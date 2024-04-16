@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react'
 import GithubIcon from 'mdi-react/GithubIcon'
+import { describe, expect, test } from 'vitest'
 
 import type { AuthProvider } from '../../../jscontext'
 
@@ -16,6 +17,7 @@ const mockAccount: NormalizedExternalAccount = {
         authenticationURL: 'https://example.com',
         serviceID: '123',
         clientID: '123',
+        noSignIn: false,
     },
 }
 

@@ -23,7 +23,6 @@ import (
 )
 
 type s3Store struct {
-	logger       log.Logger
 	bucket       string
 	manageBucket bool
 	client       s3API
@@ -34,6 +33,7 @@ type s3Store struct {
 var _ Store = &s3Store{}
 
 type S3Config struct {
+	IsBlobstore     bool
 	Region          string
 	Endpoint        string
 	UsePathStyle    bool
@@ -267,7 +267,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	}
 
 	var parts []s3types.CompletedPart
-	for i := 0; i < len(sources); i++ {
+	for i := range len(sources) {
 		partNumber := i + 1
 
 		parts = append(parts, s3types.CompletedPart{
@@ -400,6 +400,28 @@ func (r *countingReader) Read(p []byte) (n int, err error) {
 }
 
 func s3ClientConfig(ctx context.Context, s3config S3Config) (aws.Config, error) {
+	if s3config.IsBlobstore {
+		// For blobstore, no need to read local credential files or talk to a server
+		// to get a role assumption. Instead, we return a simple config with only a static
+		// provider and that's it.
+		//
+		// NOTE: We allow credential free access. In that case we set no
+		// provider. Otherwise the s3 client fails to sign requests with empty
+		// static credentials.
+		cfg := aws.NewConfig()
+
+		if s3config.AccessKeyID != "" || s3config.SecretAccessKey != "" || s3config.SessionToken != "" {
+			cfg.Credentials = credentials.NewStaticCredentialsProvider(
+				s3config.AccessKeyID,
+				s3config.SecretAccessKey,
+				s3config.SessionToken,
+			)
+		}
+
+		cfg.Region = s3config.Region
+		return *cfg, nil
+	}
+
 	optFns := []func(*awsconfig.LoadOptions) error{
 		awsconfig.WithRegion(s3config.Region),
 	}

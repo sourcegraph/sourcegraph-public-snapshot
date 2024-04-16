@@ -6,7 +6,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/sourcegraph/go-ctags"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -84,15 +84,12 @@ func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths
 	}()
 
 	var (
-		wg                          sync.WaitGroup                                         // concurrency control
-		parseRequests               = make(chan fetcher.ParseRequest, p.requestBufferSize) // buffered requests
-		symbolOrErrors              = make(chan SymbolOrError)                             // parsed responses
-		totalRequests, totalSymbols uint32                                                 // stats
+		wg                          sync.WaitGroup             // concurrency control
+		symbolOrErrors              = make(chan SymbolOrError) // parsed responses
+		totalRequests, totalSymbols uint32                     // stats
 	)
 
 	defer func() {
-		close(parseRequests)
-
 		go func() {
 			defer func() {
 				endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
@@ -106,7 +103,7 @@ func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths
 		}()
 	}()
 
-	for i := 0; i < p.numParserProcesses; i++ {
+	for range p.numParserProcesses {
 		wg.Add(1)
 
 		go func() {
@@ -118,6 +115,12 @@ func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths
 					break
 				}
 
+				// Drain channel if our context has been canceled. Otherwise
+				// we just logspam on handleParseRequest.
+				if ctx.Err() != nil {
+					continue
+				}
+
 				atomic.AddUint32(&totalRequests, 1)
 				if err := p.handleParseRequest(ctx, symbolOrErrors, parseRequestOrError.ParseRequest, &totalSymbols); err != nil {
 					log15.Error("error handling parse request", "error", err, "path", parseRequestOrError.ParseRequest.Path)
@@ -127,13 +130,6 @@ func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths
 	}
 
 	return symbolOrErrors, nil
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 func (p *parser) handleParseRequest(
@@ -148,7 +144,7 @@ func (p *parser) handleParseRequest(
 	}})
 	defer endObservation(1, observation.Args{})
 
-	language, found := languages.GetLanguage(parseRequest.Path, string(parseRequest.Data))
+	language, found := languages.GetMostLikelyLanguage(parseRequest.Path, string(parseRequest.Data))
 	if !found {
 		return nil
 	}
@@ -174,11 +170,19 @@ func (p *parser) handleParseRequest(
 		if err == nil {
 			p.parserPool.Done(parser, source)
 		} else {
-			// Close parser and return nil to pool, indicating that the next receiver should create a new parser
-			log15.Error("Closing failed parser", "error", err)
+			// If we are canceled we still kill the parser just in case, but
+			// we do not record as failure nor logspam since this is a more
+			// expected case.
+			if errors.Is(err, context.Canceled) {
+				p.operations.parseCanceled.Inc()
+			} else {
+				p.operations.parseFailed.Inc()
+				log15.Error("Closing failed parser", "error", err)
+			}
+			// Close parser and return nil to pool, indicating that the next
+			// receiver should create a new parser
 			parser.Close()
 			p.parserPool.Done(nil, source)
-			p.operations.parseFailed.Inc()
 		}
 	}()
 

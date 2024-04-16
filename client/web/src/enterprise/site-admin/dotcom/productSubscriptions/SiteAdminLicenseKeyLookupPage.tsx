@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react'
 
 import { useSearchParams } from 'react-router-dom'
 
-import { Container, H2, Text } from '@sourcegraph/wildcard'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,
@@ -15,20 +16,21 @@ import {
     ConnectionForm,
 } from '../../../../components/FilteredConnection/ui'
 import { PageTitle } from '../../../../components/PageTitle'
-import { eventLogger } from '../../../../tracking/eventLogger'
 
 import { useQueryProductLicensesConnection } from './backend'
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
 
-interface Props {}
+interface Props extends TelemetryV2Props {}
 
 const SEARCH_PARAM_KEY = 'query'
 
 /**
  * Displays the product licenses that have been created on Sourcegraph.com.
  */
-export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
-    useEffect(() => eventLogger.logPageView('SiteAdminLicenseKeyLookup'), [])
+export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    telemetryRecorder,
+}) => {
+    useEffect(() => telemetryRecorder.recordEvent('admin.licenseKeyLookup', 'view'), [telemetryRecorder])
 
     const [searchParams, setSearchParams] = useSearchParams()
 
@@ -47,58 +49,68 @@ export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsW
 
     return (
         <div className="site-admin-product-subscriptions-page">
-            <PageTitle title="Product subscriptions" />
-            <H2>License key lookup</H2>
-            <Text>Find matching licenses and their associated product subscriptions.</Text>
+            <PageTitle title="Enterprise subscriptions" />
+            <PageHeader
+                path={[{ text: 'License key lookup' }]}
+                headingElement="h2"
+                description="Find matching licenses and their associated enterprise subscriptions"
+                className="mb-3"
+            />
             <ConnectionContainer>
-                {error && <ConnectionError errors={[error.message]} />}
-                {loading && !connection && <ConnectionLoading />}
-                <ConnectionForm
-                    inputValue={search}
-                    onInputChange={event => {
-                        const search = event.target.value
-                        setSearch(search)
-                    }}
-                    inputPlaceholder="Search product licenses..."
-                />
-                <div className="text-muted mb-2">
-                    <small>Enter a partial license key to find matches.</small>
-                </div>
+                <Container className="mb-3">
+                    <ConnectionForm
+                        inputValue={search}
+                        onInputChange={event => {
+                            const search = event.target.value
+                            setSearch(search)
+                        }}
+                        inputPlaceholder="Enter a partial license key to find matches"
+                        inputClassName="mb-0"
+                        formClassName="mb-0"
+                    />
+                </Container>
                 {search && (
-                    <Container>
-                        <ConnectionList
-                            as="ul"
-                            className="list-group list-group-flush mb-0"
-                            aria-label="Subscription licenses"
-                        >
-                            {connection?.nodes?.length === 0 && (
-                                <div className="text-center">No matching license key found.</div>
+                    <>
+                        <Container className="mb-3">
+                            {error && <ConnectionError errors={[error.message]} />}
+                            {loading && !connection && <ConnectionLoading />}
+                            <ConnectionList
+                                as="ul"
+                                className="list-group list-group-flush mb-0"
+                                aria-label="Subscription licenses"
+                            >
+                                {connection?.nodes?.map(node => (
+                                    <SiteAdminProductLicenseNode
+                                        key={node.id}
+                                        node={node}
+                                        showSubscription={true}
+                                        onRevokeCompleted={refetchAll}
+                                        telemetryRecorder={telemetryRecorder}
+                                    />
+                                ))}
+                            </ConnectionList>
+                            {connection && (
+                                <SummaryContainer className="mt-2 mb-0">
+                                    <ConnectionSummary
+                                        first={15}
+                                        centered={true}
+                                        connection={connection}
+                                        noun="product license"
+                                        pluralNoun="product licenses"
+                                        hasNextPage={hasNextPage}
+                                        noSummaryIfAllNodesVisible={true}
+                                        emptyElement={
+                                            <div className="w-100 text-center text-muted">
+                                                No matching license key found
+                                            </div>
+                                        }
+                                        className="mb-0"
+                                    />
+                                    {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
+                                </SummaryContainer>
                             )}
-
-                            {connection?.nodes?.map(node => (
-                                <SiteAdminProductLicenseNode
-                                    key={node.id}
-                                    node={node}
-                                    showSubscription={true}
-                                    onRevokeCompleted={refetchAll}
-                                />
-                            ))}
-                        </ConnectionList>
-                    </Container>
-                )}
-                {connection && (
-                    <SummaryContainer className="mt-2">
-                        <ConnectionSummary
-                            first={15}
-                            centered={true}
-                            connection={connection}
-                            noun="product license"
-                            pluralNoun="product licenses"
-                            hasNextPage={hasNextPage}
-                            noSummaryIfAllNodesVisible={true}
-                        />
-                        {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
-                    </SummaryContainer>
+                        </Container>
+                    </>
                 )}
             </ConnectionContainer>
         </div>

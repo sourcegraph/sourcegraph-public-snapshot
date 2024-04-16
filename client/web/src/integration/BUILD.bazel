@@ -28,7 +28,6 @@ ts_project(
         "temporarySettingsContext.ts",
         "utils.ts",
     ],
-    module = "commonjs",
     tsconfig = ":tsconfig",
     deps = [
         "//:node_modules/@codemirror/view",
@@ -84,7 +83,6 @@ ts_project(
         "sign-in.test.ts",
     ],
     tsconfig = ":tsconfig",
-    use_preset_env = False,
     deps = [
         ":integration",
         "//:node_modules/@types/lodash",
@@ -98,6 +96,7 @@ ts_project(
         "//:node_modules/mocha",
         "//:node_modules/puppeteer",
         "//:node_modules/ts-key-enum",
+        "//client/shared/src/testing",  # keep
         "//client/web:graphql_operations",
         "//client/web:node_modules/@sourcegraph/common",
         "//client/web:node_modules/@sourcegraph/shared",
@@ -123,5 +122,7 @@ mocha_test(
         "requires-network",
     ],
     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
-    deps = [":integration_tests"],
+    deps = [
+        ":integration_tests",
+    ],
 )

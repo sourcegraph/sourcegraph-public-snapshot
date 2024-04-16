@@ -5,6 +5,7 @@ import type * as H from 'history'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 import sinon from 'sinon'
+import { afterAll, describe, expect, it } from 'vitest'
 
 import { ConnectionNodes } from './ConnectionNodes'
 import { FilteredConnection } from './FilteredConnection'

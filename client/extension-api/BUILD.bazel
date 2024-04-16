@@ -11,18 +11,7 @@ package(default_visibility = ["//visibility:public"])
 
 npm_link_all_packages(name = "node_modules")
 
-eslint_config_and_lint_root(
-    config_deps = [":tsconfig-eslint"],
-)
-
-ts_config(
-    name = "tsconfig-eslint",
-    src = "tsconfig.eslint.json",
-    visibility = ["//client:__subpackages__"],
-    deps = [
-        "//:tsconfig",
-    ],
-)
+eslint_config_and_lint_root()
 
 ts_config(
     name = "tsconfig",

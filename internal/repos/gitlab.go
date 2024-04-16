@@ -12,7 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -28,20 +27,23 @@ import (
 // A GitLabSource yields repositories from a single GitLab connection configured
 // in Sourcegraph via the external services configuration.
 type GitLabSource struct {
-	svc                 *types.ExternalService
-	config              *schema.GitLabConnection
-	exclude             excludeFunc
-	baseURL             *url.URL // URL with path /api/v4 (no trailing slash)
-	nameTransformations reposource.NameTransformations
-	provider            *gitlab.ClientProvider
-	client              *gitlab.Client
-	logger              log.Logger
+	svc                       *types.ExternalService
+	config                    *schema.GitLabConnection
+	excluder                  repoExcluder
+	baseURL                   *url.URL // URL with path /api/v4 (no trailing slash)
+	nameTransformations       reposource.NameTransformations
+	provider                  *gitlab.ClientProvider
+	client                    *gitlab.Client
+	logger                    log.Logger
+	markInternalReposAsPublic bool
 }
 
-var _ Source = &GitLabSource{}
-var _ UserSource = &GitLabSource{}
-var _ AffiliatedRepositorySource = &GitLabSource{}
-var _ VersionSource = &GitLabSource{}
+var (
+	_ Source                     = &GitLabSource{}
+	_ UserSource                 = &GitLabSource{}
+	_ AffiliatedRepositorySource = &GitLabSource{}
+	_ VersionSource              = &GitLabSource{}
+)
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
@@ -87,23 +89,28 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 		return nil, err
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Exact(strconv.Itoa(r.Id))
-		eb.Pattern(r.Pattern)
-		excludeFunc := func(repo any) bool {
-			if project, ok := repo.(gitlab.Project); ok {
-				return project.EmptyRepo
-			}
-			return false
+		rule := NewRule().
+			Exact(r.Name).
+			Pattern(r.Pattern)
+
+		if r.Id != 0 {
+			rule.Exact(strconv.Itoa(r.Id))
 		}
+
 		if r.EmptyRepos {
-			eb.Generic(excludeFunc)
+			rule.Generic(func(repo any) bool {
+				if project, ok := repo.(gitlab.Project); ok {
+					return project.EmptyRepo
+				}
+				return false
+			})
 		}
+
+		ex.AddRule(rule)
 	}
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
 
@@ -123,26 +130,25 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 		client = provider.GetPATClient(c.Token, "")
 	}
 
-	if !envvar.SourcegraphDotComMode() || svc.CloudDefault {
-		client.ExternalRateLimiter().SetCollector(&ratelimit.MetricsCollector{
-			Remaining: func(n float64) {
-				gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(n)
-			},
-			WaitDuration: func(n time.Duration) {
-				gitlabRatelimitWaitCounter.WithLabelValues("rest", svc.DisplayName).Add(n.Seconds())
-			},
-		})
-	}
+	client.ExternalRateLimiter().SetCollector(&ratelimit.MetricsCollector{
+		Remaining: func(n float64) {
+			gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(n)
+		},
+		WaitDuration: func(n time.Duration) {
+			gitlabRatelimitWaitCounter.WithLabelValues("rest", svc.DisplayName).Add(n.Seconds())
+		},
+	})
 
 	return &GitLabSource{
-		svc:                 svc,
-		config:              c,
-		exclude:             exclude,
-		baseURL:             baseURL,
-		nameTransformations: nts,
-		provider:            provider,
-		client:              client,
-		logger:              logger,
+		svc:                       svc,
+		config:                    c,
+		excluder:                  ex,
+		baseURL:                   baseURL,
+		nameTransformations:       nts,
+		provider:                  provider,
+		client:                    client,
+		logger:                    logger,
+		markInternalReposAsPublic: c.MarkInternalReposAsPublic,
 	}, nil
 }
 
@@ -190,7 +196,6 @@ func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*t
 		PathWithNamespace: pathWithNamespace,
 		CommonOp:          gitlab.CommonOp{NoCache: true},
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -205,6 +210,12 @@ func (s GitLabSource) ExternalServices() types.ExternalServices {
 
 func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 	urn := s.svc.URN()
+
+	private := proj.Visibility == gitlab.Private || proj.Visibility == gitlab.Internal
+	if proj.Visibility == gitlab.Internal && s.markInternalReposAsPublic {
+		private = false
+	}
+
 	return &types.Repo{
 		Name: reposource.GitLabRepoName(
 			s.config.RepositoryPathPattern,
@@ -223,7 +234,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 		Fork:         proj.ForkedFromProject != nil,
 		Archived:     proj.Archived,
 		Stars:        proj.StarCount,
-		Private:      proj.Visibility == "private" || proj.Visibility == "internal",
+		Private:      private,
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
@@ -246,7 +257,9 @@ func (s *GitLabSource) remoteURL(proj *gitlab.Project) string {
 }
 
 func (s *GitLabSource) excludes(p *gitlab.Project) bool {
-	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID)) || s.exclude(*p)
+	return s.excluder.ShouldExclude(p.PathWithNamespace) ||
+		s.excluder.ShouldExclude(strconv.Itoa(p.ID)) ||
+		s.excluder.ShouldExclude(*p)
 }
 
 func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceResult) {
@@ -260,7 +273,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 	var wg sync.WaitGroup
 
 	projch := make(chan *schema.GitLabProject)
-	for i := 0; i < 5; i++ { // 5 concurrent requests
+	for range 5 { // 5 concurrent requests
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -313,7 +326,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 
 		const perPage = 100
 		wg.Add(1)
-		go func(projectQuery string) {
+		go func() {
 			defer wg.Done()
 
 			urlStr, err := projectQueryToURL(projectQuery, perPage) // first page URL
@@ -338,7 +351,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 				}
 				urlStr = *nextPageURL
 			}
-		}(projectQuery)
+		}()
 	}
 
 	go func() {

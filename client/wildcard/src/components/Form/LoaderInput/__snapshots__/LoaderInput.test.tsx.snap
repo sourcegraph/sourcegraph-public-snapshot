@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`LoaderInput should not render a loading spinner when loading prop is false 1`] = `
+exports[`LoaderInput > should not render a loading spinner when loading prop is false 1`] = `
 <DocumentFragment>
   <div
     class="container"
@@ -17,7 +17,7 @@ exports[`LoaderInput should not render a loading spinner when loading prop is fa
 </DocumentFragment>
 `;
 
-exports[`LoaderInput should render a loading spinner when loading prop is true 1`] = `
+exports[`LoaderInput > should render a loading spinner when loading prop is true 1`] = `
 <DocumentFragment>
   <div
     class="container"

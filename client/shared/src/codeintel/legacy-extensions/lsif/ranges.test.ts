@@ -1,6 +1,7 @@
 import * as assert from 'assert'
 
 import * as sinon from 'sinon'
+import { describe, it } from 'vitest'
 
 import * as scip from '../../scip'
 import * as sourcegraph from '../api'

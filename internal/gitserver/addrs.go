@@ -4,13 +4,13 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/binary"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/log"
@@ -26,10 +26,10 @@ import (
 )
 
 var (
-	addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
+	addrForRepoInvoked = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_addr_for_repo_invoked",
 		Help: "Number of times gitserver.AddrForRepo was invoked",
-	}, []string{"user_agent"})
+	})
 )
 
 // NewGitserverAddresses fetches the current set of gitserver addresses
@@ -104,8 +104,8 @@ type testGitserverConns struct {
 }
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
-func (c *testGitserverConns) AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string {
-	return c.conns.AddrForRepo(ctx, userAgent, repo)
+func (c *testGitserverConns) AddrForRepo(ctx context.Context, repo api.RepoName) string {
+	return c.conns.AddrForRepo(ctx, repo)
 }
 
 // Addresses returns the current list of gitserver addresses.
@@ -123,13 +123,17 @@ func (c *testGitserverConns) GetAddressWithClient(addr string) AddressWithClient
 }
 
 // ClientForRepo returns a client or host for the given repo name.
-func (c *testGitserverConns) ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
-	conn, err := c.conns.ConnForRepo(ctx, userAgent, repo)
+func (c *testGitserverConns) ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	conn, err := c.conns.ConnForRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.clientFunc(conn), nil
+	return &errorTranslatingClient{
+		base: &automaticRetryClient{
+			base: c.clientFunc(conn),
+		},
+	}, nil
 }
 
 type testConnAndErr struct {
@@ -146,7 +150,11 @@ func (t *testConnAndErr) Address() string {
 
 // GRPCClient implements AddressWithClient
 func (t *testConnAndErr) GRPCClient() (proto.GitserverServiceClient, error) {
-	return t.clientFunc(t.conn), t.err
+	return &errorTranslatingClient{
+		base: &automaticRetryClient{
+			base: t.clientFunc(t.conn),
+		},
+	}, t.err
 }
 
 var _ ClientSource = &testGitserverConns{}
@@ -163,16 +171,23 @@ type GitserverAddresses struct {
 }
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
-func (g *GitserverAddresses) AddrForRepo(ctx context.Context, userAgent string, repoName api.RepoName) string {
-	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
+func (g *GitserverAddresses) AddrForRepo(ctx context.Context, repoName api.RepoName) string {
+	addrForRepoInvoked.Inc()
 
-	// Normalizing the name in case the caller didn't.
-	name := string(protocol.NormalizeRepo(repoName))
+	// We undelete the repo name for the addr function so that we can still reach the
+	// right gitserver after a repo has been deleted (and the name changed by that).
+	// Ideally we wouldn't need this, but as long as we use RepoName as the identifier
+	// in gitserver, we have to do this.
+	name := string(api.UndeletedRepoName(repoName))
 	if pinnedAddr, ok := g.PinnedServers[name]; ok {
 		return pinnedAddr
 	}
 
-	return addrForKey(name, g.Addresses)
+	// We use the normalize function here, because that's what we did previously.
+	// Ideally, this would not be required, but it would reshuffle GitHub.com repos
+	// with uppercase characters in the name. So until we have a better migration
+	// strategy, we keep this old behavior in.
+	return addrForKey(string(protocol.NormalizeRepo(api.RepoName(name))), g.Addresses)
 }
 
 // addrForKey returns the gitserver address to use for the given string key,
@@ -190,8 +205,8 @@ type GitserverConns struct {
 	grpcConns map[string]connAndErr
 }
 
-func (g *GitserverConns) ConnForRepo(ctx context.Context, userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
-	addr := g.AddrForRepo(ctx, userAgent, repo)
+func (g *GitserverConns) ConnForRepo(ctx context.Context, repo api.RepoName) (*grpc.ClientConn, error) {
+	addr := g.AddrForRepo(ctx, repo)
 	ce, ok := g.grpcConns[addr]
 	if !ok {
 		return nil, errors.Newf("no gRPC connection found for address %q", addr)
@@ -216,7 +231,11 @@ func (c *connAndErr) Address() string {
 }
 
 func (c *connAndErr) GRPCClient() (proto.GitserverServiceClient, error) {
-	return proto.NewGitserverServiceClient(c.conn), c.err
+	return &errorTranslatingClient{
+		base: &automaticRetryClient{
+			base: proto.NewGitserverServiceClient(c.conn),
+		},
+	}, c.err
 }
 
 type atomicGitServerConns struct {
@@ -224,16 +243,21 @@ type atomicGitServerConns struct {
 	watchOnce sync.Once
 }
 
-func (a *atomicGitServerConns) AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string {
-	return a.get().AddrForRepo(ctx, userAgent, repo)
+func (a *atomicGitServerConns) AddrForRepo(ctx context.Context, repo api.RepoName) string {
+	return a.get().AddrForRepo(ctx, repo)
 }
 
-func (a *atomicGitServerConns) ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
-	conn, err := a.get().ConnForRepo(ctx, userAgent, repo)
+func (a *atomicGitServerConns) ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	conn, err := a.get().ConnForRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
-	return proto.NewGitserverServiceClient(conn), nil
+
+	return &errorTranslatingClient{
+		base: &automaticRetryClient{
+			base: proto.NewGitserverServiceClient(conn),
+		},
+	}, nil
 }
 
 func (a *atomicGitServerConns) Addresses() []AddressWithClient {

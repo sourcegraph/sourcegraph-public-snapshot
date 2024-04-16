@@ -1,9 +1,11 @@
-import { BehaviorSubject, merge, Observable, of } from 'rxjs'
-import { shareReplay } from 'rxjs/operators'
+import { BehaviorSubject, type Observable, of } from 'rxjs'
 import { get } from 'svelte/store'
 
+import { browser } from '$app/environment'
 import { navigating } from '$app/stores'
 import { SearchPatternType } from '$lib/graphql-operations'
+import { parseExtendedSearchURL, type ExtendedParsedSearchURL } from '$lib/search'
+import { SearchCachePolicy, getCachePolicyFromURL } from '$lib/search/state'
 import {
     aggregateStreamingSearch,
     LATEST_VERSION,
@@ -13,24 +15,88 @@ import {
     FilterType,
     getGlobalSearchContextFilter,
     omitFilter,
+    emptyAggregateResults,
 } from '$lib/shared'
-import { parseSearchURL } from '$lib/web'
 
 import type { PageLoad } from './$types'
 
-const cache: Record<string, Observable<AggregateStreamingSearchResults | undefined>> = {}
+type SearchStreamCacheEntry = Observable<AggregateStreamingSearchResults>
+
+/**
+ * CachingStreamManager helps caching and canceling search streams in the browser.
+ */
+class CachingStreamManager {
+    private cache: Map<string, SearchStreamCacheEntry> = new Map()
+    private streamManager = new NonCachingStreamManager()
+
+    search(
+        parsedQuery: ExtendedParsedSearchURL,
+        searchOptions: StreamSearchOptions,
+        useCache: boolean
+    ): Observable<AggregateStreamingSearchResults> {
+        const key = this.createCacheKey(parsedQuery, searchOptions)
+
+        const searchStream = this.cache.get(key)
+
+        if (!useCache || !searchStream) {
+            const stream = this.streamManager.search(parsedQuery, searchOptions)
+            const searchStream = new BehaviorSubject<AggregateStreamingSearchResults>(emptyAggregateResults)
+            this.cache.set(key, searchStream)
+            stream.subscribe({
+                next: value => {
+                    searchStream.next(value)
+                },
+            })
+            return searchStream
+        }
+
+        return searchStream
+    }
+
+    private createCacheKey(parsedQuery: ExtendedParsedSearchURL, options: StreamSearchOptions): string {
+        return [
+            options.version,
+            options.patternType,
+            options.caseSensitive,
+            options.searchMode,
+            options.chunkMatches,
+            parsedQuery.filteredQuery,
+            parsedQuery.searchMode,
+            parsedQuery.patternType,
+            parsedQuery.caseSensitive,
+        ].join('--')
+    }
+}
+
+/**
+ * NonCachingStreamManager simply executes the search query without caching.
+ */
+class NonCachingStreamManager {
+    search(
+        parsedQuery: ExtendedParsedSearchURL,
+        searchOptions: StreamSearchOptions
+    ): Observable<AggregateStreamingSearchResults> {
+        return aggregateStreamingSearch(of(parsedQuery.filteredQuery ?? ''), searchOptions)
+    }
+}
+
+const streamManager = browser ? new CachingStreamManager() : new NonCachingStreamManager()
 
 export const load: PageLoad = ({ url, depends }) => {
     const hasQuery = url.searchParams.has('q')
     const caseSensitiveURL = url.searchParams.get('case') === 'yes'
+    const cachePolicy = getCachePolicyFromURL(url)
+    const trace = url.searchParams.get('trace') ?? undefined
 
     if (hasQuery) {
+        const parsedQuery = parseExtendedSearchURL(url)
         let {
             query = '',
             searchMode,
-            patternType = SearchPatternType.literal,
+            patternType = SearchPatternType.keyword,
             caseSensitive,
-        } = parseSearchURL(url.search)
+            filters: queryFilters,
+        } = parsedQuery
         // Necessary for allowing to submit the same query again
         // FIXME: This is not correct
         depends(`query:${query}--${caseSensitiveURL}`)
@@ -41,7 +107,6 @@ export const load: PageLoad = ({ url, depends }) => {
             const globalSearchContext = getGlobalSearchContextFilter(query)
             if (globalSearchContext?.spec) {
                 searchContext = globalSearchContext.spec
-                query = omitFilter(query, globalSearchContext.filter)
             }
         }
 
@@ -49,33 +114,39 @@ export const load: PageLoad = ({ url, depends }) => {
             version: LATEST_VERSION,
             patternType,
             caseSensitive,
-            trace: '',
+            trace,
+            // TODO(@camdencheek): populate these from local storage
             featureOverrides: [],
             chunkMatches: true,
             searchMode,
+            displayLimit: 1500,
+            // 5kb is a conservative upper bound on a reasonable line to show
+            // to a user. In practice we can likely go much lower.
+            maxLineLen: 5 * 1024,
         }
 
-        const key = createCacheKey(options, url.search)
-        let searchStream = cache[key]
-
-        // Browser back button should always use the cached version if available
-        if (get(navigating)?.type !== 'popstate' || !searchStream) {
-            const querySource = new BehaviorSubject<string>(query)
-            searchStream = cache[key] = merge(of(undefined), aggregateStreamingSearch(querySource, options)).pipe(
-                shareReplay(1)
-            )
-            // Primes the stream
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            searchStream.subscribe()
+        let useClientCache = false
+        switch (cachePolicy) {
+            case SearchCachePolicy.CacheFirst:
+                useClientCache = true
+                break
+            case SearchCachePolicy.Default:
+                useClientCache = get(navigating)?.type === 'popstate'
+                break
         }
-        const resultStream = searchStream
-        // Do we actualle need this?
-        // merge(searchStream.pipe(throttleTime(500)), searchStream.pipe(last()))
+
+        // We create a new stream only if
+        // - we do not have a cached stream (in the browser)
+        // - the search result page was expliclty navigated to (not via back/forward buttons)
+        // - cache is not enforced (which is used in the filters sidebar)
+        const searchStream = streamManager.search(parsedQuery, options, useClientCache)
 
         return {
-            stream: resultStream,
+            searchStream,
+            queryFilters,
+            queryFromURL: query,
             queryOptions: {
-                query,
+                query: withoutGlobalContext(query),
                 caseSensitive,
                 patternType,
                 searchMode,
@@ -83,17 +154,18 @@ export const load: PageLoad = ({ url, depends }) => {
             },
         }
     }
-    return {}
+    return {
+        queryOptions: {
+            query: '',
+        },
+    }
 }
 
-function createCacheKey(options: StreamSearchOptions, query: string): string {
-    return [
-        options.version,
-        options.patternType,
-        options.caseSensitive,
-        options.caseSensitive,
-        options.searchMode,
-        options.chunkMatches,
-        query,
-    ].join('--')
+function withoutGlobalContext(query: string): string {
+    // TODO: Validate search context
+    const globalSearchContext = getGlobalSearchContextFilter(query)
+    if (globalSearchContext?.spec) {
+        return omitFilter(query, globalSearchContext.filter)
+    }
+    return query
 }

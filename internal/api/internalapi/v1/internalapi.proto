@@ -7,7 +7,9 @@ import "google/protobuf/duration.proto";
 option go_package = "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1";
 
 service ConfigService {
-  rpc GetConfig(GetConfigRequest) returns (GetConfigResponse) {}
+  rpc GetConfig(GetConfigRequest) returns (GetConfigResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetConfigRequest {}

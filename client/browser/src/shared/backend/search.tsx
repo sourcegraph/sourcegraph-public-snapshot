@@ -1,6 +1,6 @@
 /* eslint rxjs/no-ignored-subscription: warn */
-import { Subject, forkJoin } from 'rxjs'
-import { debounceTime, distinctUntilChanged, map, publishReplay, refCount, repeat, switchMap } from 'rxjs/operators'
+import { ReplaySubject, Subject, forkJoin } from 'rxjs'
+import { debounceTime, distinctUntilChanged, map, repeat, switchMap, share } from 'rxjs/operators'
 
 import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
@@ -48,7 +48,7 @@ function dirname(path: string): string | undefined {
  * Returns the last element of path, or "." if path is empty.
  */
 function basename(path: string): string {
-    return path.split('/').slice(-1)[0] || '.'
+    return path.split('/').at(-1) || '.'
 }
 
 function createSuggestions(item: SearchMatch): Suggestion[] {
@@ -91,8 +91,9 @@ function createSuggestions(item: SearchMatch): Suggestion[] {
                 urlLabel: 'go to definition',
             }))
         }
-        default:
+        default: {
             return []
+        }
     }
 }
 
@@ -115,8 +116,12 @@ export const createSuggestionFetcher = (): ((input: SuggestionInput) => void) =>
                         suggestions: suggestions.flat().flatMap(suggestion => createSuggestions(suggestion)),
                         handler,
                     })),
-                    publishReplay(),
-                    refCount()
+                    share({
+                        connector: () => new ReplaySubject(),
+                        resetOnError: false,
+                        resetOnComplete: false,
+                        resetOnRefCountZero: false,
+                    })
                 )
             ),
             // But resubscribe afterwards

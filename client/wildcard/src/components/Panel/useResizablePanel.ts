@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
@@ -114,7 +114,7 @@ export const useResizablePanel = ({
     const [isResizing, setResizing] = useState(false)
     const [panelSize, setPanelSize] = useState(defaultSize)
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const size = getCachedPanelSize(storageKey, defaultSize, maxSize, minSize)
         onResize?.(size)
         setPanelSize(size)

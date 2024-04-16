@@ -21,7 +21,7 @@ extend type Query {
         The number of text results to return. Text results contain Markdown files and similar file types primarily used for writing documentation.
         """
         textResultsCount: Int!
-    ): EmbeddingsSearchResults!
+    ): EmbeddingsSearchResults! @deprecated(reason: "use getCodyContext instead.")
 
     """
     Experimental: Searches a set of repositories for similar code and text results using embeddings.
@@ -45,7 +45,7 @@ extend type Query {
         The number of text results to return. Text results contain Markdown files and similar file types primarily used for writing documentation.
         """
         textResultsCount: Int!
-    ): EmbeddingsSearchResults!
+    ): EmbeddingsSearchResults! @deprecated(reason: "use getCodyContext instead.")
 
     """
     Experimental: Determines whether the given query requires further context before it can be answered.

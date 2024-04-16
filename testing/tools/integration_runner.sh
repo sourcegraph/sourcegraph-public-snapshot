@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -eu
 
 DB_STARTUP_TIMEOUT="${DB_STARTUP_TIMEOUT:-10s}"
 
@@ -35,9 +35,6 @@ function ensure_clean_slate() {
     echo "Found 0 images."
   fi
 
-  echo "Removing existing volumes, if any"
-  # docker volume prune -f
-
   echo "--- done"
 }
 
@@ -62,7 +59,18 @@ function generate_unique_container_name() {
   local prefix="$1"
   prefix="$1"
   local ident
-  ident="$(openssl rand -hex 12)"
+
+  # try generate a unique identifier with openssl otherwise fallback to dd and hexdump
+  if command -v openssl &>/dev/null; then
+    ident="$(openssl rand -hex 12)"
+  elif command -v hexdump &>/dev/null; then
+    ident="$(dd if=/dev/urandom bs=24 count=1 2>/dev/null | hexdump -e '24/1 "%02x"')"
+  else
+    echo "⚠️ Missing openssl or hexdump. Unable to generate unique id"
+    echo "👉 Aborting."
+    exit 1
+  fi
+
   echo "$prefix-$ident"
 }
 
@@ -85,13 +93,11 @@ function _run_server_image() {
   url="$3"
   local server_port
   server_port="$4"
-  local data
-  data="$5"
   local container_name
-  container_name="$6"
+  container_name="$5"
   local docker_args
   # shellcheck disable=SC2124
-  docker_args="${@:7}"
+  docker_args="${@:6}"
 
   echo "--- Loading server image"
   echo "Loading $image_tarball in Docker"
@@ -99,13 +105,11 @@ function _run_server_image() {
 
   echo "-- Starting $image_name"
   echo "Listening at: $url"
-  echo "Data and config volume bounds: $data"
   echo "Database startup timeout: $DB_STARTUP_TIMEOUT"
   echo "License key generator present: $(is_present "$SOURCEGRAPH_LICENSE_GENERATION_KEY")"
   echo "License key present: $(is_present "$SOURCEGRAPH_LICENSE_GENERATION_KEY")"
 
   echo "Allow single docker image code insights: $ALLOW_SINGLE_DOCKER_CODE_INSIGHTS"
-  echo "GRPC Feature flag: $SG_FEATURE_FLAG_GRPC"
 
   # shellcheck disable=SC2086
   docker run $docker_args \
@@ -116,10 +120,7 @@ function _run_server_image() {
     -e BAZEL_SKIP_OOB_INFER_VERSION=true \
     -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS="$ALLOW_SINGLE_DOCKER_CODE_INSIGHTS" \
     -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
-    -e SG_FEATURE_FLAG_GRPC="$SG_FEATURE_FLAG_GRPC" \
     -e DB_STARTUP_TIMEOUT="$DB_STARTUP_TIMEOUT" \
-    --volume "$data/config:/etc/sourcegraph" \
-    --volume "$data/data:/var/opt/sourcegraph" \
     "$image_name"
 
   echo "-- Listening at $url"
@@ -142,7 +143,7 @@ function wait_until_container_ready() {
   # shellcheck disable=SC2181
   while [ ! $? -eq 0 ]; do
     sleep 5
-    t=$(( t + 5 ))
+    t=$((t + 5))
     if [ "$t" -gt "$timeout" ]; then
       echo "$url was not accessible within $timeout."
       docker inspect "$name"
@@ -168,15 +169,11 @@ function run_server_image() {
 
   local container_name
   container_name=$(generate_unique_container_name "server-integration")
-  local data
-  data="tmp_run_server_image_$container_name"
-  mkdir "$data"
-  data="$(pwd)/$data"
 
   # we want those to be expanded right now, on purpose.
   # shellcheck disable=SC2064
   trap "cleanup $image_name $container_name" EXIT
-  _run_server_image "$image_tarball" "$image_name" "$url" "$server_port" "$data" "$container_name"
+  _run_server_image "$image_tarball" "$image_name" "$url" "$server_port" "$container_name"
 
   wait_until_container_ready "$container_name" "$url" 60
 }

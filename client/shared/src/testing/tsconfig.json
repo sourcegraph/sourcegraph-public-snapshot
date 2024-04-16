@@ -2,10 +2,7 @@
   "extends": "../../tsconfig.json",
   "references": [{ "path": "../.." }],
   "compilerOptions": {
-    "types": ["mocha", "node"],
-    "paths": {
-      "*": ["../types/*", "*"],
-    },
+    "types": ["node"],
   },
   "include": ["**/*"],
   "exclude": [],

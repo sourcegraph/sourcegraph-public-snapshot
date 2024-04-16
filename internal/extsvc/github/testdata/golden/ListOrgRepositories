@@ -13,7 +13,8 @@
    "ViewerPermission": "ADMIN",
    "RepositoryTopics": {
     "Nodes": []
-   }
+   },
+   "DiskUsage": 1
   },
   {
    "ID": "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
@@ -29,6 +30,7 @@
    "ViewerPermission": "ADMIN",
    "RepositoryTopics": {
     "Nodes": []
-   }
+   },
+   "DiskUsage": 1
   }
  ]

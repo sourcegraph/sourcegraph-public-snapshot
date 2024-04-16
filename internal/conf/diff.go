@@ -5,8 +5,21 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func Diff(before, after string) (fields map[string]struct{}) {
+	beforeCfg, err := ParseConfig(conftypes.RawUnified{Site: before})
+	if err != nil {
+		return nil
+	}
+	afterCfg, err := ParseConfig(conftypes.RawUnified{Site: after})
+	if err != nil {
+		return nil
+	}
+	return diff(beforeCfg, afterCfg)
+}
 
 // diff returns names of the Go fields that have different values between the
 // two configurations.
@@ -34,7 +47,7 @@ func diffStruct(before, after any, prefix string) (fields map[string]struct{}) {
 func getJSONFields(vv any, prefix string) (fields map[string]any) {
 	fields = make(map[string]any)
 	v := reflect.ValueOf(vv)
-	for i := 0; i < v.NumField(); i++ {
+	for i := range v.NumField() {
 		f := v.Field(i)
 		tag := v.Type().Field(i).Tag.Get("json")
 		if tag == "" {

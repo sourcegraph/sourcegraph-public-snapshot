@@ -1,6 +1,7 @@
 package main
 
 import (
+	"slices"
 	"sort"
 	"strings"
 
@@ -45,7 +46,7 @@ var customerMatcher = regexp.MustCompile(`https://app\.hubspot\.com/contacts/276
 // categorizeCustomerIssue adds a customer emoji if the repository matches sourcegraph/customer or if
 // the issue contains a hubspot URL.
 func categorizeCustomerIssue(labels []string, repository, body string, categories map[string]string) {
-	if repository == "sourcegraph/customer" || contains(labels, "customer") {
+	if repository == "sourcegraph/customer" || slices.Contains(labels, "customer") {
 		if customer := customerMatcher.FindString(body); customer != "" {
 			categories["customer"] = "[👩](" + customer + ")"
 		} else {

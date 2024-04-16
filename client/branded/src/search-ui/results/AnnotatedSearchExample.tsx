@@ -11,7 +11,6 @@ const edgesHeight = 8
 const aboveArrowY = 70
 const belowArrowY = 150
 
-/* eslint-disable jsdoc/check-indentation */
 /**
  * Helper function to create "arrows" of the form
  *

@@ -16,7 +16,7 @@ func TestSiteConfigurationDiff(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
-	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{})
+	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{})
 	if err != nil {
 		t.Fatalf("failed to create schemaResolver: %v", err)
 	}
@@ -88,7 +88,7 @@ func TestSiteConfigurationDiff(t *testing.T) {
 				t.Fatalf("mismatched number of nodes, expected %d, got: %d", totalExpectedNodes, totalNodes)
 			}
 
-			for i := 0; i < totalNodes; i++ {
+			for i := range totalNodes {
 				siteConfig, expectedNode := nodes[i].siteConfig, expectedNodes[i]
 
 				if siteConfig.ID != expectedNode.ID {

@@ -90,20 +90,6 @@ func TestSearch(t *testing.T) {
 	})
 
 	testSearchOther(t)
-
-	// Run the search tests with file-based ranking disabled
-	err = client.SetFeatureFlag("search-ranking", false)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Run("graphql with file ranking", func(t *testing.T) {
-		testSearchClient(t, client)
-	})
-
-	t.Run("stream with file ranking", func(t *testing.T) {
-		testSearchClient(t, streamClient)
-	})
 }
 
 // searchClient is an interface so we can swap out a streaming vs graphql
@@ -226,6 +212,38 @@ func testSearchClient(t *testing.T, client searchClient) {
 				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
 			}
 		}
+	})
+
+	t.Run("repo at time", func(t *testing.T) {
+		// Surprisingly, our repo GraphQL resolver for a search result is just
+		// a repo, which does not expose its rev, so GraphQL does not work for this test.
+		doSkip(t, skipGraphQL)
+
+		t.Run("HEAD", func(t *testing.T) {
+			results, err := client.SearchRepositories("repo:^github.com/sgtest/go-diff$ rev:at.time(2018-01-01)")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(results) != 1 {
+				t.Fatalf("expected exactly one result, got %#v", results)
+			}
+			if !strings.Contains(results[0].URL, "3f415a1") {
+				t.Fatalf("expected repository to be at commit 3f415a1, got %q", results[0].URL)
+			}
+		})
+
+		t.Run("branch", func(t *testing.T) {
+			results, err := client.SearchRepositories("repo:^github.com/sgtest/go-diff$ rev:at.time(2019-11-09, test-already-exist-pr)")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(results) != 1 {
+				t.Fatalf("expected exactly one result, got %#v", results)
+			}
+			if !strings.Contains(results[0].URL, "3637c60") {
+				t.Fatalf("expected repository to be at commit 3637c60 got %q", results[0].URL)
+			}
+		})
 	})
 
 	t.Run("lang: filter", func(t *testing.T) {
@@ -431,10 +449,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				},
 			},
 			{
-				name:  `Structural search returns repo results if patterntype set but pattern is empty`,
-				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ patterntype:structural`,
-			},
-			{
 				name:       `case sensitive`,
 				query:      `case:yes type:repo Diff`,
 				zeroResult: true,
@@ -533,14 +547,26 @@ func testSearchClient(t *testing.T, client searchClient) {
 			// 	skip:          skipStream,
 			// },
 			{
-				name:  "regular expression without indexed search",
+				name:  "regular expression with unindexed search",
 				query: "index:no patterntype:regexp ^func.*$",
 			},
+			{
+				name:  "empty query with unindexed search",
+				query: "index:no file:\\.go",
+			},
+			{
+				name:  "boolean query with unindexed search",
+				query: "index:no func OR NOT default",
+			},
+			{
+				name:  "lang filters with unindexed search",
+				query: "index:no func OR NOT default lang:Go",
+			},
 			// Failing test: https://github.com/sourcegraph/sourcegraph/issues/48109
-			//{
+			// {
 			//	name:  "fork:only",
 			//	query: "fork:only router",
-			//},
+			// },
 			{
 				name:  "double-quoted pattern, nonzero result",
 				query: `"func main() {\n" patterntype:regexp type:file`,
@@ -723,6 +749,31 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("structural search", func(t *testing.T) {
+		// Enable structural search.
+		siteConfig, lastID, err := client.SiteConfiguration()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		oldSiteConfig := new(schema.SiteConfiguration)
+		*oldSiteConfig = *siteConfig
+		defer func() {
+			_, lastID, err := client.SiteConfiguration()
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
+
+		siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{StructuralSearch: "enabled"}
+		err = client.UpdateSiteConfiguration(siteConfig, lastID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		tests := []struct {
 			name       string
 			query      string
@@ -746,6 +797,18 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  `Structural search quotes are interpreted literally`,
 				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ file:^README\.md "basic :[_] access :[_]" patterntype:structural`,
+			},
+			{
+				name:  `Structural search returns repo results if patterntype set but pattern is empty`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ patterntype:structural`,
+			},
+			{
+				name:  `Dedupe union operation`,
+				query: `file:diff.go|print.go|parse.go repo:^github\.com/sgtest/go-diff _, :[[x]] := range :[src.] { :[_] } or if :[s1] == :[s2] patterntype:structural`,
+			},
+			{
+				name:  `Dedupe union operation`,
+				query: `file:diff.go|print.go|parse.go repo:^github\.com/sgtest/go-diff _, :[[x]] := range :[src.] { :[_] } or if :[s1] == :[s2] patterntype:structural`,
 			},
 		}
 		for _, test := range tests {
@@ -928,10 +991,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time patterntype:regexp type:file`,
 			},
 			{
-				name:  `Structural search uses literal search parser`,
-				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go :[[v]] := ts and printFileHeader(:[_]) patterntype:structural`,
-			},
-			{
 				name:  `Union file matches per file and accurate counts`,
 				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func or package`,
 			},
@@ -955,10 +1014,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:       `Intersect file matches per file against an empty result set`,
 				query:      `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func and doesnotexist838338`,
 				zeroResult: true,
-			},
-			{
-				name:  `Dedupe union operation`,
-				query: `file:diff.go|print.go|parse.go repo:^github\.com/sgtest/go-diff _, :[[x]] := range :[src.] { :[_] } or if :[s1] == :[s2] patterntype:structural`,
 			},
 		}
 		for _, test := range tests {
@@ -1355,11 +1410,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 1},
 			},
 			// Temporarily disabled as it can be flaky
-			//{
+			// {
 			//	name:   `select file`,
 			//	query:  `repo:go-diff patterntype:literal HunkNoChunksize select:file`,
 			//	counts: counts{File: 1},
-			//},
+			// },
 			{
 				name:   `or statement merges file`,
 				query:  `repo:go-diff HunkNoChunksize or ParseHunksAndPrintHunks select:file`,
@@ -1568,7 +1623,7 @@ func testSearchContextsCRUD(t *testing.T, client *gqltestutil.Client) {
 func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
 	numSearchContexts := 10
 	searchContextIDs := make([]string, 0, numSearchContexts)
-	for i := 0; i < numSearchContexts; i++ {
+	for i := range numSearchContexts {
 		scID, err := client.CreateSearchContext(
 			gqltestutil.CreateSearchContextInput{Name: fmt.Sprintf("SearchContext%d", i), Public: true},
 			[]gqltestutil.SearchContextRepositoryRevisionsInput{},
@@ -1577,7 +1632,7 @@ func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
 		searchContextIDs = append(searchContextIDs, scID)
 	}
 	defer func() {
-		for i := 0; i < numSearchContexts; i++ {
+		for i := range numSearchContexts {
 			err := client.DeleteSearchContext(searchContextIDs[i])
 			require.NoError(t, err)
 		}

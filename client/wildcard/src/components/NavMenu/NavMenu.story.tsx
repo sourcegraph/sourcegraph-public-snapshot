@@ -129,13 +129,13 @@ const navItems: NavMenuSectionProps[] = [
             {
                 content: 'About Sourcegraph',
                 suffixIcon: OpenInNewIcon,
-                to: 'https://about.sourcegraph.com',
+                to: 'https://sourcegraph.com',
                 key: 'Sourcegraph',
             },
             {
                 content: 'Browser Extension',
                 suffixIcon: OpenInNewIcon,
-                to: 'https://docs.sourcegraph.com/integration/browser_extension',
+                to: 'https://sourcegraph.com/docs/integration/browser_extension',
                 key: 'Extension',
             },
         ],

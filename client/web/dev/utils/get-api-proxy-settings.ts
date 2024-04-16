@@ -37,13 +37,13 @@ export function getAPIProxySettings(options: GetAPIProxySettingsOptions): ProxyS
         cookieDomainRewrite: '',
         // Prevent automatic call of res.end() in `onProxyRes`. It is handled by `responseInterceptor`.
         selfHandleResponse: true,
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises, @typescript-eslint/require-await
+        // eslint-disable-next-line @typescript-eslint/require-await
         onProxyRes: conditionalResponseInterceptor(STREAMING_ENDPOINTS, async (responseBuffer, proxyRes) => {
             // Propagate cookies to enable authentication on the remote server.
             if (proxyRes.headers['set-cookie']) {
                 // Remove `Secure` and `SameSite` from `set-cookie` headers.
                 const cookies = proxyRes.headers['set-cookie'].map(cookie =>
-                    cookie.replace(/; secure/gi, '').replace(/; samesite=.+/gi, '')
+                    cookie.replaceAll(/; secure/gi, '').replaceAll(/; samesite=.+/gi, '')
                 )
 
                 proxyRes.headers['set-cookie'] = cookies
@@ -71,7 +71,6 @@ export function getAPIProxySettings(options: GetAPIProxySettingsOptions): ProxyS
             // we add it ourselves.
             proxyRequest.setHeader('Origin', apiURL)
         },
-        // TODO: share with `client/web/gulpfile.js`
         // Avoid crashing on "read ECONNRESET".
         onError: () => undefined,
         // Don't log proxy errors, these usually just contain
@@ -167,17 +166,21 @@ function decompress<TReq extends http.IncomingMessage = http.IncomingMessage>(
     let decompress
 
     switch (contentEncoding) {
-        case 'gzip':
+        case 'gzip': {
             decompress = zlib.createGunzip()
             break
-        case 'br':
+        }
+        case 'br': {
             decompress = zlib.createBrotliDecompress()
             break
-        case 'deflate':
+        }
+        case 'deflate': {
             decompress = zlib.createInflate()
             break
-        default:
+        }
+        default: {
             break
+        }
     }
 
     if (decompress) {

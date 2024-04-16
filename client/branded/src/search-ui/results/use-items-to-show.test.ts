@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react'
 import { times } from 'lodash'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { INCREMENTAL_ITEMS_TO_SHOW, DEFAULT_INITIAL_ITEMS_TO_SHOW, useItemsToShow } from './use-items-to-show'
 
@@ -11,7 +12,7 @@ function renderUseItemsToShowHook(query = 'Hello there!') {
 
 function scrollToViewMoreResults(scrollNumber: number, handleBottomHit: () => void) {
     // Do not await `act` call with sync logic. It's not a promise.
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
     act(() => {
         times(scrollNumber, handleBottomHit)
     })

@@ -109,8 +109,8 @@ function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] 
             const searchText: string | undefined = parsedArguments?.code_search?.query_data?.combined
 
             if (searchText) {
-                if (recentSearches.length > 0 && recentSearches[recentSearches.length - 1].searchText === searchText) {
-                    recentSearches[recentSearches.length - 1].count += 1
+                if (recentSearches.length > 0 && recentSearches.at(-1)!.searchText === searchText) {
+                    recentSearches.at(-1)!.count += 1
                 } else {
                     const parsedUrl = new URL(node.url)
                     recentSearches.push({

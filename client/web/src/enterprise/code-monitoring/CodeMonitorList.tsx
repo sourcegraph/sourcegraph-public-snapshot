@@ -3,6 +3,7 @@ import React, { useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import { of } from 'rxjs'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container, Link, H2, H3 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -21,9 +22,10 @@ import { CodeMonitorNode, type CodeMonitorNodeProps } from './CodeMonitoringNode
 import type { CodeMonitoringPageProps } from './CodeMonitoringPage'
 
 interface CodeMonitorListProps
-    extends Required<
-        Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'fetchCodeMonitors' | 'toggleCodeMonitorEnabled'>
-    > {
+    extends TelemetryV2Props,
+        Required<
+            Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'fetchCodeMonitors' | 'toggleCodeMonitorEnabled'>
+        > {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -38,6 +40,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
     fetchUserCodeMonitors,
     fetchCodeMonitors,
     toggleCodeMonitorEnabled,
+    telemetryRecorder,
 }) => {
     const location = useLocation()
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
@@ -80,10 +83,13 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                             <CallToActionBanner variant="outlined" small={true}>
                                 To monitor changes across your private repositories,{' '}
                                 <Link
-                                    to="https://about.sourcegraph.com"
-                                    onClick={() =>
+                                    to="https://sourcegraph.com"
+                                    onClick={() => {
                                         eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Monitoring' })
-                                    }
+                                        telemetryRecorder.recordEvent('codeMonitor.enterpriseCTA', 'click', {
+                                            metadata: { location: 1 },
+                                        })
+                                    }}
                                 >
                                     get Sourcegraph Enterprise
                                 </Link>
@@ -151,9 +157,6 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                         </>
                     )}
                 </div>
-            </div>
-            <div className="mt-5">
-                We want to hear your feedback! <Link to="mailto:feedback@sourcegraph.com">Share your thoughts</Link>
             </div>
         </>
     )

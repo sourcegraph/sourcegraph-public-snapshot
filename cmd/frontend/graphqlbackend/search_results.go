@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
@@ -78,12 +78,12 @@ func (c *SearchResultsResolver) repositoryResolvers(ctx context.Context, ids []a
 		return nil, nil
 	}
 
-	gsClient := gitserver.NewClient()
+	gsClient := gitserver.NewClient("graphql.search.results.repositories")
 	resolvers := make([]*RepositoryResolver, 0, len(ids))
 	err := c.db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
 		IDs: ids,
 	}, func(repo *types.MinimalRepo) {
-		resolvers = append(resolvers, NewRepositoryResolver(c.db, gsClient, repo.ToRepo()))
+		resolvers = append(resolvers, NewMinimalRepositoryResolver(c.db, gsClient, repo.ID, repo.Name))
 	})
 	if err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func (c *SearchResultsResolver) Missing(ctx context.Context) ([]*RepositoryResol
 }
 
 func (c *SearchResultsResolver) Timedout(ctx context.Context) ([]*RepositoryResolver, error) {
-	return c.repositoryResolvers(ctx, c.repoIDsByStatus(search.RepoStatusTimedout))
+	return c.repositoryResolvers(ctx, c.repoIDsByStatus(search.RepoStatusTimedOut))
 }
 
 func (c *SearchResultsResolver) IndexUnavailable() bool {
@@ -128,19 +128,14 @@ func (sr *SearchResultsResolver) Results() []SearchResultResolver {
 }
 
 func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultResolver {
-	type repoKey struct {
-		Name types.MinimalRepo
-		Rev  string
-	}
-	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
-	gsClient := gitserver.NewClient()
-	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
-		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
+	repoResolvers := make(map[types.MinimalRepo]*RepositoryResolver, 10)
+	gsClient := gitserver.NewClient("graphql.search.results")
+	getRepoResolver := func(repoName types.MinimalRepo) *RepositoryResolver {
+		if existing, ok := repoResolvers[repoName]; ok {
 			return existing
 		}
-		resolver := NewRepositoryResolver(db, gsClient, repoName.ToRepo())
-		resolver.RepoMatch.Rev = rev
-		repoResolvers[repoKey{repoName, rev}] = resolver
+		resolver := NewMinimalRepositoryResolver(db, gsClient, repoName.ID, repoName.Name)
+		repoResolvers[repoName] = resolver
 		return resolver
 	}
 
@@ -151,10 +146,10 @@ func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultRe
 			resolvers = append(resolvers, &FileMatchResolver{
 				db:           db,
 				FileMatch:    *v,
-				RepoResolver: getRepoResolver(v.Repo, ""),
+				RepoResolver: getRepoResolver(v.Repo),
 			})
 		case *result.RepoMatch:
-			resolvers = append(resolvers, getRepoResolver(v.RepoName(), v.Rev))
+			resolvers = append(resolvers, getRepoResolver(v.RepoName()))
 		case *result.CommitMatch:
 			resolvers = append(resolvers, &CommitSearchResultResolver{
 				db:          db,
@@ -176,7 +171,7 @@ func (sr *SearchResultsResolver) ResultCount() int32 { return sr.MatchCount() }
 
 func (sr *SearchResultsResolver) ApproximateResultCount() string {
 	count := sr.MatchCount()
-	if sr.LimitHit() || sr.Stats.Status.Any(search.RepoStatusCloning|search.RepoStatusTimedout) {
+	if sr.LimitHit() || sr.Stats.Status.Any(search.RepoStatusCloning|search.RepoStatusTimedOut) {
 		return fmt.Sprintf("%d+", count)
 	}
 	return strconv.Itoa(int(count))
@@ -224,11 +219,12 @@ func (sf *searchFilterResolver) Count() int32 {
 }
 
 func (sf *searchFilterResolver) LimitHit() bool {
-	return sf.filter.IsLimitHit
+	// TODO(camdencheek): calculate exhaustiveness correctly
+	return true
 }
 
 func (sf *searchFilterResolver) Kind() string {
-	return sf.filter.Kind
+	return string(sf.filter.Kind)
 }
 
 // blameFileMatch blames the specified file match to produce the time at which
@@ -242,17 +238,28 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 		// No line match
 		return time.Time{}, nil
 	}
+
 	hm := fm.ChunkMatches[0]
-	hunks, err := gitserver.NewClient().BlameFile(ctx, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
+	hr, err := gitserver.NewClient("graphql.search.results.blame").StreamBlameFile(ctx, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
-		StartLine:    hm.Ranges[0].Start.Line,
-		EndLine:      hm.Ranges[0].Start.Line,
+		Range: &gitserver.BlameRange{
+			StartLine: hm.Ranges[0].Start.Line,
+			EndLine:   hm.Ranges[0].Start.Line,
+		},
 	})
 	if err != nil {
 		return time.Time{}, err
 	}
+	defer hr.Close()
 
-	return hunks[0].Author.Date, nil
+	// We are only interested in the first hunk, so we consume one and then return
+	// which calls hr.Close above.
+	hunk, err := hr.Read()
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return hunk.Author.Date, nil
 }
 
 func (sr *SearchResultsResolver) Sparkline(ctx context.Context) (sparkline []int32, err error) {
@@ -475,7 +482,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		}
 
 		status := v.Stats.Status
-		if !status.Any(search.RepoStatusCloning) && !status.Any(search.RepoStatusTimedout) {
+		if !status.Any(search.RepoStatusCloning) && !status.Any(search.RepoStatusTimedOut) {
 			break // zero results, but no cloning or timed out repos. No point in retrying.
 		}
 
@@ -483,7 +490,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		status.Filter(search.RepoStatusCloning, func(api.RepoID) {
 			cloning++
 		})
-		status.Filter(search.RepoStatusTimedout, func(api.RepoID) {
+		status.Filter(search.RepoStatusTimedOut, func(api.RepoID) {
 			timedout++
 		})
 

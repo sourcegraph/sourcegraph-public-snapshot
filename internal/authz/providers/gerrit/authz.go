@@ -1,7 +1,6 @@
 package gerrit
 
 import (
-	"fmt"
 	"net/url"
 
 	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
@@ -46,15 +45,6 @@ func NewAuthzProviders(conns []*types.GerritConnection, authProviders []schema.A
 		}
 		if p != nil {
 			initResults.Providers = append(initResults.Providers, p)
-
-			if _, exists := gerritAuthProviders[p.ServiceID()]; !exists {
-				initResults.Warnings = append(initResults.Warnings,
-					fmt.Sprintf("Gerrit config for %[1]s has `authorization` enabled, "+
-						"but no authentication provider matching %[1]q was found. "+
-						"Check the [**site configuration**](/site-admin/configuration) to "+
-						"verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %[1]s.",
-						p.ServiceID()))
-			}
 		}
 	}
 	return initResults

@@ -11,6 +11,7 @@ import { useLazyQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { displayRepoName, RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
@@ -57,7 +58,7 @@ const DEBOUNCED_WAIT = 250
 
 const MS_IN_HOURS = 60 * 60 * 1000
 
-export interface CodeIntelConfigurationPolicyPageProps extends TelemetryProps {
+export interface CodeIntelConfigurationPolicyPageProps extends TelemetryProps, TelemetryV2Props {
     repo?: { id: string; name: string }
     authenticatedUser: AuthenticatedUser | null
     indexingEnabled?: boolean
@@ -76,12 +77,16 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
     domain = 'scip',
     telemetryService,
+    telemetryRecorder,
 }) => {
     const navigate = useNavigate()
     const location = useLocation()
     const { id } = useParams<{ id: string }>()
 
-    useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPolicy'), [telemetryService])
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeIntelConfigurationPolicy')
+        telemetryRecorder.recordEvent(getViewEventFeatureName(domain, !!repo), 'view')
+    }, [telemetryService, telemetryRecorder, domain, repo])
 
     // Handle local policy state
     const [policy, setPolicy] = useState<CodeIntelligenceConfigurationPolicyFields | undefined>()
@@ -469,7 +474,8 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
             </Label>
             <Text size="small" className="text-muted mb-2">
                 Configuration policies apply to code intelligence data for specific revisions of{' '}
-                {repo ? 'this repository' : 'matching repositories'}.
+                {repo ? 'this repository' : 'matching repositories'}. Specify branches or tags using a{' '}
+                <Link to="https://github.com/gobwas/glob#example">glob pattern</Link>.
             </Text>
 
             <div className="input-group">
@@ -662,7 +668,8 @@ const RepositorySettingsSection: FunctionComponent<RepositorySettingsSectionProp
     <div className="form-group">
         <Label className="mb-0">Which repositories match this policy?</Label>
         <Text size="small" className="text-muted mb-2">
-            Configuration policies can apply to one, a set, or to all repositories on a Sourcegraph instance.
+            Configuration policies can apply to one, a set, or to all repositories on a Sourcegraph instance. Specify a
+            set of repositories using a <Link to="https://github.com/gobwas/glob#example">glob pattern</Link>.
         </Text>
         {!policy.repositoryPatterns || policy.repositoryPatterns.length === 0 ? (
             <Alert variant="info" className="d-flex justify-content-between align-items-center">
@@ -977,4 +984,18 @@ function comparePatterns(a: string[] | null, b: string[] | null): boolean {
 
     // Both supplied and their contents match
     return a.length === b.length && a.every((pattern, index) => b[index] === pattern)
+}
+
+type viewEventFeatureName =
+    | 'repo.codeIntel.configurationPolicy'
+    | 'admin.codeIntel.configurationPolicy'
+    | 'repo.cody.configurationPolicy'
+    | 'admin.cody.configurationPolicy'
+
+function getViewEventFeatureName(domain: string, hasRepo: boolean): viewEventFeatureName {
+    if (domain === 'scip') {
+        return hasRepo ? 'repo.codeIntel.configurationPolicy' : 'admin.codeIntel.configurationPolicy'
+    }
+
+    return hasRepo ? 'repo.cody.configurationPolicy' : 'admin.cody.configurationPolicy'
 }

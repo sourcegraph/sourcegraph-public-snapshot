@@ -4,7 +4,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	adobatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/azuredevops"
 	gerritbatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/gerrit"

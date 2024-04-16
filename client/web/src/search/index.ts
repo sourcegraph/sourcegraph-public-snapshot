@@ -42,8 +42,10 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
         case SearchPatternType.regexp:
         case SearchPatternType.structural:
         case SearchPatternType.lucky:
-        case SearchPatternType.keyword:
+        case SearchPatternType.codycontext:
+        case SearchPatternType.keyword: {
             return patternType
+        }
     }
     return undefined
 }
@@ -59,8 +61,9 @@ export function parseSearchURLSearchMode(query: string): SearchMode {
     const searchMode = parseInt(searchModeStr, 10)
     switch (searchMode) {
         case SearchMode.Precise:
-        case SearchMode.SmartSearch:
+        case SearchMode.SmartSearch: {
             return searchMode
+        }
     }
     return defaultSearchMode
 }
@@ -112,7 +115,7 @@ export function parseSearchURL(
     let query = queryInput
     const { queryInput: newQuery, patternTypeInput: patternType } = literalSearchCompatibility({
         queryInput,
-        patternTypeInput: patternTypeInput || SearchPatternType.standard,
+        patternTypeInput,
     })
     query = newQuery
 
@@ -165,11 +168,11 @@ export function quoteIfNeeded(string: string): string {
 
 interface QueryCompatibility {
     queryInput: string
-    patternTypeInput: SearchPatternType
+    patternTypeInput?: SearchPatternType
 }
 
 export function literalSearchCompatibility({ queryInput, patternTypeInput }: QueryCompatibility): QueryCompatibility {
-    if (patternTypeInput !== SearchPatternType.literal) {
+    if (patternTypeInput === undefined || patternTypeInput !== SearchPatternType.literal) {
         return { queryInput, patternTypeInput }
     }
     const tokens = scanSearchQuery(queryInput, false, SearchPatternType.standard)

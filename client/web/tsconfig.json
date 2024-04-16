@@ -3,9 +3,6 @@
   "compilerOptions": {
     "module": "esnext",
     "baseUrl": ".",
-    "paths": {
-      "*": ["src/types/*", "../shared/src/types/*", "../common/src/types/*", "*"],
-    },
     "jsx": "react-jsx",
     "rootDir": ".",
     "outDir": "out",
@@ -25,6 +22,12 @@
     },
     {
       "path": "../codeintellify",
+    },
+    {
+      "path": "../cody-shared",
+    },
+    {
+      "path": "../cody-ui",
     },
     {
       "path": "../common",
@@ -51,8 +54,17 @@
       "path": "../wildcard",
     },
   ],
-  "include": ["**/*", ".*", "./src/**/*.json"],
-  "exclude": ["../../node_modules", "./node_modules", "./out", "src/end-to-end", "src/regression", "src/integration"],
+  "include": ["src", "scripts", "__mocks__", "./src/**/*.json"],
+  "exclude": [
+    "vitest.config.ts",
+    "dev",
+    "../../node_modules",
+    "./node_modules",
+    "./out",
+    "src/end-to-end",
+    "src/regression",
+    "src/integration",
+  ],
   "ts-node": {
     "moduleTypes": {
       "scripts/**/*": "cjs",

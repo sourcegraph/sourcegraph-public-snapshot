@@ -1,21 +1,19 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
-import { NEVER } from 'rxjs'
+import { afterEach, describe, expect, it, test, vi } from 'vitest'
 
-import { assertAriaEnabled } from '@sourcegraph/testing'
+import { assertAriaEnabled, createBarrier } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { createBarrier } from '../testing/testHelpers'
 
-import { ActionItem } from './ActionItem'
+import { ActionItem, windowLocation__testingOnly } from './ActionItem'
 
-jest.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
+vi.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
 
 describe('ActionItem', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve(undefined) }
-    const NOOP_PLATFORM_CONTEXT = { settings: NEVER }
     const history = H.createMemoryHistory()
 
     test('non-actionItem variant', () => {
@@ -26,7 +24,6 @@ describe('ActionItem', () => {
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
-                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
         expect(component.asFragment()).toMatchSnapshot()
@@ -41,7 +38,6 @@ describe('ActionItem', () => {
                 variant="actionItem"
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
-                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
         expect(component.asFragment()).toMatchSnapshot()
@@ -55,7 +51,6 @@ describe('ActionItem', () => {
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
-                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
         expect(component.asFragment()).toMatchSnapshot()
@@ -70,7 +65,6 @@ describe('ActionItem', () => {
                 variant="actionItem"
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
-                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
         expect(component.asFragment()).toMatchSnapshot()
@@ -85,7 +79,6 @@ describe('ActionItem', () => {
                 variant="actionItem"
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
-                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
         expect(component.asFragment()).toMatchSnapshot()
@@ -101,7 +94,6 @@ describe('ActionItem', () => {
                 title={<span>t2</span>}
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
-                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
         expect(component.asFragment()).toMatchSnapshot()
@@ -119,7 +111,6 @@ describe('ActionItem', () => {
                 disabledDuringExecution={true}
                 location={history.location}
                 extensionsController={{ ...NOOP_EXTENSIONS_CONTROLLER, executeCommand: () => wait }}
-                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
 
@@ -146,7 +137,6 @@ describe('ActionItem', () => {
                 showLoadingSpinnerDuringExecution={true}
                 location={history.location}
                 extensionsController={{ ...NOOP_EXTENSIONS_CONTROLLER, executeCommand: () => wait }}
-                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
 
@@ -162,7 +152,9 @@ describe('ActionItem', () => {
         // Finish execution. (Use setTimeout to wait for the executeCommand resolution to result in the setState
         // call.)
         done()
-        await new Promise<void>(resolve => setTimeout(resolve))
+        await waitFor(() => {
+            expect(screen.queryByTestId('action-item-spinner')).not.toBeInTheDocument()
+        })
         expect(asFragment()).toMatchSnapshot()
     })
 
@@ -179,7 +171,6 @@ describe('ActionItem', () => {
                     ...NOOP_EXTENSIONS_CONTROLLER,
                     executeCommand: () => Promise.reject(new Error('x')),
                 }}
-                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
 
@@ -194,8 +185,12 @@ describe('ActionItem', () => {
     })
 
     describe('"open" command', () => {
+        afterEach(() => {
+            windowLocation__testingOnly.value = null
+        })
+
         it('renders as link', () => {
-            jsdom.reconfigure({ url: 'https://example.com/foo' })
+            windowLocation__testingOnly.value = new URL('https://example.com/foo')
 
             const { asFragment } = renderWithBrandedContext(
                 <ActionItem
@@ -204,14 +199,13 @@ describe('ActionItem', () => {
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     location={history.location}
                     extensionsController={NOOP_EXTENSIONS_CONTROLLER}
-                    platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )
             expect(asFragment()).toMatchSnapshot()
         })
 
         it('renders as link with icon and opens a new tab for a different origin', () => {
-            jsdom.reconfigure({ url: 'https://example.com/foo' })
+            windowLocation__testingOnly.value = new URL('https://example.com/foo')
 
             const { asFragment } = renderWithBrandedContext(
                 <ActionItem
@@ -220,14 +214,13 @@ describe('ActionItem', () => {
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     location={history.location}
                     extensionsController={NOOP_EXTENSIONS_CONTROLLER}
-                    platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )
             expect(asFragment()).toMatchSnapshot()
         })
 
         it('renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined', () => {
-            jsdom.reconfigure({ url: 'https://example.com/foo' })
+            windowLocation__testingOnly.value = new URL('https://example.com/foo')
 
             const { asFragment } = renderWithBrandedContext(
                 <ActionItem
@@ -237,7 +230,6 @@ describe('ActionItem', () => {
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     location={history.location}
                     extensionsController={NOOP_EXTENSIONS_CONTROLLER}
-                    platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )
             expect(asFragment()).toMatchSnapshot()

@@ -73,9 +73,6 @@ fragment RepositoryFields on Repository {
         serviceType
         url
     }
-    label {
-        html
-    }
 }
 
 fragment SearchResultsAlertFields on SearchResults {

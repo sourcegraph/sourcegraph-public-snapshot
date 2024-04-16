@@ -19,6 +19,7 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/extsvc",
+        "//internal/httpcli",
         "//internal/licensing",
         "//internal/types",
         "//lib/errors",
@@ -35,7 +36,6 @@ go_test(
     ],
     embed = [":providers"],
     deps = [
-        "//cmd/frontend/globals",
         "//internal/auth/providers",
         "//internal/authz",
         "//internal/authz/providers/gitlab",

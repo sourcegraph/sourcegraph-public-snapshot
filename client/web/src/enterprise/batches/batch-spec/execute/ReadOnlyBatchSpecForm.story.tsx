@@ -1,5 +1,7 @@
 import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import { WebStory } from '../../../../components/WebStory'
 import { BatchSpecSource, BatchSpecState } from '../../../../graphql-operations'
 import { mockBatchChange, mockFullBatchSpec } from '../batch-spec.mock'
@@ -19,7 +21,7 @@ const config: Meta = {
 
 export default config
 
-export const Executing: Story = args => (
+export const Executing: StoryFn = args => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider
@@ -28,7 +30,7 @@ export const Executing: Story = args => (
                     state: args.state,
                 })}
             >
-                <ReadOnlyBatchSpecForm {...props} />
+                <ReadOnlyBatchSpecForm {...props} telemetryRecorder={noOpTelemetryRecorder} />
             </BatchSpecContextProvider>
         )}
     </WebStory>
@@ -45,7 +47,7 @@ Executing.args = {
 
 Executing.storyName = 'while executing'
 
-export const ExecutionFinished: Story = args => (
+export const ExecutionFinished: StoryFn = args => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider
@@ -54,7 +56,7 @@ export const ExecutionFinished: Story = args => (
                     state: args.state,
                 })}
             >
-                <ReadOnlyBatchSpecForm {...props} />
+                <ReadOnlyBatchSpecForm {...props} telemetryRecorder={noOpTelemetryRecorder} />
             </BatchSpecContextProvider>
         )}
     </WebStory>
@@ -87,7 +89,7 @@ export const LocallyExecutedSpec: StoryFn = () => (
                 batchChange={mockBatchChange()}
                 batchSpec={mockFullBatchSpec({ source: BatchSpecSource.LOCAL })}
             >
-                <ReadOnlyBatchSpecForm {...props} />
+                <ReadOnlyBatchSpecForm {...props} telemetryRecorder={noOpTelemetryRecorder} />
             </BatchSpecContextProvider>
         )}
     </WebStory>

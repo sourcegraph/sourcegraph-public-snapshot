@@ -3,6 +3,7 @@ package streaming
 import (
 	"context"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/conc/stream"
 	"github.com/sourcegraph/log"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func toComputeResult(ctx context.Context, gitserverClient gitserver.Client, cmd compute.Command, match result.Match) (out []compute.Result, _ error) {
@@ -35,7 +37,7 @@ func toComputeResult(ctx context.Context, gitserverClient gitserver.Client, cmd 
 }
 
 func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, searchQuery string, computeCommand compute.Command) (<-chan Event, func() (*search.Alert, error)) {
-	gitserverClient := gitserver.NewClient()
+	gitserverClient := gitserver.NewClient("http.computestream")
 
 	eventsC := make(chan Event, 8)
 	errorC := make(chan error, 1)
@@ -68,7 +70,7 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, se
 	})
 
 	patternType := "regexp"
-	searchClient := client.New(logger, db)
+	searchClient := client.New(logger, db, gitserver.NewClient("http.compute.search"))
 	inputs, err := searchClient.Plan(
 		ctx,
 		"",
@@ -76,6 +78,7 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, se
 		searchQuery,
 		search.Precise,
 		search.Streaming,
+		pointers.Ptr(int32(0)),
 	)
 	if err != nil {
 		close(eventsC)
@@ -88,23 +91,24 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, se
 		alert *search.Alert
 		err   error
 	}
-	final := make(chan finalResult, 1)
-	go func() {
-		defer close(final)
+
+	pl := pool.NewWithResults[finalResult]()
+	pl.Go(func() finalResult {
 		defer close(eventsC)
 		defer close(errorC)
 		defer s.Wait()
 
 		alert, err := searchClient.Execute(ctx, stream, inputs)
-		final <- finalResult{alert: alert, err: err}
-	}()
+		return finalResult{alert: alert, err: err}
+	})
 
 	return eventsC, func() (*search.Alert, error) {
 		computeErr := <-errorC
 		if computeErr != nil {
 			return nil, computeErr
 		}
-		f := <-final
-		return f.alert, f.err
+		results := pl.Wait()
+		r := results[0]
+		return r.alert, r.err
 	}
 }

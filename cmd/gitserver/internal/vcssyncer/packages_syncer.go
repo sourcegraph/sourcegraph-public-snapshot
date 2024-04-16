@@ -2,6 +2,7 @@ package vcssyncer
 
 import (
 	"context"
+	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -12,12 +13,13 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,10 +34,12 @@ type vcsPackagesSyncer struct {
 	// placeholder is used to set GIT_AUTHOR_NAME for git commands that don't create
 	// commits or tags. The name of this dependency should never be publicly visible,
 	// so it can have any random value.
-	placeholder reposource.VersionedPackage
-	configDeps  []string
-	source      packagesSource
-	svc         dependenciesService
+	placeholder        reposource.VersionedPackage
+	configDeps         []string
+	source             packagesSource
+	svc                dependenciesService
+	fs                 gitserverfs.FS
+	getRemoteURLSource func(ctx context.Context, name api.RepoName) (RemoteURLSource, error)
 }
 
 var _ VCSSyncer = &vcsPackagesSyncer{}
@@ -67,7 +71,7 @@ type dependenciesService interface {
 	IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error)
 }
 
-func (s *vcsPackagesSyncer) IsCloneable(_ context.Context, _ api.RepoName, _ *vcs.URL) error {
+func (s *vcsPackagesSyncer) IsCloneable(_ context.Context, _ api.RepoName) error {
 	return nil
 }
 
@@ -75,33 +79,45 @@ func (s *vcsPackagesSyncer) Type() string {
 	return s.typ
 }
 
-func (s *vcsPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
-	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
-}
-
-func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
-	err := os.MkdirAll(bareGitDirectory, 0o755)
-	if err != nil {
-		return nil, err
+// Clone writes a package and all requested versions of it into a synthetic git
+// repo at tmpPath by creating one head per version.
+// It reports redacted progress logs via the progressWriter.
+func (s *vcsPackagesSyncer) Clone(ctx context.Context, repo api.RepoName, _ common.GitDir, tmpPath string, progressWriter io.Writer) (err error) {
+	// First, make sure the tmpPath exists.
+	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "clone failed to create tmp dir")
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "--bare", "init")
-	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory, s.placeholder); err != nil {
-		return nil, err
+	// Next, initialize a bare repo in that tmp path.
+	tryWrite(s.logger, progressWriter, "Creating bare repo\n")
+	if err := git.MakeBareRepo(ctx, tmpPath); err != nil {
+		return err
 	}
+	tryWrite(s.logger, progressWriter, "Created bare repo at %s\n", tmpPath)
 
 	// The Fetch method is responsible for cleaning up temporary directories.
-	if _, err := s.Fetch(ctx, remoteURL, "", common.GitDir(bareGitDirectory), ""); err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch repo for %s", remoteURL)
+	// TODO: We should have more fine-grained progress reporting here.
+	tryWrite(s.logger, progressWriter, "Fetching package revisions\n")
+	if _, err := s.Fetch(ctx, repo, common.GitDir(tmpPath), ""); err != nil {
+		return errors.Wrapf(err, "failed to fetch repo for %s", repo)
 	}
 
-	// no-op command to satisfy VCSSyncer interface, see docstring for more details.
-	return exec.CommandContext(ctx, "git", "--version"), nil
+	return nil
 }
 
-func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ api.RepoName, dir common.GitDir, revspec string) ([]byte, error) {
+func (s *vcsPackagesSyncer) Fetch(ctx context.Context, repo api.RepoName, dir common.GitDir, revspec string) ([]byte, error) {
+	source, err := s.getRemoteURLSource(ctx, repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting remote URL source")
+	}
+
+	remoteURL, err := source.RemoteURL(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting remote URL") // This should never happen for Perforce
+	}
+
 	var pkg reposource.Package
-	pkg, err := s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
+	pkg, err = s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
 	if err != nil {
 		return nil, err
 	}
@@ -243,6 +259,15 @@ func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.P
 
 	// Return error if at least one version failed to download.
 	if errs != nil {
+		// TEMP: For dotcom, we don't want to hard fail for missing versions.
+		// Currently, our DB does not contain valid versions only, and attempting
+		// to download versions over and over again clogs out large clone queue.
+		// TODO(eseliger): Remove this branch! Also make sure to remove all the
+		// existing packages from gitserver disks.
+		if dotcom.SourcegraphDotComMode() {
+			s.logger.Error("failed to fetch some dependency versions", log.Error(errs))
+			return nil
+		}
 		return errs
 	}
 
@@ -281,7 +306,7 @@ func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.P
 // gitPushDependencyTag is responsible for cleaning up temporary directories
 // created in the process.
 func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.VersionedPackage) error {
-	workDir, err := os.MkdirTemp("", s.Type())
+	workDir, err := s.fs.TempDir(s.Type())
 	if err != nil {
 		return err
 	}
@@ -385,7 +410,8 @@ func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory 
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_NAME="+gitName)
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_EMAIL="+gitEmail)
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_DATE="+stableGitCommitDate)
-	output, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, nil, cmd))
+	wrCmd := wrexec.Wrap(ctx, nil, cmd)
+	output, err := wrCmd.CombinedOutput()
 	if err != nil {
 		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
 	}
@@ -418,4 +444,22 @@ func isPotentiallyMaliciousFilepathInArchive(filepath, destinationDir string) bo
 	// For security reasons, skip file if it's not a child
 	// of the target directory. See "Zip Slip Vulnerability".
 	return !strings.HasPrefix(cleanedOutputPath, destinationDir)
+}
+
+func writeZipToTemp(tmpdir string, pkg io.Reader) (*os.File, int64, error) {
+	// Create a temp file.
+	f, err := os.CreateTemp(tmpdir, "packages-zip-")
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Write contents to file.
+	read, err := io.Copy(f, pkg)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Reset read head.
+	_, err = f.Seek(0, 0)
+	return f, read, err
 }

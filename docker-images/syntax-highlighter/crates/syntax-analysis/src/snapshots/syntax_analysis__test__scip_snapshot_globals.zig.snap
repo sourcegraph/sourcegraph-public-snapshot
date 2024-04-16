@@ -1,0 +1,76 @@
+---
+source: crates/syntax-analysis/src/lib.rs
+expression: dumped
+---
+  pub const Bruh = struct {
+//          ^^^^ definition scip-ctags Bruh.
+      zig_is_cool: bool = true,
+//    ^^^^^^^^^^^ definition scip-ctags Bruh.zig_is_cool.
+  
+      pub fn init() Bruh {
+//           ^^^^ definition scip-ctags Bruh.init().
+          var aaa = false;
+          return .{};
+      }
+  };
+  
+  const MyUnion = union {
+//      ^^^^^^^ definition scip-ctags MyUnion.
+      const decl = 10;
+//          ^^^^ definition scip-ctags MyUnion.decl.
+  
+      a: u8,
+//    ^ definition scip-ctags MyUnion.a.
+      b: u40,
+//    ^ definition scip-ctags MyUnion.b.
+  
+      pub fn init() void {};
+//           ^^^^ definition scip-ctags MyUnion.init().
+  };
+  
+  const MyEnum = enum {
+//      ^^^^^^ definition scip-ctags MyEnum.
+      const decl = 10;
+//          ^^^^ definition scip-ctags MyEnum.decl.
+  
+      a,
+//    ^ definition scip-ctags MyEnum.a.
+      b,
+//    ^ definition scip-ctags MyEnum.b.
+  
+      pub fn init() void {};
+//           ^^^^ definition scip-ctags MyEnum.init().
+  };
+  
+  const MyUnionEnum = union(enum) {
+//      ^^^^^^^^^^^ definition scip-ctags MyUnionEnum.
+      const decl = 10;
+//          ^^^^ definition scip-ctags MyUnionEnum.decl.
+  
+      a: u8,
+//    ^ definition scip-ctags MyUnionEnum.a.
+      b: u40,
+//    ^ definition scip-ctags MyUnionEnum.b.
+  
+      pub fn init() void {};
+//           ^^^^ definition scip-ctags MyUnionEnum.init().
+  };
+  
+  const Ahh = opaque {
+//      ^^^ definition scip-ctags Ahh.
+      pub fn opaqueFn() void {}
+//           ^^^^^^^^ definition scip-ctags Ahh.opaqueFn().
+  }
+  
+  fn bruh() void {
+//   ^^^^ definition scip-ctags bruh().
+      const ThisShouldntBeRegistered = struct {
+          fn bruh2() void {}
+      }
+  }
+  
+  fn complex(a: struct {bruh: bool}) struct {dab: u8} {
+//   ^^^^^^^ definition scip-ctags complex().
+      return .{.dab = if (a.bruh) 10 else 20};
+  }
+

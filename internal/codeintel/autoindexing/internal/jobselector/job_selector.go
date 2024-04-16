@@ -2,6 +2,7 @@ package jobselector
 
 import (
 	"context"
+	"io"
 	"os"
 
 	"github.com/sourcegraph/log"
@@ -174,12 +175,18 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.C
 		return nil, false, err
 	}
 
-	content, err := s.gitserverClient.ReadFile(ctx, repo.Name, api.CommitID(commit), "sourcegraph.yaml")
+	r, err := s.gitserverClient.NewFileReader(ctx, repo.Name, api.CommitID(commit), "sourcegraph.yaml")
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, false, nil
 		}
 
+		return nil, false, err
+	}
+
+	content, err := io.ReadAll(r)
+	r.Close()
+	if err != nil {
 		return nil, false, err
 	}
 

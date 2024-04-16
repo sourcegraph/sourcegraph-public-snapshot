@@ -7,18 +7,19 @@ import (
 	"testing"
 	"time"
 
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
@@ -38,8 +39,7 @@ func TestCheckEmailAbuse(t *testing.T) {
 		conf.Mock(cfg)
 	}()
 
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	now := time.Now()
 
@@ -286,7 +286,32 @@ func TestSendUserEmailOnTokenChange(t *testing.T) {
 	}
 }
 
+type noopAuthzStore struct{}
+
+func (*noopAuthzStore) GrantPendingPermissions(_ context.Context, _ *database.GrantPendingPermissionsArgs) error {
+	return nil
+}
+
+func (*noopAuthzStore) AuthorizedRepos(_ context.Context, _ *database.AuthorizedReposArgs) ([]*types.Repo, error) {
+	return []*types.Repo{}, nil
+}
+
+func (*noopAuthzStore) RevokeUserPermissions(_ context.Context, _ *database.RevokeUserPermissionsArgs) error {
+	return nil
+}
+
+func (*noopAuthzStore) RevokeUserPermissionsList(_ context.Context, _ []*database.RevokeUserPermissionsArgs) error {
+	return nil
+}
+
 func TestUserEmailsAddRemove(t *testing.T) {
+	database.AuthzWith = func(basestore.ShareableStore) database.AuthzStore {
+		return &noopAuthzStore{}
+	}
+	defer func() {
+		database.AuthzWith = nil
+	}()
+
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
@@ -356,6 +381,13 @@ func TestUserEmailsAddRemove(t *testing.T) {
 }
 
 func TestUserEmailsSetPrimary(t *testing.T) {
+	database.AuthzWith = func(basestore.ShareableStore) database.AuthzStore {
+		return &noopAuthzStore{}
+	}
+	defer func() {
+		database.AuthzWith = nil
+	}()
+
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
@@ -397,6 +429,13 @@ func TestUserEmailsSetPrimary(t *testing.T) {
 }
 
 func TestUserEmailsSetVerified(t *testing.T) {
+	database.AuthzWith = func(basestore.ShareableStore) database.AuthzStore {
+		return &noopAuthzStore{}
+	}
+	defer func() {
+		database.AuthzWith = nil
+	}()
+
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()

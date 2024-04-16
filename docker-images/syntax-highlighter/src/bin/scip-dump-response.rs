@@ -1,6 +1,8 @@
 use std::{fs, path::Path};
 
 use clap::Parser;
+use syntax_analysis::highlighting::FileInfo;
+use syntect::parsing::SyntaxSet;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -36,26 +38,23 @@ fn main() -> Result<(), std::io::Error> {
     let contents = fs::read_to_string(path)?;
     println!("  read {} bytes", contents.len());
 
-    let filetype = sg_syntax::determine_filetype(&sg_syntax::SourcegraphQuery {
-        extension: path
-            .extension()
-            .expect("extension")
-            .to_str()
-            .expect("valid utf-8 path")
-            .to_string(),
-        code: contents.clone(),
-        filepath: "".to_string(),
-        filetype: None,
-        css: false,
-        line_length_limit: None,
-        theme: "".to_string(),
-    });
+    let file_info = FileInfo::new(path.to_string_lossy().as_ref(), &contents, None);
 
-    println!("  filetype: {:?}", filetype);
+    let language = file_info
+        .determine_language(&SyntaxSet::load_defaults_newlines())
+        .expect("failed to determine language");
+    println!("  language: {:?}", language.to_string());
 
-    let document = sg_syntax::treesitter_index(&filetype, &contents, args.include_locals)
-        .expect("parse document");
-    println!("  parsed document");
+    let document = language
+        .highlight_document(&contents, args.include_locals)
+        .unwrap_or_else(|e| {
+            panic!(
+                "failed to run Tree-sitter for file '{}': {:?}",
+                path.to_string_lossy(),
+                e
+            )
+        });
+    println!("  highlighted document");
 
     scip::write_message_to_file(output, document).expect("writes document");
     println!("  wrote document to {:?}", output);

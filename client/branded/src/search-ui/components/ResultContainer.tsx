@@ -1,11 +1,11 @@
-import React from 'react'
+import React, { type ReactElement } from 'react'
 
 import classNames from 'classnames'
 
 import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import type { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
 
-import { formatRepositoryStarCount } from '../util/stars'
+import { formatRepositoryStarCount } from '../util'
 
 import { CodeHostIcon } from './CodeHostIcon'
 import { LastSyncedIcon } from './LastSyncedIcon'
@@ -24,6 +24,7 @@ export interface ResultContainerProps {
     repoName?: string
     className?: string
     rankingDebug?: string
+    actions?: ReactElement | boolean
     onResultClicked?: () => void
 }
 
@@ -55,9 +56,10 @@ export const ResultContainer: ForwardReferenceExoticComponent<
         repoName,
         className,
         rankingDebug,
+        actions,
+        repoLastFetched,
         as: Component = 'div',
         onResultClicked,
-        repoLastFetched,
     } = props
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -66,14 +68,14 @@ export const ResultContainer: ForwardReferenceExoticComponent<
 
     return (
         <Component
-            className={classNames('test-search-result', styles.resultContainer, className)}
+            className={classNames('test-search-result', className, styles.resultContainer)}
             data-testid="result-container"
             data-result-type={resultType}
             onClick={trackReferencePanelClick}
             ref={reference}
         >
             <article aria-labelledby={`result-container-${index}`}>
-                <div className={styles.header} id={`result-container-${index}`}>
+                <header className={styles.header} id={`result-container-${index}`} data-result-header={true}>
                     {/* Add a result type to be read out to screen readers only, so that screen reader users can
                     easily scan the search results list (for example, by navigating by landmarks). */}
                     <span className="sr-only">{resultType ? accessibleResultType[resultType] : 'search'} result,</span>
@@ -84,6 +86,8 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                     >
                         {title}
                     </div>
+
+                    {actions}
                     {formattedRepositoryStarCount && (
                         <span className="d-flex align-items-center">
                             <SearchResultStar aria-label={`${repoStars} stars`} />
@@ -91,7 +95,7 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                         </span>
                     )}
                     {repoLastFetched && <LastSyncedIcon lastSyncedTime={repoLastFetched} className="ml-2" />}
-                </div>
+                </header>
                 {rankingDebug && <div>{rankingDebug}</div>}
                 {children && <div className={classNames(styles.result, resultClassName)}>{children}</div>}
             </article>

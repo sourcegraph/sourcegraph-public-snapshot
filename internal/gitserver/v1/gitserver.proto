@@ -8,30 +8,358 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
-  rpc BatchLog(BatchLogRequest) returns (BatchLogResponse) {}
   rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
-  rpc DiskInfo(DiskInfoRequest) returns (DiskInfoResponse) {}
-  rpc Exec(ExecRequest) returns (stream ExecResponse) {}
-  rpc GetObject(GetObjectRequest) returns (GetObjectResponse) {}
-  rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
-  rpc ListGitolite(ListGitoliteRequest) returns (ListGitoliteResponse) {}
-  rpc Search(SearchRequest) returns (stream SearchResponse) {}
-  rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
-  rpc P4Exec(P4ExecRequest) returns (stream P4ExecResponse) {
-    option deprecated = true;
+  rpc DiskInfo(DiskInfoRequest) returns (DiskInfoResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
-  rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {}
-  rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {}
+  rpc Exec(ExecRequest) returns (stream ExecResponse) {}
+  rpc GetObject(GetObjectRequest) returns (GetObjectResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc ListGitolite(ListGitoliteRequest) returns (ListGitoliteResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc Search(SearchRequest) returns (stream SearchResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // Archive creates an archive for the given treeish in the given format.
+  // If paths are specified, only those paths are included in the archive.
+  //
+  // If subrepo permissions are enabled for the repo, no archive will be created
+  // for non-internal actors and an unimplemented error will be returned. We can
+  // currently not filter parts of the archive, so this would be considered
+  // leaking information.
+  //
+  // If the given treeish does not exist, an error with a
+  // RevisionNotFoundPayload is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
-  rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {}
-  rpc IsPerforcePathCloneable(IsPerforcePathCloneableRequest) returns (IsPerforcePathCloneableResponse) {}
-  rpc CheckPerforceCredentials(CheckPerforceCredentialsRequest) returns (CheckPerforceCredentialsResponse) {}
-  rpc PerforceUsers(PerforceUsersRequest) returns (PerforceUsersResponse) {}
-  rpc PerforceProtectsForUser(PerforceProtectsForUserRequest) returns (PerforceProtectsForUserResponse) {}
-  rpc PerforceProtectsForDepot(PerforceProtectsForDepotRequest) returns (PerforceProtectsForDepotResponse) {}
-  rpc PerforceGroupMembers(PerforceGroupMembersRequest) returns (PerforceGroupMembersResponse) {}
-  rpc IsPerforceSuperUser(IsPerforceSuperUserRequest) returns (IsPerforceSuperUserResponse) {}
-  rpc PerforceGetChangelist(PerforceGetChangelistRequest) returns (PerforceGetChangelistResponse) {}
+  rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  rpc IsPerforcePathCloneable(IsPerforcePathCloneableRequest) returns (IsPerforcePathCloneableResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc CheckPerforceCredentials(CheckPerforceCredentialsRequest) returns (CheckPerforceCredentialsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc PerforceUsers(PerforceUsersRequest) returns (PerforceUsersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc PerforceProtectsForUser(PerforceProtectsForUserRequest) returns (PerforceProtectsForUserResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc PerforceProtectsForDepot(PerforceProtectsForDepotRequest) returns (PerforceProtectsForDepotResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc PerforceGroupMembers(PerforceGroupMembersRequest) returns (PerforceGroupMembersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc IsPerforceSuperUser(IsPerforceSuperUserRequest) returns (IsPerforceSuperUserResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc PerforceGetChangelist(PerforceGetChangelistRequest) returns (PerforceGetChangelistResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // MergeBase returns the merge base commit sha for the specified revspecs.
+  // If no common merge base exists, an empty string is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc MergeBase(MergeBaseRequest) returns (MergeBaseResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // Blame runs a blame operation on the specified file. It returns a stream of
+  // hunks as they are found. The --incremental flag is used on the git CLI
+  // level to achieve this behavior. The endpoint will verify that the user is
+  // allowed to blame the given file if subrepo permissions are enabled for the
+  // repo. If access is denied, an error with a UnauthorizedPayload in the
+  // details is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc Blame(BlameRequest) returns (stream BlameResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // DefaultBranch resolves HEAD to ref name and current commit SHA it points
+  // to. If HEAD points to an empty branch, it returns an error with a
+  // RevisionNotFoundPayload.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc DefaultBranch(DefaultBranchRequest) returns (DefaultBranchResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // ReadFile gets a file from the repo ODB and streams the contents back.
+  // The endpoint will verify that the user is allowed to view the given file
+  // if subrepo permissions are enabled for the repo. If access is denied, an
+  // error with a UnauthorizedPayload in the details is returned. If the path
+  // points to a submodule, no error is returned and an empty file is streamed
+  // back.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc ReadFile(ReadFileRequest) returns (stream ReadFileResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // GetCommit gets a commit from the repo ODB.
+  // The endpoint will verify that the user is allowed to view the given commit.
+  //
+  // If subrepo permissions are enabled for the repo. If access is denied, an
+  // error with a RevisionNotFoundPayload is returned, to not leak existence of
+  // the commit.
+  //
+  // If the commit is not found, an error with a RevisionNotFoundPayload is
+  // returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc GetCommit(GetCommitRequest) returns (GetCommitResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // ResolveRevision resolves a given revspec-ish to a commit SHA.
+  // If passed a commit sha, the endpoint will also verify that the commit
+  // exists.
+  //
+  // If the revision cannot be resolved an error with RevisionNotFoundPayload is
+  // returned.
+  //
+  // Under the hood, this endpoint currently uses git rev-parse to resolve the
+  // revspec, but we forbid certain revspecs (like HEAD) to avoid leaking
+  // existence files, and to avoid running very expensive rev-parse operations.
+  // Assume only the following are supported:
+  // - Symbolic refs
+  // - All refs under refs/, including tags
+  // - Commit hashes
+  // - Abbreviated commit hashes
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc ResolveRevision(ResolveRevisionRequest) returns (ResolveRevisionResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  // ListRefs returns a list of all the refs known to the repository, this includes
+  // heads, tags, and other potential refs, but filters can be applied.
+  //
+  // The refs are ordered in the following order:
+  // HEAD first, if part of the result set.
+  // The rest will be ordered by creation date, in descending order, i.e., newest
+  // first.
+  // If two resources are created at the same timestamp, the records are ordered
+  // alphabetically.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
+  rpc ListRefs(ListRefsRequest) returns (stream ListRefsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // RevAtTime looks up the OID of the nearest ancestor of `spec` that has a
+  // commit time before the given time. To simplify the logic, it only follows
+  // the first parent of merge commits to linearize the commit history. The
+  // intent is to return the state of a branch at a given time.
+  //
+  // If the revision cannot be resolved an error with RevisionNotFoundPayload is
+  // returned.
+  //
+  // If the revision exists, but there is no commit in its ancestry before
+  // the requested time, an empty string is returned for the commit SHA.
+  rpc RevAtTime(RevAtTimeRequest) returns (RevAtTimeResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message ListRefsRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // If true, only heads are returned. Can be combined with tags_only.
+  bool heads_only = 3;
+  // If true, only tags are returned. Can be combined with heads_only.
+  bool tags_only = 4;
+  // If set, only return refs that point at the given commit sha. Multiple values
+  // will be ORed together.
+  repeated string points_at_commit = 5;
+  // If set, only return refs that contain the given commit sha.
+  optional string contains_sha = 6;
+}
+
+message ListRefsResponse {
+  repeated GitRef refs = 1;
+}
+
+message GitRef {
+  // ref_name is the unabbreviated name of the reference, i.e., refs/heads/main, or refs/tags/1.0.
+  string ref_name = 1;
+  // short_ref_name is the abbreviated name of the reference, if unambiguous.
+  // I.e., main, or 1.0.
+  string short_ref_name = 2;
+  // target_commit is the hash of the commit the reference is currently pointing at.
+  // For a head reference, this is the commit the head is currently pointing at.
+  // For a tag, this is the commit that the tag is attached to.
+  string target_commit = 3;
+  // ref_oid is the full object ID of the reference. For a head reference and
+  // a lightweight tag, this value is the same as target_commit. For annotated tags,
+  // it is the object ID of the tag.
+  string ref_oid = 4;
+  // created_at is the timestamp when the ref was created or modified last.
+  google.protobuf.Timestamp created_at = 5;
+  enum RefType {
+    REF_TYPE_UNSPECIFIED = 0;
+    REF_TYPE_BRANCH = 1;
+    REF_TYPE_TAG = 2;
+  }
+  // ref_type is the type of the reference. Non-tag references will be of
+  // type branch. I.e., refs/pull/123/head will be a branch as well.
+  RefType ref_type = 6;
+  // is_head is true if the reference is the HEAD reference.
+  bool is_head = 7;
+}
+
+message ResolveRevisionRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // The rev spec to resolve. I.e., HEAD, deadbeefdeadbeefdeadbeefdeadbeef, or
+  // refs/heads/main.
+  bytes rev_spec = 3;
+  // ensure_revision tries to ensure that the revision is present in the repo by
+  // triggering a git fetch if it is not present. It's not guaranteed that
+  // a revision exists in the repo after this call, if it really doesn't exist.
+  // This can slow down the response time significantly, only use it if you have
+  // good reason to do so.
+  optional bool ensure_revision = 4;
+}
+
+message ResolveRevisionResponse {
+  // commit is the commit SHA of the resolved revision.
+  string commit_sha = 1;
+}
+
+message RevAtTimeRequest {
+  // repo_name is the name of the repo to run the operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+
+  // rev_spec is the starting revision for the search. We iterate
+  // through its --first-parent ancestors looking for the first ancestor
+  // that has a committer time before `time`.
+  //
+  // e.g., HEAD, deadbeefdeadbeefdeadbeefdeadbeef, or refs/heads/main.
+  bytes rev_spec = 3;
+
+  // time is the timestamp we are looking for commits before
+  google.protobuf.Timestamp time = 4;
+}
+
+message RevAtTimeResponse {
+  // commit is the commit SHA of the resolved revision.
+  string commit_sha = 1;
+}
+
+message GetCommitRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  string commit = 3;
+}
+
+message GetCommitResponse {
+  GitCommit commit = 1;
+}
+
+message GitCommit {
+  string oid = 1;
+  GitSignature author = 2;
+  GitSignature committer = 3;
+  string message = 4;
+  repeated string parents = 5;
+}
+
+message GitSignature {
+  string name = 1;
+  string email = 2;
+  google.protobuf.Timestamp date = 3;
+}
+
+message BlameRequest {
+  reserved 6, 7;
+  reserved "start_line", "end_line";
+
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // commit is the commit sha to start the blame operation at.
+  string commit = 3;
+  string path = 4;
+  bool ignore_whitespace = 5;
+  optional BlameRange range = 8;
+}
+
+message BlameRange {
+  uint32 start_line = 1;
+  uint32 end_line = 2;
+}
+
+message BlameResponse {
+  BlameHunk hunk = 1;
+}
+
+message BlameHunk {
+  uint32 start_line = 1;
+  uint32 end_line = 2;
+  uint32 start_byte = 3;
+  uint32 end_byte = 4;
+  string commit = 5;
+  BlameAuthor author = 6;
+  string message = 7;
+  string filename = 8;
+  optional PreviousCommit previous_commit = 9;
+}
+
+message BlameAuthor {
+  string name = 1;
+  string email = 2;
+  google.protobuf.Timestamp date = 3;
+}
+
+message PreviousCommit {
+  string commit = 1;
+  string filename = 2;
+}
+
+message DefaultBranchRequest {
+  // repo_name is the name of the repo to get the default branch for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  bool short_ref = 3;
+}
+
+message DefaultBranchResponse {
+  string ref_name = 1;
+  string commit = 2;
+}
+
+message ReadFileRequest {
+  // repo_name is the name of the repo to get the default branch for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  string commit = 3;
+  string path = 4;
+}
+
+message ReadFileResponse {
+  bytes data = 1;
 }
 
 // DiskInfoRequest is a empty request for the DiskInfo RPC.
@@ -47,44 +375,6 @@ message DiskInfoResponse {
 
   // percent_used is the percent of disk space used on a gitserver instance.
   float percent_used = 3;
-}
-
-// BatchLogRequest is a request to execute a `git log` command inside a set of
-// git repositories present on the target shard.
-message BatchLogRequest {
-  // repo_commits is the list of repositories and commits to run the git log
-  // command on.
-  repeated RepoCommit repo_commits = 1;
-  // format is the entire `--format=<format>` argument to git log. This value is
-  // expected to be non-empty.
-  string format = 2;
-}
-
-// BatchLogResponse contains the results of the BatchLog request.
-message BatchLogResponse {
-  // results is the list of results for each repository and commit pair from the
-  // input of a BatchLog request.
-  repeated BatchLogResult results = 1;
-}
-
-// BatchLogResult is the result that associates a repository and commit pair
-// from the input of a BatchLog request with the result of the associated git
-// log command.
-message BatchLogResult {
-  // repo_commit is the repository and commit pair from the input of a BatchLog
-  // request.
-  RepoCommit repo_commit = 1;
-  // command_output is the output of the git log command.
-  string command_output = 2;
-  // command_error is an optional error message if the git log command
-  // encountered an error.
-  optional string command_error = 3;
-}
-
-// RepoCommit is the represention of a repository and commit pair.
-message RepoCommit {
-  string repo = 1;
-  string commit = 2;
 }
 
 message PatchCommitInfo {
@@ -127,7 +417,8 @@ message CreateCommitFromPatchBinaryRequest {
     // target_ref is the ref that will be created for this patch
     string target_ref = 3;
     // unique_ref is a boolean that indicates whether a unique number will be
-    // appended to the end (ie TargetRef-{#}). The generated ref will be returned.
+    // appended to the end (ie TargetRef-{#}). The generated ref will be
+    // returned.
     bool unique_ref = 4;
     // commit_info is the information to be used for the commit
     PatchCommitInfo commit_info = 5;
@@ -172,11 +463,12 @@ message CreateCommitFromPatchBinaryResponse {
   // changelistid is the Perforce changelist id
   string changelist_id = 3;
 }
+
 message ExecRequest {
   string repo = 1;
-  bytes ensure_revision = 2;
+  bytes ensure_revision = 2 [deprecated = true];
   repeated bytes args = 3;
-  bytes stdin = 4;
+  bytes stdin = 4 [deprecated = true];
   bool no_timeout = 5;
 }
 
@@ -184,15 +476,35 @@ message ExecResponse {
   bytes data = 1;
 }
 
-message NotFoundPayload {
+message RepoNotFoundPayload {
   string repo = 1;
   bool clone_in_progress = 2;
   string clone_progress = 3;
 }
 
+message RevisionNotFoundPayload {
+  string repo = 1;
+  string spec = 2;
+}
+
+message FileNotFoundPayload {
+  string repo = 1;
+  string commit = 2;
+  string path = 3;
+}
+
 message ExecStatusPayload {
   int32 status_code = 1;
   string stderr = 2;
+}
+
+// UnauthorizedPayload is the payload returned when an actor cannot access
+// a commit or file due to subrepo permissions.
+message UnauthorizedPayload {
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  optional string path = 3;
+  optional string commit = 4;
 }
 
 message SearchRequest {
@@ -219,12 +531,8 @@ message RevisionSpecifier {
   // RevSpec is a revision range specifier suitable for passing to git. See
   // the manpage gitrevisions(7).
   string rev_spec = 1;
-  // RefGlob is a reference glob to pass to git. See the documentation for
-  // "--glob" in git-log.
-  string ref_glob = 2;
-  // ExcludeRefGlob is a glob for references to exclude. See the
-  // documentation for "--exclude" in git-log.
-  string exclude_ref_glob = 3;
+  reserved 2;
+  reserved 3;
 }
 
 // AuthorMatchesNode is a predicate that matches if the author's name or email
@@ -356,17 +664,23 @@ message CommitMatch {
   repeated string modified_files = 9;
 }
 
+enum ArchiveFormat {
+  ARCHIVE_FORMAT_UNSPECIFIED = 0;
+  ARCHIVE_FORMAT_ZIP = 1;
+  ARCHIVE_FORMAT_TAR = 2;
+}
+
 // ArchiveRequest is set of parameters for the Archive RPC.
 message ArchiveRequest {
-  // repo is the name of the repo to be archived
+  // repo is the name of the repo to be archived.
   string repo = 1;
-  // treeish is the tree or commit to produce an archive for
+  // treeish is the tree or commit to produce an archive for.
   string treeish = 2;
-  // format is the format of the resulting archive (usually "tar" or "zip")
-  string format = 3;
-  // pathspecs is the list of pathspecs to include in the archive. If empty, all
-  // pathspecs are included.
-  repeated string pathspecs = 4;
+  // format is the format of the resulting archive (either ZIP or TAR).
+  ArchiveFormat format = 3;
+  // paths is the list of paths to include in the archive. If empty, all
+  // paths are included.
+  repeated string paths = 4;
 }
 
 // ArchiveResponse is the response from the Archive RPC that returns a chunk of
@@ -391,38 +705,25 @@ message IsRepoCloneableResponse {
   string reason = 3;
 }
 
-// RepoCloneRequest is a request to clone a repository.
-message RepoCloneRequest {
-  // repo is the name of the repo to clone.
-  string repo = 1;
-}
-
-message RepoCloneResponse {
-  // error is the error that occurred during cloning.
-  string error = 1;
-}
-
 // RepoCloneProgressRequest is a request for information about the clone
 // progress of multiple repositories on gitserver.
 message RepoCloneProgressRequest {
-  repeated string repos = 1;
+  reserved 1;
+  reserved "repos";
+
+  // repo_name is the name of the repo to get the progress for.
+  string repo_name = 2;
 }
 
-// RepoCloneProgress is information about the clone progress of a repo
-message RepoCloneProgress {
+// RepoCloneProgressResponse is the response to a repository clone progress
+// request.
+message RepoCloneProgressResponse {
   // clone_in_progress is whether the repository is currently being cloned
   bool clone_in_progress = 1;
   // clone_progress is a progress message from the running clone command.
   string clone_progress = 2;
   // cloned is whether the repository has been cloned successfully
   bool cloned = 3;
-}
-
-// RepoCloneProgressResponse is the response to a repository clone progress
-// request for multiple repositories at the same time.
-message RepoCloneProgressResponse {
-  // results is a map from repository name to clone progress information
-  map<string, RepoCloneProgress> results = 1;
 }
 
 // RepoDeleteRequest is a request to delete a repository.
@@ -441,8 +742,12 @@ message RepoUpdateRequest {
   // repo is the name of the repo to update.
   string repo = 1;
   // since is the debounce interval for queries, used only with
-  // request-repo-update
-  google.protobuf.Duration since = 2;
+  // request-repo-update.
+  // This field has now been deprecated and is no longer respected.
+  // The caller should make sure to not call this endpoint more often
+  // than needed, and gitserver may make it's own internal decisions
+  // on when to fast-pass a request.
+  google.protobuf.Duration since = 2 [deprecated = true];
 }
 
 // RepoUpdateResponse is the response from the RepoUpdate RPC.
@@ -453,19 +758,6 @@ message RepoUpdateResponse {
   google.protobuf.Timestamp last_changed = 2;
   // error is the error that occurred during the update.
   string error = 3;
-}
-
-// Do not use: The P4Exec method has been deprecated and will disappear soon!
-message P4ExecRequest {
-  string p4port = 1 [deprecated = true];
-  string p4user = 2 [deprecated = true];
-  string p4passwd = 3 [deprecated = true];
-  repeated bytes args = 4 [deprecated = true];
-}
-
-// Do not use: The P4Exec method has been deprecated and will disappear soon!
-message P4ExecResponse {
-  bytes data = 1 [deprecated = true];
 }
 
 // ListGitoliteRequest is a request to list all repositories in gitolite.
@@ -517,24 +809,29 @@ message GitObject {
   ObjectType type = 2;
 }
 
-// IsPerforcePathCloneableRequest is the request to check if a Perforce path is cloneable.
+// IsPerforcePathCloneableRequest is the request to check if a Perforce path is
+// cloneable.
 message IsPerforcePathCloneableRequest {
   PerforceConnectionDetails connection_details = 1;
   string depot_path = 2;
 }
 
-// IsPerforcePathCloneableResponse is the response from checking if a Perforce path is cloneable.
+// IsPerforcePathCloneableResponse is the response from checking if a Perforce
+// path is cloneable.
 message IsPerforcePathCloneableResponse {}
 
-// CheckPerforceCredentialsRequest is the request to check if given Perforce credentials are valid.
+// CheckPerforceCredentialsRequest is the request to check if given Perforce
+// credentials are valid.
 message CheckPerforceCredentialsRequest {
   PerforceConnectionDetails connection_details = 1;
 }
 
-// IsPerforcePathCloneableResponse is the response from checking if given Perforce credentials are valid.
+// IsPerforcePathCloneableResponse is the response from checking if given
+// Perforce credentials are valid.
 message CheckPerforceCredentialsResponse {}
 
-// PerforceConnectionDetails holds all the details required to talk to a Perforce server.
+// PerforceConnectionDetails holds all the details required to talk to a
+// Perforce server.
 message PerforceConnectionDetails {
   string p4port = 1;
   string p4user = 2;
@@ -548,7 +845,8 @@ message PerforceGetChangelistRequest {
   string changelist_id = 2;
 }
 
-// PerforceGetChangelistResponse returns information about the requested changelist.
+// PerforceGetChangelistResponse returns information about the requested
+// changelist.
 message PerforceGetChangelistResponse {
   PerforceChangelist changelist = 1;
 }
@@ -561,8 +859,8 @@ message PerforceChangelist {
     PERFORCE_CHANGELIST_STATE_SUBMITTED = 1;
     PERFORCE_CHANGELIST_STATE_PENDING = 2;
     PERFORCE_CHANGELIST_STATE_SHELVED = 3;
-    // Perforce doesn't actually return a state for closed changelists, so this is
-    // one we use to indicate the changelist is closed.
+    // Perforce doesn't actually return a state for closed changelists, so this
+    // is one we use to indicate the changelist is closed.
     PERFORCE_CHANGELIST_STATE_CLOSED = 4;
   }
   string id = 1;
@@ -584,15 +882,15 @@ message IsPerforceSuperUserRequest {
 // No fields here, returning an error means "no".
 message IsPerforceSuperUserResponse {}
 
-// PerforceProtectsForDepotRequest requests all the protections that apply to the
-// given depot.
+// PerforceProtectsForDepotRequest requests all the protections that apply to
+// the given depot.
 message PerforceProtectsForDepotRequest {
   PerforceConnectionDetails connection_details = 1;
   string depot = 2;
 }
 
-// PerforceProtectsForDepotResponse returns all the protections that apply to the
-// given depot.
+// PerforceProtectsForDepotResponse returns all the protections that apply to
+// the given depot.
 message PerforceProtectsForDepotResponse {
   repeated PerforceProtect protects = 1;
 }
@@ -626,7 +924,8 @@ message PerforceGroupMembersRequest {
   string group = 2;
 }
 
-// PerforceGroupMembersResponse returns the members of the requested Perforce group.
+// PerforceGroupMembersResponse returns the members of the requested Perforce
+// group.
 message PerforceGroupMembersResponse {
   repeated string usernames = 1;
 }
@@ -645,4 +944,21 @@ message PerforceUsersResponse {
 message PerforceUser {
   string username = 1;
   string email = 2;
+}
+
+// MergeBaseRequest is a request to find the merge base of two revspecs.
+message MergeBaseRequest {
+  // repo_name is the name of the repo to get the merge base for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // base is a revspec, for now, we allow non-utf8 revspecs.
+  bytes base = 3;
+  // head is a revspec, for now, we allow non-utf8 revspecs.
+  bytes head = 4;
+}
+
+// MergeBaseResponse is the response from finding the merge base of two
+// revspecs.
+message MergeBaseResponse {
+  string merge_base_commit_sha = 1;
 }

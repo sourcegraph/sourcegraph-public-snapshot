@@ -6,7 +6,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud",
     visibility = ["//visibility:public"],
     deps = [
-        "//dev/managedservicesplatform/internal/stack/project",
         "//dev/managedservicesplatform/internal/terraform",
         "//dev/managedservicesplatform/spec",
         "//lib/errors",

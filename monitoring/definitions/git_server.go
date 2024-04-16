@@ -2,6 +2,9 @@ package definitions
 
 import (
 	"fmt"
+	"github.com/iancoleman/strcase"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -14,6 +17,8 @@ func GitServer() *monitoring.Dashboard {
 		grpcServiceName = "gitserver.v1.GitserverService"
 	)
 
+	scrapeJobRegex := fmt.Sprintf(".*%s", containerName)
+
 	gitserverHighMemoryNoAlertTransformer := func(observable shared.Observable) shared.Observable {
 		return observable.WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`)
 	}
@@ -23,7 +28,81 @@ func GitServer() *monitoring.Dashboard {
 		ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
 	}
 
+	vcsSyncerVariableName := "vcsSyncerType"
+
 	grpcMethodVariable := shared.GRPCMethodVariable("gitserver", grpcServiceName)
+
+	titleCaser := cases.Title(language.English)
+
+	type vcsMetricsOptions struct {
+		// The name of the VCS operation.
+		operation                 string
+		metric                    string
+		interpretationDescription string
+	}
+
+	genVCSMetricsGroup := func(o vcsMetricsOptions) monitoring.Group {
+		var rows []monitoring.Row
+
+		for _, succeeded := range []bool{true, false} {
+
+			successString := "successful"
+			if !succeeded {
+				successString = "failed"
+			}
+
+			var row []monitoring.Observable
+
+			for _, percentile := range []struct {
+				description string
+				raw         string
+			}{
+				{
+					description: "99.9th percentile",
+					raw:         "999",
+				},
+				{
+					description: "99th percentile",
+					raw:         "99",
+				},
+				{
+					description: "95th percentile",
+					raw:         "95",
+				},
+			} {
+				row = append(row, monitoring.Observable{
+					Name:        fmt.Sprintf("vcs_syncer_%s_%s_%s_duration", percentile.raw, successString, strcase.ToSnake(o.operation)),
+					Description: fmt.Sprintf("%s %s %s duration over 1m", percentile.description, successString, titleCaser.String(o.operation)),
+					Query:       fmt.Sprintf("histogram_quantile(0.%s, sum by (type, le) (rate(%s_bucket{type=~`%s`, success=\"%t\"}[1m])))", percentile.raw, o.metric, fmt.Sprintf("${%s:regex}", vcsSyncerVariableName), succeeded),
+					Panel:       monitoring.Panel().LegendFormat("{{le}}").Unit(monitoring.Seconds).With(monitoring.PanelOptions.ZeroIfNoData()),
+					NoAlert:     true,
+
+					Owner:          monitoring.ObservableOwnerSource,
+					Interpretation: fmt.Sprintf("The %s duration for %s `%s` VCS operations. %s", percentile.description, successString, titleCaser.String(o.operation), o.interpretationDescription),
+				})
+			}
+
+			rows = append(rows, row)
+
+			rows = append(rows, []monitoring.Observable{
+				{
+					Name:           fmt.Sprintf("vcs_syncer_%s_%s_rate", successString, strcase.ToSnake(o.operation)),
+					Description:    fmt.Sprintf("rate of %s %s VCS operations over 1m", successString, titleCaser.String(o.operation)),
+					Query:          fmt.Sprintf("sum by (type) (rate(%s_count{type=~`%s`, success=\"%t\"}[1m]))", o.metric, fmt.Sprintf("${%s:regex}", vcsSyncerVariableName), succeeded),
+					Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.RequestsPerSecond).With(monitoring.PanelOptions.ZeroIfNoData()),
+					NoAlert:        true,
+					Owner:          monitoring.ObservableOwnerSource,
+					Interpretation: fmt.Sprintf("The rate of %s `%s` VCS operations. %s", successString, titleCaser.String(o.operation), o.interpretationDescription),
+				},
+			})
+		}
+
+		return monitoring.Group{
+			Title:  fmt.Sprintf("VCS %s metrics", titleCaser.String(o.operation)),
+			Hidden: true,
+			Rows:   rows,
+		}
+	}
 
 	return &monitoring.Dashboard{
 		Name:        "gitserver",
@@ -41,6 +120,17 @@ func GitServer() *monitoring.Dashboard {
 				Multi: true,
 			},
 			grpcMethodVariable,
+			{
+				Label: "VCS Syncer Kind",
+				Name:  vcsSyncerVariableName,
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "vcssyncer_fetch_duration_seconds_bucket",
+					LabelName:     "type",
+					ExampleOption: "jvm",
+				},
+				Multi:            true,
+				WildcardAllValue: true,
+			},
 		},
 		Groups: []monitoring.Group{
 			{
@@ -64,12 +154,17 @@ func GitServer() *monitoring.Dashboard {
 							Name:        "cpu_throttling_time",
 							Description: "container CPU throttling time %",
 							Query:       "sum by (container_label_io_kubernetes_pod_name) ((rate(container_cpu_cfs_throttled_periods_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]) / rate(container_cpu_cfs_periods_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m])) * 100)",
-							NoAlert:     true,
+							Warning:     monitoring.Alert().GreaterOrEqual(75).For(2 * time.Minute),
+							Critical:    monitoring.Alert().GreaterOrEqual(90).For(5 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
 								Unit(monitoring.Percentage).
 								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerSource,
 							Interpretation: `
+								- A high value indicates that the container is spending too much time waiting for CPU cycles.
+						`,
+							NextSteps: `
+								- Consider increasing the CPU limit for the container.
 						`,
 						},
 						{
@@ -81,14 +176,18 @@ func GitServer() *monitoring.Dashboard {
 								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerSource,
 							Interpretation: `
+								- This value should not exceed 75% of the CPU limit over a longer period of time.
+								- We cannot alert on this as we don't know the resource allocation.
+
+								- If this value is high for a longer time, consider increasing the CPU limit for the container.
 						`,
 						},
 					},
 					{
 						{
 							Name:        "disk_space_remaining",
-							Description: "disk space remaining by instance",
-							Query:       `(src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100`,
+							Description: "disk space remaining",
+							Query:       "(src_gitserver_disk_space_available{instance=~`${shard:regex}`} / src_gitserver_disk_space_total{instance=~`${shard:regex}`}) * 100",
 							// Warning alert when we have disk space remaining that is
 							// approaching the default SRC_REPOS_DESIRED_PERCENT_FREE
 							Warning: monitoring.Alert().Less(15),
@@ -106,87 +205,9 @@ func GitServer() *monitoring.Dashboard {
 								Indicates disk space remaining for each gitserver instance, which is used to determine when to start evicting least-used repository clones from disk (default 10%, configured by 'SRC_REPOS_DESIRED_PERCENT_FREE').
 							`,
 							NextSteps: `
-								- On a warning alert, you may want to provision more disk space: Sourcegraph may be about to start evicting repositories due to disk pressure, which may result in decreased performance, users having to wait for repositories to clone, etc.
-								- On a critical alert, you need to provision more disk space: Sourcegraph should be evicting repositories from disk, but is either filling up faster than it can evict, or there is an issue with the janitor job.
+								- On a warning alert, you may want to provision more disk space: Disk pressure may result in decreased performance, users having to wait for repositories to clone, etc.
+								- On a critical alert, you need to provision more disk space. Running out of disk space will result in decreased performance, or complete service outage.
 							`,
-						},
-					},
-					{
-						{
-							Name:        "io_reads_total",
-							Description: "i/o reads total",
-							Query:       "sum by (container_label_io_kubernetes_container_name) (rate(container_fs_reads_total{container_label_io_kubernetes_container_name=\"gitserver\"}[5m]))",
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								Unit(monitoring.ReadsPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
-						`,
-						},
-						{
-							Name:        "io_writes_total",
-							Description: "i/o writes total",
-							Query:       "sum by (container_label_io_kubernetes_container_name) (rate(container_fs_writes_total{container_label_io_kubernetes_container_name=\"gitserver\"}[5m]))",
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								Unit(monitoring.WritesPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
-						`,
-						},
-					},
-					{
-						{
-							Name:        "io_reads",
-							Description: "i/o reads",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_reads_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))",
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								Unit(monitoring.ReadsPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
-						`,
-						},
-						{
-							Name:        "io_writes",
-							Description: "i/o writes",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_writes_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))",
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								Unit(monitoring.WritesPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
-						`,
-						},
-					},
-					{
-						{
-							Name:        "io_read_througput",
-							Description: "i/o read throughput",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_reads_bytes_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))",
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								Unit(monitoring.ReadsPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
-						`,
-						},
-						{
-							Name:        "io_write_throughput",
-							Description: "i/o write throughput",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_writes_bytes_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))",
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								Unit(monitoring.WritesPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
-						`,
 						},
 					},
 					{
@@ -210,13 +231,53 @@ func GitServer() *monitoring.Dashboard {
 						},
 						{
 							Name:           "git_commands_received",
-							Description:    "rate of git commands received across all instances",
-							Query:          "sum by (cmd) (rate(src_gitserver_exec_duration_seconds_count[5m]))",
+							Description:    "rate of git commands received",
+							Query:          "sum by (cmd) (rate(src_gitserver_exec_duration_seconds_count{instance=~`${shard:regex}`}[5m]))",
 							NoAlert:        true,
-							Interpretation: "per second rate per command across all instances",
+							Interpretation: "per second rate per command",
 							Panel: monitoring.Panel().LegendFormat("{{cmd}}").
 								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerSource,
+						},
+					},
+					{
+						{
+							Name:        "echo_command_duration_test",
+							Description: "echo test command duration",
+							Query:       "max(src_gitserver_echo_duration_seconds)",
+							Warning:     monitoring.Alert().GreaterOrEqual(0.020).For(30 * time.Second),
+							Critical:    monitoring.Alert().GreaterOrEqual(1).For(1 * time.Minute),
+							Panel:       monitoring.Panel().LegendFormat("running commands").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSource,
+							Interpretation: `
+							A high value here likely indicates a problem, especially if consistently high.
+							You can query for individual commands using 'sum by (cmd)(src_gitserver_exec_running)' in Grafana ('/-/debug/grafana') to see if a specific Git Server command might be spiking in frequency.
+							On a healthy linux node, this number should be less than 5ms, ideally closer to 2ms.
+							A high process spawning overhead will affect latency of gitserver APIs.
+
+							Various factors can affect process spawning overhead, but the most common we've seen is IOPS contention on the underlying volume, or high CPU throttling.
+							`,
+							NextSteps: `
+								- **Single container deployments:** Upgrade to a [Docker Compose deployment](../deploy/docker-compose/migrate.md) which offers better scalability and resource isolation.
+								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../deploy/resource_estimator.md).
+								- If your persistent volume is slow, you may want to provision more IOPS, usually by increasing the volume size.
+							`,
+						},
+						{
+							Name:        "repo_corrupted",
+							Description: "number of times a repo corruption has been identified",
+							Query:       `sum(rate(src_gitserver_repo_corrupted[5m]))`,
+							Critical:    monitoring.Alert().Greater(0),
+							Panel:       monitoring.Panel().LegendFormat("corruption events").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSource,
+							Interpretation: `
+								A non-null value here indicates that a problem has been detected with the gitserver repository storage.
+								Repository corruptions are never expected. This is a real issue. Gitserver should try to recover from them
+								by recloning repositories, but this may take a while depending on repo size.
+							`,
+							NextSteps: `
+								- Check the corruption logs for details. gitserver_repos.corruption_logs contains more information.
+							`,
 						},
 					},
 					{
@@ -232,41 +293,6 @@ func GitServer() *monitoring.Dashboard {
 								- **Check which repositories need cloning**, by visiting e.g. https://sourcegraph.example.com/site-admin/repositories?filter=not-cloned
 							`,
 						},
-						{
-							Name:        "repository_existence_check_queue_size",
-							Description: "repository existence check queue size",
-							Query:       "sum(src_gitserver_lsremote_queue)",
-							Warning:     monitoring.Alert().GreaterOrEqual(25),
-							Panel:       monitoring.Panel().LegendFormat("queue size"),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps: `
-								- **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
-								- **Check if the issue continues to happen after 30 minutes**, it may be temporary.
-								- **Check the gitserver logs for more information.**
-							`,
-						},
-					},
-					{
-						{
-							Name:        "echo_command_duration_test",
-							Description: "echo test command duration",
-							Query:       "max(src_gitserver_echo_duration_seconds)",
-							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("running commands").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSource,
-							Interpretation: `
-								A high value here likely indicates a problem, especially if consistently high.
-								You can query for individual commands using 'sum by (cmd)(src_gitserver_exec_running)' in Grafana ('/-/debug/grafana') to see if a specific Git Server command might be spiking in frequency.
-
-								If this value is consistently high, consider the following:
-
-								- **Single container deployments:** Upgrade to a [Docker Compose deployment](../deploy/docker-compose/migrate.md) which offers better scalability and resource isolation.
-								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../deploy/resource_estimator.md).
-							`,
-						},
-						shared.FrontendInternalAPIErrorResponses("gitserver", monitoring.ObservableOwnerSource).Observable(),
-					},
-					{
 						{
 							Name:          "src_gitserver_repo_count",
 							Description:   "number of repositories on gitserver",
@@ -284,8 +310,6 @@ func GitServer() *monitoring.Dashboard {
 					},
 				},
 			},
-			shared.GitServer.NewAPIGroup(containerName),
-			shared.GitServer.NewBatchLogSemaphoreWait(containerName),
 			{
 				Title:  "Gitservice for internal cloning",
 				Hidden: true,
@@ -399,8 +423,8 @@ func GitServer() *monitoring.Dashboard {
 					{
 						{
 							Name:           "janitor_running",
-							Description:    "if the janitor process is running",
-							Query:          "max by (instance) (src_gitserver_janitor_running)",
+							Description:    "janitor process is running",
+							Query:          "max by (instance) (src_gitserver_janitor_running{instance=~`${shard:regex}`})",
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("janitor process running").Unit(monitoring.Number),
 							Owner:          monitoring.ObservableOwnerSource,
@@ -411,7 +435,7 @@ func GitServer() *monitoring.Dashboard {
 						{
 							Name:           "janitor_job_duration",
 							Description:    "95th percentile job run duration",
-							Query:          "histogram_quantile(0.95, sum(rate(src_gitserver_janitor_job_duration_seconds_bucket[5m])) by (le, job_name))",
+							Query:          "histogram_quantile(0.95, sum(rate(src_gitserver_janitor_job_duration_seconds_bucket{instance=~`${shard:regex}`}[5m])) by (le, job_name))",
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("{{job_name}}").Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerSource,
@@ -422,7 +446,7 @@ func GitServer() *monitoring.Dashboard {
 						{
 							Name:           "janitor_job_failures",
 							Description:    "failures over 5m (by job)",
-							Query:          `sum by (job_name) (rate(src_gitserver_janitor_job_duration_seconds_count{success="false"}[5m]))`,
+							Query:          "sum by (job_name) (rate(src_gitserver_janitor_job_duration_seconds_count{instance=~`${shard:regex}`,success=\"false\"}[5m]))",
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("{{job_name}}").Unit(monitoring.Number),
 							Owner:          monitoring.ObservableOwnerSource,
@@ -433,7 +457,7 @@ func GitServer() *monitoring.Dashboard {
 						{
 							Name:           "repos_removed",
 							Description:    "repositories removed due to disk pressure",
-							Query:          "sum by (instance) (rate(src_gitserver_repos_removed_disk_pressure[5m]))",
+							Query:          "sum by (instance) (rate(src_gitserver_repos_removed_disk_pressure{instance=~`${shard:regex}`}[5m]))",
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
 							Owner:          monitoring.ObservableOwnerSource,
@@ -522,6 +546,26 @@ func GitServer() *monitoring.Dashboard {
 					},
 				},
 			},
+
+			genVCSMetricsGroup(vcsMetricsOptions{
+				operation:                 "clone",
+				metric:                    "vcssyncer_clone_duration_seconds",
+				interpretationDescription: "This is the time taken to clone a repository from the upstream source.",
+			}),
+			genVCSMetricsGroup(vcsMetricsOptions{
+				operation:                 "fetch",
+				metric:                    "vcssyncer_fetch_duration_seconds",
+				interpretationDescription: "This is the time taken to fetch a repository from the upstream source.",
+			}),
+			genVCSMetricsGroup(vcsMetricsOptions{
+				operation:                 "is_cloneable",
+				metric:                    "vcssyncer_is_cloneable_duration_seconds",
+				interpretationDescription: "This is the time taken to check to see if a repository is cloneable from the upstream source.",
+			}),
+
+			shared.GitServer.NewBackendGroup(containerName, true),
+			shared.GitServer.NewClientGroup("*"),
+
 			shared.NewDiskMetricsGroup(
 				shared.DiskMetricsGroupOptions{
 					DiskTitle: "repos",
@@ -543,7 +587,7 @@ func GitServer() *monitoring.Dashboard {
 					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 					InstanceFilterRegex:  `${shard:regex}`,
 					MessageSizeNamespace: "src",
-				}, monitoring.ObservableOwnerSearchCore),
+				}, monitoring.ObservableOwnerSource),
 
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
@@ -552,13 +596,28 @@ func GitServer() *monitoring.Dashboard {
 					Namespace:          "src",
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-				}, monitoring.ObservableOwnerSearchCore),
+				}, monitoring.ObservableOwnerSource),
+
+			shared.NewGRPCRetryMetricsGroup(
+				shared.GRPCRetryMetricsOptions{
+					HumanServiceName:   "gitserver",
+					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+				}, monitoring.ObservableOwnerSource),
+
+			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
+				HumanServiceName:    "gitserver",
+				InstanceFilterRegex: `${shard:regex}`,
+				JobFilterRegex:      scrapeJobRegex,
+			}, monitoring.ObservableOwnerInfraOrg),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
 			shared.CodeIntelligence.NewNpmGroup(containerName),
 
 			shared.HTTP.NewHandlersGroup(containerName),
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerSource),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSource, provisioningIndicatorsOptions),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),

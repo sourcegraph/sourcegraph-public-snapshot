@@ -3,9 +3,8 @@ import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { Code, Grid } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
+import { siteAdminSidebarGroups } from '../../site-admin/sidebaritems'
 import { SiteAdminSidebar } from '../../site-admin/SiteAdminSidebar'
-
-import { enterpriseSiteAdminSidebarGroups } from './sidebaritems'
 
 const decorator: Decorator = story => <div style={{ width: '192px' }}>{story()}</div>
 
@@ -21,71 +20,64 @@ const config: Meta = {
 
 export default config
 
+const licenseFeatures = {
+    isCodeSearchEnabled: true,
+    isCodyEnabled: true,
+}
+
 // Moved story under enterprise folder to avoid failing ci linting
 // due to importing enterprise path in oss folders.
 export const AdminSidebarItems: StoryFn = () => (
     <WebStory>
         {webProps => (
             <Grid columnCount={5}>
-                <Code>isCodyApp=true</Code>
                 <Code>default</Code>
                 <Code>isSourcegraphDotCom=true</Code>
                 <Code>batchChangesEnabled=false</Code>
                 <Code>codeInsightsEnabled=false</Code>
                 <SiteAdminSidebar
                     {...webProps}
-                    groups={enterpriseSiteAdminSidebarGroups}
+                    groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
-                    isCodyApp={true}
                     batchChangesEnabled={true}
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={true}
                     endUserOnboardingEnabled={false}
+                    license={licenseFeatures}
                 />
                 <SiteAdminSidebar
                     {...webProps}
-                    groups={enterpriseSiteAdminSidebarGroups}
-                    isSourcegraphDotCom={false}
-                    isCodyApp={false}
-                    batchChangesEnabled={true}
-                    batchChangesExecutionEnabled={true}
-                    batchChangesWebhookLogsEnabled={true}
-                    codeInsightsEnabled={true}
-                    endUserOnboardingEnabled={false}
-                />
-                <SiteAdminSidebar
-                    {...webProps}
-                    groups={enterpriseSiteAdminSidebarGroups}
+                    groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={true}
-                    isCodyApp={false}
                     batchChangesEnabled={true}
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={true}
                     endUserOnboardingEnabled={false}
+                    license={licenseFeatures}
                 />
                 <SiteAdminSidebar
                     {...webProps}
-                    groups={enterpriseSiteAdminSidebarGroups}
+                    groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
-                    isCodyApp={false}
                     batchChangesEnabled={false}
                     batchChangesExecutionEnabled={false}
                     batchChangesWebhookLogsEnabled={false}
                     codeInsightsEnabled={true}
                     endUserOnboardingEnabled={false}
+                    license={licenseFeatures}
                 />
                 <SiteAdminSidebar
                     {...webProps}
-                    groups={enterpriseSiteAdminSidebarGroups}
+                    groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
-                    isCodyApp={false}
                     batchChangesEnabled={true}
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={false}
                     endUserOnboardingEnabled={false}
+                    license={licenseFeatures}
                 />
             </Grid>
         )}

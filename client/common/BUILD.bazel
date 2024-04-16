@@ -1,6 +1,6 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
+load("//dev:defs.bzl", "npm_package", "ts_project", "vitest_test")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 npm_link_all_packages(name = "node_modules")
@@ -26,18 +26,18 @@ ts_project(
         "src/errors/types.ts",
         "src/errors/utils.ts",
         "src/index.ts",
+        "src/languages.ts",
         "src/types/highlight.js/lib/core.d.ts",
         "src/types/highlightjs-graphql/index.d.ts",
         "src/types/index.ts",
         "src/types/utils.ts",
-        "src/util/LocalStorageSubject.ts",
         "src/util/browserDetection.ts",
         "src/util/compatNavigate.ts",
+        "src/util/deviceDetection.ts",
         "src/util/fetchCache.ts",
         "src/util/hashCode.ts",
         "src/util/highlightNode.ts",
         "src/util/index.ts",
-        "src/util/isEncodedImage.ts",
         "src/util/jsonc.ts",
         "src/util/logger.ts",
         "src/util/markdown/contributions.ts",
@@ -46,6 +46,7 @@ ts_project(
         "src/util/path.ts",
         "src/util/rxjs/asObservable.ts",
         "src/util/rxjs/combineLatestOrDefault.ts",
+        "src/util/rxjs/fromSubscribable.ts",
         "src/util/rxjs/index.ts",
         "src/util/rxjs/memoizeObservable.ts",
         "src/util/rxjs/repeatUntil.ts",
@@ -55,7 +56,6 @@ ts_project(
     ],
     tsconfig = ":tsconfig",
     deps = [
-        ":node_modules/@sourcegraph/extension-api-types",
         "//:node_modules/@types/dompurify",
         "//:node_modules/@types/highlight.js",
         "//:node_modules/@types/history",
@@ -71,7 +71,9 @@ ts_project(
         "//:node_modules/marked",
         "//:node_modules/react-router-dom",
         "//:node_modules/rxjs",
+        "//:node_modules/sourcegraph",
         "//:node_modules/utility-types",
+        "//client/wildcard:wildcard_lib",
     ],
 )
 
@@ -96,9 +98,10 @@ ts_project(
         ":common_lib",
         "//:node_modules/@types/mockdate",
         "//:node_modules/@types/node",
-        "//:node_modules/jest-fetch-mock",
         "//:node_modules/mockdate",
         "//:node_modules/rxjs",
+        "//:node_modules/vitest",
+        "//:node_modules/vitest-fetch-mock",
     ],
 )
 
@@ -110,7 +113,7 @@ npm_package(
     ],
 )
 
-jest_test(
+vitest_test(
     name = "test",
     data = [
         ":common_tests",

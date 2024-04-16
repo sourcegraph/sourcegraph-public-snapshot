@@ -7,6 +7,7 @@ import "github.com/sourcegraph/sourcegraph/internal/session"
 var (
 	ResetMockSessionStore   = session.ResetMockSessionStore
 	SetActor                = session.SetActor
+	SetActorFromUser        = session.SetActorFromUser
 	SetData                 = session.SetData
 	GetData                 = session.GetData
 	InvalidateSessionsByIDs = session.InvalidateSessionsByIDs

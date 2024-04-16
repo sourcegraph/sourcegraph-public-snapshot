@@ -1,9 +1,9 @@
 <script lang="ts">
     import Timestamp from '$lib/Timestamp.svelte'
     import { numberWithCommas } from '$lib/common'
-    import type { GitRefFields } from '$lib/graphql-operations'
+    import type { GitReference_Ref } from './GitReference.gql'
 
-    export let ref: GitRefFields
+    export let ref: GitReference_Ref
 
     $: authorName = ref.target.commit?.author.person.displayName ?? ''
     $: authorDate = ref.target.commit ? new Date(ref.target.commit.author.date) : null

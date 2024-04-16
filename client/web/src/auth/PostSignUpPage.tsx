@@ -2,40 +2,19 @@ import React from 'react'
 
 import { Navigate, useLocation } from 'react-router-dom'
 
-import type { AuthenticatedUser } from '../auth'
-import { Page } from '../components/Page'
-import { PageTitle } from '../components/PageTitle'
-import { CodySurveyToast } from '../marketing/toast/CodySurveyToast'
-import { eventLogger } from '../tracking/eventLogger'
+import { PageRoutes } from '../routes.constants'
 
 import { getReturnTo } from './SignInSignUpCommon'
-import { withAuthenticatedUser } from './withAuthenticatedUser'
 
-import styles from './PostSignUpPage.module.scss'
-
-interface PostSignUpPageProps {
-    authenticatedUser: AuthenticatedUser
-}
-
-const PostSignUp: React.FunctionComponent<PostSignUpPageProps> = ({ authenticatedUser }) => {
+export const PostSignUpPage: React.FunctionComponent = () => {
     const location = useLocation()
+    const returnTo = getReturnTo(location)
 
-    // Redirect if user has already completed post signup flow
-    if (authenticatedUser.completedPostSignup) {
-        const returnTo = getReturnTo(location)
-        return <Navigate to={returnTo} replace={true} />
-    }
+    // Redirects Cody PLG users without asking
+    const params = new URLSearchParams()
+    params.set('returnTo', returnTo)
 
-    return (
-        <div className={styles.pageWrapper}>
-            <PageTitle title="Post signup" />
-            <Page className={styles.page}>
-                <img src="/.assets/img/sourcegraph-mark.svg?v2" alt="Sourcegraph logo" className={styles.logo} />
+    const navigateTo = PageRoutes.CodyManagement + '?' + params.toString()
 
-                <CodySurveyToast telemetryService={eventLogger} authenticatedUser={authenticatedUser} />
-            </Page>
-        </div>
-    )
+    return <Navigate to={navigateTo.toString()} replace={true} />
 }
-
-export const PostSignUpPage = withAuthenticatedUser(PostSignUp)

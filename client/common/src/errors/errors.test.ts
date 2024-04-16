@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { asError } from './errors'
 import { isErrorLike } from './utils'
 

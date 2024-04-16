@@ -1,4 +1,0 @@
-# TODO(bazel): esbuild dev tools currently disabled in bazel
-# See client/build-config/src/esbuild/BUILD.bazel
-
-# gazelle:js disabled

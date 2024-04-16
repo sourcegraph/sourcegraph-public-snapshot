@@ -17,7 +17,6 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -68,36 +67,10 @@ type globalRateLimiter struct {
 func NewGlobalRateLimiter(logger log.Logger, bucketName string) GlobalLimiter {
 	logger = logger.Scoped(fmt.Sprintf("GlobalRateLimiter.%s", bucketName))
 
-	// Pool can return false for ok if the implementation of `KeyValue` is not
-	// backed by a real redis server. For App, we implemented an in-memory version
-	// of redis that only supports a subset of commands that are not sufficient
-	// for our redis-based global rate limiter.
-	// Technically, other installations could use this limiter too, but it's undocumented
-	// and should really not be used. The intended use is for Cody App.
-	// In the unlucky case that we are NOT in App and cannot get a proper redis
-	// connection, we will fall back to an in-memory implementation as well to
-	// prevent the instance from breaking entirely. Note that the limits may NOT
-	// be enforced like configured then and should be treated as best effort only.
-	// Errors will be logged frequently.
-	// In single-program mode, this will still correctly limit globally, because all the services
-	// run in the same process and share memory. Otherwise, it is best effort only.
-	pool, ok := kv().Pool()
-	if !ok {
-		if !deploy.IsSingleBinary() {
-			// Outside of single-program mode, this should be considered a configuration mistake.
-			logger.Error("Redis pool not set, global rate limiter will not work as expected")
-		}
-		rl := -1 // Documented default in site-config JSON schema. -1 means infinite.
-		if rate := conf.Get().DefaultRateLimit; rate != nil {
-			rl = *rate
-		}
-		return getInMemoryLimiter(bucketName, rl)
-	}
-
 	return &globalRateLimiter{
 		prefix:     tokenBucketGlobalPrefix,
 		bucketName: bucketName,
-		pool:       pool,
+		pool:       kv().Pool(),
 		logger:     logger,
 	}
 }
@@ -172,9 +145,9 @@ func (r *globalRateLimiter) newTimer(d time.Duration) (<-chan time.Time, func() 
 }
 
 func (r *globalRateLimiter) waitn(ctx context.Context, n int, requestTime time.Time, maxTimeToWait time.Duration) (timeToWait time.Duration, err error) {
-	metricLimiterAttempts.Inc()
-	metricLimiterWaiting.Inc()
-	defer metricLimiterWaiting.Dec()
+	metricLimiterAttempts.WithLabelValues(r.bucketName).Inc()
+	metricLimiterWaiting.WithLabelValues(r.bucketName).Inc()
+	defer metricLimiterWaiting.WithLabelValues(r.bucketName).Dec()
 	keys := getRateLimiterKeys(r.prefix, r.bucketName)
 	connection := r.pool.Get()
 	defer connection.Close()
@@ -203,7 +176,12 @@ func (r *globalRateLimiter) waitn(ctx context.Context, n int, requestTime time.T
 		n,
 	)
 	if err != nil {
-		metricLimiterFailedAcquire.Inc()
+		// Check if context has been canceled. If so, we don't attempt to wait for
+		// the default limiter and intead return immediately.
+		if err := ctx.Err(); err != nil {
+			return 0, err
+		}
+		metricLimiterFailedAcquire.WithLabelValues(r.bucketName).Inc()
 		r.logger.Error("failed to acquire global rate limiter, falling back to default in-memory limiter", log.Error(err))
 		// If using the real global limiter fails, we fall back to the in-memory registry
 		// of rate limiters. This rate limiter is NOT synced across services, so when these
@@ -245,7 +223,7 @@ const (
 )
 
 func invokeScriptWithRetries(ctx context.Context, script *redis.Script, c redis.Conn, keysAndArgs ...any) (result any, err error) {
-	for i := 0; i < scriptInvocationMaxRetries; i++ {
+	for range scriptInvocationMaxRetries {
 		result, err = script.DoContext(ctx, c, keysAndArgs...)
 		if err == nil {
 			// If no error, return the result.
@@ -330,7 +308,7 @@ var setTokenBucketReplenishmentLuaScript string
 
 type getTokenGrantType int64
 
-var (
+const (
 	tokenGranted            getTokenGrantType = 1
 	waitTimeExceedsDeadline getTokenGrantType = -1
 	negativeTimeDifference  getTokenGrantType = -2
@@ -400,15 +378,8 @@ type GlobalLimiterInfo struct {
 
 // GetGlobalLimiterState reports how all the existing rate limiters are configured,
 // keyed by bucket name.
-// On instances without a proper redis (currently only App), this will return nil.
 func GetGlobalLimiterState(ctx context.Context) (map[string]GlobalLimiterInfo, error) {
-	pool, ok := kv().Pool()
-	if !ok {
-		// In app, we don't have global limiters. Return.
-		return nil, nil
-	}
-
-	return GetGlobalLimiterStateFromPool(ctx, pool, tokenBucketGlobalPrefix)
+	return GetGlobalLimiterStateFromPool(ctx, kv().Pool(), tokenBucketGlobalPrefix)
 }
 
 func GetGlobalLimiterStateFromPool(ctx context.Context, pool *redis.Pool, prefix string) (map[string]GlobalLimiterInfo, error) {
@@ -586,17 +557,17 @@ func kv() redispool.KeyValue {
 
 // metrics.
 var (
-	metricLimiterAttempts = promauto.NewCounter(prometheus.CounterOpts{
+	metricLimiterAttempts = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_globallimiter_attempts",
 		Help: "Incremented each time we request a token from a rate limiter.",
-	})
-	metricLimiterWaiting = promauto.NewGauge(prometheus.GaugeOpts{
+	}, []string{"bucket"})
+	metricLimiterWaiting = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_globallimiter_waiting",
 		Help: "Number of rate limiter requests that are pending.",
-	})
+	}, []string{"bucket"})
 	// TODO: Once we add Grafana dashboards, add an alert on this metric.
-	metricLimiterFailedAcquire = promauto.NewCounter(prometheus.CounterOpts{
+	metricLimiterFailedAcquire = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_globallimiter_failed_acquire",
 		Help: "Incremented each time requesting a token from a rate limiter fails after retries.",
-	})
+	}, []string{"bucket"})
 )

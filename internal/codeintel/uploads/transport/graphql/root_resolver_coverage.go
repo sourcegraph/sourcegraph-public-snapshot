@@ -40,6 +40,11 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
+	// 🚨 SECURITY: Only site admins can access repository summary
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
 	id, err := resolverstubs.UnmarshalID[int](repoID)
 	if err != nil {
 		return nil, err

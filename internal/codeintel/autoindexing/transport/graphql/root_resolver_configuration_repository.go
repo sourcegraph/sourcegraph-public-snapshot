@@ -104,29 +104,25 @@ func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *stri
 func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) (_ resolverstubs.InferredConfigurationResolver, err error) {
 	defer r.errTracer.Collect(&err, attribute.String("indexConfigResolver.field", "inferredConfiguration"))
 
-	var limitErr error
 	result, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", "", true)
+	resolver := &inferredConfigurationResolver{siteAdminChecker: r.siteAdminChecker}
 	if err != nil {
 		if errors.As(err, &inference.LimitError{}) {
-			limitErr = err
-		} else {
-			return nil, err
+			resolver.limitErr = err
 		}
+		return resolver, err
 	}
 
 	marshaled, err := config.MarshalJSON(config.IndexConfiguration{IndexJobs: result.IndexJobs})
 	if err != nil {
-		return nil, err
+		return resolver, err
 	}
 
 	var indented bytes.Buffer
 	_ = json.Indent(&indented, marshaled, "", "\t")
+	resolver.configuration = indented.String()
 
-	return &inferredConfigurationResolver{
-		siteAdminChecker: r.siteAdminChecker,
-		configuration:    indented.String(),
-		limitErr:         limitErr,
-	}, nil
+	return resolver, nil
 }
 
 func (r *indexConfigurationResolver) ParsedConfiguration(ctx context.Context) (*[]resolverstubs.AutoIndexJobDescriptionResolver, error) {

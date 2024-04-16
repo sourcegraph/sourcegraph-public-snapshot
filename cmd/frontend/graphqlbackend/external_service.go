@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -158,6 +159,38 @@ func (r *externalServiceResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.externalService.UpdatedAt}
 }
 
+func (r *externalServiceResolver) Creator(ctx context.Context) (*UserResolver, error) {
+	if r.externalService.CreatorID == nil {
+		return nil, nil
+	}
+
+	user, err := r.db.Users().GetByID(ctx, *r.externalService.CreatorID)
+	if err != nil {
+		if database.IsUserNotFoundErr(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return NewUserResolver(ctx, r.db, user), nil
+}
+
+func (r *externalServiceResolver) LastUpdater(ctx context.Context) (*UserResolver, error) {
+	if r.externalService.LastUpdaterID == nil {
+		return nil, nil
+	}
+
+	user, err := r.db.Users().GetByID(ctx, *r.externalService.LastUpdaterID)
+	if err != nil {
+		if database.IsUserNotFoundErr(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return NewUserResolver(ctx, r.db, user), nil
+}
+
 func (r *externalServiceResolver) WebhookURL(ctx context.Context) (*string, error) {
 	r.webhookURLOnce.Do(func() {
 		parsed, err := extsvc.ParseEncryptableConfig(ctx, r.externalService.Kind, r.externalService.Config)
@@ -267,6 +300,7 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 		r.db,
 		r.externalService,
 		httpcli.ExternalClientFactory,
+		gitserver.NewClient("graphql.check-connection"),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create source")
@@ -315,6 +349,10 @@ func (r *externalServiceAvailabilityStateResolver) ImplementationNote() string {
 
 func (r *externalServiceResolver) SupportsRepoExclusion() bool {
 	return r.externalService.SupportsRepoExclusion()
+}
+
+func (r *externalServiceResolver) Unrestricted() bool {
+	return r.externalService.Unrestricted
 }
 
 type externalServiceSyncJobConnectionResolver struct {

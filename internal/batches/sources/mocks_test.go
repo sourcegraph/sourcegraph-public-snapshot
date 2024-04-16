@@ -14,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	diff "github.com/sourcegraph/go-diff/diff"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	store "github.com/sourcegraph/sourcegraph/internal/batches/store"
 	types1 "github.com/sourcegraph/sourcegraph/internal/batches/types"
@@ -23,6 +22,7 @@ import (
 	azuredevops "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	bitbucketcloud "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	gerrit "github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	gitolite "github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	store1 "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -8758,6 +8758,9 @@ type MockGerritClient struct {
 	// GetGroupFunc is an instance of a mock function object controlling the
 	// behavior of the method GetGroup.
 	GetGroupFunc *GerritClientGetGroupFunc
+	// GetSSHInfoFunc is an instance of a mock function object controlling
+	// the behavior of the method GetSSHInfo.
+	GetSSHInfoFunc *GerritClientGetSSHInfoFunc
 	// GetURLFunc is an instance of a mock function object controlling the
 	// behavior of the method GetURL.
 	GetURLFunc *GerritClientGetURLFunc
@@ -8826,6 +8829,11 @@ func NewMockGerritClient() *MockGerritClient {
 		},
 		GetGroupFunc: &GerritClientGetGroupFunc{
 			defaultHook: func(context.Context, string) (r0 gerrit.Group, r1 error) {
+				return
+			},
+		},
+		GetSSHInfoFunc: &GerritClientGetSSHInfoFunc{
+			defaultHook: func(context.Context) (r0 string, r1 int, r2 error) {
 				return
 			},
 		},
@@ -8921,6 +8929,11 @@ func NewStrictMockGerritClient() *MockGerritClient {
 				panic("unexpected invocation of MockGerritClient.GetGroup")
 			},
 		},
+		GetSSHInfoFunc: &GerritClientGetSSHInfoFunc{
+			defaultHook: func(context.Context) (string, int, error) {
+				panic("unexpected invocation of MockGerritClient.GetSSHInfo")
+			},
+		},
 		GetURLFunc: &GerritClientGetURLFunc{
 			defaultHook: func() *url.URL {
 				panic("unexpected invocation of MockGerritClient.GetURL")
@@ -8999,6 +9012,9 @@ func NewMockGerritClientFrom(i gerrit.Client) *MockGerritClient {
 		},
 		GetGroupFunc: &GerritClientGetGroupFunc{
 			defaultHook: i.GetGroup,
+		},
+		GetSSHInfoFunc: &GerritClientGetSSHInfoFunc{
+			defaultHook: i.GetSSHInfo,
 		},
 		GetURLFunc: &GerritClientGetURLFunc{
 			defaultHook: i.GetURL,
@@ -9777,6 +9793,114 @@ func (c GerritClientGetGroupFuncCall) Args() []interface{} {
 // invocation.
 func (c GerritClientGetGroupFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// GerritClientGetSSHInfoFunc describes the behavior when the GetSSHInfo
+// method of the parent MockGerritClient instance is invoked.
+type GerritClientGetSSHInfoFunc struct {
+	defaultHook func(context.Context) (string, int, error)
+	hooks       []func(context.Context) (string, int, error)
+	history     []GerritClientGetSSHInfoFuncCall
+	mutex       sync.Mutex
+}
+
+// GetSSHInfo delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGerritClient) GetSSHInfo(v0 context.Context) (string, int, error) {
+	r0, r1, r2 := m.GetSSHInfoFunc.nextHook()(v0)
+	m.GetSSHInfoFunc.appendCall(GerritClientGetSSHInfoFuncCall{v0, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetSSHInfo method of
+// the parent MockGerritClient instance is invoked and the hook queue is
+// empty.
+func (f *GerritClientGetSSHInfoFunc) SetDefaultHook(hook func(context.Context) (string, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetSSHInfo method of the parent MockGerritClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GerritClientGetSSHInfoFunc) PushHook(hook func(context.Context) (string, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientGetSSHInfoFunc) SetDefaultReturn(r0 string, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context) (string, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientGetSSHInfoFunc) PushReturn(r0 string, r1 int, r2 error) {
+	f.PushHook(func(context.Context) (string, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *GerritClientGetSSHInfoFunc) nextHook() func(context.Context) (string, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientGetSSHInfoFunc) appendCall(r0 GerritClientGetSSHInfoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientGetSSHInfoFuncCall objects
+// describing the invocations of this function.
+func (f *GerritClientGetSSHInfoFunc) History() []GerritClientGetSSHInfoFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientGetSSHInfoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientGetSSHInfoFuncCall is an object that describes an invocation
+// of method GetSSHInfo on an instance of MockGerritClient.
+type GerritClientGetSSHInfoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientGetSSHInfoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientGetSSHInfoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // GerritClientGetURLFunc describes the behavior when the GetURL method of
@@ -10859,30 +10983,12 @@ type MockGitserverClient struct {
 	// AddrForRepoFunc is an instance of a mock function object controlling
 	// the behavior of the method AddrForRepo.
 	AddrForRepoFunc *GitserverClientAddrForRepoFunc
-	// AddrsFunc is an instance of a mock function object controlling the
-	// behavior of the method Addrs.
-	AddrsFunc *GitserverClientAddrsFunc
 	// ArchiveReaderFunc is an instance of a mock function object
 	// controlling the behavior of the method ArchiveReader.
 	ArchiveReaderFunc *GitserverClientArchiveReaderFunc
-	// BatchLogFunc is an instance of a mock function object controlling the
-	// behavior of the method BatchLog.
-	BatchLogFunc *GitserverClientBatchLogFunc
-	// BlameFileFunc is an instance of a mock function object controlling
-	// the behavior of the method BlameFile.
-	BlameFileFunc *GitserverClientBlameFileFunc
-	// BranchesContainingFunc is an instance of a mock function object
-	// controlling the behavior of the method BranchesContaining.
-	BranchesContainingFunc *GitserverClientBranchesContainingFunc
 	// CheckPerforceCredentialsFunc is an instance of a mock function object
 	// controlling the behavior of the method CheckPerforceCredentials.
 	CheckPerforceCredentialsFunc *GitserverClientCheckPerforceCredentialsFunc
-	// CommitDateFunc is an instance of a mock function object controlling
-	// the behavior of the method CommitDate.
-	CommitDateFunc *GitserverClientCommitDateFunc
-	// CommitExistsFunc is an instance of a mock function object controlling
-	// the behavior of the method CommitExists.
-	CommitExistsFunc *GitserverClientCommitExistsFunc
 	// CommitGraphFunc is an instance of a mock function object controlling
 	// the behavior of the method CommitGraph.
 	CommitGraphFunc *GitserverClientCommitGraphFunc
@@ -10892,9 +10998,6 @@ type MockGitserverClient struct {
 	// CommitsFunc is an instance of a mock function object controlling the
 	// behavior of the method Commits.
 	CommitsFunc *GitserverClientCommitsFunc
-	// CommitsExistFunc is an instance of a mock function object controlling
-	// the behavior of the method CommitsExist.
-	CommitsExistFunc *GitserverClientCommitsExistFunc
 	// CommitsUniqueToBranchFunc is an instance of a mock function object
 	// controlling the behavior of the method CommitsUniqueToBranch.
 	CommitsUniqueToBranchFunc *GitserverClientCommitsUniqueToBranchFunc
@@ -10907,9 +11010,6 @@ type MockGitserverClient struct {
 	// DiffFunc is an instance of a mock function object controlling the
 	// behavior of the method Diff.
 	DiffFunc *GitserverClientDiffFunc
-	// DiffPathFunc is an instance of a mock function object controlling the
-	// behavior of the method DiffPath.
-	DiffPathFunc *GitserverClientDiffPathFunc
 	// DiffSymbolsFunc is an instance of a mock function object controlling
 	// the behavior of the method DiffSymbols.
 	DiffSymbolsFunc *GitserverClientDiffSymbolsFunc
@@ -10922,9 +11022,6 @@ type MockGitserverClient struct {
 	// GetCommitFunc is an instance of a mock function object controlling
 	// the behavior of the method GetCommit.
 	GetCommitFunc *GitserverClientGetCommitFunc
-	// GetCommitsFunc is an instance of a mock function object controlling
-	// the behavior of the method GetCommits.
-	GetCommitsFunc *GitserverClientGetCommitsFunc
 	// GetDefaultBranchFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDefaultBranch.
 	GetDefaultBranchFunc *GitserverClientGetDefaultBranchFunc
@@ -10934,9 +11031,6 @@ type MockGitserverClient struct {
 	// HasCommitAfterFunc is an instance of a mock function object
 	// controlling the behavior of the method HasCommitAfter.
 	HasCommitAfterFunc *GitserverClientHasCommitAfterFunc
-	// HeadFunc is an instance of a mock function object controlling the
-	// behavior of the method Head.
-	HeadFunc *GitserverClientHeadFunc
 	// IsPerforcePathCloneableFunc is an instance of a mock function object
 	// controlling the behavior of the method IsPerforcePathCloneable.
 	IsPerforcePathCloneableFunc *GitserverClientIsPerforcePathCloneableFunc
@@ -10946,18 +11040,15 @@ type MockGitserverClient struct {
 	// IsRepoCloneableFunc is an instance of a mock function object
 	// controlling the behavior of the method IsRepoCloneable.
 	IsRepoCloneableFunc *GitserverClientIsRepoCloneableFunc
-	// ListBranchesFunc is an instance of a mock function object controlling
-	// the behavior of the method ListBranches.
-	ListBranchesFunc *GitserverClientListBranchesFunc
 	// ListDirectoryChildrenFunc is an instance of a mock function object
 	// controlling the behavior of the method ListDirectoryChildren.
 	ListDirectoryChildrenFunc *GitserverClientListDirectoryChildrenFunc
+	// ListGitoliteReposFunc is an instance of a mock function object
+	// controlling the behavior of the method ListGitoliteRepos.
+	ListGitoliteReposFunc *GitserverClientListGitoliteReposFunc
 	// ListRefsFunc is an instance of a mock function object controlling the
 	// behavior of the method ListRefs.
 	ListRefsFunc *GitserverClientListRefsFunc
-	// ListTagsFunc is an instance of a mock function object controlling the
-	// behavior of the method ListTags.
-	ListTagsFunc *GitserverClientListTagsFunc
 	// LogReverseEachFunc is an instance of a mock function object
 	// controlling the behavior of the method LogReverseEach.
 	LogReverseEachFunc *GitserverClientLogReverseEachFunc
@@ -10988,33 +11079,27 @@ type MockGitserverClient struct {
 	// ReadDirFunc is an instance of a mock function object controlling the
 	// behavior of the method ReadDir.
 	ReadDirFunc *GitserverClientReadDirFunc
-	// ReadFileFunc is an instance of a mock function object controlling the
-	// behavior of the method ReadFile.
-	ReadFileFunc *GitserverClientReadFileFunc
-	// RefDescriptionsFunc is an instance of a mock function object
-	// controlling the behavior of the method RefDescriptions.
-	RefDescriptionsFunc *GitserverClientRefDescriptionsFunc
 	// RemoveFunc is an instance of a mock function object controlling the
 	// behavior of the method Remove.
 	RemoveFunc *GitserverClientRemoveFunc
 	// RepoCloneProgressFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoCloneProgress.
 	RepoCloneProgressFunc *GitserverClientRepoCloneProgressFunc
-	// RequestRepoCloneFunc is an instance of a mock function object
-	// controlling the behavior of the method RequestRepoClone.
-	RequestRepoCloneFunc *GitserverClientRequestRepoCloneFunc
 	// RequestRepoUpdateFunc is an instance of a mock function object
 	// controlling the behavior of the method RequestRepoUpdate.
 	RequestRepoUpdateFunc *GitserverClientRequestRepoUpdateFunc
 	// ResolveRevisionFunc is an instance of a mock function object
 	// controlling the behavior of the method ResolveRevision.
 	ResolveRevisionFunc *GitserverClientResolveRevisionFunc
-	// ResolveRevisionsFunc is an instance of a mock function object
-	// controlling the behavior of the method ResolveRevisions.
-	ResolveRevisionsFunc *GitserverClientResolveRevisionsFunc
+	// RevAtTimeFunc is an instance of a mock function object controlling
+	// the behavior of the method RevAtTime.
+	RevAtTimeFunc *GitserverClientRevAtTimeFunc
 	// RevListFunc is an instance of a mock function object controlling the
 	// behavior of the method RevList.
 	RevListFunc *GitserverClientRevListFunc
+	// ScopedFunc is an instance of a mock function object controlling the
+	// behavior of the method Scoped.
+	ScopedFunc *GitserverClientScopedFunc
 	// SearchFunc is an instance of a mock function object controlling the
 	// behavior of the method Search.
 	SearchFunc *GitserverClientSearchFunc
@@ -11041,43 +11126,13 @@ func NewMockGitserverClient() *MockGitserverClient {
 				return
 			},
 		},
-		AddrsFunc: &GitserverClientAddrsFunc{
-			defaultHook: func() (r0 []string) {
-				return
-			},
-		},
 		ArchiveReaderFunc: &GitserverClientArchiveReaderFunc{
 			defaultHook: func(context.Context, api.RepoName, gitserver.ArchiveOptions) (r0 io.ReadCloser, r1 error) {
 				return
 			},
 		},
-		BatchLogFunc: &GitserverClientBatchLogFunc{
-			defaultHook: func(context.Context, gitserver.BatchLogOptions, gitserver.BatchLogCallback) (r0 error) {
-				return
-			},
-		},
-		BlameFileFunc: &GitserverClientBlameFileFunc{
-			defaultHook: func(context.Context, api.RepoName, string, *gitserver.BlameOptions) (r0 []*gitserver.Hunk, r1 error) {
-				return
-			},
-		},
-		BranchesContainingFunc: &GitserverClientBranchesContainingFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID) (r0 []string, r1 error) {
-				return
-			},
-		},
 		CheckPerforceCredentialsFunc: &GitserverClientCheckPerforceCredentialsFunc{
 			defaultHook: func(context.Context, protocol.PerforceConnectionDetails) (r0 error) {
-				return
-			},
-		},
-		CommitDateFunc: &GitserverClientCommitDateFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID) (r0 string, r1 time.Time, r2 bool, r3 error) {
-				return
-			},
-		},
-		CommitExistsFunc: &GitserverClientCommitExistsFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -11093,11 +11148,6 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		CommitsFunc: &GitserverClientCommitsFunc{
 			defaultHook: func(context.Context, api.RepoName, gitserver.CommitsOptions) (r0 []*gitdomain.Commit, r1 error) {
-				return
-			},
-		},
-		CommitsExistFunc: &GitserverClientCommitsExistFunc{
-			defaultHook: func(context.Context, []api.RepoCommit) (r0 []bool, r1 error) {
 				return
 			},
 		},
@@ -11121,11 +11171,6 @@ func NewMockGitserverClient() *MockGitserverClient {
 				return
 			},
 		},
-		DiffPathFunc: &GitserverClientDiffPathFunc{
-			defaultHook: func(context.Context, api.RepoName, string, string, string) (r0 []*diff.Hunk, r1 error) {
-				return
-			},
-		},
 		DiffSymbolsFunc: &GitserverClientDiffSymbolsFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (r0 []byte, r1 error) {
 				return
@@ -11142,12 +11187,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		GetCommitFunc: &GitserverClientGetCommitFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (r0 *gitdomain.Commit, r1 error) {
-				return
-			},
-		},
-		GetCommitsFunc: &GitserverClientGetCommitsFunc{
-			defaultHook: func(context.Context, []api.RepoCommit, bool) (r0 []*gitdomain.Commit, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID) (r0 *gitdomain.Commit, r1 error) {
 				return
 			},
 		},
@@ -11166,11 +11206,6 @@ func NewMockGitserverClient() *MockGitserverClient {
 				return
 			},
 		},
-		HeadFunc: &GitserverClientHeadFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 string, r1 bool, r2 error) {
-				return
-			},
-		},
 		IsPerforcePathCloneableFunc: &GitserverClientIsPerforcePathCloneableFunc{
 			defaultHook: func(context.Context, protocol.PerforceConnectionDetails, string) (r0 error) {
 				return
@@ -11186,23 +11221,18 @@ func NewMockGitserverClient() *MockGitserverClient {
 				return
 			},
 		},
-		ListBranchesFunc: &GitserverClientListBranchesFunc{
-			defaultHook: func(context.Context, api.RepoName, gitserver.BranchesOptions) (r0 []*gitdomain.Branch, r1 error) {
-				return
-			},
-		},
 		ListDirectoryChildrenFunc: &GitserverClientListDirectoryChildrenFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, []string) (r0 map[string][]string, r1 error) {
 				return
 			},
 		},
-		ListRefsFunc: &GitserverClientListRefsFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 []gitdomain.Ref, r1 error) {
+		ListGitoliteReposFunc: &GitserverClientListGitoliteReposFunc{
+			defaultHook: func(context.Context, string) (r0 []*gitolite.Repo, r1 error) {
 				return
 			},
 		},
-		ListTagsFunc: &GitserverClientListTagsFunc{
-			defaultHook: func(context.Context, api.RepoName, ...string) (r0 []*gitdomain.Tag, r1 error) {
+		ListRefsFunc: &GitserverClientListRefsFunc{
+			defaultHook: func(context.Context, api.RepoName, gitserver.ListRefsOpts) (r0 []gitdomain.Ref, r1 error) {
 				return
 			},
 		},
@@ -11217,7 +11247,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		MergeBaseFunc: &GitserverClientMergeBaseFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (r0 api.CommitID, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, string, string) (r0 api.CommitID, r1 error) {
 				return
 			},
 		},
@@ -11256,33 +11286,18 @@ func NewMockGitserverClient() *MockGitserverClient {
 				return
 			},
 		},
-		ReadFileFunc: &GitserverClientReadFileFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, string) (r0 []byte, r1 error) {
-				return
-			},
-		},
-		RefDescriptionsFunc: &GitserverClientRefDescriptionsFunc{
-			defaultHook: func(context.Context, api.RepoName, ...string) (r0 map[string][]gitdomain.RefDescription, r1 error) {
-				return
-			},
-		},
 		RemoveFunc: &GitserverClientRemoveFunc{
 			defaultHook: func(context.Context, api.RepoName) (r0 error) {
 				return
 			},
 		},
 		RepoCloneProgressFunc: &GitserverClientRepoCloneProgressFunc{
-			defaultHook: func(context.Context, ...api.RepoName) (r0 *protocol.RepoCloneProgressResponse, r1 error) {
-				return
-			},
-		},
-		RequestRepoCloneFunc: &GitserverClientRequestRepoCloneFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 *protocol.RepoCloneResponse, r1 error) {
+			defaultHook: func(context.Context, api.RepoName) (r0 *protocol.RepoCloneProgress, r1 error) {
 				return
 			},
 		},
 		RequestRepoUpdateFunc: &GitserverClientRequestRepoUpdateFunc{
-			defaultHook: func(context.Context, api.RepoName, time.Duration) (r0 *protocol.RepoUpdateResponse, r1 error) {
+			defaultHook: func(context.Context, api.RepoName) (r0 *protocol.RepoUpdateResponse, r1 error) {
 				return
 			},
 		},
@@ -11291,13 +11306,18 @@ func NewMockGitserverClient() *MockGitserverClient {
 				return
 			},
 		},
-		ResolveRevisionsFunc: &GitserverClientResolveRevisionsFunc{
-			defaultHook: func(context.Context, api.RepoName, []protocol.RevisionSpecifier) (r0 []string, r1 error) {
+		RevAtTimeFunc: &GitserverClientRevAtTimeFunc{
+			defaultHook: func(context.Context, api.RepoName, string, time.Time) (r0 api.CommitID, r1 bool, r2 error) {
 				return
 			},
 		},
 		RevListFunc: &GitserverClientRevListFunc{
 			defaultHook: func(context.Context, string, string, func(commit string) (bool, error)) (r0 error) {
+				return
+			},
+		},
+		ScopedFunc: &GitserverClientScopedFunc{
+			defaultHook: func(string) (r0 gitserver.Client) {
 				return
 			},
 		},
@@ -11338,44 +11358,14 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.AddrForRepo")
 			},
 		},
-		AddrsFunc: &GitserverClientAddrsFunc{
-			defaultHook: func() []string {
-				panic("unexpected invocation of MockGitserverClient.Addrs")
-			},
-		},
 		ArchiveReaderFunc: &GitserverClientArchiveReaderFunc{
 			defaultHook: func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockGitserverClient.ArchiveReader")
 			},
 		},
-		BatchLogFunc: &GitserverClientBatchLogFunc{
-			defaultHook: func(context.Context, gitserver.BatchLogOptions, gitserver.BatchLogCallback) error {
-				panic("unexpected invocation of MockGitserverClient.BatchLog")
-			},
-		},
-		BlameFileFunc: &GitserverClientBlameFileFunc{
-			defaultHook: func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
-				panic("unexpected invocation of MockGitserverClient.BlameFile")
-			},
-		},
-		BranchesContainingFunc: &GitserverClientBranchesContainingFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID) ([]string, error) {
-				panic("unexpected invocation of MockGitserverClient.BranchesContaining")
-			},
-		},
 		CheckPerforceCredentialsFunc: &GitserverClientCheckPerforceCredentialsFunc{
 			defaultHook: func(context.Context, protocol.PerforceConnectionDetails) error {
 				panic("unexpected invocation of MockGitserverClient.CheckPerforceCredentials")
-			},
-		},
-		CommitDateFunc: &GitserverClientCommitDateFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error) {
-				panic("unexpected invocation of MockGitserverClient.CommitDate")
-			},
-		},
-		CommitExistsFunc: &GitserverClientCommitExistsFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID) (bool, error) {
-				panic("unexpected invocation of MockGitserverClient.CommitExists")
 			},
 		},
 		CommitGraphFunc: &GitserverClientCommitGraphFunc{
@@ -11391,11 +11381,6 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 		CommitsFunc: &GitserverClientCommitsFunc{
 			defaultHook: func(context.Context, api.RepoName, gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
 				panic("unexpected invocation of MockGitserverClient.Commits")
-			},
-		},
-		CommitsExistFunc: &GitserverClientCommitsExistFunc{
-			defaultHook: func(context.Context, []api.RepoCommit) ([]bool, error) {
-				panic("unexpected invocation of MockGitserverClient.CommitsExist")
 			},
 		},
 		CommitsUniqueToBranchFunc: &GitserverClientCommitsUniqueToBranchFunc{
@@ -11418,11 +11403,6 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.Diff")
 			},
 		},
-		DiffPathFunc: &GitserverClientDiffPathFunc{
-			defaultHook: func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-				panic("unexpected invocation of MockGitserverClient.DiffPath")
-			},
-		},
 		DiffSymbolsFunc: &GitserverClientDiffSymbolsFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error) {
 				panic("unexpected invocation of MockGitserverClient.DiffSymbols")
@@ -11439,13 +11419,8 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		GetCommitFunc: &GitserverClientGetCommitFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error) {
 				panic("unexpected invocation of MockGitserverClient.GetCommit")
-			},
-		},
-		GetCommitsFunc: &GitserverClientGetCommitsFunc{
-			defaultHook: func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error) {
-				panic("unexpected invocation of MockGitserverClient.GetCommits")
 			},
 		},
 		GetDefaultBranchFunc: &GitserverClientGetDefaultBranchFunc{
@@ -11463,11 +11438,6 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.HasCommitAfter")
 			},
 		},
-		HeadFunc: &GitserverClientHeadFunc{
-			defaultHook: func(context.Context, api.RepoName) (string, bool, error) {
-				panic("unexpected invocation of MockGitserverClient.Head")
-			},
-		},
 		IsPerforcePathCloneableFunc: &GitserverClientIsPerforcePathCloneableFunc{
 			defaultHook: func(context.Context, protocol.PerforceConnectionDetails, string) error {
 				panic("unexpected invocation of MockGitserverClient.IsPerforcePathCloneable")
@@ -11483,24 +11453,19 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.IsRepoCloneable")
 			},
 		},
-		ListBranchesFunc: &GitserverClientListBranchesFunc{
-			defaultHook: func(context.Context, api.RepoName, gitserver.BranchesOptions) ([]*gitdomain.Branch, error) {
-				panic("unexpected invocation of MockGitserverClient.ListBranches")
-			},
-		},
 		ListDirectoryChildrenFunc: &GitserverClientListDirectoryChildrenFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, []string) (map[string][]string, error) {
 				panic("unexpected invocation of MockGitserverClient.ListDirectoryChildren")
 			},
 		},
-		ListRefsFunc: &GitserverClientListRefsFunc{
-			defaultHook: func(context.Context, api.RepoName) ([]gitdomain.Ref, error) {
-				panic("unexpected invocation of MockGitserverClient.ListRefs")
+		ListGitoliteReposFunc: &GitserverClientListGitoliteReposFunc{
+			defaultHook: func(context.Context, string) ([]*gitolite.Repo, error) {
+				panic("unexpected invocation of MockGitserverClient.ListGitoliteRepos")
 			},
 		},
-		ListTagsFunc: &GitserverClientListTagsFunc{
-			defaultHook: func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-				panic("unexpected invocation of MockGitserverClient.ListTags")
+		ListRefsFunc: &GitserverClientListRefsFunc{
+			defaultHook: func(context.Context, api.RepoName, gitserver.ListRefsOpts) ([]gitdomain.Ref, error) {
+				panic("unexpected invocation of MockGitserverClient.ListRefs")
 			},
 		},
 		LogReverseEachFunc: &GitserverClientLogReverseEachFunc{
@@ -11514,7 +11479,7 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		MergeBaseFunc: &GitserverClientMergeBaseFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+			defaultHook: func(context.Context, api.RepoName, string, string) (api.CommitID, error) {
 				panic("unexpected invocation of MockGitserverClient.MergeBase")
 			},
 		},
@@ -11553,33 +11518,18 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.ReadDir")
 			},
 		},
-		ReadFileFunc: &GitserverClientReadFileFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error) {
-				panic("unexpected invocation of MockGitserverClient.ReadFile")
-			},
-		},
-		RefDescriptionsFunc: &GitserverClientRefDescriptionsFunc{
-			defaultHook: func(context.Context, api.RepoName, ...string) (map[string][]gitdomain.RefDescription, error) {
-				panic("unexpected invocation of MockGitserverClient.RefDescriptions")
-			},
-		},
 		RemoveFunc: &GitserverClientRemoveFunc{
 			defaultHook: func(context.Context, api.RepoName) error {
 				panic("unexpected invocation of MockGitserverClient.Remove")
 			},
 		},
 		RepoCloneProgressFunc: &GitserverClientRepoCloneProgressFunc{
-			defaultHook: func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error) {
 				panic("unexpected invocation of MockGitserverClient.RepoCloneProgress")
 			},
 		},
-		RequestRepoCloneFunc: &GitserverClientRequestRepoCloneFunc{
-			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error) {
-				panic("unexpected invocation of MockGitserverClient.RequestRepoClone")
-			},
-		},
 		RequestRepoUpdateFunc: &GitserverClientRequestRepoUpdateFunc{
-			defaultHook: func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error) {
+			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
 				panic("unexpected invocation of MockGitserverClient.RequestRepoUpdate")
 			},
 		},
@@ -11588,14 +11538,19 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.ResolveRevision")
 			},
 		},
-		ResolveRevisionsFunc: &GitserverClientResolveRevisionsFunc{
-			defaultHook: func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
-				panic("unexpected invocation of MockGitserverClient.ResolveRevisions")
+		RevAtTimeFunc: &GitserverClientRevAtTimeFunc{
+			defaultHook: func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
+				panic("unexpected invocation of MockGitserverClient.RevAtTime")
 			},
 		},
 		RevListFunc: &GitserverClientRevListFunc{
 			defaultHook: func(context.Context, string, string, func(commit string) (bool, error)) error {
 				panic("unexpected invocation of MockGitserverClient.RevList")
+			},
+		},
+		ScopedFunc: &GitserverClientScopedFunc{
+			defaultHook: func(string) gitserver.Client {
+				panic("unexpected invocation of MockGitserverClient.Scoped")
 			},
 		},
 		SearchFunc: &GitserverClientSearchFunc{
@@ -11634,29 +11589,11 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		AddrForRepoFunc: &GitserverClientAddrForRepoFunc{
 			defaultHook: i.AddrForRepo,
 		},
-		AddrsFunc: &GitserverClientAddrsFunc{
-			defaultHook: i.Addrs,
-		},
 		ArchiveReaderFunc: &GitserverClientArchiveReaderFunc{
 			defaultHook: i.ArchiveReader,
 		},
-		BatchLogFunc: &GitserverClientBatchLogFunc{
-			defaultHook: i.BatchLog,
-		},
-		BlameFileFunc: &GitserverClientBlameFileFunc{
-			defaultHook: i.BlameFile,
-		},
-		BranchesContainingFunc: &GitserverClientBranchesContainingFunc{
-			defaultHook: i.BranchesContaining,
-		},
 		CheckPerforceCredentialsFunc: &GitserverClientCheckPerforceCredentialsFunc{
 			defaultHook: i.CheckPerforceCredentials,
-		},
-		CommitDateFunc: &GitserverClientCommitDateFunc{
-			defaultHook: i.CommitDate,
-		},
-		CommitExistsFunc: &GitserverClientCommitExistsFunc{
-			defaultHook: i.CommitExists,
 		},
 		CommitGraphFunc: &GitserverClientCommitGraphFunc{
 			defaultHook: i.CommitGraph,
@@ -11666,9 +11603,6 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		},
 		CommitsFunc: &GitserverClientCommitsFunc{
 			defaultHook: i.Commits,
-		},
-		CommitsExistFunc: &GitserverClientCommitsExistFunc{
-			defaultHook: i.CommitsExist,
 		},
 		CommitsUniqueToBranchFunc: &GitserverClientCommitsUniqueToBranchFunc{
 			defaultHook: i.CommitsUniqueToBranch,
@@ -11682,9 +11616,6 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		DiffFunc: &GitserverClientDiffFunc{
 			defaultHook: i.Diff,
 		},
-		DiffPathFunc: &GitserverClientDiffPathFunc{
-			defaultHook: i.DiffPath,
-		},
 		DiffSymbolsFunc: &GitserverClientDiffSymbolsFunc{
 			defaultHook: i.DiffSymbols,
 		},
@@ -11697,9 +11628,6 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		GetCommitFunc: &GitserverClientGetCommitFunc{
 			defaultHook: i.GetCommit,
 		},
-		GetCommitsFunc: &GitserverClientGetCommitsFunc{
-			defaultHook: i.GetCommits,
-		},
 		GetDefaultBranchFunc: &GitserverClientGetDefaultBranchFunc{
 			defaultHook: i.GetDefaultBranch,
 		},
@@ -11708,9 +11636,6 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		},
 		HasCommitAfterFunc: &GitserverClientHasCommitAfterFunc{
 			defaultHook: i.HasCommitAfter,
-		},
-		HeadFunc: &GitserverClientHeadFunc{
-			defaultHook: i.Head,
 		},
 		IsPerforcePathCloneableFunc: &GitserverClientIsPerforcePathCloneableFunc{
 			defaultHook: i.IsPerforcePathCloneable,
@@ -11721,17 +11646,14 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		IsRepoCloneableFunc: &GitserverClientIsRepoCloneableFunc{
 			defaultHook: i.IsRepoCloneable,
 		},
-		ListBranchesFunc: &GitserverClientListBranchesFunc{
-			defaultHook: i.ListBranches,
-		},
 		ListDirectoryChildrenFunc: &GitserverClientListDirectoryChildrenFunc{
 			defaultHook: i.ListDirectoryChildren,
 		},
+		ListGitoliteReposFunc: &GitserverClientListGitoliteReposFunc{
+			defaultHook: i.ListGitoliteRepos,
+		},
 		ListRefsFunc: &GitserverClientListRefsFunc{
 			defaultHook: i.ListRefs,
-		},
-		ListTagsFunc: &GitserverClientListTagsFunc{
-			defaultHook: i.ListTags,
 		},
 		LogReverseEachFunc: &GitserverClientLogReverseEachFunc{
 			defaultHook: i.LogReverseEach,
@@ -11763,20 +11685,11 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		ReadDirFunc: &GitserverClientReadDirFunc{
 			defaultHook: i.ReadDir,
 		},
-		ReadFileFunc: &GitserverClientReadFileFunc{
-			defaultHook: i.ReadFile,
-		},
-		RefDescriptionsFunc: &GitserverClientRefDescriptionsFunc{
-			defaultHook: i.RefDescriptions,
-		},
 		RemoveFunc: &GitserverClientRemoveFunc{
 			defaultHook: i.Remove,
 		},
 		RepoCloneProgressFunc: &GitserverClientRepoCloneProgressFunc{
 			defaultHook: i.RepoCloneProgress,
-		},
-		RequestRepoCloneFunc: &GitserverClientRequestRepoCloneFunc{
-			defaultHook: i.RequestRepoClone,
 		},
 		RequestRepoUpdateFunc: &GitserverClientRequestRepoUpdateFunc{
 			defaultHook: i.RequestRepoUpdate,
@@ -11784,11 +11697,14 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		ResolveRevisionFunc: &GitserverClientResolveRevisionFunc{
 			defaultHook: i.ResolveRevision,
 		},
-		ResolveRevisionsFunc: &GitserverClientResolveRevisionsFunc{
-			defaultHook: i.ResolveRevisions,
+		RevAtTimeFunc: &GitserverClientRevAtTimeFunc{
+			defaultHook: i.RevAtTime,
 		},
 		RevListFunc: &GitserverClientRevListFunc{
 			defaultHook: i.RevList,
+		},
+		ScopedFunc: &GitserverClientScopedFunc{
+			defaultHook: i.Scoped,
 		},
 		SearchFunc: &GitserverClientSearchFunc{
 			defaultHook: i.Search,
@@ -11913,105 +11829,6 @@ func (c GitserverClientAddrForRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// GitserverClientAddrsFunc describes the behavior when the Addrs method of
-// the parent MockGitserverClient instance is invoked.
-type GitserverClientAddrsFunc struct {
-	defaultHook func() []string
-	hooks       []func() []string
-	history     []GitserverClientAddrsFuncCall
-	mutex       sync.Mutex
-}
-
-// Addrs delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) Addrs() []string {
-	r0 := m.AddrsFunc.nextHook()()
-	m.AddrsFunc.appendCall(GitserverClientAddrsFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Addrs method of the
-// parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientAddrsFunc) SetDefaultHook(hook func() []string) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Addrs method of the parent MockGitserverClient instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *GitserverClientAddrsFunc) PushHook(hook func() []string) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientAddrsFunc) SetDefaultReturn(r0 []string) {
-	f.SetDefaultHook(func() []string {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientAddrsFunc) PushReturn(r0 []string) {
-	f.PushHook(func() []string {
-		return r0
-	})
-}
-
-func (f *GitserverClientAddrsFunc) nextHook() func() []string {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientAddrsFunc) appendCall(r0 GitserverClientAddrsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientAddrsFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientAddrsFunc) History() []GitserverClientAddrsFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientAddrsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientAddrsFuncCall is an object that describes an invocation of
-// method Addrs on an instance of MockGitserverClient.
-type GitserverClientAddrsFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []string
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientAddrsFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientAddrsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // GitserverClientArchiveReaderFunc describes the behavior when the
 // ArchiveReader method of the parent MockGitserverClient instance is
 // invoked.
@@ -12124,342 +11941,6 @@ func (c GitserverClientArchiveReaderFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitserverClientBatchLogFunc describes the behavior when the BatchLog
-// method of the parent MockGitserverClient instance is invoked.
-type GitserverClientBatchLogFunc struct {
-	defaultHook func(context.Context, gitserver.BatchLogOptions, gitserver.BatchLogCallback) error
-	hooks       []func(context.Context, gitserver.BatchLogOptions, gitserver.BatchLogCallback) error
-	history     []GitserverClientBatchLogFuncCall
-	mutex       sync.Mutex
-}
-
-// BatchLog delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) BatchLog(v0 context.Context, v1 gitserver.BatchLogOptions, v2 gitserver.BatchLogCallback) error {
-	r0 := m.BatchLogFunc.nextHook()(v0, v1, v2)
-	m.BatchLogFunc.appendCall(GitserverClientBatchLogFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the BatchLog method of
-// the parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientBatchLogFunc) SetDefaultHook(hook func(context.Context, gitserver.BatchLogOptions, gitserver.BatchLogCallback) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BatchLog method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientBatchLogFunc) PushHook(hook func(context.Context, gitserver.BatchLogOptions, gitserver.BatchLogCallback) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientBatchLogFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, gitserver.BatchLogOptions, gitserver.BatchLogCallback) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientBatchLogFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, gitserver.BatchLogOptions, gitserver.BatchLogCallback) error {
-		return r0
-	})
-}
-
-func (f *GitserverClientBatchLogFunc) nextHook() func(context.Context, gitserver.BatchLogOptions, gitserver.BatchLogCallback) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientBatchLogFunc) appendCall(r0 GitserverClientBatchLogFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientBatchLogFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientBatchLogFunc) History() []GitserverClientBatchLogFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientBatchLogFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientBatchLogFuncCall is an object that describes an invocation
-// of method BatchLog on an instance of MockGitserverClient.
-type GitserverClientBatchLogFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 gitserver.BatchLogOptions
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 gitserver.BatchLogCallback
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientBatchLogFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientBatchLogFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// GitserverClientBlameFileFunc describes the behavior when the BlameFile
-// method of the parent MockGitserverClient instance is invoked.
-type GitserverClientBlameFileFunc struct {
-	defaultHook func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)
-	hooks       []func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)
-	history     []GitserverClientBlameFileFuncCall
-	mutex       sync.Mutex
-}
-
-// BlameFile delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) BlameFile(v0 context.Context, v1 api.RepoName, v2 string, v3 *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
-	r0, r1 := m.BlameFileFunc.nextHook()(v0, v1, v2, v3)
-	m.BlameFileFunc.appendCall(GitserverClientBlameFileFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the BlameFile method of
-// the parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientBlameFileFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BlameFile method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientBlameFileFunc) PushHook(hook func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientBlameFileFunc) SetDefaultReturn(r0 []*gitserver.Hunk, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientBlameFileFunc) PushReturn(r0 []*gitserver.Hunk, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientBlameFileFunc) nextHook() func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientBlameFileFunc) appendCall(r0 GitserverClientBlameFileFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientBlameFileFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientBlameFileFunc) History() []GitserverClientBlameFileFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientBlameFileFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientBlameFileFuncCall is an object that describes an
-// invocation of method BlameFile on an instance of MockGitserverClient.
-type GitserverClientBlameFileFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 *gitserver.BlameOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*gitserver.Hunk
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientBlameFileFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientBlameFileFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverClientBranchesContainingFunc describes the behavior when the
-// BranchesContaining method of the parent MockGitserverClient instance is
-// invoked.
-type GitserverClientBranchesContainingFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID) ([]string, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID) ([]string, error)
-	history     []GitserverClientBranchesContainingFuncCall
-	mutex       sync.Mutex
-}
-
-// BranchesContaining delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) BranchesContaining(v0 context.Context, v1 api.RepoName, v2 api.CommitID) ([]string, error) {
-	r0, r1 := m.BranchesContainingFunc.nextHook()(v0, v1, v2)
-	m.BranchesContainingFunc.appendCall(GitserverClientBranchesContainingFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the BranchesContaining
-// method of the parent MockGitserverClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverClientBranchesContainingFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID) ([]string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BranchesContaining method of the parent MockGitserverClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitserverClientBranchesContainingFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID) ([]string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientBranchesContainingFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID) ([]string, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientBranchesContainingFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID) ([]string, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientBranchesContainingFunc) nextHook() func(context.Context, api.RepoName, api.CommitID) ([]string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientBranchesContainingFunc) appendCall(r0 GitserverClientBranchesContainingFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientBranchesContainingFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverClientBranchesContainingFunc) History() []GitserverClientBranchesContainingFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientBranchesContainingFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientBranchesContainingFuncCall is an object that describes an
-// invocation of method BranchesContaining on an instance of
-// MockGitserverClient.
-type GitserverClientBranchesContainingFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.CommitID
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientBranchesContainingFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientBranchesContainingFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // GitserverClientCheckPerforceCredentialsFunc describes the behavior when
 // the CheckPerforceCredentials method of the parent MockGitserverClient
 // instance is invoked.
@@ -12567,235 +12048,6 @@ func (c GitserverClientCheckPerforceCredentialsFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverClientCheckPerforceCredentialsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// GitserverClientCommitDateFunc describes the behavior when the CommitDate
-// method of the parent MockGitserverClient instance is invoked.
-type GitserverClientCommitDateFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error)
-	history     []GitserverClientCommitDateFuncCall
-	mutex       sync.Mutex
-}
-
-// CommitDate delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitDate(v0 context.Context, v1 api.RepoName, v2 api.CommitID) (string, time.Time, bool, error) {
-	r0, r1, r2, r3 := m.CommitDateFunc.nextHook()(v0, v1, v2)
-	m.CommitDateFunc.appendCall(GitserverClientCommitDateFuncCall{v0, v1, v2, r0, r1, r2, r3})
-	return r0, r1, r2, r3
-}
-
-// SetDefaultHook sets function that is called when the CommitDate method of
-// the parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientCommitDateFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CommitDate method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientCommitDateFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientCommitDateFunc) SetDefaultReturn(r0 string, r1 time.Time, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientCommitDateFunc) PushReturn(r0 string, r1 time.Time, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-func (f *GitserverClientCommitDateFunc) nextHook() func(context.Context, api.RepoName, api.CommitID) (string, time.Time, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientCommitDateFunc) appendCall(r0 GitserverClientCommitDateFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientCommitDateFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientCommitDateFunc) History() []GitserverClientCommitDateFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientCommitDateFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientCommitDateFuncCall is an object that describes an
-// invocation of method CommitDate on an instance of MockGitserverClient.
-type GitserverClientCommitDateFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.CommitID
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 time.Time
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 bool
-	// Result3 is the value of the 4th result returned from this method
-	// invocation.
-	Result3 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientCommitDateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientCommitDateFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
-}
-
-// GitserverClientCommitExistsFunc describes the behavior when the
-// CommitExists method of the parent MockGitserverClient instance is
-// invoked.
-type GitserverClientCommitExistsFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID) (bool, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID) (bool, error)
-	history     []GitserverClientCommitExistsFuncCall
-	mutex       sync.Mutex
-}
-
-// CommitExists delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitExists(v0 context.Context, v1 api.RepoName, v2 api.CommitID) (bool, error) {
-	r0, r1 := m.CommitExistsFunc.nextHook()(v0, v1, v2)
-	m.CommitExistsFunc.appendCall(GitserverClientCommitExistsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the CommitExists method
-// of the parent MockGitserverClient instance is invoked and the hook queue
-// is empty.
-func (f *GitserverClientCommitExistsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID) (bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CommitExists method of the parent MockGitserverClient instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *GitserverClientCommitExistsFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID) (bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientCommitExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID) (bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientCommitExistsFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID) (bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientCommitExistsFunc) nextHook() func(context.Context, api.RepoName, api.CommitID) (bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientCommitExistsFunc) appendCall(r0 GitserverClientCommitExistsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientCommitExistsFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientCommitExistsFunc) History() []GitserverClientCommitExistsFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientCommitExistsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientCommitExistsFuncCall is an object that describes an
-// invocation of method CommitExists on an instance of MockGitserverClient.
-type GitserverClientCommitExistsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.CommitID
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientCommitExistsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientCommitExistsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitserverClientCommitGraphFunc describes the behavior when the
@@ -13128,115 +12380,6 @@ func (c GitserverClientCommitsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientCommitsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverClientCommitsExistFunc describes the behavior when the
-// CommitsExist method of the parent MockGitserverClient instance is
-// invoked.
-type GitserverClientCommitsExistFunc struct {
-	defaultHook func(context.Context, []api.RepoCommit) ([]bool, error)
-	hooks       []func(context.Context, []api.RepoCommit) ([]bool, error)
-	history     []GitserverClientCommitsExistFuncCall
-	mutex       sync.Mutex
-}
-
-// CommitsExist delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitsExist(v0 context.Context, v1 []api.RepoCommit) ([]bool, error) {
-	r0, r1 := m.CommitsExistFunc.nextHook()(v0, v1)
-	m.CommitsExistFunc.appendCall(GitserverClientCommitsExistFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the CommitsExist method
-// of the parent MockGitserverClient instance is invoked and the hook queue
-// is empty.
-func (f *GitserverClientCommitsExistFunc) SetDefaultHook(hook func(context.Context, []api.RepoCommit) ([]bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CommitsExist method of the parent MockGitserverClient instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *GitserverClientCommitsExistFunc) PushHook(hook func(context.Context, []api.RepoCommit) ([]bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientCommitsExistFunc) SetDefaultReturn(r0 []bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, []api.RepoCommit) ([]bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientCommitsExistFunc) PushReturn(r0 []bool, r1 error) {
-	f.PushHook(func(context.Context, []api.RepoCommit) ([]bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientCommitsExistFunc) nextHook() func(context.Context, []api.RepoCommit) ([]bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientCommitsExistFunc) appendCall(r0 GitserverClientCommitsExistFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientCommitsExistFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientCommitsExistFunc) History() []GitserverClientCommitsExistFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientCommitsExistFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientCommitsExistFuncCall is an object that describes an
-// invocation of method CommitsExist on an instance of MockGitserverClient.
-type GitserverClientCommitsExistFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []api.RepoCommit
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientCommitsExistFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientCommitsExistFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -13695,123 +12838,6 @@ func (c GitserverClientDiffFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitserverClientDiffPathFunc describes the behavior when the DiffPath
-// method of the parent MockGitserverClient instance is invoked.
-type GitserverClientDiffPathFunc struct {
-	defaultHook func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error)
-	hooks       []func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error)
-	history     []GitserverClientDiffPathFuncCall
-	mutex       sync.Mutex
-}
-
-// DiffPath delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) DiffPath(v0 context.Context, v1 api.RepoName, v2 string, v3 string, v4 string) ([]*diff.Hunk, error) {
-	r0, r1 := m.DiffPathFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.DiffPathFunc.appendCall(GitserverClientDiffPathFuncCall{v0, v1, v2, v3, v4, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the DiffPath method of
-// the parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientDiffPathFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DiffPath method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientDiffPathFunc) PushHook(hook func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientDiffPathFunc) SetDefaultReturn(r0 []*diff.Hunk, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientDiffPathFunc) PushReturn(r0 []*diff.Hunk, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientDiffPathFunc) nextHook() func(context.Context, api.RepoName, string, string, string) ([]*diff.Hunk, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientDiffPathFunc) appendCall(r0 GitserverClientDiffPathFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientDiffPathFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientDiffPathFunc) History() []GitserverClientDiffPathFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientDiffPathFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientDiffPathFuncCall is an object that describes an invocation
-// of method DiffPath on an instance of MockGitserverClient.
-type GitserverClientDiffPathFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*diff.Hunk
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientDiffPathFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientDiffPathFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // GitserverClientDiffSymbolsFunc describes the behavior when the
 // DiffSymbols method of the parent MockGitserverClient instance is invoked.
 type GitserverClientDiffSymbolsFunc struct {
@@ -14155,24 +13181,24 @@ func (c GitserverClientGetBehindAheadFuncCall) Results() []interface{} {
 // GitserverClientGetCommitFunc describes the behavior when the GetCommit
 // method of the parent MockGitserverClient instance is invoked.
 type GitserverClientGetCommitFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error)
+	defaultHook func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error)
+	hooks       []func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error)
 	history     []GitserverClientGetCommitFuncCall
 	mutex       sync.Mutex
 }
 
 // GetCommit delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) GetCommit(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
-	r0, r1 := m.GetCommitFunc.nextHook()(v0, v1, v2, v3)
-	m.GetCommitFunc.appendCall(GitserverClientGetCommitFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockGitserverClient) GetCommit(v0 context.Context, v1 api.RepoName, v2 api.CommitID) (*gitdomain.Commit, error) {
+	r0, r1 := m.GetCommitFunc.nextHook()(v0, v1, v2)
+	m.GetCommitFunc.appendCall(GitserverClientGetCommitFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the GetCommit method of
 // the parent MockGitserverClient instance is invoked and the hook queue is
 // empty.
-func (f *GitserverClientGetCommitFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error)) {
+func (f *GitserverClientGetCommitFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error)) {
 	f.defaultHook = hook
 }
 
@@ -14180,7 +13206,7 @@ func (f *GitserverClientGetCommitFunc) SetDefaultHook(hook func(context.Context,
 // GetCommit method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientGetCommitFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error)) {
+func (f *GitserverClientGetCommitFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -14189,19 +13215,19 @@ func (f *GitserverClientGetCommitFunc) PushHook(hook func(context.Context, api.R
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverClientGetCommitFunc) SetDefaultReturn(r0 *gitdomain.Commit, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientGetCommitFunc) PushReturn(r0 *gitdomain.Commit, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
+	f.PushHook(func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientGetCommitFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
+func (f *GitserverClientGetCommitFunc) nextHook() func(context.Context, api.RepoName, api.CommitID) (*gitdomain.Commit, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -14243,9 +13269,6 @@ type GitserverClientGetCommitFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 api.CommitID
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 gitserver.ResolveRevisionOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *gitdomain.Commit
@@ -14257,123 +13280,12 @@ type GitserverClientGetCommitFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientGetCommitFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientGetCommitFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverClientGetCommitsFunc describes the behavior when the GetCommits
-// method of the parent MockGitserverClient instance is invoked.
-type GitserverClientGetCommitsFunc struct {
-	defaultHook func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error)
-	hooks       []func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error)
-	history     []GitserverClientGetCommitsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetCommits delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitserverClient) GetCommits(v0 context.Context, v1 []api.RepoCommit, v2 bool) ([]*gitdomain.Commit, error) {
-	r0, r1 := m.GetCommitsFunc.nextHook()(v0, v1, v2)
-	m.GetCommitsFunc.appendCall(GitserverClientGetCommitsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetCommits method of
-// the parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientGetCommitsFunc) SetDefaultHook(hook func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetCommits method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientGetCommitsFunc) PushHook(hook func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientGetCommitsFunc) SetDefaultReturn(r0 []*gitdomain.Commit, r1 error) {
-	f.SetDefaultHook(func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientGetCommitsFunc) PushReturn(r0 []*gitdomain.Commit, r1 error) {
-	f.PushHook(func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientGetCommitsFunc) nextHook() func(context.Context, []api.RepoCommit, bool) ([]*gitdomain.Commit, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientGetCommitsFunc) appendCall(r0 GitserverClientGetCommitsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientGetCommitsFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientGetCommitsFunc) History() []GitserverClientGetCommitsFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientGetCommitsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientGetCommitsFuncCall is an object that describes an
-// invocation of method GetCommits on an instance of MockGitserverClient.
-type GitserverClientGetCommitsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []api.RepoCommit
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 bool
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*gitdomain.Commit
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientGetCommitsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitserverClientGetCommitsFuncCall) Results() []interface{} {
+func (c GitserverClientGetCommitFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -14721,117 +13633,6 @@ func (c GitserverClientHasCommitAfterFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitserverClientHeadFunc describes the behavior when the Head method of
-// the parent MockGitserverClient instance is invoked.
-type GitserverClientHeadFunc struct {
-	defaultHook func(context.Context, api.RepoName) (string, bool, error)
-	hooks       []func(context.Context, api.RepoName) (string, bool, error)
-	history     []GitserverClientHeadFuncCall
-	mutex       sync.Mutex
-}
-
-// Head delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) Head(v0 context.Context, v1 api.RepoName) (string, bool, error) {
-	r0, r1, r2 := m.HeadFunc.nextHook()(v0, v1)
-	m.HeadFunc.appendCall(GitserverClientHeadFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the Head method of the
-// parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientHeadFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (string, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Head method of the parent MockGitserverClient instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *GitserverClientHeadFunc) PushHook(hook func(context.Context, api.RepoName) (string, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientHeadFunc) SetDefaultReturn(r0 string, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (string, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientHeadFunc) PushReturn(r0 string, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, api.RepoName) (string, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *GitserverClientHeadFunc) nextHook() func(context.Context, api.RepoName) (string, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientHeadFunc) appendCall(r0 GitserverClientHeadFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientHeadFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientHeadFunc) History() []GitserverClientHeadFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientHeadFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientHeadFuncCall is an object that describes an invocation of
-// method Head on an instance of MockGitserverClient.
-type GitserverClientHeadFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 bool
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientHeadFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientHeadFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
 // GitserverClientIsPerforcePathCloneableFunc describes the behavior when
 // the IsPerforcePathCloneable method of the parent MockGitserverClient
 // instance is invoked.
@@ -15159,118 +13960,6 @@ func (c GitserverClientIsRepoCloneableFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// GitserverClientListBranchesFunc describes the behavior when the
-// ListBranches method of the parent MockGitserverClient instance is
-// invoked.
-type GitserverClientListBranchesFunc struct {
-	defaultHook func(context.Context, api.RepoName, gitserver.BranchesOptions) ([]*gitdomain.Branch, error)
-	hooks       []func(context.Context, api.RepoName, gitserver.BranchesOptions) ([]*gitdomain.Branch, error)
-	history     []GitserverClientListBranchesFuncCall
-	mutex       sync.Mutex
-}
-
-// ListBranches delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitserverClient) ListBranches(v0 context.Context, v1 api.RepoName, v2 gitserver.BranchesOptions) ([]*gitdomain.Branch, error) {
-	r0, r1 := m.ListBranchesFunc.nextHook()(v0, v1, v2)
-	m.ListBranchesFunc.appendCall(GitserverClientListBranchesFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ListBranches method
-// of the parent MockGitserverClient instance is invoked and the hook queue
-// is empty.
-func (f *GitserverClientListBranchesFunc) SetDefaultHook(hook func(context.Context, api.RepoName, gitserver.BranchesOptions) ([]*gitdomain.Branch, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ListBranches method of the parent MockGitserverClient instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *GitserverClientListBranchesFunc) PushHook(hook func(context.Context, api.RepoName, gitserver.BranchesOptions) ([]*gitdomain.Branch, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientListBranchesFunc) SetDefaultReturn(r0 []*gitdomain.Branch, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, gitserver.BranchesOptions) ([]*gitdomain.Branch, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientListBranchesFunc) PushReturn(r0 []*gitdomain.Branch, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, gitserver.BranchesOptions) ([]*gitdomain.Branch, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientListBranchesFunc) nextHook() func(context.Context, api.RepoName, gitserver.BranchesOptions) ([]*gitdomain.Branch, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientListBranchesFunc) appendCall(r0 GitserverClientListBranchesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientListBranchesFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientListBranchesFunc) History() []GitserverClientListBranchesFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientListBranchesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientListBranchesFuncCall is an object that describes an
-// invocation of method ListBranches on an instance of MockGitserverClient.
-type GitserverClientListBranchesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 gitserver.BranchesOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*gitdomain.Branch
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientListBranchesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientListBranchesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // GitserverClientListDirectoryChildrenFunc describes the behavior when the
 // ListDirectoryChildren method of the parent MockGitserverClient instance
 // is invoked.
@@ -15389,27 +14078,138 @@ func (c GitserverClientListDirectoryChildrenFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// GitserverClientListGitoliteReposFunc describes the behavior when the
+// ListGitoliteRepos method of the parent MockGitserverClient instance is
+// invoked.
+type GitserverClientListGitoliteReposFunc struct {
+	defaultHook func(context.Context, string) ([]*gitolite.Repo, error)
+	hooks       []func(context.Context, string) ([]*gitolite.Repo, error)
+	history     []GitserverClientListGitoliteReposFuncCall
+	mutex       sync.Mutex
+}
+
+// ListGitoliteRepos delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverClient) ListGitoliteRepos(v0 context.Context, v1 string) ([]*gitolite.Repo, error) {
+	r0, r1 := m.ListGitoliteReposFunc.nextHook()(v0, v1)
+	m.ListGitoliteReposFunc.appendCall(GitserverClientListGitoliteReposFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListGitoliteRepos
+// method of the parent MockGitserverClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverClientListGitoliteReposFunc) SetDefaultHook(hook func(context.Context, string) ([]*gitolite.Repo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListGitoliteRepos method of the parent MockGitserverClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverClientListGitoliteReposFunc) PushHook(hook func(context.Context, string) ([]*gitolite.Repo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientListGitoliteReposFunc) SetDefaultReturn(r0 []*gitolite.Repo, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) ([]*gitolite.Repo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientListGitoliteReposFunc) PushReturn(r0 []*gitolite.Repo, r1 error) {
+	f.PushHook(func(context.Context, string) ([]*gitolite.Repo, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientListGitoliteReposFunc) nextHook() func(context.Context, string) ([]*gitolite.Repo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientListGitoliteReposFunc) appendCall(r0 GitserverClientListGitoliteReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientListGitoliteReposFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverClientListGitoliteReposFunc) History() []GitserverClientListGitoliteReposFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientListGitoliteReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientListGitoliteReposFuncCall is an object that describes an
+// invocation of method ListGitoliteRepos on an instance of
+// MockGitserverClient.
+type GitserverClientListGitoliteReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*gitolite.Repo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientListGitoliteReposFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientListGitoliteReposFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // GitserverClientListRefsFunc describes the behavior when the ListRefs
 // method of the parent MockGitserverClient instance is invoked.
 type GitserverClientListRefsFunc struct {
-	defaultHook func(context.Context, api.RepoName) ([]gitdomain.Ref, error)
-	hooks       []func(context.Context, api.RepoName) ([]gitdomain.Ref, error)
+	defaultHook func(context.Context, api.RepoName, gitserver.ListRefsOpts) ([]gitdomain.Ref, error)
+	hooks       []func(context.Context, api.RepoName, gitserver.ListRefsOpts) ([]gitdomain.Ref, error)
 	history     []GitserverClientListRefsFuncCall
 	mutex       sync.Mutex
 }
 
 // ListRefs delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) ListRefs(v0 context.Context, v1 api.RepoName) ([]gitdomain.Ref, error) {
-	r0, r1 := m.ListRefsFunc.nextHook()(v0, v1)
-	m.ListRefsFunc.appendCall(GitserverClientListRefsFuncCall{v0, v1, r0, r1})
+func (m *MockGitserverClient) ListRefs(v0 context.Context, v1 api.RepoName, v2 gitserver.ListRefsOpts) ([]gitdomain.Ref, error) {
+	r0, r1 := m.ListRefsFunc.nextHook()(v0, v1, v2)
+	m.ListRefsFunc.appendCall(GitserverClientListRefsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ListRefs method of
 // the parent MockGitserverClient instance is invoked and the hook queue is
 // empty.
-func (f *GitserverClientListRefsFunc) SetDefaultHook(hook func(context.Context, api.RepoName) ([]gitdomain.Ref, error)) {
+func (f *GitserverClientListRefsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, gitserver.ListRefsOpts) ([]gitdomain.Ref, error)) {
 	f.defaultHook = hook
 }
 
@@ -15417,7 +14217,7 @@ func (f *GitserverClientListRefsFunc) SetDefaultHook(hook func(context.Context, 
 // ListRefs method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientListRefsFunc) PushHook(hook func(context.Context, api.RepoName) ([]gitdomain.Ref, error)) {
+func (f *GitserverClientListRefsFunc) PushHook(hook func(context.Context, api.RepoName, gitserver.ListRefsOpts) ([]gitdomain.Ref, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -15426,19 +14226,19 @@ func (f *GitserverClientListRefsFunc) PushHook(hook func(context.Context, api.Re
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverClientListRefsFunc) SetDefaultReturn(r0 []gitdomain.Ref, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) ([]gitdomain.Ref, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, gitserver.ListRefsOpts) ([]gitdomain.Ref, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientListRefsFunc) PushReturn(r0 []gitdomain.Ref, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName) ([]gitdomain.Ref, error) {
+	f.PushHook(func(context.Context, api.RepoName, gitserver.ListRefsOpts) ([]gitdomain.Ref, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientListRefsFunc) nextHook() func(context.Context, api.RepoName) ([]gitdomain.Ref, error) {
+func (f *GitserverClientListRefsFunc) nextHook() func(context.Context, api.RepoName, gitserver.ListRefsOpts) ([]gitdomain.Ref, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -15477,6 +14277,9 @@ type GitserverClientListRefsFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 gitserver.ListRefsOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []gitdomain.Ref
@@ -15488,130 +14291,12 @@ type GitserverClientListRefsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientListRefsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientListRefsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverClientListTagsFunc describes the behavior when the ListTags
-// method of the parent MockGitserverClient instance is invoked.
-type GitserverClientListTagsFunc struct {
-	defaultHook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)
-	hooks       []func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)
-	history     []GitserverClientListTagsFuncCall
-	mutex       sync.Mutex
-}
-
-// ListTags delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) ListTags(v0 context.Context, v1 api.RepoName, v2 ...string) ([]*gitdomain.Tag, error) {
-	r0, r1 := m.ListTagsFunc.nextHook()(v0, v1, v2...)
-	m.ListTagsFunc.appendCall(GitserverClientListTagsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ListTags method of
-// the parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientListTagsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ListTags method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientListTagsFunc) PushHook(hook func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientListTagsFunc) SetDefaultReturn(r0 []*gitdomain.Tag, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientListTagsFunc) PushReturn(r0 []*gitdomain.Tag, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientListTagsFunc) nextHook() func(context.Context, api.RepoName, ...string) ([]*gitdomain.Tag, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientListTagsFunc) appendCall(r0 GitserverClientListTagsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientListTagsFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientListTagsFunc) History() []GitserverClientListTagsFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientListTagsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientListTagsFuncCall is an object that describes an invocation
-// of method ListTags on an instance of MockGitserverClient.
-type GitserverClientListTagsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*gitdomain.Tag
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitserverClientListTagsFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientListTagsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -15855,15 +14540,15 @@ func (c GitserverClientLsFilesFuncCall) Results() []interface{} {
 // GitserverClientMergeBaseFunc describes the behavior when the MergeBase
 // method of the parent MockGitserverClient instance is invoked.
 type GitserverClientMergeBaseFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)
+	defaultHook func(context.Context, api.RepoName, string, string) (api.CommitID, error)
+	hooks       []func(context.Context, api.RepoName, string, string) (api.CommitID, error)
 	history     []GitserverClientMergeBaseFuncCall
 	mutex       sync.Mutex
 }
 
 // MergeBase delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) MergeBase(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 api.CommitID) (api.CommitID, error) {
+func (m *MockGitserverClient) MergeBase(v0 context.Context, v1 api.RepoName, v2 string, v3 string) (api.CommitID, error) {
 	r0, r1 := m.MergeBaseFunc.nextHook()(v0, v1, v2, v3)
 	m.MergeBaseFunc.appendCall(GitserverClientMergeBaseFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -15872,7 +14557,7 @@ func (m *MockGitserverClient) MergeBase(v0 context.Context, v1 api.RepoName, v2 
 // SetDefaultHook sets function that is called when the MergeBase method of
 // the parent MockGitserverClient instance is invoked and the hook queue is
 // empty.
-func (f *GitserverClientMergeBaseFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)) {
+func (f *GitserverClientMergeBaseFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string) (api.CommitID, error)) {
 	f.defaultHook = hook
 }
 
@@ -15880,7 +14565,7 @@ func (f *GitserverClientMergeBaseFunc) SetDefaultHook(hook func(context.Context,
 // MergeBase method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientMergeBaseFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)) {
+func (f *GitserverClientMergeBaseFunc) PushHook(hook func(context.Context, api.RepoName, string, string) (api.CommitID, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -15889,19 +14574,19 @@ func (f *GitserverClientMergeBaseFunc) PushHook(hook func(context.Context, api.R
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverClientMergeBaseFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, string) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientMergeBaseFunc) PushReturn(r0 api.CommitID, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+	f.PushHook(func(context.Context, api.RepoName, string, string) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientMergeBaseFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+func (f *GitserverClientMergeBaseFunc) nextHook() func(context.Context, api.RepoName, string, string) (api.CommitID, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -15942,10 +14627,10 @@ type GitserverClientMergeBaseFuncCall struct {
 	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.CommitID
+	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 api.CommitID
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 api.CommitID
@@ -16766,240 +15451,6 @@ func (c GitserverClientReadDirFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitserverClientReadFileFunc describes the behavior when the ReadFile
-// method of the parent MockGitserverClient instance is invoked.
-type GitserverClientReadFileFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error)
-	history     []GitserverClientReadFileFuncCall
-	mutex       sync.Mutex
-}
-
-// ReadFile delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) ReadFile(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 string) ([]byte, error) {
-	r0, r1 := m.ReadFileFunc.nextHook()(v0, v1, v2, v3)
-	m.ReadFileFunc.appendCall(GitserverClientReadFileFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ReadFile method of
-// the parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientReadFileFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ReadFile method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientReadFileFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientReadFileFunc) SetDefaultReturn(r0 []byte, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientReadFileFunc) PushReturn(r0 []byte, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientReadFileFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientReadFileFunc) appendCall(r0 GitserverClientReadFileFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientReadFileFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientReadFileFunc) History() []GitserverClientReadFileFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientReadFileFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientReadFileFuncCall is an object that describes an invocation
-// of method ReadFile on an instance of MockGitserverClient.
-type GitserverClientReadFileFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.CommitID
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []byte
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientReadFileFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientReadFileFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverClientRefDescriptionsFunc describes the behavior when the
-// RefDescriptions method of the parent MockGitserverClient instance is
-// invoked.
-type GitserverClientRefDescriptionsFunc struct {
-	defaultHook func(context.Context, api.RepoName, ...string) (map[string][]gitdomain.RefDescription, error)
-	hooks       []func(context.Context, api.RepoName, ...string) (map[string][]gitdomain.RefDescription, error)
-	history     []GitserverClientRefDescriptionsFuncCall
-	mutex       sync.Mutex
-}
-
-// RefDescriptions delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) RefDescriptions(v0 context.Context, v1 api.RepoName, v2 ...string) (map[string][]gitdomain.RefDescription, error) {
-	r0, r1 := m.RefDescriptionsFunc.nextHook()(v0, v1, v2...)
-	m.RefDescriptionsFunc.appendCall(GitserverClientRefDescriptionsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the RefDescriptions
-// method of the parent MockGitserverClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverClientRefDescriptionsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, ...string) (map[string][]gitdomain.RefDescription, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RefDescriptions method of the parent MockGitserverClient instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *GitserverClientRefDescriptionsFunc) PushHook(hook func(context.Context, api.RepoName, ...string) (map[string][]gitdomain.RefDescription, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientRefDescriptionsFunc) SetDefaultReturn(r0 map[string][]gitdomain.RefDescription, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, ...string) (map[string][]gitdomain.RefDescription, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientRefDescriptionsFunc) PushReturn(r0 map[string][]gitdomain.RefDescription, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, ...string) (map[string][]gitdomain.RefDescription, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientRefDescriptionsFunc) nextHook() func(context.Context, api.RepoName, ...string) (map[string][]gitdomain.RefDescription, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientRefDescriptionsFunc) appendCall(r0 GitserverClientRefDescriptionsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientRefDescriptionsFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverClientRefDescriptionsFunc) History() []GitserverClientRefDescriptionsFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientRefDescriptionsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientRefDescriptionsFuncCall is an object that describes an
-// invocation of method RefDescriptions on an instance of
-// MockGitserverClient.
-type GitserverClientRefDescriptionsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[string][]gitdomain.RefDescription
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitserverClientRefDescriptionsFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientRefDescriptionsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // GitserverClientRemoveFunc describes the behavior when the Remove method
 // of the parent MockGitserverClient instance is invoked.
 type GitserverClientRemoveFunc struct {
@@ -17109,16 +15560,16 @@ func (c GitserverClientRemoveFuncCall) Results() []interface{} {
 // RepoCloneProgress method of the parent MockGitserverClient instance is
 // invoked.
 type GitserverClientRepoCloneProgressFunc struct {
-	defaultHook func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
-	hooks       []func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
+	defaultHook func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)
+	hooks       []func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)
 	history     []GitserverClientRepoCloneProgressFuncCall
 	mutex       sync.Mutex
 }
 
 // RepoCloneProgress delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) RepoCloneProgress(v0 context.Context, v1 ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
-	r0, r1 := m.RepoCloneProgressFunc.nextHook()(v0, v1...)
+func (m *MockGitserverClient) RepoCloneProgress(v0 context.Context, v1 api.RepoName) (*protocol.RepoCloneProgress, error) {
+	r0, r1 := m.RepoCloneProgressFunc.nextHook()(v0, v1)
 	m.RepoCloneProgressFunc.appendCall(GitserverClientRepoCloneProgressFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
@@ -17126,7 +15577,7 @@ func (m *MockGitserverClient) RepoCloneProgress(v0 context.Context, v1 ...api.Re
 // SetDefaultHook sets function that is called when the RepoCloneProgress
 // method of the parent MockGitserverClient instance is invoked and the hook
 // queue is empty.
-func (f *GitserverClientRepoCloneProgressFunc) SetDefaultHook(hook func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)) {
+func (f *GitserverClientRepoCloneProgressFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)) {
 	f.defaultHook = hook
 }
 
@@ -17135,7 +15586,7 @@ func (f *GitserverClientRepoCloneProgressFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverClientRepoCloneProgressFunc) PushHook(hook func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)) {
+func (f *GitserverClientRepoCloneProgressFunc) PushHook(hook func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -17143,20 +15594,20 @@ func (f *GitserverClientRepoCloneProgressFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverClientRepoCloneProgressFunc) SetDefaultReturn(r0 *protocol.RepoCloneProgressResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+func (f *GitserverClientRepoCloneProgressFunc) SetDefaultReturn(r0 *protocol.RepoCloneProgress, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientRepoCloneProgressFunc) PushReturn(r0 *protocol.RepoCloneProgressResponse, r1 error) {
-	f.PushHook(func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+func (f *GitserverClientRepoCloneProgressFunc) PushReturn(r0 *protocol.RepoCloneProgress, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientRepoCloneProgressFunc) nextHook() func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+func (f *GitserverClientRepoCloneProgressFunc) nextHook() func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -17193,28 +15644,21 @@ type GitserverClientRepoCloneProgressFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []api.RepoName
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *protocol.RepoCloneProgressResponse
+	Result0 *protocol.RepoCloneProgress
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
+// invocation.
 func (c GitserverClientRepoCloneProgressFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -17223,139 +15667,28 @@ func (c GitserverClientRepoCloneProgressFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitserverClientRequestRepoCloneFunc describes the behavior when the
-// RequestRepoClone method of the parent MockGitserverClient instance is
-// invoked.
-type GitserverClientRequestRepoCloneFunc struct {
-	defaultHook func(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
-	hooks       []func(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
-	history     []GitserverClientRequestRepoCloneFuncCall
-	mutex       sync.Mutex
-}
-
-// RequestRepoClone delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) RequestRepoClone(v0 context.Context, v1 api.RepoName) (*protocol.RepoCloneResponse, error) {
-	r0, r1 := m.RequestRepoCloneFunc.nextHook()(v0, v1)
-	m.RequestRepoCloneFunc.appendCall(GitserverClientRequestRepoCloneFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the RequestRepoClone
-// method of the parent MockGitserverClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverClientRequestRepoCloneFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RequestRepoClone method of the parent MockGitserverClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitserverClientRequestRepoCloneFunc) PushHook(hook func(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientRequestRepoCloneFunc) SetDefaultReturn(r0 *protocol.RepoCloneResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientRequestRepoCloneFunc) PushReturn(r0 *protocol.RepoCloneResponse, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientRequestRepoCloneFunc) nextHook() func(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientRequestRepoCloneFunc) appendCall(r0 GitserverClientRequestRepoCloneFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientRequestRepoCloneFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverClientRequestRepoCloneFunc) History() []GitserverClientRequestRepoCloneFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientRequestRepoCloneFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientRequestRepoCloneFuncCall is an object that describes an
-// invocation of method RequestRepoClone on an instance of
-// MockGitserverClient.
-type GitserverClientRequestRepoCloneFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *protocol.RepoCloneResponse
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientRequestRepoCloneFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientRequestRepoCloneFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // GitserverClientRequestRepoUpdateFunc describes the behavior when the
 // RequestRepoUpdate method of the parent MockGitserverClient instance is
 // invoked.
 type GitserverClientRequestRepoUpdateFunc struct {
-	defaultHook func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
-	hooks       []func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
+	defaultHook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
+	hooks       []func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
 	history     []GitserverClientRequestRepoUpdateFuncCall
 	mutex       sync.Mutex
 }
 
 // RequestRepoUpdate delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) RequestRepoUpdate(v0 context.Context, v1 api.RepoName, v2 time.Duration) (*protocol.RepoUpdateResponse, error) {
-	r0, r1 := m.RequestRepoUpdateFunc.nextHook()(v0, v1, v2)
-	m.RequestRepoUpdateFunc.appendCall(GitserverClientRequestRepoUpdateFuncCall{v0, v1, v2, r0, r1})
+func (m *MockGitserverClient) RequestRepoUpdate(v0 context.Context, v1 api.RepoName) (*protocol.RepoUpdateResponse, error) {
+	r0, r1 := m.RequestRepoUpdateFunc.nextHook()(v0, v1)
+	m.RequestRepoUpdateFunc.appendCall(GitserverClientRequestRepoUpdateFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the RequestRepoUpdate
 // method of the parent MockGitserverClient instance is invoked and the hook
 // queue is empty.
-func (f *GitserverClientRequestRepoUpdateFunc) SetDefaultHook(hook func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)) {
+func (f *GitserverClientRequestRepoUpdateFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)) {
 	f.defaultHook = hook
 }
 
@@ -17364,7 +15697,7 @@ func (f *GitserverClientRequestRepoUpdateFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverClientRequestRepoUpdateFunc) PushHook(hook func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)) {
+func (f *GitserverClientRequestRepoUpdateFunc) PushHook(hook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -17373,19 +15706,19 @@ func (f *GitserverClientRequestRepoUpdateFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverClientRequestRepoUpdateFunc) SetDefaultReturn(r0 *protocol.RepoUpdateResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientRequestRepoUpdateFunc) PushReturn(r0 *protocol.RepoUpdateResponse, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error) {
+	f.PushHook(func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientRequestRepoUpdateFunc) nextHook() func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error) {
+func (f *GitserverClientRequestRepoUpdateFunc) nextHook() func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -17425,9 +15758,6 @@ type GitserverClientRequestRepoUpdateFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 time.Duration
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *protocol.RepoUpdateResponse
@@ -17439,7 +15769,7 @@ type GitserverClientRequestRepoUpdateFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientRequestRepoUpdateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -17564,37 +15894,35 @@ func (c GitserverClientResolveRevisionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitserverClientResolveRevisionsFunc describes the behavior when the
-// ResolveRevisions method of the parent MockGitserverClient instance is
-// invoked.
-type GitserverClientResolveRevisionsFunc struct {
-	defaultHook func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)
-	hooks       []func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)
-	history     []GitserverClientResolveRevisionsFuncCall
+// GitserverClientRevAtTimeFunc describes the behavior when the RevAtTime
+// method of the parent MockGitserverClient instance is invoked.
+type GitserverClientRevAtTimeFunc struct {
+	defaultHook func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)
+	hooks       []func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)
+	history     []GitserverClientRevAtTimeFuncCall
 	mutex       sync.Mutex
 }
 
-// ResolveRevisions delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) ResolveRevisions(v0 context.Context, v1 api.RepoName, v2 []protocol.RevisionSpecifier) ([]string, error) {
-	r0, r1 := m.ResolveRevisionsFunc.nextHook()(v0, v1, v2)
-	m.ResolveRevisionsFunc.appendCall(GitserverClientResolveRevisionsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
+// RevAtTime delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverClient) RevAtTime(v0 context.Context, v1 api.RepoName, v2 string, v3 time.Time) (api.CommitID, bool, error) {
+	r0, r1, r2 := m.RevAtTimeFunc.nextHook()(v0, v1, v2, v3)
+	m.RevAtTimeFunc.appendCall(GitserverClientRevAtTimeFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
 }
 
-// SetDefaultHook sets function that is called when the ResolveRevisions
-// method of the parent MockGitserverClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverClientResolveRevisionsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)) {
+// SetDefaultHook sets function that is called when the RevAtTime method of
+// the parent MockGitserverClient instance is invoked and the hook queue is
+// empty.
+func (f *GitserverClientRevAtTimeFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ResolveRevisions method of the parent MockGitserverClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitserverClientResolveRevisionsFunc) PushHook(hook func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)) {
+// RevAtTime method of the parent MockGitserverClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitserverClientRevAtTimeFunc) PushHook(hook func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -17602,20 +15930,20 @@ func (f *GitserverClientResolveRevisionsFunc) PushHook(hook func(context.Context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverClientResolveRevisionsFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
-		return r0, r1
+func (f *GitserverClientRevAtTimeFunc) SetDefaultReturn(r0 api.CommitID, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientResolveRevisionsFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
-		return r0, r1
+func (f *GitserverClientRevAtTimeFunc) PushReturn(r0 api.CommitID, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *GitserverClientResolveRevisionsFunc) nextHook() func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
+func (f *GitserverClientRevAtTimeFunc) nextHook() func(context.Context, api.RepoName, string, time.Time) (api.CommitID, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -17628,27 +15956,26 @@ func (f *GitserverClientResolveRevisionsFunc) nextHook() func(context.Context, a
 	return hook
 }
 
-func (f *GitserverClientResolveRevisionsFunc) appendCall(r0 GitserverClientResolveRevisionsFuncCall) {
+func (f *GitserverClientRevAtTimeFunc) appendCall(r0 GitserverClientRevAtTimeFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitserverClientResolveRevisionsFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverClientResolveRevisionsFunc) History() []GitserverClientResolveRevisionsFuncCall {
+// History returns a sequence of GitserverClientRevAtTimeFuncCall objects
+// describing the invocations of this function.
+func (f *GitserverClientRevAtTimeFunc) History() []GitserverClientRevAtTimeFuncCall {
 	f.mutex.Lock()
-	history := make([]GitserverClientResolveRevisionsFuncCall, len(f.history))
+	history := make([]GitserverClientRevAtTimeFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitserverClientResolveRevisionsFuncCall is an object that describes an
-// invocation of method ResolveRevisions on an instance of
-// MockGitserverClient.
-type GitserverClientResolveRevisionsFuncCall struct {
+// GitserverClientRevAtTimeFuncCall is an object that describes an
+// invocation of method RevAtTime on an instance of MockGitserverClient.
+type GitserverClientRevAtTimeFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -17657,25 +15984,31 @@ type GitserverClientResolveRevisionsFuncCall struct {
 	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 []protocol.RevisionSpecifier
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []string
+	Result0 api.CommitID
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitserverClientResolveRevisionsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+func (c GitserverClientRevAtTimeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitserverClientResolveRevisionsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+func (c GitserverClientRevAtTimeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // GitserverClientRevListFunc describes the behavior when the RevList method
@@ -17786,6 +16119,108 @@ func (c GitserverClientRevListFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientRevListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverClientScopedFunc describes the behavior when the Scoped method
+// of the parent MockGitserverClient instance is invoked.
+type GitserverClientScopedFunc struct {
+	defaultHook func(string) gitserver.Client
+	hooks       []func(string) gitserver.Client
+	history     []GitserverClientScopedFuncCall
+	mutex       sync.Mutex
+}
+
+// Scoped delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverClient) Scoped(v0 string) gitserver.Client {
+	r0 := m.ScopedFunc.nextHook()(v0)
+	m.ScopedFunc.appendCall(GitserverClientScopedFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Scoped method of the
+// parent MockGitserverClient instance is invoked and the hook queue is
+// empty.
+func (f *GitserverClientScopedFunc) SetDefaultHook(hook func(string) gitserver.Client) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Scoped method of the parent MockGitserverClient instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GitserverClientScopedFunc) PushHook(hook func(string) gitserver.Client) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientScopedFunc) SetDefaultReturn(r0 gitserver.Client) {
+	f.SetDefaultHook(func(string) gitserver.Client {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientScopedFunc) PushReturn(r0 gitserver.Client) {
+	f.PushHook(func(string) gitserver.Client {
+		return r0
+	})
+}
+
+func (f *GitserverClientScopedFunc) nextHook() func(string) gitserver.Client {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientScopedFunc) appendCall(r0 GitserverClientScopedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientScopedFuncCall objects
+// describing the invocations of this function.
+func (f *GitserverClientScopedFunc) History() []GitserverClientScopedFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientScopedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientScopedFuncCall is an object that describes an invocation
+// of method Scoped on an instance of MockGitserverClient.
+type GitserverClientScopedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 gitserver.Client
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientScopedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientScopedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

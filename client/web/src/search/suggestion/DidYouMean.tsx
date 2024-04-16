@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo } from 'react'
 
 import { mdiArrowRight } from '@mdi/js'
+import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
+import { ALL_LANGUAGES } from '@sourcegraph/common'
 import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '@sourcegraph/shared/src/search'
-import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral, type Pattern, type Token } from '@sourcegraph/shared/src/search/query/token'
@@ -54,13 +55,15 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): Sug
     // This is used later to reconstruct the query
     const tokensWithoutContext = scanResult.term.filter(term => {
         switch (term.type) {
-            case 'filter':
+            case 'filter': {
                 if (term.field.value === 'context') {
                     return false
                 }
                 return true
-            default:
+            }
+            default: {
                 return true
+            }
         }
     })
 
@@ -68,10 +71,12 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): Sug
     const tokensWithoutWhitespace = tokensWithoutContext.filter(term => {
         switch (term.type) {
             case 'comment':
-            case 'whitespace':
+            case 'whitespace': {
                 return false
-            default:
+            }
+            default: {
                 return true
+            }
         }
     })
 
@@ -86,7 +91,7 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): Sug
 
     let matchResult = matchesLanguage(tokensWithoutWhitespace[0])
     if (!matchResult.success) {
-        matchResult = matchesLanguage(tokensWithoutWhitespace[tokensWithoutWhitespace.length - 1])
+        matchResult = matchesLanguage(tokensWithoutWhitespace.at(-1)!)
     }
 
     if (matchResult.success) {
@@ -122,6 +127,7 @@ interface DidYouMeanProps
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         TelemetryProps {
     query: string
+    className?: string
 }
 
 export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouMeanProps>> = ({
@@ -129,6 +135,7 @@ export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouM
     query,
     patternType,
     caseSensitive,
+    className,
     selectedSearchContextSpec,
 }) => {
     const suggestions = useMemo(() => getQuerySuggestions(query, patternType), [query, patternType])
@@ -141,7 +148,7 @@ export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouM
 
     if (suggestions.length > 0) {
         return (
-            <div className={styles.root}>
+            <div className={classNames(className, styles.root)}>
                 <ul className={styles.container}>
                     {suggestions.map(suggestion => {
                         const builtURLQuery = buildSearchURLQuery(

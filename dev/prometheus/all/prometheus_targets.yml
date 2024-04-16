@@ -76,5 +76,8 @@
 - labels:
     job: telemetry-gateway
   targets:
-    # cody gateway
     - host.docker.internal:6080
+- labels:
+    job: msp-example
+  targets:
+    - host.docker.internal:9080

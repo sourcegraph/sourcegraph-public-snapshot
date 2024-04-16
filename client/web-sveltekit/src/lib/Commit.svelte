@@ -1,44 +1,66 @@
+<svelte:options immutable />
+
 <script lang="ts">
     import { mdiDotsHorizontal } from '@mdi/js'
 
-    import type { GitCommitFields } from '$lib/graphql-operations'
+    import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
-    import UserAvatar from '$lib/UserAvatar.svelte'
-    import Timestamp from './Timestamp.svelte'
+    import Timestamp from '$lib/Timestamp.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
 
-    export let commit: GitCommitFields
+    import type { Commit } from './Commit.gql'
+
+    export let commit: Commit
     export let alwaysExpanded: boolean = false
 
+    function getCommitter({ committer }: Commit): NonNullable<Commit['committer']>['person'] | null {
+        if (!committer) {
+            return null
+        }
+        // Do not show if committer is GitHub (e.g. squash merge)
+        if (committer.person.name === 'GitHub' && committer.person.email === 'noreply@github.com') {
+            return null
+        }
+        return committer.person
+    }
+
     $: commitDate = new Date(commit.committer ? commit.committer.date : commit.author.date)
+    $: author = commit.author.person
+    $: committer = getCommitter(commit)
+    $: authorAvatarTooltip = author.name + (committer ? ' (author)' : '')
     let expanded = alwaysExpanded
 </script>
 
 <div class="root">
     <div class="avatar">
-        <UserAvatar user={commit.author.person} />
+        <Tooltip tooltip={authorAvatarTooltip}>
+            <Avatar avatar={author} --avatar-size="1.5rem" />
+        </Tooltip>
     </div>
-    {#if commit.committer}
+    {#if committer && committer.name !== author.name}
         <div class="avatar">
-            <UserAvatar user={commit.committer.person} />
+            <Tooltip tooltip="{committer.name} (committer)">
+                <Avatar avatar={committer} />
+            </Tooltip>
         </div>
     {/if}
     <div class="info">
         <span class="d-flex">
-            <a class="subject" href={commit.url}>{commit.subject}</a>
+            <a class="subject" href={commit.canonicalURL}>{commit.subject}</a>
             {#if !alwaysExpanded}
                 <button type="button" on:click={() => (expanded = !expanded)}>
                     <Icon svgPath={mdiDotsHorizontal} inline />
                 </button>
             {/if}
         </span>
-        <span>committed by <strong>{commit.author.person.name}</strong> <Timestamp date={commitDate} /></span>
+        <span>committed by <strong>{author.name}</strong> <Timestamp date={commitDate} /></span>
         {#if expanded}
             <pre>{commit.body}</pre>
         {/if}
     </div>
     {#if !alwaysExpanded}
         <div class="buttons">
-            <a href={commit.url}>{commit.abbreviatedOID}</a>
+            <a href={commit.canonicalURL}>{commit.abbreviatedOID}</a>
         </div>
     {/if}
 </div>

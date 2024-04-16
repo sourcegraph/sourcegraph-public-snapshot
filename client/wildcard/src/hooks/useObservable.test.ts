@@ -1,11 +1,14 @@
 // causes false positive on act()
 
+import { fail } from 'assert'
+
 import { useMemo, useCallback } from 'react'
 
 import { renderHook, act } from '@testing-library/react'
 import { Observable, type Subscriber } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as sinon from 'sinon'
+import { describe, expect, it } from 'vitest'
 
 import { useObservable, useEventObservable } from './useObservable'
 

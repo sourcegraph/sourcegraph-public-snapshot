@@ -1,6 +1,5 @@
 import * as comlink from 'comlink'
-import { from, Subscription, type Unsubscribable } from 'rxjs'
-import { first } from 'rxjs/operators'
+import { firstValueFrom, Subscription, type Unsubscribable } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 
@@ -13,28 +12,6 @@ import { registerComlinkTransferHandlers } from '../util'
 
 import type { ClientAPI } from './api/api'
 import { type ExposedToClient, initMainThreadAPI } from './mainthread-api'
-
-export interface ExtensionHostClientConnection {
-    /**
-     * Closes the connection to and terminates the extension host.
-     */
-    unsubscribe(): void
-}
-
-/**
- * An activated extension.
- */
-export interface ActivatedExtension {
-    /**
-     * The extension's extension ID (which uniquely identifies it among all activated extensions).
-     */
-    id: string
-
-    /**
-     * Deactivate the extension (by calling its "deactivate" function, if any).
-     */
-    deactivate(): void | Promise<void>
-}
 
 /**
  * @param endpoints The Worker object to communicate with
@@ -64,7 +41,7 @@ export async function createExtensionHostClientConnection(
     /** Proxy to the exposed extension host API */
     const initializeExtensionHost = comlink.wrap<ExtensionHostAPIFactory>(endpoints.proxy)
 
-    const initialSettings = await from(platformContext.settings).pipe(first()).toPromise()
+    const initialSettings = await firstValueFrom(platformContext.settings)
     const proxy = await initializeExtensionHost({
         ...initData,
         // TODO what to do in error case?

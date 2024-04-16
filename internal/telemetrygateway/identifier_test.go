@@ -34,7 +34,8 @@ func TestNewIdentifier(t *testing.T) {
 				c := conf.MockClient()
 				c.Mock(&conf.Unified{
 					SiteConfiguration: schema.SiteConfiguration{
-						LicenseKey: "foobar",
+						LicenseKey:  "foobar",
+						ExternalURL: "sourcegraph.com",
 					},
 				})
 				return c
@@ -42,6 +43,7 @@ func TestNewIdentifier(t *testing.T) {
 			globalState: defaultGlobalState,
 			wantIdentifier: autogold.Expect(`{
   "licensedInstance": {
+    "externalUrl": "sourcegraph.com",
     "instanceId": "1234",
     "licenseKey": "foobar"
   }
@@ -51,12 +53,17 @@ func TestNewIdentifier(t *testing.T) {
 			name: "unlicensed",
 			conf: func() conftypes.SiteConfigQuerier {
 				c := conf.MockClient()
-				c.Mock(&conf.Unified{})
+				c.Mock(&conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						ExternalURL: "sourcegraph.com",
+					},
+				})
 				return c
 			}(),
 			globalState: defaultGlobalState,
 			wantIdentifier: autogold.Expect(`{
   "unlicensedInstance": {
+    "externalUrl": "sourcegraph.com",
     "instanceId": "1234"
   }
 }`),

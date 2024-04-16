@@ -5,9 +5,14 @@ set -e
 # Create the folder for annotations
 mkdir -p ./annotations/
 
+if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ aspect-.* ]]; then
+    exit 0
+fi
+
 # asdf setup
 # ----------
-if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" && "$BUILDKITE_AGENT_META_DATA_QUEUE" != "macos" ]]; then
+# TODO(burmudar): Once the bazel agents are deprecated we need to remove this
+if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" ]]; then
     echo "~~~ Preparing asdf dependencies"
 
     if [[ "$BUILDKITE_STEP_KEY" == "pipeline-gen" ]]; then

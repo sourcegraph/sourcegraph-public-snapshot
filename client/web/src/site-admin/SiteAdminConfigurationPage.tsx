@@ -4,11 +4,12 @@ import type { FC } from 'react'
 import { type ApolloClient, useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import * as jsonc from 'jsonc-parser'
-import { Subject, Subscription } from 'rxjs'
-import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
+import { lastValueFrom, timer, Subject, Subscription } from 'rxjs'
+import { delay, mergeMap, retry, tap, timeout } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -97,7 +98,7 @@ const quickConfigureActions: {
                         clientSecret: '<client secret>',
                     },
                     {
-                        COMMENT: '// See https://docs.sourcegraph.com/admin/auth#gitlab for instructions',
+                        COMMENT: '// See https://sourcegraph.com/docs/admin/auth#gitlab for instructions',
                     }
                 ),
             ]
@@ -121,7 +122,7 @@ const quickConfigureActions: {
                         clientID: '<client ID>',
                         clientSecret: '<client secret>',
                     },
-                    { COMMENT: '// See https://docs.sourcegraph.com/admin/auth#github for instructions' }
+                    { COMMENT: '// See https://sourcegraph.com/docs/admin/auth#github for instructions' }
                 ),
             ]
             return { edits, selectText: '<client ID>' }
@@ -143,7 +144,7 @@ const quickConfigureActions: {
                         identityProviderMetadataURL: '<identity provider metadata URL>',
                     },
                     {
-                        COMMENT: '// See https://docs.sourcegraph.com/admin/auth/saml/one_login for instructions',
+                        COMMENT: '// See https://sourcegraph.com/docs/admin/auth/saml/one_login for instructions',
                     }
                 ),
             ]
@@ -162,7 +163,7 @@ const quickConfigureActions: {
             }
             const edits = [
                 editWithComments(config, ['auth.providers', -1], value, {
-                    COMMENT: '// See https://docs.sourcegraph.com/admin/auth/saml/okta for instructions',
+                    COMMENT: '// See https://sourcegraph.com/docs/admin/auth/saml/okta for instructions',
                 }),
             ]
             return { edits, selectText: '<identity provider metadata URL>' }
@@ -182,7 +183,7 @@ const quickConfigureActions: {
                         displayName: 'SAML',
                         identityProviderMetadataURL: '<SAML IdP metadata URL>',
                     },
-                    { COMMENT: '// See https://docs.sourcegraph.com/admin/auth/saml for instructions' }
+                    { COMMENT: '// See https://sourcegraph.com/docs/admin/auth/saml for instructions' }
                 ),
             ]
             return { edits, selectText: '<SAML IdP metadata URL>' }
@@ -204,7 +205,7 @@ const quickConfigureActions: {
                         clientID: '<client ID>',
                         clientSecret: '<client secret>',
                     },
-                    { COMMENT: '// See https://docs.sourcegraph.com/admin/auth#openid-connect for instructions' }
+                    { COMMENT: '// See https://sourcegraph.com/docs/admin/auth#openid-connect for instructions' }
                 ),
             ]
             return { edits, selectText: '<identity provider URL>' }
@@ -212,10 +213,9 @@ const quickConfigureActions: {
     },
 ]
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     isLightTheme: boolean
     client: ApolloClient<{}>
-    isCodyApp: boolean
 }
 
 interface State {
@@ -231,7 +231,7 @@ interface State {
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
-export const SiteAdminConfigurationPage: FC<TelemetryProps & { isCodyApp: boolean }> = props => {
+export const SiteAdminConfigurationPage: FC<TelemetryProps & TelemetryV2Props> = props => {
     const client = useApolloClient()
     return <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()} client={client} />
 }
@@ -251,6 +251,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminConfiguration')
+        this.props.telemetryRecorder.recordEvent('admin.configuration', 'view')
 
         this.subscriptions.add(
             this.remoteRefreshes.pipe(mergeMap(() => fetchSite())).subscribe(
@@ -275,12 +276,12 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                     mergeMap(() =>
                         // wait for server to restart
                         fetchSite().pipe(
-                            retryWhen(errors =>
-                                errors.pipe(
-                                    tap(() => this.forceUpdate()),
-                                    delay(500)
-                                )
-                            ),
+                            retry({
+                                delay: () => {
+                                    this.forceUpdate()
+                                    return timer(500)
+                                },
+                            }),
                             timeout(10000)
                         )
                     ),
@@ -395,7 +396,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                 <Alert key="cody-beta-notice" className={styles.alert} variant="info">
                     By turning on completions for "Cody beta," you have read the{' '}
                     <Link to="/help/cody">Cody Documentation</Link> and agree to the{' '}
-                    <Link to="https://about.sourcegraph.com/terms/cody-notice">Cody Notice and Usage Policy</Link>. In
+                    <Link to="https://sourcegraph.com/terms/cody-notice">Cody Notice and Usage Policy</Link>. In
                     particular, some code snippets will be sent to a third-party language model provider when you use
                     Cody questions.
                 </Alert>
@@ -435,8 +436,9 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                                 height={600}
                                 isLightTheme={this.props.isLightTheme}
                                 onSave={this.onSave}
-                                actions={this.props.isCodyApp ? [] : quickConfigureActions}
+                                actions={quickConfigureActions}
                                 telemetryService={this.props.telemetryService}
+                                telemetryRecorder={this.props.telemetryRecorder}
                                 explanation={
                                     <Text className="form-text text-muted">
                                         <small>
@@ -457,6 +459,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
 
     private onSave = async (newContents: string): Promise<string> => {
         eventLogger.log('SiteConfigurationSaved')
+        this.props.telemetryRecorder.recordEvent('admin.configuration', 'save')
 
         this.setState({ saving: true, error: undefined })
 
@@ -465,7 +468,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
 
         let restartToApply = false
         try {
-            restartToApply = await updateSiteConfiguration(lastConfigurationID, newContents).toPromise<boolean>()
+            restartToApply = await lastValueFrom(updateSiteConfiguration(lastConfigurationID, newContents))
         } catch (error) {
             logger.error(error)
             this.setState({
@@ -509,7 +512,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
         this.setState({ restartToApply })
 
         try {
-            const site = await fetchSite().toPromise()
+            const site = await lastValueFrom(fetchSite())
 
             this.setState({
                 site,
@@ -528,6 +531,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
 
     private reloadSite = (): void => {
         eventLogger.log('SiteReloaded')
+        this.props.telemetryRecorder.recordEvent('admin.configuration.site', 'reload')
         this.siteReloads.next()
     }
 }

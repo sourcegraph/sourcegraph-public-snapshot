@@ -37,6 +37,7 @@ go_test(
     deps = [
         "//internal/conf",
         "//internal/conf/conftypes",
+        "//internal/dotcom",
         "//lib/pointers",
         "//schema",
         "@com_github_sourcegraph_log//logtest",

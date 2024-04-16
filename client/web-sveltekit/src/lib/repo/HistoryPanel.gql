@@ -1,0 +1,19 @@
+fragment HistoryPanel_HistoryConnection on GitCommitConnection {
+    nodes {
+        id
+        abbreviatedOID
+        subject
+        author {
+            date
+            person {
+                displayName
+                ...Avatar_Person
+            }
+        }
+        canonicalURL
+    }
+    pageInfo {
+        hasNextPage
+        endCursor
+    }
+}

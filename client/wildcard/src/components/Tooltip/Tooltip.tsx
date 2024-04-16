@@ -191,6 +191,8 @@ export const Tooltip: FC<TooltipProps> = props => {
                         returnTargetFocus={false}
                         className={styles.tooltipContent}
                         onOpenChange={handleOpenChange}
+                        overflowToScrollParents={false}
+                        constrainToScrollParents={false}
                     >
                         {content}
                     </PopoverContent>

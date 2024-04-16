@@ -35,6 +35,8 @@ export const generateCache = (): InMemoryCache =>
             Changeset: ['ExternalChangeset', 'HiddenExternalChangeset'],
             TeamMember: ['User'],
             Owner: ['Person', 'Team'],
+            TreeEntry: ['GitBlob', 'GitTree'],
+            File2: ['GitBlob', 'VirtualFile'],
         },
     })
 

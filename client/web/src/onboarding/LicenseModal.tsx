@@ -5,13 +5,13 @@ import classnames from 'classnames'
 import { format, formatDistanceToNow } from 'date-fns'
 import * as jsonc from 'jsonc-parser'
 import { useNavigate } from 'react-router-dom'
-import type { SiteConfigResult } from 'src/graphql-operations'
 import { useDebouncedCallback } from 'use-debounce'
 
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Alert, Button, Form, H3, H2, Input, Label, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
+import type { SiteConfigResult } from '../graphql-operations'
 
 import { DEBOUNCE_DELAY_MS, DEFAULT_FORMAT_OPTIONS, DEFAULT_LICENSE_KEY_INFO, MIN_INPUT_LENGTH } from './constants'
 import { useUpdateLicenseKeyMutation } from './graphql-hooks'
@@ -99,7 +99,7 @@ export const LicenseKeyModal: FC<LicenseKeyModalProps> = ({
             <H3 className="m-0 pb-4">Upgrade your license</H3>
             <Text className="m-0 pb-3">Enter your license key to start your enterprise set up:</Text>
             {error && <Alert variant="danger">License key not recognized. Please try again.</Alert>}
-            {/* eslint-disable @typescript-eslint/no-misused-promises */}
+            {}
             <Form onSubmit={onSubmit}>
                 <Label htmlFor="license-key">License key</Label>
                 <Input

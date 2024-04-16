@@ -24,11 +24,11 @@ import (
 // A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
 // in Sourcegraph via the external services configuration.
 type BitbucketServerSource struct {
-	svc     *types.ExternalService
-	config  *schema.BitbucketServerConnection
-	exclude excludeFunc
-	client  *bitbucketserver.Client
-	logger  log.Logger
+	svc      *types.ExternalService
+	config   *schema.BitbucketServerConnection
+	excluder repoExcluder
+	client   *bitbucketserver.Client
+	logger   log.Logger
 }
 
 var _ Source = &BitbucketServerSource{}
@@ -64,14 +64,19 @@ func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *
 		return nil, err
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Exact(strconv.Itoa(r.Id))
-		eb.Pattern(r.Pattern)
+		rule := NewRule().
+			Exact(r.Name).
+			Pattern(r.Pattern)
+
+		if r.Id != 0 {
+			rule.Exact(strconv.Itoa(r.Id))
+		}
+
+		ex.AddRule(rule)
 	}
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
 
@@ -81,11 +86,11 @@ func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *
 	}
 
 	return &BitbucketServerSource{
-		svc:     svc,
-		config:  c,
-		exclude: exclude,
-		client:  client,
-		logger:  logger,
+		svc:      svc,
+		config:   c,
+		excluder: ex,
+		client:   client,
+		logger:   logger,
 	}, nil
 }
 
@@ -203,8 +208,8 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 		name = r.Project.Key + "/" + name
 	}
 	if r.State != "AVAILABLE" ||
-		s.exclude(name) ||
-		s.exclude(strconv.Itoa(r.ID)) ||
+		s.excluder.ShouldExclude(name) ||
+		s.excluder.ShouldExclude(strconv.Itoa(r.ID)) ||
 		(s.config.ExcludePersonalRepositories && r.IsPersonalRepository()) {
 		return true
 	}
@@ -275,7 +280,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 		}
 
 		wg.Add(1)
-		go func(q string) {
+		go func() {
 			defer wg.Done()
 
 			next := &bitbucketserver.PageToken{Limit: 1000}
@@ -289,7 +294,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 				ch <- batch{repos: repos}
 				next = page
 			}
-		}(q)
+		}()
 	}
 
 	for _, q := range s.config.ProjectKeys {

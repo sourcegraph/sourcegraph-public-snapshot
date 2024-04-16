@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
+exports[`SearchResultsInfoBar > code monitoring feature flag disabled 1`] = `
 <DocumentFragment>
   <aside
     aria-label="Search results information"
@@ -74,7 +74,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
 </DocumentFragment>
 `;
 
-exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create monitor from query 1`] = `
+exports[`SearchResultsInfoBar > code monitoring feature flag enabled, can create monitor from query 1`] = `
 <DocumentFragment>
   <aside
     aria-label="Search results information"
@@ -148,7 +148,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
 </DocumentFragment>
 `;
 
-exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create monitor from query, user not logged in 1`] = `
+exports[`SearchResultsInfoBar > code monitoring feature flag enabled, can create monitor from query, user not logged in 1`] = `
 <DocumentFragment>
   <aside
     aria-label="Search results information"
@@ -222,7 +222,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
 </DocumentFragment>
 `;
 
-exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot create monitor from query 1`] = `
+exports[`SearchResultsInfoBar > code monitoring feature flag enabled, cannot create monitor from query 1`] = `
 <DocumentFragment>
   <aside
     aria-label="Search results information"
@@ -296,7 +296,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
 </DocumentFragment>
 `;
 
-exports[`SearchResultsInfoBar unauthenticated user 1`] = `
+exports[`SearchResultsInfoBar > unauthenticated user 1`] = `
 <DocumentFragment>
   <aside
     aria-label="Search results information"

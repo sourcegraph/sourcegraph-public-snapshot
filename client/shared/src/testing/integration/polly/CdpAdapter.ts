@@ -58,8 +58,11 @@ export class CdpAdapter extends PollyAdapter {
 
     /**
      * `adapterOptions` passed to Polly.
+     *
+     * Uses `declare` because otherwise esbuild overwrites the superclass PollyAdapter's `options`
+     * field. See https://github.com/evanw/esbuild/issues/885.
      */
-    public options!: CdpAdapterOptions
+    public declare options: CdpAdapterOptions
 
     private readonly _errors = new Subject<unknown>()
 

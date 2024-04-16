@@ -67,10 +67,10 @@ async function getLocalCopy(remoteUri: SourcegraphUri): Promise<vscode.TextDocum
 }
 
 function getSelection(uri: SourcegraphUri, textDocument: vscode.TextDocument): vscode.Range | undefined {
-    if (typeof uri?.position?.line !== 'undefined' && typeof uri?.position?.character !== 'undefined') {
+    if (uri?.position?.line !== undefined && uri?.position?.character !== undefined) {
         return offsetRange(uri.position.line, uri.position.character)
     }
-    if (typeof uri?.position?.line !== 'undefined') {
+    if (uri?.position?.line !== undefined) {
         return offsetRange(uri.position.line, 0)
     }
     // There's no explicitly provided line number. Instead of focusing on the
@@ -79,7 +79,7 @@ function getSelection(uri: SourcegraphUri, textDocument: vscode.TextDocument): v
     // function/class/struct/interface with the same name as the filename).
     if (uri.path && isFilenameThatMayDefineSymbols(uri.path)) {
         const fileNames = uri.path.split('/')
-        const fileName = fileNames[fileNames.length - 1]
+        const fileName = fileNames.at(-1)!
         const symbolName = fileName.split('.')[0]
         const text = textDocument.getText()
         const symbolMatches = new RegExp(` ${symbolName}\\b`).exec(text)

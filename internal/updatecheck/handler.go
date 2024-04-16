@@ -21,37 +21,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
-var pubSubPingsTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub pings topic ID is the pub/sub topic id where pings are published.")
-
 var (
 	// latestReleaseDockerServerImageBuild is only used by sourcegraph.com to tell existing
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newPingResponse("5.2.0")
+	latestReleaseDockerServerImageBuild = newPingResponse("5.3.3")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newPingResponse("5.2.0")
+	latestReleaseKubernetesBuild = newPingResponse("5.3.3")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.2.0")
-
-	// latestReleaseApp is only used by sourcegraph.com to tell existing Sourcegraph
-	// App instances what the latest version is. The version here _must_ be available for download/released
-	// before being referenced here.
-	latestReleaseApp = newPingResponse("2023.03.23+205301.ca3646")
+	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.3.3")
 )
 
 func getLatestRelease(deployType string) pingResponse {
@@ -60,8 +51,6 @@ func getLatestRelease(deployType string) pingResponse {
 		return latestReleaseKubernetesBuild
 	case deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return latestReleaseDockerComposeOrPureDocker
-	case deploy.IsDeployTypeApp(deployType):
-		return latestReleaseApp
 	default:
 		return latestReleaseDockerServerImageBuild
 	}
@@ -94,12 +83,11 @@ type Meter struct {
 
 // Handle handles the ping requests and responds with information about software
 // updates for Sourcegraph.
-func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, w http.ResponseWriter, r *http.Request) {
+func Handle(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter, w http.ResponseWriter, r *http.Request) {
 	meter.RequestCounter.Add(r.Context(), 1)
 
 	pr, err := readPingRequest(r)
 	if err != nil {
-		logger.Error("malformed request", log.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -114,14 +102,14 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, w 
 		http.Error(w, "no version specified", http.StatusBadRequest)
 		return
 	}
-	if pr.ClientVersionString == "dev" && !deploy.IsDeployTypeApp(pr.DeployType) {
+	if pr.ClientVersionString == "dev" {
 		// No updates for dev servers.
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
 	pingResponse := getLatestRelease(pr.DeployType)
-	hasUpdate, err := canUpdate(pr.ClientVersionString, pingResponse, pr.DeployType)
+	hasUpdate, err := canUpdate(pr.ClientVersionString, pingResponse)
 
 	// Always log, even on malformed version strings
 	logPing(logger, pubsubClient, meter, r, pr, hasUpdate)
@@ -130,25 +118,10 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, w 
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	if deploy.IsDeployTypeApp(pr.DeployType) {
-		pingResponse.Notifications = getNotifications(pr.ClientVersionString)
-		pingResponse.UpdateAvailable = hasUpdate
-	}
 	body, err := json.Marshal(pingResponse)
 	if err != nil {
 		logger.Error("error preparing update check response", log.Error(err))
 		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
-
-	// Cody App: We always send back a ping response (rather than StatusNoContent) because
-	// the user's instance may have unseen notification messages.
-	if deploy.IsDeployTypeApp(pr.DeployType) {
-		if hasUpdate {
-			meter.RequestHasUpdateCounter.Add(r.Context(), 1)
-		}
-		w.Header().Set("content-type", "application/json; charset=utf-8")
-		_, _ = w.Write(body)
 		return
 	}
 
@@ -163,11 +136,11 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, w 
 }
 
 // canUpdate returns true if the latestReleaseBuild is newer than the clientVersionString.
-func canUpdate(clientVersionString string, latestReleaseBuild pingResponse, deployType string) (bool, error) {
+func canUpdate(clientVersionString string, latestReleaseBuild pingResponse) (bool, error) {
 	// Check for a date in the version string to handle developer builds that don't have a semver.
 	// If there is an error parsing a date out of the version string, then we ignore the error
 	// and parse it as a semver.
-	if hasDateUpdate, err := canUpdateDate(clientVersionString); err == nil && !deploy.IsDeployTypeApp(deployType) {
+	if hasDateUpdate, err := canUpdateDate(clientVersionString); err == nil {
 		return hasDateUpdate, nil
 	}
 
@@ -217,6 +190,7 @@ func canUpdateDate(clientVersionString string) (bool, error) {
 type pingRequest struct {
 	ClientSiteID         string          `json:"site"`
 	LicenseKey           string          `json:",omitempty"`
+	ExternalURL          string          `json:"externalURL,omitempty"`
 	DeployType           string          `json:"deployType"`
 	Os                   string          `json:"os,omitempty"` // Only used in Cody App
 	ClientVersionString  string          `json:"version"`
@@ -262,8 +236,12 @@ type pingRequest struct {
 	EverFindRefs                  bool            `json:"refs,omitempty"`
 	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Cody App
 	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
-	CodyUsage                     json.RawMessage `json:"codyUsage,omitempty"`
-	RepoMetadataUsage             json.RawMessage `json:"repoMetadataUsage,omitempty"`
+	// CodyUsage is deprecated, but here so we can receive pings from older instances
+	CodyUsage         json.RawMessage `json:"codyUsage,omitempty"`
+	CodyUsage2        json.RawMessage `json:"codyUsage2,omitempty"`
+	CodyProviders     json.RawMessage `json:"codyProviders,omitempty"`
+	RepoMetadataUsage json.RawMessage `json:"repoMetadataUsage,omitempty"`
+	LlmUsage          json.RawMessage `json:"llmUsage,omitempty"`
 }
 
 type dependencyVersions struct {
@@ -348,6 +326,7 @@ type pingPayload struct {
 	RemoteSiteVersion             string          `json:"remote_site_version"`
 	RemoteSiteID                  string          `json:"remote_site_id"`
 	LicenseKey                    string          `json:"license_key"`
+	ExternalURL                   string          `json:"external_url"`
 	HasUpdate                     string          `json:"has_update"`
 	UniqueUsersToday              string          `json:"unique_users_today"`
 	SiteActivity                  json.RawMessage `json:"site_activity"`
@@ -390,11 +369,13 @@ type pingPayload struct {
 	ActiveToday                   string          `json:"active_today"`
 	Timestamp                     string          `json:"timestamp"`
 	HasCodyEnabled                string          `json:"has_cody_enabled"`
-	CodyUsage                     json.RawMessage `json:"cody_usage"`
+	CodyUsage2                    json.RawMessage `json:"cody_usage_2"`
+	CodyProviders                 json.RawMessage `json:"cody_providers"`
 	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
+	LlmUsage                      json.RawMessage `json:"llm_usage"`
 }
 
-func logPing(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, r *http.Request, pr *pingRequest, hasUpdate bool) {
+func logPing(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter, r *http.Request, pr *pingRequest, hasUpdate bool) {
 	logger = logger.Scoped("logPing")
 	defer func() {
 		if err := recover(); err != nil {
@@ -445,16 +426,12 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		return nil, errors.Wrap(err, "malformed search usage")
 	}
 
-	codyUsage, err := reserializeCodyUsage(pr.CodyUsage)
-	if err != nil {
-		return nil, errors.Wrap(err, "malformed cody usage")
-	}
-
 	return json.Marshal(&pingPayload{
 		RemoteIP:                      clientAddr,
 		RemoteSiteVersion:             pr.ClientVersionString,
 		RemoteSiteID:                  pr.ClientSiteID,
 		LicenseKey:                    pr.LicenseKey,
+		ExternalURL:                   pr.ExternalURL,
 		Os:                            pr.Os,
 		HasUpdate:                     strconv.FormatBool(hasUpdate),
 		UniqueUsersToday:              strconv.FormatInt(int64(pr.UniqueUsers), 10),
@@ -495,8 +472,10 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		ActiveToday:                   strconv.FormatBool(pr.ActiveToday),
 		Timestamp:                     now.UTC().Format(time.RFC3339),
 		HasCodyEnabled:                strconv.FormatBool(pr.HasCodyEnabled),
-		CodyUsage:                     codyUsage,
+		CodyUsage2:                    pr.CodyUsage2,
+		CodyProviders:                 pr.CodyProviders,
 		RepoMetadataUsage:             pr.RepoMetadataUsage,
+		LlmUsage:                      pr.LlmUsage,
 	})
 }
 
@@ -750,42 +729,6 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 	}
 	if len(searchUsage.Monthly) > 0 {
 		singlePeriodUsage.Monthly = searchUsage.Monthly[0]
-	}
-
-	return json.Marshal(singlePeriodUsage)
-}
-
-// reserializeCodyUsage will reserialize a cody usage statistics
-// struct with only the first period in each period type. This reduces the
-// complexity required in the BigQuery schema and downstream ETL transform
-// logic.
-func reserializeCodyUsage(payload json.RawMessage) (json.RawMessage, error) {
-	if len(payload) == 0 {
-		return nil, nil
-	}
-
-	var codyUsage *types.CodyUsageStatistics
-	if err := json.Unmarshal(payload, &codyUsage); err != nil {
-		return nil, err
-	}
-	if codyUsage == nil {
-		return nil, nil
-	}
-
-	singlePeriodUsage := struct {
-		Daily   *types.CodyUsagePeriod
-		Weekly  *types.CodyUsagePeriod
-		Monthly *types.CodyUsagePeriod
-	}{}
-
-	if len(codyUsage.Daily) > 0 {
-		singlePeriodUsage.Daily = codyUsage.Daily[0]
-	}
-	if len(codyUsage.Weekly) > 0 {
-		singlePeriodUsage.Weekly = codyUsage.Weekly[0]
-	}
-	if len(codyUsage.Monthly) > 0 {
-		singlePeriodUsage.Monthly = codyUsage.Monthly[0]
 	}
 
 	return json.Marshal(singlePeriodUsage)

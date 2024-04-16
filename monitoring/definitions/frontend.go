@@ -2,6 +2,7 @@ package definitions
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -17,6 +18,9 @@ func Frontend() *monitoring.Dashboard {
 
 		grpcZoektConfigurationServiceName = "sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"
 		grpcInternalAPIServiceName        = "api.internalapi.v1.ConfigService"
+
+		scrapeJobRegex              = `(sourcegraph-)?frontend`
+		httpRequestHostVariableName = "httpRequestHost"
 	)
 
 	var sentinelSamplingIntervals []string
@@ -57,6 +61,16 @@ func Frontend() *monitoring.Dashboard {
 					Query:         "src_updatecheck_client_duration_seconds_sum",
 					LabelName:     "instance",
 					ExampleOption: "sourcegraph-frontend:3090",
+				},
+				Multi: true,
+			},
+			{
+				Label: "HTTP request hostname",
+				Name:  httpRequestHostVariableName,
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "src_http_client_external_request_count",
+					LabelName:     "host",
+					ExampleOption: "pings.sourcegraph.com",
 				},
 				Multi: true,
 			},
@@ -157,20 +171,7 @@ func Frontend() *monitoring.Dashboard {
 							NextSteps: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 								- Investigate potential sources of latency by selecting Explore and modifying the 'sum by(le)' section to include additional labels: for example, 'sum by(le, job)' or 'sum by (le, instance)'.
-								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-							`,
-						},
-						{
-							Name:        "blob_load_latency",
-							Description: "90th percentile blob load latency over 10m. The 90th percentile of API calls to the blob route in the frontend API is at 5 seconds or more, meaning calls to the blob route, are slow to return a response. The blob API route provides the files and code snippets that the UI displays. When this alert fires, the UI will likely experience delays loading files and code snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses.",
-							Query:       `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
-							Critical:    monitoring.Alert().GreaterOrEqual(5),
-							Panel:       monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps: `
-								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
-								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-								- Check that gitserver containers have enough CPU/memory and are not getting throttled.
+								- Trace a request to see what the slowest part is: https://sourcegraph.com/docs/admin/observability/tracing
 							`,
 						},
 					},
@@ -333,6 +334,12 @@ func Frontend() *monitoring.Dashboard {
 				},
 			},
 
+			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
+				HumanServiceName:    "frontend",
+				InstanceFilterRegex: `${internalInstance:regex}`,
+				JobFilterRegex:      scrapeJobRegex,
+			}, monitoring.ObservableOwnerInfraOrg),
+
 			shared.CodeIntelligence.NewResolversGroup(containerName),
 			shared.CodeIntelligence.NewAutoIndexEnqueuerGroup(containerName),
 			shared.CodeIntelligence.NewDBStoreGroup(containerName),
@@ -417,6 +424,14 @@ func Frontend() *monitoring.Dashboard {
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendZoektConfiguration.Name),
 				}, monitoring.ObservableOwnerSearchCore),
+			shared.NewGRPCRetryMetricsGroup(
+				shared.GRPCRetryMetricsOptions{
+					HumanServiceName:   "zoekt_configuration",
+					RawGRPCServiceName: grpcZoektConfigurationServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendZoektConfiguration.Name),
+				}, monitoring.ObservableOwnerSearchCore),
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
@@ -429,6 +444,14 @@ func Frontend() *monitoring.Dashboard {
 				}, monitoring.ObservableOwnerSearchCore),
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
+					HumanServiceName:   "internal_api",
+					RawGRPCServiceName: grpcInternalAPIServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendInternalAPI.Name),
+				}, monitoring.ObservableOwnerSearchCore),
+			shared.NewGRPCRetryMetricsGroup(
+				shared.GRPCRetryMetricsOptions{
 					HumanServiceName:   "internal_api",
 					RawGRPCServiceName: grpcInternalAPIServiceName,
 					Namespace:          "src",
@@ -463,23 +486,12 @@ func Frontend() *monitoring.Dashboard {
 								- Check the Searcher dashboard for indications it might be unhealthy.
 							`,
 						},
-						{
-							Name:        "internalapi_error_responses",
-							Description: "internal API error responses every 5m by route",
-							Query:       `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100`,
-							Warning:     monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps: `
-								- May not be a substantial issue, check the 'frontend' logs for potential causes.
-							`,
-						},
 					},
 					{
 						{
 							Name:        "99th_percentile_gitserver_duration",
 							Description: "99th percentile successful gitserver query duration over 5m",
-							Query:       `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))`,
+							Query:       fmt.Sprintf(`histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job=~%q}[5m])))`, scrapeJobRegex),
 							Warning:     monitoring.Alert().GreaterOrEqual(20),
 							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Seconds),
 							Owner:       monitoring.ObservableOwnerSource,
@@ -488,7 +500,7 @@ func Frontend() *monitoring.Dashboard {
 						{
 							Name:        "gitserver_error_responses",
 							Description: "gitserver error responses every 5m",
-							Query:       `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend"}[5m])) * 100`,
+							Query:       fmt.Sprintf(`sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~%q,code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~%q}[5m])) * 100`, scrapeJobRegex, scrapeJobRegex),
 							Warning:     monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
 							Owner:       monitoring.ObservableOwnerSource,
@@ -502,7 +514,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `max by(owner) (observability_test_metric_warning)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(1),
 							Panel:       monitoring.Panel().Max(1),
-							Owner:       monitoring.ObservableOwnerDevOps,
+							Owner:       monitoring.ObservableOwnerInfraOrg,
 							NextSteps:   "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
 						},
 						{
@@ -511,7 +523,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `max by(owner) (observability_test_metric_critical)`,
 							Critical:    monitoring.Alert().GreaterOrEqual(1),
 							Panel:       monitoring.Panel().Max(1),
-							Owner:       monitoring.ObservableOwnerDevOps,
+							Owner:       monitoring.ObservableOwnerInfraOrg,
 							NextSteps:   "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
 						},
 					},
@@ -633,6 +645,42 @@ func Frontend() *monitoring.Dashboard {
 				},
 			},
 			{
+				Title:  "External HTTP Request Rate",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "external_http_request_rate_by_host",
+							Description: "rate of external HTTP requests by host over 1m",
+							Query:       fmt.Sprintf("sum by (host) (rate(src_http_client_external_request_count{host=~`%s`}[1m]))", fmt.Sprintf("${%s:regex}", httpRequestHostVariableName)),
+							NoAlert:     true,
+							Panel: monitoring.Panel().Unit(monitoring.RequestsPerSecond).LegendFormat("{{host}}").
+								With(monitoring.PanelOptions.ZeroIfNoData()).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner: monitoring.ObservableOwnerSource,
+							Interpretation: strings.TrimSpace(`
+							Shows the rate of external HTTP requests made by Sourcegraph to other services, broken down by host.
+`),
+						},
+					},
+					{
+						{
+							Name:        "external_http_request_rate_by_host_by_code",
+							Description: "rate of external HTTP requests by host and response code over 1m",
+							Query:       fmt.Sprintf("sum by (host, status_code) (rate(src_http_client_external_request_count{host=~`%s`}[1m]))", fmt.Sprintf("${%s:regex}", httpRequestHostVariableName)),
+							NoAlert:     true,
+							Panel: monitoring.Panel().Unit(monitoring.RequestsPerSecond).LegendFormat("{{host}}:{{status_code}}").
+								With(monitoring.PanelOptions.ZeroIfNoData()).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner: monitoring.ObservableOwnerSource,
+							Interpretation: strings.TrimSpace(`
+							Shows the rate of external HTTP requests made by Sourcegraph to other services, broken down by host and response code.
+`),
+						},
+					},
+				},
+			},
+			{
 				Title:  "Cody API requests",
 				Hidden: true,
 				Rows: []monitoring.Row{{{
@@ -641,7 +689,6 @@ func Frontend() *monitoring.Dashboard {
 					Query:          `sum by (route, code)(irate(src_http_request_duration_seconds_count{route=~"^completions.*"}[5m]))`,
 					NoAlert:        true,
 					Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-					Owner:          monitoring.ObservableOwnerCody,
 					Interpretation: `Rate (QPS) of requests to cody related endpoints. completions.stream is for the conversational endpoints. completions.code is for the code auto-complete endpoints.`,
 				}}},
 			},
@@ -689,11 +736,11 @@ func Frontend() *monitoring.Dashboard {
 			},
 
 			// Resource monitoring
-			shared.NewDatabaseConnectionsMonitoringGroup("frontend"),
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewDatabaseConnectionsMonitoringGroup("frontend", monitoring.ObservableOwnerInfraOrg),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerInfraOrg, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerInfraOrg, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerInfraOrg, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerInfraOrg, nil),
 			{
 				Title:  "Search: Ranking",
 				Hidden: true,
@@ -748,7 +795,8 @@ func Frontend() *monitoring.Dashboard {
 											RefID:        "2",
 											Expr:         "sum(increase(src_search_ranking_result_clicked_count{type=\"filePathMatch\"}[6h])) / sum(increase(src_search_ranking_result_clicked_count[6h])) * 100",
 											LegendFormat: "filePathMatch",
-										}}
+										},
+									}
 									p.GraphPanel.Tooltip.Shared = true
 								}),
 							Owner:          monitoring.ObservableOwnerSearchCore,
@@ -784,7 +832,7 @@ func Frontend() *monitoring.Dashboard {
 						Warning:  monitoring.Alert().Greater(0),
 						Critical: monitoring.Alert().GreaterOrEqual(10),
 
-						Owner: monitoring.ObservableOwnerDevOps,
+						Owner: monitoring.ObservableOwnerInfraOrg,
 						NextSteps: `
 							- Check your SMTP configuration in site configuration.
 							- Check 'sourcegraph-frontend' logs for more detailed error messages.
@@ -800,7 +848,7 @@ func Frontend() *monitoring.Dashboard {
 						Panel:       monitoring.Panel().LegendFormat("emails"),
 						NoAlert:     true, // this is a purely informational panel
 
-						Owner:          monitoring.ObservableOwnerDevOps,
+						Owner:          monitoring.ObservableOwnerInfraOrg,
 						Interpretation: "Total emails successfully delivered.",
 
 						// use to observe behaviour of email usage across instances
@@ -814,7 +862,7 @@ func Frontend() *monitoring.Dashboard {
 							With(monitoring.PanelOptions.LegendOnRight()),
 						NoAlert: true, // this is a purely informational panel
 
-						Owner:          monitoring.ObservableOwnerDevOps,
+						Owner:          monitoring.ObservableOwnerInfraOrg,
 						Interpretation: "Emails successfully delivered by source, i.e. product feature.",
 
 						// use to observe behaviour of email usage across instances.
@@ -1058,7 +1106,7 @@ func Frontend() *monitoring.Dashboard {
 
 							Increases in response time can point to too much load on the database to keep up with the incoming requests.
 
-							See this documentation page for more details on webhook requests: (https://docs.sourcegraph.com/admin/config/webhooks/incoming)`,
+							See this documentation page for more details on webhook requests: (https://sourcegraph.com/docs/admin/config/webhooks/incoming)`,
 						},
 					},
 				},

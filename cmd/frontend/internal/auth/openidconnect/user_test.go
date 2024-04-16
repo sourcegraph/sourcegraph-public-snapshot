@@ -7,11 +7,15 @@ import (
 
 	"github.com/coreos/go-oidc"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -19,9 +23,10 @@ func TestAllowSignup(t *testing.T) {
 	allow := true
 	disallow := false
 	tests := map[string]struct {
-		allowSignup       *bool
-		usernamePrefix    string
-		shouldAllowSignup bool
+		allowSignup          *bool
+		usernamePrefix       string
+		shouldAllowSignup    bool
+		additionalProperties telemetry.EventMetadata
 	}{
 		"nil": {
 			allowSignup:       nil,
@@ -39,6 +44,11 @@ func TestAllowSignup(t *testing.T) {
 			allowSignup:       &disallow,
 			shouldAllowSignup: false,
 			usernamePrefix:    "sourcegraph-operator-",
+		},
+		"with metadata": {
+			allowSignup:          &allow,
+			shouldAllowSignup:    true,
+			additionalProperties: telemetry.EventMetadata{"foo": 1},
 		},
 	}
 	for name, test := range tests {
@@ -59,12 +69,14 @@ func TestAllowSignup(t *testing.T) {
 					RequireEmailDomain: "example.com",
 					AllowSignup:        test.allowSignup,
 				},
-				oidc: &oidcProvider{},
+				oidc:       &oidcProvider{},
+				httpClient: httpcli.ExternalClient,
 			}
 			_, _, _, err := getOrCreateUser(
 				context.Background(),
 				dbmocks.NewStrictMockDB(),
 				p,
+				&oauth2.Token{},
 				&oidc.IDToken{},
 				&oidc.UserInfo{
 					Email:         "foo@bar.com",
@@ -72,10 +84,13 @@ func TestAllowSignup(t *testing.T) {
 				},
 				&userClaims{},
 				test.usernamePrefix,
-				"anonymous-user-id-123",
-				"https://example.com/",
-				"https://example.com/",
-			)
+				test.additionalProperties,
+
+				&hubspot.ContactProperties{
+					AnonymousUserID: "anonymous-user-id-123",
+					FirstSourceURL:  "https://example.com/",
+					LastSourceURL:   "https://example.com/",
+				})
 			require.NoError(t, err)
 		})
 	}

@@ -85,7 +85,6 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 	// Filter matches in place
 	filtered := matches[:0]
 
-	subRepoPermsCache := map[api.RepoName]bool{}
 	errCache := map[api.RepoName]struct{}{} // cache repos that errored
 
 	for _, m := range matches {
@@ -93,25 +92,18 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 		if _, ok := errCache[m.RepoName().Name]; ok {
 			continue
 		}
-		// Skip check if sub-repo perms are disabled for the repository
-		enabled, ok := subRepoPermsCache[m.RepoName().Name]
-		if ok && !enabled {
-			filtered = append(filtered, m)
+		enabled, err := authz.SubRepoEnabledForRepoID(ctx, checker, m.RepoName().ID)
+		if err != nil {
+			// If an error occurs while checking sub-repo perms, we omit it from the results
+			if err != ctx.Err() {
+				logger.Error("Could not determine if sub-repo permissions are enabled for repo, skipping", log.Error(err), log.String("repoName", string(m.RepoName().Name)))
+			}
+			errCache[m.RepoName().Name] = struct{}{}
 			continue
 		}
-		if !ok {
-			enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, m.RepoName().Name)
-			if err != nil {
-				// If an error occurs while checking sub-repo perms, we omit it from the results
-				logger.Error("Could not determine if sub-repo permissions are enabled for repo, skipping", log.String("repoName", string(m.RepoName().Name)))
-				errCache[m.RepoName().Name] = struct{}{}
-				continue
-			}
-			subRepoPermsCache[m.RepoName().Name] = enabled // cache the result for this repo name
-			if !enabled {
-				filtered = append(filtered, m)
-				continue
-			}
+		if !enabled {
+			filtered = append(filtered, m)
+			continue
 		}
 		switch mm := m.(type) {
 		case *result.FileMatch:

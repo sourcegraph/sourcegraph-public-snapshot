@@ -39,11 +39,6 @@ declare var SOURCEGRAPH_PHABRICATOR_EXTENSION: boolean | undefined
 /** Set from the Phabricator native integration. **/
 declare var SOURCEGRAPH_BUNDLE_URL: string | undefined
 
-/**
- * Set by shared/dev/jest-environment.js
- */
-declare var jsdom: import('jsdom').JSDOM
-
 declare module '*.scss' {
     const cssModule: string
     export default cssModule

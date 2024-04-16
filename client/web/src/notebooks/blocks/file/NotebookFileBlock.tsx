@@ -9,6 +9,7 @@ import { startWith } from 'rxjs/operators'
 import { CodeExcerpt } from '@sourcegraph/branded'
 import { isErrorLike } from '@sourcegraph/common'
 import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
@@ -28,7 +29,7 @@ import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
 
 import styles from './NotebookFileBlock.module.scss'
 
-interface NotebookFileBlockProps extends BlockProps<FileBlock>, TelemetryProps {
+interface NotebookFileBlockProps extends BlockProps<FileBlock>, TelemetryProps, TelemetryV2Props {
     isSourcegraphDotCom: boolean
 }
 
@@ -40,6 +41,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
         input,
         output,
         telemetryService,
+        telemetryRecorder,
         isSelected,
         showMenu,
         isReadOnly,
@@ -81,7 +83,9 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
         const hideInputs = useCallback(() => setShowInputs(false), [setShowInputs])
 
         const isFileSelected = input.repositoryName.length > 0 && input.filePath.length > 0
-        const blobLines = useObservable(useMemo(() => output?.pipe(startWith(LOADING)) ?? of(undefined), [output]))
+        const highlightedLines = useObservable(
+            useMemo(() => output?.pipe(startWith(LOADING)) ?? of(undefined), [output])
+        )
         const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, ...props })
         const fileURL = useMemo(
             () =>
@@ -154,7 +158,8 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
 
         const logEventOnCopy = useCallback(() => {
             telemetryService.log(...codeCopiedEvent('notebook-file-block'))
-        }, [telemetryService])
+            telemetryRecorder.recordEvent('notebook.code', 'copy', { metadata: { page: 2 } })
+        }, [telemetryService, telemetryRecorder])
 
         return (
             <NotebookBlock
@@ -186,30 +191,30 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                         {...props}
                     />
                 )}
-                {blobLines && blobLines === LOADING && (
+                {highlightedLines && highlightedLines === LOADING && (
                     <div className="d-flex justify-content-center py-3">
                         <LoadingSpinner inline={false} />
                     </div>
                 )}
-                {blobLines && blobLines !== LOADING && !isErrorLike(blobLines) && (
+                {highlightedLines && highlightedLines !== LOADING && !isErrorLike(highlightedLines) && (
                     <div>
                         <CodeExcerpt
                             className={styles.code}
                             repoName={input.repositoryName}
                             commitID={input.revision}
                             filePath={input.filePath}
-                            blobLines={blobLines}
+                            plaintextLines={[]}
+                            highlightedLines={highlightedLines}
                             highlightRanges={[]}
                             startLine={input.lineRange?.startLine ?? 0}
                             endLine={input.lineRange?.endLine ?? 1}
-                            fetchHighlightedFileRangeLines={() => of([])}
                             onCopy={logEventOnCopy}
                         />
                     </div>
                 )}
-                {blobLines && blobLines !== LOADING && isErrorLike(blobLines) && (
+                {highlightedLines && highlightedLines !== LOADING && isErrorLike(highlightedLines) && (
                     <Alert className="m-3" variant="danger">
-                        {blobLines.message}
+                        {highlightedLines.message}
                     </Alert>
                 )}
             </NotebookBlock>

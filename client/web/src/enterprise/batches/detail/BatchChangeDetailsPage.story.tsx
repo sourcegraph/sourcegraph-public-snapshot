@@ -1,11 +1,12 @@
 import { useMemo } from '@storybook/addons'
-import type { Decorator, Meta, StoryFn } from '@storybook/react'
+import type { Decorator, Meta, StoryFn, StoryObj } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
@@ -32,7 +33,7 @@ import {
 import { CHANGESET_COUNTS_OVER_TIME_MOCK } from './testdata'
 
 const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
-const config: Meta = {
+const config: Meta<Args> = {
     title: 'web/batches/details/BatchChangeDetailsPage',
     decorators: [decorator],
     parameters: {
@@ -86,13 +87,15 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
 
 const deleteBatchChange = () => Promise.resolve(undefined)
 
-const Template: StoryFn<{
+interface Args {
     url: string
     supersedingBatchSpec?: boolean
     currentBatchSpec?: BatchChangeFields['currentSpec']
     viewerCanAdminister: boolean
     isClosed?: boolean
-}> = ({ url, supersedingBatchSpec, currentBatchSpec, viewerCanAdminister, isClosed }) => {
+}
+
+const Template: StoryFn<Args> = ({ url, supersedingBatchSpec, currentBatchSpec, viewerCanAdminister, isClosed }) => {
     const batchChange: BatchChangeFields = useMemo(() => {
         const currentSpec = currentBatchSpec ?? MOCK_BATCH_CHANGE.currentSpec
 
@@ -155,6 +158,7 @@ const Template: StoryFn<{
                         deleteBatchChange={deleteBatchChange}
                         queryAllChangesetIDs={queryAllChangesetIDs}
                         settingsCascade={EMPTY_SETTINGS_CASCADE}
+                        telemetryRecorder={noOpTelemetryRecorder}
                     />
                 </MockedTestProvider>
             )}
@@ -162,20 +166,22 @@ const Template: StoryFn<{
     )
 }
 
-export const Overview = Template.bind({})
+type Story = StoryObj<typeof config>
+
+export const Overview: Story = Template.bind({})
 Overview.args = { url: '/users/alice/batch-changes/awesome-batch-change', supersedingBatchSpec: false }
 Overview.argTypes = {
     supersedingBatchSpec: {},
 }
 
-export const BurndownChart = Template.bind({})
+export const BurndownChart: Story = Template.bind({})
 BurndownChart.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=chart', supersedingBatchSpec: false }
 BurndownChart.storyName = 'Burndown chart'
 BurndownChart.argTypes = {
     supersedingBatchSpec: {},
 }
 
-export const SpecFile = Template.bind({})
+export const SpecFile: Story = Template.bind({})
 SpecFile.args = {
     url: '/users/alice/batch-changes/awesome-batch-change?tab=spec',
     supersedingBatchSpec: false,
@@ -187,13 +193,13 @@ SpecFile.argTypes = {
     viewerCanAdminister: {},
 }
 
-export const Archived = Template.bind({})
+export const Archived: Story = Template.bind({})
 Archived.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=archived', supersedingBatchSpec: false }
 Archived.argTypes = {
     supersedingBatchSpec: {},
 }
 
-export const BulkOperations = Template.bind({})
+export const BulkOperations: Story = Template.bind({})
 BulkOperations.args = {
     url: '/users/alice/batch-changes/awesome-batch-change?tab=bulkoperations',
     supersedingBatchSpec: false,
@@ -203,14 +209,14 @@ BulkOperations.argTypes = {
     supersedingBatchSpec: {},
 }
 
-export const SupersededBatchSpec = Template.bind({})
+export const SupersededBatchSpec: Story = Template.bind({})
 SupersededBatchSpec.args = { url: '/users/alice/batch-changes/awesome-batch-change', supersedingBatchSpec: true }
 SupersededBatchSpec.storyName = 'Superseded batch-spec'
 SupersededBatchSpec.argTypes = {
     supersedingBatchSpec: {},
 }
 
-export const UnpublishableBatchSpec = Template.bind({})
+export const UnpublishableBatchSpec: Story = Template.bind({})
 UnpublishableBatchSpec.args = {
     url: '/users/alice/batch-changes/awesome-batch-change',
     supersedingBatchSpec: true,
@@ -265,6 +271,7 @@ export const EmptyChangesets: StoryFn = args => {
                         deleteBatchChange={deleteBatchChange}
                         settingsCascade={EMPTY_SETTINGS_CASCADE}
                         {...args}
+                        telemetryRecorder={noOpTelemetryRecorder}
                     />
                 </MockedTestProvider>
             )}

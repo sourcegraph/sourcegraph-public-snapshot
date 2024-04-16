@@ -1,7 +1,7 @@
 package bg
 
 import (
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -9,10 +9,7 @@ import (
 
 func DeleteOldCacheDataInRedis() {
 	for _, kv := range []redispool.KeyValue{redispool.Store, redispool.Cache} {
-		pool, ok := kv.Pool()
-		if !ok { // redis disabled, nothing to delete
-			continue
-		}
+		pool := kv.Pool()
 
 		c := pool.Get()
 		defer c.Close()

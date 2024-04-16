@@ -164,7 +164,7 @@ Also see [Buildkite infrastructure](#buildkite-infrastructure).
 
 ##### Flaky linters
 
-Linters are all run through [`sg lint`](../sg/reference.md#sg-lint), with linters defined in [`dev/sg/linters`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/sg/linters).
+Linters are all run through [`sg lint`], with linters defined in [`dev/sg/linters`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/sg/linters).
 If a linter is flaky, you can modify the `dev/sg/linters` package to disable the specific linter (or entire category of linters) with the `Enabled: disabled(...)` helper:
 
 ```diff

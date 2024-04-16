@@ -1,0 +1,267 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.sgdev.org/api/v4/projects?min_access_level=20&per_page=100&simple=true&visibility=private
+    method: GET
+  response:
+    body: '[]'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 87121e37f97d06df-CPT
+      Content-Length:
+      - "2"
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 08 Apr 2024 12:04:07 GMT
+      Etag:
+      - W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+      Link:
+      - <https://gitlab.sgdev.org/api/v4/projects?imported=false&membership=false&min_access_level=20&order_by=created_at&owned=false&page=1&per_page=100&repository_checksum_failed=false&simple=true&sort=desc&starred=false&statistics=false&visibility=private&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
+        rel="first", <https://gitlab.sgdev.org/api/v4/projects?imported=false&membership=false&min_access_level=20&order_by=created_at&owned=false&page=1&per_page=100&repository_checksum_failed=false&simple=true&sort=desc&starred=false&statistics=false&visibility=private&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
+        rel="last"
+      Server:
+      - cloudflare
+      Vary:
+      - Origin
+      Via:
+      - 1.1 google
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Next-Page:
+      - ""
+      X-Page:
+      - "1"
+      X-Per-Page:
+      - "100"
+      X-Prev-Page:
+      - ""
+      X-Request-Id:
+      - 01HTYSG7W0VG600EVA44C97DSB
+      X-Runtime:
+      - "0.053107"
+      X-Total:
+      - "0"
+      X-Total-Pages:
+      - "1"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.sgdev.org/api/v4/projects?min_access_level=20&per_page=100&simple=true&visibility=internal
+    method: GET
+  response:
+    body: '[{"id":371334,"description":"A ready-to-go template for Swift-based iOS
+      development.","name":"GetSchwifty","name_with_namespace":"Petri Last / GetSchwifty","path":"getschwifty","path_with_namespace":"petri.last/getschwifty","created_at":"2023-06-29T09:26:32.021Z","default_branch":"master","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.sgdev.org:petri.last/getschwifty.git","http_url_to_repo":"https://gitlab.sgdev.org/petri.last/getschwifty.git","web_url":"https://gitlab.sgdev.org/petri.last/getschwifty","readme_url":"https://gitlab.sgdev.org/petri.last/getschwifty/-/blob/master/README.md","forks_count":0,"avatar_url":null,"star_count":0,"last_activity_at":"2023-09-11T07:38:44.207Z","namespace":{"id":106548,"name":"Petri
+      Last","path":"petri.last","kind":"user","full_path":"petri.last","parent_id":null,"avatar_url":"https://secure.gravatar.com/avatar/51965a4ab94bea1eb5372f9f94f680a1?s=80\u0026d=identicon","web_url":"https://gitlab.sgdev.org/petri.last"}}]'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 87121e430c2006df-CPT
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 08 Apr 2024 12:04:09 GMT
+      Etag:
+      - W/"e6076c9c08d66e209d2675c4b8a701ee"
+      Link:
+      - <https://gitlab.sgdev.org/api/v4/projects?imported=false&membership=false&min_access_level=20&order_by=created_at&owned=false&page=1&per_page=100&repository_checksum_failed=false&simple=true&sort=desc&starred=false&statistics=false&visibility=internal&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
+        rel="first", <https://gitlab.sgdev.org/api/v4/projects?imported=false&membership=false&min_access_level=20&order_by=created_at&owned=false&page=1&per_page=100&repository_checksum_failed=false&simple=true&sort=desc&starred=false&statistics=false&visibility=internal&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
+        rel="last"
+      Server:
+      - cloudflare
+      Vary:
+      - Origin
+      Via:
+      - 1.1 google
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Next-Page:
+      - ""
+      X-Page:
+      - "1"
+      X-Per-Page:
+      - "100"
+      X-Prev-Page:
+      - ""
+      X-Request-Id:
+      - 01HTYSG9M3N220GQPMC7D4K99C
+      X-Runtime:
+      - "0.136001"
+      X-Total:
+      - "1"
+      X-Total-Pages:
+      - "1"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.sgdev.org/api/v4/projects?per_page=100&simple=true&visibility=private
+    method: GET
+  response:
+    body: '[]'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 87121e4dcda906df-CPT
+      Content-Length:
+      - "2"
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 08 Apr 2024 12:04:10 GMT
+      Etag:
+      - W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+      Link:
+      - <https://gitlab.sgdev.org/api/v4/projects?imported=false&membership=false&order_by=created_at&owned=false&page=1&per_page=100&repository_checksum_failed=false&simple=true&sort=desc&starred=false&statistics=false&visibility=private&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
+        rel="first", <https://gitlab.sgdev.org/api/v4/projects?imported=false&membership=false&order_by=created_at&owned=false&page=1&per_page=100&repository_checksum_failed=false&simple=true&sort=desc&starred=false&statistics=false&visibility=private&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
+        rel="last"
+      Server:
+      - cloudflare
+      Vary:
+      - Origin
+      Via:
+      - 1.1 google
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Next-Page:
+      - ""
+      X-Page:
+      - "1"
+      X-Per-Page:
+      - "100"
+      X-Prev-Page:
+      - ""
+      X-Request-Id:
+      - 01HTYSGB9Q80KQF5GFNQ72QBH2
+      X-Runtime:
+      - "0.064129"
+      X-Total:
+      - "0"
+      X-Total-Pages:
+      - "1"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.sgdev.org/api/v4/projects?per_page=100&simple=true&visibility=internal
+    method: GET
+  response:
+    body: '[{"id":371345,"description":null,"name":"Internal Project","name_with_namespace":"Booking-Test-Group
+      / Internal Project","path":"internal-project","path_with_namespace":"booking-test-group/internal-project","created_at":"2024-02-13T17:14:18.495Z","default_branch":"main","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.sgdev.org:booking-test-group/internal-project.git","http_url_to_repo":"https://gitlab.sgdev.org/booking-test-group/internal-project.git","web_url":"https://gitlab.sgdev.org/booking-test-group/internal-project","readme_url":null,"forks_count":0,"avatar_url":null,"star_count":0,"last_activity_at":"2024-02-13T17:14:18.495Z","namespace":{"id":560477,"name":"Booking-Test-Group","path":"booking-test-group","kind":"group","full_path":"booking-test-group","parent_id":null,"avatar_url":null,"web_url":"https://gitlab.sgdev.org/groups/booking-test-group"}},{"id":371337,"description":"A
+      getting started template for go-micro (https://micro.mu/docs/go-micro.html)","name":"test_go_popover","name_with_namespace":"Administrator
+      / test_go_popover","path":"test_go_popover","path_with_namespace":"root/test_go_popover","created_at":"2023-07-26T20:49:57.534Z","default_branch":"master","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.sgdev.org:root/test_go_popover.git","http_url_to_repo":"https://gitlab.sgdev.org/root/test_go_popover.git","web_url":"https://gitlab.sgdev.org/root/test_go_popover","readme_url":"https://gitlab.sgdev.org/root/test_go_popover/-/blob/master/README.md","forks_count":0,"avatar_url":null,"star_count":0,"last_activity_at":"2023-08-25T00:10:06.176Z","namespace":{"id":1,"name":"Administrator","path":"root","kind":"user","full_path":"root","parent_id":null,"avatar_url":"https://secure.gravatar.com/avatar/e75bc1cb5f1c1c4247d93980c1847fb8?s=80\u0026d=identicon","web_url":"https://gitlab.sgdev.org/root"}},{"id":371336,"description":"","name":"test_proj_net","name_with_namespace":"Administrator
+      / test_proj_net","path":"test_proj_net","path_with_namespace":"root/test_proj_net","created_at":"2023-07-26T20:26:32.093Z","default_branch":"master","tag_list":["test-cj"],"topics":["test-cj"],"ssh_url_to_repo":"git@gitlab.sgdev.org:root/test_proj_net.git","http_url_to_repo":"https://gitlab.sgdev.org/root/test_proj_net.git","web_url":"https://gitlab.sgdev.org/root/test_proj_net","readme_url":"https://gitlab.sgdev.org/root/test_proj_net/-/blob/master/README.md","forks_count":0,"avatar_url":null,"star_count":0,"last_activity_at":"2023-08-25T00:10:04.668Z","namespace":{"id":1,"name":"Administrator","path":"root","kind":"user","full_path":"root","parent_id":null,"avatar_url":"https://secure.gravatar.com/avatar/e75bc1cb5f1c1c4247d93980c1847fb8?s=80\u0026d=identicon","web_url":"https://gitlab.sgdev.org/root"}},{"id":371335,"description":"A
+      ready-to-go template for Swift-based iOS development.","name":"Schwifty2","name_with_namespace":"Petrissupercoolgroup
+      / Schwifty2","path":"schwifty2","path_with_namespace":"petrissupercoolgroup/schwifty2","created_at":"2023-06-29T09:34:56.953Z","default_branch":"master","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.sgdev.org:petrissupercoolgroup/schwifty2.git","http_url_to_repo":"https://gitlab.sgdev.org/petrissupercoolgroup/schwifty2.git","web_url":"https://gitlab.sgdev.org/petrissupercoolgroup/schwifty2","readme_url":"https://gitlab.sgdev.org/petrissupercoolgroup/schwifty2/-/blob/master/README.md","forks_count":0,"avatar_url":null,"star_count":0,"last_activity_at":"2023-10-11T00:10:19.996Z","namespace":{"id":560496,"name":"Petrissupercoolgroup","path":"petrissupercoolgroup","kind":"group","full_path":"petrissupercoolgroup","parent_id":null,"avatar_url":null,"web_url":"https://gitlab.sgdev.org/groups/petrissupercoolgroup"}},{"id":371334,"description":"A
+      ready-to-go template for Swift-based iOS development.","name":"GetSchwifty","name_with_namespace":"Petri
+      Last / GetSchwifty","path":"getschwifty","path_with_namespace":"petri.last/getschwifty","created_at":"2023-06-29T09:26:32.021Z","default_branch":"master","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.sgdev.org:petri.last/getschwifty.git","http_url_to_repo":"https://gitlab.sgdev.org/petri.last/getschwifty.git","web_url":"https://gitlab.sgdev.org/petri.last/getschwifty","readme_url":"https://gitlab.sgdev.org/petri.last/getschwifty/-/blob/master/README.md","forks_count":0,"avatar_url":null,"star_count":0,"last_activity_at":"2023-09-11T07:38:44.207Z","namespace":{"id":106548,"name":"Petri
+      Last","path":"petri.last","kind":"user","full_path":"petri.last","parent_id":null,"avatar_url":"https://secure.gravatar.com/avatar/51965a4ab94bea1eb5372f9f94f680a1?s=80\u0026d=identicon","web_url":"https://gitlab.sgdev.org/petri.last"}},{"id":371317,"description":"A
+      getting started template for go-micro (https://micro.mu/docs/go-micro.html)","name":"Go
+      Micro Test","name_with_namespace":"Bolaji Olajide / Go Micro Test","path":"go-micro-test","path_with_namespace":"bolaji.olajide/go-micro-test","created_at":"2023-05-24T17:33:07.485Z","default_branch":"master","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.sgdev.org:bolaji.olajide/go-micro-test.git","http_url_to_repo":"https://gitlab.sgdev.org/bolaji.olajide/go-micro-test.git","web_url":"https://gitlab.sgdev.org/bolaji.olajide/go-micro-test","readme_url":"https://gitlab.sgdev.org/bolaji.olajide/go-micro-test/-/blob/master/README.md","forks_count":0,"avatar_url":null,"star_count":0,"last_activity_at":"2023-09-26T20:14:00.746Z","namespace":{"id":49,"name":"Bolaji
+      Olajide","path":"bolaji.olajide","kind":"user","full_path":"bolaji.olajide","parent_id":null,"avatar_url":"https://secure.gravatar.com/avatar/213c58298da632ba87f9255c73c3ebc5?s=80\u0026d=identicon","web_url":"https://gitlab.sgdev.org/bolaji.olajide"}},{"id":50,"description":"Test
+      repo for Milan to test https://github.com/sourcegraph/sourcegraph/issues/41909","name":"Milan
+      test project","name_with_namespace":"Milan Freml / Milan test project","path":"milan-test-project","path_with_namespace":"milan.freml/milan-test-project","created_at":"2022-10-03T11:08:27.271Z","default_branch":"main","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.sgdev.org:milan.freml/milan-test-project.git","http_url_to_repo":"https://gitlab.sgdev.org/milan.freml/milan-test-project.git","web_url":"https://gitlab.sgdev.org/milan.freml/milan-test-project","readme_url":"https://gitlab.sgdev.org/milan.freml/milan-test-project/-/blob/main/README.md","forks_count":0,"avatar_url":null,"star_count":0,"last_activity_at":"2022-10-03T11:08:27.271Z","namespace":{"id":106544,"name":"Milan
+      Freml","path":"milan.freml","kind":"user","full_path":"milan.freml","parent_id":null,"avatar_url":"https://secure.gravatar.com/avatar/a367fcbe20fbc9c635b7940827c9104e?s=80\u0026d=identicon","web_url":"https://gitlab.sgdev.org/milan.freml"}},{"id":45,"description":"","name":"Megarepo1","name_with_namespace":"sgtest
+      / Megarepo1","path":"megarepo1","path_with_namespace":"sgtest/megarepo1","created_at":"2022-09-21T13:48:43.148Z","default_branch":"main","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.sgdev.org:sgtest/megarepo1.git","http_url_to_repo":"https://gitlab.sgdev.org/sgtest/megarepo1.git","web_url":"https://gitlab.sgdev.org/sgtest/megarepo1","readme_url":null,"forks_count":0,"avatar_url":null,"star_count":0,"last_activity_at":"2022-09-21T13:48:43.148Z","namespace":{"id":12,"name":"sgtest","path":"sgtest","kind":"group","full_path":"sgtest","parent_id":null,"avatar_url":null,"web_url":"https://gitlab.sgdev.org/groups/sgtest"}},{"id":44,"description":"","name":"Megarepo","name_with_namespace":"sgtest
+      / Megarepo","path":"megarepo","path_with_namespace":"sgtest/megarepo","created_at":"2022-09-21T12:21:07.399Z","default_branch":"main","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.sgdev.org:sgtest/megarepo.git","http_url_to_repo":"https://gitlab.sgdev.org/sgtest/megarepo.git","web_url":"https://gitlab.sgdev.org/sgtest/megarepo","readme_url":null,"forks_count":0,"avatar_url":null,"star_count":0,"last_activity_at":"2022-09-21T12:21:07.399Z","namespace":{"id":12,"name":"sgtest","path":"sgtest","kind":"group","full_path":"sgtest","parent_id":null,"avatar_url":null,"web_url":"https://gitlab.sgdev.org/groups/sgtest"}},{"id":20,"description":null,"name":"rubytestpublic3","name_with_namespace":"GitLab
+      Instance / rubytestpublic3","path":"rubytestpublic3","path_with_namespace":"gitlab-instance-328202d9/rubytestpublic3","created_at":"2022-06-10T16:16:07.560Z","default_branch":"master","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.sgdev.org:gitlab-instance-328202d9/rubytestpublic3.git","http_url_to_repo":"https://gitlab.sgdev.org/gitlab-instance-328202d9/rubytestpublic3.git","web_url":"https://gitlab.sgdev.org/gitlab-instance-328202d9/rubytestpublic3","readme_url":"https://gitlab.sgdev.org/gitlab-instance-328202d9/rubytestpublic3/-/blob/master/README.md","forks_count":0,"avatar_url":null,"star_count":0,"last_activity_at":"2022-12-02T04:37:09.595Z","namespace":{"id":2,"name":"GitLab
+      Instance","path":"gitlab-instance-328202d9","kind":"group","full_path":"gitlab-instance-328202d9","parent_id":null,"avatar_url":null,"web_url":"https://gitlab.sgdev.org/groups/gitlab-instance-328202d9"}},{"id":19,"description":null,"name":"rubytestpublic2","name_with_namespace":"GitLab
+      Instance / rubytestpublic2","path":"rubytestpublic2","path_with_namespace":"gitlab-instance-328202d9/rubytestpublic2","created_at":"2022-06-10T16:15:00.296Z","default_branch":"master","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.sgdev.org:gitlab-instance-328202d9/rubytestpublic2.git","http_url_to_repo":"https://gitlab.sgdev.org/gitlab-instance-328202d9/rubytestpublic2.git","web_url":"https://gitlab.sgdev.org/gitlab-instance-328202d9/rubytestpublic2","readme_url":"https://gitlab.sgdev.org/gitlab-instance-328202d9/rubytestpublic2/-/blob/master/README.md","forks_count":0,"avatar_url":null,"star_count":0,"last_activity_at":"2022-12-02T04:36:55.095Z","namespace":{"id":2,"name":"GitLab
+      Instance","path":"gitlab-instance-328202d9","kind":"group","full_path":"gitlab-instance-328202d9","parent_id":null,"avatar_url":null,"web_url":"https://gitlab.sgdev.org/groups/gitlab-instance-328202d9"}},{"id":18,"description":null,"name":"rubytestpublic1","name_with_namespace":"GitLab
+      Instance / rubytestpublic1","path":"rubytestpublic1","path_with_namespace":"gitlab-instance-328202d9/rubytestpublic1","created_at":"2022-06-10T16:14:44.333Z","default_branch":"master","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.sgdev.org:gitlab-instance-328202d9/rubytestpublic1.git","http_url_to_repo":"https://gitlab.sgdev.org/gitlab-instance-328202d9/rubytestpublic1.git","web_url":"https://gitlab.sgdev.org/gitlab-instance-328202d9/rubytestpublic1","readme_url":"https://gitlab.sgdev.org/gitlab-instance-328202d9/rubytestpublic1/-/blob/master/README.md","forks_count":0,"avatar_url":null,"star_count":0,"last_activity_at":"2022-12-02T04:36:33.580Z","namespace":{"id":2,"name":"GitLab
+      Instance","path":"gitlab-instance-328202d9","kind":"group","full_path":"gitlab-instance-328202d9","parent_id":null,"avatar_url":null,"web_url":"https://gitlab.sgdev.org/groups/gitlab-instance-328202d9"}},{"id":1,"description":"This
+      project is automatically generated and helps monitor this GitLab instance. [Learn
+      more](/help/administration/monitoring/gitlab_self_monitoring_project/index).","name":"Monitoring","name_with_namespace":"Administrator
+      / Monitoring","path":"Monitoring","path_with_namespace":"root/Monitoring","created_at":"2022-06-04T00:56:00.431Z","default_branch":"main","tag_list":[],"topics":[],"ssh_url_to_repo":"git@gitlab.sgdev.org:root/Monitoring.git","http_url_to_repo":"https://gitlab.sgdev.org/root/Monitoring.git","web_url":"https://gitlab.sgdev.org/root/Monitoring","readme_url":null,"forks_count":0,"avatar_url":null,"star_count":0,"last_activity_at":"2022-11-24T16:47:58.818Z","namespace":{"id":1,"name":"Administrator","path":"root","kind":"user","full_path":"root","parent_id":null,"avatar_url":"https://secure.gravatar.com/avatar/e75bc1cb5f1c1c4247d93980c1847fb8?s=80\u0026d=identicon","web_url":"https://gitlab.sgdev.org/root"}}]'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 87121e58c8e906df-CPT
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 08 Apr 2024 12:04:13 GMT
+      Etag:
+      - W/"0a5942ff5125948f442125125307af0f"
+      Link:
+      - <https://gitlab.sgdev.org/api/v4/projects?imported=false&membership=false&order_by=created_at&owned=false&page=1&per_page=100&repository_checksum_failed=false&simple=true&sort=desc&starred=false&statistics=false&visibility=internal&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
+        rel="first", <https://gitlab.sgdev.org/api/v4/projects?imported=false&membership=false&order_by=created_at&owned=false&page=1&per_page=100&repository_checksum_failed=false&simple=true&sort=desc&starred=false&statistics=false&visibility=internal&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
+        rel="last"
+      Server:
+      - cloudflare
+      Vary:
+      - Origin
+      Via:
+      - 1.1 google
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Next-Page:
+      - ""
+      X-Page:
+      - "1"
+      X-Per-Page:
+      - "100"
+      X-Prev-Page:
+      - ""
+      X-Request-Id:
+      - 01HTYSGD0GGVKC3E9B42MTMKQ3
+      X-Runtime:
+      - "0.555416"
+      X-Total:
+      - "13"
+      X-Total-Pages:
+      - "1"
+    status: 200 OK
+    code: 200
+    duration: ""

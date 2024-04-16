@@ -18,6 +18,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
+import { isCodyOnlyLicense } from '../../util/license'
 
 import navActionStyles from './NavAction.module.scss'
 import navBarStyles from './NavBar.module.scss'
@@ -30,6 +31,7 @@ interface NavBarProps {
 
 interface NavGroupProps {
     children: React.ReactNode
+    className?: string
 }
 
 interface NavItemProps {
@@ -50,14 +52,15 @@ export interface NavLinkProps extends NavItemProps, Pick<LinkProps, 'to'> {
 }
 
 export const NavBar = forwardRef(function NavBar({ children, logo }, reference): JSX.Element {
+    const logoUrl = isCodyOnlyLicense() ? PageRoutes.Cody : PageRoutes.Search
     return (
         <nav aria-label="Main" className={navBarStyles.navbar} ref={reference}>
             {logo && (
                 <>
                     <H1 className={navBarStyles.logo}>
-                        <RouterNavLink className="d-flex align-items-center" to={PageRoutes.Search}>
+                        <Link className="d-flex align-items-center" to={logoUrl}>
                             {logo}
-                        </RouterNavLink>
+                        </Link>
                     </H1>
                     <hr className={navBarStyles.divider} aria-hidden={true} />
                 </>
@@ -69,26 +72,26 @@ export const NavBar = forwardRef(function NavBar({ children, logo }, reference):
 
 export const MobileNavGroupContext = React.createContext(false)
 
-export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
+export const NavGroup = forwardRef<HTMLDivElement, NavGroupProps>(({ children, className }: NavGroupProps, ref) => {
     const isMobileSize = useMatchMedia(`(max-width: ${VIEWPORT_SM}px)`)
 
     return (
         <MobileNavGroupContext.Provider value={isMobileSize}>
             {isMobileSize ? (
-                <Menu>
+                <Menu ref={ref} className={className}>
                     <MenuButton aria-label="Sections Navigation">
                         <Icon aria-hidden={true} svgPath={mdiMenu} />
                     </MenuButton>
                     <MenuList>{children}</MenuList>
                 </Menu>
             ) : (
-                <div className={navBarStyles.menu}>
+                <div ref={ref} className={classNames(navBarStyles.menu, className)}>
                     <ul className={navBarStyles.list}>{children}</ul>
                 </div>
             )}
         </MobileNavGroupContext.Provider>
     )
-}
+})
 
 export const NavActions: React.FunctionComponent<React.PropsWithChildren<NavActionsProps>> = ({ children }) => (
     <ul className={navActionStyles.actions}>{children}</ul>

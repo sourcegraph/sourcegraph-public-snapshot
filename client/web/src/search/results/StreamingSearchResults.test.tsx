@@ -1,10 +1,13 @@
 import React from 'react'
 
+import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
+
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
-import { EMPTY, NEVER, of } from 'rxjs'
+import { EMPTY, lastValueFrom, NEVER, of } from 'rxjs'
 import { spy, assert } from 'sinon'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
@@ -39,9 +42,13 @@ describe('StreamingSearchResults', () => {
 
         settingsCascade: {
             subjects: null,
-            final: null,
+            final: { experimentalFeatures: { newSearchResultFiltersPanel: false } },
         },
-        platformContext: { settings: NEVER, requestGraphQL: () => EMPTY, sourcegraphURL: 'https://sourcegraph.com' },
+        platformContext: {
+            settings: NEVER,
+            requestGraphQL: () => EMPTY,
+            sourcegraphURL: 'https://sourcegraph.com',
+        } as any,
 
         streamSearch: () => of(MULTIPLE_SEARCH_RESULT),
 
@@ -91,7 +98,7 @@ describe('StreamingSearchResults', () => {
         assert.calledOnce(searchSpy)
         const call = searchSpy.getCall(0)
         // We have to extract the query from the observable since we can't directly compare observables
-        const receivedQuery = await call.args[0].toPromise()
+        const receivedQuery = await lastValueFrom(call.args[0])
         const receivedOptions = call.args[1]
 
         expect(receivedQuery).toEqual('r:golang/oauth2 test f:travis')
@@ -102,7 +109,9 @@ describe('StreamingSearchResults', () => {
             searchMode: SearchMode.SmartSearch,
             trace: undefined,
             chunkMatches: true,
+            maxLineLen: 5 * 1024,
             featureOverrides: [],
+            zoektSearchOptions: '',
         })
     })
 
@@ -180,7 +189,10 @@ describe('StreamingSearchResults', () => {
         assert.calledWith(logSpy, 'SearchResultsFetched')
     })
 
-    it('should log events when clicking on search result', () => {
+    // This test passes but it throws some internal happy-dom errors while
+    // running. See thread  https://sourcegraph.slack.com/archives/C04MYFW01NV/p1705436143793999
+    // you can find original problem issue https://github.com/sourcegraph/sourcegraph/issues/59700
+    it.skip('should log events when clicking on search result', () => {
         const logSpy = spy()
         const telemetryService = {
             ...NOOP_TELEMETRY_SERVICE,
@@ -194,7 +206,6 @@ describe('StreamingSearchResults', () => {
         assert.calledWith(logSpy, 'search.ranking.result-clicked', {
             index: 0,
             type: 'fileMatch',
-            ranked: false,
             resultsLength: 3,
         })
 
@@ -203,7 +214,6 @@ describe('StreamingSearchResults', () => {
         assert.calledWith(logSpy, 'search.ranking.result-clicked', {
             index: 2,
             type: 'fileMatch',
-            ranked: false,
             resultsLength: 3,
         })
     })
@@ -229,7 +239,7 @@ describe('StreamingSearchResults', () => {
     })
 
     it('should start a new search with added params when onSearchAgain event is triggered', async () => {
-        const submitSearchMock = jest.spyOn(helpers, 'submitSearch').mockImplementation(() => {})
+        const submitSearchMock = vi.spyOn(helpers, 'submitSearch').mockImplementation(() => {})
         const tests = [
             {
                 parsedSearchQuery: 'r:golang/oauth2 test f:travis',
@@ -282,9 +292,13 @@ describe('StreamingSearchResults', () => {
                 userEvent.click(check, undefined, { skipPointerEventsCheck: true })
             }
 
-            userEvent.click(await screen.findByText(/search again/i, { selector: 'button[type=submit]' }), undefined, {
-                skipPointerEventsCheck: true,
-            })
+            userEvent.click(
+                await screen.findByText(/modify and re-run/i, { selector: 'button[type=submit]' }),
+                undefined,
+                {
+                    skipPointerEventsCheck: true,
+                }
+            )
 
             expect(helpers.submitSearch).toBeCalledTimes(index + 1)
             const args = submitSearchMock.mock.calls[index][0]

@@ -484,7 +484,7 @@ func buildChangesetSource(ctx context.Context, tx SourcerStore, cf *httpcli.Fact
 	case extsvc.KindGerrit:
 		return NewGerritSource(ctx, externalService, cf)
 	case extsvc.KindPerforce:
-		return NewPerforceSource(ctx, gitserver.NewClient(), externalService, cf)
+		return NewPerforceSource(ctx, gitserver.NewClient("batches.perforcesource"), externalService, cf)
 	default:
 		return nil, errors.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}
@@ -653,7 +653,7 @@ func CopyRepoAsFork(repo *types.Repo, metadata any, nameAndOwner, forkNameAndOwn
 	forkSources := map[string]*types.SourceInfo{}
 
 	for urn, src := range repo.Sources {
-		if src != nil || src.CloneURL != "" {
+		if src != nil && src.CloneURL != "" {
 			forkURL := strings.Replace(
 				strings.ToLower(src.CloneURL),
 				strings.ToLower(nameAndOwner),

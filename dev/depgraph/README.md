@@ -40,7 +40,6 @@ This command ensures the following lint passes. Violations of the lint rules wil
 
 - **NoBinarySpecificSharedCode**: Report shared packages that are imported only by a single command
 - **NoDeadPackages**: Report unused packages (except for library code and main packages)
-- **NoEnterpriseImportsFromOSS**: Report packages that illegally import enterprise code
 - **NoLooseCommands**: Report main packages outside of known command roots
 - **NoReachingIntoCommands**: Report packages that import code from an unrelated command
 - **NoUnusedSharedCommandCode**: Report packages that could be moved into an internal package

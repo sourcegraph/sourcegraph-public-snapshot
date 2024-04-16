@@ -1,14 +1,15 @@
 <script lang="ts">
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
+    import Avatar from '$lib/Avatar.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Paginator from '$lib/Paginator.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
-    import UserAvatar from '$lib/UserAvatar.svelte'
     import { createPromiseStore } from '$lib/utils'
-    import { Button, ButtonGroup } from '$lib/wildcard'
+    import { Alert, Button, ButtonGroup } from '$lib/wildcard'
 
     import type { PageData } from './$types'
+    import type { ContributorConnection } from './page.gql'
 
     export let data: PageData
 
@@ -19,15 +20,15 @@
         ['All time', ''],
     ]
 
-    const { pending, latestValue: contributors, set } = createPromiseStore<PageData['deferred']['contributors']>()
-    $: set(data.deferred.contributors)
+    const contributorConnection = createPromiseStore<ContributorConnection | null>()
+    $: contributorConnection.set(data.contributors)
 
     // We want to show stale contributors data when the user navigates to
     // the next or previous page for the current time period. When the user
     // changes the time period we want to show a loading indicator instead.
-    let currentContributors = $contributors
-    $: if (!$pending && $contributors) {
-        currentContributors = $contributors
+    let currentContributorConnection = $contributorConnection.value
+    $: if (!$contributorConnection.pending) {
+        currentContributorConnection = $contributorConnection.value
     }
 
     $: timePeriod = data.after
@@ -38,10 +39,14 @@
         const newURL = new URL($page.url)
         newURL.search = timePeriod ? `after=${timePeriod}` : ''
         // Don't show stale contributors when switching the time period
-        currentContributors = null
+        currentContributorConnection = null
         await goto(newURL)
     }
 </script>
+
+<svelte:head>
+    <title>Contributors - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
 
 <section>
     <div class="root">
@@ -50,49 +55,65 @@
             <ButtonGroup>
                 {#each timePeriodButtons as [label, value]}
                     <Button variant="secondary">
-                        <button
-                            slot="custom"
-                            let:className
-                            class={className}
-                            class:active={timePeriod === value}
-                            type="button"
-                            data-value={value}
-                            on:click={setTimePeriod}>{label}</button
-                        >
+                        <svelte:fragment slot="custom" let:buttonClass>
+                            <button
+                                class={buttonClass}
+                                class:active={timePeriod === value}
+                                type="button"
+                                data-value={value}
+                                on:click={setTimePeriod}>{label}</button
+                            >
+                        </svelte:fragment>
                     </Button>
                 {/each}
             </ButtonGroup>
         </form>
-        {#if !currentContributors && $pending}
+        {#if !currentContributorConnection && $contributorConnection.pending}
             <div class="mt-3">
                 <LoadingSpinner />
             </div>
-        {:else if currentContributors}
-            {@const nodes = currentContributors.nodes}
+        {:else if currentContributorConnection}
+            {@const nodes = currentContributorConnection.nodes}
             <table class="mt-3">
                 <tbody>
                     {#each nodes as contributor}
                         {@const commit = contributor.commits.nodes[0]}
                         <tr>
                             <td
-                                ><span><UserAvatar user={contributor.person} /></span>&nbsp;<span
-                                    >{contributor.person.displayName}</span
-                                ></td
-                            >
+                                ><span><Avatar avatar={contributor.person} --avatar-size="1.5rem" /></span>&nbsp;
+                                <span>{contributor.person.displayName}</span>
+                            </td>
                             <td
                                 ><Timestamp date={new Date(commit.author.date)} strict />:
                                 <a href={commit.canonicalURL}>{commit.subject}</a></td
                             >
                             <td>{contributor.count}&nbsp;commits</td>
                         </tr>
+                    {:else}
+                        <tr>
+                            <td colspan="3">
+                                <Alert variant="info">No contributors found</Alert>
+                            </td>
+                        </tr>
                     {/each}
                 </tbody>
             </table>
-            <div class="d-flex flex-column align-items-center">
-                <Paginator disabled={$pending} pageInfo={currentContributors.pageInfo} />
-                <p class="mt-1 text-muted">
-                    <small>Total contributors: {currentContributors.totalCount}</small>
-                </p>
+            {#if nodes.length > 0}
+                <div class="d-flex flex-column align-items-center">
+                    <Paginator
+                        disabled={$contributorConnection.pending}
+                        pageInfo={currentContributorConnection.pageInfo}
+                    />
+                    <p class="mt-1 text-muted">
+                        <small>Total contributors: {currentContributorConnection.totalCount}</small>
+                    </p>
+                </div>
+            {/if}
+        {:else if $contributorConnection.error}
+            <div class="mt-2">
+                <Alert variant="danger">
+                    Unable to load contributors: {$contributorConnection.error.message}
+                </Alert>
             </div>
         {/if}
     </div>
@@ -113,6 +134,7 @@
 
     table {
         border-collapse: collapse;
+        width: 100%;
     }
 
     td {

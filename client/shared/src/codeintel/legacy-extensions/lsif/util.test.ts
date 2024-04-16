@@ -1,4 +1,5 @@
 import sinon from 'sinon'
+import { test } from 'vitest'
 
 import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'
 

@@ -1,18 +1,24 @@
 package repo
 
 import (
+	"context"
+	"io/fs"
 	"os"
 	"path/filepath"
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/run"
+
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 )
 
 // UseManagedServicesRepo is a cli.BeforeFunc that enforces that we are in the
 // sourcegraph/managed-services repository by setting the current working
 // directory.
-func UseManagedServicesRepo(c *cli.Context) error {
+func UseManagedServicesRepo(*cli.Context) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -28,6 +34,84 @@ func UseManagedServicesRepo(c *cli.Context) error {
 	return nil
 }
 
+func listServicesFromRoot(root string) ([]string, error) {
+	var services []string
+	return services, filepath.Walk(filepath.Join(root, "services"), func(path string, info fs.FileInfo, err error) error {
+		if info == nil || info.Name() == "services" {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			return nil
+		}
+		if _, err := os.Stat(filepath.Join(root, ServiceYAMLPath(info.Name()))); err != nil {
+			if os.IsNotExist(err) {
+				return nil
+			}
+			return err
+		}
+
+		services = append(services, info.Name())
+		return nil
+	})
+}
+
+// ListServices returns a list of services, assuming MSP conventions in the
+// working directory. Expected to be run after UseManagedServicesRepo() in a
+// command context.
+func ListServices() ([]string, error) {
+	return listServicesFromRoot(".")
+}
+
+// ServicesAndEnvironmentsCompletion provides completions capabilities for
+// commands that accept '<service ID> <environment ID>' positional arguments.
+func ServicesAndEnvironmentsCompletion(additionalArgs ...func(args cli.Args) (options []string)) cli.BashCompleteFunc {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil
+	}
+	repoRoot, err := repositoryRoot(cwd)
+	if err != nil {
+		return nil
+	}
+	args := []func(cli.Args) []string{
+		func(cli.Args) (options []string) {
+			services, _ := listServicesFromRoot(repoRoot)
+			return services
+		},
+		func(args cli.Args) (options []string) {
+			svc, err := spec.Open(filepath.Join(repoRoot, ServiceYAMLPath(args.First())))
+			if err != nil {
+				// try to complete services as a fallback
+				services, _ := listServicesFromRoot(repoRoot)
+				return services
+			}
+			return svc.ListEnvironmentIDs()
+		},
+	}
+	return completions.CompletePositionalArgs(append(args, additionalArgs...)...)
+}
+
 func ServiceYAMLPath(serviceID string) string {
 	return filepath.Join("services", serviceID, "service.yaml")
+}
+
+func ServiceStackPath(serviceID, envID, stackID string) string {
+	return filepath.Join("services", serviceID, "terraform", envID, "stacks", stackID)
+}
+
+// GitRevision gets the revision of the managed-services repository.
+// Requires UseManagedServicesRepo.
+func GitRevision(ctx context.Context) (string, error) {
+	return run.Cmd(ctx, "git rev-parse HEAD").
+		Environ(append(os.Environ(),
+			// Options copy-pasta from dev/sg/internal/run
+			// Don't use the system wide git config.
+			"GIT_CONFIG_NOSYSTEM=1",
+			// And also not any other, because they can mess up output, change defaults, .. which can do unexpected things.
+			"GIT_CONFIG=/dev/null")).
+		Run().
+		String()
 }

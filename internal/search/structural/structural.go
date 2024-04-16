@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -66,6 +65,7 @@ func (s *searchRepos) getJob(ctx context.Context) func() error {
 			Indexed:         s.repoSet.IsIndexed(),
 			UseFullDeadline: s.args.UseFullDeadline,
 			Features:        s.args.Features,
+			NumContextLines: s.args.NumContextLines,
 		}
 
 		_, err := searcherJob.Run(ctx, s.clients, s.stream)
@@ -157,50 +157,24 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 }
 
 type SearchJob struct {
-	SearcherArgs     *search.SearcherParameters
-	UseIndex         query.YesNoOnly
-	ContainsRefGlobs bool
-	BatchRetry       bool
+	SearcherArgs *search.SearcherParameters
+	UseIndex     query.YesNoOnly
+	BatchRetry   bool
 
-	RepoOpts search.RepoOptions
+	Indexed   *zoektutil.IndexedRepoRevs
+	Unindexed []*search.RepositoryRevisions
 }
 
 func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
-	it := repos.Iterator(ctx, s.RepoOpts)
-
-	for it.Next() {
-		page := it.Current()
-		page.MaybeSendStats(stream)
-
-		indexed, unindexed, err := zoektutil.PartitionRepos(
-			ctx,
-			clients.Logger,
-			page.RepoRevs,
-			clients.Zoekt,
-			search.TextRequest,
-			s.UseIndex,
-			s.ContainsRefGlobs,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		repoSet := []repoData{UnindexedList(unindexed)}
-		if indexed != nil {
-			repoRevsFromBranchRepos := indexed.GetRepoRevsFromBranchRepos()
-			repoSet = append(repoSet, IndexedMap(repoRevsFromBranchRepos))
-		}
-		err = runStructuralSearch(ctx, clients, s.SearcherArgs, s.BatchRetry, repoSet, stream)
-		if err != nil {
-			return nil, err
-		}
+	repoSet := []repoData{UnindexedList(s.Unindexed)}
+	if s.Indexed != nil {
+		repoRevsFromBranchRepos := s.Indexed.GetRepoRevsFromBranchRepos()
+		repoSet = append(repoSet, IndexedMap(repoRevsFromBranchRepos))
 	}
-
-	return nil, it.Err()
+	return nil, runStructuralSearch(ctx, clients, s.SearcherArgs, s.BatchRetry, repoSet, stream)
 }
 
 func (*SearchJob) Name() string {
@@ -212,13 +186,11 @@ func (s *SearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	case job.VerbosityMax:
 		res = append(res,
 			attribute.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
-			attribute.Bool("containsRefGlobs", s.ContainsRefGlobs),
 			attribute.String("useIndex", string(s.UseIndex)),
 		)
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res, trace.Scoped("patternInfo", s.SearcherArgs.PatternInfo.Fields()...)...)
-		res = append(res, trace.Scoped("repoOpts", s.RepoOpts.Attributes()...)...)
 	}
 	return res
 }

@@ -25,9 +25,11 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
             ? this.fs.sourcegraphUri(this.activeUri)
             : undefined
     }
+
     public isViewVisible(): boolean {
         return this._isViewVisible
     }
+
     public setTreeView(treeView: vscode.TreeView<string>): void {
         this.treeView = treeView
         treeView.onDidChangeSelection(async event => {

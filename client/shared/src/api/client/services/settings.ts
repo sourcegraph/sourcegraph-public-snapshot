@@ -1,5 +1,4 @@
-import { from } from 'rxjs'
-import { first } from 'rxjs/operators'
+import { firstValueFrom } from 'rxjs'
 
 import type { KeyPath } from '@sourcegraph/client-api'
 
@@ -28,10 +27,10 @@ export async function updateSettings(
     edit: SettingsEdit
 ): Promise<void> {
     const { settings: data, updateSettings: update } = platformContext
-    const settings = await from(data).pipe(first()).toPromise()
+    const settings = await firstValueFrom(data)
     if (!isSettingsValid(settings)) {
         throw new Error('invalid settings (internal error)')
     }
-    const subject = settings.subjects[settings.subjects.length - 1]
+    const subject = settings.subjects.at(-1)!
     await update(subject.subject.id, edit)
 }

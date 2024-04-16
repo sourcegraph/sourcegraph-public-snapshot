@@ -2,16 +2,11 @@ package dependencies
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 const (
@@ -40,43 +35,43 @@ var Mac = []category{
 		Checks: []*dependency{
 			{
 				Name:  "git",
-				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.38.1"))),
-				Fix:   cmdFix(`brew install git`),
+				Check: checkAction(check.Git),
+				Fix:   brewInstall("git"),
 			},
 			{
 				Name:  "gnu-sed",
 				Check: checkAction(check.InPath("gsed")),
-				Fix:   cmdFix("brew install gnu-sed"),
+				Fix:   brewInstall("gnu-sed"),
 			},
 			{
 				Name:  "findutils",
 				Check: checkAction(check.InPath("gfind")),
-				Fix:   cmdFix("brew install findutils"),
+				Fix:   brewInstall("findutils"),
 			},
 			{
 				Name:  "comby",
 				Check: checkAction(check.InPath("comby")),
-				Fix:   cmdFix("brew install comby"),
+				Fix:   brewInstall("comby"),
 			},
 			{
 				Name:  "pcre",
 				Check: checkAction(check.InPath("pcregrep")),
-				Fix:   cmdFix(`brew install pcre`),
+				Fix:   brewInstall("pcre"),
 			},
 			{
 				Name:  "sqlite",
 				Check: checkAction(check.InPath("sqlite3")),
-				Fix:   cmdFix(`brew install sqlite`),
+				Fix:   brewInstall("sqlite"),
 			},
 			{
 				Name:  "jq",
 				Check: checkAction(check.InPath("jq")),
-				Fix:   cmdFix(`brew install jq`),
+				Fix:   brewInstall("jq"),
 			},
 			{
 				Name:  "bash",
 				Check: checkAction(check.CommandOutputContains("bash --version", "version 5")),
-				Fix:   cmdFix(`brew install bash`),
+				Fix:   brewInstall("bash"),
 			},
 			{
 				Name: "rosetta",
@@ -93,25 +88,25 @@ var Mac = []category{
 				Name:        "certutil",
 				Description: "Required for caddy certificates.",
 				Check:       checkAction(check.InPath("certutil")),
-				Fix:         cmdFix(`brew install nss`),
+				Fix:         brewInstall("nss"),
 			},
 			{
 				// Bazelisk is a wrapper for Bazel written in Go. It automatically picks a good version of Bazel given your current working directory
 				// Bazelisk replaces the bazel binary in your path
 				Name:  "bazelisk (bazel)",
-				Check: checkAction(check.Combine(check.InPath("bazel"), check.CommandOutputContains("bazel version", "Bazelisk version"))),
-				Fix:   cmdFix(`brew install bazelisk`),
+				Check: checkAction(check.Bazelisk),
+				Fix:   brewInstall("bazelisk"),
 			},
 			{
 				Name:  "ibazel",
 				Check: checkAction(check.InPath("ibazel")),
-				Fix:   cmdFix(`brew install ibazel`),
+				Fix:   brewInstall("ibazel"),
 			},
 			{
 				Name:  "asdf",
-				Check: checkAction(check.CommandOutputContains("asdf", "version")),
+				Check: checkAction(check.ASDF),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := usershell.Run(ctx, "brew install asdf").StreamLines(cio.Verbose); err != nil {
+					if err := brewInstall("asdf")(ctx, cio, args); err != nil {
 						return err
 					}
 					return usershell.Run(ctx,
@@ -120,9 +115,10 @@ var Mac = []category{
 				},
 			},
 			{
-				Name:  "p4 CLI (Perforce)",
-				Check: checkAction(check.InPath("p4")),
-				Fix:   cmdFix(`brew install --cask p4`),
+				Name:    "p4 CLI (Perforce)",
+				Check:   checkAction(check.InPath("p4")),
+				Enabled: disableInCI(), // giving a SHA256 mismatch error in CI
+				Fix:     caskInstall("p4"),
 			},
 		},
 	},
@@ -132,20 +128,12 @@ var Mac = []category{
 		DependsOn: []string{depsHomebrew},
 		Checks: []*dependency{
 			{
-				Name: "docker",
-				Check: checkAction(check.Combine(
-					check.WrapErrMessage(check.InPath("docker"),
-						"if Docker is installed and the check fails, you might need to restart terminal and 'sg setup'"),
-				)),
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := usershell.Run(ctx, `brew install --cask docker`).StreamLines(cio.Verbose); err != nil {
-						return err
-					}
-
-					cio.Write("Docker installed - attempting to start docker")
-
-					return usershell.Cmd(ctx, "open --hide --background /Applications/Docker.app").Run()
-				},
+				Name:  "docker",
+				Check: checkAction(check.Docker),
+				Fix: check.CombineFix(
+					caskInstall("docker"),
+					cmdFix("open --hide --background /Applications/Docker.app"),
+				),
 			},
 		},
 	},
@@ -156,6 +144,12 @@ var Mac = []category{
 			Name:  "src",
 			Check: checkAction(check.Combine(check.InPath("src"), checkSrcCliVersion(">= 4.2.0"))),
 			Fix:   cmdFix(`brew upgrade sourcegraph/src-cli/src-cli || brew install sourcegraph/src-cli/src-cli`),
+		},
+		// gnu-parallel is never available by default on MacOs.
+		&dependency{
+			Name:  "gnu-parallel",
+			Check: checkAction(check.InPath("parallel")),
+			Fix:   brewInstall("parallel"),
 		},
 	),
 	{
@@ -169,8 +163,12 @@ var Mac = []category{
 If you've installed PostgreSQL with Homebrew that should be the case.
 
 If you used another method, make sure psql is available.`,
-				Check: checkAction(check.InPath("psql")),
-				Fix:   cmdFix("brew install postgresql@15"),
+				Check: checkAction(check.Combine(
+					check.InPath("psql"),
+					check.CommandExitCode("brew ls --versions postgresql@12", 0),
+					check.CompareSemanticVersion("psql", "psql --version", ">= 12.0"),
+				)),
+				Fix: check.CombineFix(brewInstall("postgresql@12"), cmdFix("brew link postgresql@12")),
 			},
 			{
 				Name: "Start Postgres",
@@ -184,102 +182,29 @@ If you used another method, make sure psql is available.`,
 					if err := checkSourcegraphDatabase(ctx, out, args); err == nil {
 						return nil
 					}
-					return checkPostgresConnection(ctx)
+					return check.PostgresConnection(ctx)
 				},
-				Description: `Sourcegraph requires the PostgreSQL database (v12+) to be running.
+				Description: `Sourcegraph requires the PostgreSQL database (v12) to be running.
 
 We recommend installing it with Homebrew and starting it as a system service.
 If you know what you're doing, you can also install PostgreSQL another way.
 For example: you can use https://postgresapp.com/
 
 If you're not sure: use the recommended commands to install PostgreSQL.`,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					err := usershell.Cmd(ctx, "brew services start postgresql").Run()
-					if err != nil {
-						return err
-					}
-
-					// Wait for startup
-					time.Sleep(5 * time.Second)
-
-					// Doesn't matter if this succeeds
-					_ = usershell.Cmd(ctx, "createdb").Run()
-					return nil
-				},
+				Fix: cmdFixes(
+					"brew services start postgresql@12",
+					"sleep 3",
+				),
 			},
 			{
 				Name:        "Connection to 'sourcegraph' database",
 				Check:       checkSourcegraphDatabase,
 				Description: `Once PostgreSQL is installed and running, we need to set up Sourcegraph database itself and a specific user.`,
 				Fix: cmdFixes(
-					"createuser --superuser sourcegraph || true",
-					`psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"`,
+					"PGUSER=$USER createuser --superuser sourcegraph || true",
+					`PGUSER=$USER PGDATABASE=postgres psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"`,
 					`createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph`,
 				),
-			},
-			{
-				Name:        "Path to pg utilities (createdb, etc ...)",
-				Enabled:     disableInCI(), // will never pass in CI.
-				Check:       checkPGUtilsPath,
-				Description: `Bazel need to know where the createdb, pg_dump binaries are located, we need to ensure they are accessible\nand possibly indicate where they are located if non default.`,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					_, err := root.RepositoryRoot()
-					if err != nil {
-						return errors.Wrap(err, "This check requires sg setup to be run inside sourcegraph/sourcegraph the repository.")
-					}
-
-					// Check if we need to create a user.bazelrc or not
-					_, err = os.Stat(userBazelRcPath)
-					if err != nil {
-						if os.IsNotExist(err) {
-							// It doesn't exist, so we create a new one.
-							f, err := os.Create(".aspect/bazelrc/user.bazelrc")
-							if err != nil {
-								return errors.Wrap(err, "cannot create user.bazelrc to inject PG_UTILS_PATH")
-							}
-							defer f.Close()
-
-							// Try guessing the path to the createdb postgres utilities.
-							err, pgUtilsPath := guessPgUtilsPath(ctx)
-							if err != nil {
-								return err
-							}
-							_, err = fmt.Fprintf(f, "build --action_env=PG_UTILS_PATH=%s\n", pgUtilsPath)
-
-							// Inform the user of what happened, so it's not dark magic.
-							cio.Write(fmt.Sprintf("Guessed PATH for pg utils (createdb,...) to be %q\nCreated %s.", pgUtilsPath, userBazelRcPath))
-							return err
-						}
-
-						// File exists, but we got a different error. Can't continue, bubble up the error.
-						return errors.Wrapf(err, "unexpected error with %s", userBazelRcPath)
-					}
-
-					// If we didn't create it, open the existing one.
-					f, err := os.Open(userBazelRcPath)
-					if err != nil {
-						return errors.Wrapf(err, "cannot open existing %s", userBazelRcPath)
-					}
-					defer f.Close()
-
-					// Parse the path it contains.
-					err, pgUtilsPath := parsePgUtilsPathInUserBazelrc(f)
-					if err != nil {
-						return err
-					}
-
-					// Ensure that path is correct, if not tell the user about it.
-					err = checkPgUtilsPathIncludesBinaries(pgUtilsPath)
-					if err != nil {
-						cio.WriteLine(output.Styled(output.StyleWarning, "--- Manual action needed ---"))
-						cio.WriteLine(output.Styled(output.StyleYellow, fmt.Sprintf("➡️  PG_UTILS_PATH=%q defined in %s doesn't include createdb. Please correct the file manually.", pgUtilsPath, userBazelRcPath)))
-						cio.WriteLine(output.Styled(output.StyleWarning, "Please make sure that this file contains:"))
-						cio.WriteLine(output.Styled(output.StyleWarning, "`build --action_env=PG_UTILS_PATH=[PATH TO PARENT FOLDER OF WHERE createdb IS LOCATED`"))
-						cio.WriteLine(output.Styled(output.StyleWarning, "--- Manual action needed ---"))
-						return err
-					}
-					return nil
-				},
 			},
 		},
 	},
@@ -291,7 +216,7 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 				Name: "Start Redis",
 				Description: `Sourcegraph requires the Redis database to be running.
 We recommend installing it with Homebrew and starting it as a system service.`,
-				Check: checkAction(check.Retry(checkRedisConnection, 5, 500*time.Millisecond)),
+				Check: checkAction(check.Redis),
 				Fix: cmdFixes(
 					"brew reinstall redis",
 					"brew services start redis",
@@ -317,9 +242,9 @@ To do that, we need to add sourcegraph.test to the /etc/hosts file.`,
 				Description: `In order to use TLS to access your local Sourcegraph instance, you need to
 trust the certificate created by Caddy, the proxy we use locally.
 
-YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
+WARNING: if you just fixed (automatically or manually) this step, you must restart sg setup for the check to pass.`,
 				Enabled: disableInCI(), // Can't seem to get this working
-				Check:   checkAction(checkCaddyTrusted),
+				Check:   checkAction(check.Caddy),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					return root.Run(usershell.Command(ctx, `./dev/caddy.sh trust`)).StreamLines(cio.Verbose)
 				},
@@ -330,9 +255,25 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 	{
 		Name:      "Cloud services",
 		DependsOn: []string{depsHomebrew},
-		Enabled:   enableForTeammatesOnly(),
+		Enabled:   disableInCI(),
 		Checks: []*dependency{
 			dependencyGcloud(),
 		},
 	},
 }
+
+// var homebrewPsqlVersion = regexp.MustCompile(`^psql (PostgreSQL) 15\.(\d+) (Homebrew)$`)
+// var homebrewPostgresVersion = regexp.MustCompile(`^PostgreSQL (\d+)\.(\d+)$`)
+
+// // var psqlCheck = check.Combine(check.InPath("psql"), )
+
+// func checkPsqlVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
+// 	version, err := usershell.Run(ctx, "psql --version").String()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	if !homebrewPsqlVersion.MatchString(version) {
+// 		return errors.Newf("wanted psql is not installed with Homebrew")
+// 	}
+// }

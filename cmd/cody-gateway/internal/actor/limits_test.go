@@ -169,8 +169,7 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 }
 
 func TestAsErrConcurrencyLimitExceeded(t *testing.T) {
-	var err error
-	err = ErrConcurrencyLimitExceeded{}
+	var err error = ErrConcurrencyLimitExceeded{}
 	assert.True(t, errors.As(err, &ErrConcurrencyLimitExceeded{}))
 	assert.True(t, errors.As(errors.Wrap(err, "foo"), &ErrConcurrencyLimitExceeded{}))
 }

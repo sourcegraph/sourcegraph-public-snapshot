@@ -209,9 +209,6 @@ const (
 
 	// VariantOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	VariantOther
-
-	// VariantLocalGit is the (api.ExternalRepoSpec).ServiceType for local git repositories
-	VariantLocalGit
 )
 
 type variantValues struct {
@@ -227,7 +224,7 @@ var variantValuesMap = map[Variant]variantValues{
 	VariantAzureDevOps:     {AsKind: "AZUREDEVOPS", AsType: "azuredevops", ConfigPrototype: func() any { return &schema.AzureDevOpsConnection{} }, SupportsRepoExclusion: true},
 	VariantBitbucketCloud:  {AsKind: "BITBUCKETCLOUD", AsType: "bitbucketCloud", ConfigPrototype: func() any { return &schema.BitbucketCloudConnection{} }, WebhookURLPath: "bitbucket-cloud-webhooks", SupportsRepoExclusion: true},
 	VariantBitbucketServer: {AsKind: "BITBUCKETSERVER", AsType: "bitbucketServer", ConfigPrototype: func() any { return &schema.BitbucketServerConnection{} }, WebhookURLPath: "bitbucket-server-webhooks", SupportsRepoExclusion: true},
-	VariantGerrit:          {AsKind: "GERRIT", AsType: "gerrit", ConfigPrototype: func() any { return &schema.GerritConnection{} }},
+	VariantGerrit:          {AsKind: "GERRIT", AsType: "gerrit", ConfigPrototype: func() any { return &schema.GerritConnection{} }, SupportsRepoExclusion: true},
 	VariantGitHub:          {AsKind: "GITHUB", AsType: "github", ConfigPrototype: func() any { return &schema.GitHubConnection{} }, WebhookURLPath: "github-webhooks", SupportsRepoExclusion: true},
 	VariantGitLab:          {AsKind: "GITLAB", AsType: "gitlab", ConfigPrototype: func() any { return &schema.GitLabConnection{} }, WebhookURLPath: "gitlab-webhooks", SupportsRepoExclusion: true},
 	VariantGitolite:        {AsKind: "GITOLITE", AsType: "gitolite", ConfigPrototype: func() any { return &schema.GitoliteConnection{} }, SupportsRepoExclusion: true},
@@ -242,7 +239,6 @@ var variantValuesMap = map[Variant]variantValues{
 	VariantRubyPackages:    {AsKind: "RUBYPACKAGES", AsType: "rubyPackages", ConfigPrototype: func() any { return &schema.RubyPackagesConnection{} }},
 	VariantRustPackages:    {AsKind: "RUSTPACKAGES", AsType: "rustPackages", ConfigPrototype: func() any { return &schema.RustPackagesConnection{} }},
 	VariantSCIM:            {AsKind: "SCIM", AsType: "scim"},
-	VariantLocalGit:        {AsKind: "LOCALGIT", AsType: "localgit", ConfigPrototype: func() any { return &schema.LocalGitExternalService{} }},
 }
 
 func (v Variant) AsKind() string {
@@ -630,12 +626,6 @@ func GetLimitFromConfig(config any, kind string) (limit rate.Limit, isDefault bo
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-	case *schema.PerforceConnection:
-		limit = GetDefaultRateLimit(KindPerforce)
-		if c != nil && c.RateLimit != nil {
-			isDefault = false
-			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-		}
 	case *schema.JVMPackagesConnection:
 		limit = GetDefaultRateLimit(KindJVMPackages)
 		if c != nil && c.Maven.RateLimit != nil {
@@ -674,6 +664,12 @@ func GetLimitFromConfig(config any, kind string) (limit rate.Limit, isDefault bo
 		}
 	case *schema.RubyPackagesConnection:
 		limit = GetDefaultRateLimit(KindRubyPackages)
+		if c != nil && c.RateLimit != nil {
+			isDefault = false
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
+	case *schema.AzureDevOpsConnection:
+		limit = GetDefaultRateLimit(KindAzureDevOps)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
@@ -722,6 +718,8 @@ func GetDefaultRateLimit(kind string) rate.Limit {
 	case KindRubyPackages:
 		// The rubygems.org API allows 10 rps https://guides.rubygems.org/rubygems-org-rate-limits/
 		return rate.Limit(10)
+	case KindAzureDevOps:
+		return rate.Inf
 	default:
 		return rate.Inf
 	}
@@ -777,13 +775,6 @@ type OtherRepoMetadata struct {
 	// repository on the src git-serve server. Notably this is only
 	// implemented for Cody App's implementation of src git-serve.
 	AbsFilePath string
-}
-
-type LocalGitMetadata struct {
-	// AbsFilePath is the absolute path to the local repository. The path can also
-	// be extracted from the repo's URN, but storing it separately makes it easier
-	// work with.
-	AbsRepoPath string
 }
 
 func UniqueEncryptableCodeHostIdentifier(ctx context.Context, kind string, config *EncryptableConfig) (string, error) {
@@ -858,8 +849,6 @@ func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 		return VariantRubyPackages.AsKind(), nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
-	case *schema.LocalGitExternalService:
-		return VariantLocalGit.AsKind(), nil
 	default:
 		return "", errors.Errorf("unknown external service kind: %s", kind)
 	}
@@ -897,3 +886,8 @@ func NewCodeHostBaseURL(baseURL string) (CodeHostBaseURL, error) {
 func (c CodeHostBaseURL) String() string {
 	return c.baseURL
 }
+
+// ServeGitExtSVCID is the external service ID used by sourcegraph's local code
+// syncing. We use a hardcoded ID to simplify finding and mutating the
+// external service.
+const ServeGitExtSVCID = 0xC0DE

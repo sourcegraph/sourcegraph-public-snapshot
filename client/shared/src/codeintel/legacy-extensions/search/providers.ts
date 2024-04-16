@@ -1,7 +1,6 @@
 /* eslint-disable jsdoc/check-param-names */
 import { flatten, sortBy } from 'lodash'
-import { from, isObservable, type Observable } from 'rxjs'
-import { take } from 'rxjs/operators'
+import { firstValueFrom, from, isObservable } from 'rxjs'
 
 import * as sourcegraph from '../api'
 import type { FilterDefinitions, LanguageSpec } from '../language-specs/language-spec'
@@ -60,7 +59,7 @@ export function createProviders(
             cachedFileContents.delete(Array.from(cachedFileContents.keys())[index])
         }
 
-        const { repo, commit, path } = parseGitURI(new URL(uri))
+        const { repo, commit, path } = parseGitURI(uri)
         const fileContent = api.getFileContent(repo, commit, path)
         cachedFileContents.set(uri, fileContent)
         return fileContent
@@ -119,7 +118,7 @@ export function createProviders(
             return null
         }
         const { text, searchToken } = contentAndToken
-        const { repo, commit, path } = parseGitURI(new URL(textDocument.uri))
+        const { repo, commit, path } = parseGitURI(textDocument.uri)
         const { isFork, isArchived } = await api.resolveRepo(repo)
 
         // Construct base definition query without scoping terms
@@ -173,7 +172,7 @@ export function createProviders(
             return []
         }
         const { searchToken } = contentAndToken
-        const { repo, commit } = parseGitURI(new URL(textDocument.uri))
+        const { repo, commit } = parseGitURI(textDocument.uri)
         const { isFork, isArchived } = await api.resolveRepo(repo)
 
         // Construct base references query without scoping terms
@@ -239,7 +238,7 @@ export function createProviders(
         }
 
         // Get the first definition and ensure it has a range
-        const def = asArray(await (from(result) as Observable<sourcegraph.Definition>).pipe(take(1)).toPromise())[0]
+        const def = asArray(await firstValueFrom(from(result), { defaultValue: undefined }))[0]
         if (!def?.range) {
             return null
         }
@@ -582,5 +581,5 @@ function repositoryKindTerms(includeFork: boolean, includeArchived: boolean): st
 
 /** Returns a regular expression matching the given repository. */
 function makeRepositoryPattern(repo: string): string {
-    return `^${repo.replace(/ /g, '\\ ')}$`
+    return `^${repo.replaceAll(' ', '\\ ')}$`
 }

@@ -114,7 +114,6 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
                     <SetupStepsContent
                         contentContainerClass={styles.contentContainer}
                         telemetryService={telemetryService}
-                        isCodyApp={false}
                     />
                 </div>
 

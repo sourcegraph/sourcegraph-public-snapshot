@@ -1,10 +1,11 @@
 import { logger } from '@sourcegraph/common'
 import { getDocumentNode, gql, useQuery } from '@sourcegraph/http-client'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 
 import type { EvaluateFeatureFlagResult, EvaluateFeatureFlagVariables } from '../graphql-operations'
 
 import type { FeatureFlagName } from './featureFlags'
-import { getFeatureFlagOverrideValue } from './lib/feature-flag-local-overrides'
+import { getFeatureFlagOverride } from './lib/feature-flag-local-overrides'
 
 export const EVALUATE_FEATURE_FLAG_QUERY = getDocumentNode(gql`
     query EvaluateFeatureFlag($flagName: String!) {
@@ -40,8 +41,8 @@ export function useFeatureFlag(
      */
     flagStates = FLAG_STATES
 ): [boolean, FetchStatus, EvaluateError?] {
-    const overriddenValue = getFeatureFlagOverrideValue(flagName)
-    const overriddenValueExists = typeof overriddenValue === 'boolean'
+    const overriddenValue = getFeatureFlagOverride(flagName)
+    const overriddenValueExists = overriddenValue !== null
 
     const { data, error, refetch } = useQuery<EvaluateFeatureFlagResult, EvaluateFeatureFlagVariables>(
         EVALUATE_FEATURE_FLAG_QUERY,
@@ -84,8 +85,9 @@ export function useFeatureFlag(
             /**
              * Do nothing. The `setTimeout` is in progress and we can use the cached value for now.
              */
-            case 'valid':
+            case 'valid': {
                 break
+            }
 
             /**
              * If we have the stale value, initiate the refetch with the `network-only`
@@ -103,8 +105,9 @@ export function useFeatureFlag(
             /**
              * Do nothing. The `refetch` is in progress and we can use the cached value for now.
              */
-            case 'refetch':
+            case 'refetch': {
                 break
+            }
         }
     }
 
@@ -112,4 +115,8 @@ export function useFeatureFlag(
     const status = error ? 'error' : data ? 'loaded' : 'initial'
 
     return [value, status, error?.networkError]
+}
+
+export function useKeywordSearch(): boolean {
+    return useExperimentalFeatures<boolean | undefined>(features => features.keywordSearch) !== false
 }

@@ -42,6 +42,7 @@ export function initializeCodeSharingCommands(
             await vscode.env.openExternal(vscode.Uri.parse(uri))
         })
     )
+
     // Log Redirect Event
     function logRedirectEvent(sourcegraphUrl: string): void {
         const userEventVariables = {

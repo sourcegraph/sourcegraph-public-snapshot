@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
@@ -18,9 +19,7 @@ go_library(
         "//cmd/symbols/observability",
         "//cmd/symbols/squirrel",
         "//cmd/symbols/types",
-        "//internal/conf/deploy",
         "//internal/database",
-        "//internal/env",
         "//internal/grpc",
         "//internal/grpc/chunk",
         "//internal/grpc/defaults",
@@ -31,11 +30,12 @@ go_library(
         "//internal/types",
         "//lib/errors",
         "@com_github_dustin_go_humanize//:go-humanize",
-        "@com_github_sourcegraph_go_ctags//:go-ctags",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
+        "@org_golang_x_text//language",
+        "@org_golang_x_text//message",
     ],
 )
 
@@ -60,7 +60,6 @@ go_test(
         "//internal/endpoint",
         "//internal/gitserver/gitdomain",
         "//internal/grpc/defaults",
-        "//internal/httpcli",
         "//internal/observation",
         "//internal/search",
         "//internal/search/result",
@@ -73,4 +72,15 @@ go_test(
         "@com_github_sourcegraph_log//logtest",
         "@org_golang_x_sync//semaphore",
     ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = ["//cmd/symbols/gitserver"],
 )

@@ -52,6 +52,18 @@ $theme-colors: (
     'merged': $merged,
 );
 
+// Brand secondary colors.
+// https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/color/#secondary-colors
+$violet-01: #eedfff;
+$violet-02: #e8d1ff;
+$violet-03: #ce9cff;
+$violet-04: #a112ff;
+$violet-05: #820dde;
+$violet-06: #6112a3;
+$violet-07: #270741;
+$violet-08: #160425;
+$violet-09: #5f3dc4;
+
 :root {
     // Gray (blueish) root palette.
     --white: #ffffff;
@@ -83,7 +95,6 @@ $theme-colors: (
     --cyan: #{$cyan};
 
     // Brand secondary colors.
-    // https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/color/#secondary-colors
     --violet-01: #eedfff;
     --violet-02: #e8d1ff;
     --violet-03: #ce9cff;
@@ -155,8 +166,10 @@ $theme-colors: (
     --color-bg-3: var(--gray-04);
     --mark-bg: #f8e688;
     --merged-4: #eee9fd;
+    --text-body: var(--gray-08);
     --text-muted: var(--gray-07);
     --text-muted-highlighted: #566880; // --text-muted with higher contrast when shown on a --mark-bg background
+    --text-title: var(--gray-11);
     --link-color: var(--primary);
     --link-color-2: #0766cc;
     --link-active-color: #0c7bf0;
@@ -222,7 +235,6 @@ $theme-colors: (
     --modal-bg: #{rgba($gray-04, 0.5)};
     --sidebar-bg: var(--color-bg-1);
     --sidebar-border-color: var(--border-color-2);
-    --collapse-results-color: var(--gray-08);
     // Chroma rules, for rendered markdown blocks
     --chroma-error-fg: #a61717;
     --chroma-error-bg: #e3d2d2;
@@ -295,6 +307,15 @@ $theme-colors: (
     --chroma-generic-subheading-fg: #aaaaaa;
     --chroma-generic-traceback-fg: #aa0000;
     --chroma-text-whitespace-fg: #bbbbbb;
+
+    // Header colors
+    --result-header-bg: #f5f8fa;
+
+    // Search input "chip" colors
+    // Transparency needs to be added to make the text selection marker visible
+    --search-input-token-pattern: #{rgba($gray-04, 0.6)};
+    --search-input-token-filter: #{rgba($oc-blue-1, 0.6)};
+    --search-input-token-keyword: #{rgba($violet-01, 0.6)};
 }
 
 .theme-dark {
@@ -306,7 +327,7 @@ $theme-colors: (
     --secondary: var(--gray-08);
     --secondary-2: #242936;
     --secondary-3: #1f232e;
-    --secondary-4: #545967;
+    --secondary-4: #1e222f;
     --success-2: #156724;
     --success-3: #237332;
     --success-4: #054410;
@@ -327,8 +348,10 @@ $theme-colors: (
     --color-bg-3: var(--gray-08);
     --mark-bg: #7a341e;
     --merged-4: #1f0a5c;
+    --text-body: var(--gray-05);
     --text-muted: var(--gray-06);
     --text-muted-highlighted: #a9b9da; // --text-muted with higher contrast when shown on a --mark-bg background
+    --text-title: var(--gray-02);
     --link-color: var(--light-blue);
     --link-color-2: #70b0f3;
     --link-active-color: #489ffa;
@@ -458,6 +481,15 @@ $theme-colors: (
     --chroma-generic-subheading-fg: #79c0ff;
     --chroma-generic-traceback-fg: #ff7b72;
     --chroma-text-whitespace-fg: #6e7681;
+
+    // Header colors
+    --result-header-bg: #22283b;
+
+    // Search input "chip" colors
+    // Transparency needs to be added to make the text selection marker visible
+    --search-input-token-pattern: #{rgba($gray-08, 0.8)};
+    --search-input-token-filter: #{rgba($oc-blue-9, 0.4)};
+    --search-input-token-keyword: #{rgba($violet-05, 0.6)};
 }
 
 // Additional colors global colors.

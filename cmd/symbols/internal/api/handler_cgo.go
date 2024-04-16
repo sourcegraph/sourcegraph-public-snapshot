@@ -4,26 +4,25 @@ package api
 
 import (
 	"context"
-	"net/http"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/squirrel"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/chunk"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
-// addHandlers adds handlers that require cgo.
-func addHandlers(
-	mux *http.ServeMux,
-	searchFunc types.SearchFunc,
-	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error),
-) {
-	mux.HandleFunc("/localCodeIntel", squirrel.LocalCodeIntelHandler(readFileFunc))
-	mux.HandleFunc("/symbolInfo", squirrel.NewSymbolInfoHandler(searchFunc, readFileFunc))
+func convertSquirrelErrorToGrpcError(err error) *status.Status {
+	if errors.Is(err, squirrel.UnrecognizedFileExtensionError) {
+		return status.New(codes.InvalidArgument, err.Error())
+	}
+	if errors.Is(err, squirrel.UnsupportedLanguageError) {
+		return status.New(codes.Unimplemented, err.Error())
+	}
+	return nil
 }
 
 // LocalCodeIntel returns local code intelligence for the given file and commit
@@ -36,8 +35,8 @@ func (s *grpcService) LocalCodeIntel(request *proto.LocalCodeIntelRequest, ss pr
 	ctx := ss.Context()
 	payload, err := squirrelService.LocalCodeIntel(ctx, args)
 	if err != nil {
-		if errors.Is(err, squirrel.UnsupportedLanguageError) {
-			return status.Error(codes.Unimplemented, err.Error())
+		if grpcStatus := convertSquirrelErrorToGrpcError(err); grpcStatus != nil {
+			return grpcStatus.Err()
 		}
 
 		if ctxErr := ctx.Err(); ctxErr != nil {
@@ -80,8 +79,8 @@ func (s *grpcService) SymbolInfo(ctx context.Context, request *proto.SymbolInfoR
 
 	info, err := squirrelService.SymbolInfo(ctx, args)
 	if err != nil {
-		if errors.Is(err, squirrel.UnsupportedLanguageError) {
-			return nil, status.Error(codes.Unimplemented, err.Error())
+		if grpcStatus := convertSquirrelErrorToGrpcError(err); grpcStatus != nil {
+			return nil, grpcStatus.Err()
 		}
 
 		if ctxErr := ctx.Err(); ctxErr != nil {

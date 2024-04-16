@@ -19,6 +19,7 @@ export interface MatchHandlersContext {
     openCommit: (commitUrl: string) => void
     instanceURL: string
 }
+
 export const MatchHandlersContext = createContext<MatchHandlersContext>({
     // Initialize in `SearchResultsView` (via `useMatchHandlers`)
     openRepo: noop,

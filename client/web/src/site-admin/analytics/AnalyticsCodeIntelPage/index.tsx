@@ -228,9 +228,10 @@ export const AnalyticsCodeIntelPage: React.FC = () => {
         go: 'https://github.com/sourcegraph/lsif-go',
         rust: 'https://github.com/rust-analyzer/rust-analyzer',
         scala: 'https://github.com/sourcegraph/lsif-java',
-        cpp: 'https://github.com/sourcegraph/lsif-clang',
+        cpp: 'https://github.com/sourcegraph/scip-clang',
         csharp: 'https://github.com/tcz717/LsifDotnet',
-        dart: 'https://github.com/sourcegraph/lsif-dart',
+        dart: 'https://github.com/Workiva/scip-dart',
+        php: 'https://github.com/davidrjenni/scip-php',
         haskell: 'https://github.com/mpickering/hie-lsif',
         kotlin: 'https://github.com/sourcegraph/lsif-java',
     }
@@ -432,11 +433,14 @@ export const AnalyticsCodeIntelPage: React.FC = () => {
 
 const color = (precision: string): string => {
     switch (precision) {
-        case 'precise':
+        case 'precise': {
             return 'rgb(255, 184, 109)'
-        case 'search-based':
+        }
+        case 'search-based': {
             return 'rgb(155, 211, 255)'
-        default:
+        }
+        default: {
             return 'gray'
+        }
     }
 }

@@ -57,7 +57,7 @@ const BatchChangesUnlicensedAlert: React.FunctionComponent<React.PropsWithChildr
                         up to ten changesets without a license.
                     </Text>
                     <Text className="mb-0">
-                        <Link to="https://about.sourcegraph.com/contact/sales/">Contact sales</Link> to obtain a trial
+                        <Link to="https://sourcegraph.com/contact/sales/">Contact sales</Link> to obtain a trial
                         license.
                     </Text>
                 </div>

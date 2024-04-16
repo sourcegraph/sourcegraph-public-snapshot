@@ -1,31 +1,40 @@
 <script lang="ts">
-    import { getQueryExamples } from '$lib/search/queryExamples'
     import { queryStateStore } from '$lib/search/state'
     import { settings } from '$lib/stores'
 
-    import type { PageData } from './$types'
-    import QueryExamples from './QueryExamples.svelte'
+    import type { PageData, Snapshot } from './$types'
     import SearchHome from './SearchHome.svelte'
-    import SearchResults from './SearchResults.svelte'
+    import SearchResults, { type SearchResultsCapture } from './SearchResults.svelte'
 
     export let data: PageData
 
+    export const snapshot: Snapshot<{ searchResults?: SearchResultsCapture }> = {
+        capture() {
+            return {
+                searchResults: searchResults?.capture(),
+            }
+        },
+        restore(value) {
+            if (value) {
+                searchResults?.restore(value.searchResults)
+            }
+        },
+    }
+
     const queryState = queryStateStore(data.queryOptions ?? {}, $settings)
+    let searchResults: SearchResults | undefined
     $: queryState.set(data.queryOptions ?? {})
     $: queryState.setSettings($settings)
 </script>
 
-{#if data.stream}
-    <SearchResults stream={data.stream} queryFromURL={data.queryOptions.query} {queryState} />
+{#if data.searchStream}
+    <SearchResults
+        bind:this={searchResults}
+        stream={data.searchStream}
+        queryFromURL={data.queryFromURL}
+        {queryState}
+        selectedFilters={data.queryFilters}
+    />
 {:else}
-    <SearchHome {queryState}>
-        <div class="mt-5">
-            <!--
-                Example for how we might want to make the homepage composable.
-                Ideally all logic that determines what to shoe for a specific
-                version (e.g. which examples to show) is kept inside pages.
-            -->
-            <QueryExamples examples={getQueryExamples()} />
-        </div>
-    </SearchHome>
+    <SearchHome {queryState} />
 {/if}

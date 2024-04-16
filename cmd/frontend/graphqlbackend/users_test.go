@@ -11,11 +11,11 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -262,21 +262,10 @@ type usersQueryTest struct {
 
 func runUsersQuery(t *testing.T, schema *graphql.Schema, want usersQueryTest) {
 	t.Helper()
-
-	if want.dotcom {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		t.Cleanup(func() {
-			envvar.MockSourcegraphDotComMode(orig)
-		})
-	}
+	dotcom.MockSourcegraphDotComMode(t, want.dotcom)
 
 	type node struct {
 		Username string `json:"username"`
-	}
-
-	type pageInfo struct {
-		HasNextPage bool `json:"hasNextPage"`
 	}
 
 	type users struct {
@@ -377,6 +366,8 @@ func TestUsers_InactiveSince(t *testing.T) {
 			Name:      "testevent",
 			Source:    "test",
 		}
+
+		//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 		if err := db.EventLogs().Insert(ctx, event); err != nil {
 			t.Fatal(err)
 		}
@@ -447,6 +438,60 @@ func TestUsers_InactiveSince(t *testing.T) {
 				{ "username": "user-4" }
 			], "totalCount": 4 }}
 			`,
+		},
+	})
+}
+
+func TestUsers_CreatePassword(t *testing.T) {
+	users := dbmocks.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	db := dbmocks.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+
+	actorFromSession := actor.FromMockUser(1)
+	actorFromSession.FromSessionCookie = true
+	actorNotFromSession := actor.FromMockUser(2)
+	actorNotFromSession.FromSessionCookie = false
+
+	RunTests(t, []*Test{
+		{
+			Label:   "Actor from session",
+			Context: actor.WithActor(context.Background(), actorFromSession),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+				mutation {
+					createPassword(newPassword:"i am gr00t1234!!") {
+					  alwaysNil
+					}
+				  }
+			`,
+			ExpectedResult: `
+				{
+					"createPassword": {
+						"alwaysNil": null
+					}
+				}
+			`,
+		},
+		{
+			Label:   "Actor not from session (token)",
+			Context: actor.WithActor(context.Background(), actorNotFromSession),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+				mutation {
+					createPassword(newPassword:"i am gr00t1234!!") {
+					  alwaysNil
+					}
+				  }
+			`,
+			ExpectedResult: `{ "createPassword": null }`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Message: "only allowed from user session",
+					Path:    []any{"createPassword"},
+				},
+			},
 		},
 	})
 }

@@ -12,7 +12,9 @@
 #
 # git pack-refs --all --prune
 # git reflog expire --all
-# git repack -d -l -A --unpack-unreachable=2.weeks.ago
+# git repack -d -l --cruft --cruft-expiration=2.weeks.ago
+# -> git pack-objects --local --delta-base-offset .git/objects/pack/.tmp-73874-pack --keep-true-parents --honor-pack-keep --non-empty --all --reflog --indexed-objects
+# -> git pack-objects --local --delta-base-offset .git/objects/pack/.tmp-73874-pack --cruft --cruft-expiration=2.weeks.ago --honor-pack-keep --non-empty --max-pack-size=0
 # git prune --expire 2.weeks.ago
 # git worktree prune --expire 3.months.ago
 # git rerere gc

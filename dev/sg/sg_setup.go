@@ -32,10 +32,6 @@ var setupCommand = &cli.Command{
 			Usage:   "Fix all checks",
 		},
 		&cli.BoolFlag{
-			Name:  "oss",
-			Usage: "Omit Sourcegraph-teammate-specific setup",
-		},
-		&cli.BoolFlag{
 			Name:  "skip-pre-commit",
 			Usage: "Skip overwriting pre-commit.com installation",
 		},
@@ -67,7 +63,6 @@ var setupCommand = &cli.Command{
 		setup.RunPostFixChecks = true
 
 		args := dependencies.CheckArgs{
-			Teammate:            !cmd.Bool("oss"),
 			ConfigFile:          configFile,
 			ConfigOverwriteFile: configOverwriteFile,
 			DisableOverwrite:    disableOverwrite,
@@ -86,15 +81,6 @@ var setupCommand = &cli.Command{
 			return setup.Fix(cmd.Context, args)
 
 		default:
-			// Prompt for details if flags are not set
-			if !cmd.IsSet("oss") {
-				std.Out.Promptf("Are you a Sourcegraph teammate? (y/n)")
-				var s string
-				if _, err := fmt.Scan(&s); err != nil {
-					return err
-				}
-				args.Teammate = s == "y"
-			}
 			return setup.Interactive(cmd.Context, args)
 		}
 	},

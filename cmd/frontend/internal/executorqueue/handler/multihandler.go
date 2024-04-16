@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/sourcegraph/log"
-	"golang.org/x/exp/slices"
 
 	"github.com/mroth/weightedrand/v2"
 
@@ -89,7 +89,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	version2Supported := false
 	if req.Version != "" {
 		var err error
-		version2Supported, err = api.CheckSourcegraphVersion(req.Version, "4.3.0-0", "2022-11-24")
+		version2Supported, err = api.CheckSourcegraphVersion(req.Version, ">= 4.3.0-0", "2022-11-24")
 		if err != nil {
 			return executortypes.Job{}, false, errors.Wrapf(err, "failed to check version %q", req.Version)
 		}

@@ -144,41 +144,9 @@ Will result in a single trace span for the `./dev/check/docsite.sh` script. But 
     // ...
     bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
     bk.Cmd("pnpm --filter @sourcegraph/browser -s run build"),
-    bk.Cmd("pnpm run cover-browser-integration"),
-    bk.Cmd("pnpm nyc report -r json"),
-    bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 ```
 
 Therefore, it's beneficial for tracing purposes to split the step in multiple commands, if possible.
-
-#### Test analytics
-
-Our test analytics is currently powered by a Buildkite beta feature for analysing individual tests across builds called [Buildkite Analytics](https://buildkite.com/test-analytics).
-This tool enables us to observe the evolution of each individual test on the following metrics: duration and flakiness.
-
-Browse the [dashboard](https://buildkite.com/organizations/sourcegraph/analytics) to explore the metrics and optionally set monitors that will alert if a given test or a test suite is deviating from its historical duration or flakiness.
-
-In order to track a new test suite, test results must be converted to JUnit XML reports and uploaded to Buildkite.
-The pipeline generator provides an API for this that, at a high level, works like this:
-
-1. In your script, leave your JUnit XML test report in `./test-reports`
-2. [Create a new Test Suite](https://buildkite.com/organizations/sourcegraph/analytics/suites/new) in the Buildkite Analytics UI.
-3. In your pipeline operation, replace the usual `bk.Cmd` with `bk.AnnotatedCmd`:
-
-  ```go
-  pipeline.AddStep(":jest::globe_with_meridians: Test",
-    withPnpmCache(),
-    bk.AnnotatedCmd("dev/ci/pnpm-test.sh client/web", bk.AnnotatedCmdOpts{
-      TestReports: &bk.TestReportOpts{/* ... */},
-    }),
-  ```
-
-4. That's it!
-
-For more details about best practices and additional features and capabilities, please refer to [the `bk.AnnotatedCmd` docstring](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Edev/ci/internal/buildkite+AnnotatedCmd+type:symbol&patternType=literal).
-
-> WARNING: The Buildkite API is not finalized and neither are the configuration options for `TestReportOpts`.
-> To get started with Buildkite Analytics please reach out to the `#dev-experience` channel for assistance.
 
 ### Buildkite infrastructure
 

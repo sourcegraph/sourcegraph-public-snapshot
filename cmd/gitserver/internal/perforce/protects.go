@@ -5,37 +5,57 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"os/exec"
 
-	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	p4types "github.com/sourcegraph/sourcegraph/internal/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// P4ProtectsForUserArguments are the arguments for P4ProtectsForUser.
+type P4ProtectsForUserArguments struct {
+	// P4PORT is the address of the Perforce server.
+	P4Port string
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+
+	// Username is the username for which to get the protect definition for
+	Username string
+}
+
 // P4ProtectsForUser returns all protect definitions that apply to the given username.
-func P4ProtectsForUser(ctx context.Context, p4home, p4port, p4user, p4passwd, username string) ([]*p4types.Protect, error) {
+func P4ProtectsForUser(ctx context.Context, fs gitserverfs.FS, args P4ProtectsForUserArguments) ([]*p4types.Protect, error) {
+	options := []P4OptionFunc{
+		WithAuthentication(args.P4User, args.P4Passwd),
+		WithHost(args.P4Port),
+	}
+
 	// -u User : Displays protection lines that apply to the named user. This option
 	// requires super access.
-	cmd := exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "protects", "-u", username)
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+p4port,
-		"P4USER="+p4user,
-		"P4PASSWD="+p4passwd,
-		"HOME="+p4home,
-	)
+	options = append(options, WithArguments("-Mj", "-ztag", "protects", "-u", args.Username))
 
-	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+	p4home, err := fs.P4HomeDir()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create p4home dir")
+	}
+
+	scratchDir, err := fs.TempDir("p4-protects-")
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 protects'")
+	}
+	defer os.Remove(scratchDir)
+
+	cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = errors.Wrap(ctxerr, "p4 protects context error")
 		}
 
 		if len(out) > 0 {
-			err = errors.Wrapf(err, `failed to run command "p4 protects" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd))
+			err = errors.Wrapf(err, `failed to run command "p4 protects" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd.Unwrap()))
 		}
 
 		return nil, err
@@ -49,26 +69,50 @@ func P4ProtectsForUser(ctx context.Context, p4home, p4port, p4user, p4passwd, us
 	return parseP4Protects(out)
 }
 
+type P4ProtectsForDepotArguments struct {
+	// P4PORT is the address of the Perforce server.
+	P4Port string
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+
+	// Depot is the depot to get the protect definition for.
+	Depot string
+}
+
 // P4ProtectsForUser returns all protect definitions that apply to the given depot.
-func P4ProtectsForDepot(ctx context.Context, p4home, p4port, p4user, p4passwd, depot string) ([]*p4types.Protect, error) {
+func P4ProtectsForDepot(ctx context.Context, fs gitserverfs.FS, args P4ProtectsForDepotArguments) ([]*p4types.Protect, error) {
+	options := []P4OptionFunc{
+		WithAuthentication(args.P4User, args.P4Passwd),
+		WithHost(args.P4Port),
+	}
+
 	// -a : Displays protection lines for all users. This option requires super
 	// access.
-	cmd := exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "protects", "-a", depot)
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+p4port,
-		"P4USER="+p4user,
-		"P4PASSWD="+p4passwd,
-		"HOME="+p4home,
-	)
+	options = append(options, WithArguments("-Mj", "-ztag", "protects", "-a", args.Depot))
 
-	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+	p4home, err := fs.P4HomeDir()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create p4home dir")
+	}
+
+	scratchDir, err := fs.TempDir("p4-protects-")
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 protects'")
+	}
+	defer os.Remove(scratchDir)
+
+	cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = errors.Wrap(ctxerr, "p4 protects context error")
 		}
 
 		if len(out) > 0 {
-			err = errors.Wrapf(err, `failed to run command "p4 protects" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd))
+			err = errors.Wrapf(err, `failed to run command "p4 protects" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd.Unwrap()))
 		}
 
 		return nil, err

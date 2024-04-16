@@ -2,7 +2,6 @@ package redispool
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -13,9 +12,7 @@ import (
 //
 // The purpose of KeyValue is to provide a more ergonomic way to interact with
 // a key value store. Additionally it makes it possible to replace the store
-// with something which is note redis. For example this will be used in
-// Cody App to use in-memory or postgres as a backing store to avoid
-// shipping redis.
+// with something which is not redis.
 //
 // To understand the behaviour of a method in this interface view the
 // corresponding redis documentation at https://redis.io/commands/COMMANDNAME/
@@ -28,6 +25,8 @@ type KeyValue interface {
 	SetNx(key string, value any) (bool, error)
 	Incr(key string) (int, error)
 	Incrby(key string, value int) (int, error)
+	IncrByInt64(key string, value int64) (int64, error)
+	DecrByInt64(key string, value int64) (int64, error)
 	Del(key string) error
 
 	TTL(key string) (int, error)
@@ -43,15 +42,17 @@ type KeyValue interface {
 	LLen(key string) (int, error)
 	LRange(key string, start, stop int) Values
 
+	Keys(prefix string) ([]string, error)
 	// WithContext will return a KeyValue that should respect ctx for all
 	// blocking operations.
 	WithContext(ctx context.Context) KeyValue
+	WithLatencyRecorder(r LatencyRecorder) KeyValue
 
-	// Pool returns the underlying redis pool if set. If ok is false redis is
-	// disabled and you are in the Cody App. The intention of this API
-	// is Pool is only for advanced use cases and the caller should provide an
-	// alternative if redis is not available.
-	Pool() (pool *redis.Pool, ok bool)
+	// Pool returns the underlying redis pool.
+	// The intention of this API is Pool is only for advanced use cases and the caller
+	// should consider if they need to use it. Pool is very hard to mock, while
+	// the other functions on this interface are trivial to mock.
+	Pool() *redis.Pool
 }
 
 // Value is a response from an operation on KeyValue. It provides convenient
@@ -79,6 +80,10 @@ func (v Value) Bytes() ([]byte, error) {
 
 func (v Value) Int() (int, error) {
 	return redis.Int(v.reply, v.err)
+}
+
+func (v Value) Int64() (int64, error) {
+	return redis.Int64(v.reply, v.err)
 }
 
 func (v Value) String() (string, error) {
@@ -112,43 +117,20 @@ func (v Values) StringMap() (map[string]string, error) {
 	return redis.StringMap(v.reply, v.err)
 }
 
+type LatencyRecorder func(call string, latency time.Duration, err error)
+
 type redisKeyValue struct {
-	pool   *redis.Pool
-	ctx    context.Context
-	prefix string
+	pool     *redis.Pool
+	ctx      context.Context
+	prefix   string
+	recorder *LatencyRecorder
 }
 
-// MemoryKeyValue is the special URI which is recognized by NewKeyValue to
-// create an in memory key value.
-const MemoryKeyValueURI = "redis+memory:memory"
-
-const dbKeyValueURIScheme = "redis+postgres"
-
-// DBKeyValueURI returns a URI to connect to the DB backed redis with the
-// specified namespace.
-func DBKeyValueURI(namespace string) string {
-	return dbKeyValueURIScheme + ":" + namespace
-}
-
-// NewKeyValue returns a KeyValue for addr. addr is treated as follows:
-//
-//  1. if addr == MemoryKeyValueURI we use a KeyValue that lives
-//     in memory of the current process.
-//  2. if addr was created by DBKeyValueURI we use a KeyValue that is backed
-//     by postgres.
-//  3. otherwise treat as a redis address.
+// NewKeyValue returns a KeyValue for addr.
 //
 // poolOpts is a required argument which sets defaults in the case we connect
 // to redis. If used we only override TestOnBorrow and Dial.
 func NewKeyValue(addr string, poolOpts *redis.Pool) KeyValue {
-	if addr == MemoryKeyValueURI {
-		return MemoryKeyValue()
-	}
-
-	if schema, namespace, ok := strings.Cut(addr, ":"); ok && schema == dbKeyValueURIScheme {
-		return DBKeyValue(namespace)
-	}
-
 	poolOpts.TestOnBorrow = func(c redis.Conn, t time.Time) error {
 		_, err := c.Do("PING")
 		return err
@@ -204,6 +186,14 @@ func (r *redisKeyValue) Incrby(key string, value int) (int, error) {
 	return r.do("INCRBY", r.prefix+key, value).Int()
 }
 
+func (r *redisKeyValue) IncrByInt64(key string, value int64) (int64, error) {
+	return r.do("INCRBY", r.prefix+key, value).Int64()
+}
+
+func (r *redisKeyValue) DecrByInt64(key string, value int64) (int64, error) {
+	return r.do("DECRBY", r.prefix+key, value).Int64()
+}
+
 func (r *redisKeyValue) Del(key string) error {
 	return r.do("DEL", r.prefix+key).err
 }
@@ -254,6 +244,15 @@ func (r *redisKeyValue) WithContext(ctx context.Context) KeyValue {
 	}
 }
 
+func (r *redisKeyValue) WithLatencyRecorder(rec LatencyRecorder) KeyValue {
+	return &redisKeyValue{
+		pool:     r.pool,
+		ctx:      r.ctx,
+		prefix:   r.prefix,
+		recorder: &rec,
+	}
+}
+
 // WithPrefix wraps r to return a RedisKeyValue that prefixes all keys with
 // prefix + ":".
 func (r *redisKeyValue) WithPrefix(prefix string) KeyValue {
@@ -264,8 +263,12 @@ func (r *redisKeyValue) WithPrefix(prefix string) KeyValue {
 	}
 }
 
-func (r *redisKeyValue) Pool() (*redis.Pool, bool) {
-	return r.pool, true
+func (r *redisKeyValue) Keys(prefix string) ([]string, error) {
+	return Values(r.do("KEYS", prefix)).Strings()
+}
+
+func (r *redisKeyValue) Pool() *redis.Pool {
+	return r.pool
 }
 
 func (r *redisKeyValue) do(commandName string, args ...any) Value {
@@ -281,8 +284,15 @@ func (r *redisKeyValue) do(commandName string, args ...any) Value {
 		c = r.pool.Get()
 		defer c.Close()
 	}
-
+	var start time.Time
+	if r.recorder != nil {
+		start = time.Now()
+	}
 	reply, err := c.Do(commandName, args...)
+	if r.recorder != nil {
+		elapsed := time.Since(start)
+		(*r.recorder)(commandName, elapsed, err)
+	}
 	return Value{
 		reply: reply,
 		err:   err,

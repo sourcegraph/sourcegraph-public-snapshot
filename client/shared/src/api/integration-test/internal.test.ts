@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { integrationTestContext } from '../../testing/testHelpers'
 
 describe('Internal (integration)', () => {

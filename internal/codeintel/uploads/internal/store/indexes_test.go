@@ -11,9 +11,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
@@ -25,7 +25,7 @@ func TestGetIndexes(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Minute * 1)
@@ -84,7 +84,7 @@ func TestGetIndexes(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		for lo := 0; lo < len(testCase.expectedIDs); lo++ {
+		for lo := range len(testCase.expectedIDs) {
 			hi := lo + 3
 			if hi > len(testCase.expectedIDs) {
 				hi = len(testCase.expectedIDs)
@@ -135,9 +135,15 @@ func TestGetIndexes(t *testing.T) {
 		// Enable permissions user mapping forces checking repository permissions
 		// against permissions tables in the database, which should effectively block
 		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				PermissionsUserMapping: &schema.PermissionsUserMapping{
+					Enabled: true,
+					BindID:  "email",
+				},
+			},
+		})
+		t.Cleanup(func() { conf.Mock(nil) })
 
 		indexes, totalCount, err := store.GetIndexes(ctx,
 			shared.GetIndexesOptions{
@@ -157,7 +163,7 @@ func TestGetIndexByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// Index does not exist initially
 	if _, exists, err := store.GetIndexByID(ctx, 1); err != nil {
@@ -213,9 +219,15 @@ func TestGetIndexByID(t *testing.T) {
 		// Enable permissions user mapping forces checking repository permissions
 		// against permissions tables in the database, which should effectively block
 		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				PermissionsUserMapping: &schema.PermissionsUserMapping{
+					Enabled: true,
+					BindID:  "email",
+				},
+			},
+		})
+		t.Cleanup(func() { conf.Mock(nil) })
 
 		_, exists, err := store.GetIndexByID(ctx, 1)
 		if err != nil {
@@ -230,7 +242,7 @@ func TestGetIndexByID(t *testing.T) {
 func TestGetQueuedIndexRank(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(+time.Minute * 6)
@@ -281,7 +293,7 @@ func TestGetIndexesByIDs(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	indexID1, indexID2, indexID3, indexID4 := 1, 3, 5, 5 // note the duplication
 	uploadID1, uploadID2, uploadID3, uploadID4 := 10, 11, 12, 13
@@ -326,9 +338,15 @@ func TestGetIndexesByIDs(t *testing.T) {
 		// Enable permissions user mapping forces checking repository permissions
 		// against permissions tables in the database, which should effectively block
 		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				PermissionsUserMapping: &schema.PermissionsUserMapping{
+					Enabled: true,
+					BindID:  "email",
+				},
+			},
+		})
+		t.Cleanup(func() { conf.Mock(nil) })
 
 		indexes, err := store.GetIndexesByIDs(ctx, 1, 2, 3, 4)
 		if err != nil {
@@ -343,7 +361,7 @@ func TestGetIndexesByIDs(t *testing.T) {
 func TestDeleteIndexByID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1})
 
@@ -364,7 +382,7 @@ func TestDeleteIndexByID(t *testing.T) {
 func TestDeleteIndexes(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
 	insertIndexes(t, db, uploadsshared.Index{ID: 2, State: "errored"})
@@ -388,7 +406,7 @@ func TestDeleteIndexes(t *testing.T) {
 func TestDeleteIndexesWithIndexerKey(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
 	insertIndexes(t, db, uploadsshared.Index{ID: 2, Indexer: "sourcegraph/scip-go"})
@@ -423,7 +441,7 @@ func TestDeleteIndexesWithIndexerKey(t *testing.T) {
 func TestReindexIndexByID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
 	insertIndexes(t, db, uploadsshared.Index{ID: 2, State: "errored"})
@@ -445,7 +463,7 @@ func TestReindexIndexByID(t *testing.T) {
 func TestReindexIndexes(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
 	insertIndexes(t, db, uploadsshared.Index{ID: 2, State: "errored"})
@@ -471,7 +489,7 @@ func TestReindexIndexes(t *testing.T) {
 func TestReindexIndexesWithIndexerKey(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
 	insertIndexes(t, db, uploadsshared.Index{ID: 2, Indexer: "sourcegraph/scip-go"})
@@ -504,7 +522,7 @@ func TestReindexIndexesWithIndexerKey(t *testing.T) {
 func TestDeleteIndexByIDMissingRow(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	if found, err := store.DeleteIndexByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error deleting index: %s", err)

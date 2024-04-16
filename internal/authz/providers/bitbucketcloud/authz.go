@@ -1,7 +1,6 @@
 package bitbucketcloud
 
 import (
-	"fmt"
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -51,15 +50,6 @@ func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection, 
 		}
 		if p == nil {
 			continue
-		}
-
-		if _, exists := bbcloudAuthProviders[p.ServiceID()]; !exists {
-			initResults.Warnings = append(initResults.Warnings,
-				fmt.Sprintf("Bitbucket Cloud config for %[1]s has `authorization` enabled, "+
-					"but no authentication provider matching %[1]q was found. "+
-					"Check the [**site configuration**](/site-admin/configuration) to "+
-					"verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %[1]s.",
-					p.ServiceID()))
 		}
 
 		initResults.Providers = append(initResults.Providers, p)

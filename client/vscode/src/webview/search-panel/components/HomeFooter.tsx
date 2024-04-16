@@ -16,6 +16,7 @@ import styles from './HomeFooter.module.scss'
 export interface HomeFooterProps extends TelemetryProps {
     setQuery: (newState: QueryState) => void
 }
+
 interface SearchExamplesProps extends TelemetryProps {
     title: string
     subtitle: string

@@ -20,6 +20,7 @@ go_binary(
 go_cross_binary(
     name = "init-sg-darwin-arm64",
     platform = "@io_bazel_rules_go//go/toolchain:darwin_arm64",
+    tags = ["manual"],
     target = ":init-sg",
     visibility = ["//testing:__pkg__"],
 )

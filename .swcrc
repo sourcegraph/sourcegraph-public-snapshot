@@ -1,0 +1,10 @@
+{
+    "$schema": "https://json.schemastore.org/swcrc",
+    "jsc": {
+        "transform": {
+            "react": { "runtime": "automatic" }
+        },
+        "parser": { "syntax": "typescript" },
+        "target": "es2022"
+    }
+}

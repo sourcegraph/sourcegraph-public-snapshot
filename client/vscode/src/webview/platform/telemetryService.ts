@@ -21,17 +21,20 @@ export interface VsceTelemetryService extends TelemetryService {
      * Provide uri manually for some events (e.g ViewRepository, ViewBlob) as webview does not provide link location
      */
     log(eventName: string, eventProperties?: any, publicArgument?: any, uri?: string): void
+
     /**
      * @deprecated use logPageView instead
      *
      * Log a pageview event (by sending it to the server).
      */
     logViewEvent(eventName: string, eventProperties?: any, publicArgument?: any, uri?: string): void
+
     /**
      * Log a pageview event (by sending it to the server).
      * Adheres to the new event naming policy
      */
     logPageView(eventName: string, eventProperties?: any, publicArgument?: any, uri?: string): void
+
     /**
      * Listen for event logs
      *

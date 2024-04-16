@@ -25,11 +25,11 @@ import (
 func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsClient, error) {
 	switch config.Provider {
 	case conftypes.EmbeddingsProviderNameSourcegraph:
-		return sourcegraph.NewClient(httpcli.ExternalClient, config), nil
+		return sourcegraph.NewClient(httpcli.UncachedExternalClient, config), nil
 	case conftypes.EmbeddingsProviderNameOpenAI:
-		return openai.NewClient(httpcli.ExternalClient, config), nil
+		return openai.NewClient(httpcli.UncachedExternalClient, config), nil
 	case conftypes.EmbeddingsProviderNameAzureOpenAI:
-		return azureopenai.NewClient(httpcli.ExternalClient, config), nil
+		return azureopenai.NewClient(azureopenai.GetAPIClient, config)
 	default:
 		return nil, errors.Newf("invalid provider %q", config.Provider)
 	}
@@ -259,22 +259,25 @@ func embedFiles(
 		}
 
 		batchEmbeddings, err := embeddingsClient.GetDocumentEmbeddings(ctx, batchChunks)
-		if err != nil && !excludeChunksOnError {
-			return nil, errors.Wrap(err, "error while getting embeddings")
-		} else if err != nil {
-			// To avoid failing large jobs on a flaky API, just mark all files
-			// as failed and continue. This means we may have some missing
-			// files, but they will be logged as such below and some embeddings
-			// are better than no embeddings.
-			logger.Warn("error while getting embeddings", log.Error(err))
-			failed := make([]int, len(batchChunks))
-			for i := 0; i < len(batchChunks); i++ {
-				failed[i] = i
-			}
-			batchEmbeddings = &client.EmbeddingsResults{
-				Embeddings: make([]float32, len(batchChunks)*dimensions),
-				Failed:     failed,
-				Dimensions: dimensions,
+		if err != nil {
+			if !excludeChunksOnError || errors.Is(err, &client.RateLimitExceededError{}) {
+				// Fail immediately if we hit a rate limit, so we don't continually retry and fail on every chunk.
+				return nil, errors.Wrap(err, "error while getting embeddings")
+			} else {
+				// To avoid failing large jobs on a flaky API, just mark all files
+				// as failed and continue. This means we may have some missing
+				// files, but they will be logged as such below and some embeddings
+				// are better than no embeddings.
+				logger.Warn("error while getting embeddings", log.Error(err))
+				failed := make([]int, len(batchChunks))
+				for i := range len(batchChunks) {
+					failed[i] = i
+				}
+				batchEmbeddings = &client.EmbeddingsResults{
+					Embeddings: make([]float32, len(batchChunks)*dimensions),
+					Failed:     failed,
+					Dimensions: dimensions,
+				}
 			}
 		}
 

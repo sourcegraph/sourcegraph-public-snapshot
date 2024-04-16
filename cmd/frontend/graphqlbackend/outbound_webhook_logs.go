@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"strconv"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -10,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -74,14 +74,14 @@ func newOutboundWebhookLogConnectionResolver(
 	limit := opts.Limit
 	logStore := store.ToLogStore()
 
-	nodes := syncx.OnceValues(func() ([]*types.OutboundWebhookLog, error) {
+	nodes := sync.OnceValues(func() ([]*types.OutboundWebhookLog, error) {
 		opts.Limit += 1
 		return logStore.ListForOutboundWebhook(ctx, opts)
 	})
 
 	return &outboundWebhookLogConnectionResolver{
 		nodes: nodes,
-		resolvers: syncx.OnceValues(func() ([]OutboundWebhookLogResolver, error) {
+		resolvers: sync.OnceValues(func() ([]OutboundWebhookLogResolver, error) {
 			logs, err := nodes()
 			if err != nil {
 				return nil, err
@@ -101,7 +101,7 @@ func newOutboundWebhookLogConnectionResolver(
 
 			return resolvers, nil
 		}),
-		totalCount: syncx.OnceValues(func() (int32, error) {
+		totalCount: sync.OnceValues(func() (int32, error) {
 			total, errored, err := logStore.CountsForOutboundWebhook(ctx, opts.OutboundWebhookID)
 			if opts.OnlyErrors {
 				return int32(errored), err
@@ -199,7 +199,7 @@ func newOutboundWebhookJobResolver(
 	id int64,
 ) OutboundWebhookJobResolver {
 	return &outboundWebhookJobResolver{
-		job: syncx.OnceValues(func() (*types.OutboundWebhookJob, error) {
+		job: sync.OnceValues(func() (*types.OutboundWebhookJob, error) {
 			return store.GetByID(ctx, id)
 		}),
 	}

@@ -90,7 +90,7 @@ const cardItem = (
     </Card>
 )
 
-export const InteractiveCard: Story = () => (
+export const InteractiveCard: StoryFn = () => (
     <>
         <H2>Interactive Cards</H2>
         {cardItem}

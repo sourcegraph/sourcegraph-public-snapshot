@@ -15,13 +15,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestRepoEmbeddingJobsStore(t *testing.T) {
-	t.Parallel()
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
@@ -142,8 +143,6 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 }
 
 func TestRescheduleAll(t *testing.T) {
-	t.Parallel()
-
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := db.Repos()
@@ -186,8 +185,6 @@ func TestRescheduleAll(t *testing.T) {
 }
 
 func TestCancelRepoEmbeddingJob(t *testing.T) {
-	t.Parallel()
-
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := db.Repos()
@@ -242,7 +239,7 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 }
 
 func TestGetEmbeddableRepos(t *testing.T) {
-	t.Parallel()
+	dotcom.MockSourcegraphDotComMode(t, true)
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
@@ -287,8 +284,6 @@ func TestGetEmbeddableRepos(t *testing.T) {
 }
 
 func TestEmbeddingsPolicyWithFailures(t *testing.T) {
-	t.Parallel()
-
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := db.Repos()
@@ -395,6 +390,8 @@ func TestGetEmbeddableReposLimit(t *testing.T) {
 }
 
 func TestGetEmbeddableRepoOpts(t *testing.T) {
+	dotcom.MockSourcegraphDotComMode(t, true)
+
 	conf.Mock(&conf.Unified{})
 	defer conf.Mock(nil)
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{

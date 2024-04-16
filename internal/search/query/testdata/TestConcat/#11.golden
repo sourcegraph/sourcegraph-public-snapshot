@@ -1,0 +1,120 @@
+[
+  {
+    "and": [
+      {
+        "value": "a",
+        "negated": false,
+        "labels": [
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 0
+          },
+          "end": {
+            "line": 0,
+            "column": 1
+          }
+        }
+      },
+      {
+        "value": "b",
+        "negated": false,
+        "labels": [
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 2
+          },
+          "end": {
+            "line": 0,
+            "column": 3
+          }
+        }
+      },
+      {
+        "value": "c",
+        "negated": false,
+        "labels": [
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 4
+          },
+          "end": {
+            "line": 0,
+            "column": 5
+          }
+        }
+      },
+      {
+        "value": "d",
+        "negated": false,
+        "labels": [
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 6
+          },
+          "end": {
+            "line": 0,
+            "column": 7
+          }
+        }
+      },
+      {
+        "value": "e",
+        "negated": false,
+        "labels": [
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 8
+          },
+          "end": {
+            "line": 0,
+            "column": 9
+          }
+        }
+      },
+      {
+        "value": "f",
+        "negated": false,
+        "labels": [
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 10
+          },
+          "end": {
+            "line": 0,
+            "column": 11
+          }
+        }
+      }
+    ]
+  }
+]

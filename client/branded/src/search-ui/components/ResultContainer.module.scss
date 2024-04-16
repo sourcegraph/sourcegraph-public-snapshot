@@ -1,38 +1,28 @@
 .result-container {
-    &:last-child {
-        border-bottom-width: 1px;
-    }
-
-    &:not(:last-of-type) {
-        // Prevents the sticky items below from affecting
-        // anything outside of the result container.
-        isolation: isolate;
-        margin-bottom: 1rem;
-    }
+    // Force the creation of a new stacking context
+    // so the z-index of the result header does not
+    // leak outside of the search results list.
+    isolation: isolate;
 }
 
 .header {
-    padding: 0.5rem 0.5rem 0.25rem 0;
+    padding: 0.5rem 0.75rem;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
+
     position: sticky;
     top: 0;
+
     z-index: 1; // Show on top of search result contents
-    background-color: var(--body-bg);
+
+    border-bottom: 1px solid var(--border-color-2);
+    background-color: var(--result-header-bg);
 
     &-title {
         flex: 1 1 auto;
         display: flex;
         flex-wrap: wrap;
-    }
-
-    p {
-        margin-bottom: 0;
-    }
-
-    &:not(:only-of-type) {
-        border-bottom: none;
     }
 
     :global(.match-highlight) {
@@ -41,21 +31,94 @@
 }
 
 .result {
-    // The LastSyncedIcon is absolutely-positions inside the search results.
-    // This causes it to show over the sticky header when scrolling unless
-    // we isolate the search result contents.
-    isolation: isolate;
+    background-color: var(--code-bg);
+    border-bottom: 1px solid var(--border-color-2);
+}
 
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
-    margin-top: 0.25rem;
+.search-result-match {
+    text-decoration: none; /* don't use cascading link style */
+    display: flex;
+    align-items: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    position: relative;
+}
 
-    &:hover {
-        border-color: var(--border-color-2);
+.horizontal-divider-between {
+    &:not(:last-child) {
+        border-bottom: 1px solid var(--border-color);
     }
 }
 
-.header:focus-within + .highlight-result.result,
-.highlight-result.result:focus-within {
-    box-shadow: 0 0 0 2px var(--border-color-2);
+.focusable-block {
+    &:focus-visible {
+        box-shadow: inset 0 0 0 1px var(--primary-2);
+    }
+}
+
+.clickable {
+    cursor: pointer;
+    &:hover {
+        text-decoration: none;
+        background-color: var(--subtle-bg-2);
+    }
+}
+
+.copy-button {
+    visibility: hidden;
+    padding-top: 0;
+    padding-bottom: 0;
+    display: inline-flex;
+    align-items: center;
+
+    .copy-button-container:hover &,
+    .copy-button-container:focus-within & {
+        visibility: visible;
+    }
+}
+
+.divider-between {
+    > *:not(:last-child)::after {
+        content: ' ';
+        height: 1rem;
+        margin: 0 0.75rem;
+        border-right: 1px solid var(--border-color-2);
+        display: block;
+    }
+}
+
+.match-type {
+    white-space: nowrap;
+}
+
+.divider-vertical {
+    border-bottom: 1px solid var(--border-color-2);
+    width: 100%;
+    margin: 0.5rem 0;
+}
+
+.divider {
+    border-right: 1px solid var(--border-color-2);
+    height: 1rem;
+    margin: 0 0.5rem;
+}
+
+.gap-1 {
+    gap: 0.5rem;
+}
+
+.title-inner {
+    overflow-wrap: anywhere;
+}
+
+.icon {
+    margin-right: 0.25rem;
+}
+
+.title {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    min-width: 0;
+    flex-wrap: wrap;
 }

@@ -71,6 +71,10 @@ func (m *mockFileResolver) ToBatchSpecWorkspaceFile() (graphqlbackend.BatchWorks
 	return nil, false
 }
 
+func (m *mockFileResolver) Languages(context.Context) ([]string, error) {
+	return nil, errors.New("not implemented")
+}
+
 func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 	date := time.Date(2022, 1, 2, 3, 5, 6, 0, time.UTC)
 	batchSpecRandID := "123abc"

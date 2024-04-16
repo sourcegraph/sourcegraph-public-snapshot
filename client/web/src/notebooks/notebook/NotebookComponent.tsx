@@ -10,14 +10,15 @@ import { catchError, delay, startWith, switchMap, tap } from 'rxjs/operators'
 import type { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, useEventObservable, Icon } from '@sourcegraph/wildcard'
 
-import type { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
+import { V2BlockTypes, type Block, type BlockDirection, type BlockInit, type BlockInput, type BlockType } from '..'
 import type { AuthenticatedUser } from '../../auth'
 import type { NotebookFields } from '../../graphql-operations'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
-import { EnterprisePageRoutes } from '../../routes.constants'
+import { PageRoutes } from '../../routes.constants'
 import type { SearchStreamingProps } from '../../search'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
@@ -34,6 +35,7 @@ import styles from './NotebookComponent.module.scss'
 export interface NotebookComponentProps
     extends SearchStreamingProps,
         TelemetryProps,
+        TelemetryV2Props,
         Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery'>,
         OwnConfigProps {
     isReadOnly?: boolean
@@ -83,6 +85,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         isEmbedded,
         authenticatedUser,
         telemetryService,
+        telemetryRecorder,
         isSourcegraphDotCom,
         platformContext,
         blocks: initialBlocks,
@@ -122,6 +125,8 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                     { blocksCount: blocks.length, blockCountsPerType },
                     { blocksCount: blocks.length, blockCountsPerType }
                 )
+                // No V2 telemetry needed, as this is not a direct user action, and is duplicative with
+                // other telemetry below (since updateBlocks() is called by the other user actions).
             },
             [notebook, setBlocks, debouncedOnSerializeBlocks, telemetryService]
         )
@@ -150,26 +155,31 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 notebook.runBlockById(id)
                 updateBlocks(false)
 
-                telemetryService.log(
-                    'SearchNotebookRunBlock',
-                    { type: notebook.getBlockById(id)?.type },
-                    { type: notebook.getBlockById(id)?.type }
-                )
+                const blockType = notebook.getBlockById(id)
+                telemetryService.log('SearchNotebookRunBlock', { type: blockType?.type }, { type: blockType?.type })
+                telemetryRecorder.recordEvent('notebook.block', 'run', {
+                    metadata: {
+                        type: blockType && blockType.type ? V2BlockTypes[blockType.type] : 0,
+                    },
+                })
             },
-            [notebook, telemetryService, updateBlocks]
+            [notebook, telemetryService, telemetryRecorder, updateBlocks]
         )
 
         const [runAllBlocks, runningAllBlocks] = useEventObservable(
             useCallback(
                 (click: Observable<React.MouseEvent>) =>
                     click.pipe(
+                        tap(() => {
+                            telemetryService.log('SearchNotebookRunAllBlocks')
+                            telemetryRecorder.recordEvent('notebook.blocks', 'runAll')
+                        }),
                         switchMap(() => notebook.runAllBlocks().pipe(startWith(LOADING))),
                         tap(() => {
                             updateBlocks(false)
-                            telemetryService.log('SearchNotebookRunAllBlocks')
                         })
                     ),
-                [notebook, telemetryService, updateBlocks]
+                [notebook, telemetryService, telemetryRecorder, updateBlocks]
             )
         )
 
@@ -181,9 +191,10 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                         tap(exportedMarkdown => {
                             downloadTextAsFile(exportedMarkdown, exportedFileName)
                             telemetryService.log('SearchNotebookExportNotebook')
+                            telemetryRecorder.recordEvent('notebook', 'export')
                         })
                     ),
-                [notebook, exportedFileName, telemetryService]
+                [notebook, exportedFileName, telemetryService, telemetryRecorder]
             )
         )
 
@@ -205,15 +216,17 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 return
             }
             telemetryService.log('SearchNotebookCopyNotebookButtonClick')
+            telemetryRecorder.recordEvent('notebook', 'copy')
             copyNotebook({ namespace: authenticatedUser.id, blocks: notebook.getBlocks() })
-        }, [authenticatedUser, copyNotebook, notebook, telemetryService])
+        }, [authenticatedUser, copyNotebook, notebook, telemetryService, telemetryRecorder])
 
         const onBlockInputChange = useCallback(
             (id: string, blockInput: BlockInput) => {
                 notebook.setBlockInputById(id, blockInput)
+                telemetryRecorder.recordEvent('notebook', 'changeInput')
                 updateBlocks()
             },
-            [notebook, updateBlocks]
+            [notebook, updateBlocks, telemetryRecorder]
         )
 
         const onNewBlock = useCallback(
@@ -258,8 +271,11 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 updateBlocks()
 
                 telemetryService.log('SearchNotebookAddBlock', { type: addedBlock.type }, { type: addedBlock.type })
+                telemetryRecorder.recordEvent('notebook.blocks', 'add', {
+                    metadata: { type: V2BlockTypes[addedBlock.type] },
+                })
             },
-            [isReadOnly, notebook, selectBlock, focusBlock, updateBlocks, telemetryService]
+            [isReadOnly, notebook, selectBlock, focusBlock, updateBlocks, telemetryService, telemetryRecorder]
         )
 
         const onDeleteBlock = useCallback(
@@ -278,8 +294,11 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 updateBlocks()
 
                 telemetryService.log('SearchNotebookDeleteBlock', { type: block?.type }, { type: block?.type })
+                telemetryRecorder.recordEvent('notebook.block', 'delete', {
+                    metadata: { type: block ? V2BlockTypes[block.type] : 0 },
+                })
             },
-            [notebook, isReadOnly, telemetryService, selectBlock, updateBlocks, focusBlock]
+            [notebook, isReadOnly, telemetryService, telemetryRecorder, selectBlock, updateBlocks, focusBlock]
         )
 
         const onMoveBlock = useCallback(
@@ -292,13 +311,20 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 focusBlock(id)
                 updateBlocks()
 
+                const blockType = notebook.getBlockById(id)
                 telemetryService.log(
                     'SearchNotebookMoveBlock',
-                    { type: notebook.getBlockById(id)?.type, direction },
-                    { type: notebook.getBlockById(id)?.type, direction }
+                    { type: blockType?.type, direction },
+                    { type: blockType?.type, direction }
                 )
+                telemetryRecorder.recordEvent('notebook.block', 'move', {
+                    metadata: {
+                        type: blockType ? V2BlockTypes[blockType.type] : 0,
+                        direction: direction === 'up' ? 1 : 2,
+                    },
+                })
             },
-            [notebook, isReadOnly, telemetryService, updateBlocks, focusBlock]
+            [notebook, isReadOnly, telemetryService, telemetryRecorder, updateBlocks, focusBlock]
         )
 
         const onDuplicateBlock = useCallback(
@@ -322,8 +348,11 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                     { type: duplicateBlock?.type },
                     { type: duplicateBlock?.type }
                 )
+                telemetryRecorder.recordEvent('notebook.block', 'duplicate', {
+                    metadata: { type: duplicateBlock ? V2BlockTypes[duplicateBlock.type] : 0 },
+                })
             },
-            [notebook, isReadOnly, telemetryService, selectBlock, updateBlocks, focusBlock]
+            [notebook, isReadOnly, telemetryService, telemetryRecorder, selectBlock, updateBlocks, focusBlock]
         )
 
         const onFocusLastBlock = useCallback(() => {
@@ -381,18 +410,21 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 }
 
                 switch (block.type) {
-                    case 'md':
+                    case 'md': {
                         return <NotebookMarkdownBlock {...block} {...blockProps} isEmbedded={isEmbedded} />
-                    case 'file':
+                    }
+                    case 'file': {
                         return (
                             <NotebookFileBlock
                                 {...block}
                                 {...blockProps}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                             />
                         )
-                    case 'query':
+                    }
+                    case 'query': {
                         return (
                             <NotebookQueryBlock
                                 {...block}
@@ -403,20 +435,24 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 ownEnabled={ownEnabled}
                                 settingsCascade={settingsCascade}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 platformContext={platformContext}
                                 authenticatedUser={authenticatedUser}
                             />
                         )
-                    case 'symbol':
+                    }
+                    case 'symbol': {
                         return (
                             <NotebookSymbolBlock
                                 {...block}
                                 {...blockProps}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 platformContext={platformContext}
                             />
                         )
+                    }
                 }
             },
             [
@@ -432,6 +468,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 isReadOnly,
                 isEmbedded,
                 telemetryService,
+                telemetryRecorder,
                 isSourcegraphDotCom,
                 fetchHighlightedFileLineRanges,
                 searchContextsEnabled,
@@ -456,9 +493,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         }, [])
 
         if (copiedNotebookOrError && !isErrorLike(copiedNotebookOrError) && copiedNotebookOrError !== LOADING) {
-            return (
-                <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} replace={true} />
-            )
+            return <Navigate to={PageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} replace={true} />
         }
 
         return (

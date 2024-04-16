@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { formatDays, formatRate } from './format'
 
 describe('format', () => {

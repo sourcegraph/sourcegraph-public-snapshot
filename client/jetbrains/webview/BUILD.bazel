@@ -1,10 +1,7 @@
-load("//dev:defs.bzl", "sass", "ts_project")
-load("//client/shared/dev:tools.bzl", "module_style_typings")
-load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
-
-# TODO(bazel): storybook build
-# gazelle:exclude **/*.story.{ts,tsx}
+load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
+load("//client/shared/dev:tools.bzl", "module_style_typings")
+load("//dev:defs.bzl", "sass", "ts_project")
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 

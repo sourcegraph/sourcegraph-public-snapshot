@@ -93,12 +93,12 @@ export function renderWithBrandedContext(
     }
 }
 
-interface SyncRourterRefProps {
+interface SyncRouterRefProps {
     onLocationChange: (location: Location) => void
     onNavigateChange: (navigate: NavigateFunction) => void
 }
 
-const SyncRouterRefs: FC<SyncRourterRefProps> = props => {
+const SyncRouterRefs: FC<SyncRouterRefProps> = props => {
     const { onLocationChange, onNavigateChange } = props
 
     const location = useLocation()

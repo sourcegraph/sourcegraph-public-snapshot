@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.json",
   "references": [{ "path": "../../../shared/src/testing" }, { "path": "../../../../schema" }],
   "compilerOptions": {
-    "types": ["mocha", "node"],
+    "types": ["node"],
     "module": "commonjs",
   },
   "include": ["**/*", "../graphql-operations.ts"],

@@ -1,4 +1,4 @@
-import { of } from 'rxjs'
+import { of, lastValueFrom } from 'rxjs'
 
 import {
     type ContentMatch,
@@ -19,12 +19,6 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 
 import { eventLogger } from '../../../tracking/eventLogger'
-
-const sanitizeString = (str: string): string =>
-    `"${str
-        .replaceAll(/"/g, '""') // escape quotes
-        .replaceAll(/ +(?= )/g, '') // remove extra spaces
-        .replaceAll(/\n/g, '')}"` // remove extra newlines
 
 export const searchResultsToFileContent = (
     searchResults: SearchMatch[],
@@ -61,11 +55,9 @@ export const searchResultsToFileContent = (
                         // e.g. for query "codehost" the path match record can be
                         // "[pkg/microservice/systemconfig/core/codehost/repository/models/codehost.go, [[35, 43], [62,70]]]"
                         const pathMatches = result.pathMatches
-                            ? JSON.stringify(
-                                  `[${result.path}, [${result.pathMatches
-                                      .map(match => `[${match.start.column}, ${match.end.column}]`)
-                                      .join(' ')}]]`
-                              )
+                            ? `[${result.path}, [${result.pathMatches
+                                  .map(match => `[${match.start.column}, ${match.end.column}]`)
+                                  .join(' ')}]]`
                             : ''
 
                         // e.g. for query "codehost" the chunk match record can be
@@ -74,16 +66,14 @@ export const searchResultsToFileContent = (
                         // - line 39 with matches starting from 2 to 10 and from 22 to 30
                         const chunkMatches =
                             'chunkMatches' in result
-                                ? JSON.stringify(
-                                      result.chunkMatches
-                                          ?.map(
-                                              match =>
-                                                  `[${match.contentStart.line}, [${match.ranges
-                                                      .map(range => `[${range.start.column}, ${range.end.column}]`)
-                                                      .join(' ')}]]`
-                                          )
-                                          .join('; ')
-                                  )
+                                ? result.chunkMatches
+                                      ?.map(
+                                          match =>
+                                              `[${match.contentStart.line}, [${match.ranges
+                                                  .map(range => `[${range.start.column}, ${range.end.column}]`)
+                                                  .join(' ')}]]`
+                                      )
+                                      .join('; ')
                                 : ''
 
                         return [
@@ -110,17 +100,15 @@ export const searchResultsToFileContent = (
                         const fileURL = new URL(getFileMatchUrl(result), sourcegraphURL).toString()
 
                         // e.g. "[FIELD, codeHost, http://localhost:3443/repo/file1.java?L27:20-27:28]; [METHOD, getCodeHost, http://localhost:3443/repo/file2.java?L74:22-74:33]"
-                        const symbols = JSON.stringify(
-                            result.symbols
-                                .map(
-                                    symbol =>
-                                        `[${symbol.kind}, ${symbol.name}, ${new URL(
-                                            symbol.url,
-                                            sourcegraphURL
-                                        ).toString()}]`
-                                )
-                                .join('; ')
-                        )
+                        const symbols = result.symbols
+                            .map(
+                                symbol =>
+                                    `[${symbol.kind}, ${symbol.name}, ${new URL(
+                                        symbol.url,
+                                        sourcegraphURL
+                                    ).toString()}]`
+                            )
+                            .join('; ')
                         return [result.type, result.repository, repoURL, result.path, fileURL, symbols]
                     }),
             ]
@@ -129,7 +117,7 @@ export const searchResultsToFileContent = (
 
         case 'repo': {
             content = [
-                enableRepositoryMetadata ? [...headers, 'Repository metadata'] : headers,
+                enableRepositoryMetadata ? [...headers, 'Repository metadata', 'Repository metadata JSON'] : headers,
                 ...searchResults
                     .filter((result: SearchMatch): result is RepositoryMatch => result.type === 'repo')
                     .map(result => [
@@ -138,12 +126,22 @@ export const searchResultsToFileContent = (
                         new URL(getRepositoryUrl(result.repository, result.branches), sourcegraphURL).toString(),
                         ...(enableRepositoryMetadata
                             ? [
-                                  '"' +
-                                      Object.entries(result.metadata ?? {})
-                                          .map(([key, value]) => (value ? `${key}:${value}` : key))
-                                          .join('\n')
-                                          .replaceAll('"', '""') +
-                                      '"',
+                                  Object.entries(result.metadata ?? {})
+                                      .map(([key, value]) => (value ? `${key}:${value}` : key))
+                                      .join('\n'),
+                              ]
+                            : []),
+                        ...(enableRepositoryMetadata
+                            ? [
+                                  JSON.stringify(
+                                      Object.entries(result.metadata ?? {}).reduce(
+                                          (obj: { [key: string]: string | null }, [key, value]) => {
+                                              obj[key] = value ?? null
+                                              return obj
+                                          },
+                                          {}
+                                      )
+                                  ),
                               ]
                             : []),
                     ]),
@@ -153,7 +151,7 @@ export const searchResultsToFileContent = (
 
         case 'commit': {
             content = [
-                [...headers, 'Date', 'Author', 'Subject', 'oid', 'Commit URL'],
+                [...headers, 'Date', 'Author', 'Message', 'oid', 'Commit URL'],
                 ...searchResults
                     .filter((result: SearchMatch): result is CommitMatch => result.type === 'commit')
                     .map(result => {
@@ -165,7 +163,7 @@ export const searchResultsToFileContent = (
                             repoURL,
                             result.authorDate,
                             result.authorName,
-                            sanitizeString(result.message),
+                            result.message,
                             result.oid,
                             commitURL,
                         ]
@@ -202,18 +200,30 @@ export const searchResultsToFileContent = (
             break
         }
 
-        default:
+        default: {
             return ''
+        }
     }
 
     return content
         .filter(cells => cells.length > 0)
-        .map(cells => cells.join(','))
+        .map(cells => cells.map(escapeCell).join(','))
         .join('\n')
 }
 
+// Escape a cell value based on IETF RFC 4180
+const escapeCell = (cell: string | undefined): string | undefined => {
+    if (cell === undefined) {
+        return cell
+    }
+    if (/[\n\r",]/.test(cell)) {
+        return `"${cell.replaceAll('"', '""')}"`
+    }
+    return cell
+}
+
 export const buildFileName = (query?: string): string => {
-    const formattedQuery = query?.trim().replace(/\W/g, '-')
+    const formattedQuery = query?.trim().replaceAll(/\W/g, '-')
     // truncate query to account for Windows OS failing to build a file with a name > 255 characters in length
     const truncatedQuery = formattedQuery?.slice(0, 225)
     return `sourcegraph-search-export${truncatedQuery ? `-${truncatedQuery}` : ''}.csv`
@@ -232,12 +242,14 @@ export const downloadSearchResults = (
     shouldRerunSearch: boolean
 ): Promise<void> => {
     const resultsObservable = shouldRerunSearch
-        ? aggregateStreamingSearch(of(query), { ...options, displayLimit: EXPORT_RESULT_DISPLAY_LIMIT })
+        ? aggregateStreamingSearch(of(query), {
+              ...options,
+              displayLimit: EXPORT_RESULT_DISPLAY_LIMIT,
+              maxLineLen: -1, // disable content truncation
+          })
         : of(results)
 
-    // Once we update to RxJS 7, we need to change `toPromise` to `lastValueFrom`.
-    // See https://rxjs.dev/deprecations/to-promise
-    return resultsObservable.toPromise().then(results => {
+    return lastValueFrom(resultsObservable, { defaultValue: undefined }).then(results => {
         if (results?.state === 'error') {
             const error = results.progress.skipped.find(skipped => skipped.reason === 'error')
             if (error) {

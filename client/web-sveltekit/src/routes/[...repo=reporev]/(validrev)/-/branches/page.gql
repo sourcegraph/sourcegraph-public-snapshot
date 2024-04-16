@@ -1,0 +1,18 @@
+query BranchesPage_OverviewQuery($repoName: String!, $first: Int!, $withBehindAhead: Boolean!, $revspec: String = "") {
+    repository(name: $repoName) {
+        id
+        ...GitBranchesOverview
+    }
+}
+
+fragment GitBranchesOverview on Repository {
+    defaultBranch {
+        ...GitReference_Ref
+    }
+    branches(first: $first) {
+        nodes {
+            id
+            ...GitReference_Ref
+        }
+    }
+}

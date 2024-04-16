@@ -262,16 +262,19 @@ export const PermissionsSyncJobNumbers: React.FunctionComponent<PermissionsSyncJ
     let diff = 0
     let classes = 'text-right'
     switch (type) {
-        case PermissionsSyncJobNumberType.ADDED:
+        case PermissionsSyncJobNumberType.ADDED: {
             diff = job.permissionsAdded
             classes = classNames(classes, { 'text-success': diff > 0 })
             break
-        case PermissionsSyncJobNumberType.REMOVED:
+        }
+        case PermissionsSyncJobNumberType.REMOVED: {
             diff = job.permissionsRemoved
             classes = classNames(classes, { 'text-danger': diff > 0 })
             break
-        default:
+        }
+        default: {
             diff = job.permissionsFound
+        }
     }
     classes = classNames(classes, { [styles.textTotalNumber]: diff === 0 })
 

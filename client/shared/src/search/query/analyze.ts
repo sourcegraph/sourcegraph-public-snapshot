@@ -17,8 +17,9 @@ export function getRelevantTokens(query: Node, target: CharacterRange, filter: (
     function processNode(node: Node): Node | null {
         switch (node.type) {
             case 'parameter':
-            case 'pattern':
+            case 'pattern': {
                 return filter(node) ? node : null
+            }
             case 'sequence': {
                 const nodes = node.nodes.map(processNode).filter(isDefined)
                 return nodes.length > 0 ? { type: 'sequence', nodes, range: placeholderRange } : null
@@ -103,9 +104,10 @@ const operatorKindToKeywordKind: Record<OperatorKind, KeywordKind> = {
  */
 function tokenize(node: Node | null): Token[] {
     switch (node?.type) {
-        case undefined:
+        case undefined: {
             return []
-        case 'parameter':
+        }
+        case 'parameter': {
             return [
                 {
                     type: 'filter',
@@ -115,8 +117,10 @@ function tokenize(node: Node | null): Token[] {
                     range: placeholderRange,
                 },
             ]
-        case 'pattern':
+        }
+        case 'pattern': {
             return [node]
+        }
         case 'sequence': {
             const tokens: Token[] = []
             for (const child of node.nodes) {
@@ -129,7 +133,7 @@ function tokenize(node: Node | null): Token[] {
         }
         case 'operator': {
             switch (node.kind) {
-                case OperatorKind.Not:
+                case OperatorKind.Not: {
                     return [
                         {
                             type: 'keyword',
@@ -140,7 +144,8 @@ function tokenize(node: Node | null): Token[] {
                         { type: 'whitespace', range: placeholderRange },
                         ...(node.right ? tokenize(node.right) : []),
                     ]
-                default:
+                }
+                default: {
                     return [
                         { type: 'openingParen', range: placeholderRange },
                         ...(node.left ? tokenize(node.left) : []),
@@ -155,6 +160,7 @@ function tokenize(node: Node | null): Token[] {
                         ...(node.right ? tokenize(node.right) : []),
                         { type: 'closingParen', range: placeholderRange },
                     ]
+                }
             }
         }
     }

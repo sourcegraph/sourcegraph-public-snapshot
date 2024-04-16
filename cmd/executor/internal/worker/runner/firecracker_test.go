@@ -19,7 +19,7 @@ import (
 )
 
 func TestFirecrackerRunner_Setup(t *testing.T) {
-	operations := command.NewOperations(&observation.TestContext)
+	operations := command.NewOperations(observation.TestContextTB(t))
 
 	tests := []struct {
 		name             string
@@ -331,7 +331,7 @@ const defaultCNIConfig = `
 func TestFirecrackerRunner_Teardown(t *testing.T) {
 	cmd := runner.NewMockCommand()
 	logger := runner.NewMockLogger()
-	operations := command.NewOperations(&observation.TestContext)
+	operations := command.NewOperations(observation.TestContextTB(t))
 	firecrackerRunner := runner.NewFirecrackerRunner(cmd, logger, "/dev", "test", runner.FirecrackerOptions{}, types.DockerAuthConfig{}, operations)
 
 	cmd.RunFunc.PushReturn(nil)
@@ -360,16 +360,10 @@ func TestFirecrackerRunner_Teardown(t *testing.T) {
 	assert.Equal(t, []string{"ignite", "rm", "-f", "test"}, cmd.RunFunc.History()[1].Arg2.Command)
 }
 
-func matchCmd(key string) func(spec command.Spec) bool {
-	return func(spec command.Spec) bool {
-		return spec.Key == key
-	}
-}
-
 func TestFirecrackerRunner_Run(t *testing.T) {
 	cmd := runner.NewMockCommand()
 	logger := runner.NewMockLogger()
-	operations := command.NewOperations(&observation.TestContext)
+	operations := command.NewOperations(observation.TestContextTB(t))
 	options := runner.FirecrackerOptions{
 		DockerOptions: command.DockerOptions{
 			ConfigPath:     "/docker/config",

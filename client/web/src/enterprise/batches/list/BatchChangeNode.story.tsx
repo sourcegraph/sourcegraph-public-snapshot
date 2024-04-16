@@ -1,4 +1,4 @@
-import type { Meta, Decorator, StoryFn } from '@storybook/react'
+import type { Meta, Decorator, StoryFn, StoryObj } from '@storybook/react'
 import classNames from 'classnames'
 import { subDays } from 'date-fns'
 
@@ -49,18 +49,21 @@ const Template: StoryFn /* <{ node: ListBatchChange }>*/ = ({ node, ...args }) =
         )}
     </WebStory>
 )
-export const OpenBatchChange = Template.bind({})
+
+type Story = StoryObj<typeof config>
+
+export const OpenBatchChange: Story = Template.bind({})
 OpenBatchChange.args = { node: nodes['Open batch change'] }
 OpenBatchChange.storyName = 'Open batch change'
 
-export const FailedDraft = Template.bind({})
+export const FailedDraft: Story = Template.bind({})
 FailedDraft.args = { node: nodes['Failed draft'] }
 FailedDraft.storyName = 'Failed draft'
 
-export const NoDescription = Template.bind({})
+export const NoDescription: Story = Template.bind({})
 NoDescription.args = { node: nodes['No description'] }
 NoDescription.storyName = 'No description'
 
-export const ClosedBatchChange = Template.bind({})
+export const ClosedBatchChange: Story = Template.bind({})
 ClosedBatchChange.args = { node: nodes['Closed batch change'] }
 ClosedBatchChange.storyName = 'Closed batch change'

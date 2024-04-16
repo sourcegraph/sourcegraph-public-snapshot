@@ -339,7 +339,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     fetchSearchContexts={fetchSearchContexts}
                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                     fetchStreamSuggestions={fetchStreamSuggestions}
-                    settingsCascade={settingsCascade}
                     telemetryService={platformContext.telemetryService}
                     platformContext={platformContext}
                     className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
@@ -389,7 +388,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             executedQuery={context.submittedSearchQueryState.queryState.query}
                             resultClassName="mr-0"
                             showQueryExamplesOnNoResultsPage={true}
-                            setQueryState={setUserQueryState}
                             selectedSearchContextSpec={context.selectedSearchContextSpec}
                         />
                     </MatchHandlersContext.Provider>

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/dustin/go-humanize"
+
 	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
 
 	"google.golang.org/grpc/codes"
@@ -23,8 +24,7 @@ import (
 )
 
 var (
-	logScope       = "gRPC.internal.error.reporter"
-	logDescription = "logs gRPC errors that appear to come from the go-grpc implementation"
+	logScope = "gRPC.internal.error.reporter"
 
 	envLoggingEnabled        = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_ENABLED", true, "Enables logging of gRPC internal errors")
 	envLogStackTracesEnabled = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_STACK_TRACES", false, "Enables including stack traces in logs of gRPC internal errors")
@@ -176,21 +176,20 @@ func newLoggingClientStream(s grpc.ClientStream, logger log.Logger, serviceName,
 
 	requestSaver := requestSavingClientStream{ClientStream: s}
 
-	return &callBackClientStream{
-		ClientStream: &requestSaver,
-
-		postMessageSend: func(m any, err error) {
-			if err != nil {
-				doLog(sendLogger, serviceName, methodName, requestSaver.InitialRequest(), m, err)
-			}
-		},
-
-		postMessageReceive: func(m any, err error) {
-			if err != nil && err != io.EOF { // EOF is expected at the end of a stream, so no need to log an error
-				doLog(receiveLogger, serviceName, methodName, requestSaver.InitialRequest(), m, err)
-			}
-		},
+	postMessageSend := func(m any, err error) {
+		if err != nil {
+			doLog(sendLogger, serviceName, methodName, requestSaver.InitialRequest(), m, err)
+		}
 	}
+
+	postMessageReceive := func(m any, err error) {
+		if err != nil && err != io.EOF { // EOF is expected at the end of a stream, so no need to log an error
+			doLog(receiveLogger, serviceName, methodName, requestSaver.InitialRequest(), m, err)
+		}
+	}
+
+	return grpcutil.NewCallBackClientStream(&requestSaver, postMessageSend, postMessageReceive)
+
 }
 
 func doLog(logger log.Logger, serviceName, methodName string, initialRequest *proto.Message, payload any, err error) {

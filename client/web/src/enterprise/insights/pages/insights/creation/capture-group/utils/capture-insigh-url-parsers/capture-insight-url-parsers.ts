@@ -24,8 +24,9 @@ export function encodeCaptureInsightURL(values: Partial<CaptureInsightUrlValues>
                 break
             }
 
-            default:
+            default: {
                 parameters.set(key, fields[key].toString())
+            }
         }
     }
 

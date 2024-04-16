@@ -33,7 +33,7 @@ export function useLastRepoName(query: string, filters: Filter[] = []): string {
         }
         const repoFilters = getFiltersOfKind(filters, FilterType.repo)
         switch (repoFilters.length) {
-            case 0:
+            case 0: {
                 // Reuse last repo name if query contains a repo filter and
                 // it's the same as the previous one, otherwise clear previous
                 // repo name
@@ -42,7 +42,8 @@ export function useLastRepoName(query: string, filters: Filter[] = []): string {
                     setRepoName('')
                 }
                 break
-            case 1:
+            }
+            case 1: {
                 // Update last repo name and repo query
                 if (queryRepoFilters.length === 0) {
                     // This is a special case: If the query doesn't contain a
@@ -55,10 +56,12 @@ export function useLastRepoName(query: string, filters: Filter[] = []): string {
                 lastRepoQuery.current = queryRepo
                 setRepoName(repoFilters[0].label)
                 break
-            default:
+            }
+            default: {
                 // multiple repos are matched, clear everything
                 lastRepoQuery.current = ''
                 setRepoName('')
+            }
         }
     }, [query, filters, lastRepoQuery])
 

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -119,7 +119,7 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 				return
 			}
 
-			auth.AddPostAuthRedirectParametersToURL(r.URL, newUserCreated)
+			auth.AddPostAuthRedirectParametersToURL(r.URL, newUserCreated, "http-header")
 			r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{UID: userID}))
 			next.ServeHTTP(w, r)
 		})

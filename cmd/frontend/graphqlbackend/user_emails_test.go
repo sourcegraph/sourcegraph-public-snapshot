@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
@@ -110,6 +110,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 		userEmails := dbmocks.NewMockUserEmailsStore()
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		db.SubRepoPermsFunc.SetDefaultReturn(dbmocks.NewMockSubRepoPermsStore())
 
 		tests := []struct {
 			name    string
@@ -165,7 +166,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, gitserver.NewClient()).SetUserEmailVerified(
+				_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).SetUserEmailVerified(
 					test.ctx,
 					&setUserEmailVerifiedArgs{
 						User: MarshalUserID(1),
@@ -255,6 +256,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 			db.AuthzFunc.SetDefaultReturn(authz)
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccounts)
+			db.SubRepoPermsFunc.SetDefaultReturn(dbmocks.NewMockSubRepoPermsStore())
 
 			RunTests(t, test.gqlTests(db))
 
@@ -268,7 +270,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 }
 
 func TestPrimaryEmail(t *testing.T) {
-	var primaryEmailQuery = `query hasPrimaryEmail($id: ID!){
+	primaryEmailQuery := `query hasPrimaryEmail($id: ID!){
 		node(id: $id) {
 			... on User {
 				primaryEmail {

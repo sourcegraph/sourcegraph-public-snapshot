@@ -78,10 +78,7 @@ func TestPerforceSource_ListRepos(t *testing.T) {
 		tc := tc
 		tc.name = "PERFORCE-LIST-REPOS/" + tc.name
 		t.Run(tc.name, func(t *testing.T) {
-			svc := &types.ExternalService{
-				Kind:   extsvc.KindPerforce,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
-			}
+			svc := typestest.MakeExternalService(t, extsvc.VariantPerforce, tc.conf)
 
 			gc := gitserver.NewMockClient()
 			gc.IsPerforcePathCloneableFunc.SetDefaultHook(func(ctx context.Context, _ protocol.PerforceConnectionDetails, depotPath string) error {

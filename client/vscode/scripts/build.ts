@@ -8,9 +8,8 @@ import {
     packageResolutionPlugin,
     stylePlugin,
     workerPlugin,
-    RXJS_RESOLUTIONS,
     buildTimerPlugin,
-} from '@sourcegraph/build-config'
+} from '@sourcegraph/build-config/src/esbuild/plugins'
 
 const minify = process.env.NODE_ENV === 'production'
 const outdir = path.join(__dirname, '../dist')
@@ -114,7 +113,6 @@ export async function build(): Promise<void> {
                     process: require.resolve('process/browser'),
                     http: require.resolve('stream-http'), // for stream search - event source polyfills
                     https: require.resolve('https-browserify'), // for stream search - event source polyfills
-                    ...RXJS_RESOLUTIONS,
                     './RepoSearchResult': require.resolve('../src/webview/search-panel/alias/RepoSearchResult'),
                     './CommitSearchResult': require.resolve('../src/webview/search-panel/alias/CommitSearchResult'),
                     './SymbolSearchResult': require.resolve('../src/webview/search-panel/alias/SymbolSearchResult'),

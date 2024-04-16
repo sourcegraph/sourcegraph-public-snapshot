@@ -1,7 +1,7 @@
 import { type ApolloClient, gql } from '@apollo/client'
 import { isEqual } from 'lodash'
 import { Observable, of, type Subscription, from, ReplaySubject, type Subscriber, fromEvent } from 'rxjs'
-import { distinctUntilChanged, map, mapTo, mergeAll, startWith, switchMap } from 'rxjs/operators'
+import { distinctUntilChanged, map, mergeAll, startWith, switchMap } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 import { fromObservableQuery } from '@sourcegraph/http-client'
@@ -29,7 +29,11 @@ export class TemporarySettingsStorage {
         this.saveSubscription?.unsubscribe()
     }
 
-    constructor(private apolloClient: ApolloClient<object> | null, isAuthenticatedUser: boolean) {
+    constructor(
+        private apolloClient: ApolloClient<object> | null,
+        isAuthenticatedUser: boolean,
+        enableLocalOverrides: boolean = false
+    ) {
         let backend: SettingsBackend
         if (isAuthenticatedUser) {
             if (!this.apolloClient) {
@@ -41,7 +45,7 @@ export class TemporarySettingsStorage {
             backend = new LocalStorageSettingsBackend()
         }
 
-        if (process.env.NODE_ENV === 'development') {
+        if (enableLocalOverrides) {
             backend = new LocalOverrideBackend(backend)
         }
 
@@ -260,7 +264,7 @@ class LocalOverrideBackend implements SettingsBackend {
                 of(temporarySettingsOverrideUpdate, fromEvent(window, 'storage')).pipe(
                     mergeAll(),
                     startWith(settings),
-                    mapTo(settings)
+                    map(() => settings)
                 )
             ),
             map(settings => {

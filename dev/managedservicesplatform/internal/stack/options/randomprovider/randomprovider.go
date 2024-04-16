@@ -9,7 +9,8 @@ import (
 
 // With configures a stack to be able to use random resources.
 func With() stack.NewStackOption {
-	return func(s stack.Stack) {
+	return func(s stack.Stack) error {
 		_ = random.NewRandomProvider(s.Stack, pointers.Ptr("random"), &random.RandomProviderConfig{})
+		return nil
 	}
 }

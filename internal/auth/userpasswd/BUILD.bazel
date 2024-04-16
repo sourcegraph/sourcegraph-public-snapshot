@@ -1,10 +1,10 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "userpasswd",
     srcs = [
-        "app.go",
         "config.go",
         "config_watch.go",
         "doc.go",
@@ -25,23 +25,18 @@ go_library(
         "//cmd/frontend/hubspot",
         "//cmd/frontend/hubspot/hubspotutil",
         "//internal/actor",
-        "//internal/apptoken",
         "//internal/auth",
         "//internal/auth/providers",
         "//internal/authz",
         "//internal/conf",
-        "//internal/conf/conftypes",
-        "//internal/conf/deploy",
         "//internal/cookie",
         "//internal/database",
         "//internal/deviceid",
-        "//internal/env",
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/featureflag",
         "//internal/lazyregexp",
         "//internal/rcache",
-        "//internal/security",
         "//internal/session",
         "//internal/suspiciousnames",
         "//internal/telemetry",
@@ -64,8 +59,6 @@ go_test(
     name = "userpasswd_test",
     timeout = "short",
     srcs = [
-        "app_test.go",
-        "config_test.go",
         "handlers_test.go",
         "lockout_test.go",
         "main_test.go",
@@ -92,11 +85,22 @@ go_test(
         "//internal/types",
         "//lib/errors",
         "//schema",
-        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
         "@com_github_golang_jwt_jwt_v4//:jwt",
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [":userpasswd"],
 )

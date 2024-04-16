@@ -2,6 +2,7 @@ package squirrel
 
 import (
 	"math"
+	"slices"
 	"strings"
 )
 
@@ -19,7 +20,7 @@ func findHover(node Node) string {
 
 		// Skip over Java annotations and the like.
 		for ; prev != nil; prev = prev.PrevNamedSibling() {
-			if !contains(style.skipNodeTypes, prev.Type()) {
+			if !slices.Contains(style.skipNodeTypes, prev.Type()) {
 				break
 			}
 		}
@@ -27,7 +28,7 @@ func findHover(node Node) string {
 		// Collect comments backwards.
 		comments := []string{}
 		lastStartRow := -1
-		for ; prev != nil && contains(style.nodeTypes, prev.Type()); prev = prev.PrevNamedSibling() {
+		for ; prev != nil && slices.Contains(style.nodeTypes, prev.Type()); prev = prev.PrevNamedSibling() {
 			if lastStartRow == -1 {
 				lastStartRow = int(prev.StartPoint().Row)
 			} else if lastStartRow != int(prev.EndPoint().Row+1) {

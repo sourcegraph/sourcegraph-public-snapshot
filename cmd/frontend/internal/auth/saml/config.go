@@ -6,19 +6,20 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	stdlog "log"
+	stdlog "log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -84,11 +85,11 @@ func Init() {
 			}
 
 			for _, p := range ps {
-				go func(p providers.Provider) {
+				go func() {
 					if err := p.Refresh(context.Background()); err != nil {
 						logger.Error("Error prefetching SAML service provider metadata.", log.Error(err))
 					}
-				}(p)
+				}()
 			}
 			providers.Update(pkgName, ps)
 		})
@@ -106,7 +107,7 @@ func getProviders() []providers.Provider {
 	multiple := len(cfgs) >= 2
 	ps := make([]providers.Provider, 0, len(cfgs))
 	for _, cfg := range cfgs {
-		p := &provider{config: *cfg, multiple: multiple}
+		p := &provider{config: *cfg, multiple: multiple, httpClient: httpcli.ExternalClient}
 		ps = append(ps, p)
 	}
 	return ps

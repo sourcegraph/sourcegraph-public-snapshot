@@ -3,11 +3,12 @@ import React, { useCallback, useEffect } from 'react'
 import { mdiPlus } from '@mdi/js'
 import { Navigate } from 'react-router-dom'
 import { merge, of, type Observable } from 'rxjs'
-import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
+import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Button, useEventObservable, Link, Alert, Icon, H2, Form } from '@sourcegraph/wildcard'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { Button, useEventObservable, Link, Alert, Icon, Form, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
@@ -20,13 +21,13 @@ import type {
     ProductSubscriptionAccountFields,
     CreateProductSubscriptionResult,
 } from '../../../../graphql-operations'
-import { eventLogger } from '../../../../tracking/eventLogger'
 
-interface UserCreateSubscriptionNodeProps {
+interface UserCreateSubscriptionNodeProps extends TelemetryV2Props {
     /**
      * The user to display in this list item.
      */
     node: ProductSubscriptionAccountFields
+    authenticatedUser: AuthenticatedUser
 }
 
 const createProductSubscription = (
@@ -38,6 +39,7 @@ const createProductSubscription = (
                 dotcom {
                     createProductSubscription(accountID: $accountID) {
                         urlForSiteAdmin
+                        uuid
                     }
                 }
             }
@@ -60,8 +62,8 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
             > =>
                 submits.pipe(
                     tap(event => event.preventDefault()),
-                    tap(() => eventLogger.log('NewProductSubscriptionCreated')),
-                    concatMapTo(
+                    tap(() => props.telemetryRecorder.recordEvent('admin.productSubscriptions', 'create')),
+                    concatMap(() =>
                         merge(
                             of('saving' as const),
                             createProductSubscription({ accountID: props.node.id }).pipe(
@@ -70,7 +72,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
                         )
                     )
                 ),
-            [props.node.id]
+            [props.node.id, props.telemetryRecorder]
         )
     )
 
@@ -85,10 +87,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        <Link to={`/users/${props.node.username}`}>{props.node.username}</Link>{' '}
-                        <span className="text-muted">
-                            ({props.node.emails.filter(({ isPrimary }) => isPrimary).map(({ email }) => email)})
-                        </span>
+                        <Link to={`/users/${props.node.username}`}>{props.node.username}</Link>
                     </div>
                     <div>
                         <Form onSubmit={onSubmit}>
@@ -115,7 +114,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
     )
 }
 
-interface Props {
+interface Props extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
 }
 
@@ -127,22 +126,22 @@ interface Props {
 export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
     React.PropsWithChildren<Props>
 > = props => {
-    useEffect(() => {
-        eventLogger.logViewEvent('SiteAdminCreateProductSubscription')
-    })
+    useEffect(() => props.telemetryRecorder.recordEvent('admin.productSubscriptions.create', 'view'))
     return (
         <div className="site-admin-create-product-subscription-page">
             <PageTitle title="Create product subscription" />
-            <H2>Create product subscription</H2>
-            <FilteredConnection<ProductSubscriptionAccountFields, {}>
-                {...props}
-                className="list-group list-group-flush mt-3"
-                noun="user"
-                pluralNoun="users"
-                queryConnection={queryAccounts}
-                nodeComponent={UserCreateSubscriptionNode}
-                nodeComponentProps={props}
-            />
+            <PageHeader headingElement="h2" path={[{ text: 'Create product subscription' }]} className="mb-2" />
+            <Container className="mb-3">
+                <FilteredConnection<ProductSubscriptionAccountFields, Props>
+                    {...props}
+                    className="list-group list-group-flush"
+                    noun="user"
+                    pluralNoun="users"
+                    queryConnection={queryAccounts}
+                    nodeComponent={UserCreateSubscriptionNode}
+                    nodeComponentProps={props}
+                />
+            </Container>
         </div>
     )
 }
@@ -166,11 +165,6 @@ function queryAccounts(
             fragment ProductSubscriptionAccountFields on User {
                 id
                 username
-                emails {
-                    email
-                    verified
-                    isPrimary
-                }
             }
         `,
         args

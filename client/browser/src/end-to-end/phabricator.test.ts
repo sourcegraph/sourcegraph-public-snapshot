@@ -1,5 +1,6 @@
 import expect from 'expect'
 import { isEqual } from 'lodash'
+import { describe, it } from 'mocha'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
@@ -96,7 +97,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
         await driver.page.waitForSelector('a[href="/config/group/sourcegraph/"]', { timeout: 2000 })
     } catch {
         throw new Error(
-            `The Sourcegraph native integration is not installed on ${PHABRICATOR_BASE_URL}. Please see https://docs.sourcegraph.com/dev/phabricator_gitolite#install-the-sourcegraph-phabricator-extension`
+            `The Sourcegraph native integration is not installed on ${PHABRICATOR_BASE_URL}. Please see https://sourcegraph.com/docs/dev/how-to/configure_phabricator_gitolite#install-the-sourcegraph-phabricator-extension`
         )
     }
 

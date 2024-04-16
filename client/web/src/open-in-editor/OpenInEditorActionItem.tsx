@@ -8,6 +8,7 @@ import { logger } from '@sourcegraph/common'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { isSettingsValid, type Settings } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Button,
     Icon,
@@ -20,6 +21,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../repo/components/RepoHeaderActions'
+import { RepoActionInfo } from '../repo/RepoActionInfo'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { getEditorSettingsErrorMessage } from './build-url'
@@ -31,7 +33,7 @@ import { useOpenCurrentUrlInEditor } from './useOpenCurrentUrlInEditor'
 
 import styles from './OpenInEditorActionItem.module.scss'
 
-export interface OpenInEditorActionItemProps {
+export interface OpenInEditorActionItemProps extends TelemetryV2Props {
     platformContext: PlatformContext
     externalServiceType?: string
     assetsRoot?: string
@@ -109,6 +111,9 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                             }
                             onClick={() => {
                                 eventLogger.log('OpenInEditorClicked', { editor: editor.id }, { editor: editor.id })
+                                props.telemetryRecorder.recordEvent('blob.openInEditor', 'click', {
+                                    metadata: { editor: editor.telemetryID },
+                                })
                                 openCurrentUrlInEditor(
                                     settings?.openInEditor,
                                     props.externalServiceType,
@@ -189,6 +194,7 @@ interface EditorItemProps {
     source?: 'repoHeader' | 'actionItemsBar'
     actionType?: 'nav' | 'dropdown'
 }
+
 function EditorItem(props: EditorItemProps): JSX.Element {
     if (props.source === 'actionItemsBar') {
         return (
@@ -210,7 +216,7 @@ function EditorItem(props: EditorItemProps): JSX.Element {
     return (
         <Tooltip content={props.tooltip}>
             <RepoHeaderActionAnchor onSelect={props.onClick} className={styles.item}>
-                {props.icon}
+                <RepoActionInfo icon={props.icon} displayName="Editor" />
             </RepoHeaderActionAnchor>
         </Tooltip>
     )

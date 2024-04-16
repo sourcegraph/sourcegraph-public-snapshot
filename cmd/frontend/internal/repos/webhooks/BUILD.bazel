@@ -8,9 +8,9 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
+        "//cmd/frontend/internal/cloneurls",
         "//cmd/frontend/internal/repos/webhooks/resolvers",
         "//cmd/frontend/webhooks",
-        "//internal/cloneurls",
         "//internal/codeintel",
         "//internal/conf/conftypes",
         "//internal/database",
@@ -50,7 +50,6 @@ go_test(
         "//internal/extsvc/gitlab/webhooks",
         "//internal/grpc",
         "//internal/grpc/defaults",
-        "//internal/httpcli",
         "//internal/repos",
         "//internal/repoupdater",
         "//internal/repoupdater/protocol",

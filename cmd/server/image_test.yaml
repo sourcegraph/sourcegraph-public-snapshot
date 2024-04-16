@@ -30,6 +30,13 @@ commandTests:
     expectedOutput: ["valid commands: submit"]
     exitCode: 2
 
+  # P4-fusion
+  - name: "p4-fusion is runnable"
+    command: "p4-fusion-binary"
+    args:
+    expectedOutput: [ "--noBaseCommit" ]
+    exitCode: 1
+
   # Zoekt binaries
   - name: "zoket binaries are runnable"
     command: "/opt/image_tests/test_zoekt.sh"

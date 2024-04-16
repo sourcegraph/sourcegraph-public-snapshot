@@ -1,4 +1,5 @@
 import { render } from '@testing-library/react'
+import { describe, expect, test } from 'vitest'
 
 import type { AuthProvider } from '../../../jscontext'
 
@@ -38,6 +39,7 @@ const mockAuthProviders: AuthProvider[] = [
         clientID: '123',
         isBuiltin: false,
         authenticationURL: 'https://example.com',
+        noSignIn: false,
     },
 ]
 

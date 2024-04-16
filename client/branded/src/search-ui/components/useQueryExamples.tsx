@@ -4,6 +4,7 @@ import { differenceInHours, formatISO, parseISO } from 'date-fns'
 
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import type { ProductStatusType } from '@sourcegraph/wildcard'
 
 import { basicSyntaxColumns } from './QueryExamples.constants'
 
@@ -17,6 +18,7 @@ export interface QueryExamplesSection {
     queryExamples: {
         query: string
         helperText?: string
+        productStatus?: ProductStatusType
     }[]
 }
 
@@ -53,8 +55,8 @@ function getRepoFilterExamples(repositoryName: string): { singleRepoExample: str
         return { singleRepoExample: quoteIfNeeded(repositoryName) }
     }
 
-    const repoName = repositoryNameParts[repositoryNameParts.length - 1]
-    const repoOrg = repositoryNameParts[repositoryNameParts.length - 2]
+    const repoName = repositoryNameParts.at(-1)
+    const repoOrg = repositoryNameParts.at(-2)
     return {
         singleRepoExample: quoteIfNeeded(`${repoOrg}/${repoName}`),
         orgReposExample: quoteIfNeeded(`${repoOrg}/`),
@@ -63,7 +65,8 @@ function getRepoFilterExamples(repositoryName: string): { singleRepoExample: str
 
 export function useQueryExamples(
     selectedSearchContextSpec: string,
-    isSourcegraphDotCom: boolean = false
+    isSourcegraphDotCom: boolean = false,
+    keywordSearch: boolean = false
 ): QueryExamplesSection[][] {
     const [queryExamplesContent, setQueryExamplesContent] = useState<QueryExamplesContent>()
     const [cachedQueryExamplesContent, setCachedQueryExamplesContent, cachedQueryExamplesContentLoadStatus] =
@@ -136,7 +139,7 @@ export function useQueryExamples(
     return useMemo(() => {
         // Static examples for Sourcegraph.com.
         if (isSourcegraphDotCom) {
-            return basicSyntaxColumns('test', 'facebook/react', 'kubernetes/')
+            return basicSyntaxColumns('test', 'facebook/react', 'kubernetes/', keywordSearch)
         }
         if (!queryExamplesContent) {
             return []
@@ -145,8 +148,8 @@ export function useQueryExamples(
 
         const { singleRepoExample, orgReposExample } = getRepoFilterExamples(repositoryName)
         const filePathParts = filePath.split('/')
-        const fileName = quoteIfNeeded(filePathParts[filePathParts.length - 1])
+        const fileName = quoteIfNeeded(filePathParts.at(-1)!)
 
-        return basicSyntaxColumns(fileName, singleRepoExample, orgReposExample)
-    }, [queryExamplesContent, isSourcegraphDotCom])
+        return basicSyntaxColumns(fileName, singleRepoExample, orgReposExample, keywordSearch)
+    }, [queryExamplesContent, isSourcegraphDotCom, keywordSearch])
 }

@@ -18,34 +18,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// callBackClientStream is a grpc.ClientStream that calls a function after SendMsg and RecvMsg.
-type callBackClientStream struct {
-	grpc.ClientStream
-
-	postMessageSend    func(message any, err error)
-	postMessageReceive func(message any, err error)
-}
-
-func (c *callBackClientStream) SendMsg(m any) error {
-	err := c.ClientStream.SendMsg(m)
-	if c.postMessageSend != nil {
-		c.postMessageSend(m, err)
-	}
-
-	return err
-}
-
-func (c *callBackClientStream) RecvMsg(m any) error {
-	err := c.ClientStream.RecvMsg(m)
-	if c.postMessageReceive != nil {
-		c.postMessageReceive(m, err)
-	}
-
-	return err
-}
-
-var _ grpc.ClientStream = &callBackClientStream{}
-
 // requestSavingClientStream is a grpc.ClientStream that saves the initial request sent to the server.
 type requestSavingClientStream struct {
 	grpc.ClientStream

@@ -3,44 +3,39 @@
 <script lang="ts" context="module">
     const BY_LINE_RANKING = 'by-line-number'
     const DEFAULT_CONTEXT_LINES = 1
-    const MAX_LINE_MATCHES = 5
-    const MAX_ZOEKT_RESULTS = 3
+    const DEFAULT_EXPANDED_MATCHES = 5
 </script>
 
 <script lang="ts">
     import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
-    import {
-        addLineRangeQueryParameter,
-        formatSearchParameters,
-        pluralize,
-        toPositionOrRangeQueryParameter,
-    } from '$lib/common'
+    import { pluralize, SourcegraphURL } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import { getFileMatchUrl, type ContentMatch, ZoektRanking, LineRanking } from '$lib/shared'
-
-    import FileMatchChildren from './FileMatchChildren.svelte'
-    import SearchResult from './SearchResult.svelte'
-    import { getSearchResultsContext } from './SearchResults.svelte'
-    import CodeHostIcon from './CodeHostIcon.svelte'
-    import RepoStars from './RepoStars.svelte'
-    import { settings } from '$lib/stores'
+    import { observeIntersection } from '$lib/intersection-observer'
+    import RepoStars from '$lib/repo/RepoStars.svelte'
+    import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
+    import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
     import { rankContentMatch } from '$lib/search/results'
-    import { goto } from '$app/navigation'
+    import { getFileMatchUrl, type ContentMatch, rankByLine, rankPassthrough } from '$lib/shared'
+    import { settings } from '$lib/stores'
+
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
+    import PreviewButton from './PreviewButton.svelte'
+    import SearchResult from './SearchResult.svelte'
+    import { getSearchResultsContext } from './searchResultsContext'
 
     export let result: ContentMatch
 
     $: contextLines = $settings?.['search.contextLines'] ?? DEFAULT_CONTEXT_LINES
     $: ranking =
-        $settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING
-            ? new LineRanking(MAX_LINE_MATCHES)
-            : new ZoektRanking(MAX_ZOEKT_RESULTS)
-    $: ({ expandedMatchGroups, collapsedMatchGroups, collapsible, hiddenMatchesCount } = rankContentMatch(
+        $settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING ? rankByLine : rankPassthrough
+    $: ({ expandedMatchGroups, collapsedMatchGroups, hiddenMatchesCount } = rankContentMatch(
         result,
         ranking,
+        DEFAULT_EXPANDED_MATCHES,
         contextLines
     ))
+    $: collapsible = hiddenMatchesCount > 0
     $: fileURL = getFileMatchUrl(result)
 
     const searchResultContext = getSearchResultsContext()
@@ -49,6 +44,7 @@
     $: expandButtonText = expanded
         ? 'Show less'
         : `Show ${hiddenMatchesCount} more ${pluralize('match', hiddenMatchesCount, 'matches')}`
+    $: matchesToShow = expanded ? expandedMatchGroups : collapsedMatchGroups
 
     let root: HTMLElement
     let userInteracted = false
@@ -59,47 +55,78 @@
         }, 0)
     }
 
-    function handleLineClick(event: MouseEvent) {
-        const target = event.target as HTMLElement
-        if (target.dataset.line) {
-            const searchParams = formatSearchParameters(
-                addLineRangeQueryParameter(
-                    // We don't want to preserve the 'q' query parameter.
-                    // We might have to adjust this if we want to preserver other query parameters.
-                    new URLSearchParams(),
-                    toPositionOrRangeQueryParameter({ position: { line: +target.dataset.line } })
-                )
-            )
-            goto(`${fileURL}?${searchParams}`)
+    function getMatchURL(line: number, endLine: number): string {
+        return SourcegraphURL.from(fileURL).setLineRange({ line, endLine }).toString()
+    }
+
+    let visible = false
+    let highlightedHTMLRows: Promise<string[][]> | undefined
+    $: if (visible) {
+        // If the file contains some large lines, avoid stressing syntax-highlighter and the browser.
+        if (!result.chunkMatches?.some(chunk => chunk.contentTruncated)) {
+            // We rely on fetchFileRangeMatches to cache the result for us so that repeated
+            // calls will not result in repeated network requests.
+            highlightedHTMLRows = fetchFileRangeMatches({
+                result,
+                ranges: expandedMatchGroups.map(group => ({
+                    startLine: group.startLine,
+                    endLine: group.endLine,
+                })),
+            })
         }
     }
 </script>
 
 <SearchResult>
-    <CodeHostIcon slot="icon" repository={result.repository} />
     <FileSearchResultHeader slot="title" {result} />
     <svelte:fragment slot="info">
         {#if result.repoStars}
             <RepoStars repoStars={result.repoStars} />
         {/if}
+        <PreviewButton {result} />
     </svelte:fragment>
 
-    <div bind:this={root} class="matches" on:click={handleLineClick}>
-        <FileMatchChildren {result} grouped={expanded ? expandedMatchGroups.grouped : collapsedMatchGroups.grouped} />
+    <div bind:this={root} use:observeIntersection on:intersecting={event => (visible = event.detail)} class="matches">
+        {#each matchesToShow as group, index}
+            <div class="code">
+                <a href={getMatchURL(group.startLine + 1, group.endLine)}>
+                    <!--
+                        We need to "post-slice" `highlightedHTMLRows` because we fetch highlighting for
+                        the whole chunk.
+                    -->
+                    {#await highlightedHTMLRows}
+                        <CodeExcerpt
+                            startLine={group.startLine}
+                            matches={group.matches}
+                            plaintextLines={group.plaintextLines}
+                            --background-color="transparent"
+                        />
+                    {:then result}
+                        <CodeExcerpt
+                            startLine={group.startLine}
+                            matches={group.matches}
+                            plaintextLines={group.plaintextLines}
+                            highlightedHTMLRows={result?.[index]?.slice(0, group.plaintextLines.length)}
+                            --background-color="transparent"
+                        />
+                    {/await}
+                </a>
+            </div>
+        {/each}
+        {#if collapsible}
+            <button
+                type="button"
+                on:click={() => {
+                    expanded = !expanded
+                    userInteracted = true
+                }}
+                class:expanded
+            >
+                <Icon svgPath={expanded ? mdiChevronUp : mdiChevronDown} inline aria-hidden="true" />
+                <span>{expandButtonText}</span>
+            </button>
+        {/if}
     </div>
-    {#if collapsible}
-        <button
-            type="button"
-            on:click={() => {
-                expanded = !expanded
-                userInteracted = true
-            }}
-            class:expanded
-        >
-            <Icon svgPath={expanded ? mdiChevronUp : mdiChevronDown} inline aria-hidden="true" />
-            <span>{expandButtonText}</span>
-        </button>
-    {/if}
 </SearchResult>
 
 <style lang="scss">
@@ -108,24 +135,36 @@
         text-align: left;
         border: none;
         padding: 0.25rem 0.5rem;
-        background-color: var(--border-color);
-        border-radius: 0 0 var(--border-radius) var(--border-radius);
-        color: var(--collapse-results-color);
+        background-color: var(--code-bg);
+        color: var(--text-muted);
         cursor: pointer;
 
         &.expanded {
             position: sticky;
             bottom: 0;
         }
+
+        &:hover {
+            background-color: var(--subtle-bg-2);
+        }
     }
 
-    .matches {
-        // TODO: Evaluate whether (and how) these should/can be convertd to links
-        :global(td[data-line]) {
-            cursor: pointer;
-            &:hover {
-                text-decoration: underline;
-            }
+    .code {
+        border-bottom: 1px solid var(--border-color);
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        &:hover {
+            background-color: var(--subtle-bg-2);
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            padding: 0.125rem 0.375rem;
         }
     }
 </style>

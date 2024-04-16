@@ -6,7 +6,26 @@
   "allowComments": true,
   "type": "object",
   "additionalProperties": false,
-  "required": ["url", "username", "appPassword"],
+  "required": ["url"],
+  "oneOf": [
+    {
+      "allOf": [
+        {
+          "required": ["accessToken"]
+        },
+        {
+          "not": { "required": ["username"] }
+        },
+        {
+          "not": { "required": ["appPassword"] }
+        }
+      ]
+    },
+    {
+      "required": ["username", "appPassword"],
+      "not": { "required": ["accessToken"] }
+    }
+  ],
   "properties": {
     "url": {
       "description": "URL of Bitbucket Cloud, such as https://bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.",
@@ -55,7 +74,7 @@
     },
     "authorization": {
       "title": "BitbucketCloudAuthorization",
-      "description": "If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type \"bitbucketcloud\" with the same `url` field as specified in this `BitbucketCloudConnection`.",
+      "description": "If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://sourcegraph.com/docs/admin/config/site_config#auth-providers) `auth.providers` field, of type \"bitbucketcloud\" with the same `url` field as specified in this `BitbucketCloudConnection`.",
       "type": "object",
       "properties": {
         "identityProvider": {
@@ -72,8 +91,12 @@
       "description": "The app password to use when authenticating to the Bitbucket Cloud. Also set the corresponding \"username\" field.",
       "type": "string"
     },
+    "accessToken": {
+      "description": "The workspace access token to use when authenticating with Bitbucket Cloud.",
+      "type": "string"
+    },
     "gitURLType": {
-      "description": "The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Cloud.\n\nIf \"http\", Sourcegraph will access Bitbucket Cloud repositories using Git URLs of the form https://bitbucket.org/myteam/myproject.git.\n\nIf \"ssh\", Sourcegraph will access Bitbucket Cloud repositories using Git URLs of the form git@bitbucket.org:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
+      "description": "The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Cloud.\n\nIf \"http\", Sourcegraph will access Bitbucket Cloud repositories using Git URLs of the form https://bitbucket.org/myteam/myproject.git.\n\nIf \"ssh\", Sourcegraph will access Bitbucket Cloud repositories using Git URLs of the form git@bitbucket.org:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://sourcegraph.com/docs/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
       "type": "string",
       "enum": ["http", "ssh"],
       "default": "http",
@@ -89,6 +112,15 @@
       "type": "array",
       "items": { "type": "string", "pattern": "^[\\w-]+$" },
       "examples": [["name"], ["kubernetes", "golang", "facebook"]]
+    },
+    "repos": {
+      "description": "An array of repository \"projectKey/repositorySlug\" strings specifying repositories to mirror on Sourcegraph.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^~?[\\w-]+/[\\w.-]+$"
+      },
+      "examples": [["myproject/myrepo", "myproject/myotherrepo"]]
     },
     "exclude": {
       "description": "A list of repositories to never mirror from Bitbucket Cloud. Takes precedence over \"teams\" configuration.\n\nSupports excluding by name ({\"name\": \"myorg/myrepo\"}) or by UUID ({\"uuid\": \"{fceb73c7-cef6-4abe-956d-e471281126bd}\"}).",
@@ -123,7 +155,7 @@
     },
     "webhookSecret": {
       "description": "A shared secret used to authenticate incoming webhooks (minimum 12 characters).",
-      "deprecationMessage": "Deprecated in favour of first class webhooks. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice",
+      "deprecationMessage": "Deprecated in favour of first class webhooks. See https://sourcegraph.com/docs/admin/config/webhooks/incoming#deprecation-notice",
       "type": "string",
       "minLength": 12
     }

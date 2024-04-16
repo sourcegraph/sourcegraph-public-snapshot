@@ -39,10 +39,18 @@ const (
 	SecurityEventNamPasswordRandomized     SecurityEventName = "PasswordRandomized"
 	SecurityEventNamePasswordChanged       SecurityEventName = "PasswordChanged"
 
-	SecurityEventNameEmailVerified SecurityEventName = "EmailVerified"
+	SecurityEventNameEmailVerified       SecurityEventName = "EmailVerified"
+	SecurityEventNameEmailVerifiedToggle SecurityEventName = "EmailVerificationChanged"
+	SecurityEventNameEmailAdded          SecurityEventName = "EmailAdded"
+	SecurityEventNameEmailRemoved        SecurityEventName = "EmailRemoved"
 
 	SecurityEventNameRoleChangeDenied  SecurityEventName = "RoleChangeDenied"
 	SecurityEventNameRoleChangeGranted SecurityEventName = "RoleChangeGranted"
+
+	SecurityEventNameRBACRoleAdded     SecurityEventName = "RBACRoleAdded"
+	SecurityEventNameRBACRoleRemoved   SecurityEventName = "RBACRoleRemoved"
+	SecurityEventNameRBACRoleSet       SecurityEventName = "RBACRoleSet"
+	SecurityEventNameRBACPermissionSet SecurityEventName = "RBACPermissionSet"
 
 	SecurityEventNameAccessGranted SecurityEventName = "AccessGranted"
 
@@ -67,6 +75,35 @@ const (
 
 	SecurityEventOIDCLoginSucceeded SecurityEventName = "SecurityEventOIDCLoginSucceeded"
 	SecurityEventOIDCLoginFailed    SecurityEventName = "SecurityEventOIDCLoginFailed"
+
+	SecurityEventNameSiteConfigUpdated        SecurityEventName = "SiteConfigUpdated"
+	SecurityEventNameSiteConfigRedactedViewed SecurityEventName = "SiteConfigRedactedViewed"
+	SecurityEventNameSiteConfigViewed         SecurityEventName = "SiteConfigViewed"
+
+	SecurityEventNameDotComLicenseCreated       SecurityEventName = "DotComLicenseCreated"
+	SecurityEventNameDotComLicenseViewed        SecurityEventName = "DotComLicenseViewed"
+	SecurityEventNameDotComSubscriptionViewed   SecurityEventName = "DotComSubscriptionViewed"
+	SecurityEventNameDotComSubscriptionCreated  SecurityEventName = "DotComSubscriptionCreated"
+	SecurityEventNameDotComSubscriptionArchived SecurityEventName = "DotComSubscriptionArchived"
+	SecurityEventNameDotComSubscriptionsListed  SecurityEventName = "DotComSubscriptionsListed"
+	SecurityEventNameDotComSubscriptionUpdated  SecurityEventName = "DotComSubscriptionUpdated"
+
+	SecurityEventNameOrgViewed         SecurityEventName = "OrganizationViewed"
+	SecurityEventNameOrgListViewed     SecurityEventName = "OrganizationListViewed"
+	SecurityEventNameOrgCreated        SecurityEventName = "OrganizationCreated"
+	SecurityEventNameOrgUpdated        SecurityEventName = "OrganizationUpdated"
+	SecurityEventNameOrgSettingsViewed SecurityEventName = "OrganizationSettingsViewed"
+	SecurityEventNameDotComOrgViewed   SecurityEventName = "DotComOrganizationViewed"
+
+	SecurityEventNameOutboundReqViewed SecurityEventName = "OutboundRequestViewed"
+
+	SecurityEventNameUserCompletionQuotaUpdated     SecurityEventName = "UserCompletionQuotaUpdated"
+	SecurityEventNameUserCodeCompletionQuotaUpdated SecurityEventName = "UserCodeCompletionQuotaUpdated"
+
+	SecurityEventNameCodeHostConnectionsViewed SecurityEventName = "CodeHostConnectionsViewed"
+	SecurityEventNameCodeHostConnectionDeleted SecurityEventName = "CodeHostConnectionDeleted"
+	SecurityEventNameCodeHostConnectionAdded   SecurityEventName = "CodeHostConnectionAdded"
+	SecurityEventNameCodeHostConnectionUpdated SecurityEventName = "CodeHostConnectionUpdated"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.
@@ -80,8 +117,8 @@ type SecurityEvent struct {
 	Timestamp       time.Time
 }
 
-func (e *SecurityEvent) marshalArgumentAsJSON() string {
-	if e.Argument == nil {
+func (e *SecurityEvent) argumentToJSONString() string {
+	if e.Argument == nil || string(e.Argument) == "null" {
 		return "{}"
 	}
 	return string(e.Argument)
@@ -101,6 +138,8 @@ type SecurityEventLogsStore interface {
 	LogEvent(ctx context.Context, e *SecurityEvent)
 	// Bulk "LogEvent" action.
 	LogEventList(ctx context.Context, events []*SecurityEvent)
+	// LogSecurityEvent creates an event and logs it.
+	LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error
 }
 
 type securityEventLogsStore struct {
@@ -132,7 +171,7 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 		// Add an attribution for Sourcegraph operator to be distinguished in our analytics pipelines
 		if actor.SourcegraphOperator {
 			result, err := jsonc.Edit(
-				event.marshalArgumentAsJSON(),
+				event.argumentToJSONString(),
 				true,
 				EventLogsSourcegraphOperatorKey,
 			)
@@ -163,7 +202,7 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 			event.UserID,
 			event.AnonymousUserID,
 			event.Source,
-			event.marshalArgumentAsJSON(),
+			event.argumentToJSONString(),
 			version.Version(),
 			event.Timestamp.UTC(),
 		)
@@ -187,7 +226,7 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 						log.Uint32("UserID", event.UserID),
 						log.String("AnonymousUserID", event.AnonymousUserID),
 						log.String("source", event.Source),
-						log.String("argument", event.marshalArgumentAsJSON()),
+						log.String("argument", event.argumentToJSONString()),
 						log.String("version", version.Version()),
 						log.String("timestamp", event.Timestamp.UTC().String()),
 					),
@@ -214,5 +253,26 @@ func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*Sec
 		} else {
 			trace.Logger(ctx, s.logger).Error(strings.Join(names, ","), log.String("events", string(j)), log.Error(err))
 		}
+	}
+}
+
+func (s *securityEventLogsStore) LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error {
+	event := SecurityEvent{
+		Name:            eventName,
+		URL:             url,
+		UserID:          userID,
+		AnonymousUserID: anonymousUserID,
+		Source:          source,
+		Timestamp:       time.Now(),
+	}
+	argsJSON, err := json.Marshal(arguments)
+	if err != nil {
+		event.Argument = nil
+		s.LogEvent(ctx, &event)
+		return errors.Wrap(err, "error marshalling arguments")
+	} else {
+		event.Argument = argsJSON
+		s.LogEvent(ctx, &event)
+		return nil
 	}
 }

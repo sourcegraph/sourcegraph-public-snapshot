@@ -11,10 +11,10 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -37,6 +37,7 @@ type SearchClient interface {
 		searchQuery string,
 		searchMode search.Mode,
 		protocol search.Protocol,
+		contextLines *int32,
 	) (*search.Inputs, error)
 
 	Execute(
@@ -49,7 +50,7 @@ type SearchClient interface {
 }
 
 // New will create a search client with a zoekt and searcher backed by conf.
-func New(logger log.Logger, db database.DB) SearchClient {
+func New(logger log.Logger, db database.DB, gitserverClient gitserver.Client) SearchClient {
 	return &searchClient{
 		runtimeClients: job.RuntimeClients{
 			Logger:                      logger,
@@ -57,10 +58,10 @@ func New(logger log.Logger, db database.DB) SearchClient {
 			Zoekt:                       search.Indexed(),
 			SearcherURLs:                search.SearcherURLs(),
 			SearcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
-			Gitserver:                   gitserver.NewClient(),
+			Gitserver:                   gitserverClient,
 		},
 		settingsService:       settings.NewService(db),
-		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		sourcegraphDotComMode: dotcom.SourcegraphDotComMode(),
 	}
 }
 
@@ -69,7 +70,7 @@ func Mocked(runtimeClients job.RuntimeClients) SearchClient {
 	return &searchClient{
 		runtimeClients:        runtimeClients,
 		settingsService:       settings.Mock(&schema.Settings{}),
-		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		sourcegraphDotComMode: dotcom.SourcegraphDotComMode(),
 	}
 }
 
@@ -86,8 +87,9 @@ func (s *searchClient) Plan(
 	searchQuery string,
 	searchMode search.Mode,
 	protocol search.Protocol,
+	contextLines *int32,
 ) (_ *search.Inputs, err error) {
-	tr, ctx := trace.New(ctx, "NewSearchInputs", attribute.String("query", searchQuery))
+	tr, ctx := trace.New(ctx, "Plan", attribute.String("query", searchQuery))
 	defer tr.EndWithErr(&err)
 
 	searchType, err := detectSearchType(version, patternType)
@@ -95,10 +97,6 @@ func (s *searchClient) Plan(
 		return nil, err
 	}
 	searchType = overrideSearchType(searchQuery, searchType)
-
-	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
-		return nil, errors.New("Structural search is disabled in the site configuration.")
-	}
 
 	settings, err := s.settingsService.UserFromContext(ctx)
 	if err != nil {
@@ -124,7 +122,22 @@ func (s *searchClient) Plan(
 	if err != nil {
 		return nil, &QueryError{Query: searchQuery, Err: err}
 	}
+
+	if searchType == query.SearchTypeKeyword {
+		plan = query.MapPlan(plan, query.ExperimentalPhraseBoost)
+		tr.AddEvent("applied phrase boost")
+	}
+
 	tr.AddEvent("parsing done")
+
+	var finalContextLines int32
+	if contextLines != nil {
+		finalContextLines = *contextLines
+	} else if settings.SearchContextLines != nil {
+		finalContextLines = int32(*settings.SearchContextLines)
+	} else {
+		finalContextLines = 1 // default
+	}
 
 	inputs := &search.Inputs{
 		Plan:                   plan,
@@ -136,6 +149,7 @@ func (s *searchClient) Plan(
 		Features:               ToFeatures(featureflag.FromContext(ctx), s.runtimeClients.Logger),
 		PatternType:            searchType,
 		Protocol:               protocol,
+		ContextLines:           finalContextLines,
 		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.runtimeClients.DB, s.runtimeClients.Logger), // Experimental: check site config to see if search sanitization is enabled
 	}
 
@@ -229,6 +243,8 @@ func SearchTypeFromString(patternType string) (query.SearchType, error) {
 		return query.SearchTypeStructural, nil
 	case "lucky":
 		return query.SearchTypeLucky, nil
+	case "codycontext":
+		return query.SearchTypeCodyContext, nil
 	case "keyword":
 		return query.SearchTypeKeyword, nil
 	default:
@@ -279,6 +295,8 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 			searchType = query.SearchTypeStructural
 		case "lucky":
 			searchType = query.SearchTypeLucky
+		case "codycontext":
+			searchType = query.SearchTypeCodyContext
 		case "keyword":
 			searchType = query.SearchTypeKeyword
 		}
@@ -293,9 +311,10 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 		logger.Warn("search feature flags are not available")
 	}
 
+	// When adding a new feature flag remember to add it to the list in
+	// client/web/src/featureFlags/featureFlags.ts to allow overriding.
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
-		UseZoektParser:          flagSet.GetBoolOr("search-new-keyword", false),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
 	}
 }

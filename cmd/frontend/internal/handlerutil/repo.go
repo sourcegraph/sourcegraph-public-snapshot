@@ -22,7 +22,7 @@ import (
 func GetRepo(ctx context.Context, logger log.Logger, db database.DB, vars map[string]string) (*types.Repo, error) {
 	origRepo := routevar.ToRepo(vars)
 
-	repo, err := backend.NewRepos(logger, db, gitserver.NewClient()).GetByName(ctx, origRepo)
+	repo, err := backend.NewRepos(logger, db, gitserver.NewClient("http.getrepo")).GetByName(ctx, origRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -37,12 +37,12 @@ func GetRepo(ctx context.Context, logger log.Logger, db database.DB, vars map[st
 // getRepoRev resolves the repository and commit specified in the route vars.
 func getRepoRev(ctx context.Context, logger log.Logger, db database.DB, vars map[string]string, repoID api.RepoID) (api.RepoID, api.CommitID, error) {
 	repoRev := routevar.ToRepoRev(vars)
-	gsClient := gitserver.NewClient()
+	gsClient := gitserver.NewClient("http.getreporev")
 	repo, err := backend.NewRepos(logger, db, gsClient).Get(ctx, repoID)
 	if err != nil {
 		return repoID, "", err
 	}
-	commitID, err := backend.NewRepos(logger, db, gsClient).ResolveRev(ctx, repo, repoRev.Rev)
+	commitID, err := backend.NewRepos(logger, db, gsClient).ResolveRev(ctx, repo.Name, repoRev.Rev)
 	if err != nil {
 		return repoID, "", err
 	}
@@ -80,6 +80,11 @@ func RedirectToNewRepoName(w http.ResponseWriter, r *http.Request, newRepoName a
 		return err
 	}
 
-	http.Redirect(w, r, destURL.String(), http.StatusMovedPermanently)
+	// Update the old request with the new path, retaining any additional
+	// query params and fragments.
+	origURLCopy := *r.URL
+	origURLCopy.Path = destURL.Path
+
+	http.Redirect(w, r, origURLCopy.String(), http.StatusMovedPermanently)
 	return nil
 }

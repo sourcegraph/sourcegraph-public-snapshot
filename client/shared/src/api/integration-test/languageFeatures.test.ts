@@ -1,13 +1,15 @@
 import type { Remote } from 'comlink'
-import { asyncScheduler, type Observable, of, type Unsubscribable } from 'rxjs'
+import { asyncScheduler, type Observable, of, type Unsubscribable, lastValueFrom } from 'rxjs'
 import { observeOn, take, toArray, map, first } from 'rxjs/operators'
 import type * as sourcegraph from 'sourcegraph'
+import { describe, expect, it } from 'vitest'
 
 import type { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import type { Location } from '@sourcegraph/extension-api-types'
+import { createBarrier } from '@sourcegraph/testing'
 
-import { assertToJSON, createBarrier, integrationTestContext } from '../../testing/testHelpers'
+import { assertToJSON, integrationTestContext } from '../../testing/testHelpers'
 import { wrapRemoteObservable } from '../client/api/common'
 import type { FlatExtensionHostAPI } from '../contract'
 
@@ -143,23 +145,23 @@ function testLocationProvider<P>({
             const subscription = registerProvider(extensionAPI)(['*'], labeledProvider('a'))
             await extensionAPI.internal.sync()
             expect(
-                await getResult('file:///f', extensionHostAPI)
-                    .pipe(
+                await lastValueFrom(
+                    getResult('file:///f', extensionHostAPI).pipe(
                         first(({ isLoading }) => !isLoading),
                         map(({ result }) => result)
                     )
-                    .toPromise()
+                )
             ).toEqual(labeledProviderResults(['a']))
 
             // Unregister the provider and ensure it's removed.
             subscription.unsubscribe()
             expect(
-                await getResult('file:///f', extensionHostAPI)
-                    .pipe(
+                await lastValueFrom(
+                    getResult('file:///f', extensionHostAPI).pipe(
                         first(({ isLoading }) => !isLoading),
                         map(({ result }) => result)
                     )
-                    .toPromise()
+                )
             ).toEqual(emptyResultValue)
         })
 
@@ -182,12 +184,12 @@ function testLocationProvider<P>({
             })
 
             expect(
-                await getResult('file:///f2', extensionHostAPI)
-                    .pipe(
+                await lastValueFrom(
+                    getResult('file:///f2', extensionHostAPI).pipe(
                         first(({ isLoading }) => !isLoading),
                         map(({ result }) => result)
                     )
-                    .toPromise()
+                )
             ).toEqual(labeledProviderResults(['a']))
 
             subscription.unsubscribe()
@@ -205,12 +207,12 @@ function testLocationProvider<P>({
                 })
             )
             await extensionAPI.internal.sync()
-            await getResult('file:///f', extensionHostAPI)
-                .pipe(
+            await lastValueFrom(
+                getResult('file:///f', extensionHostAPI).pipe(
                     first(({ isLoading }) => !isLoading),
                     map(({ result }) => result)
                 )
-                .toPromise()
+            )
             await wait
         })
 
@@ -223,7 +225,7 @@ function testLocationProvider<P>({
             await extensionAPI.internal.sync()
 
             // Expect it to emit the first provider's result first (and not block on both providers being ready).
-            expect(await getResult('file:///f', extensionHostAPI).pipe(take(3), toArray()).toPromise()).toEqual([
+            expect(await lastValueFrom(getResult('file:///f', extensionHostAPI).pipe(take(3), toArray()))).toEqual([
                 { isLoading: true, result: emptyResultValue },
                 { isLoading: true, result: labeledProviderResults(['a']) },
                 { isLoading: false, result: labeledProviderResults(['a', 'b']) },

@@ -22,7 +22,8 @@ import { SearchButton } from './SearchButton'
 import { SearchContextDropdown } from './SearchContextDropdown'
 import { SearchHelpDropdownButton } from './SearchHelpDropdownButton'
 import { SearchHistoryDropdown } from './SearchHistoryDropdown'
-import { Toggles, type TogglesProps } from './toggles'
+import { LegacyToggles } from './toggles'
+import { Toggles, type TogglesProps } from './toggles/Toggles'
 
 import styles from './SearchBox.module.scss'
 
@@ -49,13 +50,15 @@ export interface SearchBoxProps
     /** Called with the underlying editor instance on creation. */
     onEditorCreated?: (editor: IEditor) => void
 
-    /** Whether or not to show the search history button. Also disables the
+    /**
+     * Whether or not to show the search history button. Also disables the
      * search button. Does not affect history in the search input itself (via
      * arrow up/down)
      */
     showSearchHistory?: boolean
 
     recentSearches?: RecentSearch[]
+    showKeywordSearchToggle?: boolean
 }
 
 export const SearchBox: FC<SearchBoxProps> = props => {
@@ -183,22 +186,36 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
                         searchHistory={recentSearchesWithoutSearchContext}
                         onSelectSearchFromHistory={onInlineSearchHistorySelect}
+                        enableJumpToSuggestion={true}
                     />
-                    <Toggles
-                        patternType={props.patternType}
-                        setPatternType={props.setPatternType}
-                        caseSensitive={props.caseSensitive}
-                        setCaseSensitivity={props.setCaseSensitivity}
-                        searchMode={props.searchMode}
-                        setSearchMode={props.setSearchMode}
-                        settingsCascade={props.settingsCascade}
-                        submitSearch={props.submitSearchOnToggle}
-                        navbarSearchQuery={queryState.query}
-                        className={styles.searchBoxToggles}
-                        showCopyQueryButton={props.showCopyQueryButton}
-                        structuralSearchDisabled={props.structuralSearchDisabled}
-                        selectedSearchContextSpec={props.selectedSearchContextSpec}
-                    />
+                    {props.showKeywordSearchToggle ? (
+                        <Toggles
+                            patternType={props.patternType}
+                            setPatternType={props.setPatternType}
+                            caseSensitive={props.caseSensitive}
+                            setCaseSensitivity={props.setCaseSensitivity}
+                            searchMode={props.searchMode}
+                            setSearchMode={props.setSearchMode}
+                            submitSearch={props.submitSearchOnToggle}
+                            navbarSearchQuery={queryState.query}
+                            className={styles.searchBoxToggles}
+                            structuralSearchDisabled={props.structuralSearchDisabled}
+                            telemetryService={props.telemetryService}
+                        />
+                    ) : (
+                        <LegacyToggles
+                            patternType={props.patternType}
+                            setPatternType={props.setPatternType}
+                            caseSensitive={props.caseSensitive}
+                            setCaseSensitivity={props.setCaseSensitivity}
+                            searchMode={props.searchMode}
+                            setSearchMode={props.setSearchMode}
+                            submitSearch={props.submitSearchOnToggle}
+                            navbarSearchQuery={queryState.query}
+                            className={styles.searchBoxToggles}
+                            structuralSearchDisabled={props.structuralSearchDisabled}
+                        />
+                    )}
                 </div>
             </div>
             <div className={styles.searchBoxButton}>

@@ -23,13 +23,13 @@ To run the tests execute `go test .`
 
 ### Notification testing
 
-To test the notifications that get sent over slack you can pass the flag `-RunIntegrationTest` as part of your test invocation, with some required configuration:
+To test the notifications that get sent over slack you can pass the flag `-RunSlackIntegrationTest` as part of your test invocation, with some required configuration:
 
 ```sh
 export SLACK_TOKEN='my valid token'
 export BUILDKITE_WEBHOOK_TOKEN='optional'
 export GITHUB_TOKEN='optional'
-go test . -RunIntegrationTest
+go test . -RunSlackIntegrationTest
 ```
 
 You can enable Slack client debugging by exporting the following environment variable `BUILD_TRACKER_SLACK_DEBUG=1`

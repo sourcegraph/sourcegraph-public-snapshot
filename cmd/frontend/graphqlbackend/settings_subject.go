@@ -7,11 +7,10 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -78,7 +77,7 @@ func settingsSubjectForNode(ctx context.Context, n Node) (*settingsSubjectResolv
 	case *UserResolver:
 		// 🚨 SECURITY: Only the authenticated user can view their settings on
 		// Sourcegraph.com.
-		if envvar.SourcegraphDotComMode() {
+		if dotcom.SourcegraphDotComMode() {
 			if err := auth.CheckSameUser(ctx, s.user.ID); err != nil {
 				return nil, err
 			}
@@ -204,16 +203,4 @@ func (s *settingsSubjectResolver) SettingsCascade() (*settingsCascade, error) {
 
 func (s *settingsSubjectResolver) ConfigurationCascade() (*settingsCascade, error) {
 	return s.SettingsCascade()
-}
-
-// readSettings unmarshals s's latest settings into v.
-func (s *settingsSubjectResolver) readSettings(ctx context.Context, v any) error {
-	settings, err := s.LatestSettings(ctx)
-	if err != nil {
-		return err
-	}
-	if settings == nil {
-		return nil
-	}
-	return jsonc.Unmarshal(string(settings.Contents()), &v)
 }

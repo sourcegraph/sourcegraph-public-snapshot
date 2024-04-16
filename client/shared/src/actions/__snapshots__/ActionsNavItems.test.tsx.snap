@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`ActionItem Renders contributed action items 1`] = `
+exports[`ActionItem > Renders contributed action items 1`] = `
 <DocumentFragment>
    
   <li>

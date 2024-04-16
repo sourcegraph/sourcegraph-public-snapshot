@@ -7,25 +7,35 @@ import (
 )
 
 type Filter struct {
+	// Value is the search query snippet for this filter
 	Value string
 
 	// Label is the string to be displayed in the UI.
 	Label string
 
-	// Count is the number of matches in a particular repository. Only used
-	// for `repo:` filters.
+	// Count is the number of matches for a particular filter.
+	// May be unset if we do not have that information.
 	Count int
 
-	// IsLimitHit is true if the results returned for a repository are
-	// incomplete.
-	IsLimitHit bool
-
-	// Kind of filter. Should be "repo", "file", or "lang".
-	Kind string
+	// The filter kind, which is just a categorization.
+	Kind FilterKind
 
 	// important is used to prioritize the order that filters appear in.
 	important bool
 }
+
+type FilterKind string
+
+const (
+	FilterKindType       FilterKind = "type"
+	FilterKindRepo       FilterKind = "repo"
+	FilterKindFile       FilterKind = "file"
+	FilterKindLang       FilterKind = "lang"
+	FilterKindSymbolType FilterKind = "symbol type"
+	FilterKindAuthor     FilterKind = "author"
+	FilterKindCommitDate FilterKind = "commit date"
+	FilterKindUtility    FilterKind = "utility"
+)
 
 // Less returns true if f is more important the o.
 func (f *Filter) Less(o *Filter) bool {
@@ -46,15 +56,14 @@ func (f *Filter) Less(o *Filter) bool {
 type filters map[string]*Filter
 
 // Add the count to the filter with value.
-func (m filters) Add(value string, label string, count int32, limitHit bool, kind string) {
+func (m filters) Add(value string, label string, count int32, kind FilterKind) {
 	sf, ok := m[value]
 	if !ok {
 		sf = &Filter{
-			Value:      value,
-			Label:      label,
-			Count:      int(count),
-			IsLimitHit: limitHit,
-			Kind:       kind,
+			Value: value,
+			Label: label,
+			Count: int(count),
+			Kind:  kind,
 		}
 		m[value] = sf
 	} else {

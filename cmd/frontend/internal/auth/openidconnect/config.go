@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -40,6 +41,8 @@ func GetProvider(id string) *Provider {
 	return nil
 }
 
+var errNoSuchProvider = errors.New("no such authentication provider")
+
 // GetProviderAndRefresh retrieves the authentication provider with the given
 // type and ID, and refreshes the token used by the provider.
 func GetProviderAndRefresh(ctx context.Context, id string, getProvider func(id string) *Provider) (p *Provider, safeErrMsg string, err error) {
@@ -47,7 +50,7 @@ func GetProviderAndRefresh(ctx context.Context, id string, getProvider func(id s
 	if p == nil {
 		return nil,
 			"Misconfigured authentication provider.",
-			errors.Errorf("no authentication provider found with ID %q", id)
+			errNoSuchProvider
 	}
 	if p.config.Issuer == "" {
 		return nil,
@@ -82,11 +85,11 @@ func Init() {
 			}
 
 			for _, p := range ps {
-				go func(p providers.Provider) {
+				go func() {
 					if err := p.Refresh(context.Background()); err != nil {
 						logger.Error("Error prefetching OpenID Connect service provider metadata.", log.Error(err))
 					}
-				}(p)
+				}()
 			}
 			providers.Update(pkgName, ps)
 		})
@@ -103,7 +106,7 @@ func getProviders() []providers.Provider {
 	}
 	ps := make([]providers.Provider, 0, len(cfgs))
 	for _, cfg := range cfgs {
-		ps = append(ps, NewProvider(*cfg, authPrefix, path.Join(auth.AuthURLPrefix, "callback")))
+		ps = append(ps, NewProvider(*cfg, authPrefix, path.Join(auth.AuthURLPrefix, "callback"), httpcli.ExternalClient))
 	}
 	return ps
 }

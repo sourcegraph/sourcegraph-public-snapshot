@@ -8,7 +8,8 @@ import { catchError, map } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     PageHeader,
     LoadingSpinner,
@@ -43,12 +44,15 @@ function getSelectedTabFromLocation(
 ): MonitorsTab {
     const urlParameters = new URLSearchParams(locationSearch)
     switch (urlParameters.get('tab')) {
-        case 'list':
+        case 'list': {
             return 'list'
-        case 'getting-started':
+        }
+        case 'getting-started': {
             return 'getting-started'
-        case 'logs':
+        }
+        case 'logs': {
             return 'logs'
+        }
     }
 
     return userHasCodeMonitors ? 'list' : 'getting-started'
@@ -62,12 +66,11 @@ function setSelectedLocationTab(location: Location, navigate: NavigateFunction, 
     }
 }
 
-export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> {
+export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
     fetchCodeMonitors?: typeof _fetchCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
-    isCodyApp: boolean
     // For testing purposes only
     testForceTab?: 'list' | 'getting-started' | 'logs'
 }
@@ -78,7 +81,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
     fetchCodeMonitors = _fetchCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
     testForceTab,
-    isCodyApp,
+    telemetryRecorder,
 }) => {
     const userHasCodeMonitors = useObservable(
         useMemo(
@@ -123,17 +126,23 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
     useEffect(() => {
         if (userHasCodeMonitors !== undefined) {
             switch (currentTab) {
-                case 'getting-started':
+                case 'getting-started': {
                     eventLogger.logPageView('CodeMonitoringGettingStartedPage')
+                    telemetryRecorder.recordEvent('codeMonitor.gettingStarted', 'view')
                     break
-                case 'logs':
+                }
+                case 'logs': {
                     eventLogger.logPageView('CodeMonitoringLogsPage')
+                    telemetryRecorder.recordEvent('codeMonitor.logs', 'view')
                     break
-                case 'list':
+                }
+                case 'list': {
                     eventLogger.logPageView('CodeMonitoringPage')
+                    telemetryRecorder.recordEvent('codeMonitor.list', 'view')
+                }
             }
         }
-    }, [currentTab, userHasCodeMonitors])
+    }, [currentTab, userHasCodeMonitors, telemetryRecorder])
 
     const showList = userHasCodeMonitors !== undefined && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 
@@ -163,8 +172,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
             <PageTitle title="Code Monitoring" />
             <PageHeader
                 actions={
-                    authenticatedUser &&
-                    !isCodyApp && (
+                    authenticatedUser && (
                         <Button to="/code-monitoring/new" variant="primary" as={Link}>
                             <Icon aria-hidden={true} svgPath={mdiPlus} /> Create a code monitor
                         </Button>
@@ -208,7 +216,10 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                     </div>
 
                     {currentTab === 'getting-started' && (
-                        <CodeMonitoringGettingStarted authenticatedUser={authenticatedUser} isCodyApp={isCodyApp} />
+                        <CodeMonitoringGettingStarted
+                            authenticatedUser={authenticatedUser}
+                            telemetryRecorder={telemetryRecorder}
+                        />
                     )}
 
                     {currentTab === 'logs' && <CodeMonitoringLogs />}
@@ -219,6 +230,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                             fetchUserCodeMonitors={fetchUserCodeMonitors}
                             fetchCodeMonitors={fetchCodeMonitors}
                             toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
+                            telemetryRecorder={telemetryRecorder}
                         />
                     )}
                 </div>

@@ -6,13 +6,10 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -57,33 +54,57 @@ type perforceDepot struct {
 	Type perforceDepotType `json:"type,omitempty"`
 }
 
+// P4DepotsArguments contains the arguments for P4Depots.
+type P4DepotsArguments struct {
+	// P4Port is the address of the Perforce server.
+	P4Port string
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+
+	// NameFilter is a filter for the depot names to return.
+	NameFilter string
+}
+
 // P4Depots returns all of the depots to which the user has access on the host
 // and whose names match the given nameFilter, which can contain asterisks (*) for wildcards
 // if nameFilter is blank, return all depots.
-func P4Depots(ctx context.Context, p4home, p4port, p4user, p4passwd, nameFilter string) ([]perforceDepot, error) {
+func P4Depots(ctx context.Context, fs gitserverfs.FS, args P4DepotsArguments) ([]perforceDepot, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	var cmd *exec.Cmd
-	if nameFilter == "" {
-		cmd = exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "depots")
-	} else {
-		cmd = exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "depots", "-e", nameFilter)
+	options := []P4OptionFunc{
+		WithAuthentication(args.P4User, args.P4Passwd),
+		WithHost(args.P4Port),
 	}
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+p4port,
-		"P4USER="+p4user,
-		"P4PASSWD="+p4passwd,
-		"HOME="+p4home,
-	)
 
-	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+	if args.NameFilter == "" {
+		options = append(options, WithArguments("-Mj", "-ztag", "depots"))
+	} else {
+		options = append(options, WithArguments("-Mj", "-ztag", "depots", "-e", args.NameFilter))
+	}
+
+	p4home, err := fs.P4HomeDir()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create p4home dir")
+	}
+
+	scratchDir, err := fs.TempDir("p4-depots-")
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 depots'")
+	}
+	defer os.Remove(scratchDir)
+
+	cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = errors.Wrap(ctxerr, "p4 depots context error")
 		}
 		if len(out) > 0 {
-			err = errors.Wrapf(err, `failed to run command "p4 depots" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd))
+			err = errors.Wrapf(err, `failed to run command "p4 depots" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd.Unwrap()))
 		}
 		return nil, err
 	}

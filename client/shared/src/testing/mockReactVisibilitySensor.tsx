@@ -1,6 +1,7 @@
 import React from 'react'
 
 import type _VisibilitySensor from 'react-visibility-sensor'
+import { vi } from 'vitest'
 
 type VisibilitySensorPropsType = React.ComponentProps<typeof _VisibilitySensor>
 
@@ -25,4 +26,4 @@ function mockVisibilitySensor({ children, onChange }: VisibilitySensorPropsType)
     )
 }
 
-jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => mockVisibilitySensor)
+vi.mock('react-visibility-sensor', () => ({ default: mockVisibilitySensor }))

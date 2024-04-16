@@ -1,0 +1,105 @@
+# From-scratch Grafana base image that doesn't use sourcegraph-base
+contents:
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://packages.sgdev.org/sourcegraph-melange-prod.rsa.pub
+    - https://packages.sgdev.org/chainguard/chainguard-enterprise.rsa.pub
+  repositories:
+    - https://packages.wolfi.dev/os
+    - '@sourcegraph https://packages.sgdev.org/main'
+    - '@chainguard https://packages.sgdev.org/chainguard'
+  packages:
+    - wolfi-baselayout
+    - ca-certificates-bundle
+    - tzdata
+    - busybox
+    - glibc-locale-en
+    # Packages that were included in our original image
+    - apk-tools
+    - krb5
+    - libssl3
+    - libtirpc
+    - ncurses
+    - ncurses-terminfo
+    - openssl
+
+    # Grafana packages
+    - grafana-7=7.5.28-r2@chainguard
+    - grafana-7-dashboards=7.5.28-r2@chainguard
+
+work-dir: /usr/share/grafana
+
+entrypoint:
+  command: '/opt/grafana/entry.sh'
+
+accounts:
+  run-as: grafana
+  groups:
+    - groupname: grafana
+      gid: 472
+  users:
+    - username: grafana
+      uid: 472
+      gid: 472
+
+environment:
+  PATH: /usr/share/grafana/bin:/usr/sbin:/sbin:/usr/bin:/bin
+  GF_PATHS_CONFIG: /etc/grafana/grafana.ini
+  GF_PATHS_DATA: /var/lib/grafana
+  GF_PATHS_HOME: /usr/share/grafana
+  GF_PATHS_LOGS: /var/log/grafana
+  GF_PATHS_PLUGINS: /var/lib/grafana/plugins
+  GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+  LANG: en_US.UTF-8
+  SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
+
+paths:
+  - path: /var/lib/grafana
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+  - path: /var/lib/grafana/plugins
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+  - path: /var/log/grafana
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+  - path: /sg_grafana_additional_dashboards
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+  - path: /etc/grafana/provisioning/dashboards/
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+  - path: /etc/grafana/provisioning/datasources/
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+  - path: /etc/grafana/provisioning/notifiers/
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+  - path: /etc/grafana/provisioning/plugins/
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+
+archs:
+ - amd64
+
+# NOTE: These don't seem to be applied to the image
+annotations:
+  org.opencontainers.image.url: https://sourcegraph.com/
+  org.opencontainers.image.source: https://github.com/sourcegraph/sourcegraph/
+  org.opencontainers.image.documentation: https://sourcegraph.com/docs/

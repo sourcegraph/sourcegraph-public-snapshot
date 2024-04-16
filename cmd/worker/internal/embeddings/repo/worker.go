@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	repoembeddingsbg "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
@@ -53,8 +54,9 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 		return nil, err
 	}
 
-	getQdrantDB := vdb.NewDBFromConfFunc(observationCtx.Logger, vdb.NewNoopDB())
-	getQdrantInserter := func() (vdb.VectorInserter, error) { return getQdrantDB() }
+	// qdrant is going to be removed. For now we only ever set the noop db.
+	qdrantDB := vdb.NewNoopDB()
+	getQdrantInserter := func() (vdb.VectorInserter, error) { return qdrantDB, nil }
 
 	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
@@ -64,10 +66,11 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 			repoembeddingsbg.NewRepoEmbeddingJobWorkerStore(observationCtx, db.Handle()),
 			db,
 			uploadStore,
-			gitserver.NewClient(),
+			gitserver.NewClient("embeddings.worker"),
 			getQdrantInserter,
 			services.ContextService,
 			repoembeddingsbg.NewRepoEmbeddingJobsStore(db),
+			services.RankingService,
 		),
 	}, nil
 }
@@ -82,6 +85,7 @@ func newRepoEmbeddingJobWorker(
 	getQdrantInserter func() (vdb.VectorInserter, error),
 	contextService embed.ContextService,
 	repoEmbeddingJobsStore repoembeddingsbg.RepoEmbeddingJobsStore,
+	rankingService *ranking.Service,
 ) *workerutil.Worker[*repoembeddingsbg.RepoEmbeddingJob] {
 	handler := &handler{
 		db:                     db,
@@ -90,6 +94,7 @@ func newRepoEmbeddingJobWorker(
 		getQdrantInserter:      getQdrantInserter,
 		contextService:         contextService,
 		repoEmbeddingJobsStore: repoEmbeddingJobsStore,
+		rankingService:         rankingService,
 	}
 	return dbworker.NewWorker[*repoembeddingsbg.RepoEmbeddingJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "repo_embedding_job_worker",

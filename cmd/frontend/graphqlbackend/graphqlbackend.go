@@ -13,6 +13,7 @@ import (
 	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace/otel"
+	"github.com/graph-gophers/graphql-go/trace/tracer"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -21,17 +22,16 @@ import (
 	oteltracer "go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -45,19 +45,29 @@ var graphqlFieldHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
 
 // Note: we have both pointer and value receivers on this type, and we are fine with that.
 type requestTracer struct {
-	DB     database.DB
-	tracer *otel.Tracer
 	logger log.Logger
+	db     database.DB
+
+	tracer *otel.Tracer
+}
+
+func newRequestTracer(logger log.Logger, db database.DB) tracer.Tracer {
+	return &requestTracer{
+		db: db,
+		tracer: &otel.Tracer{
+			Tracer: oteltracer.Tracer("GraphQL"),
+		},
+		logger: logger,
+	}
 }
 
 func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, func([]*gqlerrors.QueryError)) {
 	start := time.Now()
-	var finish func([]*gqlerrors.QueryError)
-	if policy.ShouldTrace(ctx) {
-		ctx, finish = t.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
-	}
 
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
+
+	var finish func([]*gqlerrors.QueryError)
+	ctx, finish = t.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
@@ -90,9 +100,12 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 		// NOTE: It is important to propagate the correct context that carries the
 		// information of the actor, especially whether the actor is a Sourcegraph
 		// operator or not.
+		//
+		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
+		//lint:ignore SA1019 existing usage of deprecated functionality.
 		err = usagestats.LogEvent(
 			ctx,
-			t.DB,
+			t.db,
 			usagestats.Event{
 				EventName: eventName,
 				UserID:    a.UID,
@@ -118,9 +131,8 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 	requestSource := sgtrace.RequestSource(ctx)
 
 	return ctx, func(err []*gqlerrors.QueryError) {
-		if finish != nil {
-			finish(err)
-		}
+		finish(err) // always non-nil
+
 		d := time.Since(start)
 		if v := conf.Get().ObservabilityLogSlowGraphQLRequests; v != 0 && d.Milliseconds() > int64(v) {
 			enc, _ := json.Marshal(variables)
@@ -182,15 +194,7 @@ func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName stri
 }
 
 func (t requestTracer) TraceValidation(ctx context.Context) func([]*gqlerrors.QueryError) {
-	var finish func([]*gqlerrors.QueryError)
-	if policy.ShouldTrace(ctx) {
-		finish = t.tracer.TraceValidation(ctx)
-	}
-	return func(queryErrors []*gqlerrors.QueryError) {
-		if finish != nil {
-			finish(queryErrors)
-		}
-	}
+	return t.tracer.TraceValidation(ctx)
 }
 
 var allowedPrometheusFieldNames = map[[2]string]struct{}{
@@ -382,7 +386,7 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{})
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{})
 }
 
 func NewSchemaWithGitserverClient(db database.DB, gitserverClient gitserver.Client) (*graphql.Schema, error) {
@@ -390,39 +394,39 @@ func NewSchemaWithGitserverClient(db database.DB, gitserverClient gitserver.Clie
 }
 
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{NotebooksResolver: notebooks}})
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{NotebooksResolver: notebooks}})
 }
 
 func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{AuthzResolver: authz}})
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{AuthzResolver: authz}})
 }
 
 func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver, githubApps GitHubAppsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{BatchChangesResolver: batchChanges}, {GitHubAppsResolver: githubApps}})
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{BatchChangesResolver: batchChanges}, {GitHubAppsResolver: githubApps}})
 }
 
 func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{CodeMonitorsResolver: codeMonitors}})
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{CodeMonitorsResolver: codeMonitors}})
 }
 
 func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{LicenseResolver: license}})
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{LicenseResolver: license}})
 }
 
 func NewSchemaWithWebhooksResolver(db database.DB, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{WebhooksResolver: webhooksResolver}})
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{WebhooksResolver: webhooksResolver}})
 }
 
 func NewSchemaWithRBACResolver(db database.DB, rbacResolver RBACResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{RBACResolver: rbacResolver}})
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{RBACResolver: rbacResolver}})
 }
 
 func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{OwnResolver: own}})
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{OwnResolver: own}})
 }
 
 func NewSchemaWithCompletionsResolver(db database.DB, completionsResolver CompletionsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{CompletionsResolver: completionsResolver}})
+	return NewSchema(db, gitserver.NewClient("graphql.schemaresolver"), []OptionalResolver{{CompletionsResolver: completionsResolver}})
 }
 
 func NewSchema(
@@ -600,12 +604,6 @@ func NewSchema(
 			schemas = append(schemas, guardrailsSchema)
 		}
 
-		if appResolver := optional.AppResolver; appResolver != nil {
-			// Not under enterpriseResolvers, as this is a OSS schema extension.
-			resolver.AppResolver = appResolver
-			schemas = append(schemas, appSchema)
-		}
-
 		if contentLibraryResolver := optional.ContentLibraryResolver; contentLibraryResolver != nil {
 			EnterpriseResolvers.contentLibraryResolver = contentLibraryResolver
 			resolver.ContentLibraryResolver = contentLibraryResolver
@@ -629,16 +627,10 @@ func NewSchema(
 		}
 	}
 
-	logger := log.Scoped("GraphQL")
 	opts := []graphql.SchemaOpt{
-		graphql.Tracer(&requestTracer{
-			DB: db,
-			tracer: &otel.Tracer{
-				Tracer: oteltracer.Tracer("GraphQL"),
-			},
-			logger: logger,
-		}),
+		graphql.Tracer(newRequestTracer(log.Scoped("GraphQL"), db)),
 		graphql.UseStringDescriptions(),
+		graphql.MaxDepth(conf.RateLimits().GraphQLMaxDepth),
 	}
 	opts = append(opts, graphqlOpts...)
 	return graphql.ParseSchema(
@@ -665,7 +657,6 @@ type schemaResolver struct {
 // OptionalResolver are the resolvers that do not have to be set. If a field
 // is non-nil, NewSchema will register the corresponding graphql schema.
 type OptionalResolver struct {
-	AppResolver
 	AuthzResolver
 	BatchChangesResolver
 	CodeIntelResolver
@@ -858,8 +849,10 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("could not delete repository with ID %d", repoID))
 	}
 
-	if err := backend.NewRepos(r.logger, r.db, r.gitserverClient).RequestRepositoryClone(ctx, repoID); err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while requesting clone for repository with ID %d", repoID))
+	// We call RequestRepositoryUpdate here which will trigger a clone of the repo doesn't exist
+	// on disk.
+	if err := backend.NewRepos(r.logger, r.db, r.gitserverClient).RequestRepositoryUpdate(ctx, repoID); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while requesting fetch for repository with ID %d", repoID))
 	}
 
 	return &EmptyResponse{}, nil
@@ -972,9 +965,24 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
+		if errcode.IsRepoDenied(err) {
+			return nil, repositoryDeniedError{err}
+		}
 		return nil, err
 	}
 	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, r.gitserverClient, repo)}, nil
+}
+
+type repositoryDeniedError struct {
+	error
+}
+
+func (r repositoryDeniedError) Error() string {
+	return r.error.Error()
+}
+
+func (r repositoryDeniedError) Extensions() map[string]any {
+	return map[string]any{"code": "ErrRepoDenied"}
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {

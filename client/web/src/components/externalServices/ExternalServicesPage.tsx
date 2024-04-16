@@ -3,6 +3,7 @@ import { type FC, useEffect } from 'react'
 import { mdiPlus } from '@mdi/js'
 import { Navigate, useLocation } from 'react-router-dom'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
@@ -22,10 +23,9 @@ import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDis
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 import { ExternalServiceNode } from './ExternalServiceNode'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
-    isCodyApp: boolean
 }
 
 /**
@@ -33,13 +33,14 @@ interface Props extends TelemetryProps {
  */
 export const ExternalServicesPage: FC<Props> = ({
     telemetryService,
+    telemetryRecorder,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
-    isCodyApp,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalServices')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('admin.externalServices', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     const location = useLocation()
     const searchParameters = new URLSearchParams(location.search)
@@ -64,11 +65,6 @@ export const ExternalServicesPage: FC<Props> = ({
                 headingElement="h2"
                 actions={
                     <>
-                        {isCodyApp && (
-                            <ButtonLink className="mr-2" to="/setup" variant="secondary" as={Link}>
-                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add local code
-                            </ButtonLink>
-                        )}
                         <ButtonLink
                             className="test-goto-add-external-service-page"
                             to="/site-admin/external-services/new"

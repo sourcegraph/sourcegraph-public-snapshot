@@ -12,8 +12,8 @@ import (
 
 func cleanupStore(t *testing.T, store redispool.KeyValue) {
 	t.Cleanup(func() {
-		store.Del(LicenseValidityStoreKey)
-		store.Del(LicenseInvalidReason)
+		require.NoError(t, store.Del(LicenseValidityStoreKey))
+		require.NoError(t, store.Del(LicenseInvalidReason))
 	})
 }
 
@@ -22,7 +22,7 @@ func TestIsLicenseValid(t *testing.T) {
 		MaxIdle:     3,
 		IdleTimeout: 5 * time.Second,
 	})
-	store.Del(LicenseValidityStoreKey)
+	require.NoError(t, store.Del(LicenseValidityStoreKey))
 
 	t.Run("unset key returns true", func(t *testing.T) {
 		cleanupStore(t, store)
@@ -47,8 +47,8 @@ func TestGetLicenseInvalidReason(t *testing.T) {
 		MaxIdle:     3,
 		IdleTimeout: 5 * time.Second,
 	})
-	store.Del(LicenseValidityStoreKey)
-	store.Del(LicenseInvalidReason)
+	require.NoError(t, store.Del(LicenseValidityStoreKey))
+	require.NoError(t, store.Del(LicenseInvalidReason))
 
 	t.Run("unset licenseValidityStoreKey returns empty string", func(t *testing.T) {
 		cleanupStore(t, store)

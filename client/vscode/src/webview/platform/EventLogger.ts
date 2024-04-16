@@ -73,15 +73,18 @@ export class EventLogger implements VsceTelemetryService {
             return
         }
         switch (eventLabel) {
-            case 'DynamicFilterClicked':
+            case 'DynamicFilterClicked': {
                 eventLabel = 'VSCESidebarDynamicFiltersClick'
                 break
-            case 'SearchSnippetClicked':
+            }
+            case 'SearchSnippetClicked': {
                 eventLabel = 'VSCESidebarRepositoriesClick'
                 break
-            case 'SearchReferenceOpened':
+            }
+            case 'SearchReferenceOpened': {
                 eventLabel = 'VSCESidebarSearchReferenceClick'
                 break
+            }
         }
         for (const listener of this.listeners) {
             listener(eventLabel)

@@ -25,14 +25,14 @@ export const CloudAuthedHome: StoryFn = () => (
     <WebStory
         legacyLayoutContext={{ isSourcegraphDotCom: true, authenticatedUser: { id: 'userID' } as AuthenticatedUser }}
     >
-        {() => <SearchPageContent shouldShowAddCodeHostWidget={false} />}
+        {() => <SearchPageContent shouldShowAddCodeHostWidget={false} isSourcegraphDotCom={true} />}
     </WebStory>
 )
 
 CloudAuthedHome.storyName = 'Cloud authenticated home'
 
 export const ServerHome: StoryFn = () => (
-    <WebStory>{() => <SearchPageContent shouldShowAddCodeHostWidget={false} />}</WebStory>
+    <WebStory>{() => <SearchPageContent shouldShowAddCodeHostWidget={false} isSourcegraphDotCom={false} />}</WebStory>
 )
 
 ServerHome.storyName = 'Server home'

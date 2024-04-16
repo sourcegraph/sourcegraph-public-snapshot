@@ -27,7 +27,7 @@ This means the `frontend` server failed to start, for some reason. Look through 
 If you see this error when opening the app:
 
 ```
-500 Internal Server Error template: app.html:21:70: executing "app.html" at <version "styles/styl...>: error calling version: open ui/assets/styles/app.bundle.css: no such file or directory
+500 Internal Server Error template: app.html:21:70: executing "app.html" at <version "styles/styl...>: error calling version: open client/web/dist/main-ABCD.css: no such file or directory
 ```
 
 that means the web builder hasn't finished compiling the styles yet (it takes about 3 minutes).
@@ -109,8 +109,6 @@ SRC_REPOS_DESIRED_PERCENT_FREE=5
 On first install, the program will use quite a bit of bandwidth to concurrently download all the Go and Node packages. After packages have been installed, the Javascript assets will be compiled into a single Javascript file, which can take up to 5 minutes, and can be heavy on the CPU at times.
 
 After the initial install/compile is complete, the Docker for Mac binary uses about 1.5GB of RAM. The numerous different Go binaries don't use that much RAM or CPU each, about 5MB of RAM each.
-
-If you notice heavy battery and CPU usage running `gulp --color watch`, please first [double check that Spotlight is not indexing your Sourcegraph repository](https://www.macobserver.com/tips/how-to/stop-spotlight-indexing/), as this can lead to additional, unnecessary, poll events.
 
 If you're running macOS 10.15.x (Catalina) reinstalling the Xcode Command Line Tools may be necessary as follows:
 

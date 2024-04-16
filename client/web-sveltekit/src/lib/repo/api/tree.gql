@@ -1,0 +1,28 @@
+query TreeEntries($repoName: String!, $revision: String!, $filePath: String!, $first: Int) {
+    repository(name: $repoName) {
+        id
+        ... on Repository {
+            commit(rev: $revision) {
+                ...GitCommitFieldsWithTree
+            }
+        }
+    }
+}
+
+fragment GitCommitFieldsWithTree on GitCommit {
+    id
+    tree(path: $filePath) {
+        canonicalURL
+        isRoot
+        name
+        path
+        isDirectory
+        entries(first: $first) {
+            canonicalURL
+            name
+            path
+            isDirectory
+            ...FileIcon_GitBlob
+        }
+    }
+}

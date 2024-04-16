@@ -228,7 +228,7 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
       interfaces:
         - Store
-    - path: internal/codeintel/uploads
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads
       interfaces:
         - RepoStore
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore
@@ -301,6 +301,10 @@
     - ErrorHandler
     - Finalizer
     - Handler
+- filename: lib/background/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/lib/background
+  interfaces:
+    - Routine
 - filename: internal/oobmigration/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/oobmigration
   interfaces:
@@ -382,9 +386,9 @@
     - InsightPermissionStore
 - filename: cmd/cody-gateway/internal/auth/mocks_test.go
   sources:
-    - path: github.com/gregjones/httpcache
+    - path: github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription
       interfaces:
-        - Cache
+        - ListingCache
 - filename: cmd/cody-gateway/internal/dotcom/mocks.go
   sources:
     - path: github.com/Khan/genqlient/graphql
@@ -404,3 +408,18 @@
     - path: github.com/sourcegraph/sourcegraph/internal/telemetry
       interfaces:
         - EventsStore
+- filename: cmd/gitserver/internal/integration_tests/mocks.go
+  package: inttests
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal
+      interfaces:
+        - RepositoryLocker
+        - RepositoryLock
+- filename: cmd/gitserver/internal/mocks_test.go
+  package: internal
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal
+      interfaces:
+        - service
+        - RepositoryLocker
+        - RepositoryLock

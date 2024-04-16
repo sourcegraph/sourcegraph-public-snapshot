@@ -28,14 +28,14 @@ func TestRepoRefresh(t *testing.T) {
 			panic("wrong path")
 		}
 	}
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		if repo.ID != 2 || rev != "master" {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
+		if repo != "github.com/gorilla/mux" || rev != "master" {
 			t.Error("wrong arguments to ResolveRev")
 		}
 		return "aed", nil
 	}
 
-	if _, err := c.PostOK("/repos/github.com/gorilla/mux/-/refresh", nil); err != nil {
+	if _, err := c.PostOK("/.api/repos/github.com/gorilla/mux/-/refresh", nil); err != nil {
 		t.Fatal(err)
 	}
 	if ct := enqueueRepoUpdateCount["github.com/gorilla/mux"]; ct != 1 {

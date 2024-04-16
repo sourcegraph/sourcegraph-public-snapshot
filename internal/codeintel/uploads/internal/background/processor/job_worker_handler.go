@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func NewUploadProcessorWorker(
@@ -143,27 +144,19 @@ func (h *handler) PreDequeue(_ context.Context, _ log.Logger) (bool, any, error)
 }
 
 func (h *handler) PreHandle(_ context.Context, _ log.Logger, upload uploadsshared.Upload) {
-	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
+	uncompressedSize := pointers.DerefZero(upload.UncompressedSize)
 	h.uploadSizeGauge.Add(float64(uncompressedSize))
 
-	gzipSize := h.getUploadSize(upload.UploadSize)
+	gzipSize := pointers.DerefZero(upload.UploadSize)
 	atomic.AddInt64(&h.budgetRemaining, -gzipSize)
 }
 
 func (h *handler) PostHandle(_ context.Context, _ log.Logger, upload uploadsshared.Upload) {
-	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
+	uncompressedSize := pointers.DerefZero(upload.UncompressedSize)
 	h.uploadSizeGauge.Sub(float64(uncompressedSize))
 
-	gzipSize := h.getUploadSize(upload.UploadSize)
+	gzipSize := pointers.DerefZero(upload.UploadSize)
 	atomic.AddInt64(&h.budgetRemaining, +gzipSize)
-}
-
-func (h *handler) getUploadSize(field *int64) int64 {
-	if field != nil {
-		return *field
-	}
-
-	return 0
 }
 
 func createLogFields(upload uploadsshared.Upload) []attribute.KeyValue {
@@ -186,27 +179,18 @@ func createLogFields(upload uploadsshared.Upload) []attribute.KeyValue {
 // defaultBranchContains tells if the default branch contains the given commit ID.
 func (c *handler) defaultBranchContains(ctx context.Context, repo api.RepoName, commit string) (bool, error) {
 	// Determine default branch name.
-	descriptions, err := c.gitserverClient.RefDescriptions(ctx, repo)
+	defaultBranchName, _, err := c.gitserverClient.GetDefaultBranch(ctx, repo, false)
 	if err != nil {
 		return false, err
 	}
-	var defaultBranchName string
-	for _, descriptions := range descriptions {
-		for _, ref := range descriptions {
-			if ref.IsDefaultBranch {
-				defaultBranchName = ref.Name
-				break
-			}
-		}
-	}
 
 	// Determine if branch contains commit.
-	branches, err := c.gitserverClient.BranchesContaining(ctx, repo, api.CommitID(commit))
+	branches, err := c.gitserverClient.ListRefs(ctx, repo, gitserver.ListRefsOpts{HeadsOnly: true, Contains: api.CommitID(commit)})
 	if err != nil {
 		return false, err
 	}
 	for _, branch := range branches {
-		if branch == defaultBranchName {
+		if branch.Name == defaultBranchName {
 			return true, nil
 		}
 	}
@@ -256,13 +240,16 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		// database (if not already present). We need to have the commit data of every processed upload
 		// for a repository when calculating the commit graph (triggered at the end of this handler).
 
-		_, commitDate, revisionExists, err := h.gitserverClient.CommitDate(ctx, repo.Name, api.CommitID(upload.Commit))
+		commit, err := h.gitserverClient.GetCommit(ctx, repo.Name, api.CommitID(upload.Commit))
 		if err != nil {
-			return errors.Wrap(err, "gitserverClient.CommitDate")
+			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				return errCommitDoesNotExist
+			}
+			return errors.Wrap(err, "failed to determine commit date")
 		}
-		if !revisionExists {
-			return errCommitDoesNotExist
-		}
+
+		commitDate := commit.Committer.Date
+
 		trace.AddEvent("TODO Domain Owner", attribute.String("commitDate", commitDate.String()))
 
 		// We do the update here outside of the transaction started below to reduce the long blocking
@@ -303,8 +290,8 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			// Before we mark the upload as complete, we need to delete any existing completed uploads
 			// that have the same repository_id, commit, root, and indexer values. Otherwise, the transaction
 			// will fail as these values form a unique constraint.
-			if err := tx.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
-				return errors.Wrap(err, "store.DeleteOverlappingDumps")
+			if err := tx.DeleteOverlappingCompletedUploads(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
+				return errors.Wrap(err, "store.DeleteOverlappingCompletedUploads")
 			}
 
 			trace.AddEvent("TODO Domain Owner", attribute.Int("packages", len(pkgData.Packages)))
@@ -353,7 +340,7 @@ const requeueDelay = time.Minute
 // valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
 // fail on.
 func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, gitserverClient gitserver.Client, workerStore dbworkerstore.Store[uploadsshared.Upload], upload uploadsshared.Upload, repo *types.Repo) (requeued bool, _ error) {
-	_, err := gitserverClient.ResolveRevision(ctx, repo.Name, upload.Commit, gitserver.ResolveRevisionOptions{})
+	_, err := gitserverClient.ResolveRevision(ctx, repo.Name, upload.Commit, gitserver.ResolveRevisionOptions{EnsureRevision: true})
 	if err == nil {
 		// commit is resolvable
 		return false, nil

@@ -1,14 +1,15 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import Icon from '$lib/Icon.svelte'
     import { mdiAccount } from '@mdi/js'
 
-    import SearchResult from './SearchResult.svelte'
-    import { getSearchResultsContext } from './SearchResults.svelte'
+    import Avatar from '$lib/Avatar.svelte'
+    import Icon from '$lib/Icon.svelte'
     import { getOwnerDisplayName, getOwnerMatchURL, buildSearchURLQueryForOwner } from '$lib/search/results'
-    import UserAvatar from '$lib/UserAvatar.svelte'
     import type { PersonMatch } from '$lib/shared'
+
+    import SearchResult from './SearchResult.svelte'
+    import { getSearchResultsContext } from './searchResultsContext'
 
     export let result: PersonMatch
 
@@ -20,11 +21,14 @@
 </script>
 
 <SearchResult>
-    <UserAvatar slot="icon" user={{ ...result.user, displayName }} />
     <div slot="title">
+        <Avatar
+            avatar={{ displayName, username: result.user?.username ?? '', avatarURL: result.user?.avatarURL ?? null }}
+            --avatar-size="1.5rem"
+        />
         &nbsp;
         {#if ownerURL}
-            <a data-sveltekit-reload href={ownerURL}>{displayName}</a>
+            <a href={ownerURL}>{displayName}</a>
         {:else}
             {displayName}
         {/if}

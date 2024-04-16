@@ -11,6 +11,9 @@
 
 .icon-section {
     margin-bottom: 3rem !important;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
 }
 
 .section {
@@ -21,22 +24,14 @@
 
 .greeting {
     &-container {
-        grid-column: 2 / 2;
-        grid-row: 1 / 1;
-        margin: 0 0 -1.5rem -0.5rem !important;
-    }
-
-    &-icon {
-        grid-column: 1/1;
-        grid-row: 1/1;
+        position: relative;
     }
 
     &-text {
-        grid-column: 1/1;
-        grid-row: 1/1;
-        align-self: center;
         color: var(--white);
-        margin: 0 0 0.5rem 2rem;
+        position: absolute;
+        top: 1rem;
+        left: 2rem;
     }
 }
 

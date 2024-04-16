@@ -5,7 +5,6 @@ go_library(
     name = "licensing",
     srcs = [
         "codygateway.go",
-        "conf.go",
         "constants.go",
         "data.go",
         "doc.go",
@@ -22,6 +21,7 @@ go_library(
     deps = [
         "//internal/conf",
         "//internal/conf/conftypes",
+        "//internal/dotcom",
         "//internal/env",
         "//internal/errcode",
         "//internal/license",
@@ -30,7 +30,6 @@ go_library(
         "@com_github_gomodule_redigo//redis",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_x_crypto//ssh",
-        "@org_golang_x_exp//slices",
         "@org_uber_go_atomic//:atomic",
     ],
 )

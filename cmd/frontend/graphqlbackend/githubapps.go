@@ -25,6 +25,7 @@ type GitHubAppsResolver interface {
 
 	// Mutations
 	DeleteGitHubApp(ctx context.Context, args *DeleteGitHubAppArgs) (*EmptyResponse, error)
+	RefreshGitHubApp(ctx context.Context, args *RefreshGitHubAppArgs) (*EmptyResponse, error)
 }
 
 type GitHubAppConnectionResolver interface {
@@ -50,6 +51,10 @@ type GitHubAppResolver interface {
 }
 
 type DeleteGitHubAppArgs struct {
+	GitHubApp graphql.ID
+}
+
+type RefreshGitHubAppArgs struct {
 	GitHubApp graphql.ID
 }
 

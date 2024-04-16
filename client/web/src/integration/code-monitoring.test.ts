@@ -1,6 +1,7 @@
 import assert from 'assert'
 
 import expect from 'expect'
+import { describe, afterEach, before, beforeEach, after } from 'mocha'
 
 import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'

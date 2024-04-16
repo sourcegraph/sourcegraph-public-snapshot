@@ -14,13 +14,13 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
@@ -355,7 +355,7 @@ func createInvitationJWT(orgID int32, invitationID int64, senderID int32, expiry
 // respond to the invitation. Callers should check conf.CanSendEmail() if they want to return a nice
 // error if sending email is not enabled.
 func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *types.Org, sender *types.User, recipientEmail string, invitationURL string, expiryTime time.Time) error {
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		// Basic abuse prevention for Sourcegraph.com.
 
 		// Only allow email-verified users to send invites.
@@ -423,8 +423,8 @@ Visit this link in your browser to accept the invite: {{.InvitationUrl}}
 This link will expire in {{.ExpiryDays}} days. You are receiving this email because @{{.FromUserName}} invited you to an organization on Sourcegraph Cloud.
 
 
-To see our Terms of Service, please visit this link: https://about.sourcegraph.com/terms
-To see our Privacy Policy, please visit this link: https://about.sourcegraph.com/privacy
+To see our Terms of Service, please visit this link: https://sourcegraph.com/terms
+To see our Privacy Policy, please visit this link: https://sourcegraph.com/privacy
 
 Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA
 `,
@@ -464,8 +464,8 @@ Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA
     This link will expire in {{.ExpiryDays}} days. You are receiving this email because @{{.FromUserName}} invited you to an organization on Sourcegraph Cloud.
   </p>
   <p class="mtl">
-    <a href="https://about.sourcegraph.com/terms">Terms</a>&nbsp;&#8226;&nbsp;
-    <a href="https://about.sourcegraph.com/privacy">Privacy</a>
+    <a href="https://sourcegraph.com/terms">Terms</a>&nbsp;&#8226;&nbsp;
+    <a href="https://sourcegraph.com/privacy">Privacy</a>
   </p>
   <p>Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA</p>
   </small>

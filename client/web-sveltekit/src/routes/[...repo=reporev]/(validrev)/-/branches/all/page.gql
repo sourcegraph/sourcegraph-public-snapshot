@@ -1,0 +1,21 @@
+query AllBranchesPage_BranchesQuery(
+    $repoName: String!
+    $first: Int!
+    $withBehindAhead: Boolean!
+    $revspec: String = ""
+) {
+    repository(name: $repoName) {
+        id
+        branches(first: $first) {
+            ...GitBranchesConnection
+        }
+    }
+}
+
+fragment GitBranchesConnection on GitRefConnection {
+    nodes {
+        id
+        ...GitReference_Ref
+    }
+    totalCount
+}

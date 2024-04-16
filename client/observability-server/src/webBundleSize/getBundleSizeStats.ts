@@ -14,11 +14,8 @@ interface BundleSizeConfig {
 interface BundleSizeStats {
     [baseFilePath: string]: {
         raw: number
-        gzip: number
-        brotli: number
         isInitial: boolean
         isDynamicImport: boolean
-        isDefaultVendors: boolean
         isCss: boolean
         isJs: boolean
     }
@@ -39,28 +36,21 @@ export function getBundleSizeStats(options: GetBundleSizeStatsOptions): BundleSi
     const webBuildManifest = require(webBuildManifestPath) as Record<string, string>
 
     const initialResources = new Set(
-        Object.values(webBuildManifest).map(resourcePath =>
-            path.join(staticAssetsPath, resourcePath.replace('/.assets/', ''))
-        )
+        Object.values(webBuildManifest)
+            .filter(value => typeof value === 'string')
+            .map(resourcePath => path.join(staticAssetsPath, resourcePath.replace('/.assets/', '')))
     )
 
     return bundleSizeConfig.files.reduce<BundleSizeStats>((result, file) => {
         const filePaths = glob.sync(file.path)
-
-        const fileStats = filePaths.reduce((fileStats, brotliFilePath) => {
-            const { dir, name } = path.parse(brotliFilePath)
-            const noCompressionFilePath = path.join(dir, name)
-            const gzipFilePath = `${noCompressionFilePath}.gz`
-
+        const fileStats = filePaths.reduce((fileStats, noCompressionFilePath) => {
+            const name = path.basename(noCompressionFilePath)
             return {
                 ...fileStats,
                 [noCompressionFilePath.replace(`${staticAssetsPath}/`, '')]: {
                     raw: statSync(noCompressionFilePath).size,
-                    gzip: statSync(gzipFilePath).size,
-                    brotli: statSync(brotliFilePath).size,
                     isInitial: initialResources.has(noCompressionFilePath),
-                    isDynamicImport: name.startsWith('sg_'),
-                    isDefaultVendors: /\d+.chunk.js/.test(name),
+                    isDynamicImport: name.startsWith('chunk-'),
                     isCss: path.parse(name).ext === '.css',
                     isJs: path.parse(name).ext === '.js',
                 },

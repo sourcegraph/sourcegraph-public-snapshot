@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -18,14 +17,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
 	symbolparser "github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 func LoadConfig() {
@@ -36,7 +32,7 @@ func LoadConfig() {
 
 var config types.SqliteConfig
 
-func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
+func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, error) {
 	logger := observationCtx.Logger.Scoped("sqlite.setup")
 
 	if err := baseConfig.Validate(); err != nil {
@@ -46,14 +42,6 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 	// Ensure we register our database driver before calling
 	// anything that tries to open a SQLite database.
 	sqlite.Init()
-
-	if deploy.IsSingleBinary() && config.Ctags.UniversalCommand == "" {
-		// app: ctags is not available
-		searchFunc := func(ctx context.Context, params search.SymbolsParameters) (result.Symbols, error) {
-			return nil, nil
-		}
-		return searchFunc, nil, []goroutine.BackgroundRoutine{}, "", nil
-	}
 
 	parserFactory := func(source ctags_config.ParserType) (ctags.Parser, error) {
 		return symbolparser.SpawnCtags(logger, config.Ctags, source)
@@ -78,15 +66,9 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 	cacheSizeBytes := int64(config.CacheSizeMB) * 1000 * 1000
 	cacheEvicter := janitor.NewCacheEvicter(evictionInterval, cache, cacheSizeBytes, janitor.NewMetrics(observationCtx))
 
-	return searchFunc, nil, []goroutine.BackgroundRoutine{cacheEvicter}, config.Ctags.UniversalCommand, nil
+	return searchFunc, nil, []goroutine.BackgroundRoutine{cacheEvicter}, nil
 }
 
 func parserTypesForDeployment() []ctags_config.ParserType {
-	if deploy.IsSingleBinary() {
-		// ScipCtags is not available
-		// TODO(burmudar): make it available
-		return []ctags_config.ParserType{ctags_config.UniversalCtags}
-	}
-
 	return symbolparser.DefaultParserTypes
 }

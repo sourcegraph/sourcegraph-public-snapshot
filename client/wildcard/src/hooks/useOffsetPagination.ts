@@ -84,7 +84,7 @@ const getPages = ({ activePage, totalPages, maxDisplayed }: GetPagesParameters):
         middle[0] = '...'
     }
 
-    if (middle[middle.length - 1] !== maximumBoundary) {
+    if (middle.at(-1) !== maximumBoundary) {
         middle[middle.length - 1] = '...'
     }
 

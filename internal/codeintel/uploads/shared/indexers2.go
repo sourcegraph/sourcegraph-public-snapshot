@@ -12,14 +12,18 @@ type CodeIntelIndexer struct {
 	DockerImages []string
 }
 
+const SyntacticIndexer = "scip-syntax"
+
 // allIndexers is a list of all detectable/suggested indexers known to Sourcegraph.
 // Two indexers with the same language key will be preferred according to the given order.
 var allIndexers = []CodeIntelIndexer{
 	// C++
+	makeIndexer("C++", "scip-clang", "github.com/sourcegraph/scip-clang"),
 	makeInternalIndexer("C++", "lsif-clang"),
 	makeInternalIndexer("C++", "lsif-cpp"),
 
 	// Dart
+	makeIndexer("Dart", "scip-dart", "github.com/Workiva/scip-dart"),
 	makeInternalIndexer("Dart", "lsif-dart"),
 	makeIndexer("Dart", "lsif_indexer", "github.com/Workiva/lsif_indexer"),
 
@@ -45,6 +49,7 @@ var allIndexers = []CodeIntelIndexer{
 	makeIndexer("OCaml", "lsif-ocaml", "github.com/rvantonder/lsif-ocaml"),
 
 	// PHP
+	makeIndexer("PHP", "scip-php", "github.com/davidrjenni/scip-php", "davidrjenni/scip-php"),
 	makeIndexer("PHP", "lsif-php", "github.com/davidrjenni/lsif-php", "davidrjenni/lsif-php"),
 
 	// Python
@@ -77,7 +82,7 @@ func NamesForKey(key string) []string {
 }
 
 var extensions = map[string][]string{
-	"C++":        {".c", ".cp", ".cpp", ".cxx", ".h", ".hpp"},
+	"C++":        {".c", ".cp", ".cpp", ".cxx", ".h", ".hpp", ".hxx"},
 	"Dart":       {".dart"},
 	"DotNet":     {".cs", ".fs"},
 	"Go":         {".go"},

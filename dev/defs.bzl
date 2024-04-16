@@ -1,18 +1,19 @@
 "Bazel rules"
 
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library")
+load("@aspect_rules_js//npm:defs.bzl", _npm_package = "npm_package")
+load("@aspect_rules_swc//swc:defs.bzl", "swc")
+load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
 load("@bazel_skylib//lib:partial.bzl", "partial")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
-load("@aspect_rules_js//npm:defs.bzl", _npm_package = "npm_package")
-load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
-load("@aspect_rules_jest//jest:defs.bzl", _jest_test = "jest_test")
+load("@npm//:vitest/package_json.bzl", vitest_bin = "bin")
 load("//dev:eslint.bzl", "eslint_test_with_types", "get_client_package_path")
 load(":sass.bzl", _sass = "sass")
-load(":babel.bzl", _babel = "babel")
 
 sass = _sass
 
 # TODO move this to `ts_project.bzl`
-def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
+def ts_project(name, srcs = [], deps = [], module = "es6", **kwargs):
     """A wrapper around ts_project
 
     Args:
@@ -22,7 +23,7 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
 
         deps: A list of dependencies
 
-        use_preset_env: Controls if we transpile TS sources with babel-preset-env
+        module: The module type to use for the project (es6 or commonjs)
 
         **kwargs: Additional arguments to pass to ts_project
     """
@@ -42,18 +43,26 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
     visibility = kwargs.pop("visibility", ["//visibility:public"])
 
     # Add standard test libraries for the repo test frameworks
-    if kwargs.get("testonly", False):
+    testonly = kwargs.get("testonly", False)
+    if testonly:
         deps = deps + [d for d in [
-            "//:node_modules/@types/jest",
             "//:node_modules/@types/mocha",
-            "//:node_modules/@types/testing-library__jest-dom",
+            "//:node_modules/vitest",
         ] if not d in deps]
+
+    transpiler = partial.make(
+        swc,
+        swcrc = kwargs.pop("swcrc", "//:.swcrc"),
+        # Test code using jest.mock needs to be transpiled to CommonJS.
+        args = ["--config-json", '{"module": {"type": "commonjs"}}'] if module == "commonjs" else [],
+    )
 
     # Default arguments for ts_project.
     _ts_project(
         name = name,
         srcs = srcs,
         deps = deps,
+        transpiler = transpiler,
 
         # tsconfig options, default to the root
         tsconfig = kwargs.pop("tsconfig", "//:tsconfig"),
@@ -64,16 +73,6 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
         source_map = kwargs.pop("source_map", True),
         preserve_jsx = kwargs.pop("preserve_jsx", None),
         visibility = visibility,
-
-        # use babel as the transpiler
-        transpiler = partial.make(
-            _babel,
-            use_preset_env = use_preset_env,
-            module = kwargs.pop("module", None),
-            tags = kwargs.get("tags", []),
-            visibility = visibility,
-            testonly = kwargs.get("testonly", None),
-        ),
         supports_workers = 0,
 
         # Allow any other args
@@ -91,8 +90,6 @@ def npm_package(name, srcs = [], **kwargs):
         **kwargs: Additional arguments to pass to npm_package
     """
     replace_prefixes = kwargs.pop("replace_prefixes", {})
-
-    package_type = kwargs.pop("type", "commonjs")
 
     # Modifications to package.json
     # TODO(bazel): remove when package.json can be updated in source
@@ -127,11 +124,59 @@ def npm_package(name, srcs = [], **kwargs):
         **kwargs
     )
 
-def jest_test(name, data = [], **kwargs):
-    _jest_test(
+def vitest_test(name, data = [], with_vitest_config = True, bin = vitest_bin, **kwargs):
+    """Triggers a vitest test with the given name and some sensible defaults.
+
+    Args:
+        name: A unique name for this target
+
+        data: A list of sources available to the test
+
+        with_vitest_config: Whether to include a vitest.config.ts file in the test data or default to the vite config
+
+        bin: The vitest binary to use
+
+        **kwargs: Additional arguments to pass to npm_package
+    """
+    vitest_config = "%s_vitest_config" % name
+    if with_vitest_config:
+        js_library(
+            name = vitest_config,
+            testonly = True,
+            srcs = ["vitest.config.ts"],
+            deps = ["//:vitest_config", "//:node_modules/vitest"],
+            data = data,
+        )
+
+        data.append(":%s" % vitest_config)
+
+    bin.vitest_test(
         name = name,
-        config = "//:jest_config",
-        snapshots = kwargs.pop("snapshots", True),
-        data = data + native.glob(["**/__fixtures__/**/*"]),
+        args = [
+            "run",
+            "--reporter=default",
+            "--color",
+            "--update=false",
+            "--config=$(location :%s)" % vitest_config if with_vitest_config else "",
+        ],
+        data = data + native.glob(["**/__fixtures__/**/*"]) + [
+            "//:node_modules/happy-dom",
+            "//:node_modules/jsdom",
+        ],
+        env = {"BAZEL": "1", "CI": "1"},
+        patch_node_fs = True,
+        tags = kwargs.pop("tags", []),
+        timeout = kwargs.pop("timeout", "short"),
+        **kwargs
+    )
+
+def ts_binary(name, entry_point, data = [], env = {}, **kwargs):
+    """A wrapper around js_binary that invokes a TypeScript entrypoint using ts-node."""
+    js_binary(
+        name = name,
+        entry_point = entry_point,
+        data = data + ["//:node_modules/ts-node"],
+        env = dict(env, **{"TS_NODE_TRANSPILE_ONLY": "1"}),
+        node_options = ["--require", "ts-node/register"],
         **kwargs
     )

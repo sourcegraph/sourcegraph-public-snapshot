@@ -132,6 +132,7 @@ export const pullRequestDOMFunctions: DOMFunctions = {
             throw new Error('Could not find line number permalink(s) for code element')
         }
 
+        // eslint-disable-next-line unicorn/prefer-at
         const lastLineNumberPermalink = lineNumberPermalinks[lineNumberPermalinks.length - 1]
         const lineNumber = parseInt(lastLineNumberPermalink.textContent ?? '', 10)
         if (!isNaN(lineNumber)) {

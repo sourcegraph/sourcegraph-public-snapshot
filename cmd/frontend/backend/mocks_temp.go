@@ -11,10 +11,9 @@ import (
 	"sync"
 	"time"
 
+	inventory "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
-	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	inventory "github.com/sourcegraph/sourcegraph/internal/inventory"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -596,9 +595,6 @@ type MockReposService struct {
 	// GetByNameFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByName.
 	GetByNameFunc *ReposServiceGetByNameFunc
-	// GetCommitFunc is an instance of a mock function object controlling
-	// the behavior of the method GetCommit.
-	GetCommitFunc *ReposServiceGetCommitFunc
 	// GetInventoryFunc is an instance of a mock function object controlling
 	// the behavior of the method GetInventory.
 	GetInventoryFunc *ReposServiceGetInventoryFunc
@@ -608,9 +604,9 @@ type MockReposService struct {
 	// ListIndexableFunc is an instance of a mock function object
 	// controlling the behavior of the method ListIndexable.
 	ListIndexableFunc *ReposServiceListIndexableFunc
-	// RequestRepositoryCloneFunc is an instance of a mock function object
-	// controlling the behavior of the method RequestRepositoryClone.
-	RequestRepositoryCloneFunc *ReposServiceRequestRepositoryCloneFunc
+	// RequestRepositoryUpdateFunc is an instance of a mock function object
+	// controlling the behavior of the method RequestRepositoryUpdate.
+	RequestRepositoryUpdateFunc *ReposServiceRequestRepositoryUpdateFunc
 	// ResolveRevFunc is an instance of a mock function object controlling
 	// the behavior of the method ResolveRev.
 	ResolveRevFunc *ReposServiceResolveRevFunc
@@ -635,13 +631,8 @@ func NewMockReposService() *MockReposService {
 				return
 			},
 		},
-		GetCommitFunc: &ReposServiceGetCommitFunc{
-			defaultHook: func(context.Context, *types.Repo, api.CommitID) (r0 *gitdomain.Commit, r1 error) {
-				return
-			},
-		},
 		GetInventoryFunc: &ReposServiceGetInventoryFunc{
-			defaultHook: func(context.Context, *types.Repo, api.CommitID, bool) (r0 *inventory.Inventory, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, bool) (r0 *inventory.Inventory, r1 error) {
 				return
 			},
 		},
@@ -655,13 +646,13 @@ func NewMockReposService() *MockReposService {
 				return
 			},
 		},
-		RequestRepositoryCloneFunc: &ReposServiceRequestRepositoryCloneFunc{
+		RequestRepositoryUpdateFunc: &ReposServiceRequestRepositoryUpdateFunc{
 			defaultHook: func(context.Context, api.RepoID) (r0 error) {
 				return
 			},
 		},
 		ResolveRevFunc: &ReposServiceResolveRevFunc{
-			defaultHook: func(context.Context, *types.Repo, string) (r0 api.CommitID, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, string) (r0 api.CommitID, r1 error) {
 				return
 			},
 		},
@@ -687,13 +678,8 @@ func NewStrictMockReposService() *MockReposService {
 				panic("unexpected invocation of MockReposService.GetByName")
 			},
 		},
-		GetCommitFunc: &ReposServiceGetCommitFunc{
-			defaultHook: func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error) {
-				panic("unexpected invocation of MockReposService.GetCommit")
-			},
-		},
 		GetInventoryFunc: &ReposServiceGetInventoryFunc{
-			defaultHook: func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error) {
 				panic("unexpected invocation of MockReposService.GetInventory")
 			},
 		},
@@ -707,13 +693,13 @@ func NewStrictMockReposService() *MockReposService {
 				panic("unexpected invocation of MockReposService.ListIndexable")
 			},
 		},
-		RequestRepositoryCloneFunc: &ReposServiceRequestRepositoryCloneFunc{
+		RequestRepositoryUpdateFunc: &ReposServiceRequestRepositoryUpdateFunc{
 			defaultHook: func(context.Context, api.RepoID) error {
-				panic("unexpected invocation of MockReposService.RequestRepositoryClone")
+				panic("unexpected invocation of MockReposService.RequestRepositoryUpdate")
 			},
 		},
 		ResolveRevFunc: &ReposServiceResolveRevFunc{
-			defaultHook: func(context.Context, *types.Repo, string) (api.CommitID, error) {
+			defaultHook: func(context.Context, api.RepoName, string) (api.CommitID, error) {
 				panic("unexpected invocation of MockReposService.ResolveRev")
 			},
 		},
@@ -734,9 +720,6 @@ func NewMockReposServiceFrom(i ReposService) *MockReposService {
 		GetByNameFunc: &ReposServiceGetByNameFunc{
 			defaultHook: i.GetByName,
 		},
-		GetCommitFunc: &ReposServiceGetCommitFunc{
-			defaultHook: i.GetCommit,
-		},
 		GetInventoryFunc: &ReposServiceGetInventoryFunc{
 			defaultHook: i.GetInventory,
 		},
@@ -746,8 +729,8 @@ func NewMockReposServiceFrom(i ReposService) *MockReposService {
 		ListIndexableFunc: &ReposServiceListIndexableFunc{
 			defaultHook: i.ListIndexable,
 		},
-		RequestRepositoryCloneFunc: &ReposServiceRequestRepositoryCloneFunc{
-			defaultHook: i.RequestRepositoryClone,
+		RequestRepositoryUpdateFunc: &ReposServiceRequestRepositoryUpdateFunc{
+			defaultHook: i.RequestRepositoryUpdate,
 		},
 		ResolveRevFunc: &ReposServiceResolveRevFunc{
 			defaultHook: i.ResolveRev,
@@ -1079,129 +1062,18 @@ func (c ReposServiceGetByNameFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// ReposServiceGetCommitFunc describes the behavior when the GetCommit
-// method of the parent MockReposService instance is invoked.
-type ReposServiceGetCommitFunc struct {
-	defaultHook func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error)
-	hooks       []func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error)
-	history     []ReposServiceGetCommitFuncCall
-	mutex       sync.Mutex
-}
-
-// GetCommit delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockReposService) GetCommit(v0 context.Context, v1 *types.Repo, v2 api.CommitID) (*gitdomain.Commit, error) {
-	r0, r1 := m.GetCommitFunc.nextHook()(v0, v1, v2)
-	m.GetCommitFunc.appendCall(ReposServiceGetCommitFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetCommit method of
-// the parent MockReposService instance is invoked and the hook queue is
-// empty.
-func (f *ReposServiceGetCommitFunc) SetDefaultHook(hook func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetCommit method of the parent MockReposService instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ReposServiceGetCommitFunc) PushHook(hook func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ReposServiceGetCommitFunc) SetDefaultReturn(r0 *gitdomain.Commit, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ReposServiceGetCommitFunc) PushReturn(r0 *gitdomain.Commit, r1 error) {
-	f.PushHook(func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error) {
-		return r0, r1
-	})
-}
-
-func (f *ReposServiceGetCommitFunc) nextHook() func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ReposServiceGetCommitFunc) appendCall(r0 ReposServiceGetCommitFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ReposServiceGetCommitFuncCall objects
-// describing the invocations of this function.
-func (f *ReposServiceGetCommitFunc) History() []ReposServiceGetCommitFuncCall {
-	f.mutex.Lock()
-	history := make([]ReposServiceGetCommitFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ReposServiceGetCommitFuncCall is an object that describes an invocation
-// of method GetCommit on an instance of MockReposService.
-type ReposServiceGetCommitFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *types.Repo
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.CommitID
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *gitdomain.Commit
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ReposServiceGetCommitFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ReposServiceGetCommitFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // ReposServiceGetInventoryFunc describes the behavior when the GetInventory
 // method of the parent MockReposService instance is invoked.
 type ReposServiceGetInventoryFunc struct {
-	defaultHook func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error)
-	hooks       []func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error)
+	defaultHook func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error)
+	hooks       []func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error)
 	history     []ReposServiceGetInventoryFuncCall
 	mutex       sync.Mutex
 }
 
 // GetInventory delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockReposService) GetInventory(v0 context.Context, v1 *types.Repo, v2 api.CommitID, v3 bool) (*inventory.Inventory, error) {
+func (m *MockReposService) GetInventory(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 bool) (*inventory.Inventory, error) {
 	r0, r1 := m.GetInventoryFunc.nextHook()(v0, v1, v2, v3)
 	m.GetInventoryFunc.appendCall(ReposServiceGetInventoryFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -1210,7 +1082,7 @@ func (m *MockReposService) GetInventory(v0 context.Context, v1 *types.Repo, v2 a
 // SetDefaultHook sets function that is called when the GetInventory method
 // of the parent MockReposService instance is invoked and the hook queue is
 // empty.
-func (f *ReposServiceGetInventoryFunc) SetDefaultHook(hook func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error)) {
+func (f *ReposServiceGetInventoryFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error)) {
 	f.defaultHook = hook
 }
 
@@ -1218,7 +1090,7 @@ func (f *ReposServiceGetInventoryFunc) SetDefaultHook(hook func(context.Context,
 // GetInventory method of the parent MockReposService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ReposServiceGetInventoryFunc) PushHook(hook func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error)) {
+func (f *ReposServiceGetInventoryFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1227,19 +1099,19 @@ func (f *ReposServiceGetInventoryFunc) PushHook(hook func(context.Context, *type
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ReposServiceGetInventoryFunc) SetDefaultReturn(r0 *inventory.Inventory, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ReposServiceGetInventoryFunc) PushReturn(r0 *inventory.Inventory, r1 error) {
-	f.PushHook(func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error) {
+	f.PushHook(func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error) {
 		return r0, r1
 	})
 }
 
-func (f *ReposServiceGetInventoryFunc) nextHook() func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error) {
+func (f *ReposServiceGetInventoryFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1277,7 +1149,7 @@ type ReposServiceGetInventoryFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *types.Repo
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 api.CommitID
@@ -1516,37 +1388,37 @@ func (c ReposServiceListIndexableFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// ReposServiceRequestRepositoryCloneFunc describes the behavior when the
-// RequestRepositoryClone method of the parent MockReposService instance is
+// ReposServiceRequestRepositoryUpdateFunc describes the behavior when the
+// RequestRepositoryUpdate method of the parent MockReposService instance is
 // invoked.
-type ReposServiceRequestRepositoryCloneFunc struct {
+type ReposServiceRequestRepositoryUpdateFunc struct {
 	defaultHook func(context.Context, api.RepoID) error
 	hooks       []func(context.Context, api.RepoID) error
-	history     []ReposServiceRequestRepositoryCloneFuncCall
+	history     []ReposServiceRequestRepositoryUpdateFuncCall
 	mutex       sync.Mutex
 }
 
-// RequestRepositoryClone delegates to the next hook function in the queue
+// RequestRepositoryUpdate delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockReposService) RequestRepositoryClone(v0 context.Context, v1 api.RepoID) error {
-	r0 := m.RequestRepositoryCloneFunc.nextHook()(v0, v1)
-	m.RequestRepositoryCloneFunc.appendCall(ReposServiceRequestRepositoryCloneFuncCall{v0, v1, r0})
+func (m *MockReposService) RequestRepositoryUpdate(v0 context.Context, v1 api.RepoID) error {
+	r0 := m.RequestRepositoryUpdateFunc.nextHook()(v0, v1)
+	m.RequestRepositoryUpdateFunc.appendCall(ReposServiceRequestRepositoryUpdateFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
-// RequestRepositoryClone method of the parent MockReposService instance is
+// RequestRepositoryUpdate method of the parent MockReposService instance is
 // invoked and the hook queue is empty.
-func (f *ReposServiceRequestRepositoryCloneFunc) SetDefaultHook(hook func(context.Context, api.RepoID) error) {
+func (f *ReposServiceRequestRepositoryUpdateFunc) SetDefaultHook(hook func(context.Context, api.RepoID) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// RequestRepositoryClone method of the parent MockReposService instance
+// RequestRepositoryUpdate method of the parent MockReposService instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ReposServiceRequestRepositoryCloneFunc) PushHook(hook func(context.Context, api.RepoID) error) {
+func (f *ReposServiceRequestRepositoryUpdateFunc) PushHook(hook func(context.Context, api.RepoID) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1554,20 +1426,20 @@ func (f *ReposServiceRequestRepositoryCloneFunc) PushHook(hook func(context.Cont
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ReposServiceRequestRepositoryCloneFunc) SetDefaultReturn(r0 error) {
+func (f *ReposServiceRequestRepositoryUpdateFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, api.RepoID) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ReposServiceRequestRepositoryCloneFunc) PushReturn(r0 error) {
+func (f *ReposServiceRequestRepositoryUpdateFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, api.RepoID) error {
 		return r0
 	})
 }
 
-func (f *ReposServiceRequestRepositoryCloneFunc) nextHook() func(context.Context, api.RepoID) error {
+func (f *ReposServiceRequestRepositoryUpdateFunc) nextHook() func(context.Context, api.RepoID) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1580,27 +1452,27 @@ func (f *ReposServiceRequestRepositoryCloneFunc) nextHook() func(context.Context
 	return hook
 }
 
-func (f *ReposServiceRequestRepositoryCloneFunc) appendCall(r0 ReposServiceRequestRepositoryCloneFuncCall) {
+func (f *ReposServiceRequestRepositoryUpdateFunc) appendCall(r0 ReposServiceRequestRepositoryUpdateFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of ReposServiceRequestRepositoryCloneFuncCall
+// History returns a sequence of ReposServiceRequestRepositoryUpdateFuncCall
 // objects describing the invocations of this function.
-func (f *ReposServiceRequestRepositoryCloneFunc) History() []ReposServiceRequestRepositoryCloneFuncCall {
+func (f *ReposServiceRequestRepositoryUpdateFunc) History() []ReposServiceRequestRepositoryUpdateFuncCall {
 	f.mutex.Lock()
-	history := make([]ReposServiceRequestRepositoryCloneFuncCall, len(f.history))
+	history := make([]ReposServiceRequestRepositoryUpdateFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ReposServiceRequestRepositoryCloneFuncCall is an object that describes an
-// invocation of method RequestRepositoryClone on an instance of
+// ReposServiceRequestRepositoryUpdateFuncCall is an object that describes
+// an invocation of method RequestRepositoryUpdate on an instance of
 // MockReposService.
-type ReposServiceRequestRepositoryCloneFuncCall struct {
+type ReposServiceRequestRepositoryUpdateFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1614,28 +1486,28 @@ type ReposServiceRequestRepositoryCloneFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ReposServiceRequestRepositoryCloneFuncCall) Args() []interface{} {
+func (c ReposServiceRequestRepositoryUpdateFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ReposServiceRequestRepositoryCloneFuncCall) Results() []interface{} {
+func (c ReposServiceRequestRepositoryUpdateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
 // ReposServiceResolveRevFunc describes the behavior when the ResolveRev
 // method of the parent MockReposService instance is invoked.
 type ReposServiceResolveRevFunc struct {
-	defaultHook func(context.Context, *types.Repo, string) (api.CommitID, error)
-	hooks       []func(context.Context, *types.Repo, string) (api.CommitID, error)
+	defaultHook func(context.Context, api.RepoName, string) (api.CommitID, error)
+	hooks       []func(context.Context, api.RepoName, string) (api.CommitID, error)
 	history     []ReposServiceResolveRevFuncCall
 	mutex       sync.Mutex
 }
 
 // ResolveRev delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockReposService) ResolveRev(v0 context.Context, v1 *types.Repo, v2 string) (api.CommitID, error) {
+func (m *MockReposService) ResolveRev(v0 context.Context, v1 api.RepoName, v2 string) (api.CommitID, error) {
 	r0, r1 := m.ResolveRevFunc.nextHook()(v0, v1, v2)
 	m.ResolveRevFunc.appendCall(ReposServiceResolveRevFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -1644,7 +1516,7 @@ func (m *MockReposService) ResolveRev(v0 context.Context, v1 *types.Repo, v2 str
 // SetDefaultHook sets function that is called when the ResolveRev method of
 // the parent MockReposService instance is invoked and the hook queue is
 // empty.
-func (f *ReposServiceResolveRevFunc) SetDefaultHook(hook func(context.Context, *types.Repo, string) (api.CommitID, error)) {
+func (f *ReposServiceResolveRevFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) (api.CommitID, error)) {
 	f.defaultHook = hook
 }
 
@@ -1652,7 +1524,7 @@ func (f *ReposServiceResolveRevFunc) SetDefaultHook(hook func(context.Context, *
 // ResolveRev method of the parent MockReposService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ReposServiceResolveRevFunc) PushHook(hook func(context.Context, *types.Repo, string) (api.CommitID, error)) {
+func (f *ReposServiceResolveRevFunc) PushHook(hook func(context.Context, api.RepoName, string) (api.CommitID, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1661,19 +1533,19 @@ func (f *ReposServiceResolveRevFunc) PushHook(hook func(context.Context, *types.
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ReposServiceResolveRevFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.Repo, string) (api.CommitID, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ReposServiceResolveRevFunc) PushReturn(r0 api.CommitID, r1 error) {
-	f.PushHook(func(context.Context, *types.Repo, string) (api.CommitID, error) {
+	f.PushHook(func(context.Context, api.RepoName, string) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
-func (f *ReposServiceResolveRevFunc) nextHook() func(context.Context, *types.Repo, string) (api.CommitID, error) {
+func (f *ReposServiceResolveRevFunc) nextHook() func(context.Context, api.RepoName, string) (api.CommitID, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1711,7 +1583,7 @@ type ReposServiceResolveRevFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *types.Repo
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string

@@ -2,7 +2,6 @@ package squirrel
 
 import (
 	_ "embed"
-	"encoding/json"
 	"fmt"
 
 	"github.com/grafana/regexp"
@@ -15,6 +14,8 @@ import (
 	"github.com/smacker/go-tree-sitter/python"
 	"github.com/smacker/go-tree-sitter/ruby"
 	"github.com/smacker/go-tree-sitter/typescript/tsx"
+
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
 //go:embed language-file-extensions.json
@@ -23,7 +24,7 @@ var languageFileExtensionsJson string
 // Mapping from langauge name to file extensions.
 var langToExts = func() map[string][]string {
 	var m map[string][]string
-	err := json.Unmarshal([]byte(languageFileExtensionsJson), &m)
+	err := jsonc.Unmarshal(languageFileExtensionsJson, &m)
 	if err != nil {
 		panic(err)
 	}
@@ -72,7 +73,7 @@ var langToLangSpec = map[string]LangSpec{
 		name:     "java",
 		language: java.GetLanguage(),
 		commentStyle: CommentStyle{
-			nodeTypes:     []string{"comment"},
+			nodeTypes:     []string{"line_comment", "block_comment"},
 			stripRegex:    javaStyleStripRegex,
 			ignoreRegex:   javaStyleIgnoreRegex,
 			codeFenceName: "java",
@@ -301,7 +302,8 @@ var pythonLocalsQuery = `
 (typed_parameter               (identifier) @definition)                                   ; def f(x: bool): ...
 (default_parameter       name: (identifier) @definition)                                   ; def f(x = False): ...
 (typed_default_parameter name: (identifier) @definition)                                   ; def f(x: bool = False): ...
-(except_clause                 (identifier) (identifier) @definition)                      ; except Exception as e: ...
+(except_clause
+  (as_pattern (identifier) alias: (as_pattern_target (identifier) @definition)))           ; except Exception as e: ...
 (expression_statement          (assignment left: (identifier) @definition))                ; x = ...
 (expression_statement          (assignment left: (pattern_list (identifier) @definition))) ; x, y = ...
 (for_statement           left: (identifier) @definition)                                   ; for x in ...: ...

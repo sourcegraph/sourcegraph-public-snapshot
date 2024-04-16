@@ -1,7 +1,7 @@
 import { subDays } from 'date-fns'
 import expect from 'expect'
 import { range } from 'lodash'
-import { test } from 'mocha'
+import { afterEach, beforeEach, describe, test } from 'mocha'
 
 import type { SharedGraphQlOperations, SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
@@ -142,8 +142,19 @@ describe('Search contexts', () => {
     test('Create static search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            RepositoriesByNames: ({ names }) => ({
-                repositories: { nodes: names.map((name, index) => ({ id: `index-${index}`, name })) },
+            RepositoriesByNames: ({ names, first, after }) => ({
+                repositories: {
+                    nodes: names.map((name, index) => ({ id: `index-${index}`, name })),
+                    pageInfo: {
+                        endCursor: null,
+                        hasNextPage: false,
+                    },
+                },
+                variables: {
+                    names,
+                    first,
+                    after,
+                },
             }),
             CreateSearchContext: ({ searchContext, repositories }) => ({
                 createSearchContext: {
@@ -291,8 +302,19 @@ describe('Search contexts', () => {
     test('Edit search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            RepositoriesByNames: ({ names }) => ({
-                repositories: { nodes: names.map((name, index) => ({ id: `index-${index}`, name })) },
+            RepositoriesByNames: ({ names, first, after }) => ({
+                repositories: {
+                    nodes: names.map((name, index) => ({ id: `index-${index}`, name })),
+                    pageInfo: {
+                        endCursor: null,
+                        hasNextPage: false,
+                    },
+                },
+                variables: {
+                    names,
+                    first,
+                    after,
+                },
             }),
             UpdateSearchContext: ({ id, searchContext, repositories }) => ({
                 updateSearchContext: {

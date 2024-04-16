@@ -7,6 +7,7 @@ import { Routes, Route } from 'react-router-dom'
 import type { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -19,6 +20,7 @@ import { Page } from '../components/Page'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useUserExternalAccounts } from '../hooks/useUserExternalAccounts'
 import type { RouteV6Descriptor } from '../util/contributions'
+import { getLicenseFeatures } from '../util/license'
 
 import {
     maintenanceGroupHeaderLabel,
@@ -48,11 +50,11 @@ export interface SiteAdminAreaRouteContext
     extends PlatformContextProps,
         SettingsCascadeProps,
         BatchChangesProps,
-        TelemetryProps {
+        TelemetryProps,
+        TelemetryV2Props {
     site: Pick<SiteSettingFields, '__typename' | 'id'>
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<{}>>[]
@@ -60,17 +62,26 @@ export interface SiteAdminAreaRouteContext
     codeInsightsEnabled: boolean
 
     endUserOnboardingEnabled: boolean
+
+    license: {
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
+    }
 }
 
 export interface SiteAdminAreaRoute extends RouteV6Descriptor<SiteAdminAreaRouteContext> {}
 
-interface SiteAdminAreaProps extends PlatformContextProps, SettingsCascadeProps, BatchChangesProps, TelemetryProps {
+interface SiteAdminAreaProps
+    extends PlatformContextProps,
+        SettingsCascadeProps,
+        BatchChangesProps,
+        TelemetryProps,
+        TelemetryV2Props {
     routes: readonly SiteAdminAreaRoute[]
     sideBarGroups: SiteAdminSideBarGroups
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
     codeInsightsEnabled: boolean
 }
 
@@ -129,30 +140,31 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         platformContext: props.platformContext,
         settingsCascade: props.settingsCascade,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
-        isCodyApp: props.isCodyApp,
         batchChangesEnabled: props.batchChangesEnabled,
         batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
         batchChangesWebhookLogsEnabled: props.batchChangesWebhookLogsEnabled,
         site: { __typename: 'Site' as const, id: window.context.siteGQLID },
         overviewComponents: props.overviewComponents,
         telemetryService: props.telemetryService,
+        telemetryRecorder: props.telemetryRecorder,
         codeInsightsEnabled: props.codeInsightsEnabled,
         endUserOnboardingEnabled,
+        license: getLicenseFeatures(),
     }
 
     return (
         <Page>
             <PageHeader>
                 <PageHeader.Heading as="h2" styleAs="h1">
-                    <PageHeader.Breadcrumb>{props.isCodyApp ? 'Advanced Settings' : 'Admin'}</PageHeader.Breadcrumb>
+                    <PageHeader.Breadcrumb>Admin</PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
             <div className="d-flex my-3 flex-column flex-sm-row" ref={reference}>
                 <SiteAdminSidebar
+                    license={context.license}
                     className={classNames('flex-0 mr-3 mb-4', styles.sidebar)}
                     groups={adminSideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
-                    isCodyApp={props.isCodyApp}
                     batchChangesEnabled={props.batchChangesEnabled}
                     batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
                     batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}

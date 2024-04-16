@@ -233,6 +233,7 @@ export const FETCH_HIGHLIGHTED_BLOB = gql`
                 blob(path: $path) {
                     ...HighlightedGitBlobFields
                     content
+                    languages
                 }
             }
         }
@@ -297,7 +298,9 @@ export const LOCAL_CODE_INTEL_QUERY = gql`
         repository(name: $repository) {
             id
             commit(rev: $commit) {
+                id
                 blob(path: $path) {
+                    canonicalURL
                     localCodeIntel
                 }
             }

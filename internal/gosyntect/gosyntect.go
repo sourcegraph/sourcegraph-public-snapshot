@@ -35,6 +35,7 @@ func GetSyntectClient() *Client {
 	return client
 }
 
+// Keep in sync with 'enum SyntaxEngine' in Rust code
 const (
 	SyntaxEngineSyntect    = "syntect"
 	SyntaxEngineTreesitter = "tree-sitter"
@@ -84,22 +85,8 @@ type Query struct {
 	// Filetype is the language name.
 	Filetype string `json:"filetype"`
 
-	// Theme is the color theme to use for highlighting.
-	// If CSS is true, theme is ignored.
-	//
-	// See https://github.com/sourcegraph/syntect_server#embedded-themes
-	Theme string `json:"theme"`
-
 	// Code is the literal code to highlight.
 	Code string `json:"code"`
-
-	// CSS causes results to be returned in HTML table format with CSS class
-	// names annotating the spans rather than inline styles.
-	//
-	// TODO: I think we can just delete this? And theme? We don't use these.
-	// Then we could remove themes from syntect as well. I don't think we
-	// have any use case for these anymore (and haven't for awhile).
-	CSS bool `json:"css"`
 
 	// LineLengthLimit is the maximum length of line that will be highlighted if set.
 	// Defaults to no max if zero.
@@ -129,9 +116,6 @@ type Response struct {
 }
 
 var (
-	// ErrInvalidTheme is returned when the Query.Theme is not a valid theme.
-	ErrInvalidTheme = errors.New("invalid theme")
-
 	// ErrRequestTooLarge is returned when the request is too large for syntect_server to handle (e.g. file is too large to highlight).
 	ErrRequestTooLarge = errors.New("request too large")
 
@@ -177,9 +161,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 	q.Filetype = languages.NormalizeLanguage(q.Filetype)
 
 	tr, ctx := trace.New(ctx, "gosyntect.Highlight",
-		attribute.String("filepath", q.Filepath),
-		attribute.String("theme", q.Theme),
-		attribute.Bool("css", q.CSS))
+		attribute.String("filepath", q.Filepath))
 	defer tr.EndWithErr(&err)
 
 	if isTreesitterBased(q.Engine) && !IsTreesitterSupported(q.Filetype) {
@@ -231,8 +213,6 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 	if r.Error != "" {
 		var err error
 		switch r.Code {
-		case "invalid_theme":
-			err = ErrInvalidTheme
 		case "resource_not_found":
 			// resource_not_found is returned in the event of a 404, indicating a bug
 			// in gosyntect.
@@ -269,51 +249,4 @@ func New(syntectServer string) *Client {
 		syntectServer: strings.TrimSuffix(syntectServer, "/"),
 		httpClient:    httpcli.InternalClient,
 	}
-}
-
-type symbolsResponse struct {
-	Scip      string
-	Plaintext bool
-}
-
-type SymbolsQuery struct {
-	FileName string `json:"filename"`
-	Content  string `json:"content"`
-}
-
-// SymbolsResponse represents a response to a symbols query.
-type SymbolsResponse struct {
-	Scip      string `json:"scip"`
-	Plaintext bool   `json:"plaintext"`
-}
-
-func (c *Client) Symbols(ctx context.Context, q *SymbolsQuery) (*SymbolsResponse, error) {
-	serialized, err := json.Marshal(q)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to encode query")
-	}
-	body := bytes.NewReader(serialized)
-
-	req, err := http.NewRequest("POST", c.url("/symbols"), body)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to build request")
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to perform symbols request")
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Newf("unexpected status code %d", resp.StatusCode)
-	}
-
-	var r SymbolsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return nil, errors.Wrap(err, "failed to decode symbols response")
-	}
-
-	return &r, nil
 }

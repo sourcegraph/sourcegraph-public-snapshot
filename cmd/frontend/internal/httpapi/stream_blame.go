@@ -5,6 +5,7 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -30,11 +30,6 @@ import (
 // before that.
 func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitserver.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		flags := featureflag.FromContext(r.Context())
-		if !flags.GetBoolOr("enable-streaming-git-blame", false) {
-			w.WriteHeader(404)
-			return
-		}
 		tr, ctx := trace.New(r.Context(), "blame.Stream")
 		defer tr.End()
 		r = r.WithContext(ctx)
@@ -61,6 +56,22 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 		}
 
 		requestedPath := mux.Vars(r)["Path"]
+		requestedPath = strings.TrimPrefix(requestedPath, "/")
+
+		hunkReader, err := gitserverClient.StreamBlameFile(r.Context(), repo.Name, requestedPath, &gitserver.BlameOptions{
+			NewestCommit: commitID,
+		})
+		if err != nil {
+			tr.SetError(err)
+			if os.IsNotExist(err) {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer hunkReader.Close()
+
 		streamWriter, err := streamhttp.NewWriter(w)
 		if err != nil {
 			tr.SetError(err)
@@ -80,19 +91,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			tr.AddEvent("write", attrs...)
 		}
 
-		requestedPath = strings.TrimPrefix(requestedPath, "/")
-
-		hunkReader, err := gitserverClient.StreamBlameFile(r.Context(), repo.Name, requestedPath, &gitserver.BlameOptions{
-			NewestCommit: commitID,
-		})
-		if err != nil {
-			tr.SetError(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer hunkReader.Close()
-
-		parentsCache := map[api.CommitID][]api.CommitID{}
+		authorCache := map[string]*BlameHunkUserResponse{}
 
 		for {
 			h, err := hunkReader.Read()
@@ -105,45 +104,6 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 				return
 			}
 
-			var parents []api.CommitID
-			if p, ok := parentsCache[h.CommitID]; ok {
-				parents = p
-			} else {
-				c, err := gitserverClient.GetCommit(ctx, repo.Name, h.CommitID, gitserver.ResolveRevisionOptions{})
-				if err != nil {
-					tr.SetError(err)
-					http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
-					return
-				}
-				parents = c.Parents
-				parentsCache[h.CommitID] = c.Parents
-			}
-
-			user, err := db.Users().GetByVerifiedEmail(ctx, h.Author.Email)
-			if err != nil && !errcode.IsNotFound(err) {
-				tr.SetError(err)
-				http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
-				return
-			}
-
-			var blameHunkUserResponse *BlameHunkUserResponse
-			if user != nil {
-				displayName := &user.DisplayName
-				if *displayName == "" {
-					displayName = nil
-				}
-				avatarURL := &user.AvatarURL
-				if *avatarURL == "" {
-					avatarURL = nil
-				}
-
-				blameHunkUserResponse = &BlameHunkUserResponse{
-					Username:    user.Username,
-					DisplayName: displayName,
-					AvatarURL:   avatarURL,
-				}
-			}
-
 			blameResponse := BlameHunkResponse{
 				StartLine: h.StartLine,
 				EndLine:   h.EndLine,
@@ -152,10 +112,37 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 				Message:   h.Message,
 				Filename:  h.Filename,
 				Commit: BlameHunkCommitResponse{
-					Parents: parents,
-					URL:     fmt.Sprintf("%s/-/commit/%s", repo.Name, h.CommitID),
+					Previous: h.PreviousCommit,
+					URL:      fmt.Sprintf("%s/-/commit/%s", repo.Name, h.CommitID),
 				},
-				User: blameHunkUserResponse,
+			}
+
+			if h.Author.Email != "" {
+				if a, ok := authorCache[h.Author.Email]; ok {
+					blameResponse.User = a
+				} else {
+					user, err := db.Users().GetByVerifiedEmail(ctx, h.Author.Email)
+					if err != nil && !errcode.IsNotFound(err) {
+						tr.SetError(err)
+						http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
+						return
+					}
+					if user != nil {
+						u := BlameHunkUserResponse{
+							Username: user.Username,
+						}
+						if user.DisplayName != "" {
+							u.DisplayName = &user.DisplayName
+						}
+						if user.AvatarURL != "" {
+							u.AvatarURL = &user.AvatarURL
+						}
+						authorCache[h.Author.Email] = &u
+						blameResponse.User = &u
+					} else {
+						authorCache[h.Author.Email] = nil
+					}
+				}
 			}
 
 			if err := streamWriter.Event("hunk", []BlameHunkResponse{blameResponse}); err != nil {
@@ -170,8 +157,8 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 type BlameHunkResponse struct {
 	api.CommitID `json:"commitID"`
 
-	StartLine int                     `json:"startLine"` // 1-indexed start line number
-	EndLine   int                     `json:"endLine"`   // 1-indexed end line number
+	StartLine uint32                  `json:"startLine"` // 1-indexed start line number
+	EndLine   uint32                  `json:"endLine"`   // 1-indexed end line number
 	Author    gitdomain.Signature     `json:"author"`
 	Message   string                  `json:"message"`
 	Filename  string                  `json:"filename"`
@@ -180,8 +167,8 @@ type BlameHunkResponse struct {
 }
 
 type BlameHunkCommitResponse struct {
-	Parents []api.CommitID `json:"parents"`
-	URL     string         `json:"url"`
+	Previous *gitdomain.PreviousCommit `json:"previous,omitempty"`
+	URL      string                    `json:"url"`
 }
 
 type BlameHunkUserResponse struct {

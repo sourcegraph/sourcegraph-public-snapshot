@@ -1,5 +1,7 @@
 import assert from 'assert'
 
+import { afterEach, beforeEach, describe, it } from 'mocha'
+
 import type { ExtensionContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import type { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'

@@ -52,7 +52,7 @@ func TestNullIDResilience(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	sr := New(db, store.New(db, &observation.TestContext, nil), gitserver.NewMockClient(), logger)
+	sr := New(db, store.New(db, observation.TestContextTB(t), nil), gitserver.NewMockClient(), logger)
 
 	s, err := newSchema(db, sr)
 	if err != nil {
@@ -149,7 +149,7 @@ func TestCreateBatchSpec(t *testing.T) {
 
 	unauthorizedUser := bt.CreateTestUser(t, db, false)
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 	repoStore := database.ReposWith(logger, bstore)
 	esStore := database.ExternalServicesWith(logger, bstore)
 
@@ -192,32 +192,26 @@ func TestCreateBatchSpec(t *testing.T) {
 	}{
 		"unauthorized access": {
 			changesetSpecs: []*btypes.ChangesetSpec{},
-			licenseInfo:    licensingInfo("starter"),
+			licenseInfo:    licensingInfo("plan:enterprise-0"),
 			wantErr:        true,
 			userID:         unauthorizedUser.ID,
 			unauthorized:   true,
 		},
 		"batch changes license, restricted, over the limit": {
 			changesetSpecs: changesetSpecs,
-			licenseInfo:    licensingInfo("starter"),
+			licenseInfo:    licensingInfo("plan:enterprise-0"),
 			wantErr:        true,
 			userID:         userID,
 		},
 		"batch changes license, restricted, under the limit": {
 			changesetSpecs: changesetSpecs[0 : maxNumChangesets-1],
-			licenseInfo:    licensingInfo("starter"),
+			licenseInfo:    licensingInfo("plan:enterprise-0"),
 			wantErr:        false,
 			userID:         userID,
 		},
 		"batch changes license, unrestricted, over the limit": {
 			changesetSpecs: changesetSpecs,
-			licenseInfo:    licensingInfo("starter", "batch-changes"),
-			wantErr:        false,
-			userID:         userID,
-		},
-		"campaigns license, no limit": {
-			changesetSpecs: changesetSpecs,
-			licenseInfo:    licensingInfo("starter", "campaigns"),
+			licenseInfo:    licensingInfo("plan:enterprise-0", "batch-changes"),
 			wantErr:        false,
 			userID:         userID,
 		},
@@ -354,7 +348,7 @@ func TestCreateBatchSpecFromRaw(t *testing.T) {
 
 	unauthorizedUser := bt.CreateTestUser(t, db, false)
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
@@ -488,7 +482,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 
 	unauthorizedUser := bt.CreateTestUser(t, db, false)
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 	repoStore := database.ReposWith(logger, bstore)
 	esStore := database.ExternalServicesWith(logger, bstore)
 
@@ -582,7 +576,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 
 	unauthorizedUser := bt.CreateTestUser(t, db, false)
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 	repoStore := database.ReposWith(logger, bstore)
 	esStore := database.ExternalServicesWith(logger, bstore)
 
@@ -694,7 +688,7 @@ func TestApplyBatchChange(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 	repoStore := database.ReposWith(logger, bstore)
 	esStore := database.ExternalServicesWith(logger, bstore)
 
@@ -866,7 +860,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
@@ -974,7 +968,7 @@ func TestUpsertEmptyBatchChange(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
@@ -1070,7 +1064,7 @@ func TestCreateBatchChange(t *testing.T) {
 
 	unauthorizedUser := bt.CreateTestUser(t, db, false)
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec: bt.TestRawBatchSpec,
@@ -1182,7 +1176,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 	repoStore := database.ReposWith(logger, bstore)
 	esStore := database.ExternalServicesWith(logger, bstore)
 
@@ -1378,7 +1372,7 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 	repoStore := database.ReposWith(logger, bstore)
 	esStore := database.ExternalServicesWith(logger, bstore)
 
@@ -1531,7 +1525,7 @@ func TestMoveBatchChange(t *testing.T) {
 	orgName := "move-batch-change-test"
 	orgID := bt.CreateTestOrg(t, db, orgName).ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec:         bt.TestRawBatchSpec,
@@ -1834,7 +1828,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, true).ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
@@ -1965,7 +1959,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	ctx = actor.WithActor(ctx, actor.FromUser(userID))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
 	userCred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
@@ -2050,7 +2044,7 @@ func TestCreateChangesetComments(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
@@ -2170,7 +2164,7 @@ func TestReenqueueChangesets(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
@@ -2299,7 +2293,7 @@ func TestMergeChangesets(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
@@ -2429,7 +2423,7 @@ func TestCloseChangesets(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
@@ -2559,7 +2553,7 @@ func TestPublishChangesets(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
@@ -2710,7 +2704,7 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	ctx = actor.WithActor(ctx, actor.FromUser(userID))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
 	userCred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
@@ -2806,7 +2800,7 @@ func TestMaxUnlicensedChangesets(t *testing.T) {
 	var response struct{ MaxUnlicensedChangesets int32 }
 	actorCtx := actor.WithActor(context.Background(), actor.FromUser(userID))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 	require.NoError(t, err)
@@ -2830,11 +2824,11 @@ func TestListBatchSpecs(t *testing.T) {
 	user := bt.CreateTestUser(t, db, true)
 	userID := user.ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	batchSpecs := make([]*btypes.BatchSpec, 0, 10)
 
-	for i := 0; i < cap(batchSpecs); i++ {
+	for i := range cap(batchSpecs) {
 		batchSpec := &btypes.BatchSpec{
 			RawSpec:         bt.TestRawBatchSpec,
 			UserID:          userID,
@@ -2886,6 +2880,72 @@ func TestListBatchSpecs(t *testing.T) {
 const queryListBatchSpecs = `
 query($includeLocallyExecutedSpecs: Boolean!) {
 	batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) { nodes { id } }
+}
+`
+
+func TestGetChangesetsByIDs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(t))
+	bstore := store.New(db, observation.TestContextTB(t), nil)
+
+	userID := bt.CreateTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
+	// to create Batch Changes.
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close", userID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-close", userID, batchSpec.ID)
+	repo, _ := bt.CreateTestRepo(t, ctx, db)
+	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      batchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:  btypes.ReconcilerStateCompleted,
+		ExternalState:    btypes.ChangesetExternalStateOpen,
+	})
+
+	r := &Resolver{store: bstore}
+	s, err := newSchema(db, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	input := map[string]any{
+		"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
+		"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
+	}
+
+	var response struct {
+		GetChangesetsByIDs apitest.ChangesetConnection
+	}
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	apitest.MustExec(actorCtx, t, s, input, &response, queryGetChangesetsByIDs)
+
+	if len(response.GetChangesetsByIDs.Nodes) != 1 {
+		t.Fatalf("expected one changeset, got %d", len(response.GetChangesetsByIDs.Nodes))
+	}
+
+	firstChangeset := response.GetChangesetsByIDs.Nodes[0]
+	if firstChangeset.ID != string(bgql.MarshalChangesetID(changeset.ID)) {
+		t.Errorf("expected changeset ID %q, got %q", changeset.ID, firstChangeset.ID)
+	}
+}
+
+const queryGetChangesetsByIDs = `
+query($changesets: [ID!]!, $batchChange: ID!) {
+	getChangesetsByIDs(batchChange: $batchChange, changesets: $changesets) {
+		nodes {
+			... on ExternalChangeset {
+				id
+			}
+		}
+	}
 }
 `
 

@@ -44,7 +44,7 @@ export const Default: StoryFn = () => (
                 {...noopBlockCallbacks}
                 id="file-block-1"
                 input={fileBlockInput}
-                output={of(HIGHLIGHTED_FILE_LINES_LONG[0])}
+                output={of(HIGHLIGHTED_FILE_LINES_LONG)}
                 isSelected={true}
                 isReadOnly={false}
                 showMenu={false}
@@ -62,7 +62,7 @@ export const EditMode: StoryFn = () => (
                 {...noopBlockCallbacks}
                 id="file-block-1"
                 input={{ repositoryName: '', filePath: '', revision: 'main', lineRange: { startLine: 1, endLine: 10 } }}
-                output={of(HIGHLIGHTED_FILE_LINES_LONG[0])}
+                output={of(HIGHLIGHTED_FILE_LINES_LONG)}
                 isSelected={true}
                 isReadOnly={false}
                 showMenu={false}

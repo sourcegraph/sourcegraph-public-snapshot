@@ -21,7 +21,6 @@ export {
     buildSearchURLQueryFromQueryState,
 } from './navbarSearchQueryState'
 
-export { useNotepadState, useNotepad } from './notepad'
 export * from './devSettings'
 
 /**

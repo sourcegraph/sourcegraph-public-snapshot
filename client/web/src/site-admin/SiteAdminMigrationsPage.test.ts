@@ -1,4 +1,5 @@
 import { parse } from 'semver'
+import { describe, expect, it } from 'vitest'
 
 import type { OutOfBandMigrationFields } from '../graphql-operations'
 

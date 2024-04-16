@@ -1,9 +1,9 @@
-import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
-import { useNavigate, useLocation } from 'react-router-dom'
 
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useSyncedWithURLState, type SetStateResult } from '@sourcegraph/wildcard'
 
 import {
     type GetSearchAggregationResult,
@@ -17,69 +17,28 @@ import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constan
 import { GroupResultsPing } from './pings'
 import { AggregationUIMode } from './types'
 
-interface URLStateOptions<State, SerializedState> {
-    urlKey: string
-    deserializer: (value: SerializedState | null) => State
-    serializer: (state: State) => string | null
-}
-
-type UpdatedSearchQuery = string
-type SetStateResult<State> = [state: State, dispatch: (state: State) => UpdatedSearchQuery]
-
-/**
- * React hook analog standard react useState hook but with synced value with URL
- * through URL query parameter.
- */
-function useSyncedWithURLState<State, SerializedState>(
-    options: URLStateOptions<State, SerializedState>
-): SetStateResult<State> {
-    const { urlKey, serializer, deserializer } = options
-    const navigate = useNavigate()
-    const { search } = useLocation()
-
-    const urlSearchParameters = useMemo(() => new URLSearchParams(search), [search])
-    const queryParameter = useMemo(
-        () => deserializer(urlSearchParameters.get(urlKey) as unknown as SerializedState | null),
-        [urlSearchParameters, urlKey, deserializer]
-    )
-
-    const setNextState = useCallback(
-        (nextState: State) => {
-            const serializedValue = serializer(nextState)
-
-            if (serializedValue === null) {
-                urlSearchParameters.delete(urlKey)
-            } else {
-                urlSearchParameters.set(urlKey, serializedValue)
-            }
-
-            const search = `?${urlSearchParameters.toString()}`
-            navigate({ search }, { replace: true })
-
-            return search
-        },
-        [navigate, serializer, urlKey, urlSearchParameters]
-    )
-
-    return [queryParameter, setNextState]
-}
-
 type SerializedAggregationMode = 'repo' | 'path' | 'author' | 'group' | 'repo-metadata' | ''
 
 const aggregationModeSerializer = (mode: SearchAggregationMode | null): SerializedAggregationMode => {
     switch (mode) {
-        case SearchAggregationMode.REPO:
+        case SearchAggregationMode.REPO: {
             return 'repo'
-        case SearchAggregationMode.PATH:
+        }
+        case SearchAggregationMode.PATH: {
             return 'path'
-        case SearchAggregationMode.AUTHOR:
+        }
+        case SearchAggregationMode.AUTHOR: {
             return 'author'
-        case SearchAggregationMode.CAPTURE_GROUP:
+        }
+        case SearchAggregationMode.CAPTURE_GROUP: {
             return 'group'
-        case SearchAggregationMode.REPO_METADATA:
+        }
+        case SearchAggregationMode.REPO_METADATA: {
             return 'repo-metadata'
-        default:
+        }
+        default: {
             return ''
+        }
     }
 }
 
@@ -87,19 +46,25 @@ const aggregationModeDeserializer = (
     serializedValue: SerializedAggregationMode | null
 ): SearchAggregationMode | null => {
     switch (serializedValue) {
-        case 'repo':
+        case 'repo': {
             return SearchAggregationMode.REPO
-        case 'path':
+        }
+        case 'path': {
             return SearchAggregationMode.PATH
-        case 'author':
+        }
+        case 'author': {
             return SearchAggregationMode.AUTHOR
-        case 'group':
+        }
+        case 'group': {
             return SearchAggregationMode.CAPTURE_GROUP
-        case 'repo-metadata':
+        }
+        case 'repo-metadata': {
             return SearchAggregationMode.REPO_METADATA
+        }
 
-        default:
+        default: {
             return null
+        }
     }
 }
 
@@ -107,18 +72,12 @@ const aggregationModeDeserializer = (
  * Shared state hook for syncing aggregation type state between different UI trough
  * ULR query param {@link AGGREGATION_MODE_URL_KEY}
  */
-export const useAggregationSearchMode = (): SetStateResult<SearchAggregationMode | null> => {
-    const [aggregationMode, setAggregationMode] = useSyncedWithURLState<
-        SearchAggregationMode | null,
-        SerializedAggregationMode
-    >({
+export const useAggregationSearchMode = (): SetStateResult<SearchAggregationMode | null> =>
+    useSyncedWithURLState<SearchAggregationMode | null, SerializedAggregationMode>({
         urlKey: AGGREGATION_MODE_URL_KEY,
         serializer: aggregationModeSerializer,
         deserializer: aggregationModeDeserializer,
     })
-
-    return [aggregationMode, setAggregationMode]
-}
 
 /**
  * Serialized UI mode values
@@ -129,21 +88,25 @@ type SerializedAggregationUIMode = '' | null
 
 const aggregationUIModeSerializer = (uiMode: AggregationUIMode): SerializedAggregationUIMode => {
     switch (uiMode) {
-        case AggregationUIMode.SearchPage:
+        case AggregationUIMode.SearchPage: {
             return ''
+        }
         // Null means here that we will delete uiMode query param from the URL
-        case AggregationUIMode.Sidebar:
+        case AggregationUIMode.Sidebar: {
             return null
+        }
     }
 }
 
 const aggregationUIModeDeserializer = (serializedValue: SerializedAggregationUIMode | null): AggregationUIMode => {
     switch (serializedValue) {
-        case '':
+        case '': {
             return AggregationUIMode.SearchPage
+        }
 
-        default:
+        default: {
             return AggregationUIMode.Sidebar
+        }
     }
 }
 
@@ -151,15 +114,12 @@ const aggregationUIModeDeserializer = (serializedValue: SerializedAggregationUIM
  * Shared state hook for syncing aggregation UI mode state between different UI trough
  * ULR query param {@link AGGREGATION_UI_MODE_URL_KEY}
  */
-export const useAggregationUIMode = (): SetStateResult<AggregationUIMode> => {
-    const [aggregationMode, setAggregationMode] = useSyncedWithURLState({
+export const useAggregationUIMode = (): SetStateResult<AggregationUIMode> =>
+    useSyncedWithURLState({
         urlKey: AGGREGATION_UI_MODE_URL_KEY,
         serializer: aggregationUIModeSerializer,
         deserializer: aggregationUIModeDeserializer,
     })
-
-    return [aggregationMode, setAggregationMode]
-}
 
 export const AGGREGATION_SEARCH_QUERY = gql`
     fragment SearchAggregationModeAvailability on AggregationModeAvailability {

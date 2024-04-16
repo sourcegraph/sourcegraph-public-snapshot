@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -18,6 +19,7 @@ import (
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func FromSearchClient(client client.SearchClient) NewSearcher {
@@ -26,10 +28,13 @@ func FromSearchClient(client client.SearchClient) NewSearcher {
 			return nil, err
 		}
 
-		// TODO this hack is an ugly workaround to get the plan and jobs to
-		// get into a shape we like. it will break in bad ways but works for
-		// EAP.
-		q = "type:file index:no " + q
+		// We run queries on searcher only which makes it easier to control limits. Low
+		// latency is not a priority of Search Jobs.
+		q = "index:no " + q
+
+		if strings.Contains(strings.ToLower(q), "patterntype:structural") {
+			return nil, errors.New("Structural search is not supported in Search Jobs")
+		}
 
 		inputs, err := client.Plan(
 			ctx,
@@ -38,6 +43,7 @@ func FromSearchClient(client client.SearchClient) NewSearcher {
 			q,
 			search.Precise,
 			search.Exhaustive,
+			pointers.Ptr(int32(0)),
 		)
 		if err != nil {
 			return nil, err
@@ -144,7 +150,11 @@ func (s searchQuery) toRepoRevSpecs(ctx context.Context, repoRevSpec types.Repos
 
 	var revs []query.RevisionSpecifier
 	for _, revspec := range repoRevSpec.RevisionSpecifiers.Get() {
-		revs = append(revs, query.ParseRevisionSpecifier(revspec))
+		rs, err := query.ParseRevisionSpecifier(revspec)
+		if err != nil {
+			return repos.RepoRevSpecs{}, err
+		}
+		revs = append(revs, rs)
 	}
 
 	return repos.RepoRevSpecs{
@@ -153,7 +163,7 @@ func (s searchQuery) toRepoRevSpecs(ctx context.Context, repoRevSpec types.Repos
 	}, nil
 }
 
-func (s searchQuery) Search(ctx context.Context, repoRev types.RepositoryRevision, w CSVWriter) error {
+func (s searchQuery) Search(ctx context.Context, repoRev types.RepositoryRevision, matchWriter MatchWriter) error {
 	if err := isSameUser(ctx, s.userID); err != nil {
 		return err
 	}
@@ -173,10 +183,6 @@ func (s searchQuery) Search(ctx context.Context, repoRev types.RepositoryRevisio
 
 	var mu sync.Mutex     // serialize writes to w
 	var writeRowErr error // capture if w.Write fails
-	matchWriter, err := newMatchCSVWriter(w)
-	if err != nil {
-		return err
-	}
 
 	// TODO currently ignoring returned Alert
 	_, err = job.Run(ctx, s.clients, streaming.StreamFunc(func(se streaming.SearchEvent) {

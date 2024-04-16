@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
@@ -37,7 +38,7 @@ func Init(
 		return err
 	}
 
-	searchClient := client.New(logger, db)
+	searchClient := client.New(logger, db, gitserver.NewClient("http.search"))
 	newSearcher := service.FromSearchClient(searchClient)
 
 	svc := service.New(observationCtx, store, uploadStore, newSearcher)

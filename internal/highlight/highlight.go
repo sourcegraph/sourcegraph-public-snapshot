@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/binary"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -318,8 +317,6 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		return Mocks.Code(p)
 	}
 
-	logger := log.Scoped("highlight")
-
 	p.Filepath = normalizeFilepath(p.Filepath)
 
 	filetypeQuery := DetectSyntaxHighlightingLanguage(p.Filepath, string(p.Content))
@@ -332,7 +329,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		filetypeQuery.Engine = EngineSyntect
 	}
 
-	ctx, errCollector, trace, endObservation := getHighlightOp().WithErrorsAndLogger(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, errCollector, traceLogger, endObservation := getHighlightOp().WithErrorsAndLogger(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("revision", p.Metadata.Revision),
 		attribute.String("repo", p.Metadata.RepoName),
 		attribute.String("fileExtension", filepath.Ext(p.Filepath)),
@@ -345,7 +342,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	defer endObservation(1, observation.Args{})
 
 	var prometheusStatus string
-	requestTime := prometheus.NewTimer(metricRequestHistogram)
+	start := time.Now()
 	defer func() {
 		if prometheusStatus != "" {
 			requestCounter.WithLabelValues(prometheusStatus).Inc()
@@ -354,7 +351,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		} else {
 			requestCounter.WithLabelValues("success").Inc()
 		}
-		requestTime.ObserveDuration()
+		metricRequestHistogram.Observe(time.Since(start).Seconds())
 	}()
 
 	if !p.DisableTimeout {
@@ -417,55 +414,35 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Filepath:         p.Filepath,
 		StabilizeTimeout: stabilizeTimeout,
 		LineLengthLimit:  maxLineLength,
-		CSS:              true,
 		Engine:           getEngineParameter(filetypeQuery.Engine),
 	}
 
 	query.Filetype = filetypeQuery.Language
 
-	// Single-program mode: we do not use syntect_server/syntax-highlighter
-	//
-	// 1. It makes cross-compilation harder (requires a full Rust toolchain for the target, plus
-	//    a full C/C++ toolchain for the target.) Complicates macOS code signing.
-	// 2. Requires adding a C ABI so we can invoke it via CGO. Or as an external process
-	//    complicates distribution and/or requires Docker.
-	// 3. syntect_server/syntax-highlighter still uses the absolutely awful http-server-stabilizer
-	//    hack to workaround https://github.com/trishume/syntect/issues/202 - and by extension needs
-	//    two separate binaries, and separate processes, to function semi-reliably.
-	//
-	// Instead, in single-program mode we defer to Chroma for syntax highlighting.
-	if deploy.IsSingleBinary() {
-		document, err := highlightWithChroma(code, p.Filepath)
-		if err != nil {
-			return unhighlightedCode(err, code)
-		}
-		if document == nil {
-			// Highlighting this language is not supported, so fallback to plain text.
-			plainResponse, err := generatePlainTable(code)
-			if err != nil {
-				return nil, false, err
-			}
-			return plainResponse, false, nil
-		}
-		return &HighlightedCode{
-			code:     code,
-			html:     "",
-			document: document,
-		}, false, nil
-	}
-
 	resp, err := client.Highlight(ctx, query, p.Format)
 
-	if ctx.Err() == context.DeadlineExceeded {
-		logger.Warn(
-			"syntax highlighting took longer than 3s, this *could* indicate a bug in Sourcegraph",
-			log.String("filepath", p.Filepath),
-			log.String("filetype", query.Filetype),
-			log.String("repo_name", p.Metadata.RepoName),
-			log.String("revision", p.Metadata.Revision),
-			log.String("snippet", fmt.Sprintf("%q…", firstCharacters(code, 80))),
+	if ctx.Err() == context.Canceled {
+		traceLogger.Warn(
+			"syntax highlighting canceled, this *could* indicate a bug in Sourcegraph",
+			log.Duration("elapsed", time.Since(start)),
 		)
-		trace.AddEvent("syntaxHighlighting", attribute.Bool("timeout", true))
+		traceLogger.AddEvent("syntaxHighlighting", attribute.Bool("canceled", true))
+		prometheusStatus = "canceled"
+
+		// Canceled, return plain table with aborted set. Callers expect
+		// non-nil response if err is nil.
+		plainResponse, err := generatePlainTable(code)
+		if err != nil {
+			return nil, false, err
+		}
+		return plainResponse, true, nil
+	} else if ctx.Err() == context.DeadlineExceeded {
+		traceLogger.Warn(
+			"syntax highlighting took longer than 3s, this *could* indicate a bug in Sourcegraph",
+			log.Duration("elapsed", time.Since(start)),
+			snippet(code),
+		)
+		traceLogger.AddEvent("syntaxHighlighting", attribute.Bool("timeout", true))
 		prometheusStatus = "timeout"
 
 		// Timeout, so render plain table.
@@ -475,23 +452,24 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		}
 		return plainResponse, true, nil
 	} else if err != nil {
-		logger.Error(
-			"syntax highlighting failed (this is a bug, please report it)",
-			log.String("filepath", p.Filepath),
-			log.String("filetype", query.Filetype),
-			log.String("repo_name", p.Metadata.RepoName),
-			log.String("revision", p.Metadata.Revision),
-			log.String("snippet", fmt.Sprintf("%q…", firstCharacters(code, 80))),
-			log.Error(err),
-		)
-
-		if known, problem := identifyError(err); known {
+		known, problem := identifyError(err)
+		if known {
 			// A problem that can sometimes be expected has occurred. We will
 			// identify such problems through metrics/logs and resolve them on
 			// a case-by-case basis.
-			trace.AddEvent("TODO Domain Owner", attribute.Bool(problem, true))
+			traceLogger.AddEvent("TODO Domain Owner", attribute.Bool(problem, true))
 			prometheusStatus = problem
+		} else {
+			problem = "unknown"
 		}
+
+		traceLogger.Error(
+			"syntax highlighting failed (this is a bug, please report it)",
+			log.Duration("elapsed", time.Since(start)),
+			snippet(code),
+			log.String("problem", problem),
+			log.Error(err),
+		)
 
 		// It is not useful to surface errors in the UI, so fall back to
 		// unhighlighted text.
@@ -556,12 +534,12 @@ var metricRequestHistogram = promauto.NewHistogram(
 		Help: "time for a request to have syntax highlight",
 	})
 
-func firstCharacters(s string, n int) string {
-	v := []rune(s)
-	if len(v) < n {
-		return string(v)
+func snippet(codeS string) log.Field {
+	s := []rune(codeS)
+	if len(s) > 80 {
+		s = s[:80]
 	}
-	return string(v[:n])
+	return log.String("snippet", fmt.Sprintf("%q…", string(s)))
 }
 
 func generatePlainTable(code string) (*HighlightedCode, error) {

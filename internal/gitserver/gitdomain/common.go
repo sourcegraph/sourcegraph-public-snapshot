@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gobwas/glob"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 
@@ -37,7 +38,7 @@ const (
 // To avoid being reported as a regular file mode by (os.FileMode).IsRegular, it sets other bits
 // (os.ModeDevice) beyond the Git "160000" commit mode bits. The choice of os.ModeDevice is
 // arbitrary.
-const ModeSubmodule = 0160000 | os.ModeDevice
+const ModeSubmodule = 0o160000 | os.ModeDevice
 
 // Submodule holds information about a Git submodule and is
 // returned in the FileInfo's Sys field by Stat/ReadDir calls.
@@ -117,7 +118,6 @@ func (o *GitObject) FromProto(p *proto.GitObject) {
 		ID:   oid,
 		Type: t,
 	}
-
 }
 
 // IsAbsoluteRevision checks if the revision is a git OID SHA string.
@@ -158,6 +158,52 @@ type Commit struct {
 	Parents []api.CommitID `json:"Parents,omitempty"`
 }
 
+func (c *Commit) ToProto() *proto.GitCommit {
+	parents := make([]string, len(c.Parents))
+	for i, p := range c.Parents {
+		parents[i] = string(p)
+	}
+
+	return &proto.GitCommit{
+		Oid:     string(c.ID),
+		Message: string(c.Message),
+		Parents: parents,
+		Author: &proto.GitSignature{
+			Name:  c.Author.Name,
+			Email: c.Author.Email,
+			Date:  timestamppb.New(c.Author.Date),
+		},
+		Committer: &proto.GitSignature{
+			Name:  c.Committer.Name,
+			Email: c.Committer.Email,
+			Date:  timestamppb.New(c.Committer.Date),
+		},
+	}
+}
+
+func CommitFromProto(p *proto.GitCommit) *Commit {
+	parents := make([]api.CommitID, len(p.GetParents()))
+	for i, p := range p.GetParents() {
+		parents[i] = api.CommitID(p)
+	}
+
+	return &Commit{
+		ID:      api.CommitID(p.GetOid()),
+		Message: Message(p.GetMessage()),
+		Author: Signature{
+			Name:  p.GetAuthor().GetName(),
+			Email: p.GetAuthor().GetEmail(),
+			Date:  p.GetAuthor().GetDate().AsTime(),
+		},
+		Committer: &Signature{
+			Name:  p.GetCommitter().GetName(),
+			Email: p.GetCommitter().GetEmail(),
+			Date:  p.GetCommitter().GetDate().AsTime(),
+		},
+		Parents: parents,
+	}
+}
+
 // Message represents a git commit message
 type Message string
 
@@ -181,6 +227,85 @@ func (m Message) Body() string {
 	return strings.TrimSpace(message[i:])
 }
 
+// PreviousCommit represents the previous commit a file was changed in.
+type PreviousCommit struct {
+	CommitID api.CommitID `json:"commitID"`
+	Filename string       `json:"filename"`
+}
+
+// A Hunk is a contiguous portion of a file associated with a commit.
+type Hunk struct {
+	StartLine      uint32 // 1-indexed start line number
+	EndLine        uint32 // 1-indexed end line number
+	StartByte      uint32 // 0-indexed start byte position (inclusive)
+	EndByte        uint32 // 0-indexed end byte position (exclusive)
+	CommitID       api.CommitID
+	PreviousCommit *PreviousCommit
+	Author         Signature
+	Message        string
+	Filename       string
+}
+
+func HunkFromBlameProto(h *proto.BlameHunk) *Hunk {
+	if h == nil {
+		return nil
+	}
+
+	var previousCommit *PreviousCommit
+	protoPreviousCommit := h.GetPreviousCommit()
+	if protoPreviousCommit != nil {
+		previousCommit = &PreviousCommit{
+			CommitID: api.CommitID(protoPreviousCommit.GetCommit()),
+			Filename: protoPreviousCommit.GetFilename(),
+		}
+	}
+
+	return &Hunk{
+		StartLine:      h.GetStartLine(),
+		EndLine:        h.GetEndLine(),
+		StartByte:      h.GetStartByte(),
+		EndByte:        h.GetEndByte(),
+		CommitID:       api.CommitID(h.GetCommit()),
+		PreviousCommit: previousCommit,
+		Message:        h.GetMessage(),
+		Filename:       h.GetFilename(),
+		Author: Signature{
+			Name:  h.GetAuthor().GetName(),
+			Email: h.GetAuthor().GetEmail(),
+			Date:  h.GetAuthor().GetDate().AsTime(),
+		},
+	}
+}
+
+func (h *Hunk) ToProto() *proto.BlameHunk {
+	if h == nil {
+		return nil
+	}
+
+	var protoPreviousCommit *proto.PreviousCommit
+	if h.PreviousCommit != nil {
+		protoPreviousCommit = &proto.PreviousCommit{
+			Commit:   string(h.PreviousCommit.CommitID),
+			Filename: h.PreviousCommit.Filename,
+		}
+	}
+	return &proto.BlameHunk{
+		StartLine:      uint32(h.StartLine),
+		EndLine:        uint32(h.EndLine),
+		StartByte:      uint32(h.StartByte),
+		EndByte:        uint32(h.EndByte),
+		Commit:         string(h.CommitID),
+		PreviousCommit: protoPreviousCommit,
+		Message:        h.Message,
+		Filename:       h.Filename,
+		Author: &proto.BlameAuthor{
+			Name:  h.Author.Name,
+			Email: h.Author.Email,
+			Date:  timestamppb.New(h.Author.Date),
+		},
+	}
+}
+
 // Signature represents a commit signature
 type Signature struct {
 	Name  string    `json:"Name,omitempty"`
@@ -196,12 +321,26 @@ const (
 	RefTypeTag
 )
 
-// RefDescription describes a commit at the head of a branch or tag.
-type RefDescription struct {
-	Name            string
-	Type            RefType
-	IsDefaultBranch bool
-	CreatedDate     *time.Time
+func RefTypeFromProto(t proto.GitRef_RefType) RefType {
+	switch t {
+	case proto.GitRef_REF_TYPE_BRANCH:
+		return RefTypeBranch
+	case proto.GitRef_REF_TYPE_TAG:
+		return RefTypeTag
+	default:
+		return RefTypeUnknown
+	}
+}
+
+func (t RefType) ToProto() proto.GitRef_RefType {
+	switch t {
+	case RefTypeBranch:
+		return proto.GitRef_REF_TYPE_BRANCH
+	case RefTypeTag:
+		return proto.GitRef_REF_TYPE_TAG
+	default:
+		return proto.GitRef_REF_TYPE_UNSPECIFIED
+	}
 }
 
 // A ContributorCount is a contributor to a repository.
@@ -215,42 +354,56 @@ func (p *ContributorCount) String() string {
 	return fmt.Sprintf("%d %s <%s>", p.Count, p.Name, p.Email)
 }
 
-// A Tag is a VCS tag.
-type Tag struct {
-	Name         string `json:"Name,omitempty"`
-	api.CommitID `json:"CommitID,omitempty"`
-	CreatorDate  time.Time
-}
-
-type Tags []*Tag
-
-func (p Tags) Len() int           { return len(p) }
-func (p Tags) Less(i, j int) bool { return p[i].Name < p[j].Name }
-func (p Tags) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-
 // Ref describes a Git ref.
 type Ref struct {
-	Name     string // the full name of the ref (e.g., "refs/heads/mybranch")
+	// Name the full name of the ref (e.g., "refs/heads/mybranch").
+	Name string
+	// ShortName the abbreviated name of the ref, if it wouldn't be ambiguous (e.g., "mybranch").
+	ShortName string
+	// Type is the type of this reference.
+	Type RefType
+	// CommitID is the hash of the commit the reference is currently pointing at.
+	// For a head reference, this is the commit the head is currently pointing at.
+	// For a tag, this is the commit that the tag is attached to.
 	CommitID api.CommitID
+	// RefOID is the full object ID of the reference. For a head reference and
+	// a lightweight tag, this value is the same as CommitID. For annotated tags,
+	// it is the object ID of the tag.
+	RefOID api.CommitID
+	// CreatedDate is the date the ref was created or modified last.
+	CreatedDate time.Time
+	// IsHead indicates whether this is the head reference.
+	IsHead bool
+}
+
+func RefFromProto(r *proto.GitRef) Ref {
+	return Ref{
+		Name:        r.GetRefName(),
+		ShortName:   r.GetShortRefName(),
+		Type:        RefTypeFromProto(r.GetRefType()),
+		CommitID:    api.CommitID(r.GetTargetCommit()),
+		RefOID:      api.CommitID(r.GetRefOid()),
+		CreatedDate: r.GetCreatedAt().AsTime(),
+		IsHead:      r.GetIsHead(),
+	}
+}
+
+func (r *Ref) ToProto() *proto.GitRef {
+	return &proto.GitRef{
+		RefName:      r.Name,
+		ShortRefName: r.ShortName,
+		TargetCommit: string(r.CommitID),
+		RefOid:       string(r.RefOID),
+		CreatedAt:    timestamppb.New(r.CreatedDate),
+		RefType:      r.Type.ToProto(),
+		IsHead:       r.IsHead,
+	}
 }
 
 // BehindAhead is a set of behind/ahead counts.
 type BehindAhead struct {
 	Behind uint32 `json:"Behind,omitempty"`
 	Ahead  uint32 `json:"Ahead,omitempty"`
-}
-
-// A Branch is a git branch.
-type Branch struct {
-	// Name is the name of this branch.
-	Name string `json:"Name,omitempty"`
-	// Head is the commit ID of this branch's head commit.
-	Head api.CommitID `json:"Head,omitempty"`
-	// Commit optionally contains commit information for this branch's head commit.
-	// It is populated if IncludeCommit option is set.
-	Commit *Commit `json:"Commit,omitempty"`
-	// Counts optionally contains the commit counts relative to specified branch.
-	Counts *BehindAhead `json:"Counts,omitempty"`
 }
 
 // EnsureRefPrefix checks whether the ref is a full ref and contains the
@@ -265,22 +418,6 @@ func EnsureRefPrefix(ref string) string {
 func AbbreviateRef(ref string) string {
 	return strings.TrimPrefix(ref, "refs/heads/")
 }
-
-// Branches is a sortable slice of type Branch
-type Branches []*Branch
-
-func (p Branches) Len() int           { return len(p) }
-func (p Branches) Less(i, j int) bool { return p[i].Name < p[j].Name }
-func (p Branches) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-
-// ByAuthorDate sorts by author date. Requires full commit information to be included.
-type ByAuthorDate []*Branch
-
-func (p ByAuthorDate) Len() int { return len(p) }
-func (p ByAuthorDate) Less(i, j int) bool {
-	return p[i].Commit.Author.Date.Before(p[j].Commit.Author.Date)
-}
-func (p ByAuthorDate) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
 var invalidBranch = lazyregexp.New(`\.\.|/\.|\.lock$|[\000-\037\177 ~^:?*[]+|^/|/$|//|\.$|@{|^@$|\\`)
 
@@ -384,9 +521,3 @@ func (gs RefGlobs) Match(ref string) bool {
 // Pathspec is a git term for a pattern that matches paths using glob-like syntax.
 // https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
 type Pathspec string
-
-// PathspecLiteral constructs a pathspec that matches a path without interpreting "*" or "?" as special
-// characters.
-//
-// See: https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-literal
-func PathspecLiteral(s string) Pathspec { return Pathspec(":(literal)" + s) }

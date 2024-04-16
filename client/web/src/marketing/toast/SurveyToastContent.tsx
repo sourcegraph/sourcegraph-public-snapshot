@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 
 import { gql, useMutation } from '@apollo/client'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+
 import type { AuthenticatedUser } from '../../auth'
 import type { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -31,7 +33,7 @@ enum ToastSteps {
     thankYou = 3,
 }
 
-interface SurveyToastContentProps {
+interface SurveyToastContentProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     shouldTemporarilyDismiss: () => void
     shouldPermanentlyDismiss: () => void
@@ -43,6 +45,7 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
     shouldTemporarilyDismiss,
     shouldPermanentlyDismiss,
     hideToast,
+    telemetryRecorder,
 }) => {
     const [togglePermanentlyDismiss, setTogglePermanentlyDismiss] = useState(false)
     const [toggleErrorMessage, setToggleErrorMessage] = useState<boolean>(false)
@@ -56,7 +59,8 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
 
     useEffect(() => {
         eventLogger.log('SurveyReminderViewed')
-    }, [])
+        telemetryRecorder.recordEvent('surveyNPS.toast', 'view')
+    }, [telemetryRecorder])
 
     /**
      * We set dismissal state when either:
@@ -100,17 +104,19 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
             // No need to submit, but we want to ensure user isn't bothered by the toast again before exiting
             setFutureVisibility()
         }
+        telemetryRecorder.recordEvent('surveyNPS', 'dismiss')
 
         hideToast()
     }
 
     const handleUseCaseDone = async (): Promise<void> => {
         await submitSurvey({ variables: { input: userFeedback } })
+        telemetryRecorder.recordEvent('surveyNPS', 'submit')
         handleContinue()
     }
 
     switch (activeStep) {
-        case ToastSteps.rate:
+        case ToastSteps.rate: {
             return (
                 <SurveyUserRatingToast
                     score={userFeedback.score}
@@ -119,9 +125,11 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
                     onContinue={handleContinue}
                     setToggledPermanentlyDismiss={setTogglePermanentlyDismiss}
                     toggleErrorMessage={toggleErrorMessage}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )
-        case ToastSteps.useCase:
+        }
+        case ToastSteps.useCase: {
             return (
                 <SurveyUseCaseToast
                     isSubmitting={isSubmitting}
@@ -137,9 +145,12 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
                     authenticatedUser={authenticatedUser}
                 />
             )
-        case ToastSteps.thankYou:
+        }
+        case ToastSteps.thankYou: {
             return <SurveySuccessToast onDismiss={handleDismiss} />
-        default:
+        }
+        default: {
             throw new Error('Invalid survey step!')
+        }
     }
 }

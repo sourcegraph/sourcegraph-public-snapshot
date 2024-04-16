@@ -1,0 +1,190 @@
+---
+source: crates/syntax-analysis/src/lib.rs
+expression: dumped
+---
+  #include <stdlib.h>
+  #include <sys/types.h>
+  
+  #define BUFSIZE 4096
+//        ^^^^^^^ definition(Macro) scip-ctags BUFSIZE.
+  
+  const char *name = "com.horsegraph.connection";
+//            ^^^^ definition(Variable) scip-ctags name.
+  const char *author = "Petri & Thorsten";
+//            ^^^^^^ definition(Variable) scip-ctags author.
+  const int count;
+//          ^^^^^ definition(Variable) scip-ctags count.
+  int count2;
+//    ^^^^^^ definition(Variable) scip-ctags count2.
+  const int age = 28;
+//          ^^^ definition(Field) scip-ctags age.
+  static uint sweet_sweet_numbers[5] = {23, 420, 69, 42, 7};
+//            ^^^^^^^^^^^^^^^^^^^ definition(Variable) scip-ctags sweet_sweet_numbers.
+  
+  const int *ptr1 = &count;
+//           ^^^^ definition(Variable) scip-ctags ptr1.
+  const int **ptrptr1 = &ptr1;
+//            ^^^^^^^ definition(Variable) scip-ctags ptrptr1.
+  const int ***ptrptrptr1 = &ptrptr1;
+//             ^^^^^^^^^^ definition(Variable) scip-ctags ptrptrptr1.
+  
+  enum { BLACK, RED };
+//       ^^^^^ definition(EnumMember) scip-ctags BLACK.
+//              ^^^ definition(EnumMember) scip-ctags RED.
+  
+  enum animal {
+//     ^^^^^^ definition(Enum) scip-ctags animal#
+    ANIMAL_TOUCAN,
+//  ^^^^^^^^^^^^^ definition(EnumMember) scip-ctags ANIMAL_TOUCAN.
+    ANIMAL_TIGER = 1,
+//  ^^^^^^^^^^^^ definition(EnumMember) scip-ctags ANIMAL_TIGER.
+    ANIMAL_TIGGER = ANIMAL_TIGER,
+//  ^^^^^^^^^^^^^ definition(EnumMember) scip-ctags ANIMAL_TIGGER.
+    ANIMAL_HORSE,
+//  ^^^^^^^^^^^^ definition(EnumMember) scip-ctags ANIMAL_HORSE.
+    ANIMAL_GIRAFFE,
+//  ^^^^^^^^^^^^^^ definition(EnumMember) scip-ctags ANIMAL_GIRAFFE.
+    ANIMAL_GOPHER = 99,
+//  ^^^^^^^^^^^^^ definition(EnumMember) scip-ctags ANIMAL_GOPHER.
+    ANIMAL_ORANGUTAN
+//  ^^^^^^^^^^^^^^^^ definition(EnumMember) scip-ctags ANIMAL_ORANGUTAN.
+  };
+  
+  typedef enum instrument {
+//             ^^^^^^^^^^ definition(Enum) scip-ctags instrument#
+    INSTRUMENT_GUITAR,
+//  ^^^^^^^^^^^^^^^^^ definition(EnumMember) scip-ctags INSTRUMENT_GUITAR.
+    INSTRUMENT_KEYTAR,
+//  ^^^^^^^^^^^^^^^^^ definition(EnumMember) scip-ctags INSTRUMENT_KEYTAR.
+    INSTRUMENT_SITAR
+//  ^^^^^^^^^^^^^^^^ definition(EnumMember) scip-ctags INSTRUMENT_SITAR.
+  } Instrument;
+//  ^^^^^^^^^^ definition(TypeAlias) scip-ctags Instrument.
+  
+  union {
+    char *hobby;
+//        ^^^^^ definition(Field) scip-ctags hobby.
+    int age; // <-- TODO: this will be tagged as a Constant because it's the same
+//      ^^^ definition(Field) scip-ctags age.
+             // symbol as the `const int age` above.
+  } person;
+//  ^^^^^^ definition(Variable) scip-ctags person.
+  
+  union object {
+//      ^^^^^^ definition(Union) scip-ctags object#
+    char *name;
+//        ^^^^ definition(Field) scip-ctags object#name.
+    int value;
+//      ^^^^^ definition(Field) scip-ctags object#value.
+    int age;
+//      ^^^ definition(Field) scip-ctags object#age.
+  } obj1, obj2, *obj3;
+//  ^^^^ definition(Variable) scip-ctags obj1.
+//        ^^^^ definition(Variable) scip-ctags obj2.
+//               ^^^^ definition(Variable) scip-ctags obj3.
+  
+  const union object2 {
+//            ^^^^^^^ definition(Union) scip-ctags object2#
+    char name;
+//       ^^^^ definition(Field) scip-ctags object2#name.
+  } obj4;
+//  ^^^^ definition(Variable) scip-ctags obj4.
+  
+  struct connection {
+//       ^^^^^^^^^^ definition(Struct) scip-ctags connection#
+    int complete;
+//      ^^^^^^^^ definition(Field) scip-ctags connection#complete.
+    int fd;
+//      ^^ definition(Field) scip-ctags connection#fd.
+    int bufsize;
+//      ^^^^^^^ definition(Field) scip-ctags connection#bufsize.
+    char *buffer;
+//        ^^^^^^ definition(Field) scip-ctags connection#buffer.
+    char *url;
+//        ^^^ definition(Field) scip-ctags connection#url.
+  };
+  
+  typedef struct connection Connection;
+//                          ^^^^^^^^^^ definition(TypeAlias) scip-ctags Connection.
+  
+  typedef struct computer {
+//               ^^^^^^^^ definition(Struct) scip-ctags computer#
+    int cores;
+//      ^^^^^ definition(Field) scip-ctags computer#cores.
+  } Computer;
+//  ^^^^^^^^ definition(TypeAlias) scip-ctags Computer.
+  
+  typedef struct {
+    int number;
+//      ^^^^^^ definition(Field) scip-ctags number.
+  } NoName;
+//  ^^^^^^ definition(TypeAlias) scip-ctags NoName.
+  
+  struct outer {
+//       ^^^^^ definition(Struct) scip-ctags outer#
+    struct inner {
+//         ^^^^^ definition(Struct) scip-ctags outer#inner#
+      int x;
+//        ^ definition(Field) scip-ctags outer#inner#x.
+      int y;
+//        ^ definition(Field) scip-ctags outer#inner#y.
+    } b;
+//    ^ definition(Field) scip-ctags outer#b.
+  };
+  
+  // Prototype
+  struct connection *new_connection(int fd);
+//                   ^^^^^^^^^^^^^^ definition(Function) scip-ctags new_connection().
+  // Implementation
+  struct connection *new_connection(int fd) {
+//                   ^^^^^^^^^^^^^^ definition(Function) scip-ctags new_connection().
+    struct connection *c = malloc(sizeof(struct connection));
+    if (c == NULL) {
+      return NULL;
+    }
+  
+    c->url = NULL;
+    c->complete = 0;
+    c->fd = fd;
+  
+    c->buffer = calloc(BUFSIZE, sizeof(char));
+    if (c->buffer == NULL) {
+      free(c);
+      return NULL;
+    }
+    c->bufsize = BUFSIZE;
+  
+    return c;
+  }
+  
+  static void free_connection(struct connection *c) {
+//            ^^^^^^^^^^^^^^^ definition(Function) scip-ctags free_connection().
+    if (c->buffer) {
+      free(c->buffer);
+    }
+  
+    if (c->url) {
+      free(c->url);
+    }
+  
+    free(c);
+  }
+  
+  // Prototype
+  int returns_int();
+//    ^^^^^^^^^^^ definition(Function) scip-ctags returns_int().
+  // Implementation
+  int returns_int() { return 12; }
+//    ^^^^^^^^^^^ definition(Function) scip-ctags returns_int().
+  
+  int main() { return 0; }
+//    ^^^^ definition(Function) scip-ctags main().
+  
+  int k_and_r(s, f)
+//    ^^^^^^^ definition(Function) scip-ctags k_and_r().
+  char *s;
+//      ^ definition(Variable) scip-ctags s.
+  float f;
+//      ^ definition(Variable) scip-ctags f.
+  { return 5; }
+

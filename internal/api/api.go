@@ -8,7 +8,6 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,7 +31,7 @@ func (r RepoName) Equal(o RepoName) bool {
 // RepoHashedName is the hashed name of a repo
 type RepoHashedName string
 
-var deletedRegex = lazyregexp.New("DELETED-[0-9]+\\.[0-9]+-")
+var deletedRegex = lazyregexp.New("^DELETED-[0-9]+\\.[0-9]+-")
 
 // UndeletedRepoName will "undelete" a repo name. When we soft-delete a repo we
 // change its name in the database, this function extracts the original repo
@@ -65,33 +64,6 @@ func (c CommitID) Short() string {
 		return string(c)[:7]
 	}
 	return string(c)
-}
-
-// RepoCommit scopes a commit to a repository.
-type RepoCommit struct {
-	Repo     RepoName
-	CommitID CommitID
-}
-
-func (rc *RepoCommit) ToProto() *proto.RepoCommit {
-	return &proto.RepoCommit{
-		Repo:   string(rc.Repo),
-		Commit: string(rc.CommitID),
-	}
-}
-
-func (rc *RepoCommit) FromProto(p *proto.RepoCommit) {
-	*rc = RepoCommit{
-		Repo:     RepoName(p.GetRepo()),
-		CommitID: CommitID(p.GetCommit()),
-	}
-}
-
-func (rc RepoCommit) Attrs() []attribute.KeyValue {
-	return []attribute.KeyValue{
-		rc.Repo.Attr(),
-		rc.CommitID.Attr(),
-	}
 }
 
 // ExternalRepoSpec specifies a repository on an external service (such as GitHub or GitLab).

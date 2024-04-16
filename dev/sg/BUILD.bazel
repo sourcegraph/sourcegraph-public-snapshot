@@ -10,15 +10,15 @@ go_library(
         "live.go",
         "main.go",
         "os.go",
-        "release.go",
         "sg_analytics.go",
-        "sg_app.go",
         "sg_audit.go",
+        "sg_backport.go",
+        "sg_bazel.go",
         "sg_cloud.go",
         "sg_db.go",
         "sg_deploy.go",
+        "sg_doctor.go",
         "sg_embeddings_qa.go",
-        "sg_feedback.go",
         "sg_generate.go",
         "sg_help.go",
         "sg_insights.go",
@@ -42,8 +42,8 @@ go_library(
         "sg_update.go",
         "sg_version.go",
         "sg_wolfi.go",
-        "suggest.go",
     ],
+    embedsrcs = ["sg.doctor.yaml"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg",
     visibility = ["//visibility:private"],
     deps = [
@@ -53,7 +53,7 @@ go_library(
         "//dev/sg/dependencies",
         "//dev/sg/internal/analytics",
         "//dev/sg/internal/background",
-        "//dev/sg/internal/bk",
+        "//dev/sg/internal/backport",
         "//dev/sg/internal/category",
         "//dev/sg/internal/check",
         "//dev/sg/internal/db",
@@ -63,6 +63,7 @@ go_library(
         "//dev/sg/internal/images",
         "//dev/sg/internal/migration",
         "//dev/sg/internal/open",
+        "//dev/sg/internal/release",
         "//dev/sg/internal/repo",
         "//dev/sg/internal/rfc",
         "//dev/sg/internal/run",
@@ -101,8 +102,6 @@ go_library(
         "//monitoring/command",
         "//monitoring/definitions",
         "//monitoring/monitoring",
-        "@com_github_agext_levenshtein//:levenshtein",
-        "@com_github_buildkite_go_buildkite_v3//buildkite",
         "@com_github_gomodule_redigo//redis",
         "@com_github_google_go_github_v55//github",
         "@com_github_grafana_regexp//:regexp",
@@ -112,27 +111,29 @@ go_library(
         "@com_github_opsgenie_opsgenie_go_sdk_v2//alert",
         "@com_github_opsgenie_opsgenie_go_sdk_v2//client",
         "@com_github_slack_go_slack//:slack",
-        "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_run//:run",
         "@com_github_urfave_cli_v2//:cli",
-        "@com_google_cloud_go_storage//:storage",
         "@in_gopkg_yaml_v3//:yaml_v3",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_trace//:trace",
+        "@org_golang_x_exp//maps",
         "@org_golang_x_mod//semver",
         "@org_golang_x_oauth2//:oauth2",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
     ],
 )
 
 go_binary(
     name = "sg",
     embed = [":sg_lib"],
+    # keep
+    gotags = select({
+        "//:sg_msp_flag": ["msp"],
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )
 
 go_test(
@@ -140,9 +141,7 @@ go_test(
     timeout = "short",
     srcs = [
         "main_test.go",
-        "release_test.go",
         "sg_start_test.go",
-        "suggest_test.go",
     ],
     # Required by func findRoot() to check if sg is running in sourcegraph/sourcegraph
     data = ["//:go.mod"],
@@ -155,30 +154,7 @@ go_test(
         "//dev/sg/internal/std",
         "//lib/output/outputtest",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_stretchr_testify//assert",
         "@com_github_urfave_cli_v2//:cli",
     ],
-)
-
-# Refer to /doc/dev/background-information/sg/BUILD.bazel to see how this target is used to copy the
-# reference.md to the correct directory.
-#
-# Alternatively, if you just want to generate the doc:
-# bazel run //doc/dev/background-information/sg:write_cli_reference_doc
-genrule(
-    name = "generate_reference_doc",
-    srcs = ["//:sg.config.yaml"],
-    outs = ["_reference.md"],
-    cmd = """
-    SG_FORCE_REPO_ROOT="$$(pwd)" $(location :sg) \
-            --no-dev-private \
-            --disable-overwrite \
-            --disable-analytics \
-            --skip-auto-update \
-            --config sg.config.yaml \
-            help --full --output $@
-    """,
-    tools = [":sg"],
-    visibility = ["//visibility:public"],
 )

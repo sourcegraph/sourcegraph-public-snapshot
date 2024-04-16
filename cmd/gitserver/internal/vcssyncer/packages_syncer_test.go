@@ -4,22 +4,25 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -35,6 +38,11 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	}
 	depsService := &fakeDepsService{deps: map[reposource.PackageName]dependencies.PackageRepoReference{}}
 
+	root := t.TempDir()
+	fs := gitserverfs.New(observation.TestContextTB(t), root)
+	require.NoError(t, fs.Initialize())
+	remoteURL := &vcs.URL{URL: url.URL{Path: "fake/foo"}}
+
 	s := vcsPackagesSyncer{
 		logger:      logtest.Scoped(t),
 		typ:         "fake",
@@ -42,19 +50,23 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 		placeholder: placeholder,
 		source:      depsSource,
 		svc:         depsService,
+		fs:          fs,
+		getRemoteURLSource: func(ctx context.Context, name api.RepoName) (RemoteURLSource, error) {
+			return RemoteURLSourceFunc(func(_ context.Context) (*vcs.URL, error) {
+				return remoteURL, nil
+			}), nil
+		},
 	}
 
-	remoteURL := &vcs.URL{URL: url.URL{Path: "fake/foo"}}
-
 	dir := common.GitDir(t.TempDir())
-	_, err := s.CloneCommand(ctx, remoteURL, string(dir))
+	err := s.Clone(ctx, "repo", common.GitDir(dir), string(dir), io.Discard)
 	require.NoError(t, err)
 
 	depsService.Add("foo@0.0.1")
 	depsSource.Add("foo@0.0.1")
 
 	t.Run("one version from service", func(t *testing.T) {
-		_, err := s.Fetch(ctx, remoteURL, "", dir, "")
+		_, err := s.Fetch(ctx, "", dir, "")
 		require.NoError(t, err)
 
 		s.assertRefs(t, dir, map[string]string{
@@ -77,7 +89,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	oneVersionOneDownload := map[string]int{"foo@0.0.1": 1, "foo@0.0.2": 1}
 
 	t.Run("two versions, service and config", func(t *testing.T) {
-		_, err := s.Fetch(ctx, remoteURL, "", dir, "")
+		_, err := s.Fetch(ctx, "", dir, "")
 		require.NoError(t, err)
 
 		s.assertRefs(t, dir, allVersionsHaveRefs)
@@ -87,7 +99,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsSource.Delete("foo@0.0.2")
 
 	t.Run("cached tag not re-downloaded (404 not found)", func(t *testing.T) {
-		_, err := s.Fetch(ctx, remoteURL, "", dir, "")
+		_, err := s.Fetch(ctx, "", dir, "")
 		require.NoError(t, err)
 
 		// v0.0.2 is still present in the git repo because we didn't send a second download request.
@@ -99,7 +111,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsSource.download["foo@0.0.1"] = errors.New("401 unauthorized")
 
 	t.Run("cached tag not re-downloaded (401 unauthorized)", func(t *testing.T) {
-		_, err := s.Fetch(ctx, remoteURL, "", dir, "")
+		_, err := s.Fetch(ctx, "", dir, "")
 		// v0.0.1 is still present in the git repo because we didn't send a second download request.
 		require.NoError(t, err)
 		s.assertRefs(t, dir, allVersionsHaveRefs)
@@ -114,7 +126,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	}
 
 	t.Run("service version deleted", func(t *testing.T) {
-		_, err := s.Fetch(ctx, remoteURL, "", dir, "")
+		_, err := s.Fetch(ctx, "", dir, "")
 		require.NoError(t, err)
 
 		s.assertRefs(t, dir, onlyV2Refs)
@@ -124,7 +136,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	s.configDeps = []string{}
 
 	t.Run("all versions deleted", func(t *testing.T) {
-		_, err := s.Fetch(ctx, remoteURL, "", dir, "")
+		_, err := s.Fetch(ctx, "", dir, "")
 		require.NoError(t, err)
 
 		s.assertRefs(t, dir, map[string]string{})
@@ -136,7 +148,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsService.Add("foo@0.0.2")
 	depsSource.Add("foo@0.0.2")
 	t.Run("error aggregation", func(t *testing.T) {
-		_, err := s.Fetch(ctx, remoteURL, "", dir, "")
+		_, err := s.Fetch(ctx, "", dir, "")
 		require.ErrorContains(t, err, "401 unauthorized")
 
 		// The foo@0.0.1 tag was not created because of the 401 error.
@@ -159,7 +171,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	t.Run("lazy-sync version via revspec", func(t *testing.T) {
 		// the v0.0.3 tag should be created on-demand through the revspec parameter
 		// For context, see https://github.com/sourcegraph/sourcegraph/pull/38811
-		_, err := s.Fetch(ctx, remoteURL, "", dir, "v0.0.3^0")
+		_, err := s.Fetch(ctx, "", dir, "v0.0.3^0")
 		require.ErrorContains(t, err, "401 unauthorized") // v0.0.1 is still erroring
 		require.Equal(t, s.svc.(*fakeDepsService).upsertedDeps, []dependencies.MinimalPackageRepoRef{{
 			Scheme:   fakeVersionedPackage{}.Scheme(),
@@ -177,7 +189,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 
 	t.Run("lazy-sync error version via revspec", func(t *testing.T) {
 		// the v0.0.4 tag cannot be created on-demand because it returns a "0.0.4 not found" error
-		_, err := s.Fetch(ctx, remoteURL, "", dir, "v0.0.4^0")
+		_, err := s.Fetch(ctx, "", dir, "v0.0.4^0")
 		require.Nil(t, err)
 		// // the 0.0.4 error is silently ignored, we only return the error for v0.0.1.
 		// require.Equal(t, fmt.Sprint(err.Error()), "error pushing dependency {\"foo\" \"0.0.1\"}: 401 unauthorized")
@@ -369,14 +381,11 @@ func (f fakeVersionedPackage) Less(other reposource.VersionedPackage) bool {
 	return f.VersionedPackageSyntax() > other.VersionedPackageSyntax()
 }
 
-func (s *vcsPackagesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bareGitDirectory string, dependencies []string) {
-	u := vcs.URL{
-		URL: url.URL{Path: examplePackageURL},
-	}
+func (s *vcsPackagesSyncer) runCloneCommand(t *testing.T, bareGitDirectory string, dependencies []string) {
+
 	s.configDeps = dependencies
-	cmd, err := s.CloneCommand(context.Background(), &u, bareGitDirectory)
+	err := s.Clone(context.Background(), "repo", common.GitDir(bareGitDirectory), string(bareGitDirectory), io.Discard)
 	assert.Nil(t, err)
-	assert.Nil(t, cmd.Run())
 }
 
 func (s *vcsPackagesSyncer) assertDownloadCounts(t *testing.T, depsSource *fakeDepsSource, want map[string]int) {

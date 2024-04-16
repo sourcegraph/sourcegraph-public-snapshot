@@ -1,39 +1,21 @@
-import { dirname, join } from 'path'
-import { fileURLToPath } from 'url'
+import { join } from 'path'
 
 import { sveltekit } from '@sveltejs/kit/vite'
-import { defineConfig, mergeConfig, type Plugin, type UserConfig } from 'vite'
+import { defineConfig, mergeConfig, type UserConfig } from 'vite'
 import inspect from 'vite-plugin-inspect'
+import type { UserConfig as VitestUserConfig } from 'vitest'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-
-async function generateGraphQLOperations(): Promise<Plugin> {
-    const outputPath = './src/lib/graphql-operations.ts'
-    const interfaceNameForOperations = 'SvelteKitGraphQlOperations'
-    const documents = ['src/lib/**/*.{ts,graphql}', '!src/lib/graphql-operations.ts']
-
-    // We have to dynamically import this module to not make it a dependency when using
-    // Bazel
-    const operations = await import('@sourcegraph/shared/dev/generateGraphQlOperations')
-    const codegen = (await import('vite-plugin-graphql-codegen')).default
-
-    return codegen({
-        config: {
-            ...operations.createCodegenConfig([{ interfaceNameForOperations, outputPath }]),
-            // Top-level documents needs to be expliclity configured, otherwise vite-plugin-graphql-codgen
-            // won't regenerate on change.
-            documents,
-        },
-    })
-}
+import graphqlCodegen from './dev/vite-graphql-codegen'
 
 export default defineConfig(({ mode }) => {
-    let config: UserConfig = {
+    // Using & VitestUserConfig shouldn't be necessary but without it `svelte-check` complains when run
+    // in bazel. It's not clear what needs to be done to make it work without it, just like it does
+    // locally.
+    let config: UserConfig & VitestUserConfig = {
         plugins: [
             sveltekit(),
-            // When using bazel the graphql operations fiel is generated
-            // by bazel targets
-            process.env.BAZEL ? null : generateGraphQLOperations(),
+            // Generates typescript types for gql-tags and .gql files
+            graphqlCodegen(),
             inspect(),
         ],
         define:
@@ -41,8 +23,10 @@ export default defineConfig(({ mode }) => {
                 ? {}
                 : {
                       'process.platform': '"browser"',
-                      'process.env.VITEST': 'undefined',
-                      'process.env': '({})',
+                      'process.env.VITEST': 'null',
+                      'process.env.NODE_ENV': `"${mode}"`,
+                      'process.env.SOURCEGRAPH_API_URL': JSON.stringify(process.env.SOURCEGRAPH_API_URL),
+                      'process.env': '{}',
                   },
         css: {
             preprocessorOptions: {
@@ -67,12 +51,39 @@ export default defineConfig(({ mode }) => {
             proxy: {
                 // Proxy requests to specific endpoints to a real Sourcegraph
                 // instance.
-                '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights)': {
+                '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights)|(/-/raw/)': {
                     target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.com',
                     changeOrigin: true,
                     secure: false,
                 },
             },
+        },
+
+        resolve: {
+            alias: [
+                // Unclear why Vite fails. It claims that index.esm.js doesn't have this export (it does).
+                // Rewriting this to index.js fixes the issue. Error:
+                // import { CiWarning, CiSettings, CiTextAlignLeft } from "react-icons/ci/index.esm.js";
+                //                     ^^^^^^^^^^
+                // SyntaxError: Named export 'CiSettings' not found. The requested module 'react-icons/ci/index.esm.js'
+                // is a CommonJS module, which may not support all module.exports as named exports.
+                {
+                    find: /^react-icons\/(.+)$/,
+                    replacement: 'react-icons/$1/index.js',
+                },
+                // We generate corresponding .gql.ts files for .gql files.
+                // This alias allows us to import .gql files and have them resolved to the generated .gql.ts files.
+                {
+                    find: /^(.*)\.gql$/,
+                    replacement: '$1.gql.ts',
+                },
+                // Without aliasing lodash to lodash-es we get the following error:
+                // SyntaxError: Named export 'castArray' not found. The requested module 'lodash' is a CommonJS module, which may not support all module.exports as named exports.
+                {
+                    find: /^lodash$/,
+                    replacement: 'lodash-es',
+                },
+            ],
         },
 
         optimizeDeps: {
@@ -84,6 +95,16 @@ export default defineConfig(({ mode }) => {
 
         test: {
             setupFiles: './src/testing/setup.ts',
+            include: ['src/**/*.test.ts'],
+        },
+
+        legacy: {
+            // Our existing codebase imports many CommonJS modules as if they were ES modules. The default
+            // Vite 5 behavior doesn't work with this. Enabling this should be OK since we don't
+            // actually use SSR at the moment, so the difference between the dev and prod builds don't matter.
+            // We should revisit this at some point though.
+            // See https://vitejs.dev/guide/migration.html#ssr-externalized-modules-value-now-matches-production
+            proxySsrExternalModules: true,
         },
     }
 
@@ -119,8 +140,12 @@ export default defineConfig(({ mode }) => {
                 // and processes them as well.
                 // In a bazel sandbox however all @sourcegraph/* dependencies are built packages and thus not processed
                 // by vite without this additional setting.
-                // We have to process those files to apply certain "fixes", such as aliases defined in svelte.config.js.
+                // We have to process those files to apply certain "fixes", such as aliases defined in here
+                // and in svelte.config.js.
                 noExternal: [/@sourcegraph\/.*/],
+                // Exceptions to the above rule. These are packages that are not part of this monorepo and should
+                // not be processed by vite.
+                external: ['@sourcegraph/telemetry'],
             },
         } satisfies UserConfig)
     }

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as vscode from 'vscode'
 
 import { getBlobContent } from '../backend/blobContent'
@@ -43,6 +42,7 @@ export class SourcegraphFileSystemProvider implements vscode.FileSystemProvider 
     // We don't implement this because Sourcegraph files are read-only.
     private didChangeFile = new vscode.EventEmitter<vscode.FileChangeEvent[]>() // Never used.
     public readonly onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = this.didChangeFile.event
+
     public async stat(vscodeUri: vscode.Uri): Promise<vscode.FileStat> {
         const uri = this.sourcegraphUri(vscodeUri)
         const now = Date.now()
@@ -97,6 +97,7 @@ export class SourcegraphFileSystemProvider implements vscode.FileSystemProvider 
     public createDirectory(uri: vscode.Uri): void {
         throw new Error('Method not supported in read-only file system.')
     }
+
     public writeFile(
         _uri: vscode.Uri,
         _content: Uint8Array,
@@ -104,12 +105,15 @@ export class SourcegraphFileSystemProvider implements vscode.FileSystemProvider 
     ): void | Thenable<void> {
         throw new Error('Method not supported in read-only file system.')
     }
+
     public delete(_uri: vscode.Uri, _options: { recursive: boolean }): void {
         throw new Error('Method not supported in read-only file system.')
     }
+
     public rename(_oldUri: vscode.Uri, _newUri: vscode.Uri, _options: { overwrite: boolean }): void {
         throw new Error('Method not supported in read-only file system.')
     }
+
     public watch(_uri: vscode.Uri, _options: { recursive: boolean; excludes: string[] }): vscode.Disposable {
         throw new Error('Method not supported in read-only file system.')
     }

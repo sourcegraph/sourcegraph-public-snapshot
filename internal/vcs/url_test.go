@@ -215,6 +215,12 @@ func TestParseURL(t *testing.T) {
 			formatStdlib, "perforce", "admin:pa$$word", "ssl:192.168.1.100:1666", "//Sourcegraph/",
 			"perforce://admin:pa$$word@ssl:192.168.1.100:1666//Sourcegraph/", "",
 		),
+		// iap://
+		newParseURLTest(
+			"iap://admin:pa$$word@gitlab.sgdev.org/test/repo.git",
+			formatStdlib, "iap", "admin:pa$$word", "gitlab.sgdev.org", "/test/repo.git",
+			"iap://admin:pa$$word@gitlab.sgdev.org/test/repo.git", "",
+		),
 	}
 
 	for _, tt := range tests {

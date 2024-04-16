@@ -2,6 +2,7 @@ import { type FC, type ReactElement, type ReactNode, useContext, useState, useMe
 
 import { useApolloClient } from '@apollo/client'
 import { mdiClose } from '@mdi/js'
+import { lastValueFrom } from 'rxjs'
 
 import { isErrorLike, pluralize } from '@sourcegraph/common'
 import {
@@ -53,11 +54,14 @@ export const AddInsightModal: FC<AddInsightModalProps> = props => {
         try {
             const prevInsights = getCachedDashboardInsights(client, dashboard.id)
 
-            await assignInsightsToDashboard({
-                id: dashboard.id,
-                prevInsightIds: prevInsights.map(insight => insight.id),
-                nextInsightIds: dashboardInsights.map(insight => insight.id),
-            }).toPromise()
+            await lastValueFrom(
+                assignInsightsToDashboard({
+                    id: dashboard.id,
+                    prevInsightIds: prevInsights.map(insight => insight.id),
+                    nextInsightIds: dashboardInsights.map(insight => insight.id),
+                }),
+                { defaultValue: undefined }
+            )
             setSubmittingOrError(false)
             onClose()
         } catch (error) {
@@ -203,14 +207,18 @@ function InsightSuggestionCard(props: InsightSuggestionCardProps): ReactElement 
 
 function getInsightDetails(insight: InsightSuggestion): ReactNode {
     switch (insight.type) {
-        case InsightType.Detect:
+        case InsightType.Detect: {
             return insight.queries.join(', ')
-        case InsightType.DetectAndTrack:
+        }
+        case InsightType.DetectAndTrack: {
             return insight.query
-        case InsightType.Compute:
+        }
+        case InsightType.Compute: {
             return `${insight.query}, grouped by ${formatGroupBy(insight.groupBy)}`
-        case InsightType.LanguageStats:
+        }
+        case InsightType.LanguageStats: {
             return ''
+        }
     }
 }
 

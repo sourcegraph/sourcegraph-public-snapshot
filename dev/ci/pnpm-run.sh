@@ -6,7 +6,7 @@ echo "--- pnpm install"
 ./dev/ci/pnpm-install-with-retry.sh
 
 echo "--- generate"
-pnpm gulp generate
+pnpm run generate
 
 for cmd in "$@"; do
   echo "--- $cmd"

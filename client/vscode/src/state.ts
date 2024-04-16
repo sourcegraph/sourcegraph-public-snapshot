@@ -20,6 +20,7 @@ export interface VSCEStateMachine {
     observeState: () => Observable<VSCEState>
     emit: (event: VSCEEvent) => void
 }
+
 export type VSCEState = SearchHomeState | SearchResultsState | RemoteBrowsingState | IdleState | ContextInvalidatedState
 
 export interface SearchHomeState {
@@ -33,6 +34,7 @@ export interface SearchResultsState {
         submittedSearchQueryState: Pick<SearchQueryState, 'queryState' | 'searchCaseSensitivity' | 'searchPatternType'>
     }
 }
+
 export interface RemoteBrowsingState {
     status: 'remote-browsing'
     context: CommonContext
@@ -190,9 +192,9 @@ export function createVSCEStateMachine({
 
         switch (state.status) {
             case 'search-home':
-            case 'search-results':
+            case 'search-results': {
                 switch (event.type) {
-                    case 'search_panel_disposed':
+                    case 'search_panel_disposed': {
                         return {
                             ...state,
                             status: 'search-home',
@@ -202,22 +204,26 @@ export function createVSCEStateMachine({
                                 searchResults: null,
                             },
                         }
+                    }
 
-                    case 'search_panel_unfocused':
+                    case 'search_panel_unfocused': {
                         return {
                             ...state,
                             status: 'idle',
                         }
+                    }
 
-                    case 'remote_file_focused':
+                    case 'remote_file_focused': {
                         return {
                             ...state,
                             status: 'remote-browsing',
                         }
+                    }
                 }
                 return state
+            }
 
-            case 'remote-browsing':
+            case 'remote-browsing': {
                 switch (event.type) {
                     case 'search_panel_focused': {
                         if (state.context.submittedSearchQueryState) {
@@ -235,16 +241,18 @@ export function createVSCEStateMachine({
                             status: 'search-home',
                         }
                     }
-                    case 'remote_file_unfocused':
+                    case 'remote_file_unfocused': {
                         return {
                             ...state,
                             status: 'idle',
                         }
+                    }
                 }
 
                 return state
+            }
 
-            case 'idle':
+            case 'idle': {
                 switch (event.type) {
                     case 'search_panel_focused': {
                         if (state.context.submittedSearchQueryState) {
@@ -263,14 +271,16 @@ export function createVSCEStateMachine({
                         }
                     }
 
-                    case 'remote_file_focused':
+                    case 'remote_file_focused': {
                         return {
                             ...state,
                             status: 'remote-browsing',
                         }
+                    }
                 }
 
                 return state
+            }
         }
     }
 

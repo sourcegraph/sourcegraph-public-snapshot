@@ -17,7 +17,7 @@ def container_dependencies(targets):
         pkg_tar(
             name = "tar_{}".format(name),
             srcs = [target],
-            remap_paths = { "/{}".format(name): "/usr/local/bin/{}".format(name) }
+            remap_paths = {"/{}".format(name): "/usr/local/bin/{}".format(name)},
         )
 
 def dependencies_tars(targets):
@@ -27,4 +27,3 @@ def dependencies_tars(targets):
         tars.append(":tar_{}".format(name))
 
     return tars
-

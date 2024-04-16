@@ -13,18 +13,18 @@ import '../monitoring/initMonitoring'
 import { createRoot } from 'react-dom/client'
 
 import { logger } from '@sourcegraph/common'
-import { RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
+import { setLinkComponent } from '@sourcegraph/wildcard'
 
 import { initAppShell } from '../storm/app-shell-init'
+import { WebNextAwareLink } from '../sveltekit/WebNextAwareLink'
 
 import { EnterpriseWebApp } from './EnterpriseWebApp'
 
 const appShellPromise = initAppShell()
 
-setLinkComponent(RouterLink)
+setLinkComponent(WebNextAwareLink)
 
 // It's important to have a root component in a separate file to create a react-refresh boundary and avoid page reload.
-// https://github.com/pmmmwh/react-refresh-webpack-plugin/blob/main/docs/TROUBLESHOOTING.md#edits-always-lead-to-full-reload
 window.addEventListener('DOMContentLoaded', async () => {
     const root = createRoot(document.querySelector('#root')!)
 
@@ -32,14 +32,18 @@ window.addEventListener('DOMContentLoaded', async () => {
         const { graphqlClient, temporarySettingsStorage } = await appShellPromise
 
         root.render(
-            <EnterpriseWebApp graphqlClient={graphqlClient} temporarySettingsStorage={temporarySettingsStorage} />
+            <EnterpriseWebApp
+                graphqlClient={graphqlClient}
+                temporarySettingsStorage={temporarySettingsStorage}
+                telemetryRecorder={window.context.telemetryRecorder}
+            />
         )
     } catch (error) {
         logger.error('Failed to initialize the app shell', error)
     }
 })
 
-if (process.env.DEV_WEB_BUILDER === 'esbuild' && process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development') {
     new EventSource('/.assets/esbuild').addEventListener('change', () => {
         location.reload()
     })

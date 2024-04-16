@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"sort"
-	"strings"
 	"testing"
 
 	"golang.org/x/time/rate"
@@ -46,14 +45,14 @@ func testService(t *testing.T, repositoryContents map[string]string) *Service {
 	})
 	gitService.ArchiveFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 		files := map[string]string{}
-		for _, spec := range opts.Pathspecs {
-			if contents, ok := repositoryContents[strings.TrimPrefix(string(spec), ":(literal)")]; ok {
-				files[string(spec)] = contents
+		for _, path := range opts.Paths {
+			if contents, ok := repositoryContents[path]; ok {
+				files[path] = contents
 			}
 		}
 
 		return unpacktest.CreateTarArchive(t, files), nil
 	})
 
-	return newService(&observation.TestContext, sandboxService, gitService, ratelimit.NewInstrumentedLimiter("TestInference", rate.NewLimiter(rate.Limit(100), 1)), 100, 1024*1024)
+	return newService(observation.TestContextTB(t), sandboxService, gitService, ratelimit.NewInstrumentedLimiter("TestInference", rate.NewLimiter(rate.Limit(100), 1)), 100, 1024*1024)
 }

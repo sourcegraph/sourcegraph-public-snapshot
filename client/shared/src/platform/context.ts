@@ -1,6 +1,6 @@
 import type { Endpoint } from 'comlink'
 import { isObject } from 'lodash'
-import type { Observable, Subscribable, Subscription } from 'rxjs'
+import type { Observable, Subscription } from 'rxjs'
 
 import type { DiffPart } from '@sourcegraph/codeintellify'
 import { hasProperty } from '@sourcegraph/common'
@@ -10,6 +10,7 @@ import type { SettingsEdit } from '../api/client/services/settings'
 import type { ExecutableExtension } from '../api/extension/activation'
 import type { Scalars } from '../graphql-operations'
 import type { Settings, SettingsCascadeOrError } from '../settings/settings'
+import type { TelemetryRecorder } from '../telemetry'
 import type { TelemetryService } from '../telemetry/telemetryService'
 import type { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStateSpec } from '../util/url'
 
@@ -72,7 +73,7 @@ export interface PlatformContext {
      *
      * @deprecated Use useSettings instead
      */
-    readonly settings: Subscribable<SettingsCascadeOrError<Settings>>
+    readonly settings: Observable<SettingsCascadeOrError<Settings>>
 
     /**
      * Update the settings for the subject, either by inserting/changing a specific value or by overwriting the
@@ -96,7 +97,7 @@ export interface PlatformContext {
      * Returns promise that resolves into Apollo Client instance after cache restoration.
      * Only `watchQuery` is available till https://github.com/sourcegraph/sourcegraph/issues/24953 is implemented.
      *
-     * @deprecated Use [Apollo](docs.sourcegraph.com/dev/background-information/web/graphql#graphql-client) instead
+     * @deprecated Use [Apollo](https://sourcegraph.com/docs/dev/background-information/web/graphql#graphql-client) instead
      */
     getGraphQLClient: () => Promise<Pick<GraphQLClient, 'watchQuery'>>
 
@@ -107,7 +108,7 @@ export interface PlatformContext {
      * could leak private information such as repository names.
      * @returns Observable that emits the result or an error if the HTTP request failed
      *
-     * @deprecated Use [Apollo](docs.sourcegraph.com/dev/background-information/web/graphql#graphql-client) instead
+     * @deprecated Use [Apollo](https://sourcegraph.com/docs/dev/background-information/web/graphql#graphql-client) instead
      */
     requestGraphQL: <R, V extends { [key: string]: any } = object>(options: {
         /**
@@ -180,8 +181,19 @@ export interface PlatformContext {
     /**
      * A telemetry service implementation to log events.
      * Optional because it's currently only used in the web app platform.
+     *
+     * @deprecated Use 'telemetryRecorder' instead.
      */
     telemetryService?: TelemetryService
+
+    /**
+     * Telemetry recorder for the new telemetry framework, superseding
+     * 'telemetryService' and 'logEvent' variants. Learn more here:
+     * https://sourcegraph.com/docs/dev/background-information/telemetry
+     *
+     * It is backed by a '@sourcegraph/telemetry' implementation.
+     */
+    telemetryRecorder: TelemetryRecorder
 
     /**
      * If this is a function that returns a Subscribable of executable extensions,

@@ -22,6 +22,8 @@ func normalizeConfig(t Config) Config {
 	o.Backend = strings.ToLower(o.Backend)
 
 	if o.Backend == "blobstore" {
+		o.S3.IsBlobstore = true
+
 		// No manual provisioning on blobstore.
 		o.ManageBucket = true
 

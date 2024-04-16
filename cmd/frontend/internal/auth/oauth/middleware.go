@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/oauth2"
 
@@ -83,9 +83,19 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 		id := r.URL.Query().Get("pc")
 		p := GetProvider(serviceType, id)
 		if p == nil {
-			log15.Error("no OAuth provider found with ID and service type", "id", id, "serviceType", serviceType)
-			msg := fmt.Sprintf("Misconfigured %s auth provider.", serviceType)
-			http.Error(w, msg, http.StatusInternalServerError)
+			// NOTE: Within the Sourcegraph application, we have been using both the
+			// "redirect" and "returnTo" query parameters inconsistently, and some of the
+			// usages are also on the client side (Cody clients). If we ever settle on one
+			// and updated all usages on both server and client side, we need to make sure
+			// to have a grace period (e.g. 3 months) for the client side because we have no
+			// control over when users will actually upgrade their clients.
+			redirect := r.URL.Query().Get("redirect")
+			if redirect == "" {
+				redirect = r.URL.Query().Get("returnTo")
+			}
+
+			log15.Warn("no OAuth provider found with ID and service type", "id", id, "serviceType", serviceType)
+			http.Redirect(w, r, "/sign-in?returnTo="+redirect, http.StatusFound)
 			return
 		}
 		p.Login(p.OAuth2Config()).ServeHTTP(w, r)
@@ -201,7 +211,7 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 }
 
 func getExactlyOneOAuthProvider() *Provider {
-	ps := providers.Providers()
+	ps := providers.SignInProviders()
 	if len(ps) != 1 {
 		return nil
 	}

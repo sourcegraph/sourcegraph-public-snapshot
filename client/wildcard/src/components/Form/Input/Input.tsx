@@ -23,6 +23,7 @@ export { Label }
 export interface InputProps {
     /**
      * Text label of input.
+     *
      * @deprecated Use <Label /> composition components instead
      */
     label?: ReactNode

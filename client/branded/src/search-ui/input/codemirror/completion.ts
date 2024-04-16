@@ -154,7 +154,11 @@ const theme = EditorView.theme({
  * searchQueryAutocompletion registers extensions for automcompletion, using the
  * provided suggestion sources.
  */
-export function searchQueryAutocompletion(sources: StandardSuggestionSource[], navigate?: NavigateFunction): Extension {
+export function searchQueryAutocompletion(
+    sources: StandardSuggestionSource[],
+    enableJumpToSuggestion: boolean,
+    navigate?: NavigateFunction
+): Extension {
     const override: CompletionSource[] = sources.map(source => context => {
         const position = context.pos
         const query = context.state.facet(queryTokens)
@@ -172,7 +176,7 @@ export function searchQueryAutocompletion(sources: StandardSuggestionSource[], n
         {
             render(completion) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                if ((completion as any)?.url) {
+                if (enableJumpToSuggestion && navigate && (completion as any)?.url) {
                     return createSVGIcon(mdiLightningBoltCircle, '')
                 }
                 const icon = createSVGIcon(
@@ -261,9 +265,9 @@ export function searchQueryAutocompletion(sources: StandardSuggestionSource[], n
                     key: 'Enter',
                     run(view) {
                         const selected = selectedCompletion(view.state)
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
                         const url = (selected as any)?.url
-                        if (navigate && typeof url === 'string') {
+                        if (enableJumpToSuggestion && navigate && typeof url === 'string') {
                             navigate(url)
                             return true
                         }
@@ -497,29 +501,36 @@ export function suggestionTypeFromTokens(tokens: Token[]): SearchMatch['type'] {
             continue
         }
         switch (token.field.value) {
-            case 'type':
+            case 'type': {
                 switch (token.value?.value) {
-                    case 'symbol':
+                    case 'symbol': {
                         return 'symbol'
+                    }
                     case 'path':
-                    case 'file':
+                    case 'file': {
                         return 'path'
-                    case 'repo':
+                    }
+                    case 'repo': {
                         return 'repo'
+                    }
                     case 'diff':
-                    case 'commit':
+                    case 'commit': {
                         return 'commit'
+                    }
                 }
                 break
+            }
             case 'repo':
-            case 'r':
+            case 'r': {
                 isWithinRepo = true
                 break
+            }
             case 'path':
             case 'file':
-            case 'f':
+            case 'f': {
                 isWithinFile = true
                 break
+            }
         }
     }
     // We don't suggest paths because it's easier to get completions for files
@@ -545,7 +556,7 @@ function completionFromSearchMatch(
     const hasNonActivePatternTokens =
         tokens.find(token => token.type === 'pattern' && !isEqual(token.range, activeToken.range)) !== undefined
     switch (match.type) {
-        case 'path':
+        case 'path': {
             return [
                 {
                     label: match.path,
@@ -561,7 +572,8 @@ function completionFromSearchMatch(
                     info: match.repository,
                 },
             ]
-        case 'repo':
+        }
+        case 'repo': {
             return [
                 {
                     label: match.repository,
@@ -571,7 +583,8 @@ function completionFromSearchMatch(
                     apply: (params?.isDefaultSource ? 'repo:' : '') + repositoryInsertText(match) + ' ',
                 },
             ]
-        case 'symbol':
+        }
+        case 'symbol': {
             return match.symbols.map(symbol => ({
                 label: (params?.isDefaultSource ? `${symbol.kind.toLowerCase()} ` : '') + symbol.name,
                 type: symbol.kind,
@@ -582,8 +595,10 @@ function completionFromSearchMatch(
                     : `${startCase(symbol.kind.toLowerCase())} | ${basename(match.path)}`,
                 info: match.repository,
             }))
-        default:
+        }
+        default: {
             return []
+        }
     }
 }
 

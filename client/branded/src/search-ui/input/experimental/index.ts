@@ -1,5 +1,3 @@
-export type { CodeMirrorQueryInputWrapperProps } from './CodeMirrorQueryInputWrapper'
-export { CodeMirrorQueryInputWrapper, QueryInputVisualMode } from './CodeMirrorQueryInputWrapper'
 export type {
     Group,
     Option,
@@ -10,8 +8,7 @@ export type {
     Source,
     SuggestionResult,
 } from './suggestionsExtension'
-export { combineResults, selectionListener } from './suggestionsExtension'
-export * from './optionRenderer'
+export { combineResults, selectionListener, RenderAs } from './suggestionsExtension'
 export * from './utils'
 export * from './codemirror/history'
 export * from './codemirror/searchcontext'

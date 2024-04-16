@@ -28,9 +28,9 @@ func TestZoektRepos_GetZoektRepo(t *testing.T) {
 	ctx := context.Background()
 	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
 
-	repo1, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: "repo1"})
-	repo2, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: "repo2"})
-	repo3, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: "repo3"})
+	repo1, _ := createTestRepo(ctx, t, db, "repo1")
+	repo2, _ := createTestRepo(ctx, t, db, "repo2")
+	repo3, _ := createTestRepo(ctx, t, db, "repo3")
 
 	assertZoektRepos(t, ctx, s, map[api.RepoID]*ZoektRepo{
 		repo1.ID: {RepoID: repo1.ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
@@ -56,7 +56,7 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 		"repo2",
 		"repo3",
 	} {
-		r, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: name})
+		r, _ := createTestRepo(ctx, t, db, name)
 		repos = append(repos, types.MinimalRepo{ID: r.ID, Name: r.Name})
 	}
 
@@ -227,7 +227,7 @@ func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
 	)
 
 	inserter := batch.NewInserter(ctx, db.Handle(), "repo", batch.MaxNumPostgresParameters, "name")
-	for i := 0; i < numRepos; i++ {
+	for i := range numRepos {
 		if err := inserter.Insert(ctx, fmt.Sprintf("repo-%d", i)); err != nil {
 			b.Fatal(err)
 		}
@@ -245,7 +245,7 @@ func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
 	b.ResetTimer()
 
 	b.Run("update-all", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			if err := s.UpdateIndexStatuses(ctx, indexedAll); err != nil {
 				b.Fatalf("unexpected error: %s", err)
 			}
@@ -253,7 +253,7 @@ func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
 	})
 
 	b.Run("update-half", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			if err := s.UpdateIndexStatuses(ctx, indexedHalf); err != nil {
 				b.Fatalf("unexpected error: %s", err)
 			}
@@ -261,7 +261,7 @@ func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
 	})
 
 	b.Run("update-none", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			if err := s.UpdateIndexStatuses(ctx, make(zoekt.ReposMap)); err != nil {
 				b.Fatalf("unexpected error: %s", err)
 			}

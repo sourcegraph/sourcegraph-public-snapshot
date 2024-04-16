@@ -230,7 +230,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 	if err != nil {
 		return false, err
 	}
-	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_symbols WHERE repo_id = $1;", pg.Array([]int{repoId}))
+	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_symbols WHERE repo_id = $1;", repoId)
 	if err != nil {
 		return false, err
 	}

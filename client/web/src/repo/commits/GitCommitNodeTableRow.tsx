@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 
-import { mdiDotsHorizontal } from '@mdi/js'
+import { mdiChevronUp, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -57,7 +57,7 @@ export const GitCommitNodeTableRow: React.FC<
                     size="sm"
                     aria-label={showCommitMessageBody ? 'Hide commit message body' : 'Show commit message body'}
                 >
-                    <Icon aria-hidden={true} svgPath={mdiDotsHorizontal} />
+                    <Icon aria-hidden={true} svgPath={showCommitMessageBody ? mdiChevronUp : mdiChevronDown} />
                 </Button>
             )}
 
@@ -69,12 +69,14 @@ export const GitCommitNodeTableRow: React.FC<
 
     const commitMessageBody =
         expandCommitMessageBody || showCommitMessageBody ? (
-            <tr className={classNames(styles.tableRow, className)}>
-                <td colSpan={3}>
-                    <pre className={styles.messageBody}>
+            <tr className={classNames(styles.commitMessage, className)}>
+                <td className={classNames(styles.colByline)} />
+                <td>
+                    <div className={`${styles.messageBody} flex-1`}>
                         {node.body && <Linkified input={node.body} externalURLs={node.externalURLs} />}
-                    </pre>
+                    </div>
                 </td>
+                <td className={classNames(styles.spacer)} />
             </tr>
         ) : undefined
 

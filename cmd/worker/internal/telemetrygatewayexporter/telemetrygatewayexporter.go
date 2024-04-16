@@ -75,7 +75,7 @@ func (c *config) Load() {
 	}
 
 	c.ExportedEventsRetentionWindow = env.MustGetDuration("TELEMETRY_GATEWAY_EXPORTER_EXPORTED_EVENTS_RETENTION",
-		2*24*time.Hour, "Duration to retain already-exported telemetry events before deleting")
+		24*time.Hour, "Duration to retain already-exported telemetry events before deleting")
 
 	c.QueueCleanupInterval = env.MustGetDuration("TELEMETRY_GATEWAY_EXPORTER_QUEUE_CLEANUP_INTERVAL",
 		30*time.Minute, "Interval at which to clean up telemetry export queue")

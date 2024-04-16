@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`RepositoryReleasesTagsPage renders 1`] = `
+exports[`RepositoryReleasesTagsPage > renders 1`] = `
 <DocumentFragment>
   <div
     class="repository-releases-page"
@@ -49,7 +49,7 @@ exports[`RepositoryReleasesTagsPage renders 1`] = `
 </DocumentFragment>
 `;
 
-exports[`RepositoryReleasesTagsPage renders for packages 1`] = `
+exports[`RepositoryReleasesTagsPage > renders for packages 1`] = `
 <DocumentFragment>
   <div
     class="repository-releases-page"

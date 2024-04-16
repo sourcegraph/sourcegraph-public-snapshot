@@ -15,12 +15,15 @@ type TemporarySettingsLoadStatus = 'initial' | 'loaded' | 'error'
 
 const mapObservableStatusToStatus = (observableStatus: ObservableStatus): TemporarySettingsLoadStatus => {
     switch (observableStatus) {
-        case 'initial':
+        case 'initial': {
             return 'initial'
-        case 'error':
+        }
+        case 'error': {
             return 'error'
-        default:
+        }
+        default: {
             return 'loaded'
+        }
     }
 }
 

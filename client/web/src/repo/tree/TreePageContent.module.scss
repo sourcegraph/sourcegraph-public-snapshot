@@ -14,17 +14,12 @@
     @media (--md-breakpoint-down) {
         grid-template-areas:
             'files files files'
-            'contributors contributors contributors'
-            'commits commits commits';
+            'contributors contributors contributors';
     }
 }
 
 .files {
     grid-area: files;
-}
-
-.commits {
-    grid-area: commits;
 }
 
 .contributors {
@@ -40,14 +35,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     border-top: 1px solid var(--border-color);
-}
-
-.git-commit-node {
-    padding: 0.25rem 0;
-
-    &-message-subject {
-        font-weight: normal;
-    }
 }
 
 .table {

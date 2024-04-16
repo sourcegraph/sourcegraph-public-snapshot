@@ -2,12 +2,12 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
-import cookies from 'js-cookie'
 import { type Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     useInputValidation,
     type ValidationOptions,
@@ -17,7 +17,8 @@ import { Link, Icon, Label, Text, Button, AnchorLink, LoaderInput, ErrorAlert } 
 
 import { LoaderButton } from '../components/LoaderButton'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
-import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
+import { eventLogger } from '../tracking/eventLogger'
+import { EventName, V2AuthProviderTypes } from '../util/constants'
 import { validatePassword, getPasswordRequirements } from '../util/security'
 
 import { OrDivider } from './OrDivider'
@@ -33,7 +34,7 @@ export interface SignUpArguments {
     lastSourceUrl?: string
 }
 
-interface SignUpFormProps {
+interface SignUpFormProps extends TelemetryV2Props {
     className?: string
 
     /** Called to perform the signup on the server. */
@@ -60,6 +61,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
     className,
     context,
     experimental = false,
+    telemetryRecorder,
 }) => {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<Error | null>(null)
@@ -108,16 +110,17 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                 email: emailState.value,
                 username: usernameState.value,
                 password: passwordState.value,
-                anonymousUserId: cookies.get(ANONYMOUS_USER_ID_KEY),
-                firstSourceUrl: cookies.get(FIRST_SOURCE_URL_KEY),
-                lastSourceUrl: cookies.get(LAST_SOURCE_URL_KEY),
+                anonymousUserId: eventLogger.user.anonymousUserID,
+                firstSourceUrl: eventLogger.session.getFirstSourceURL(),
+                lastSourceUrl: eventLogger.session.getLastSourceURL(),
             }).catch(error => {
                 setError(asError(error))
                 setLoading(false)
             })
             eventLogger.log('InitiateSignUp')
+            telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes.builtin } })
         },
-        [onSignUp, disabled, emailState, usernameState, passwordState]
+        [onSignUp, disabled, emailState, usernameState, passwordState, telemetryRecorder]
     )
 
     const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)
@@ -126,9 +129,10 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
         (type: AuthProvider['serviceType']) => () => {
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
-            eventLogger.log('SignupInitiated', { type }, { type })
+            eventLogger.log(EventName.AUTH_INITIATED, { type }, { type })
+            telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes[type] } })
         },
-        []
+        [telemetryRecorder]
     )
 
     return (
@@ -234,11 +238,11 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                     <Text className="mt-3 mb-0">
                         <small className="form-text text-muted">
                             By signing up, you agree to our{' '}
-                            <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
+                            <Link to="https://sourcegraph.com/terms" target="_blank" rel="noopener">
                                 Terms of Service
                             </Link>{' '}
                             and{' '}
-                            <Link to="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
+                            <Link to="https://sourcegraph.com/privacy" target="_blank" rel="noopener">
                                 Privacy Policy
                             </Link>
                             .
@@ -256,14 +260,17 @@ function isUsernameUnique(username: string): Observable<string | undefined> {
     return fromFetch(`/-/check-username-taken/${username}`).pipe(
         switchMap(response => {
             switch (response.status) {
-                case 200:
+                case 200: {
                     return of('Username is already taken.')
-                case 404:
+                }
+                case 404: {
                     // Username is unique
                     return of(undefined)
+                }
 
-                default:
+                default: {
                     return of('Unknown error validating username')
+                }
             }
         }),
         catchError(() => of('Unknown error validating username'))

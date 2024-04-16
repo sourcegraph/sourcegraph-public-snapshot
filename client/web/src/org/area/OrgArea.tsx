@@ -5,7 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, Routes, type NavigateFunction } from 'react-router-dom'
 import { combineLatest, merge, type Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { type ErrorLike, isErrorLike, asError, logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
@@ -99,7 +99,6 @@ export interface OrgAreaProps
      */
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
 
     location: H.Location
     navigate: NavigateFunction
@@ -134,10 +133,14 @@ export interface OrgAreaRouteContext
     authenticatedUser: AuthenticatedUser
 
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
 
     orgSettingsSideBarItems: OrgSettingsSidebarItems
     orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
+
+    license: {
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
+    }
 }
 
 /**
@@ -167,7 +170,7 @@ export class OrgArea extends React.Component<OrgAreaProps> {
 
         // Fetch organization.
         this.subscriptions.add(
-            combineLatest([nameChanges, merge(this.refreshRequests.pipe(mapTo(false)), of(true))])
+            combineLatest([nameChanges, merge(this.refreshRequests.pipe(map(() => false)), of(true))])
                 .pipe(
                     switchMap(([name, forceRefresh]) => {
                         type PartialStateUpdate = Pick<State, 'orgOrError'>
@@ -235,7 +238,6 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             namespace: this.state.orgOrError,
             telemetryService: this.props.telemetryService,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
-            isCodyApp: this.props.isCodyApp,
             batchChangesEnabled: this.props.batchChangesEnabled,
             batchChangesExecutionEnabled: this.props.batchChangesExecutionEnabled,
             batchChangesWebhookLogsEnabled: this.props.batchChangesWebhookLogsEnabled,
@@ -244,6 +246,10 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             useBreadcrumb: this.state.useBreadcrumb,
             orgSettingsAreaRoutes: this.props.orgSettingsAreaRoutes,
             orgSettingsSideBarItems: this.props.orgSettingsSideBarItems,
+            license: {
+                isCodeSearchEnabled: Boolean(window.context.licenseInfo?.features.codeSearch),
+                isCodyEnabled: Boolean(window.context.licenseInfo?.features.cody),
+            },
         }
 
         if (this.props.location.pathname === `/organizations/${this.props.orgName}/invitation`) {

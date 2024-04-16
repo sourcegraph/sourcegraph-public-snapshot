@@ -29,7 +29,7 @@ func walk(node *sitter.Node, f func(node *sitter.Node)) {
 // children if it returns true.
 func walkFilter(node *sitter.Node, f func(node *sitter.Node) bool) {
 	if f(node) {
-		for i := 0; i < int(node.ChildCount()); i++ {
+		for i := range int(node.ChildCount()) {
 			walkFilter(node.Child(i), f)
 		}
 	}
@@ -49,25 +49,12 @@ func getRoot(node *sitter.Node) *sitter.Node {
 	return top
 }
 
-// isLessRange compares ranges.
-func isLessRange(a, b types.Range) bool {
-	if a.Row == b.Row {
-		return a.Column < b.Column
-	}
-	return a.Row < b.Row
-}
-
-// tabsToSpaces converts tabs to spaces.
-func tabsToSpaces(s string) string {
-	return strings.ReplaceAll(s, "\t", "    ")
-}
-
 const tabSize = 4
 
 // lengthInSpaces returns the length of the string in spaces (using tabSize).
 func lengthInSpaces(s string) int {
 	total := 0
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if s[i] == '\t' {
 			total += tabSize
 		} else {
@@ -80,7 +67,7 @@ func lengthInSpaces(s string) int {
 // spacesToColumn measures the length in spaces from the start of the string to the given column.
 func spacesToColumn(s string, column int) int {
 	total := 0
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if total >= column {
 			return i
 		}
@@ -93,9 +80,6 @@ func spacesToColumn(s string, column int) int {
 	}
 	return total
 }
-
-// colorSprintfFunc is a color printing function.
-type colorSprintfFunc func(a ...any) string
 
 // bracket prefixes all the lines of the given string with pretty brackets.
 func bracket(text string) string {
@@ -196,24 +180,6 @@ func nodeLength(node *sitter.Node) int {
 	return length
 }
 
-// Of course.
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-// When generic?
-func contains(slice []string, str string) bool {
-	for _, s := range slice {
-		if s == str {
-			return true
-		}
-	}
-	return false
-}
-
 // Node is a sitter.Node plus convenient info.
 type Node struct {
 	RepoCommitPath types.RepoCommitPath
@@ -236,7 +202,9 @@ func swapNodePtr(other Node, newNode *sitter.Node) *Node {
 	return &ret
 }
 
-var unrecognizedFileExtensionError = errors.New("unrecognized file extension")
+// CAUTION: These error messages are checked by client-side code,
+// so make sure to update clients if changing them.
+var UnrecognizedFileExtensionError = errors.New("unrecognized file extension")
 var UnsupportedLanguageError = errors.New("unsupported language")
 
 // Parses a file and returns info about it.
@@ -248,7 +216,18 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 
 	langName, ok := extToLang[ext]
 	if !ok {
-		return nil, unrecognizedFileExtensionError
+		// It is not uncommon to have files with upper-case extensions
+		// like .C, .H, .CPP etc., especially for code developed on
+		// case-insensitive filesystems. So check if lower-casing helps.
+		//
+		// It might be tempting to refactor this code to store all the
+		// extensions in lower-case and do one lookup instead of two,
+		// but that would be incorrect as we want to distinguish files
+		// named 'build' (a common name for shell scripts) vs BUILD
+		//// (file extension for Bazel).
+		if langName, ok = extToLang[strings.ToLower(ext)]; !ok {
+			return nil, UnrecognizedFileExtensionError
+		}
 	}
 
 	langSpec, ok := langToLangSpec[langName]
@@ -334,7 +313,7 @@ func children(node *sitter.Node) []*sitter.Node {
 		return nil
 	}
 	var children []*sitter.Node
-	for i := 0; i < int(node.NamedChildCount()); i++ {
+	for i := range int(node.NamedChildCount()) {
 		children = append(children, node.NamedChild(i))
 	}
 	return children
@@ -409,7 +388,7 @@ func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, comm
 		Commit: commit,
 		Path:   symbol.Path,
 	})
-	if errors.Is(err, UnsupportedLanguageError) || errors.Is(err, unrecognizedFileExtensionError) {
+	if errors.Is(err, UnsupportedLanguageError) || errors.Is(err, UnrecognizedFileExtensionError) {
 		return nil, nil
 	}
 	if err != nil {

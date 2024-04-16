@@ -83,7 +83,7 @@ func CheckDrift(ctx context.Context, r *runner.Runner, version string, out *outp
 		""+
 			"Before continuing with this operation, run the migrator's drift command and follow instructions to repair the schema to the expected current state."+
 			" "+
-			"See https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#drift for additional instructions."+
+			"See https://sourcegraph.com/docs/admin/updates/migrator/schema-drift for additional instructions."+
 			"\n",
 	))
 

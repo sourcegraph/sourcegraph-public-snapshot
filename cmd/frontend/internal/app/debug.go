@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -21,13 +21,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/otlpadapter"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
-	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -36,10 +34,6 @@ var (
 	grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
 	jaegerURLFromEnv  = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
 )
-
-func init() {
-	conf.ContributeWarning(newPrometheusValidator(srcprometheus.NewClient(srcprometheus.PrometheusURL)))
-}
 
 func addNoK8sClientHandler(r *mux.Router, db database.DB) {
 	noHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -84,13 +78,6 @@ func addDebugHandlers(r *mux.Router, db database.DB) {
 	rph.AddToRouter(r, db) // todo
 }
 
-// PreMountGrafanaHook (if set) is invoked as a hook prior to mounting a
-// the Grafana endpoint to the debug router.
-var PreMountGrafanaHook func() error
-
-// This error is returned if the current license does not support monitoring.
-const errMonitoringNotLicensed = `The feature "monitoring" is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.`
-
 func addNoGrafanaHandler(r *mux.Router, db database.DB) {
 	noGrafana := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Grafana endpoint proxying: Please set env var GRAFANA_SERVER_URL`)
@@ -98,21 +85,8 @@ func addNoGrafanaHandler(r *mux.Router, db database.DB) {
 	r.Handle("/grafana", debugproxies.AdminOnly(db, noGrafana))
 }
 
-func addGrafanaNotLicensedHandler(r *mux.Router, db database.DB) {
-	notLicensed := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, errMonitoringNotLicensed, http.StatusUnauthorized)
-	})
-	r.Handle("/grafana", debugproxies.AdminOnly(db, notLicensed))
-}
-
 // addReverseProxyForService registers a reverse proxy for the specified service.
 func addGrafana(r *mux.Router, db database.DB) {
-	if PreMountGrafanaHook != nil {
-		if err := PreMountGrafanaHook(); err != nil {
-			addGrafanaNotLicensedHandler(r, db)
-			return
-		}
-	}
 	if len(grafanaURLFromEnv) > 0 {
 		grafanaURL, err := url.Parse(grafanaURLFromEnv)
 		if err != nil {
@@ -310,40 +284,4 @@ func addOpenTelemetryProtocolAdapter(r *mux.Router) {
 
 	// Register adapter endpoints
 	otlpadapter.Register(ctx, logger, protocol, endpoint, r, clientEnabled)
-}
-
-// newPrometheusValidator renders problems with the Prometheus deployment and relevant site configuration
-// as reported by `prom-wrapper` inside the `sourcegraph/prometheus` container if Prometheus is enabled.
-//
-// It also accepts the error from creating `srcprometheus.Client` as an parameter, to validate
-// Prometheus configuration.
-func newPrometheusValidator(prom srcprometheus.Client, promErr error) conf.Validator {
-	return func(c conftypes.SiteConfigQuerier) conf.Problems {
-		// surface new prometheus client error if it was unexpected
-		prometheusUnavailable := errors.Is(promErr, srcprometheus.ErrPrometheusUnavailable)
-		if promErr != nil && !prometheusUnavailable {
-			return conf.NewSiteProblems(fmt.Sprintf("Prometheus (`PROMETHEUS_URL`) might be misconfigured: %v", promErr))
-		}
-
-		// no need to validate prometheus config if no `observability.*` settings are configured
-		observabilityNotConfigured := len(c.SiteConfig().ObservabilityAlerts) == 0 && len(c.SiteConfig().ObservabilitySilenceAlerts) == 0
-		if observabilityNotConfigured {
-			// no observability configuration, no checks to make
-			return nil
-		} else if prometheusUnavailable {
-			// no prometheus, but observability is configured
-			return conf.NewSiteProblems("`observability.alerts` or `observability.silenceAlerts` are configured, but Prometheus is not available")
-		}
-
-		// use a short timeout to avoid having this block problems from loading
-		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-		defer cancel()
-
-		// get reported problems
-		status, err := prom.GetConfigStatus(ctx)
-		if err != nil {
-			return conf.NewSiteProblems(fmt.Sprintf("`observability`: failed to fetch alerting configuration status: %v", err))
-		}
-		return status.Problems
-	}
 }

@@ -3,11 +3,13 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	logger "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 )
 
 func (r *schemaResolver) Organizations(args *struct {
@@ -28,11 +30,6 @@ type orgConnectionResolver struct {
 }
 
 func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, error) {
-	// 🚨 SECURITY: Not allowed on Cloud.
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("listing organizations is not allowed")
-	}
-
 	// 🚨 SECURITY: Only site admins can list organisations.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -49,6 +46,14 @@ func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, erro
 			db:  r.db,
 			org: org,
 		})
+	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log an event when listing organizations.
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgListViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
+			logger.Error(err)
+
+		}
 	}
 	return l, nil
 }

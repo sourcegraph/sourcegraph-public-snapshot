@@ -1,0 +1,7 @@
+id: {{ .EnvironmentID }}
+projectID: {{ newProjectID .ServiceID .EnvironmentID .ProjectIDSuffixLength }}
+# TODO: We initially provision in 'test' to make it easy to access the project
+# during setup. Once done, you should change this to 'external' or 'internal'.
+category: test
+# TODO: Fill out the rest of your configuration here!
+# ...

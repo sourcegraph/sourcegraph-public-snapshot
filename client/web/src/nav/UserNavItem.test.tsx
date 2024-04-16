@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -9,6 +10,12 @@ import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { UserNavItem, type UserNavItemProps } from './UserNavItem'
+
+vi.mock('../util/license', () => ({
+    isCodeSearchOnlyLicense: () => false,
+    isCodeSearchPlusCodyLicense: () => true,
+    isCodyOnlyLicense: () => false,
+}))
 
 describe('UserNavItem', () => {
     beforeAll(() => {
@@ -46,6 +53,7 @@ describe('UserNavItem', () => {
                 },
             ],
         },
+        emails: [],
     }
 
     test('simple', () => {
@@ -57,7 +65,6 @@ describe('UserNavItem', () => {
                             showKeyboardShortcutsHelp={() => undefined}
                             authenticatedUser={USER}
                             isSourcegraphDotCom={true}
-                            isCodyApp={false}
                             showFeedbackModal={() => undefined}
                             telemetryService={NOOP_TELEMETRY_SERVICE}
                         />
@@ -74,7 +81,6 @@ describe('UserNavItem', () => {
                     showKeyboardShortcutsHelp={() => undefined}
                     authenticatedUser={USER}
                     isSourcegraphDotCom={true}
-                    isCodyApp={false}
                     showFeedbackModal={() => undefined}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                 />

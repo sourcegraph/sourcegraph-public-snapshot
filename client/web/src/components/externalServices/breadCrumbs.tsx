@@ -1,6 +1,7 @@
 import { mdiCog } from '@mdi/js'
 
 import { Icon } from '@sourcegraph/wildcard'
+// eslint-disable-next-line no-restricted-imports
 import type { BreadcrumbItem } from '@sourcegraph/wildcard/src/components/PageHeader'
 
 import type { ExternalServiceFieldsWithConfig } from './backend'

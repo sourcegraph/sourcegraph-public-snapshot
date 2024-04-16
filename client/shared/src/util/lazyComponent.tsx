@@ -3,7 +3,7 @@ import React, { type Attributes, type PropsWithChildren, type PropsWithRef } fro
 /**
  * Returns a lazy-loaded reference to a React component in another module.
  *
- * This should be used in URL routes and anywhere else that Webpack code splitting can occur, to
+ * This should be used in URL routes and anywhere else that code splitting can occur, to
  * avoid all referenced components being in the initial bundle.
  *
  * @param componentFactory Asynchronously imports the component's module; e.g., `() =>

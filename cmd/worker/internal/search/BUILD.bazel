@@ -17,6 +17,7 @@ go_library(
         "//internal/actor",
         "//internal/database",
         "//internal/env",
+        "//internal/gitserver",
         "//internal/goroutine",
         "//internal/observation",
         "//internal/search/client",

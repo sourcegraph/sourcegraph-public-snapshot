@@ -28,6 +28,9 @@ export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<Pe
     <>
         {allNamespaces.map(namespace => {
             const namespacePermissions = allPermissions[namespace]
+            if (!namespacePermissions || namespacePermissions.length === 0) {
+                return null
+            }
             return (
                 <div key={namespace}>
                     <Text className="font-weight-bold">{prettifyNamespace(namespace)}</Text>

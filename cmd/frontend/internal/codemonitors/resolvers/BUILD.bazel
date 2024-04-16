@@ -13,6 +13,7 @@ go_library(
         "//internal/codemonitors",
         "//internal/codemonitors/background",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/gqlutil",
         "//internal/httpcli",
         "//lib/errors",

@@ -69,6 +69,8 @@ func NewConfig(now time.Time) Config {
 			"RELEASE_NIGHTLY":    os.Getenv("RELEASE_NIGHTLY"),
 			"VSCE_NIGHTLY":       os.Getenv("VSCE_NIGHTLY"),
 			"WOLFI_BASE_REBUILD": os.Getenv("WOLFI_BASE_REBUILD"),
+			"RELEASE_INTERNAL":   os.Getenv("RELEASE_INTERNAL"),
+			"RELEASE_PUBLIC":     os.Getenv("RELEASE_PUBLIC"),
 		})
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
@@ -90,13 +92,20 @@ func NewConfig(now time.Time) Config {
 			// We run builds on every commit in main, so on main, just look at the diff of the current commit.
 			diffCommand = append(diffCommand, "@^")
 		} else {
-			diffCommand = append(diffCommand, "origin/main..."+commit)
+			baseBranch := os.Getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
+			if diffArgs, err := determineDiffArgs(baseBranch, commit); err != nil {
+				panic(err)
+			} else {
+				// the base we want to diff against should exist locally now so we can diff!
+				diffCommand = append(diffCommand, diffArgs)
+			}
 		}
 	} else {
 		diffCommand = append(diffCommand, "origin/main...")
 		// for testing
 		commit = "1234567890123456789012345678901234567890"
 	}
+	fmt.Fprintf(os.Stderr, "running diff command: git %v\n", diffCommand)
 	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
 		panic(err)
 	} else {
@@ -105,12 +114,19 @@ func NewConfig(now time.Time) Config {
 
 	diff, changedFilesByDiffType := changed.ParseDiff(changedFiles)
 
+	fmt.Fprintf(os.Stderr, "Parsed diff:\n\tgit command: %v\n\tchanged files: %v\n\tdiff changes: %q\n",
+		append([]string{"git"}, diffCommand...),
+		changedFiles,
+		diff.String(),
+	)
+	fmt.Fprint(os.Stderr, "The generated build pipeline will now follow, see you next time!\n")
+
 	return Config{
 		RunType: runType,
 
 		Time:              now,
 		Branch:            branch,
-		Version:           versionFromTag(runType, tag, commit, buildNumber, branch, now),
+		Version:           inferVersion(runType, tag, commit, buildNumber, branch, now),
 		Commit:            commit,
 		MustIncludeCommit: mustIncludeCommits,
 		Diff:              diff,
@@ -127,8 +143,35 @@ func NewConfig(now time.Time) Config {
 	}
 }
 
-// versionFromTag constructs the Sourcegraph version from the given build state.
-func versionFromTag(runType runtype.RunType, tag string, commit string, buildNumber int, branch string, now time.Time) string {
+func determineDiffArgs(baseBranch, commit string) (string, error) {
+	// We have a different base branch (possibily) and on aspect agents we are in a detached state with only 100 commit depth
+	// so we might not know about this base branch ... so we first fetch the base and then diff
+	//
+	// Determine the base branch
+	if baseBranch == "" {
+		// When the base branch is not set, then this is probably a build where a commit got merged
+		// onto the current branch. So we just diff with the current commit
+		return "@^", nil
+	}
+
+	// fetch the branch to make sure it exists
+	refspec := fmt.Sprintf("+refs/heads/%s:refs/remotes/origin/%s", baseBranch, baseBranch)
+	if _, err := exec.Command("git", "fetch", "origin", refspec).Output(); err != nil {
+		return "", errors.Newf("failed to fetch %s: %s", baseBranch, err)
+	} else {
+		fmt.Fprintf(os.Stderr, "fetched %s\n", baseBranch)
+		return fmt.Sprintf("origin/%s...%s", baseBranch, commit), nil
+	}
+}
+
+// inferVersion constructs the Sourcegraph version from the given build state.
+func inferVersion(runType runtype.RunType, tag string, commit string, buildNumber int, branch string, now time.Time) string {
+	// If we're building a release, use the version that is being released regardless of
+	// all other build attributes, such as tag, commit, build number, etc ...
+	if runType.Is(runtype.InternalRelease, runtype.PromoteRelease) {
+		return os.Getenv("VERSION")
+	}
+
 	if runType.Is(runtype.TaggedRelease) {
 		// This tag is used for publishing versioned releases.
 		//

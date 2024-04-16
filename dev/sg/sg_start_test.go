@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"testing"
 
@@ -20,14 +21,16 @@ func TestStartCommandSet(t *testing.T) {
 	buf := useOutputBuffer(t)
 
 	commandSet := &sgconf.Commandset{Name: "test-set", Commands: []string{"test-cmd-1"}}
-	command := run.Command{
-		Name:    "test-cmd-1",
+	command := &run.Command{
+		Config: run.SGConfigCommandOptions{
+			Name: "test-cmd-1",
+		},
 		Install: "echo 'booting up horsegraph'",
 		Cmd:     "echo 'horsegraph booted up. mount your horse.' && echo 'quitting. not horsing around anymore.'",
 	}
 
 	testConf := &sgconf.Config{
-		Commands:    map[string]run.Command{"test-cmd-1": command},
+		Commands:    map[string]*run.Command{"test-cmd-1": command},
 		Commandsets: map[string]*sgconf.Commandset{"test-set": commandSet},
 	}
 
@@ -45,6 +48,7 @@ func TestStartCommandSet(t *testing.T) {
 		"",
 		"✅ Everything installed! Booting up the system!",
 		"",
+		"Starting 1 cmds",
 		"Running test-cmd-1...",
 		"[     test-cmd-1] horsegraph booted up. mount your horse.",
 		"[     test-cmd-1] quitting. not horsing around anymore.",
@@ -59,14 +63,16 @@ func TestStartCommandSet_InstallError(t *testing.T) {
 	buf := useOutputBuffer(t)
 
 	commandSet := &sgconf.Commandset{Name: "test-set", Commands: []string{"test-cmd-1"}}
-	command := run.Command{
-		Name:    "test-cmd-1",
+	command := &run.Command{
+		Config: run.SGConfigCommandOptions{
+			Name: "test-cmd-1",
+		},
 		Install: "echo 'booting up horsegraph' && exit 1",
 		Cmd:     "echo 'never appears'",
 	}
 
 	testConf := &sgconf.Config{
-		Commands:    map[string]run.Command{"test-cmd-1": command},
+		Commands:    map[string]*run.Command{"test-cmd-1": command},
 		Commandsets: map[string]*sgconf.Commandset{"test-set": commandSet},
 	}
 
@@ -82,8 +88,7 @@ func TestStartCommandSet_InstallError(t *testing.T) {
 		"",
 		"💡 Installing 1 commands...",
 		"--------------------------------------------------------------------------------",
-		"Failed to build test-cmd-1: 'bash -c echo 'booting up horsegraph' && exit 1' failed: booting up horsegraph",
-		": exit status 1:",
+		`Failed to build test-cmd-1: 'bash -c echo 'booting up horsegraph' && exit 1' failed with "exit status 1":`,
 		"booting up horsegraph",
 		"--------------------------------------------------------------------------------",
 	})
@@ -105,6 +110,9 @@ func expectOutput(t *testing.T, buf *outputtest.Buffer, want []string) {
 	t.Helper()
 
 	have := buf.Lines()
+
+	sort.Strings(want)
+	sort.Strings(have)
 	if !cmp.Equal(want, have) {
 		t.Fatalf("wrong output:\n%s", cmp.Diff(want, have))
 	}

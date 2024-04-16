@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { SearchPatternType } from '../../graphql-operations'
 
 import { type DecoratedToken, decorate } from './decoratedToken'
@@ -23,28 +25,32 @@ const getTokens = (tokens: Token[]): { startIndex: number; scopes: string }[] =>
                 case 'closingParen':
                 case 'metaFilterSeparator':
                 case 'metaRepoRevisionSeparator':
-                case 'metaContextPrefix':
+                case 'metaContextPrefix': {
                     return {
                         startIndex: token.range.start,
                         scopes: token.type,
                     }
+                }
+                case 'metaKeyword':
                 case 'metaPath':
                 case 'metaRevision':
                 case 'metaRegexp':
                 case 'metaStructural':
-                case 'metaPredicate':
+                case 'metaPredicate': {
                     // The scopes value is derived from the token type and its kind.
                     // E.g., regexpMetaDelimited derives from {@link RegexpMeta} and {@link RegexpMetaKind}.
                     return {
                         startIndex: token.range.start,
                         scopes: `${token.type}${token.kind}`,
                     }
+                }
 
-                default:
+                default: {
                     return {
                         startIndex: token.range.start,
                         scopes: 'identifier',
                     }
+                }
             }
         })
     )
@@ -1818,5 +1824,90 @@ describe('scanSearchQuery() and decorate()', () => {
               }
             ]
         `)
+    })
+
+    test('do not decorate keywords inside quotes for keyword pattern type', () => {
+        expect(getTokens(toSuccess(scanSearchQuery('"foo and bar" and bas', false, SearchPatternType.keyword))))
+            .toMatchInlineSnapshot(`
+          [
+            {
+              "startIndex": 0,
+              "scopes": "identifier"
+            },
+            {
+              "startIndex": 13,
+              "scopes": "whitespace"
+            },
+            {
+              "startIndex": 14,
+              "scopes": "keyword"
+            },
+            {
+              "startIndex": 17,
+              "scopes": "whitespace"
+            },
+            {
+              "startIndex": 18,
+              "scopes": "identifier"
+            }
+          ]
+        `)
+    })
+
+    test('decorate escaped quotes inside quoted patterns', () => {
+        expect(getTokens(toSuccess(scanSearchQuery(String.raw`"foo\"\'bar\""`, false, SearchPatternType.keyword))))
+            .toMatchInlineSnapshot(`
+          [
+            {
+              "startIndex": 0,
+              "scopes": "identifier"
+            },
+            {
+              "startIndex": 4,
+              "scopes": "metaKeywordEscapedCharacter"
+            },
+            {
+              "startIndex": 11,
+              "scopes": "metaKeywordEscapedCharacter"
+            }
+          ]
+        `)
+        expect(getTokens(toSuccess(scanSearchQuery(String.raw`'foo\"\'bar\''`, false, SearchPatternType.keyword))))
+            .toMatchInlineSnapshot(`
+                    [
+                      {
+                        "startIndex": 0,
+                        "scopes": "identifier"
+                      },
+                      {
+                        "startIndex": 6,
+                        "scopes": "metaKeywordEscapedCharacter"
+                      },
+                      {
+                        "startIndex": 11,
+                        "scopes": "metaKeywordEscapedCharacter"
+                      }
+                    ]
+                  `)
+    })
+
+    test('do not decorate quotes inside quoted filter values', () => {
+        expect(getTokens(toSuccess(scanSearchQuery(String.raw`file:"foo\"bar"`, false, SearchPatternType.keyword))))
+            .toMatchInlineSnapshot(`
+  [
+    {
+      "startIndex": 0,
+      "scopes": "field"
+    },
+    {
+      "startIndex": 4,
+      "scopes": "metaFilterSeparator"
+    },
+    {
+      "startIndex": 5,
+      "scopes": "identifier"
+    }
+  ]
+`)
     })
 })

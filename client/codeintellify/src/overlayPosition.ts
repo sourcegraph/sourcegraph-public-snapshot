@@ -1,4 +1,3 @@
-// eslint-disable-next-line unicorn/prevent-abbreviations
 export interface HasGetBoundingClientRect {
     getBoundingClientRect: () => { left: number; top: number; bottom: number; height: number }
 }

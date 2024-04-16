@@ -2,11 +2,14 @@ package graphqlbackend
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -29,7 +32,7 @@ func TestSiteConfiguration(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(false),
 			})
 
@@ -45,7 +48,7 @@ func TestSiteConfiguration(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			r, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(true),
 			})
 			if err != nil {
@@ -98,7 +101,7 @@ func TestSiteConfiguration(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 		t.Run("ReturnSafeConfigsOnly is false", func(t *testing.T) {
-			r, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(false),
 			})
 			if err != nil {
@@ -130,7 +133,7 @@ func TestSiteConfiguration(t *testing.T) {
 		})
 
 		t.Run("ReturnSafeConfigsOnly is true", func(t *testing.T) {
-			r, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(true),
 			})
 			if err != nil {
@@ -164,7 +167,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
-	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{})
+	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{})
 	if err != nil {
 		t.Fatalf("failed to create schemaResolver: %v", err)
 	}
@@ -347,6 +350,80 @@ func TestIsRequiredOutOfBandMigration(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			got := isRequiredOutOfBandMigration(test.version, test.migration)
 			assert.Equal(t, test.want, got)
+		})
+	}
+}
+
+func Test_allowEdit(t *testing.T) {
+	tests := []struct {
+		name      string
+		before    string
+		after     string
+		allowlist []string
+		want      autogold.Value
+		ok        bool
+	}{
+		{
+			name:      "allowed",
+			before:    `{}`,
+			after:     `{"externalURL": "https://sg.local.com"}`,
+			allowlist: []string{"externalURL"},
+			ok:        true,
+		},
+		{
+			name:   "not allowed",
+			before: `{}`,
+			after: `
+{
+  "observability.alerts": [
+    {
+      "level": "critical",
+      "notifier": {
+        "type": "slack",
+        "url": "some-url",
+        "username": "username"
+      }
+    },
+  ]
+}`,
+			allowlist: []string{"externalURL"},
+			want:      autogold.Expect([]string{"observability.alerts"}),
+			ok:        false,
+		},
+		{
+			name:   "nested and mixed",
+			before: `{}`,
+			after: `
+{
+  "experimentalFeatures": {
+    "searchJobs": true,
+  },
+  "auth.providers": [
+    {
+      "type": "builtin"
+    },
+  ],
+  "email.smtp": {
+    "authentication": "PLAIN",
+    "host": "smtp.company.local",
+    "password": "password",
+    "port": 587,
+    "username": "username",
+  },
+}`,
+			allowlist: []string{"auth.providers"},
+			want:      autogold.Expect([]string{"email.smtp", "experimentalFeatures::searchJobs"}),
+			ok:        false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := allowEdit(tt.before, tt.after, tt.allowlist)
+			require.Equal(t, tt.ok, ok)
+			if !ok {
+				sort.Strings(got)
+				tt.want.Equal(t, got)
+			}
 		})
 	}
 }

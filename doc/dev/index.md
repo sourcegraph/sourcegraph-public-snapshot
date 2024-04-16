@@ -71,7 +71,6 @@ Clarification and discussion about key concepts, architecture, and development s
 ### Development
 
 - [`sg` - the Sourcegraph developer tool](background-information/sg/index.md)
-  - [Full `sg` reference](background-information/sg/reference.md)
 - [Using Bazel](background-information/bazel/index.md)
   - [Bazel and Go code](background-information/bazel/go.md)
   - [Bazel and client code](background-information/bazel/web.md)
@@ -87,7 +86,6 @@ Clarification and discussion about key concepts, architecture, and development s
   - [Accessibility](background-information/web/accessibility.md)
   - [Temporary settings](background-information/web/temporary_settings.md)
   - [Build process](background-information/web/build.md)
-- [Developing Cody App](background-information/app/index.md)
 - [Developing the GraphQL API](background-information/graphql_api.md)
 - [Developing the SCIM API](background-information/scim_api.md)
 - [Developing batch changes](background-information/batch_changes/index.md)
@@ -138,9 +136,10 @@ Clarification and discussion about key concepts, architecture, and development s
 ### Security
 
 - [Security patterns](background-information/security_patterns.md)
-- [Security policy](https://about.sourcegraph.com/security/)
-- [How to disclose vulnerabilities](https://about.sourcegraph.com/handbook/engineering/security/reporting-vulnerabilities).
+- [Security policy](https://sourcegraph.com/security/)
+- [How to disclose vulnerabilities](https://sourcegraph.com/handbook/engineering/security/reporting-vulnerabilities).
 - [CSRF security model](security/csrf_security_model.md)
+- [Sourcegraph secret formats](security/secret_formats.md)
 
 ### Testing
 

@@ -7,10 +7,12 @@ import { WebStory } from '../../../../../components/WebStory'
 
 import { Field, FocusContainer } from '.'
 
-export default {
+const meta: Meta = {
     title: 'web/insights/form/Field',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-} as Meta
+}
+
+export default meta
 
 const MULTI_LINE_VALUE = `
 repo:^(github\\.com/sourcegraph/sourcegraph)$

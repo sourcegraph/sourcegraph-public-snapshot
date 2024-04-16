@@ -3,8 +3,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useApolloClient } from '@apollo/client'
 import { Fzf } from 'fzf'
 
+import { ALL_LANGUAGES } from '@sourcegraph/common'
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 
 import { createRepositoryCompletionSource } from './sources'
 

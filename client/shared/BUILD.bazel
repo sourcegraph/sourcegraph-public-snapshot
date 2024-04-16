@@ -1,14 +1,11 @@
-load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
-load("//client/shared/dev:generate_schema.bzl", "generate_schema")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
+load("//client/shared/dev:generate_schema.bzl", "generate_schema")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
-load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
-
-# TODO(bazel): storybook build
-# gazelle:exclude **/*.story.{ts,tsx}
+load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 # gazelle:js_resolve ../graphql-operations //client/shared:graphql_operations
@@ -17,21 +14,6 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 npm_link_all_packages(name = "node_modules")
 
 eslint_config_and_lint_root()
-
-# Temporary ESLint target to lint stories. This will be removed once we have a
-# custom gazelle targets. E.g., `gazelle:custom_js_files stories src/**/*.story.tsx`
-eslint_test_with_types(
-    name = "stories_eslint",
-    srcs = glob([
-        "src/**/*.story.tsx",
-        "src/**/*.fixtures.ts",
-    ]),
-    config = ":eslint_config",
-    deps = [
-        "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
-        "//:node_modules/@types/node",
-    ],
-)
 
 ts_config(
     name = "tsconfig",
@@ -82,7 +64,7 @@ ts_project(
     ],
 )
 
-js_library(
+copy_to_bin(
     name = "graphql_operations_files",
     # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
     srcs = glob(
@@ -121,14 +103,17 @@ generate_schema(
     out = "src/schema/batch_spec.schema.d.ts",
 )
 
+generate_schema(
+    name = "opencodegraph",
+    out = "src/schema/opencodegraph.schema.d.ts",
+)
+
 ts_project(
     name = "shared_lib",
     srcs = [
         "src/actions/ActionItem.tsx",
-        "src/actions/ActionsContainer.tsx",
         "src/actions/ActionsNavItems.tsx",
         "src/actions/SimpleActionItem.tsx",
-        "src/actions/actions.ts",
         "src/api/client/api/api.ts",
         "src/api/client/api/common.ts",
         "src/api/client/connection.ts",
@@ -158,7 +143,6 @@ ts_project(
         "src/api/extension/util.ts",
         "src/api/extension/utils/ReferenceCounter.ts",
         "src/api/extension/worker.ts",
-        "src/api/features.ts",
         "src/api/sharedEventLogger.ts",
         "src/api/textDocumentTypes.ts",
         "src/api/util.ts",
@@ -211,7 +195,6 @@ ts_project(
         "src/codeintel/legacy-extensions/util/promise.ts",
         "src/codeintel/legacy-extensions/util/uri.ts",
         "src/codeintel/scip.ts",
-        "src/codeintel/searchContext.ts",
         "src/commands/commands.ts",
         "src/components/CodeMirrorEditor.tsx",
         "src/components/HighlightedMatches.tsx",
@@ -225,15 +208,11 @@ ts_project(
         "src/components/VirtualList.tsx",
         "src/components/icons.tsx",
         "src/components/languageIcons.tsx",
-        "src/components/ranking/LineRanking.ts",
         "src/components/ranking/PerFileResultRanking.ts",
-        "src/components/ranking/PerFileResultRankingTestHelpers.ts",
-        "src/components/ranking/ZoektRanking.ts",
         "src/components/utils/size.ts",
         "src/contributions/contributions.ts",
         "src/deprecated-theme-utils.ts",
         "src/extensions/controller.ts",
-        "src/extensions/createNoopLoadedController.ts",
         "src/extensions/createSyncLoadedController.ts",
         "src/extensions/extension.ts",
         "src/extensions/extensionManifest.ts",
@@ -318,15 +297,13 @@ ts_project(
         "src/symbols/SymbolKind.tsx",
         "src/symbols/SymbolTag.tsx",
         "src/symbols/symbolIcons.ts",
+        "src/telemetry/index.ts",
         "src/telemetry/telemetryService.ts",
         "src/theme.ts",
+        "src/theme-types.ts",
         "src/tracking/event-log-creators.ts",
         "src/tracking/utm.ts",
         "src/types/core-js/configurator.d.ts",
-        "src/types/jasmine/index.d.ts",
-        "src/types/puppeteer-firefox/index.d.ts",
-        "src/types/storybook-chromatic/index.d.ts",
-        "src/types/web-ext/index.d.ts",
         "src/util/dom.ts",
         "src/util/lazyComponent.tsx",
         "src/util/url.ts",
@@ -341,6 +318,7 @@ ts_project(
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/extension-api-types",
         ":node_modules/@sourcegraph/http-client",
+        ":node_modules/@sourcegraph/telemetry",
         ":node_modules/@sourcegraph/template-parser",
         ":node_modules/@sourcegraph/wildcard",
         ":node_modules/sourcegraph",
@@ -358,21 +336,19 @@ ts_project(
         "//:node_modules/@types/lru-cache",
         "//:node_modules/@types/minimatch",
         "//:node_modules/@types/node",
-        "//:node_modules/@types/puppeteer",
         "//:node_modules/@types/react",
+        "//:node_modules/@types/whatwg-url",
         "//:node_modules/classnames",
         "//:node_modules/comlink",
         "//:node_modules/core-js",
         "//:node_modules/fast-json-stable-stringify",
         "//:node_modules/history",
-        "//:node_modules/jest",  #keep
         "//:node_modules/js-base64",
         "//:node_modules/lodash",
         "//:node_modules/lru-cache",
         "//:node_modules/mdi-react",
         "//:node_modules/minimatch",
         "//:node_modules/monaco-editor",
-        "//:node_modules/puppeteer",
         "//:node_modules/react",
         "//:node_modules/react-visibility-sensor",
         "//:node_modules/regexpp",
@@ -381,6 +357,7 @@ ts_project(
         "//:node_modules/use-deep-compare-effect",
         "//:node_modules/util",
         "//:node_modules/utility-types",
+        "//:node_modules/whatwg-url",
         "//:node_modules/zustand",
         "//schema:settings",  #keep
     ],
@@ -436,8 +413,6 @@ ts_project(
         "src/components/Path.test.tsx",
         "src/components/RepoLink.test.tsx",
         "src/components/UserAvatar.test.tsx",
-        "src/components/ranking/LineRanking.test.tsx",
-        "src/components/ranking/ZoektRanking.test.tsx",
         "src/contributions/contributions.test.ts",
         "src/extensions/extension.test.ts",
         "src/hover/HoverOverlay.test.tsx",
@@ -463,6 +438,7 @@ ts_project(
         "src/search/query/validate.test.ts",
         "src/settings/settings.test.ts",
         "src/settings/temporary/useTemporarySetting.test.tsx",
+        "src/testSetup.test.ts",
         "src/tracking/utm.test.ts",
         "src/util/dom.test.ts",
         "src/util/url.test.ts",
@@ -484,6 +460,7 @@ ts_project(
         "//:node_modules/@apollo/client",
         "//:node_modules/@sourcegraph/extension-api-classes",
         "//:node_modules/@sourcegraph/extension-api-stubs",
+        "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@testing-library/react",
         "//:node_modules/@testing-library/user-event",
         "//:node_modules/@types/history",
@@ -500,6 +477,7 @@ ts_project(
         "//:node_modules/react",
         "//:node_modules/rxjs",
         "//:node_modules/sinon",
+        "//:node_modules/vitest",
         "//client/shared/src/testing",
     ],
 )
@@ -522,15 +500,30 @@ filegroup(
     srcs = glob(["src/**/__snapshots__/*"]),
 )
 
-jest_test(
+vitest_test(
     name = "test",
-    size = "enormous",  # make sure bazel reserves enough RAM for this.
-    timeout = "moderate",
     data = [
+        ":module_styles",
         ":shared_tests",
         ":snapshots",
     ],
-    patch_node_fs = False,
-    shard_count = 6,
-    tags = ["no-sandbox"],
+)
+
+ts_project(
+    name = "stories",
+    srcs = [
+        "src/actions/ActionItem.story.tsx",
+        "src/symbols/SymbolTag.story.tsx",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":graphql_operations",
+        ":node_modules/@sourcegraph/common",
+        ":node_modules/@sourcegraph/wildcard",
+        ":shared_lib",
+        "//:node_modules/@storybook/addon-actions",
+        "//:node_modules/@storybook/react",
+        "//:node_modules/@types/history",
+        "//:node_modules/history",
+    ],
 )

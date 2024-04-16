@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -17,7 +16,8 @@ type Store interface {
 
 	// Insert
 	InsertMetadata(ctx context.Context, uploadID int, meta ProcessedMetadata) error
-	NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error)
+	NewPreciseSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error)
+	NewSyntacticSCIPWriter(uploadID int) (SCIPWriter, error)
 
 	// Reconciliation and cleanup
 	IDsWithMeta(ctx context.Context, ids []int) ([]int, error)
@@ -26,9 +26,6 @@ type Store interface {
 	DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error)
 	DeleteAbandonedSchemaVersionsRecords(ctx context.Context) (_ int, err error)
 	DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (numScanned, numDeleted int, err error)
-
-	// Scan/export document data
-	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload shared.ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) (err error)
 }
 
 type SCIPWriter interface {

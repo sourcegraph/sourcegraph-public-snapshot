@@ -1,20 +1,14 @@
 import { noop } from 'lodash'
+import { describe, expect, test } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
-import { mockLicenseContext, mockLicense } from './testUtils'
+import { mockLicense } from './testUtils'
 
 describe('SiteAdminGenerateProductLicenseForSubscriptionForm', () => {
-    const origContext = window.context
-    beforeEach(() => {
-        window.context = mockLicenseContext
-    })
-    afterEach(() => {
-        window.context = origContext
-    })
-
     test('renders', () => {
         expect(
             renderWithBrandedContext(
@@ -25,6 +19,7 @@ describe('SiteAdminGenerateProductLicenseForSubscriptionForm', () => {
                         onCancel={noop}
                         subscriptionAccount="foo"
                         onGenerate={noop}
+                        telemetryRecorder={noOpTelemetryRecorder}
                     />
                 </MockedTestProvider>
             ).baseElement

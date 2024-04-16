@@ -1607,13 +1607,17 @@ SELECT u.id as user_id, MAX(p.finished_at) as finished_at
 FROM users u
 LEFT JOIN permission_sync_jobs p ON u.id = p.user_id AND p.user_id IS NOT NULL
 WHERE u.deleted_at IS NULL AND (%s)
+AND NOT EXISTS (
+	SELECT 1 FROM permission_sync_jobs p2
+	WHERE p2.user_id = u.id AND (p2.state = 'queued' OR p2.state = 'processing')
+)
 GROUP BY u.id
 ORDER BY finished_at ASC NULLS FIRST, user_id ASC
 LIMIT %d;
 `
 
 // UserIDsWithOldestPerms lists the users with the oldest synced perms, limited
-// to limit. If age is non-zero, users that have synced within "age" since now
+// to limit, for which there is no sync job scheduled at the moment. If age is non-zero, users that have synced within "age" since now
 // will be filtered out.
 func (s *permsStore) UserIDsWithOldestPerms(ctx context.Context, limit int, age time.Duration) (map[int32]time.Time, error) {
 	q := sqlf.Sprintf(usersWithOldestPermsQuery, s.getCutoffClause(age), limit)
@@ -1625,11 +1629,18 @@ SELECT r.id as repo_id, MAX(p.finished_at) as finished_at
 FROM repo r
 LEFT JOIN permission_sync_jobs p ON r.id = p.repository_id AND p.repository_id IS NOT NULL
 WHERE r.private AND r.deleted_at IS NULL AND (%s)
+AND NOT EXISTS (
+	SELECT 1 FROM permission_sync_jobs p2
+	WHERE p2.repository_id = r.id AND (p2.state = 'queued' OR p2.state = 'processing')
+)
 GROUP BY r.id
 ORDER BY finished_at ASC NULLS FIRST, repo_id ASC
 LIMIT %d;
 `
 
+// ReposIDsWithOldestPerms lists the repositories with the oldest synced perms, limited
+// to limit, for which there is no sync job scheduled at the moment. If age is non-zero, repos that have synced within "age" since now
+// will be filtered out.
 func (s *permsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int, age time.Duration) (map[api.RepoID]time.Time, error) {
 	q := sqlf.Sprintf(reposWithOldestPermsQuery, s.getCutoffClause(age), limit)
 
@@ -1972,19 +1983,24 @@ var scanRepoPermissionsInfo = func(authzParams *AuthzQueryParameters) func(bases
 			return nil, err
 		}
 
-		if source != nil {
-			// if source is API, set reason to explicit perms
+		// Access reason priorities are as follows:
+		// 1. Public repo
+		// 2. Unrestricted code host connection
+		// 3. Site admin
+		// 4. Explicit permissions
+		// 5. Permissions sync
+		if !repo.Private {
+			reason = UserRepoPermissionReasonPublic
+		} else if unrestricted {
+			reason = UserRepoPermissionReasonUnrestricted
+		} else if authzParams.BypassAuthzReasons.SiteAdmin {
+			reason = UserRepoPermissionReasonSiteAdmin
+		} else if source != nil {
 			if *source == authz.SourceAPI {
 				reason = UserRepoPermissionReasonExplicitPerms
-			}
-			// if source is perms sync, set reason to perms syncing
-			if *source == authz.SourceRepoSync || *source == authz.SourceUserSync {
+			} else if *source == authz.SourceRepoSync || *source == authz.SourceUserSync {
 				reason = UserRepoPermissionReasonPermissionsSync
 			}
-		} else if !repo.Private || unrestricted {
-			reason = UserRepoPermissionReasonUnrestricted
-		} else if repo.Private && !unrestricted && authzParams.BypassAuthzReasons.SiteAdmin {
-			reason = UserRepoPermissionReasonSiteAdmin
 		}
 
 		return &UserPermission{Repo: &repo, Reason: reason, UpdatedAt: updatedAt}, nil
@@ -2013,6 +2029,11 @@ type RepoPermission struct {
 // and timestamp for each permission.
 func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID, args *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
 	authzParams, err := GetAuthzQueryParameters(context.Background(), s.db)
+	if err != nil {
+		return nil, err
+	}
+
+	repo, err := s.db.Repos().Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -2080,15 +2101,23 @@ func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID,
 			return nil, err
 		}
 
-		reason := UserRepoPermissionReasonPermissionsSync
-		if unrestricted {
+		var reason UserRepoPermissionReason
+		// Access reason priorities are as follows:
+		// 1. Public repo
+		// 2. Unrestricted code host connection
+		// 3. Site admin
+		// 4. Explicit permissions
+		// 5. Permissions sync
+		if !repo.Private {
+			reason = UserRepoPermissionReasonPublic
+		} else if unrestricted {
 			reason = UserRepoPermissionReasonUnrestricted
-			updatedAt = time.Time{}
-		} else if user.SiteAdmin && !authzParams.AuthzEnforceForSiteAdmins {
+		} else if !authzParams.AuthzEnforceForSiteAdmins && user.SiteAdmin {
 			reason = UserRepoPermissionReasonSiteAdmin
-			updatedAt = time.Time{}
 		} else if source == authz.SourceAPI {
 			reason = UserRepoPermissionReasonExplicitPerms
+		} else if source == authz.SourceRepoSync || source == authz.SourceUserSync {
+			reason = UserRepoPermissionReasonPermissionsSync
 		}
 
 		perms = append(perms, &RepoPermission{User: user, Reason: reason, UpdatedAt: updatedAt})
@@ -2196,4 +2225,5 @@ const (
 	UserRepoPermissionReasonUnrestricted    UserRepoPermissionReason = "Unrestricted"
 	UserRepoPermissionReasonPermissionsSync UserRepoPermissionReason = "Permissions Sync"
 	UserRepoPermissionReasonExplicitPerms   UserRepoPermissionReason = "Explicit API"
+	UserRepoPermissionReasonPublic          UserRepoPermissionReason = "Public"
 )

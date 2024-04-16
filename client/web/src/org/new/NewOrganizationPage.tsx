@@ -25,7 +25,7 @@ export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildre
     const [displayName, setDisplayName] = useState<string>('')
 
     const onNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        const hyphenatedName = event.currentTarget.value.replace(/\s/g, '-')
+        const hyphenatedName = event.currentTarget.value.replaceAll(/\s/g, '-')
         setName(hyphenatedName)
     }
 

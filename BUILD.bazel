@@ -9,8 +9,8 @@ load("@io_bazel_rules_go//proto/wkt:well_known_types.bzl", "WELL_KNOWN_TYPES_API
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev/linters/staticcheck:analyzers.bzl", "STATIC_CHECK_ANALYZERS")
 load("@npm//:eslint/package_json.bzl", eslint_bin = "bin")
-load("//:stamp_tags.bzl", "stamp_tags")
 load("//dev:eslint.bzl", "eslint_test_with_types")
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
 
 # Gazelle config
 #
@@ -23,7 +23,7 @@ load("//dev:eslint.bzl", "eslint_test_with_types")
 # gazelle:js_npm_package_target_name {dirname}_pkg
 
 # Enable: Aspect javascript, standard go
-# gazelle:lang js,go,proto
+# gazelle:lang js,go,proto,gomockgen
 
 # Enable race detection for all go_test rules.
 # gazelle:map_kind go_test go_test //dev:go_defs.bzl
@@ -56,8 +56,8 @@ ts_config(
 )
 
 ts_config(
-    name = "tsconfig-eslint",
-    src = "tsconfig.eslint.json",
+    name = "tsconfig-all",
+    src = "tsconfig.json",
     visibility = ["//visibility:public"],
     deps = [
         ":tsconfig",
@@ -67,6 +67,7 @@ ts_config(
 js_library(
     name = "postcss_config_js",
     srcs = ["postcss.config.js"],
+    visibility = ["//visibility:public"],
     deps = [
         "//:node_modules/autoprefixer",
         "//:node_modules/postcss-custom-media",
@@ -76,74 +77,26 @@ js_library(
 )
 
 copy_to_bin(
-    name = "browserslist",
-    srcs = [".browserslistrc"],
-    visibility = ["//visibility:public"],
-)
-
-copy_to_bin(
     name = "package_json",
     srcs = ["package.json"],
     visibility = ["//visibility:public"],
 )
 
 js_library(
-    name = "jest_config",
+    name = "vitest_config",
     testonly = True,
     srcs = [
-        "jest.config.base.js",
-    ],
-    data = [
-        "jest.snapshot-resolver.js",
+        "vitest.shared.ts",
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":babel_config_jest",
         "//:node_modules/@testing-library/jest-dom",
         "//:node_modules/abort-controller",
-        "//:node_modules/babel-jest",
         "//:node_modules/core-js",
         "//:node_modules/identity-obj-proxy",
         "//:node_modules/message-port-polyfill",
         "//:node_modules/regenerator-runtime",
-        "//client/shared/dev:mock",
-    ],
-)
-
-js_library(
-    name = "babel_config_jest",
-    testonly = True,
-    srcs = [
-        "babel.config.jest.js",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:node_modules/@babel/preset-env",
-        "//:node_modules/@babel/runtime",
-        "//:node_modules/signale",
-    ],
-)
-
-js_library(
-    name = "babel_config",
-    srcs = [
-        "babel.config.js",
-    ],
-    data = [
-        ":package_json",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:node_modules/@babel/plugin-transform-runtime",
-        "//:node_modules/@babel/plugin-transform-typescript",
-        "//:node_modules/@babel/preset-env",
-        "//:node_modules/@babel/preset-react",
-        "//:node_modules/@babel/preset-typescript",
-        "//:node_modules/@babel/runtime",
-        "//:node_modules/babel-plugin-lodash",
-        "//:node_modules/babel-plugin-webpack-chunkname",
-        "//:node_modules/semver",
-        "//:node_modules/signale",
+        "//client/testing:testing_lib",
     ],
 )
 
@@ -155,9 +108,9 @@ js_library(
     ],
     deps = [
         "//:node_modules/abort-controller",
-        "//client/shared/dev:fetch-mock",
         "//client/shared/dev:mocha-reporter",
         "//client/shared/dev:suppress-polly-errors",
+        "//client/testing:fetch-mock",
     ],
 )
 
@@ -189,7 +142,6 @@ js_library(
         ".eslintrc.js",
     ],
     data = [
-        ".eslintignore",
         "package.json",
         ":eslint-relative-formatter",
     ],
@@ -214,7 +166,7 @@ js_library(
         ":node_modules/eslint-plugin-unicorn",
         ":node_modules/eslint-plugin-unused-imports",
         ":node_modules/react",  # required to resolve the react version for eslint-plugin-react
-        ":tsconfig-eslint",
+        ":tsconfig-all",
         "//:node_modules/tslib",
     ],
 )
@@ -228,25 +180,55 @@ eslint_test_with_types(
     ],
 )
 
+buildifier(
+    name = "buildifier",
+    exclude_patterns = [
+        "./.git/*",
+        "cmd/symbols/squirrel/test_repos/starlark/**/*",
+    ],
+    # TODO: enable these lint checks
+    # lint_mode = "fix",
+    mode = "fix",
+)
+
+buildifier(
+    name = "buildifier.check",
+    exclude_patterns = [
+        "./.git/*",
+        "cmd/symbols/squirrel/test_repos/starlark/**/*",
+    ],
+    # TODO: enable these lint checks
+    # lint_mode = "warn",
+    mode = "diff",
+)
+
 # Go
 
 gazelle_binary(
-    name = "gazelle-buf",
+    name = "gazelle-bin",
     languages = [
         # Loads the native proto extension
         "@bazel_gazelle//language/proto:go_default_library",
         # Gazelle-buf does not include the Go plugin by default, so we have to add it
         # ourselves.
         "@bazel_gazelle//language/go:go_default_library",
+        "//dev/go-mockgen-gazelle:go-mockgen-gazelle",
+        # Bundled with aspect-cli, but we're missing out on buf that way
+        "@aspect_cli//gazelle/js:js",
         # Loads the Buf extension
-        "@rules_buf//gazelle/buf:buf",
         # NOTE: This needs to be loaded after the proto language
+        "@rules_buf//gazelle/buf:buf",
     ],
 )
 
 gazelle(
     name = "gazelle",
-    gazelle = ":gazelle-buf",
+    gazelle = ":gazelle-bin",
+)
+
+sh_binary(
+    name = "configure",
+    srcs = ["//dev/ci:bazel-configure.sh"],
 )
 
 go_library(
@@ -286,24 +268,6 @@ go_proto_compiler(
     ],
 )
 
-# darwin_docker config
-#
-# To be able to run e2e tests locally, we need to simultaneously be able to build linux/amd64 container images
-# and to build go test runners targeting the local machine architecture and OS. Unless you're working on a linux machine
-# these two won't be the same. So we use this flag to indicate that this particular runner should target darwin/arm64 if we see
-# that we have this build setting enabled.
-#
-# This is part of the `--config darwin-docker` configuration alias, that you can find in .bazelrc.
-bool_flag(
-    name = "darwin_docker",
-    build_setting_default = False,
-)
-
-config_setting(
-    name = "darwin_docker_e2e_go",
-    flag_values = {":darwin_docker": "true"},
-)
-
 # nogo config
 #
 # For nogo to be able to run a linter, it needs to have `var Analyzer analysis.Analyzer` defined in the main package.
@@ -334,7 +298,11 @@ nogo(
             "//dev/linters/gocheckcompilerdirectives",
             "//dev/linters/gocritic",
             "//dev/linters/ineffassign",
+            "//dev/linters/logging",
             "//dev/linters/unparam",
+            "//dev/linters/tracinglibraries",
+            "//dev/linters/dbconn",
+            "//dev/linters/nolocalhost",
             # Disabled because we currently have a lot of unused code
             # "//dev/linters/unused",
         ] + STATIC_CHECK_ANALYZERS,
@@ -347,4 +315,72 @@ exports_files([
     # Used for when copy_to_directory might reference an empty filegroup
     # under certain conditions. See //ui/assets/...
     "CONTRIBUTING.md",
-])
+    ".swcrc",
+] + glob(["mockgen*.yaml"]))
+
+# sg msp settings
+
+bool_flag(
+    name = "sg_msp",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "sg_msp_flag",
+    flag_values = {
+        "//:sg_msp": "True",
+    },
+)
+
+load("@rules_apko//apko:defs.bzl", "apko_bazelrc")
+load("@rules_apko//apko:repositories.bzl", "apko_register_toolchains", "rules_apko_dependencies")
+load("@rules_apko//apko:toolchain.bzl", "apko_toolchain")
+
+apko_bazelrc(
+    name = "apko_bazelrc",
+    repositories = [
+        "dl-cdn.alpinelinux.org",
+        "packages.wolfi.dev",
+        "packages.sgdev.org",
+        "storage.googleapis.com",
+    ],
+)
+
+# All the below toolchain creation can be removed (and their registration in WORKSPACE)
+# on the following PR is merged and released https://github.com/chainguard-dev/go-apk/pull/216
+apko_toolchain(
+    name = "apko",
+    apko = "@dev_chainguard_apko//:apko",
+    version = "0.13.2",
+)
+
+toolchain(
+    name = "apko_linux_toolchain",
+    exec_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = "//:apko",
+    toolchain_type = "@rules_apko//apko:toolchain_type",
+)
+
+toolchain(
+    name = "apko_darwin_arm64_toolchain",
+    exec_compatible_with = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+    toolchain = "//:apko",
+    toolchain_type = "@rules_apko//apko:toolchain_type",
+)
+
+toolchain(
+    name = "apko_darwin_amd64_toolchain",
+    exec_compatible_with = [
+        "@platforms//os:macos",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = "//:apko",
+    toolchain_type = "@rules_apko//apko:toolchain_type",
+)

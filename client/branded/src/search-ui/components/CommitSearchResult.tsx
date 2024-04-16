@@ -13,7 +13,8 @@ import { Timestamp } from '../../components/Timestamp'
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 import { ResultContainer } from './ResultContainer'
 
-import styles from './SearchResult.module.scss'
+import styles from './CommitSearchResult.module.scss'
+import resultStyles from './ResultContainer.module.scss'
 
 interface Props extends PlatformContextProps<'requestGraphQL'> {
     result: CommitMatch
@@ -35,8 +36,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     index,
 }) => {
     const title = (
-        <div className={styles.title}>
-            <span className={classNames('test-search-result-label flex-grow-1', styles.titleInner)}>
+        <div className={resultStyles.title}>
+            <span className={classNames('test-search-result-label flex-grow-1', resultStyles.titleInner)}>
                 <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
                 <span aria-hidden={true}> ›</span> <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
                 <span aria-hidden={true}>{': '}</span>
@@ -48,7 +49,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                 Relative positioning needed needed to avoid VisuallyHidden creating a scrollable overflow in Chrome.
                 Related bug: https://bugs.chromium.org/p/chromium/issues/detail?id=1154640#c15
             */}
-            <Link to={getCommitMatchUrl(result)} className={classNames('position-relative', styles.titleInner)}>
+            <Link to={getCommitMatchUrl(result)} className={classNames('position-relative', resultStyles.titleInner)}>
                 <Code className={styles.commitOid}>
                     <VisuallyHidden>Commit hash:</VisuallyHidden>
                     {result.oid.slice(0, 7)}
@@ -58,7 +59,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                 {/* Display commit date in UTC to match behavior of before/after filters */}
                 <Timestamp date={result.committerDate} noAbout={true} strict={true} utc={true} />
             </Link>
-            {result.repoStars && <div className={styles.divider} />}
+            {result.repoStars && <div className={resultStyles.divider} />}
         </div>
     )
 

@@ -3,7 +3,6 @@ import { sortBy } from 'lodash'
 import { describe, test, before, beforeEach, after } from 'mocha'
 
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { afterEachRecordCoverage } from '@sourcegraph/shared/src/testing/coverage'
 import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
@@ -36,7 +35,6 @@ describe('Repository component', () => {
     after('Close browser', () => driver?.close())
 
     afterEachSaveScreenshotIfFailed(() => driver.page)
-    afterEachRecordCoverage(() => driver)
 
     beforeEach(async () => {
         if (driver) {
@@ -471,6 +469,9 @@ describe('Repository component', () => {
             })
         }
 
+        // todo: re-enable once flake is identified
+        // https://github.com/sourcegraph/sourcegraph/issues/60824
+        /*
         const highlightSymbolTests = [
             {
                 name: 'highlights correct line for Go',
@@ -501,11 +502,12 @@ describe('Repository component', () => {
                 await link.click()
 
                 const selectedLine = await driver.page.waitForSelector(
-                    `[data-testid="repo-blob"] .cm-line:nth-child(${line}).selected-line`
+                    `[data-testid="repo-blob"] .cm-line:nth-child(${line})[data-testid="selected-line"]`
                 )
                 expect(selectedLine).not.toBeNull()
             })
         }
+        */
     })
 
     describe('hovers', () => {

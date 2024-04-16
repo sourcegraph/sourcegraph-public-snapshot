@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -45,15 +44,13 @@ type accessRequestConnectionStore struct {
 	args *database.AccessRequestsFilterArgs
 }
 
-func (s *accessRequestConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *accessRequestConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	count, err := s.db.AccessRequests().Count(ctx, s.args)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	totalCount := int32(count)
-
-	return &totalCount, nil
+	return int32(count), nil
 }
 
 func (s *accessRequestConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*accessRequestResolver, error) {
@@ -80,15 +77,13 @@ func (s *accessRequestConnectionStore) MarshalCursor(node *accessRequestResolver
 	return &cursor, nil
 }
 
-func (s *accessRequestConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *accessRequestConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
 	nodeID, err := unmarshalAccessRequestID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
 
-	id := strconv.Itoa(int(nodeID))
-
-	return &id, nil
+	return []any{nodeID}, nil
 }
 
 // accessRequestResolver resolves an access request.

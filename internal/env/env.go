@@ -3,7 +3,6 @@ package env
 import (
 	"expvar"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -193,19 +192,8 @@ func HandleHelpFlag() {
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
 		case "help", "-h", "--help":
-			log.Print(HelpString())
+			fmt.Println(HelpString())
 			os.Exit(0)
 		}
 	}
-}
-
-// HackClearEnvironCache can be used to clear the environ cache if os.Setenv was called and you want
-// subsequent env.Get calls to return the new value. It is a hack but useful because some env.Get
-// calls are hard to remove from static init time, and the ones we've moved to post-init we want to
-// be able to use the default values we set in package singleprogram.
-//
-// TODO(sqs): TODO(single-binary): this indicates our initialization order could be better, hence this
-// is labeled as a hack.
-func HackClearEnvironCache() {
-	environ = nil
 }

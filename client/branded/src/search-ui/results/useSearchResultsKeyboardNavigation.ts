@@ -42,7 +42,7 @@ export function useSearchResultsKeyboardNavigation(
                     break
                 }
                 case 'ArrowLeft':
-                case 'h':
+                case 'h': {
                     if (selectedResult) {
                         selectedResult.dispatchEvent(
                             new CustomEvent('collapseSearchResultsGroup', { bubbles: true, cancelable: true })
@@ -50,8 +50,9 @@ export function useSearchResultsKeyboardNavigation(
                         event.preventDefault()
                     }
                     break
+                }
                 case 'ArrowRight':
-                case 'l':
+                case 'l': {
                     if (selectedResult) {
                         selectedResult.dispatchEvent(
                             new CustomEvent('expandSearchResultsGroup', { bubbles: true, cancelable: true })
@@ -59,13 +60,15 @@ export function useSearchResultsKeyboardNavigation(
                         event.preventDefault()
                     }
                     break
-                case '/':
+                }
+                case '/': {
                     setShowFocusInputMessage(false)
                     if (focusInputMessageTimeoutId) {
                         clearTimeout(focusInputMessageTimeoutId)
                     }
                     break
-                default:
+                }
+                default: {
                     // If the user tries typing alphanumeric characters while focused on the search results, we
                     // show him a message on how to focus the search input.
                     if (
@@ -84,6 +87,7 @@ export function useSearchResultsKeyboardNavigation(
                         setFocusInputMessageTimeoutId(timeoutId)
                     }
                     break
+                }
             }
         }
 
@@ -104,6 +108,7 @@ export function useSearchResultsKeyboardNavigation(
                 }
                 // Otherwise, find the last visible result in the group and select it.
                 const groupSelectables = group.querySelectorAll<HTMLElement>('[data-selectable-search-result="true"]')
+                // eslint-disable-next-line unicorn/prefer-at
                 selectElement(groupSelectables[groupSelectables.length - 1])
             }, 0)
         }
@@ -140,7 +145,7 @@ export function useSearchResultsKeyboardNavigation(
     const onVisibilityChange = useCallback(
         (isVisible: boolean, index: number) => {
             if (index === 0 && isVisible && root && enableKeyboardNavigation) {
-                selectFirstResult(root)
+                selectFirstResult(root, true)
             }
         },
         [root, enableKeyboardNavigation]
@@ -149,8 +154,8 @@ export function useSearchResultsKeyboardNavigation(
     return [showFocusInputMessage, onVisibilityChange]
 }
 
-function selectFirstResult(root: HTMLElement): void {
-    selectElement(root.querySelector<HTMLElement>('[data-selectable-search-result="true"]'))
+function selectFirstResult(root: HTMLElement, preventScroll?: boolean): void {
+    selectElement(root.querySelector<HTMLElement>('[data-selectable-search-result="true"]'), preventScroll)
 }
 
 function selectNextResult(
@@ -169,12 +174,17 @@ function selectNextResult(
     return selectElement(nextSelected)
 }
 
-function selectElement(resultElement: HTMLElement | undefined | null): boolean {
+function selectElement(resultElement: HTMLElement | undefined | null, preventScroll?: boolean): boolean {
     if (!resultElement) {
         return false
     }
-    resultElement?.focus()
-    resultElement?.scrollIntoView({ behavior: 'auto', block: 'nearest' })
+
+    resultElement?.focus({ preventScroll })
+
+    if (!preventScroll) {
+        resultElement?.scrollIntoView({ behavior: 'auto', block: 'nearest' })
+    }
+
     return true
 }
 

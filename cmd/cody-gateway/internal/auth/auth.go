@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
@@ -66,7 +67,7 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if !act.AccessEnabled {
+		if !isAccessEnabled(act, r.URL.Path) {
 			response.JSONError(
 				logger,
 				w,
@@ -92,4 +93,21 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 		// Continue with the chain.
 		next.ServeHTTP(w, r)
 	})
+}
+
+func isAccessEnabled(act *actor.Actor, path string) bool {
+	if act.AccessEnabled {
+		return true
+	}
+	if act.EndpointAccess == nil {
+		return false
+	}
+	path = strings.TrimPrefix(path, "/")
+	for prefix, enabled := range act.EndpointAccess {
+		prefix = strings.TrimPrefix(prefix, "/")
+		if strings.HasPrefix(path, prefix) {
+			return enabled
+		}
+	}
+	return false
 }

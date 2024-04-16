@@ -11,7 +11,7 @@ import type { AuthenticatedUser } from '../auth'
 import styles from './SavedSearchModal.module.scss'
 
 interface Props extends SearchPatternTypeProps {
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: Pick<AuthenticatedUser, 'organizations' | 'username'> | null
     query?: string
     onDidCancel: () => void
     navigate: NavigateFunction

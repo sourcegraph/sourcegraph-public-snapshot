@@ -1,5 +1,6 @@
 import assert from 'assert'
 
+import { beforeEach, describe, it } from 'mocha'
 import type { Page } from 'puppeteer'
 
 import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'

@@ -1,7 +1,9 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import { map, mapTo } from 'rxjs/operators'
+import { parseISO } from 'date-fns'
+import { lastValueFrom } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -35,22 +37,26 @@ export const accessTokenFragment = gql`
         creator {
             username
         }
+        expiresAt
     }
 `
 
 function deleteAccessToken(tokenID: Scalars['ID']): Promise<void> {
-    return requestGraphQL<DeleteAccessTokenResult, DeleteAccessTokenVariables>(
-        gql`
-            mutation DeleteAccessToken($tokenID: ID!) {
-                deleteAccessToken(byID: $tokenID) {
-                    alwaysNil
+    return lastValueFrom(
+        requestGraphQL<DeleteAccessTokenResult, DeleteAccessTokenVariables>(
+            gql`
+                mutation DeleteAccessToken($tokenID: ID!) {
+                    deleteAccessToken(byID: $tokenID) {
+                        alwaysNil
+                    }
                 }
-            }
-        `,
-        { tokenID }
+            `,
+            { tokenID }
+        ).pipe(
+            map(dataOrThrowErrors),
+            map(() => undefined)
+        )
     )
-        .pipe(map(dataOrThrowErrors), mapTo(undefined))
-        .toPromise()
 }
 
 export interface AccessTokenNodeProps {
@@ -129,6 +135,12 @@ export const AccessTokenNode: React.FunctionComponent<React.PropsWithChildren<Ac
                             <>
                                 {' '}
                                 by <Link to={userURL(node.creator.username)}>{node.creator.username}</Link>
+                            </>
+                        )}
+                        {node.expiresAt !== null && (
+                            <>
+                                {' '}
+                                | Expires <Timestamp date={parseISO(node.expiresAt)} />
                             </>
                         )}
                     </small>

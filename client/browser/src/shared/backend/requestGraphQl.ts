@@ -36,7 +36,6 @@ function createMainThreadExtensionGraphQLHelpers(): GraphQLHelpers {
     const requestGraphQLInBackground = <T, V = object>(
         options: RequestGraphQLOptions<V>
         // Keep both helpers inside of the factory function.
-        // eslint-disable-next-line unicorn/consistent-function-scoping
     ): Observable<GraphQLResult<T>> => from(background.requestGraphQL<T, V>(options))
 
     /**
@@ -57,7 +56,7 @@ function createMainThreadExtensionGraphQLHelpers(): GraphQLHelpers {
         const graphqlClient: Pick<GraphQLClient, 'watchQuery'> = {
             watchQuery: ({ variables, query }) =>
                 // Temporary implementation till Apollo-Client is configured in the background script.
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
                 requestGraphQLInBackground({
                     request: print(query),
                     variables,
@@ -113,7 +112,7 @@ export function createGraphQLHelpers(sourcegraphURL: string, isExtension: boolea
     const getBrowserGraphQLClient = once(() =>
         getGraphQLClient({
             cache,
-            headers: getHeaders(),
+            getHeaders,
             baseUrl: sourcegraphURL,
             credentials: 'include',
         })

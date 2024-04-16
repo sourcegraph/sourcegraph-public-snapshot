@@ -8,8 +8,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
-	"github.com/sourcegraph/sourcegraph/dev/build-tracker/util"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Build keeps track of a buildkite.Build and it's associated jobs and pipeline.
@@ -53,8 +53,8 @@ func (s *Step) LogURL() string {
 type BuildStatus string
 
 const (
+	// The following are statuses we consider the build to be in
 	BuildStatusUnknown BuildStatus = ""
-	BuildInProgress    BuildStatus = "InProgress"
 	BuildPassed        BuildStatus = "Passed"
 	BuildFailed        BuildStatus = "Failed"
 	BuildFixed         BuildStatus = "Fixed"
@@ -62,7 +62,12 @@ const (
 	EventJobFinished   = "job.finished"
 	EventBuildFinished = "build.finished"
 
+	// The following are states the job received from buildkite can be in. These are terminal states
 	JobFinishedState = "finished"
+	JobPassedState   = "passed"
+	JobFailedState   = "failed"
+	JobTimedOutState = "timed_out"
+	JobUnknnownState = "unknown"
 )
 
 func (b *Build) AddJob(j *Job) error {
@@ -99,53 +104,54 @@ func (b *Build) IsFinished() bool {
 	}
 }
 
-func (b *Build) GetAuthorName() string {
-	if b.Author == nil {
-		return ""
+func (b *Build) IsReleaseBuild() bool {
+	// Release builds have two environment variables which distinguishes between internal / public releases
+	for _, key := range []string{"RELEASE_PUBLIC", "RELEASE_INTERNAL"} {
+		if v, ok := b.Env[key]; ok && v == "true" {
+			return true
+		}
 	}
 
-	return b.Author.Name
+	return false
 }
 
-func (b *Build) GetAuthorEmail() string {
-	if b.Author == nil {
-		return ""
+func (b *Build) GetBuildAuthor() buildkite.Author {
+	var author buildkite.Author
+	if b.Creator == nil {
+		return author
 	}
 
-	return b.Author.Email
+	author.Name = b.Creator.Name
+	author.Email = b.Creator.Email
+	return author
+}
+
+func (b *Build) GetCommitAuthor() buildkite.Author {
+	return pointers.DerefZero(b.Author)
 }
 
 func (b *Build) GetWebURL() string {
-	if b.WebURL == nil {
-		return ""
-	}
-	return util.Strp(b.WebURL)
+	return pointers.DerefZero(b.WebURL)
 }
 
 func (b *Build) GetState() string {
-	return util.Strp(b.State)
+	return pointers.DerefZero(b.State)
 }
 
 func (b *Build) GetCommit() string {
-	if b.Commit == nil {
-		return ""
-	}
-	return util.Strp(b.Commit)
+	return pointers.DerefZero(b.Commit)
 }
 
 func (b *Build) GetNumber() int {
-	return util.Intp(b.Number)
+	return pointers.DerefZero(b.Number)
 }
 
 func (b *Build) GetBranch() string {
-	return util.Strp(b.Branch)
+	return pointers.DerefZero(b.Branch)
 }
 
 func (b *Build) GetMessage() string {
-	if b.Message == nil {
-		return ""
-	}
-	return util.Strp(b.Message)
+	return pointers.DerefZero(b.Message)
 }
 
 // Pipeline wraps a buildkite.Pipeline and provides convenience functions to access values of the wrapped pipeline in a safe maner
@@ -154,10 +160,7 @@ type Pipeline struct {
 }
 
 func (p *Pipeline) GetName() string {
-	if p == nil {
-		return ""
-	}
-	return util.Strp(p.Name)
+	return pointers.DerefZero(p.Name)
 }
 
 // Event contains information about a buildkite event. Each event contains the build, pipeline, and job. Note that when the event
@@ -200,11 +203,11 @@ func (b *Event) IsJobFinished() bool {
 }
 
 func (b *Event) GetJobName() string {
-	return util.Strp(b.Job.Name)
+	return pointers.DerefZero(b.Job.Name)
 }
 
 func (b *Event) GetBuildNumber() int {
-	return util.Intp(b.Build.Number)
+	return pointers.DerefZero(b.Build.Number)
 }
 
 // Store is a thread safe store which keeps track of Builds described by buildkite build events.
@@ -254,6 +257,9 @@ func (s *Store) Add(event *Event) {
 	// will be more up to date, and tack on some finalized data
 	if event.IsBuildFinished() {
 		build.updateFromEvent(event)
+		s.logger.Debug("build finished", log.Int("buildNumber", event.GetBuildNumber()),
+			log.Int("totalSteps", len(build.Steps)),
+			log.String("status", build.GetState()))
 
 		// Track consecutive failures by pipeline + branch
 		// We update the global count of consecutiveFailures then we set the count on the individual build
@@ -275,18 +281,25 @@ func (s *Store) Add(event *Event) {
 		s.logger.Warn("job not added",
 			log.Error(err),
 			log.Int("buildNumber", event.GetBuildNumber()),
-			log.Object("job", log.String("name", newJob.GetName()), log.String("id", newJob.GetID())),
+			log.Object("job",
+				log.String("name", newJob.GetName()),
+				log.String("id", newJob.GetID()),
+				log.String("status", string(newJob.status())),
+				log.Int("exit", newJob.exitStatus())),
 			log.Int("totalSteps", len(build.Steps)),
 		)
 	} else {
 		s.logger.Debug("job added to step",
 			log.Int("buildNumber", event.GetBuildNumber()),
 			log.Object("step", log.String("name", newJob.GetName()),
-				log.Object("job", log.String("state", newJob.state()), log.String("id", newJob.GetID())),
+				log.Object("job",
+					log.String("name", newJob.GetName()),
+					log.String("id", newJob.GetID()),
+					log.String("status", string(newJob.status())),
+					log.Int("exit", newJob.exitStatus())),
 			),
 			log.Int("totalSteps", len(build.Steps)),
 		)
-
 	}
 }
 

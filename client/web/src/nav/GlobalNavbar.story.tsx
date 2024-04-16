@@ -15,7 +15,6 @@ import { GlobalNavbar, type GlobalNavbarProps } from './GlobalNavbar'
 
 const defaultProps: GlobalNavbarProps = {
     isSourcegraphDotCom: false,
-    isCodyApp: false,
     settingsCascade: {
         final: null,
         subjects: null,
@@ -57,7 +56,7 @@ const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
     } as AuthenticatedUser,
 }
 
-const decorator: Decorator = Story => {
+const decorator: Decorator<GlobalNavbarProps> = Story => {
     updateJSContextBatchChangesLicense('full')
 
     return (
@@ -71,7 +70,7 @@ const decorator: Decorator = Story => {
     )
 }
 
-const config: Meta = {
+const config: Meta<typeof GlobalNavbar> = {
     title: 'web/nav/GlobalNav',
     decorators: [decorator],
     parameters: {
@@ -87,23 +86,89 @@ const config: Meta = {
 
 export default config
 
-export const Default: StoryFn<GlobalNavbarProps> = props => (
-    <Grid columnCount={1}>
-        <div>
-            <H3 className="ml-2">Anonymous viewer</H3>
-            <GlobalNavbar {...props} />
-        </div>
-        <div>
-            <H3 className="ml-2">Anonymous viewer with all possible nav items</H3>
-            <GlobalNavbar {...props} {...allNavItemsProps} />
-        </div>
-        <div>
-            <H3 className="ml-2">Authenticated user with all possible nav items</H3>
-            <GlobalNavbar {...props} {...allNavItemsProps} {...allAuthenticatedNavItemsProps} />
-        </div>
-        <div>
-            <H3 className="ml-2">Authenticated user with all possible nav items and search input</H3>
-            <GlobalNavbar {...props} {...allNavItemsProps} {...allAuthenticatedNavItemsProps} showSearchBox={true} />
-        </div>
-    </Grid>
-)
+export const Default: StoryFn<GlobalNavbarProps> = props => {
+    window.context.licenseInfo = { features: { codeSearch: true, cody: true } }
+    return (
+        <Grid columnCount={1}>
+            <div>
+                <H3 className="ml-2">Anonymous viewer</H3>
+                <GlobalNavbar {...props} />
+            </div>
+            <div>
+                <H3 className="ml-2">Anonymous viewer with all possible nav items</H3>
+                <GlobalNavbar {...props} {...allNavItemsProps} />
+            </div>
+            <div>
+                <H3 className="ml-2">Authenticated user with all possible nav items</H3>
+                <GlobalNavbar {...props} {...allNavItemsProps} {...allAuthenticatedNavItemsProps} />
+            </div>
+            <div>
+                <H3 className="ml-2">Authenticated user with all possible nav items and search input</H3>
+                <GlobalNavbar
+                    {...props}
+                    {...allNavItemsProps}
+                    {...allAuthenticatedNavItemsProps}
+                    showSearchBox={true}
+                />
+            </div>
+        </Grid>
+    )
+}
+
+export const CodyOnlyLicense: StoryFn<GlobalNavbarProps> = props => {
+    window.context.licenseInfo = { features: { codeSearch: false, cody: true } }
+    return (
+        <Grid columnCount={1}>
+            <div>
+                <H3 className="ml-2">Anonymous viewer</H3>
+                <GlobalNavbar {...props} />
+            </div>
+            <div>
+                <H3 className="ml-2">Anonymous viewer with all possible nav items</H3>
+                <GlobalNavbar {...props} {...allNavItemsProps} />
+            </div>
+            <div>
+                <H3 className="ml-2">Authenticated user with all possible nav items</H3>
+                <GlobalNavbar {...props} {...allNavItemsProps} {...allAuthenticatedNavItemsProps} />
+            </div>
+            <div>
+                <H3 className="ml-2">Authenticated user with all possible nav items and search input</H3>
+                <GlobalNavbar
+                    {...props}
+                    {...allNavItemsProps}
+                    {...allAuthenticatedNavItemsProps}
+                    showSearchBox={true}
+                />
+            </div>
+        </Grid>
+    )
+}
+
+export const CodeSearchOnlyLicense: StoryFn<GlobalNavbarProps> = props => {
+    window.context.licenseInfo = { features: { codeSearch: true, cody: false } }
+    return (
+        <Grid columnCount={1}>
+            <div>
+                <H3 className="ml-2">Anonymous viewer</H3>
+                <GlobalNavbar {...props} />
+            </div>
+            <div>
+                <H3 className="ml-2">Anonymous viewer with all possible nav items</H3>
+                <GlobalNavbar {...props} {...allNavItemsProps} />
+            </div>
+            <div>
+                <H3 className="ml-2">Authenticated user with all possible nav items</H3>
+                <GlobalNavbar {...props} {...allNavItemsProps} {...allAuthenticatedNavItemsProps} />
+            </div>
+            <div>
+                <H3 className="ml-2">Authenticated user with all possible nav items and search input</H3>
+                <GlobalNavbar
+                    {...props}
+                    {...allNavItemsProps}
+                    {...allAuthenticatedNavItemsProps}
+                    showSearchBox={true}
+                />
+            </div>
+        </Grid>
+    )
+}

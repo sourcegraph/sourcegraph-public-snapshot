@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -12,7 +13,7 @@ import (
 // ListTrackingIssues returns all issues with the `tracking` label (and at least one other label)
 // in the given organization.
 func ListTrackingIssues(ctx context.Context, cli *graphql.Client, org string) ([]*Issue, error) {
-	issues, _, err := LoadIssues(ctx, cli, []string{fmt.Sprintf("org:%q label:tracking", org)})
+	issues, _, err := LoadIssues(ctx, cli, []string{fmt.Sprintf("org:%q label:tracking is:open", org)})
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +40,7 @@ func LoadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, tr
 
 	issuesMap := map[string]*Issue{}
 	for _, v := range issues {
-		if !contains(v.Labels, "tracking") {
+		if !slices.Contains(v.Labels, "tracking") {
 			issuesMap[v.ID] = v
 		}
 	}
@@ -79,7 +80,7 @@ func makeQueries(org string, trackingIssues []*Issue) (queries []string) {
 
 	properSuperset := func(a, b []string) bool {
 		for _, term := range b {
-			if !contains(a, term) {
+			if !slices.Contains(a, term) {
 				return false
 			}
 		}

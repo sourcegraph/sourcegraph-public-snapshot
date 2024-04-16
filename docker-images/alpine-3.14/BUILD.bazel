@@ -1,0 +1,18 @@
+load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
+
+oci_image(
+    name = "image",
+    base = "@legacy_alpine-3.14_base",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["alpine-3.14:candidate"],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("alpine-3.14"),
+)

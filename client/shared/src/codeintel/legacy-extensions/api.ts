@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Observable, Unsubscribable } from 'rxjs'
+import { lastValueFrom, type Observable, type Unsubscribable } from 'rxjs'
 
 import type { GraphQLResult } from '@sourcegraph/http-client'
 
@@ -32,7 +32,7 @@ export interface TextDocument {
      * The text contents of the text document.
      *
      * When using the [Sourcegraph browser
-     * extension](https://docs.sourcegraph.com/integration/browser_extension), the value is
+     * extension](https://sourcegraph.com/docs/integration/browser_extension), the value is
      * `undefined` because determining the text contents (in general) is not possible without
      * additional access to the code host API. In the future, this limitation may be removed.
      */
@@ -361,10 +361,9 @@ export function requestGraphQL<T>(query: string, vars?: { [name: string]: unknow
             )
         )
     }
-    return context
-
-        .requestGraphQL<T, any>({ request: query, variables: vars as any, mightContainPrivateInfo: true })
-        .toPromise()
+    return lastValueFrom(
+        context.requestGraphQL<T, any>({ request: query, variables: vars as any, mightContainPrivateInfo: true })
+    )
 }
 
 export function getSetting<T>(key: string): T | undefined {

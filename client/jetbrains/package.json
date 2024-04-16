@@ -13,15 +13,14 @@
     "directory": "client/jetbrains"
   },
   "scripts": {
-    "build": "pnpm task:gulp esbuild",
+    "build": "ts-node -T scripts/build.ts",
+    "watch": "WATCH=1 pnpm run build",
     "lint": "pnpm run lint:js && pnpm run lint:css",
     "lint:js": "eslint --cache 'webview/**/*.[jt]s?(x)'",
     "lint:css": "stylelint 'webview/**/*.scss'",
     "standalone": "ts-node standalone/src/server.ts",
     "storybook": "STORIES_GLOB='client/jetbrains/webview/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
-    "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
-    "typecheck": "tsc -b",
-    "watch": "WATCH=true pnpm task:gulp esbuild"
+    "typecheck": "tsc -b"
   },
   "devDependencies": {
     "@sourcegraph/build-config": "workspace:*",

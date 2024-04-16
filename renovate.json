@@ -4,31 +4,12 @@
   "semanticCommits": "disabled",
   "rebaseWhen": "never",
   "prBodyNotes": ["Test plan: CI should pass with updated dependencies."],
+  "dependencyDashboardApproval": true,
   "packageRules": [
     {
       "matchDepTypes": ["engines"],
       "matchPackageNames": ["node"],
       "rangeStrategy": "bump"
-    },
-    {
-      "packageNames": ["@octokit/rest", "@slack/web-api", "googleapis"],
-      "reviewers": ["beyang"]
-    },
-    {
-      "packagePatterns": ["^@visx/"],
-      "reviewers": ["team:code-insights-frontend"]
-    },
-    {
-      "packageNames": ["react-grid-layout"],
-      "reviewers": ["team:code-insights-frontend"]
-    },
-    {
-      "groupName": "Upstream Alpine 3.12 Docker image",
-      "matchDatasources": ["docker"],
-      "packagePatterns": ["^alpine:3.12"],
-      "fileMatch": ["^Dockerfile$"],
-      "paths": ["docker-images/**"],
-      "automerge": true
     }
   ]
 }

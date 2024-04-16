@@ -15,7 +15,8 @@ fi
 
 SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
-for indexer in lsif-clang scip-go lsif-rust scip-rust scip-java scip-python scip-typescript scip-ruby; do
+# No scip-clang as that doesn't have a Docker image
+for indexer in scip-go scip-rust scip-java scip-python scip-typescript scip-ruby; do
   tag="latest"
   if [[ "${indexer}" = "scip-python" ]] || [[ "${indexer}" = "scip-typescript" || "${indexer}" = "scip-ruby" ]]; then
     tag="autoindex"
@@ -32,3 +33,6 @@ for indexer in lsif-clang scip-go lsif-rust scip-rust scip-java scip-python scip
 done
 
 go fmt "$SCRIPT_DIR/indexes.go"
+
+echo "Updating SHAs in test snapshots"
+go test "$SCRIPT_DIR/../..." -update

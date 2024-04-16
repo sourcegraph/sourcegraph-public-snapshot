@@ -7,9 +7,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Alert, Button, Container, ErrorAlert, H2, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
+import { Alert, Button, Container, ErrorAlert, H2, H3, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../../site/backend'
@@ -35,7 +36,7 @@ import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 import styles from './ExternalServicePage.module.scss'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     afterDeleteRoute: string
 
     externalServicesFromFile: boolean
@@ -52,6 +53,7 @@ const NotFoundPage: FC = () => (
 export const ExternalServicePage: FC<Props> = props => {
     const {
         telemetryService,
+        telemetryRecorder,
         afterDeleteRoute,
         externalServicesFromFile,
         allowEditExternalServicesWithFile,
@@ -64,7 +66,8 @@ export const ExternalServicePage: FC<Props> = props => {
 
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalService')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('admin.externalService', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     const [syncInProgress, setSyncInProgress] = useState<boolean>(false)
     // Callback used in ExternalServiceSyncJobsList to update the state in current component.
@@ -173,7 +176,9 @@ export const ExternalServicePage: FC<Props> = props => {
                         <CreatedByAndUpdatedByInfoByline
                             createdAt={externalService.createdAt}
                             updatedAt={externalService.updatedAt}
-                            noAuthor={true}
+                            createdBy={externalService.creator}
+                            updatedBy={externalService.lastUpdater}
+                            type={externalService.__typename}
                         />
                     }
                     className="mb-3"
@@ -246,6 +251,16 @@ export const ExternalServicePage: FC<Props> = props => {
                 {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}
                 {externalServiceAvailabilityStatus}
                 <H2>Information</H2>
+                {externalService.unrestricted && (
+                    <Alert className="mt-2" variant="warning">
+                        <H3>All repositories will be unrestricted</H3>
+                        This code host connection does not have authorization configured. Any repositories added by this
+                        code host will be accessible by all users on the instance, even if another code host connection
+                        with authorization syncs the same repository. See{' '}
+                        <Link to="/help/admin/permissions#getting-started">the documentation</Link> for instructions on
+                        configuring authorization.
+                    </Alert>
+                )}
                 {externalServiceCategory && (
                     <ExternalServiceInformation
                         displayName={externalService.displayName}
@@ -269,6 +284,7 @@ export const ExternalServicePage: FC<Props> = props => {
                         isLightTheme={isLightTheme}
                         className="test-external-service-editor"
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 )}
                 <ExternalServiceWebhook externalService={externalService} className="mt-3" />

@@ -32,20 +32,22 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	// Get the Cloudflare zone requested in configuration, and create a Cloudflare
 	// record that points to our external address
 	cfZone := datacloudflarezones.NewDataCloudflareZones(scope,
-		id.ResourceID("domain"),
+		id.TerraformID("domain"),
 		&datacloudflarezones.DataCloudflareZonesConfig{
 			Filter: &datacloudflarezones.DataCloudflareZonesFilter{
 				Name: pointers.Ptr(config.Spec.Zone),
 			},
 		})
 	_ = record.NewRecord(scope,
-		id.ResourceID("record"),
+		id.TerraformID("record"),
 		&record.RecordConfig{
 			ZoneId:  cfZone.Zones().Get(pointers.Float64(0)).Id(),
 			Name:    &config.Spec.Subdomain,
 			Type:    pointers.Ptr("A"),
 			Value:   config.Target.ExternalAddress.Address(),
-			Proxied: pointers.Ptr(config.Spec.Proxied),
+			Proxied: pointers.Ptr(config.Spec.ShouldProxy()),
+			Comment: pointers.Ptr("Managed Services Platform service"),
+			Tags:    pointers.Ptr(pointers.Slice([]string{"msp"})),
 		})
 	return &Output{}, nil
 }

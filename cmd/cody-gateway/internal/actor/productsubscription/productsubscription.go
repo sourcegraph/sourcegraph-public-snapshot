@@ -3,16 +3,17 @@ package productsubscription
 import (
 	"context"
 	"encoding/json"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/Khan/genqlient/graphql"
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
@@ -38,9 +39,14 @@ var (
 	defaultUpdateInterval = 24 * time.Hour
 )
 
+type ListingCache interface {
+	httpcache.Cache
+	ListAllKeys() []string
+}
+
 type Source struct {
 	log    log.Logger
-	cache  httpcache.Cache // cache is expected to be something with automatic TTL
+	cache  ListingCache // cache is expected to be something with automatic TTL
 	dotcom graphql.Client
 
 	// internalMode, if true, indicates only dev and internal licenses may use
@@ -54,7 +60,7 @@ var _ actor.Source = &Source{}
 var _ actor.SourceUpdater = &Source{}
 var _ actor.SourceSyncer = &Source{}
 
-func NewSource(logger log.Logger, cache httpcache.Cache, dotcomClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
+func NewSource(logger log.Logger, cache ListingCache, dotcomClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
 	return &Source{
 		log:    logger.Scoped("productsubscriptions"),
 		cache:  cache,
@@ -113,15 +119,16 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	return act, nil
 }
 
-func (s *Source) Update(ctx context.Context, actor *actor.Actor) {
-	if time.Since(*actor.LastUpdated) < minUpdateInterval {
+func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
+	if time.Since(*act.LastUpdated) < minUpdateInterval {
 		// Last update was too recent - do it later.
-		return
+		return actor.ErrActorRecentlyUpdated{
+			RetryAt: act.LastUpdated.Add(minUpdateInterval),
+		}
 	}
 
-	if _, err := s.fetchAndCache(ctx, actor.Key); err != nil {
-		sgtrace.Logger(ctx, s.log).Info("failed to update actor", log.Error(err))
-	}
+	_, err := s.fetchAndCache(ctx, act.Key)
+	return err
 }
 
 // Sync retrieves all known actors from this source and updates its cache.
@@ -129,6 +136,7 @@ func (s *Source) Update(ctx context.Context, actor *actor.Actor) {
 // to skip syncs if the frequency is too high.
 func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 	syncLog := sgtrace.Logger(ctx, s.log)
+	seenTokens := collections.NewSet[string]()
 
 	resp, err := dotcom.ListProductSubscriptions(ctx, s.dotcom)
 	if err != nil {
@@ -146,7 +154,6 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 				return seen, ctx.Err()
 			default:
 			}
-
 			act := newActor(s, token, sub.ProductSubscriptionState, s.internalMode, s.concurrencyConfig)
 			data, err := json.Marshal(act)
 			if err != nil {
@@ -156,12 +163,38 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 				continue
 			}
 			s.cache.Set(token, data)
+			seenTokens.Add(token)
 			seen++
 		}
 	}
-	// TODO: Here we should prune all cache keys that we haven't seen in the sync
-	// loop.
+	removeUnseenTokens(seenTokens, s.cache, syncLog)
 	return seen, errs
+}
+
+func removeUnseenTokens(seen collections.Set[string], cache ListingCache, syncLog log.Logger) {
+	start := time.Now()
+	// Using Redis KEYS can get slow, but we only expect NUMBER_OF_SUBSCRIPTIONS * NUMBER_OF_ACTIVE_LICENCE_KEYS here
+	// Right now, listing 2000 keys takes ~3ms, and replacing this with SCAN this would require changing our Redis client to support scanning / context, so let's leave like that until we fix listing subscriptions in Q2 2024.
+	keys := cache.ListAllKeys()
+	elapsed := time.Since(start)
+	syncLog.Info("removing expired/disabled tokens", log.Int("seen", len(seen.Values())), log.Int("allKeys", len(keys)), log.Duration("listLatency", elapsed))
+	for _, key := range keys {
+		parts := strings.Split(key, ":")
+		if len(parts) != 4 {
+			// weird, we expect things like v2:product-subscriptions:v2:TOKEN (3 ":", 4 parts)
+			// we can't log the TOKEN, so we log the # of parts and skip delete
+			syncLog.Warn("invalid key format, expected 4 parts, got", log.Int("parts", len(parts)))
+			continue
+		}
+		token := parts[3]
+		if !strings.HasPrefix(token, license.LicenseKeyBasedAccessTokenPrefix) {
+			// let's not touch other types of tokens
+			continue
+		}
+		if !seen.Has(token) {
+			cache.Delete(token)
+		}
+	}
 }
 
 func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.CheckAccessTokenResponse, error) {
@@ -253,9 +286,12 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 		ID:            s.Uuid,
 		Name:          name,
 		AccessEnabled: !disallowedLicense && !s.IsArchived && s.CodyGatewayAccess.Enabled,
-		RateLimits:    map[codygateway.Feature]actor.RateLimit{},
-		LastUpdated:   &now,
-		Source:        source,
+		EndpointAccess: map[string]bool{
+			"/v1/attribution": !disallowedLicense && !s.IsArchived,
+		},
+		RateLimits:  map[codygateway.Feature]actor.RateLimit{},
+		LastUpdated: &now,
+		Source:      source,
 	}
 
 	if rl := s.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {

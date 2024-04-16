@@ -28,7 +28,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	//
 	// That said, the cert is considered created when it's still provisioning,
 	// so CreateBeforeDestroy doesn't seem to do much - oh well.
-	certName := random.New(scope, id.SubID("cert-name"), random.Config{
+	certName := random.New(scope, id.Group("cert-name"), random.Config{
 		ByteLength: 4,
 		Prefix:     id.DisplayName(),
 		Keepers: map[string]*string{
@@ -38,7 +38,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 
 	return &Output{
 		Certificate: computemanagedsslcertificate.NewComputeManagedSslCertificate(scope,
-			id.ResourceID("managed-cert"),
+			id.TerraformID("managed-cert"),
 			&computemanagedsslcertificate.ComputeManagedSslCertificateConfig{
 				Project: pointers.Ptr(config.ProjectID),
 				Name:    pointers.Ptr(certName.HexValue),

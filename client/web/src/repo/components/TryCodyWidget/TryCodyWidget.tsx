@@ -4,6 +4,7 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, H2, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
@@ -11,7 +12,7 @@ import { Button, H2, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
 import type { AuthenticatedUser } from '../../../auth'
 import { ExternalsAuth } from '../../../auth/components/ExternalsAuth'
 import { MarketingBlock } from '../../../components/MarketingBlock'
-import type { AuthProvider, SourcegraphContext } from '../../../jscontext'
+import type { SourcegraphContext } from '../../../jscontext'
 import { EventName } from '../../../util/constants'
 
 import { GlowingCodySVG, MeetCodySVG } from './WidgetIcons'
@@ -20,14 +21,14 @@ import styles from './TryCodyWidget.module.scss'
 
 const AUTO_DISMISS_ON_EVENTS = new Set([EventName.CODY_SIDEBAR_CHAT_OPENED, EventName.CODY_CHAT_SUBMIT])
 
-interface WidgetContentProps extends TelemetryProps {
+interface WidgetContentProps extends TelemetryProps, TelemetryV2Props {
     type: 'blob' | 'repo'
     theme?: 'light' | 'dark'
     isSourcegraphDotCom: boolean
 }
 
 interface NoAuhWidgetContentProps extends WidgetContentProps {
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'externalURL'>
 }
 
 function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']): {
@@ -57,19 +58,14 @@ function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']):
     return { isDismissed, onDismiss }
 }
 
-const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetryService, context }) => {
-    const logEvent = (provider: AuthProvider['serviceType']): void => {
-        const eventType = provider === 'builtin' ? 'form' : provider
-        const eventPage = type === 'blob' ? 'Blobview' : 'RepositoryPage'
-        const eventArguments = {
-            type: eventType,
-            page: eventPage,
-            description: '',
-        }
-        telemetryService.log(EventName.TRY_CODY_SIGNUP_INITIATED, eventArguments, eventArguments)
-    }
-
+const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({
+    type,
+    telemetryService,
+    telemetryRecorder,
+    context,
+}) => {
     const title = type === 'blob' ? 'Sign up to get Cody, our AI assistant, free' : 'Meet Cody, your AI assistant'
+    const eventPage = type === 'blob' ? 'try-cody-widget-blob' : 'try-cody-widget-repo'
 
     return (
         <>
@@ -82,19 +78,22 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
                 </Text>
                 <div className={styles.authButtonsWrap}>
                     <ExternalsAuth
+                        page={eventPage}
                         context={context}
                         githubLabel="GitHub"
                         gitlabLabel="GitLab"
                         googleLabel="Google"
                         withCenteredText={true}
-                        onClick={logEvent}
+                        onClick={() => {}}
                         ctaClassName={styles.authButton}
+                        telemetryRecorder={telemetryRecorder}
+                        telemetryService={telemetryService}
                     />
                 </div>
                 <Text className="mb-2 mt-2">
                     By registering, you agree to our{' '}
                     <Link
-                        to="https://about.sourcegraph.com/terms"
+                        to="https://sourcegraph.com/terms"
                         className={styles.termsLink}
                         target="_blank"
                         rel="noopener"
@@ -103,7 +102,7 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
                     </Link>{' '}
                     and{' '}
                     <Link
-                        to="https://about.sourcegraph.com/terms/privacy"
+                        to="https://sourcegraph.com/terms/privacy"
                         className={styles.termsLink}
                         target="_blank"
                         rel="noopener"
@@ -171,17 +170,18 @@ const AuthUserWidgetContent: React.FC<WidgetContentProps> = ({ type, theme, isSo
     )
 }
 
-interface TryCodyWidgetProps extends TelemetryProps {
+interface TryCodyWidgetProps extends TelemetryProps, TelemetryV2Props {
     className?: string
     type: 'blob' | 'repo'
     authenticatedUser: AuthenticatedUser | null
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'externalURL'>
     isSourcegraphDotCom: boolean
 }
 
 export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
     className,
     telemetryService,
+    telemetryRecorder,
     authenticatedUser,
     context,
     type,
@@ -195,7 +195,9 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
         }
         const eventPage = type === 'blob' ? 'BlobPage' : 'RepoPage'
         telemetryService.log(EventName.TRY_CODY_WEB_ONBOARDING_DISPLAYED, { type: eventPage }, { type: eventPage })
-    }, [isDismissed, telemetryService, type])
+        const v2EventPage = type === 'blob' ? 0 : 1
+        telemetryRecorder.recordEvent('cta.tryCodyWebOnboarding', 'view', { metadata: { page: v2EventPage } })
+    }, [isDismissed, telemetryService, telemetryRecorder, type])
 
     if (isDismissed) {
         return null
@@ -220,11 +222,13 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
                     type={type}
                     theme={isLightTheme ? 'light' : 'dark'}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     isSourcegraphDotCom={isSourcegraphDotCom}
                 />
             ) : (
                 <NoAuthWidgetContent
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     type={type}
                     context={context}
                     isSourcegraphDotCom={isSourcegraphDotCom}

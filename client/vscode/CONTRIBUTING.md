@@ -1,8 +1,10 @@
 # Contributing to Sourcegraph VS Code Extension
 
 Thank you for your interest in contributing to Sourcegraph!
-The goal of this document is to provide a high-level overview of how you can contribute to the Sourcegraph VS Code Extension.
-Please refer to our [main CONTRIBUTING](https://github.com/sourcegraph/sourcegraph/blob/main/CONTRIBUTING.md) docs for general information regarding contributing to any Sourcegraph repository.
+The goal of this document is to provide a high-level overview of how you can contribute to the Sourcegraph VS Code
+Extension.
+Please refer to our [main CONTRIBUTING](https://github.com/sourcegraph/sourcegraph/blob/main/CONTRIBUTING.md) docs for
+general information regarding contributing to any Sourcegraph repository.
 
 ## License
 
@@ -10,11 +12,16 @@ Apache
 
 ## Feedback
 
-Your feedback is important to us and is greatly appreciated. Please do not hesitate to submit your ideas or suggestions about how we can improve the extension to our [VS Code Extension Feedback Discussion Thread](https://github.com/sourcegraph/sourcegraph/discussions/34821) on GitHub.
+Your feedback is important to us and is greatly appreciated. Please do not hesitate to submit your ideas or suggestions
+about how we can improve the extension to
+our [VS Code Extension Feedback Discussion Thread](https://github.com/sourcegraph/sourcegraph/discussions/34821) on
+GitHub.
 
 ## Issues / Bugs
 
-New issues and feature requests can be filed through our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board) using the `vscode-extension` & `team/integrations` label.
+New issues and feature requests can be filed through
+our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board)
+using the `vscode-extension` & `team/integrations` label.
 
 ## Architecture Diagram
 
@@ -42,21 +49,25 @@ New issues and feature requests can be filed through our [issue tracker](https:/
   - Core, search sidebar, and search panel.
   - The extension host API is exposed through the search sidebar.
 - See './webview/comlink' for documentation on _how_ communication between contexts works.
-  - It is _not_ important to understand this layer to add features to the VS Code extension (that's why it exists, after all).
+  - It is _not_ important to understand this layer to add features to the VS Code extension (that's why it exists,
+    after all).
 
 ## State Management
 
 This extension runs code in 4 (and counting) different execution contexts.
-Coordinating state between these contexts is a difficult task. So, instead of managing shared state in each context, we maintain one state machine in the "Core" context (see above for architecure diagram).
+Coordinating state between these contexts is a difficult task. So, instead of managing shared state in each context, we
+maintain one state machine in the "Core" context (see above for architecure diagram).
 All contexts listen for state updates and emit events on which the state machine may transition.
 
 For example:
 
 - Commands from VS Code extension core
-- The first submitted search in a session will cause the state machine to transition from the `search-home` state to the `search-results` state.
+- The first submitted search in a session will cause the state machine to transition from the `search-home` state to
+  the `search-results` state.
 - This new state will be reflected in both the search sidebar and search panel UIs
 
-We represent a hierarchical state machine in a "flat" manner to reduce code complexity and because our state machine is simple enough to not necessitate bringing in a library.
+We represent a hierarchical state machine in a "flat" manner to reduce code complexity and because our state machine is
+simple enough to not necessitate bringing in a library.
 
 ```
 ┌───►home
@@ -126,7 +137,8 @@ client/vscode
 1. Install dependencies via `pnpm install` for the Sourcegraph repository
 1. Edit files in the `client/vscode` directory
 1. To see your changes, open the `Run and Debug` sidebar view in VS Code, and
-   select `Launch VS Code Extension` (`Launch VS Code Web Extension` for VS Code Web) from the dropdown menu. (Or, in the `client/vscode` directory, run `pnpm run build`.)
+   select `Launch VS Code Extension` (`Launch VS Code Web Extension` for VS Code Web) from the dropdown menu. (Or, in
+   the `client/vscode` directory, run `pnpm run build`.)
 
 ### Integration Tests
 
@@ -151,14 +163,16 @@ To install this extension on GitPod Desktop:
 
 #### Web Version
 
-To run and test the web extension on GitPod Web (as well as VS Code and GitHub for the web), you must sideload the extension from your local machine as suggested in the following steps:
+To run and test the web extension on GitPod Web (as well as VS Code and GitHub for the web), you must sideload the
+extension from your local machine as suggested in the following steps:
 
 1. `git clone` the [Sourcegraph repository](https://github.com/sourcegraph/sourcegraph)
 1. Run `pnpm install && pnpm generate` at the root directory to install dependencies and generate the required schemas
 1. Run `pnpm -C client/vscode build` at root to build the Sourcegraph VS Code extension for Web
 1. Once the build has been completed, move to the extension’s directory: `cd client/vscode`
 1. Start an HTTP server inside the extension’s path to host the extension locally: `pnpx serve --cors -l 8988`
-1. In another terminal, generate a publicly-accessible URL from your locally running HTTP server using the localtunnel tool: `pnpx localtunnel -p 8988`
+1. In another terminal, generate a publicly-accessible URL from your locally running HTTP server using the localtunnel
+   tool: `pnpx localtunnel -p 8988`
    1. A publicly-accessible URL will be generated for you in the output followed by “your url is:”
 1. Copy and then open the newly generated URL in a browser and then select “Click to Continue”
 1. Open the Command Palette in GitPod Web (a GitPod Workspace using the Open in Browser setting)
@@ -168,11 +182,13 @@ To run and test the web extension on GitPod Web (as well as VS Code and GitHub f
 
 ### Debugging
 
-Please refer to the [How to Contribute](https://github.com/microsoft/vscode/wiki/How-to-Contribute#debugging) guide by VS Code for debugging tips.
+Please refer to the [How to Contribute](https://github.com/microsoft/vscode/wiki/How-to-Contribute#debugging) guide by
+VS Code for debugging tips.
 
 ## Questions
 
-If you need guidance or have any questions regarding Sourcegraph or the extension in general, we invite you to connect with us on the [Sourcegraph Community Slack group](https://about.sourcegraph.com/community).
+If you need guidance or have any questions regarding Sourcegraph or the extension in general, we invite you to connect
+with us on the [Sourcegraph Community Slack group](https://about.sourcegraph.com/community).
 
 ## Resources
 
@@ -195,7 +211,8 @@ The release process for the VS Code Extension for Sourcegraph is currently autom
 
 #### Release Steps
 
-1. Create a new branch when the main branch is ready for release, or use your current working branch if it is ready for release
+1. Create a new branch when the main branch is ready for release, or use your current working branch if it is ready for
+   release
 2. Run `pnpm --filter @sourcegraph/vscode run release:$RELEASE_TYPE` in the root directory
    - $RELEASE_TYPE: major, minor, patch, pre
      - Example: `pnpm --filter @sourcegraph/vscode run release:patch`
@@ -206,12 +223,17 @@ The release process for the VS Code Extension for Sourcegraph is currently autom
 3. Open a PR to merge the current branch into main
 4. Once the main branch has the updated version number and changelog, run `git push origin main:vsce/release`
    - This will trigger the build pipeline for publishing the extension using the `pnpm release` command
-   - Publish release to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
+   - Publish release
+     to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
    - Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/sourcegraph)
-   - The extension will be published with the correct package name via the [vsce CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
-5. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=vsce%2Frelease) to watch the build process
+   - The extension will be published with the correct package name via
+     the [vsce CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
+5. Visit
+   the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=vsce%2Frelease)
+   to watch the build process
 
-Once the build is completed with no error, you should see the new version being verified for the Sourcegraph extension in:
+Once the build is completed with no error, you should see the new version being verified for the Sourcegraph extension
+in:
 
 - VS Code Marketplace: [Marketplace Publisher Dashboard](https://marketplace.visualstudio.com/manage/publishers)
 - Open VSX Registry: [Namespaces Tab in User Settings](https://open-vsx.org/user-settings/namespaces)

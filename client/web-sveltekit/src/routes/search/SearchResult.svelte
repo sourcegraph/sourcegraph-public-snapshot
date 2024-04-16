@@ -1,8 +1,5 @@
 <article data-testid="search-result">
     <div class="header">
-        <div class="icon">
-            <slot name="icon" />
-        </div>
         <div class="title">
             <slot name="title" />
         </div>
@@ -20,17 +17,27 @@
 </article>
 
 <style lang="scss">
+    article {
+        :global([data-visible-on-focus]) {
+            visibility: hidden;
+        }
+
+        &:hover,
+        &:focus-within {
+            :global([data-visible-on-focus]) {
+                visibility: visible;
+            }
+        }
+    }
+
     .header {
         display: flex;
         align-items: center;
-        padding: 0.5rem 0.5rem 0.5rem 0;
+        padding: 0.5rem;
         position: sticky;
         top: 0;
         background-color: var(--body-bg);
-    }
-
-    .icon {
-        flex-shrink: 0;
+        border-bottom: 1px solid var(--border-color);
     }
 
     .title {
@@ -38,31 +45,24 @@
         overflow: hidden;
         display: flex;
         flex-wrap: wrap;
+        align-items: baseline;
 
         // .title-inner
         overflow-wrap: anywhere;
-
-        // .muted-repo-file-link
-        color: var(--text-muted);
-
-        :global(a) {
-            color: var(--text-muted);
-
-            &:hover {
-                color: var(--text-muted);
-            }
-        }
     }
 
     .info {
         margin-left: auto;
         display: flex;
         flex-wrap: wrap;
+        color: var(--text-muted);
+        flex-shrink: 0;
+        gap: 0.5rem;
+        align-items: center;
     }
 
-    .body {
-        border-radius: var(--border-radius);
-        border: 1px solid var(--border-color);
+    .body:not(:empty) {
         background-color: var(--code-bg);
+        border-bottom: 1px solid var(--border-color);
     }
 </style>

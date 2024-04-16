@@ -1,24 +1,13 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 
-import { mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
-import { range } from 'lodash'
-import VisibilitySensor from 'react-visibility-sensor'
-import { type Observable, type Subscription, BehaviorSubject, of } from 'rxjs'
-import { catchError } from 'rxjs/operators'
+import { BehaviorSubject } from 'rxjs'
 
-import { asError, type ErrorLike, isErrorLike, highlightNodeMultiline } from '@sourcegraph/common'
+import { highlightNodeMultiline } from '@sourcegraph/common'
 import type { Repo } from '@sourcegraph/shared/src/util/url'
-import { Icon, Code } from '@sourcegraph/wildcard'
+import { Code } from '@sourcegraph/wildcard'
 
 import styles from './CodeExcerpt.module.scss'
-
-export interface Shape {
-    top?: number
-    left?: number
-    bottom?: number
-    right?: number
-}
 
 interface Props extends Repo {
     commitID: string
@@ -29,15 +18,10 @@ interface Props extends Repo {
     /** The 0-based (exclusive) line number that this code excerpt ends at */
     endLine: number
     className?: string
-    /** A function to fetch the range of lines this code excerpt will display. It will be provided
-     * the same start and end lines properties that were provided as component props */
-    fetchHighlightedFileRangeLines: (startLine: number, endLine: number) => Observable<string[]>
-    /** A function to fetch the range of lines this code excerpt will display. It will be provided
-     * the same start and end lines properties that were provided as component props */
-    fetchPlainTextFileRangeLines?: (startLine: number, endLine: number) => Observable<string[]>
-    blobLines?: string[]
 
-    visibilityOffset?: Shape
+    plaintextLines: string[]
+    highlightedLines?: string[]
+
     onCopy?: () => void
 }
 
@@ -60,30 +44,39 @@ export interface HighlightRange {
     endCharacter: number
 }
 
-const makeTableHTML = (blobLines: string[]): string => '<table>' + blobLines.join('') + '</table>'
-const DEFAULT_VISIBILITY_OFFSET: Shape = { bottom: -500 }
-
 /**
  * A code excerpt that displays syntax highlighting and match range highlighting.
  */
 export const CodeExcerpt: React.FunctionComponent<Props> = ({
-    blobLines,
-    fetchHighlightedFileRangeLines,
-    fetchPlainTextFileRangeLines,
+    plaintextLines,
+    highlightedLines,
     startLine,
     endLine,
     highlightRanges,
-    visibilityOffset = DEFAULT_VISIBILITY_OFFSET,
     className,
     onCopy,
 }) => {
-    const [plainTextBlobLinesOrError, setPlainTextBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
-    const [highlightedBlobLinesOrError, setHighlightedBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
-    const [isVisible, setIsVisible] = useState(false)
-
-    const blobLinesOrError = fetchPlainTextFileRangeLines
-        ? highlightedBlobLinesOrError || plainTextBlobLinesOrError
-        : highlightedBlobLinesOrError
+    const table = useMemo(
+        () =>
+            highlightedLines ? (
+                <table dangerouslySetInnerHTML={{ __html: highlightedLines.join('') }} />
+            ) : (
+                <table>
+                    <tbody>
+                        {plaintextLines.map((line, i) => (
+                            // eslint-disable-next-line react/no-array-index-key
+                            <tr key={startLine + i}>
+                                <td className="line" data-line={startLine + i + 1} />
+                                <td className="code">
+                                    <span className="hl-text hl-plain">{line}</span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            ),
+        [plaintextLines, highlightedLines, startLine]
+    )
 
     // Both the behavior subject and the React state are needed here. The behavior subject is
     // used for hoverified events while the React state is used for match highlighting.
@@ -97,29 +90,6 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
         },
         [tableContainerElements]
     )
-
-    // Get the plain text (unhighlighted) blob lines
-    useEffect(() => {
-        let subscription: Subscription | undefined
-        if (isVisible && fetchPlainTextFileRangeLines) {
-            subscription = fetchPlainTextFileRangeLines(startLine, endLine).subscribe(blobLinesOrError => {
-                setPlainTextBlobLinesOrError(blobLinesOrError)
-            })
-        }
-        return () => subscription?.unsubscribe()
-    }, [blobLines, endLine, fetchPlainTextFileRangeLines, isVisible, startLine])
-
-    // Get the syntax highlighted blob lines
-    useEffect(() => {
-        let subscription: Subscription | undefined
-        if (isVisible) {
-            const observable = blobLines ? of(blobLines) : fetchHighlightedFileRangeLines(startLine, endLine)
-            subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(blobLinesOrError => {
-                setHighlightedBlobLinesOrError(blobLinesOrError)
-            })
-        }
-        return () => subscription?.unsubscribe()
-    }, [blobLines, endLine, fetchHighlightedFileRangeLines, isVisible, startLine])
 
     // Highlight the search matches
     useLayoutEffect(() => {
@@ -149,45 +119,11 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                 }
             }
         }
-    }, [highlightRanges, startLine, endLine, tableContainerElement, blobLinesOrError])
+    }, [highlightRanges, startLine, endLine, tableContainerElement, table])
 
     return (
-        <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilityOffset}>
-            <Code
-                data-testid="code-excerpt"
-                onCopy={onCopy}
-                className={classNames(
-                    styles.codeExcerpt,
-                    className,
-                    isErrorLike(blobLinesOrError) && styles.codeExcerptError
-                )}
-            >
-                {blobLinesOrError && !isErrorLike(blobLinesOrError) && (
-                    <div
-                        ref={updateTableContainerElementReference}
-                        dangerouslySetInnerHTML={{ __html: makeTableHTML(blobLinesOrError) }}
-                    />
-                )}
-                {blobLinesOrError && isErrorLike(blobLinesOrError) && (
-                    <div className={styles.codeExcerptAlert}>
-                        <Icon className="mr-2" aria-hidden={true} svgPath={mdiAlertCircle} />
-                        {blobLinesOrError.message}
-                    </div>
-                )}
-                {!blobLinesOrError && (
-                    <table>
-                        <tbody>
-                            {range(startLine, endLine).map(index => (
-                                <tr key={index}>
-                                    <td className="line" data-line={index + 1} />
-                                    {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
-                                    <td className="code"> </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </Code>
-        </VisibilitySensor>
+        <Code data-testid="code-excerpt" onCopy={onCopy} className={classNames(styles.codeExcerpt, className)}>
+            <div ref={updateTableContainerElementReference}>{table}</div>
+        </Code>
     )
 }

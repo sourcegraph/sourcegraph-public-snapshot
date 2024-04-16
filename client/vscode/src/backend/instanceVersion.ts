@@ -34,6 +34,7 @@ interface RegularVersion {
     major: number
     minor: number
 }
+
 type Version = RegularVersion | 'insiders'
 
 /**
@@ -103,6 +104,7 @@ const siteVersionQuery = gql`
         }
     }
 `
+
 interface SiteVersionResult {
     site: {
         productVersion: string

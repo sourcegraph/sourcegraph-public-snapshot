@@ -5,36 +5,12 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import type { Progress } from '@sourcegraph/shared/src/search/stream'
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import type { StreamingProgressProps } from './StreamingProgress'
-import { limitHit } from './utils'
+import { abbreviateNumber, getProgressText } from './utils'
 
 import styles from './StreamingProgressCount.module.scss'
-
-const abbreviateNumber = (number: number): string => {
-    if (number < 1e3) {
-        return number.toString()
-    }
-    if (number >= 1e3 && number < 1e6) {
-        return (number / 1e3).toFixed(1) + 'k'
-    }
-    if (number >= 1e6 && number < 1e9) {
-        return (number / 1e6).toFixed(1) + 'm'
-    }
-    return (number / 1e9).toFixed(1) + 'b'
-}
-
-export const getProgressText = (progress: Progress): { visibleText: string; readText: string } => {
-    const contentWithoutTimeUnit =
-        `${abbreviateNumber(progress.matchCount)}` +
-        `${limitHit(progress) ? '+' : ''} ${pluralize('result', progress.matchCount)} in ` +
-        `${(progress.durationMs / 1000).toFixed(2)}`
-    const visibleText = `${contentWithoutTimeUnit}s`
-    const readText = `${contentWithoutTimeUnit} seconds`
-    return { visibleText, readText }
-}
 
 export const StreamingProgressCount: React.FunctionComponent<
     React.PropsWithChildren<

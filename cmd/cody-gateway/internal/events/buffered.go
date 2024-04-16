@@ -7,6 +7,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	otelmetric "go.opentelemetry.io/otel/metric"
+
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
@@ -60,11 +63,13 @@ func defaultWorkers(bufferSize, workerCount int) int {
 	return bufferSize / 10
 }
 
+var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/events")
+
 // NewBufferedLogger wraps handler with a buffered logger that submits events
 // in the background instead of in the hot-path of a request. It implements
 // goroutine.BackgroundRoutine that must be started.
-func NewBufferedLogger(logger log.Logger, handler Logger, bufferSize, workerCount int) *BufferedLogger {
-	return &BufferedLogger{
+func NewBufferedLogger(logger log.Logger, handler Logger, bufferSize, workerCount int) (*BufferedLogger, error) {
+	res := BufferedLogger{
 		log: logger.Scoped("bufferedLogger"),
 
 		handler: handler,
@@ -76,6 +81,15 @@ func NewBufferedLogger(logger log.Logger, handler Logger, bufferSize, workerCoun
 		bufferClosed: &atomic.Bool{},
 		flushedC:     make(chan struct{}),
 	}
+	_, err := meter.Int64ObservableGauge("cody-gateway.buffered_logger_buffer_size",
+		otelmetric.WithDescription("number of events in buffered logger buffer"), otelmetric.WithInt64Callback(func(ctx context.Context, observer otelmetric.Int64Observer) error {
+			observer.Observe(int64(len(res.bufferC)))
+			return nil
+		}))
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
 }
 
 // LogEvent implements event.Logger by submitting the event to a buffer for processing.

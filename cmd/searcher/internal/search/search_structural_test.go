@@ -16,9 +16,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 func TestMatcherLookupByLanguage(t *testing.T) {
@@ -65,15 +65,12 @@ func foo(go string) {}
 			t.Run(tt.Name, func(t *testing.T) {
 				t.Parallel()
 
-				p := &protocol.PatternInfo{
-					Pattern:         "foo(:[args])",
-					IncludePatterns: []string{"file_without_extension"},
-					Languages:       tt.Languages,
-				}
+				pattern := "foo(:[args])"
+				includePatterns := []string{"file_without_extension"}
 
 				ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 100000000)
 				defer cancel()
-				err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+				err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(includePatterns), "", pattern, "", tt.Languages, "repo_foo", 0, sender)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -127,7 +124,7 @@ func foo(go.txt) {}
 		extensionHint := filepath.Ext(filename)
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), all, extensionHint, "foo(:[args])", "", languages, "repo_foo", sender)
+		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), all, extensionHint, "foo(:[args])", "", languages, "repo_foo", 0, sender)
 		if err != nil {
 			return "ERROR: " + err.Error()
 		}
@@ -209,12 +206,14 @@ func foo(real string) {}
 	}
 
 	p := &protocol.PatternInfo{
-		Pattern: pattern,
-		Limit:   30,
+		Query: &protocol.PatternNode{
+			Value: pattern,
+		},
+		Limit: 30,
 	}
 	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
-	err = filteredStructuralSearch(ctx, logtest.Scoped(t), zPath, zFile, p, "foo", sender)
+	err = filteredStructuralSearch(ctx, logtest.Scoped(t), zPath, zFile, p, "foo", sender, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -300,21 +299,18 @@ func TestIncludePatterns(t *testing.T) {
 		"x/y/z/bar.go",
 	}
 
-	includePatterns := []string{"a/b/c/foo.go", "bar.go"}
-
 	zipData, err := createZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
 	zf := tempZipFileOnDisk(t, zipData)
 
-	p := &protocol.PatternInfo{
-		Pattern:         "",
-		IncludePatterns: includePatterns,
-	}
+	includePatterns := []string{"a/b/c/foo.go", "bar.go"}
+	pattern := ""
+
 	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
-	err = structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "foo", sender)
+	err = structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(includePatterns), "", pattern, "", nil, "foo", 0, sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -343,15 +339,13 @@ func TestRule(t *testing.T) {
 	}
 	zf := tempZipFileOnDisk(t, zipData)
 
-	p := &protocol.PatternInfo{
-		Pattern:         "func :[[fn]](:[args])",
-		IncludePatterns: []string{".go"},
-		CombyRule:       `where :[args] == "success"`,
-	}
+	pattern := "func :[[fn]](:[args])"
+	includePatterns := []string{".go"}
+	combyRule := `where :[args] == "success"`
 
 	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
-	err = structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo", sender)
+	err = structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(includePatterns), "", pattern, combyRule, nil, "repo", 0, sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -412,21 +406,21 @@ func bar() {
 		return c
 	}
 
-	test := func(limit, wantCount int, p *protocol.PatternInfo) func(t *testing.T) {
+	test := func(limit, wantCount int, pattern string) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel, sender := newLimitedStreamCollector(context.Background(), limit)
 			defer cancel()
-			err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+			err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), nil, "", pattern, "", nil, "repo_foo", 0, sender)
 			require.NoError(t, err)
 
 			require.Equal(t, wantCount, count(sender.collected))
 		}
 	}
 
-	t.Run("unlimited", test(10000, 4, &protocol.PatternInfo{Pattern: "{:[body]}"}))
-	t.Run("exact limit", func(t *testing.T) { t.Skip("disabled because flaky") }) // test(4, 4, &protocol.PatternInfo{Pattern: "{:[body]}"}))
-	t.Run("limited", func(t *testing.T) { t.Skip("disabled because flaky") })     // test(2, 2, &protocol.PatternInfo{Pattern: "{:[body]}"}))
-	t.Run("many", test(12, 8, &protocol.PatternInfo{Pattern: "(:[_])"}))
+	t.Run("unlimited", test(10000, 4, "{:[body]}"))
+	t.Run("exact limit", func(t *testing.T) { t.Skip("disabled because flaky") }) // test(4, 4, &protocol.PatternInfo{Value: "{:[body]}"}))
+	t.Run("limited", func(t *testing.T) { t.Skip("disabled because flaky") })     // test(2, 2, &protocol.PatternInfo{Value: "{:[body]}"}))
+	t.Run("many", test(12, 8, "(:[_])"))
 }
 
 func TestMatchCountForMultilineMatches(t *testing.T) {
@@ -446,8 +440,6 @@ func bar() {
 
 	wantMatchCount := 2
 
-	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
-
 	zipData, err := createZip(input)
 	if err != nil {
 		t.Fatal(err)
@@ -457,7 +449,9 @@ func bar() {
 	t.Run("Strutural search match count", func(t *testing.T) {
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+
+		pattern := "{:[body]}"
+		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), nil, "", pattern, "", nil, "repo_foo", 0, sender)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -487,8 +481,6 @@ func bar() {
 `,
 	}
 
-	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
-
 	zipData, err := createZip(input)
 	if err != nil {
 		t.Fatal(err)
@@ -498,7 +490,9 @@ func bar() {
 	t.Run("Strutural search match count", func(t *testing.T) {
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+
+		pattern := "{:[body]}"
+		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), nil, "", pattern, "", nil, "repo_foo", 0, sender)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -529,141 +523,11 @@ func TestBuildQuery(t *testing.T) {
 	pattern := ":[x~*]"
 	want := "error parsing regexp: missing argument to repetition operator: `*`"
 	t.Run("build query", func(t *testing.T) {
-		_, err := buildQuery(&search.TextPatternInfo{Pattern: pattern}, nil, nil, false)
+		_, err := buildQuery(pattern, nil, nil, false)
 		if diff := cmp.Diff(err.Error(), want); diff != "" {
 			t.Error(diff)
 		}
 	})
-}
-
-func Test_chunkRanges(t *testing.T) {
-	cases := []struct {
-		ranges         []protocol.Range
-		mergeThreshold int
-		output         []rangeChunk
-	}{{
-		// Single range
-		ranges: []protocol.Range{{
-			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
-		}},
-		mergeThreshold: 0,
-		output: []rangeChunk{{
-			cover: protocol.Range{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
-			},
-			ranges: []protocol.Range{{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
-			}},
-		}},
-	}, {
-		// Overlapping ranges
-		ranges: []protocol.Range{{
-			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
-		}, {
-			Start: protocol.Location{Offset: 5, Line: 0, Column: 5},
-			End:   protocol.Location{Offset: 25, Line: 1, Column: 15},
-		}},
-		mergeThreshold: 0,
-		output: []rangeChunk{{
-			cover: protocol.Range{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 25, Line: 1, Column: 15},
-			},
-			ranges: []protocol.Range{{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
-			}, {
-				Start: protocol.Location{Offset: 5, Line: 0, Column: 5},
-				End:   protocol.Location{Offset: 25, Line: 1, Column: 15},
-			}},
-		}},
-	}, {
-		// Non-overlapping ranges, but share a line
-		ranges: []protocol.Range{{
-			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
-		}, {
-			Start: protocol.Location{Offset: 25, Line: 1, Column: 15},
-			End:   protocol.Location{Offset: 35, Line: 2, Column: 5},
-		}},
-		mergeThreshold: 0,
-		output: []rangeChunk{{
-			cover: protocol.Range{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 35, Line: 2, Column: 5},
-			},
-			ranges: []protocol.Range{{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
-			}, {
-				Start: protocol.Location{Offset: 25, Line: 1, Column: 15},
-				End:   protocol.Location{Offset: 35, Line: 2, Column: 5},
-			}},
-		}},
-	}, {
-		// Ranges on adjacent lines, but not merged because of low merge threshold
-		ranges: []protocol.Range{{
-			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
-		}, {
-			Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
-			End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
-		}},
-		mergeThreshold: 0,
-		output: []rangeChunk{{
-			cover: protocol.Range{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
-			},
-			ranges: []protocol.Range{{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
-			}},
-		}, {
-			cover: protocol.Range{
-				Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
-			},
-			ranges: []protocol.Range{{
-				Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
-			}},
-		}},
-	}, {
-		// Ranges on adjacent lines, merged because of high merge threshold
-		ranges: []protocol.Range{{
-			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
-		}, {
-			Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
-			End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
-		}},
-		mergeThreshold: 1,
-		output: []rangeChunk{{
-			cover: protocol.Range{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
-			},
-			ranges: []protocol.Range{{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
-			}, {
-				Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
-			}},
-		}},
-	}}
-
-	for _, tc := range cases {
-		t.Run("", func(t *testing.T) {
-			got := chunkRanges(tc.ranges, tc.mergeThreshold)
-			require.Equal(t, tc.output, got)
-		})
-	}
 }
 
 func TestTarInput(t *testing.T) {
@@ -681,8 +545,6 @@ func bar() {
 `,
 	}
 
-	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
-
 	tarInputEventC := make(chan comby.TarInputEvent, 1)
 	hdr := tar.Header{
 		Name: "main.go",
@@ -698,7 +560,9 @@ func bar() {
 	t.Run("Structural search tar input to comby", func(t *testing.T) {
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, logtest.Scoped(t), comby.Tar{TarInputEventC: tarInputEventC}, all, "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+
+		pattern := "{:[body]}"
+		err := structuralSearch(ctx, logtest.Scoped(t), comby.Tar{TarInputEventC: tarInputEventC}, all, "", pattern, "", nil, "repo_foo", 0, sender)
 		if err != nil {
 			t.Fatal(err)
 		}

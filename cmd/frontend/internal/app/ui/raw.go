@@ -19,11 +19,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // Examples:
@@ -33,7 +33,7 @@ import (
 //
 // Get a file's contents (as text/plain, images will not be rendered by browsers):
 //     http://localhost:3080/github.com/gorilla/mux/-/raw/mux.go
-//     http://localhost:3080/github.com/sourcegraph/sourcegraph/-/raw/ui/assets/img/bg-hero.png
+//     http://localhost:3080/github.com/sourcegraph/sourcegraph/-/raw/client/web/dist/img/bg-hero.png
 //
 // Get a zip archive of a repository:
 //     curl -H 'Accept: application/zip' http://localhost:3080/github.com/gorilla/mux/-/raw/ -o repo.zip
@@ -75,7 +75,7 @@ func serveRaw(logger log.Logger, db database.DB, gitserverClient gitserver.Clien
 		// - Gitserver content updating
 		// - Consistent error handling (permissions, revision not found, repo not found, etc).
 		//
-		common, err := newCommon(w, r, db, globals.Branding().BrandName, noIndex, serveError)
+		common, err := newCommon(w, r, db, conf.Branding().BrandName, noIndex, serveError)
 		if err != nil {
 			return err
 		}
@@ -195,7 +195,7 @@ func serveRaw(logger log.Logger, db database.DB, gitserverClient gitserver.Clien
 			// internet, so we use default compression levels on zips (instead of no
 			// compression).
 			f, err := gitserverClient.ArchiveReader(r.Context(), common.Repo.Name,
-				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Pathspecs: []gitdomain.Pathspec{gitdomain.PathspecLiteral(relativePath)}})
+				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Paths: []string{relativePath}})
 			if err != nil {
 				return err
 			}

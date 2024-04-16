@@ -79,7 +79,7 @@ function getBaseCommitIDFromRevisionPage(): string {
 }
 
 export function getPhabricatorState(
-    location: Location,
+    location: URL | Location,
     requestGraphQL: PlatformContext['requestGraphQL'],
     queryConduit: QueryConduitHelper<any>
 ): Observable<DiffusionState | DifferentialState | RevisionState | ChangeState> {
@@ -207,7 +207,7 @@ export function getPhabricatorState(
 
         throw new Error(`Could not determine Phabricator state from stateUrl ${stateUrl}`)
     } catch (error) {
-        return throwError(error)
+        return throwError(() => error)
     }
 }
 

@@ -1,9 +1,11 @@
 import { type Location, createPath } from 'react-router-dom'
-import { Subscription, Subject } from 'rxjs'
+import { Subscription, Subject, lastValueFrom } from 'rxjs'
 import { tap, last } from 'rxjs/operators'
+import { afterEach, beforeEach, describe, expect, it, test } from 'vitest'
 
 import { logger, resetAllMemoizationCaches } from '@sourcegraph/common'
 import { SearchMode } from '@sourcegraph/shared/src/search'
+import { createBarrier } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SearchPatternType } from '../graphql-operations'
@@ -192,14 +194,15 @@ describe('updateQueryStateFromURL', () => {
     const isSearchContextAvailable = () => Promise.resolve(true)
 
     describe('search context', () => {
-        it('should extract the search context from the query', done => {
+        it('should extract the search context from the query', async () => {
+            const { wait, done } = createBarrier()
             const [locationSubject, location] = createHistoryObservable('q=context:me+test')
 
-            getQueryStateFromLocation({
-                location: locationSubject,
-                isSearchContextAvailable,
-            })
-                .pipe(
+            lastValueFrom(
+                getQueryStateFromLocation({
+                    location: locationSubject,
+                    isSearchContextAvailable,
+                }).pipe(
                     last(),
                     tap(({ searchContextSpec, query }) => {
                         expect(searchContextSpec?.spec).toEqual('me')
@@ -207,11 +210,11 @@ describe('updateQueryStateFromURL', () => {
                         done()
                     })
                 )
-                .toPromise()
-                .catch(logger.error)
+            ).catch(logger.error)
 
             locationSubject.next(location)
             locationSubject.complete()
+            await wait
         })
     })
 })

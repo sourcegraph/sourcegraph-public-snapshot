@@ -2,13 +2,14 @@ import * as React from 'react'
 
 import { logger } from '@sourcegraph/common'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container } from '@sourcegraph/wildcard'
 
 import type { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
 
-interface Props extends SettingsAreaPageProps, TelemetryProps {
+interface Props extends SettingsAreaPageProps, TelemetryProps, TelemetryV2Props {
     /** Optional description to render above the editor. */
     description?: JSX.Element
     isLightTheme: boolean
@@ -28,12 +29,13 @@ export class SettingsPage extends React.PureComponent<Props, State> {
         return (
             <Container className="mb-3">
                 <SettingsFile
-                    settings={this.props.data.subjects[this.props.data.subjects.length - 1].latestSettings}
+                    settings={this.props.data.subjects.at(-1)!.latestSettings}
                     commitError={this.state.commitError}
                     onDidCommit={this.onDidCommit}
                     onDidDiscard={this.onDidDiscard}
                     isLightTheme={this.props.isLightTheme}
                     telemetryService={this.props.telemetryService}
+                    telemetryRecorder={this.props.telemetryRecorder}
                 />
             </Container>
         )

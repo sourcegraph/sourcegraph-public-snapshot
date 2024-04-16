@@ -1,0 +1,16 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, src)"
+---
+  package main
+//^^^^^^^ Keyword
+//        ^^^^ IdentifierNamespace
+  
+  const MySqlQuery = `
+//^^^^^ Keyword
+//      ^^^^^^^^^^ IdentifierConstant
+//                 ^ IdentifierOperator
+//                   ^ StringLiteral 2:19..4:1
+  SELECT * FROM my_table
+  `
+

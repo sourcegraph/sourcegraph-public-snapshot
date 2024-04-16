@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>{{.StatusCode}} {{.StatusText}} - Sourcegraph</title>
+    </head>
+    <body>
+        <div class="error">
+            <h1>
+                <span class="status-code">{{.StatusCode}}</span>
+                <span class="status-text">{{.StatusText}}</span>
+            </h1>
+            {{if .Error}}
+            <pre class="error-text">{{.Error}}</pre>
+            {{end}}
+            <hr />
+            <p>
+                Sorry, there's been a problem. Please <a href="mailto:support@sourcegraph.com">contact us</a> and
+                include the error message above.</strong>
+            </p>
+        </div>
+    </body>
+</html>

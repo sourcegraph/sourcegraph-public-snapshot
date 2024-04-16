@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -32,7 +32,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient()).DeleteUser(ctx, &struct {
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -54,7 +54,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient()).DeleteUser(ctx, &struct {
+		_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -432,13 +432,13 @@ func TestSetIsSiteAdmin(t *testing.T) {
 			users.SetIsSiteAdminFunc.SetDefaultReturn(nil)
 
 			securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
-			securityLogEvents.LogEventFunc.SetDefaultReturn()
+			securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
 
 			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 			db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 
-			s := newSchemaResolver(db, gitserver.NewClient())
+			s := newSchemaResolver(db, gitserver.NewTestClient(t))
 
 			actorCtx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			result, err := s.SetUserIsSiteAdmin(actorCtx, &struct {
@@ -456,7 +456,7 @@ func TestSetIsSiteAdmin(t *testing.T) {
 				t.Errorf("result: want %v but got %v", tc.result, result)
 			}
 
-			mockrequire.CalledN(t, securityLogEvents.LogEventFunc, tc.securityLogEventCalls)
+			mockrequire.CalledN(t, securityLogEvents.LogSecurityEventFunc, tc.securityLogEventCalls)
 			mockrequire.CalledN(t, users.SetIsSiteAdminFunc, tc.setIsSiteAdminCalls)
 		})
 	}

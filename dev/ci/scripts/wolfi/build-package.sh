@@ -4,7 +4,17 @@ set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
+KEYS_DIR="/etc/sourcegraph/keys/"
+MAIN_BRANCH="main"
+BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
+IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
+
+echo "~~~ :aspect: :stethoscope: Agent Health check"
+/etc/aspect/workflows/bin/agent_health_check
+
 tmpdir=$(mktemp -d -t melange-bin.XXXXXXXX)
+# shellcheck disable=SC2317
+# false positive by shellcheck https://github.com/koalaman/shellcheck/issues/2660
 function cleanup() {
   echo "Removing $tmpdir"
   rm -rf "$tmpdir"
@@ -59,8 +69,15 @@ fi
 
 echo " * Building melange package '$name'"
 
+# Sign index, using separate keys from GCS for staging and prod repos
+if [[ "$IS_MAIN" == "true" ]]; then
+  key_path="$KEYS_DIR/sourcegraph-melange-prod.rsa"
+else
+  key_path="$KEYS_DIR/sourcegraph-melange-dev.rsa"
+fi
+
 # Build package
-melange build "$name.yaml" --arch x86_64 --generate-index false
+melange build "$name.yaml" --arch x86_64 --generate-index false --signing-key "$key_path"
 
 # Upload package as build artifact
 buildkite-agent artifact upload packages/*/*

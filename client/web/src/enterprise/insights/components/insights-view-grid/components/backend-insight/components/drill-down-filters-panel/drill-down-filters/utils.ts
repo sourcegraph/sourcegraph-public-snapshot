@@ -10,18 +10,22 @@ export const getSerializedSortAndLimitFilter = (seriesDisplayOptions: InsightSer
 
     switch (mode) {
         case undefined:
-        case SeriesSortMode.RESULT_COUNT:
+        case SeriesSortMode.RESULT_COUNT: {
             sortBy = `by result count ${ascending ? 'low to high' : 'high to low'}`
             break
-        case SeriesSortMode.LEXICOGRAPHICAL:
+        }
+        case SeriesSortMode.LEXICOGRAPHICAL: {
             sortBy = ascending ? 'A-Z' : 'Z-A'
             break
-        case SeriesSortMode.DATE_ADDED:
+        }
+        case SeriesSortMode.DATE_ADDED: {
             sortBy = `by date ${ascending ? 'newest to oldest' : 'oldest to newest'}`
             break
-        default:
+        }
+        default: {
             sortBy = 'ERROR: Unknown sort type.'
             break
+        }
     }
 
     return `Sorted ${sortBy}, limit ${limit ?? 20} series, max point per series ${numSamples ?? 90}`

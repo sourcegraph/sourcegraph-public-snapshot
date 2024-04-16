@@ -18,8 +18,14 @@ type SnippetAttributionArgs struct {
 type SnippetAttributionConnectionResolver interface {
 	TotalCount() int32
 	LimitHit() bool
+	SnippetThreshold() AttributionSnippetThresholdResolver
 	PageInfo() *graphqlutil.PageInfo
 	Nodes() []SnippetAttributionResolver
+}
+
+type AttributionSnippetThresholdResolver interface {
+	SearchPerformed() bool
+	LinesLowerBound() int32
 }
 
 type SnippetAttributionResolver interface {

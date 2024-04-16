@@ -60,7 +60,7 @@ func TestHandle(t *testing.T) {
 
 	// Track writes to symbols table
 	scipWriter := NewMockLSIFSCIPWriter()
-	mockLSIFStore.NewSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
+	mockLSIFStore.NewPreciseSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
 	scipWriter.InsertDocumentFunc.SetDefaultHook(func(_ context.Context, _ string, _ *scip.Document) error {
 		return nil
@@ -74,7 +74,14 @@ func TestHandle(t *testing.T) {
 
 	expectedCommitDate := time.Unix(1587396557, 0).UTC()
 	expectedCommitDateStr := expectedCommitDate.Format(time.RFC3339)
-	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", expectedCommitDate, true, nil)
+	gitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commitID api.CommitID) (*gitdomain.Commit, error) {
+		return &gitdomain.Commit{
+			ID: "deadbeef",
+			Committer: &gitdomain.Signature{
+				Date: expectedCommitDate,
+			},
+		}, nil
+	})
 
 	svc := &handler{
 		store:           mockDBStore,
@@ -101,7 +108,7 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected UpdateCommitedAt commit date. want=%s have=%s", expectedCommitDate, calls[0].Arg3)
 	}
 
-	expectedPackagesDumpID := 42
+	expectedPackagesUploadID := 42
 	expectedPackages := []precise.Package{
 		{
 			Scheme:  "scip-typescript",
@@ -112,13 +119,13 @@ func TestHandle(t *testing.T) {
 	}
 	if len(mockDBStore.UpdatePackagesFunc.History()) != 1 {
 		t.Errorf("unexpected number of UpdatePackages calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackagesFunc.History()))
-	} else if diff := cmp.Diff(expectedPackagesDumpID, mockDBStore.UpdatePackagesFunc.History()[0].Arg1); diff != "" {
+	} else if diff := cmp.Diff(expectedPackagesUploadID, mockDBStore.UpdatePackagesFunc.History()[0].Arg1); diff != "" {
 		t.Errorf("unexpected UpdatePackagesFunc args (-want +got):\n%s", diff)
 	} else if diff := cmp.Diff(expectedPackages, mockDBStore.UpdatePackagesFunc.History()[0].Arg2); diff != "" {
 		t.Errorf("unexpected UpdatePackagesFunc args (-want +got):\n%s", diff)
 	}
 
-	expectedPackageReferencesDumpID := 42
+	expectedPackageReferencesUploadID := 42
 	expectedPackageReferences := []precise.PackageReference{
 		{Package: precise.Package{
 			Scheme:  "scip-typescript",
@@ -171,7 +178,7 @@ func TestHandle(t *testing.T) {
 	}
 	if len(mockDBStore.UpdatePackageReferencesFunc.History()) != 1 {
 		t.Errorf("unexpected number of UpdatePackageReferences calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackageReferencesFunc.History()))
-	} else if diff := cmp.Diff(expectedPackageReferencesDumpID, mockDBStore.UpdatePackageReferencesFunc.History()[0].Arg1); diff != "" {
+	} else if diff := cmp.Diff(expectedPackageReferencesUploadID, mockDBStore.UpdatePackageReferencesFunc.History()[0].Arg1); diff != "" {
 		t.Errorf("unexpected UpdatePackageReferencesFunc args (-want +got):\n%s", diff)
 	} else {
 		sort.Slice(expectedPackageReferences, func(i, j int) bool {
@@ -189,16 +196,16 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected value for upload id. want=%d have=%d", 42, mockDBStore.InsertDependencySyncingJobFunc.History()[0].Arg1)
 	}
 
-	if len(mockDBStore.DeleteOverlappingDumpsFunc.History()) != 1 {
-		t.Errorf("unexpected number of DeleteOverlappingDumps calls. want=%d have=%d", 1, len(mockDBStore.DeleteOverlappingDumpsFunc.History()))
-	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg1 != 50 {
-		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg1)
-	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg2 != "deadbeef" {
-		t.Errorf("unexpected value for commit. want=%s have=%s", "deadbeef", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg2)
-	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg3 != "" {
-		t.Errorf("unexpected value for root. want=%s have=%s", "", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg3)
-	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg4 != "lsif-go" {
-		t.Errorf("unexpected value for indexer. want=%s have=%s", "lsif-go", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg4)
+	if len(mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()) != 1 {
+		t.Errorf("unexpected number of DeleteOverlappingCompletedUploads calls. want=%d have=%d", 1, len(mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()))
+	} else if mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg1 != 50 {
+		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg1)
+	} else if mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg2 != "deadbeef" {
+		t.Errorf("unexpected value for commit. want=%s have=%s", "deadbeef", mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg2)
+	} else if mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg3 != "" {
+		t.Errorf("unexpected value for root. want=%s have=%s", "", mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg3)
+	} else if mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg4 != "lsif-go" {
+		t.Errorf("unexpected value for indexer. want=%s have=%s", "lsif-go", mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg4)
 	}
 
 	if len(mockDBStore.SetRepositoryAsDirtyFunc.History()) != 1 {
@@ -290,13 +297,20 @@ func TestHandleError(t *testing.T) {
 
 	// Track writes to symbols table
 	scipWriter := NewMockLSIFSCIPWriter()
-	mockLSIFStore.NewSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
+	mockLSIFStore.NewPreciseSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
 	// Give correlation package a valid input dump
 	mockUploadStore.GetFunc.SetDefaultHook(copyTestDumpScip)
 
 	// Supply non-nil commit date
-	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", time.Now(), true, nil)
+	gitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commitID api.CommitID) (*gitdomain.Commit, error) {
+		return &gitdomain.Commit{
+			ID: "deadbeef",
+			Committer: &gitdomain.Signature{
+				Date: time.Now(),
+			},
+		}, nil
+	})
 
 	// Set a different tip commit
 	mockDBStore.SetRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
@@ -414,7 +428,7 @@ func setupRepoMocks(t *testing.T) {
 		return &types.Repo{ID: repoID}, nil
 	}
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		if rev != "deadbeef" {
 			t.Errorf("unexpected commit. want=%s have=%s", "deadbeef", rev)
 		}

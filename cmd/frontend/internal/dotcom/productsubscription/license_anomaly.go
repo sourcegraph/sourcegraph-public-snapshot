@@ -131,10 +131,24 @@ SELECT EXTRACT(EPOCH FROM p50)::int AS p50_seconds FROM percentiles
 `
 
 const slackMessageFmt = `
-The license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s> seems to be used on multiple customer instances with the same site ID: "%s.
+We are receiving irregular pings from ` + "`%s`" + ` for the site ID: "%s".
 
-To fix it, <https://app.golinks.io/internal-licensing-faq-slack-multiple|follow the guide to update the siteID and license key for all customer instances>.
+This might mean that there is more than one active instance of Sourcegraph with the same site ID and license key.
+
+At the moment, this site ID is associated with the following license key ID: <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s>
+
+To fix this, <https://app.golinks.io/internal-licensing-faq-slack-multiple|follow the guide to update the siteID and license key for all customer instances>.
 `
+
+func formatSlackMessage(externalURL *url.URL, license *dbLicense, customerName string) string {
+	return fmt.Sprintf(slackMessageFmt,
+		customerName,
+		*license.SiteID,
+		externalURL.String(),
+		url.QueryEscape(license.ProductSubscriptionID),
+		url.QueryEscape(license.ID),
+		license.ID)
+}
 
 // checkP50CallTimeForLicense checks the p50 time difference between license-check calls for a specific license.
 // It takes 48 hour interval into account, see the `percentileTimeDiffQuery` above.
@@ -167,8 +181,10 @@ func checkP50CallTimeForLicense(ctx context.Context, logger log.Logger, db datab
 		logger.Error("parsing external URL from site config", log.Error(err))
 	}
 
+	customerName := getCustomerNameFromLicense(ctx, logger, db, license)
+
 	err = client.Post(context.Background(), &slack.Payload{
-		Text: fmt.Sprintf(slackMessageFmt, externalURL.String(), url.QueryEscape(license.ProductSubscriptionID), url.QueryEscape(license.ID), license.ID, *license.SiteID),
+		Text: formatSlackMessage(externalURL, license, customerName),
 	})
 	if err != nil {
 		logger.Error("error sending Slack message", log.Error(err))

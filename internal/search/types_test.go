@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -17,11 +18,12 @@ func TestZoektParameters(t *testing.T) {
 	documentRanksWeight := 42.0
 
 	cases := []struct {
-		name            string
-		context         context.Context
-		params          *ZoektParameters
-		rankingFeatures *schema.Ranking
-		want            *zoekt.SearchOptions
+		name                  string
+		context               context.Context
+		params                *ZoektParameters
+		rankingFeatures       *schema.Ranking
+		want                  *zoekt.SearchOptions
+		enableDocumentRanking bool
 	}{
 		{
 			name:    "test defaults",
@@ -33,7 +35,24 @@ func TestZoektParameters(t *testing.T) {
 				ShardMaxMatchCount:  10000,
 				TotalMaxMatchCount:  100000,
 				MaxWallTime:         20000000000,
-				MaxDocDisplayCount:  500,
+				MaxDocDisplayCount:  10000,
+				ChunkMatches:        true,
+				FlushWallTime:       500000000,
+				DocumentRanksWeight: 4500,
+			},
+		},
+		{
+			name:    "test defaults (with document ranking enabled)",
+			context: context.Background(),
+			params: &ZoektParameters{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+			},
+			enableDocumentRanking: true,
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:  10000,
+				TotalMaxMatchCount:  100000,
+				MaxWallTime:         20000000000,
+				MaxDocDisplayCount:  10000,
 				ChunkMatches:        true,
 				FlushWallTime:       500000000,
 				UseDocumentRanks:    true,
@@ -55,7 +74,7 @@ func TestZoektParameters(t *testing.T) {
 				TotalMaxMatchCount:     100_000,
 				ShardRepoMaxMatchCount: 1,
 				MaxWallTime:            20000000000,
-				MaxDocDisplayCount:     500,
+				MaxDocDisplayCount:     10000,
 				ChunkMatches:           true,
 			},
 		},
@@ -90,7 +109,6 @@ func TestZoektParameters(t *testing.T) {
 				MaxDocDisplayCount:  100_000,
 				ChunkMatches:        true,
 				FlushWallTime:       500000000,
-				UseDocumentRanks:    true,
 				DocumentRanksWeight: 4500,
 			},
 		},
@@ -108,9 +126,8 @@ func TestZoektParameters(t *testing.T) {
 				TotalMaxMatchCount:  100000,
 				MaxWallTime:         20000000000,
 				FlushWallTime:       500000000,
-				MaxDocDisplayCount:  500,
+				MaxDocDisplayCount:  10000,
 				ChunkMatches:        true,
-				UseDocumentRanks:    true,
 				DocumentRanksWeight: 42,
 			},
 		},
@@ -128,9 +145,8 @@ func TestZoektParameters(t *testing.T) {
 				TotalMaxMatchCount:  100000,
 				MaxWallTime:         20000000000,
 				FlushWallTime:       3141000000,
-				MaxDocDisplayCount:  500,
+				MaxDocDisplayCount:  10000,
 				ChunkMatches:        true,
-				UseDocumentRanks:    true,
 				DocumentRanksWeight: 4500,
 			},
 		},
@@ -139,22 +155,29 @@ func TestZoektParameters(t *testing.T) {
 			context: context.Background(),
 			params: &ZoektParameters{
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				KeywordScoring: true,
+				PatternType:    query.SearchTypeCodyContext,
 			},
 			want: &zoekt.SearchOptions{
 				ShardMaxMatchCount:  100000,
 				TotalMaxMatchCount:  1000000,
 				MaxWallTime:         20000000000,
 				FlushWallTime:       2000000000, // for keyword search, default is 2 sec
-				MaxDocDisplayCount:  500,
+				MaxDocDisplayCount:  10000,
 				ChunkMatches:        true,
-				UseDocumentRanks:    true,
 				DocumentRanksWeight: 4500,
 				UseKeywordScoring:   true},
 		},
 	}
+
+	enabled := true
+
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.enableDocumentRanking {
+				conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{CodeIntelRankingDocumentReferenceCountsEnabled: &enabled}})
+				defer conf.Mock(nil)
+			}
+
 			if tt.rankingFeatures != nil {
 				cfg := conf.Get()
 				cfg.ExperimentalFeatures.Ranking = tt.rankingFeatures

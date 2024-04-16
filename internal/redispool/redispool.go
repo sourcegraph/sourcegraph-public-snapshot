@@ -7,7 +7,6 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -31,19 +30,9 @@ var addresses = func() struct {
 
 	fallback := env.Get("REDIS_ENDPOINT", "", "redis endpoint. Used as fallback if REDIS_CACHE_ENDPOINT or REDIS_STORE_ENDPOINT is not specified.")
 
-	// maybe is a convenience which returns s if include is true, otherwise
-	// returns the empty string.
-	maybe := func(include bool, s string) string {
-		if include {
-			return s
-		}
-		return ""
-	}
-
 	for _, addr := range []string{
 		env.Get("REDIS_CACHE_ENDPOINT", "", "redis used for cache data. Default redis-cache:6379"),
 		fallback,
-		maybe(deploy.IsSingleBinary(), MemoryKeyValueURI),
 		"redis-cache:6379",
 	} {
 		if addr != "" {
@@ -56,7 +45,6 @@ var addresses = func() struct {
 	for _, addr := range []string{
 		env.Get("REDIS_STORE_ENDPOINT", "", "redis used for persistent stores (eg HTTP sessions). Default redis-store:6379"),
 		fallback,
-		maybe(deploy.IsSingleBinary(), DBKeyValueURI("store")),
 		"redis-store:6379",
 	} {
 		if addr != "" {

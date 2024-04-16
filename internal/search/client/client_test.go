@@ -67,9 +67,9 @@ func TestDetectSearchType(t *testing.T) {
 			patternType: &typeInvalid,
 			errorString: `unrecognized patternType "invalid"`,
 		}, {
-			version:     "V4",
+			version:     "V99",
 			patternType: nil,
-			errorString: "unrecognized version: want \"V1\", \"V2\", or \"V3\", got \"V4\"",
+			errorString: "unrecognized version: want \"V1\", \"V2\", or \"V3\", got \"V99\"",
 		}}
 
 		for _, tc := range cases {

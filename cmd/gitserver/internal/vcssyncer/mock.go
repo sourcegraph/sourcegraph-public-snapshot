@@ -8,12 +8,11 @@ package vcssyncer
 
 import (
 	"context"
-	"os/exec"
+	"io"
 	"sync"
 
 	common "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
-	vcs "github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // MockVCSSyncer is a mock implementation of the VCSSyncer interface (from
@@ -21,18 +20,15 @@ import (
 // github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer) used
 // for unit testing.
 type MockVCSSyncer struct {
-	// CloneCommandFunc is an instance of a mock function object controlling
-	// the behavior of the method CloneCommand.
-	CloneCommandFunc *VCSSyncerCloneCommandFunc
+	// CloneFunc is an instance of a mock function object controlling the
+	// behavior of the method Clone.
+	CloneFunc *VCSSyncerCloneFunc
 	// FetchFunc is an instance of a mock function object controlling the
 	// behavior of the method Fetch.
 	FetchFunc *VCSSyncerFetchFunc
 	// IsCloneableFunc is an instance of a mock function object controlling
 	// the behavior of the method IsCloneable.
 	IsCloneableFunc *VCSSyncerIsCloneableFunc
-	// RemoteShowCommandFunc is an instance of a mock function object
-	// controlling the behavior of the method RemoteShowCommand.
-	RemoteShowCommandFunc *VCSSyncerRemoteShowCommandFunc
 	// TypeFunc is an instance of a mock function object controlling the
 	// behavior of the method Type.
 	TypeFunc *VCSSyncerTypeFunc
@@ -42,23 +38,18 @@ type MockVCSSyncer struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockVCSSyncer() *MockVCSSyncer {
 	return &MockVCSSyncer{
-		CloneCommandFunc: &VCSSyncerCloneCommandFunc{
-			defaultHook: func(context.Context, *vcs.URL, string) (r0 *exec.Cmd, r1 error) {
+		CloneFunc: &VCSSyncerCloneFunc{
+			defaultHook: func(context.Context, api.RepoName, common.GitDir, string, io.Writer) (r0 error) {
 				return
 			},
 		},
 		FetchFunc: &VCSSyncerFetchFunc{
-			defaultHook: func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) (r0 []byte, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, common.GitDir, string) (r0 []byte, r1 error) {
 				return
 			},
 		},
 		IsCloneableFunc: &VCSSyncerIsCloneableFunc{
-			defaultHook: func(context.Context, api.RepoName, *vcs.URL) (r0 error) {
-				return
-			},
-		},
-		RemoteShowCommandFunc: &VCSSyncerRemoteShowCommandFunc{
-			defaultHook: func(context.Context, *vcs.URL) (r0 *exec.Cmd, r1 error) {
+			defaultHook: func(context.Context, api.RepoName) (r0 error) {
 				return
 			},
 		},
@@ -74,24 +65,19 @@ func NewMockVCSSyncer() *MockVCSSyncer {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockVCSSyncer() *MockVCSSyncer {
 	return &MockVCSSyncer{
-		CloneCommandFunc: &VCSSyncerCloneCommandFunc{
-			defaultHook: func(context.Context, *vcs.URL, string) (*exec.Cmd, error) {
-				panic("unexpected invocation of MockVCSSyncer.CloneCommand")
+		CloneFunc: &VCSSyncerCloneFunc{
+			defaultHook: func(context.Context, api.RepoName, common.GitDir, string, io.Writer) error {
+				panic("unexpected invocation of MockVCSSyncer.Clone")
 			},
 		},
 		FetchFunc: &VCSSyncerFetchFunc{
-			defaultHook: func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error) {
+			defaultHook: func(context.Context, api.RepoName, common.GitDir, string) ([]byte, error) {
 				panic("unexpected invocation of MockVCSSyncer.Fetch")
 			},
 		},
 		IsCloneableFunc: &VCSSyncerIsCloneableFunc{
-			defaultHook: func(context.Context, api.RepoName, *vcs.URL) error {
+			defaultHook: func(context.Context, api.RepoName) error {
 				panic("unexpected invocation of MockVCSSyncer.IsCloneable")
-			},
-		},
-		RemoteShowCommandFunc: &VCSSyncerRemoteShowCommandFunc{
-			defaultHook: func(context.Context, *vcs.URL) (*exec.Cmd, error) {
-				panic("unexpected invocation of MockVCSSyncer.RemoteShowCommand")
 			},
 		},
 		TypeFunc: &VCSSyncerTypeFunc{
@@ -106,8 +92,8 @@ func NewStrictMockVCSSyncer() *MockVCSSyncer {
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockVCSSyncerFrom(i VCSSyncer) *MockVCSSyncer {
 	return &MockVCSSyncer{
-		CloneCommandFunc: &VCSSyncerCloneCommandFunc{
-			defaultHook: i.CloneCommand,
+		CloneFunc: &VCSSyncerCloneFunc{
+			defaultHook: i.Clone,
 		},
 		FetchFunc: &VCSSyncerFetchFunc{
 			defaultHook: i.Fetch,
@@ -115,44 +101,40 @@ func NewMockVCSSyncerFrom(i VCSSyncer) *MockVCSSyncer {
 		IsCloneableFunc: &VCSSyncerIsCloneableFunc{
 			defaultHook: i.IsCloneable,
 		},
-		RemoteShowCommandFunc: &VCSSyncerRemoteShowCommandFunc{
-			defaultHook: i.RemoteShowCommand,
-		},
 		TypeFunc: &VCSSyncerTypeFunc{
 			defaultHook: i.Type,
 		},
 	}
 }
 
-// VCSSyncerCloneCommandFunc describes the behavior when the CloneCommand
-// method of the parent MockVCSSyncer instance is invoked.
-type VCSSyncerCloneCommandFunc struct {
-	defaultHook func(context.Context, *vcs.URL, string) (*exec.Cmd, error)
-	hooks       []func(context.Context, *vcs.URL, string) (*exec.Cmd, error)
-	history     []VCSSyncerCloneCommandFuncCall
+// VCSSyncerCloneFunc describes the behavior when the Clone method of the
+// parent MockVCSSyncer instance is invoked.
+type VCSSyncerCloneFunc struct {
+	defaultHook func(context.Context, api.RepoName, common.GitDir, string, io.Writer) error
+	hooks       []func(context.Context, api.RepoName, common.GitDir, string, io.Writer) error
+	history     []VCSSyncerCloneFuncCall
 	mutex       sync.Mutex
 }
 
-// CloneCommand delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockVCSSyncer) CloneCommand(v0 context.Context, v1 *vcs.URL, v2 string) (*exec.Cmd, error) {
-	r0, r1 := m.CloneCommandFunc.nextHook()(v0, v1, v2)
-	m.CloneCommandFunc.appendCall(VCSSyncerCloneCommandFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
+// Clone delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockVCSSyncer) Clone(v0 context.Context, v1 api.RepoName, v2 common.GitDir, v3 string, v4 io.Writer) error {
+	r0 := m.CloneFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.CloneFunc.appendCall(VCSSyncerCloneFuncCall{v0, v1, v2, v3, v4, r0})
+	return r0
 }
 
-// SetDefaultHook sets function that is called when the CloneCommand method
-// of the parent MockVCSSyncer instance is invoked and the hook queue is
-// empty.
-func (f *VCSSyncerCloneCommandFunc) SetDefaultHook(hook func(context.Context, *vcs.URL, string) (*exec.Cmd, error)) {
+// SetDefaultHook sets function that is called when the Clone method of the
+// parent MockVCSSyncer instance is invoked and the hook queue is empty.
+func (f *VCSSyncerCloneFunc) SetDefaultHook(hook func(context.Context, api.RepoName, common.GitDir, string, io.Writer) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// CloneCommand method of the parent MockVCSSyncer instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *VCSSyncerCloneCommandFunc) PushHook(hook func(context.Context, *vcs.URL, string) (*exec.Cmd, error)) {
+// Clone method of the parent MockVCSSyncer instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *VCSSyncerCloneFunc) PushHook(hook func(context.Context, api.RepoName, common.GitDir, string, io.Writer) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -160,20 +142,20 @@ func (f *VCSSyncerCloneCommandFunc) PushHook(hook func(context.Context, *vcs.URL
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *VCSSyncerCloneCommandFunc) SetDefaultReturn(r0 *exec.Cmd, r1 error) {
-	f.SetDefaultHook(func(context.Context, *vcs.URL, string) (*exec.Cmd, error) {
-		return r0, r1
+func (f *VCSSyncerCloneFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, common.GitDir, string, io.Writer) error {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *VCSSyncerCloneCommandFunc) PushReturn(r0 *exec.Cmd, r1 error) {
-	f.PushHook(func(context.Context, *vcs.URL, string) (*exec.Cmd, error) {
-		return r0, r1
+func (f *VCSSyncerCloneFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, api.RepoName, common.GitDir, string, io.Writer) error {
+		return r0
 	})
 }
 
-func (f *VCSSyncerCloneCommandFunc) nextHook() func(context.Context, *vcs.URL, string) (*exec.Cmd, error) {
+func (f *VCSSyncerCloneFunc) nextHook() func(context.Context, api.RepoName, common.GitDir, string, io.Writer) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -186,75 +168,78 @@ func (f *VCSSyncerCloneCommandFunc) nextHook() func(context.Context, *vcs.URL, s
 	return hook
 }
 
-func (f *VCSSyncerCloneCommandFunc) appendCall(r0 VCSSyncerCloneCommandFuncCall) {
+func (f *VCSSyncerCloneFunc) appendCall(r0 VCSSyncerCloneFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of VCSSyncerCloneCommandFuncCall objects
-// describing the invocations of this function.
-func (f *VCSSyncerCloneCommandFunc) History() []VCSSyncerCloneCommandFuncCall {
+// History returns a sequence of VCSSyncerCloneFuncCall objects describing
+// the invocations of this function.
+func (f *VCSSyncerCloneFunc) History() []VCSSyncerCloneFuncCall {
 	f.mutex.Lock()
-	history := make([]VCSSyncerCloneCommandFuncCall, len(f.history))
+	history := make([]VCSSyncerCloneFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// VCSSyncerCloneCommandFuncCall is an object that describes an invocation
-// of method CloneCommand on an instance of MockVCSSyncer.
-type VCSSyncerCloneCommandFuncCall struct {
+// VCSSyncerCloneFuncCall is an object that describes an invocation of
+// method Clone on an instance of MockVCSSyncer.
+type VCSSyncerCloneFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *vcs.URL
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 common.GitDir
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 io.Writer
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *exec.Cmd
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
+	Result0 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c VCSSyncerCloneCommandFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+func (c VCSSyncerCloneFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c VCSSyncerCloneCommandFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+func (c VCSSyncerCloneFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // VCSSyncerFetchFunc describes the behavior when the Fetch method of the
 // parent MockVCSSyncer instance is invoked.
 type VCSSyncerFetchFunc struct {
-	defaultHook func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error)
-	hooks       []func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error)
+	defaultHook func(context.Context, api.RepoName, common.GitDir, string) ([]byte, error)
+	hooks       []func(context.Context, api.RepoName, common.GitDir, string) ([]byte, error)
 	history     []VCSSyncerFetchFuncCall
 	mutex       sync.Mutex
 }
 
 // Fetch delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockVCSSyncer) Fetch(v0 context.Context, v1 *vcs.URL, v2 api.RepoName, v3 common.GitDir, v4 string) ([]byte, error) {
-	r0, r1 := m.FetchFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.FetchFunc.appendCall(VCSSyncerFetchFuncCall{v0, v1, v2, v3, v4, r0, r1})
+func (m *MockVCSSyncer) Fetch(v0 context.Context, v1 api.RepoName, v2 common.GitDir, v3 string) ([]byte, error) {
+	r0, r1 := m.FetchFunc.nextHook()(v0, v1, v2, v3)
+	m.FetchFunc.appendCall(VCSSyncerFetchFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Fetch method of the
 // parent MockVCSSyncer instance is invoked and the hook queue is empty.
-func (f *VCSSyncerFetchFunc) SetDefaultHook(hook func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error)) {
+func (f *VCSSyncerFetchFunc) SetDefaultHook(hook func(context.Context, api.RepoName, common.GitDir, string) ([]byte, error)) {
 	f.defaultHook = hook
 }
 
@@ -262,7 +247,7 @@ func (f *VCSSyncerFetchFunc) SetDefaultHook(hook func(context.Context, *vcs.URL,
 // Fetch method of the parent MockVCSSyncer instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *VCSSyncerFetchFunc) PushHook(hook func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error)) {
+func (f *VCSSyncerFetchFunc) PushHook(hook func(context.Context, api.RepoName, common.GitDir, string) ([]byte, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -271,19 +256,19 @@ func (f *VCSSyncerFetchFunc) PushHook(hook func(context.Context, *vcs.URL, api.R
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *VCSSyncerFetchFunc) SetDefaultReturn(r0 []byte, r1 error) {
-	f.SetDefaultHook(func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, common.GitDir, string) ([]byte, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *VCSSyncerFetchFunc) PushReturn(r0 []byte, r1 error) {
-	f.PushHook(func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error) {
+	f.PushHook(func(context.Context, api.RepoName, common.GitDir, string) ([]byte, error) {
 		return r0, r1
 	})
 }
 
-func (f *VCSSyncerFetchFunc) nextHook() func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error) {
+func (f *VCSSyncerFetchFunc) nextHook() func(context.Context, api.RepoName, common.GitDir, string) ([]byte, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -321,16 +306,13 @@ type VCSSyncerFetchFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *vcs.URL
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.RepoName
+	Arg2 common.GitDir
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 common.GitDir
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []byte
@@ -342,7 +324,7 @@ type VCSSyncerFetchFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c VCSSyncerFetchFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -354,24 +336,24 @@ func (c VCSSyncerFetchFuncCall) Results() []interface{} {
 // VCSSyncerIsCloneableFunc describes the behavior when the IsCloneable
 // method of the parent MockVCSSyncer instance is invoked.
 type VCSSyncerIsCloneableFunc struct {
-	defaultHook func(context.Context, api.RepoName, *vcs.URL) error
-	hooks       []func(context.Context, api.RepoName, *vcs.URL) error
+	defaultHook func(context.Context, api.RepoName) error
+	hooks       []func(context.Context, api.RepoName) error
 	history     []VCSSyncerIsCloneableFuncCall
 	mutex       sync.Mutex
 }
 
 // IsCloneable delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockVCSSyncer) IsCloneable(v0 context.Context, v1 api.RepoName, v2 *vcs.URL) error {
-	r0 := m.IsCloneableFunc.nextHook()(v0, v1, v2)
-	m.IsCloneableFunc.appendCall(VCSSyncerIsCloneableFuncCall{v0, v1, v2, r0})
+func (m *MockVCSSyncer) IsCloneable(v0 context.Context, v1 api.RepoName) error {
+	r0 := m.IsCloneableFunc.nextHook()(v0, v1)
+	m.IsCloneableFunc.appendCall(VCSSyncerIsCloneableFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the IsCloneable method
 // of the parent MockVCSSyncer instance is invoked and the hook queue is
 // empty.
-func (f *VCSSyncerIsCloneableFunc) SetDefaultHook(hook func(context.Context, api.RepoName, *vcs.URL) error) {
+func (f *VCSSyncerIsCloneableFunc) SetDefaultHook(hook func(context.Context, api.RepoName) error) {
 	f.defaultHook = hook
 }
 
@@ -379,7 +361,7 @@ func (f *VCSSyncerIsCloneableFunc) SetDefaultHook(hook func(context.Context, api
 // IsCloneable method of the parent MockVCSSyncer instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *VCSSyncerIsCloneableFunc) PushHook(hook func(context.Context, api.RepoName, *vcs.URL) error) {
+func (f *VCSSyncerIsCloneableFunc) PushHook(hook func(context.Context, api.RepoName) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -388,19 +370,19 @@ func (f *VCSSyncerIsCloneableFunc) PushHook(hook func(context.Context, api.RepoN
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *VCSSyncerIsCloneableFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, *vcs.URL) error {
+	f.SetDefaultHook(func(context.Context, api.RepoName) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *VCSSyncerIsCloneableFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoName, *vcs.URL) error {
+	f.PushHook(func(context.Context, api.RepoName) error {
 		return r0
 	})
 }
 
-func (f *VCSSyncerIsCloneableFunc) nextHook() func(context.Context, api.RepoName, *vcs.URL) error {
+func (f *VCSSyncerIsCloneableFunc) nextHook() func(context.Context, api.RepoName) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -439,9 +421,6 @@ type VCSSyncerIsCloneableFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 *vcs.URL
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -450,121 +429,13 @@ type VCSSyncerIsCloneableFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c VCSSyncerIsCloneableFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c VCSSyncerIsCloneableFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// VCSSyncerRemoteShowCommandFunc describes the behavior when the
-// RemoteShowCommand method of the parent MockVCSSyncer instance is invoked.
-type VCSSyncerRemoteShowCommandFunc struct {
-	defaultHook func(context.Context, *vcs.URL) (*exec.Cmd, error)
-	hooks       []func(context.Context, *vcs.URL) (*exec.Cmd, error)
-	history     []VCSSyncerRemoteShowCommandFuncCall
-	mutex       sync.Mutex
-}
-
-// RemoteShowCommand delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockVCSSyncer) RemoteShowCommand(v0 context.Context, v1 *vcs.URL) (*exec.Cmd, error) {
-	r0, r1 := m.RemoteShowCommandFunc.nextHook()(v0, v1)
-	m.RemoteShowCommandFunc.appendCall(VCSSyncerRemoteShowCommandFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the RemoteShowCommand
-// method of the parent MockVCSSyncer instance is invoked and the hook queue
-// is empty.
-func (f *VCSSyncerRemoteShowCommandFunc) SetDefaultHook(hook func(context.Context, *vcs.URL) (*exec.Cmd, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RemoteShowCommand method of the parent MockVCSSyncer instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *VCSSyncerRemoteShowCommandFunc) PushHook(hook func(context.Context, *vcs.URL) (*exec.Cmd, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *VCSSyncerRemoteShowCommandFunc) SetDefaultReturn(r0 *exec.Cmd, r1 error) {
-	f.SetDefaultHook(func(context.Context, *vcs.URL) (*exec.Cmd, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *VCSSyncerRemoteShowCommandFunc) PushReturn(r0 *exec.Cmd, r1 error) {
-	f.PushHook(func(context.Context, *vcs.URL) (*exec.Cmd, error) {
-		return r0, r1
-	})
-}
-
-func (f *VCSSyncerRemoteShowCommandFunc) nextHook() func(context.Context, *vcs.URL) (*exec.Cmd, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *VCSSyncerRemoteShowCommandFunc) appendCall(r0 VCSSyncerRemoteShowCommandFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of VCSSyncerRemoteShowCommandFuncCall objects
-// describing the invocations of this function.
-func (f *VCSSyncerRemoteShowCommandFunc) History() []VCSSyncerRemoteShowCommandFuncCall {
-	f.mutex.Lock()
-	history := make([]VCSSyncerRemoteShowCommandFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// VCSSyncerRemoteShowCommandFuncCall is an object that describes an
-// invocation of method RemoteShowCommand on an instance of MockVCSSyncer.
-type VCSSyncerRemoteShowCommandFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *vcs.URL
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *exec.Cmd
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c VCSSyncerRemoteShowCommandFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c VCSSyncerRemoteShowCommandFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // VCSSyncerTypeFunc describes the behavior when the Type method of the

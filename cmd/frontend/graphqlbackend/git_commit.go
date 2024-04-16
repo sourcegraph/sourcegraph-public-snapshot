@@ -91,8 +91,17 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 			return
 		}
 
-		opts := gitserver.ResolveRevisionOptions{}
-		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts)
+		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid))
+		if r.commitErr != nil && errors.HasType(r.commitErr, &gitdomain.RevisionNotFoundError{}) {
+			// If the commit is not found, attempt to do a ensure revision call.
+			_, err := r.gitserverClient.ResolveRevision(ctx, r.gitRepo, string(r.oid), gitserver.ResolveRevisionOptions{EnsureRevision: true})
+			if err != nil {
+				r.logger.Error("failed to resolve commit", log.Error(err), log.String("oid", string(r.oid)))
+			} else {
+				// Try again to resolve the commit.
+				r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid))
+			}
+		}
 	})
 	return r.commit, r.commitErr
 }
@@ -215,18 +224,18 @@ func (r *GitCommitResolver) CanonicalURL() string {
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	repo, err := r.repoResolver.repo(ctx)
+	linker, err := r.repoResolver.getLinker(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	return externallink.Commit(ctx, r.db, repo, api.CommitID(r.oid))
+	return linker.Commit(api.CommitID(r.oid)), nil
 }
 
-func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
-	Path      string
-	Recursive bool
-}) (*GitTreeEntryResolver, error) {
+type TreeArgs struct {
+	Path string
+}
+
+func (r *GitCommitResolver) Tree(ctx context.Context, args *TreeArgs) (*GitTreeEntryResolver, error) {
 	treeEntry, err := r.path(ctx, args.Path, func(stat fs.FileInfo) error {
 		if !stat.Mode().IsDir() {
 			return errors.Errorf("not a directory: %q", args.Path)
@@ -238,10 +247,6 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// Note: args.Recursive is deprecated
-	if treeEntry != nil {
-		treeEntry.isRecursive = args.Recursive
-	}
 	return treeEntry, nil
 }
 
@@ -319,12 +324,7 @@ func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
-	repo, err := r.repoResolver.repo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, r.repoResolver.RepoName(), api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -337,12 +337,7 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 }
 
 func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*languageStatisticsResolver, error) {
-	repo, err := r.repoResolver.repo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, r.repoResolver.RepoName(), api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -365,7 +360,7 @@ type AncestorsArgs struct {
 	Before      *string
 }
 
-func (r *GitCommitResolver) Ancestors(ctx context.Context, args *AncestorsArgs) (*gitCommitConnectionResolver, error) {
+func (r *GitCommitResolver) Ancestors(ctx context.Context, args *AncestorsArgs) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
 		db:              r.db,
 		gitserverClient: r.gitserverClient,
@@ -378,7 +373,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *AncestorsArgs) 
 		afterCursor:     args.AfterCursor,
 		before:          args.Before,
 		repo:            r.repoResolver,
-	}, nil
+	}
 }
 
 func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {
@@ -430,25 +425,23 @@ func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 // portion (unlike for commit page URLs, which must include some revspec in
 // "/REPO/-/commit/REVSPEC").
 func (r *GitCommitResolver) repoRevURL() *url.URL {
-	// Dereference to copy to avoid mutation
-	repoUrl := *r.repoResolver.RepoMatch.URL()
 	var rev string
 	if r.inputRev != nil {
 		rev = *r.inputRev // use the original input rev from the user
 	} else {
 		rev = string(r.oid)
 	}
+	repoUrl := r.repoResolver.url()
 	if rev != "" {
 		repoUrl.Path += "@" + rev
 	}
-	return &repoUrl
+	return repoUrl
 }
 
 func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
-	// Dereference to copy the URL to avoid mutation
-	repoUrl := *r.repoResolver.RepoMatch.URL()
+	repoUrl := r.repoResolver.url()
 	repoUrl.Path += "@" + string(r.oid)
-	return &repoUrl
+	return repoUrl
 }
 
 func (r *GitCommitResolver) Ownership(ctx context.Context, args ListOwnershipArgs) (OwnershipConnectionResolver, error) {

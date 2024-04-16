@@ -15,16 +15,18 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/boj/redistore"
 	"github.com/gorilla/sessions"
@@ -42,23 +44,6 @@ const defaultExpiryPeriod = 90 * 24 * time.Hour
 
 // cookieName is the name of the HTTP cookie that stores the session ID.
 const cookieName = "sgs"
-
-func init() {
-	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		if c.SiteConfig().AuthSessionExpiry == "" {
-			return nil
-		}
-
-		d, err := time.ParseDuration(c.SiteConfig().AuthSessionExpiry)
-		if err != nil {
-			return conf.NewSiteProblems("auth.sessionExpiry does not conform to the Go time.Duration format (https://golang.org/pkg/time/#ParseDuration). The default of 90 days will be used.")
-		}
-		if d == 0 {
-			return conf.NewSiteProblems("auth.sessionExpiry should be greater than zero. The default of 90 days will be used.")
-		}
-		return nil
-	})
-}
 
 // sessionInfo is the information we store in the session. The gorilla/sessions library doesn't appear to
 // enforce the maxAge field in its session store implementations, so we include the expiry here.
@@ -110,20 +95,13 @@ func NewRedisStore(secureCookie func() bool) sessions.Store {
 	var store sessions.Store
 	var options *sessions.Options
 
-	if pool, ok := redispool.Store.Pool(); ok {
-		rstore, err := redistore.NewRediStoreWithPool(pool, []byte(sessionCookieKey))
-		if err != nil {
-			waitForRedis(rstore)
-		}
-		store = rstore
-		options = rstore.Options
-	} else {
-		// Redis is not available, we fallback to storing state in cookies.
-		// TODO(keegan) ask why we can't just always use this.
-		cstore := sessions.NewCookieStore([]byte(sessionCookieKey))
-		store = cstore
-		options = cstore.Options
+	pool := redispool.Store.Pool()
+	rstore, err := redistore.NewRediStoreWithPool(pool, []byte(sessionCookieKey))
+	if err != nil {
+		waitForRedis(rstore)
 	}
+	store = rstore
+	options = rstore.Options
 
 	options.Path = "/"
 	options.HttpOnly = true
@@ -239,6 +217,24 @@ func GetData(r *http.Request, key string, value any) error {
 		}
 	}
 	return nil
+}
+
+func SetActorFromUser(ctx context.Context, w http.ResponseWriter, r *http.Request, user *types.User, expiryPeriod time.Duration) (context.Context, error) {
+	info, err := licensing.GetConfiguredProductLicenseInfo()
+	if err != nil {
+		return ctx, err
+	}
+
+	if info.IsExpired() && !user.SiteAdmin {
+		return ctx, errors.New("Sourcegraph license is expired. Only admins are allowed to sign in.")
+	}
+
+	// Write the session cookie
+	actor := sgactor.Actor{
+		UID: user.ID,
+	}
+
+	return ctx, SetActor(w, r, &actor, expiryPeriod, user.CreatedAt)
 }
 
 // SetActor sets the actor in the session, or removes it if actor == nil. If no session exists, a
@@ -437,6 +433,16 @@ func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w 
 			}
 			span.SetError(err)
 			return ctx // not authenticated
+		}
+
+		licenseInfo, err := licensing.GetConfiguredProductLicenseInfo()
+		if err != nil {
+			return ctx
+		}
+
+		if licenseInfo.IsExpired() && !usr.SiteAdmin {
+			_ = deleteSession(w, r) // Delete session since only admins are allowed
+			return ctx
 		}
 
 		// Check that the session is still valid

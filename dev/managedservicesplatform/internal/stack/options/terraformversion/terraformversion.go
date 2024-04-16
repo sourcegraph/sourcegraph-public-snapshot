@@ -17,10 +17,11 @@ import (
 // so we use an aspect to enforce it.
 // Learn more: https://developer.hashicorp.com/terraform/cdktf/concepts/aspects
 func With(terraformVersion string) stack.NewStackOption {
-	return func(s stack.Stack) {
+	return func(s stack.Stack) error {
 		cdktf.Aspects_Of(s.Stack).Add(&enforceTerraformVersion{
 			TerraformVersion: terraformVersion,
 		})
+		return nil
 	}
 }
 

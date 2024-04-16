@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Checkbox, Link, Text } from '@sourcegraph/wildcard'
 
 import { SurveyRatingRadio } from '../components/SurveyRatingRadio'
@@ -8,7 +9,7 @@ import { Toast } from './Toast'
 
 import styles from './SurveyUserRatingToast.module.scss'
 
-export interface SurveyUserRatingToastProps {
+export interface SurveyUserRatingToastProps extends TelemetryV2Props {
     score: number
     onChange: (score: number) => void
     toggleErrorMessage: boolean
@@ -24,6 +25,7 @@ export const SurveyUserRatingToast: React.FunctionComponent<SurveyUserRatingToas
     onDismiss,
     onContinue,
     setToggledPermanentlyDismiss,
+    telemetryRecorder,
 }) => (
     <Toast
         title="Tell us what you think"
@@ -32,7 +34,12 @@ export const SurveyUserRatingToast: React.FunctionComponent<SurveyUserRatingToas
         }
         cta={
             <>
-                <SurveyRatingRadio ariaLabelledby="survey-toast-scores" score={score} onChange={onChange} />
+                <SurveyRatingRadio
+                    ariaLabelledby="survey-toast-scores"
+                    score={score}
+                    onChange={onChange}
+                    telemetryRecorder={telemetryRecorder}
+                />
                 {toggleErrorMessage && (
                     <div className={styles.alertDanger} role="alert">
                         Please select a score between 0 to 10
@@ -45,7 +52,7 @@ export const SurveyUserRatingToast: React.FunctionComponent<SurveyUserRatingToas
                 <Text className="d-flex align-items-center justify-content-between mb-1">
                     <span>
                         By submitting your feedback, you agree to the{' '}
-                        <Link to="https://about.sourcegraph.com/terms/privacy">Sourcegraph Privacy Policy</Link>.
+                        <Link to="https://sourcegraph.com/terms/privacy">Sourcegraph Privacy Policy</Link>.
                     </span>
                 </Text>
                 <div className="d-flex align-items-center justify-content-between">

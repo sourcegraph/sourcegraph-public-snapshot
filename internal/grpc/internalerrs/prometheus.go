@@ -7,9 +7,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
 )
 
 var metricGRPCMethodStatus = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -64,30 +65,29 @@ func newPrometheusServerStream(s grpc.ClientStream, serviceName, methodName stri
 	// that are encountered during a stream.
 	var observeOnce sync.Once
 
-	return &callBackClientStream{
-		ClientStream: s,
-		postMessageSend: func(_ any, err error) {
-			if err != nil {
-				observeOnce.Do(func() {
-					doObservation(serviceName, methodName, err)
-				})
-			}
-		},
-		postMessageReceive: func(_ any, err error) {
-			if err != nil {
-				if err == io.EOF {
-					// EOF signals end of stream, not an error. We handle this by setting err to nil, because
-					// we want to treat the stream as successfully completed.
-					err = nil
-				}
-
-				observeOnce.Do(func() {
-					doObservation(serviceName, methodName, err)
-				})
-			}
-		},
+	postMessageSend := func(_ any, err error) {
+		if err != nil {
+			observeOnce.Do(func() {
+				doObservation(serviceName, methodName, err)
+			})
+		}
 	}
 
+	postMessageReceive := func(_ any, err error) {
+		if err != nil {
+			if err == io.EOF {
+				// EOF signals end of stream, not an error. We handle this by setting err to nil, because
+				// we want to treat the stream as successfully completed.
+				err = nil
+			}
+
+			observeOnce.Do(func() {
+				doObservation(serviceName, methodName, err)
+			})
+		}
+	}
+
+	return grpcutil.NewCallBackClientStream(s, postMessageSend, postMessageReceive)
 }
 
 func doObservation(serviceName, methodName string, rpcErr error) {

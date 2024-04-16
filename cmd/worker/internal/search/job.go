@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -66,7 +67,7 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 	}
 
 	newSearcherFactory := func(observationCtx *observation.Context, db database.DB) service.NewSearcher {
-		searchClient := client.New(observationCtx.Logger, db)
+		searchClient := client.New(observationCtx.Logger, db, gitserver.NewClient("searchjobs.search"))
 		return service.FromSearchClient(searchClient)
 	}
 

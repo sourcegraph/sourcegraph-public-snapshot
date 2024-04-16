@@ -2,7 +2,7 @@ import React from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
 
-import { SearchResultStyles as styles, LegacyResultContainer, CommitSearchResultMatch } from '@sourcegraph/branded'
+import { LegacyResultContainer, CommitSearchResultMatch } from '@sourcegraph/branded'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -10,6 +10,8 @@ import { type CommitMatch, getCommitMatchUrl } from '@sourcegraph/shared/src/sea
 import { Button, Code } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
+
+import styles from './SearchResultsStyles.module.scss'
 
 interface Props extends PlatformContextProps<'requestGraphQL'> {
     result: CommitMatch

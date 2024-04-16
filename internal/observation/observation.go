@@ -1,6 +1,6 @@
 // Package observation provides a unified way to wrap an operation with logging, tracing, and metrics.
 //
-// To learn more, refer to "How to add observability": https://docs.sourcegraph.com/dev/how-to/add_observability
+// To learn more, refer to "How to add observability": https://sourcegraph.com/docs/dev/how-to/add_observability
 package observation
 
 import (
@@ -239,7 +239,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 	start := time.Now()
 	tr, ctx := op.startTrace(ctx)
 
-	event := honey.NoopEvent()
+	event := honey.NonSendingEvent()
 	snakecaseOpName := toSnakeCase(op.name)
 	if op.context.HoneyDataset != nil {
 		event = op.context.HoneyDataset.EventWithFields(map[string]any{

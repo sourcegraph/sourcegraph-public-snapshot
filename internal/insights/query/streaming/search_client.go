@@ -6,9 +6,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type SearchClient interface {
@@ -19,7 +21,7 @@ func NewInsightsSearchClient(db database.DB) SearchClient {
 	logger := log.Scoped("insightsSearchClient")
 	return &insightsSearchClient{
 		db:           db,
-		searchClient: client.New(logger, db),
+		searchClient: client.New(logger, db, gitserver.NewClient("insights.search")),
 	}
 }
 
@@ -36,6 +38,7 @@ func (r *insightsSearchClient) Search(ctx context.Context, query string, pattern
 		query,
 		search.Precise,
 		search.Streaming,
+		pointers.Ptr(int32(0)),
 	)
 	if err != nil {
 		return nil, err

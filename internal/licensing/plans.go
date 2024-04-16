@@ -10,10 +10,19 @@ import (
 // A Plan is a pricing plan, with an associated set of features that it offers.
 type Plan string
 
+// Details returns the name and features of the plan.
+func (p Plan) Details() PlanDetails {
+	return planDetails[p]
+}
+
+func (p Plan) IsFreePlan() bool {
+	return p == PlanFree0 || p == PlanFree1
+}
+
 // HasFeature returns whether the plan has the given feature.
 // If the target is a pointer, the plan's feature configuration will be
 // set to the target.
-func (p Plan) HasFeature(target Feature, isExpired bool) bool {
+func (p Plan) HasFeature(target Feature) bool {
 	if target == nil {
 		panic("licensing: target cannot be nil")
 	}
@@ -23,23 +32,12 @@ func (p Plan) HasFeature(target Feature, isExpired bool) bool {
 		panic("licensing: target cannot be a nil pointer")
 	}
 
-	if isExpired {
-		for _, f := range planDetails[p].ExpiredFeatures {
-			if target.FeatureName() == f.FeatureName() {
-				if val.Kind() == reflect.Ptr {
-					val.Elem().Set(reflect.ValueOf(f).Elem())
-				}
-				return true
+	for _, f := range planDetails[p].Features {
+		if target.FeatureName() == f.FeatureName() {
+			if val.Kind() == reflect.Ptr {
+				val.Elem().Set(reflect.ValueOf(f).Elem())
 			}
-		}
-	} else {
-		for _, f := range planDetails[p].Features {
-			if target.FeatureName() == f.FeatureName() {
-				if val.Kind() == reflect.Ptr {
-					val.Elem().Set(reflect.ValueOf(f).Elem())
-				}
-				return true
-			}
+			return true
 		}
 	}
 	return false
@@ -60,18 +58,14 @@ func (p Plan) isKnown() bool {
 	return false
 }
 
-func (p Plan) IsFree() bool {
-	return p == PlanFree0 || p == PlanFree1
-}
-
 // Plan is the pricing plan of the license.
 func (info *Info) Plan() Plan {
 	return PlanFromTags(info.Tags)
 }
 
-// hasUnknownPlan returns an error if the plan is presented in the license tags
+// HasUnknownPlan returns an error if the plan is presented in the license tags
 // but unrecognizable. It returns nil if there is no tags found for plans.
-func (info *Info) hasUnknownPlan() error {
+func (info *Info) HasUnknownPlan() error {
 	for _, tag := range info.Tags {
 		// A tag that begins with "plan:" indicates the license's plan.
 		if !strings.HasPrefix(tag, planTagPrefix) {
@@ -96,13 +90,10 @@ func PlanFromTags(tags []string) Plan {
 				return plan
 			}
 		}
-
-		// Backcompat: support the old "starter" tag (which mapped to "Enterprise Starter").
-		if tag == "starter" {
-			return PlanOldEnterpriseStarter
-		}
 	}
 
 	// Backcompat: no tags means it is the old "Enterprise" plan.
+	// TODO: In the future, we will no longer allow this and instances without a
+	// plan tag will be on the Free plan instead.
 	return PlanOldEnterprise
 }

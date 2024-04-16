@@ -3,7 +3,6 @@ import type { Omit } from 'utility-types'
 import type { SearchMatch } from '../stream'
 
 import { languageCompletion } from './languageFilter'
-import { predicateCompletion } from './predicates'
 import { selectorCompletion } from './selectFilter'
 import type { Filter, Literal } from './token'
 
@@ -45,7 +44,6 @@ export enum AliasedFilterType {
     since = 'after',
     until = 'before',
 }
-/* eslint-enable unicorn/prevent-abbreviations */
 
 export const ALIASES: Record<string, string> = {
     r: 'repo',
@@ -71,7 +69,7 @@ export const filterTypeKeysWithAliases: (FilterType | AliasedFilterType)[] = [
     ...Object.keys(AliasedFilterType),
 ] as (FilterType | AliasedFilterType)[]
 
-enum NegatedFilters {
+export enum NegatedFilters {
     author = '-author',
     committer = '-committer',
     content = '-content',
@@ -236,7 +234,6 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from file paths matching the given search pattern.`,
-        discreteValues: () => [...predicateCompletion('file')],
         placeholder: 'regex',
         suggestions: 'path',
     },
@@ -272,8 +269,19 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         placeholder: '"content"',
     },
     [FilterType.patterntype]: {
-        discreteValues: () => ['regexp', 'structural', 'literal', 'standard'].map(value => ({ label: value })),
-        description: 'The pattern type (standard, regexp, literal, structural) in use',
+        discreteValues: () => {
+            const patternTypes = ['keyword', 'literal', 'regexp', 'standard']
+            if (typeof window === 'undefined' || window.context?.experimentalFeatures?.structuralSearch === 'enabled') {
+                patternTypes.push('structural')
+            }
+            return patternTypes.map(value => ({ label: value }))
+        },
+        description: `The pattern type (keyword, literal, regexp, standard${
+            typeof window === 'undefined' || window.context?.experimentalFeatures?.structuralSearch === 'enabled'
+                ? ', structural'
+                : ''
+        }) in use`,
+
         singular: true,
     },
     [FilterType.repo]: {
@@ -281,7 +289,6 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         discreteValues: (_value, isSourcegraphDotCom) => [
             ...(isSourcegraphDotCom === true ? SOURCEGRAPH_DOT_COM_REPO_COMPLETION : []),
-            ...predicateCompletion('repo'),
         ],
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given search pattern.`,
@@ -504,10 +511,11 @@ export const escapeSpaces = (value: string): string => {
                 current = current + 1
                 continue
             }
-            default:
+            default: {
                 escaped.push(value[current])
                 current = current + 1
                 continue
+            }
         }
     }
     return escaped.join('')

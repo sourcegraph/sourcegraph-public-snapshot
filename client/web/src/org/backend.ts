@@ -1,4 +1,4 @@
-import { concat, type Observable } from 'rxjs'
+import { concat, lastValueFrom, type Observable } from 'rxjs'
 import { map, mergeMap } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
@@ -65,19 +65,19 @@ export function createOrganization(args: {
     /** The new organization's display name (e.g. full name) in the organization profile. */
     displayName?: string
 }): Promise<CreateOrganizationResult['createOrganization']> {
-    return requestGraphQL<CreateOrganizationResult, CreateOrganizationVariables>(
-        gql`
-            mutation CreateOrganization($name: String!, $displayName: String) {
-                createOrganization(name: $name, displayName: $displayName) {
-                    id
-                    name
-                    settingsURL
+    return lastValueFrom(
+        requestGraphQL<CreateOrganizationResult, CreateOrganizationVariables>(
+            gql`
+                mutation CreateOrganization($name: String!, $displayName: String) {
+                    createOrganization(name: $name, displayName: $displayName) {
+                        id
+                        name
+                        settingsURL
+                    }
                 }
-            }
-        `,
-        { name: args.name, displayName: args.displayName ?? null }
-    )
-        .pipe(
+            `,
+            { name: args.name, displayName: args.displayName ?? null }
+        ).pipe(
             mergeMap(({ data, errors }) => {
                 if (!data?.createOrganization) {
                     eventLogger.log('NewOrgFailed')
@@ -87,7 +87,7 @@ export function createOrganization(args: {
                 return concat(refreshAuthenticatedUser(), [data.createOrganization])
             })
         )
-        .toPromise()
+    )
 }
 
 export const REMOVE_USER_FROM_ORGANIZATION_QUERY = gql`
@@ -133,20 +133,20 @@ export function removeUserFromOrganization(args: {
  * @returns Observable that emits `undefined`, then completes
  */
 export function updateOrganization(id: Scalars['ID'], displayName: string): Promise<void> {
-    return requestGraphQL<UpdateOrganizationResult, UpdateOrganizationVariables>(
-        gql`
-            mutation UpdateOrganization($id: ID!, $displayName: String) {
-                updateOrganization(id: $id, displayName: $displayName) {
-                    id
+    return lastValueFrom(
+        requestGraphQL<UpdateOrganizationResult, UpdateOrganizationVariables>(
+            gql`
+                mutation UpdateOrganization($id: ID!, $displayName: String) {
+                    updateOrganization(id: $id, displayName: $displayName) {
+                        id
+                    }
                 }
+            `,
+            {
+                id,
+                displayName,
             }
-        `,
-        {
-            id,
-            displayName,
-        }
-    )
-        .pipe(
+        ).pipe(
             map(({ data, errors }) => {
                 if (!data || (errors && errors.length > 0)) {
                     eventLogger.log('UpdateOrgSettingsFailed')
@@ -156,7 +156,7 @@ export function updateOrganization(id: Scalars['ID'], displayName: string): Prom
                 return
             })
         )
-        .toPromise()
+    )
 }
 
 export const ORG_CODE_FEATURE_FLAG_EMAIL_INVITE = 'org-email-invites'

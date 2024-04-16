@@ -160,7 +160,7 @@ func (ie *InsightEnqueuer) EnqueueSingle(
 	}
 	finalQuery = modifiedQuery.String()
 	if series.GroupBy != nil {
-		computeQuery, err := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*series.GroupBy), gitserver.NewClient())
+		computeQuery, err := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*series.GroupBy), gitserver.NewClient("insights.enqueuer"))
 		if err != nil {
 			return errors.Wrapf(err, "ComputeInsightCommandQuery series_id:%s", seriesID)
 		}

@@ -1,0 +1,16 @@
+query TagsPage_TagsQuery($repoName: String!, $first: Int!, $withBehindAhead: Boolean!, $revspec: String = "") {
+    repository(name: $repoName) {
+        id
+        gitRefs(first: $first, type: GIT_TAG) {
+            ...GitTagsConnection
+        }
+    }
+}
+
+fragment GitTagsConnection on GitRefConnection {
+    nodes {
+        id
+        ...GitReference_Ref
+    }
+    totalCount
+}

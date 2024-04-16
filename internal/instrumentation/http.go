@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/embedded"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
@@ -17,11 +18,9 @@ import (
 // defaultOTELHTTPOptions is a set of options shared between instrumetned HTTP middleware
 // and HTTP clients for consistent Sourcegraph-preferred behaviour.
 var defaultOTELHTTPOptions = []otelhttp.Option{
-	// Trace policy management
+	// Supplemental trace policy management - our core trace policy management
+	// is implemented in internal/tracer.
 	otelhttp.WithTracerProvider(&samplingRetainTracerProvider{}),
-	otelhttp.WithFilter(func(r *http.Request) bool {
-		return policy.ShouldTrace(r.Context())
-	}),
 	// Uniform span names
 	otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
 		// If incoming, just include the path since our own host is not
@@ -102,9 +101,10 @@ func HTTPMiddleware(operation string, next http.Handler, opts ...otelhttp.Option
 //
 // To achieve that, it shims the default TracerProvider with samplingRetainTracerProvider to inject
 // the attribute at the beginning of the span, which is mandatory to perform sampling.
-type samplingRetainTracerProvider struct{}
+type samplingRetainTracerProvider struct{ embedded.TracerProvider }
 type samplingRetainTracer struct {
 	tracer trace.Tracer
+	embedded.Tracer
 }
 
 func (p *samplingRetainTracerProvider) Tracer(instrumentationName string, opts ...trace.TracerOption) trace.Tracer {

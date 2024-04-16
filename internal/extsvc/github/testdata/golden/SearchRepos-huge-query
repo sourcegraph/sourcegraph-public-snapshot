@@ -96,33 +96,16 @@
       }
      ]
     },
-    "StargazerCount": 361294,
-    "ForkCount": 31019
+    "StargazerCount": 378065,
+    "ForkCount": 34811,
+    "DiskUsage": 398421
    },
    {
-    "ID": "MDEwOlJlcG9zaXRvcnkxNzc3MzY1MzM=",
-    "DatabaseID": 177736533,
-    "NameWithOwner": "996icu/996.ICU",
-    "Description": "Repo for counting stars and contributing. Press F to pay respect to glorious developers.",
-    "URL": "https://github.com/996icu/996.ICU",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": []
-    },
-    "StargazerCount": 265043,
-    "ForkCount": 21462
-   },
-   {
-    "ID": "MDEwOlJlcG9zaXRvcnk2MDQ5MzEwMQ==",
-    "DatabaseID": 60493101,
-    "NameWithOwner": "jwasham/coding-interview-university",
-    "Description": "A complete computer science study plan to become a software engineer.",
-    "URL": "https://github.com/jwasham/coding-interview-university",
+    "ID": "MDEwOlJlcG9zaXRvcnkxMzQ5MTg5NQ==",
+    "DatabaseID": 13491895,
+    "NameWithOwner": "EbookFoundation/free-programming-books",
+    "Description": ":books: Freely available programming books",
+    "URL": "https://github.com/EbookFoundation/free-programming-books",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
@@ -133,68 +116,34 @@
      "Nodes": [
       {
        "Topic": {
-        "Name": "computer-science"
+        "Name": "education"
        }
       },
       {
        "Topic": {
-        "Name": "interview"
+        "Name": "books"
        }
       },
       {
        "Topic": {
-        "Name": "programming-interviews"
+        "Name": "list"
        }
       },
       {
        "Topic": {
-        "Name": "study-plan"
+        "Name": "resource"
        }
       },
       {
        "Topic": {
-        "Name": "data-structures"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "algorithms"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "software-engineering"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "algorithm"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "coding-interviews"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "interview-prep"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "coding-interview"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "interview-preparation"
+        "Name": "hacktoberfest"
        }
       }
      ]
     },
-    "StargazerCount": 246973,
-    "ForkCount": 65490
+    "StargazerCount": 303257,
+    "ForkCount": 58520,
+    "DiskUsage": 17796
    },
    {
     "ID": "MDEwOlJlcG9zaXRvcnkyMTczNzQ2NQ==",
@@ -237,15 +186,16 @@
       }
      ]
     },
-    "StargazerCount": 238837,
-    "ForkCount": 24935
+    "StargazerCount": 277707,
+    "ForkCount": 26720,
+    "DiskUsage": 1475
    },
    {
-    "ID": "MDEwOlJlcG9zaXRvcnk4NTA3NzU1OA==",
-    "DatabaseID": 85077558,
-    "NameWithOwner": "kamranahmedse/developer-roadmap",
-    "Description": "Interactive roadmaps, guides and other educational content to help developers grow in their careers.",
-    "URL": "https://github.com/kamranahmedse/developer-roadmap",
+    "ID": "MDEwOlJlcG9zaXRvcnk1NDM0Njc5OQ==",
+    "DatabaseID": 54346799,
+    "NameWithOwner": "public-apis/public-apis",
+    "Description": "A collective list of free APIs",
+    "URL": "https://github.com/public-apis/public-apis",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
@@ -256,100 +206,95 @@
      "Nodes": [
       {
        "Topic": {
-        "Name": "computer-science"
+        "Name": "api"
        }
       },
       {
        "Topic": {
-        "Name": "roadmap"
+        "Name": "public-apis"
        }
       },
       {
        "Topic": {
-        "Name": "developer-roadmap"
+        "Name": "free"
        }
       },
       {
        "Topic": {
-        "Name": "frontend-roadmap"
+        "Name": "apis"
        }
       },
       {
        "Topic": {
-        "Name": "devops-roadmap"
+        "Name": "list"
        }
       },
       {
        "Topic": {
-        "Name": "backend-roadmap"
+        "Name": "development"
        }
       },
       {
        "Topic": {
-        "Name": "react-roadmap"
+        "Name": "software"
        }
       },
       {
        "Topic": {
-        "Name": "angular-roadmap"
+        "Name": "public"
        }
       },
       {
        "Topic": {
-        "Name": "python-roadmap"
+        "Name": "resources"
        }
       },
       {
        "Topic": {
-        "Name": "go-roadmap"
+        "Name": "dataset"
        }
       },
       {
        "Topic": {
-        "Name": "java-roadmap"
+        "Name": "open-source"
        }
       },
       {
        "Topic": {
-        "Name": "dba-roadmap"
+        "Name": "public-api"
        }
       },
       {
        "Topic": {
-        "Name": "vue-roadmap"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "blockchain-roadmap"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "javascript-roadmap"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "nodejs-roadmap"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "qa-roadmap"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "software-architect-roadmap"
+        "Name": "lists"
        }
       }
      ]
     },
-    "StargazerCount": 229269,
-    "ForkCount": 32902
+    "StargazerCount": 268744,
+    "ForkCount": 30233,
+    "DiskUsage": 5088
+   },
+   {
+    "ID": "MDEwOlJlcG9zaXRvcnkxNzc3MzY1MzM=",
+    "DatabaseID": 177736533,
+    "NameWithOwner": "996icu/996.ICU",
+    "Description": "Repo for counting stars and contributing. Press F to pay respect to glorious developers.",
+    "URL": "https://github.com/996icu/996.ICU",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 268154,
+    "ForkCount": 21476,
+    "DiskUsage": 187836
    }
   ],
-  "TotalCount": 2848396,
+  "TotalCount": 3396424,
   "EndCursor": "Y3Vyc29yOjU="
  }

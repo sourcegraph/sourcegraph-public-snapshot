@@ -23,10 +23,12 @@ import { SeriesBasedChartTypes, SeriesChart } from '../chart'
 
 import * as Card from './InsightCard'
 
-export default {
+const meta: Meta = {
     title: 'web/insights/shared-components',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-} as Meta
+}
+
+export default meta
 
 export const InsightCardShowcase: StoryFn = () => (
     <main style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>

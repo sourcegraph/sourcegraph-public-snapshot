@@ -1,5 +1,11 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
+:root {
+    --search-box-color: var(--input-bg);
+    --search-box-border: 1px solid var(--border-color-2);
+    --search-box-shadow: none;
+}
+
 .container {
     width: 100%;
     position: relative;
@@ -29,8 +35,9 @@
     min-height: 32px;
     padding: 0 0.25rem;
     border-radius: 4px;
-    border: 1px solid var(--border-color-2);
-    background-color: var(--input-bg);
+    border: var(--search-box-border);
+    background-color: var(--search-box-color);
+    box-shadow: var(--search-box-shadow);
     position: relative;
 
     &:focus-within {
@@ -91,14 +98,20 @@
     left: 0;
     right: 0;
     border-radius: 8px;
-    background-color: var(--color-bg-1);
-    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.15);
 
     // Set a default paddings to the suggestion panel (see Suggestions.module.scss)
     --suggestions-padding: 0.75rem;
 
-    :global(.theme-dark) & {
-        box-shadow: 0 10px 60px rgba(0, 0, 0, 0.8);
+    // Only apply the "container" style if the suggestions are open, as indicated
+    // by the "open" class. When autofocus is enabled we do not want the suggestions
+    // container to be visible.
+    &.open {
+        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.15);
+        background-color: var(--color-bg-1);
+
+        :global(.theme-dark) & {
+            box-shadow: 0 10px 60px rgba(0, 0, 0, 0.8);
+        }
     }
 }
 

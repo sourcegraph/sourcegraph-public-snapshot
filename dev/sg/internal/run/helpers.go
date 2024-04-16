@@ -2,12 +2,13 @@ package run
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func GitCmd(args ...string) (string, error) {
@@ -25,6 +26,26 @@ func DockerCmd(args ...string) (string, error) {
 	return InRoot(exec.Command("docker", args...))
 }
 
+type errorWithoutOutputer interface {
+	ErrorWithoutOutput() string
+}
+
+type cmdInRootErr struct {
+	err    error
+	args   []string
+	output string
+}
+
+func (e cmdInRootErr) Error() string {
+	return fmt.Sprintf("'%s' failed: err = %q, output = %q", strings.Join(e.args, " "), e.err.Error(), e.output)
+}
+
+func (e cmdInRootErr) ErrorWithoutOutput() string {
+	return fmt.Sprintf("'%s' failed with %q", strings.Join(e.args, " "), e.err)
+}
+
+func (e cmdInRootErr) Unwrap() error { return e.err }
+
 func InRoot(cmd *exec.Cmd) (string, error) {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
@@ -34,10 +55,21 @@ func InRoot(cmd *exec.Cmd) (string, error) {
 	cmd.Dir = repoRoot
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return string(out), errors.Wrapf(err, "'%s' failed: %s", strings.Join(cmd.Args, " "), out)
+		return string(out), cmdInRootErr{err: err, args: cmd.Args, output: string(out)}
 	}
 
 	return string(out), nil
+}
+
+func SplitOutputInRoot(cmd *exec.Cmd, stdout, stderr io.Writer) error {
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return err
+	}
+	cmd.Dir = repoRoot
+	return cmd.Run()
 }
 
 func BashInRoot(ctx context.Context, cmd string, env []string) (string, error) {

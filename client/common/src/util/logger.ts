@@ -1,4 +1,4 @@
-/* eslint-disable no-console, jsdoc/check-indentation */
+/* eslint-disable no-console */
 export interface Logger {
     log: Console['log']
     warn: Console['warn']

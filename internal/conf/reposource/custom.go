@@ -5,23 +5,11 @@ import (
 	"strings"
 
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
-
-func init() {
-	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		for _, c := range c.SiteConfig().GitCloneURLToRepositoryName {
-			if _, err := regexp.Compile(c.From); err != nil {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid regexp: %s. See the valid syntax: https://golang.org/pkg/regexp/", c.From)))
-			}
-		}
-		return
-	})
-}
 
 type cloneURLResolver struct {
 	from *regexp.Regexp

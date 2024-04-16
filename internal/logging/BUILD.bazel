@@ -2,10 +2,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "logging",
-    srcs = [
-        "logging.go",
-        "main.go",
-    ],
+    srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/logging",
     visibility = ["//:__subpackages__"],
     deps = [

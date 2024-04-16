@@ -10,12 +10,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -68,23 +67,22 @@ type Event struct {
 
 // LogBackendEvent is a convenience function for logging backend events.
 //
-// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
+// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
+// Learn more: https://sourcegraph.com/docs/dev/background-information/telemetry
 func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, evaluatedFlagSet featureflag.EvaluatedFlagSet, cohortID *string) error {
 	insertID, _ := uuid.NewRandom()
 	insertIDFinal := insertID.String()
 	eventID := int32(rand.Int())
 
 	client := "SERVER_BACKEND"
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		client = "DOTCOM_BACKEND"
-	}
-	if deploy.IsApp() {
-		client = "APP_BACKEND"
 	}
 
 	hashedLicenseKey := conf.HashedCurrentLicenseKeyForAnalytics()
 	connectedSiteID := siteid.Get(db)
 
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	return LogEvent(context.Background(), db, Event{
 		EventName:        eventName,
 		UserID:           userID,
@@ -107,20 +105,23 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 
 // LogEvent logs an event.
 //
-// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
+// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
+// Learn more: https://sourcegraph.com/docs/dev/background-information/telemetry
 func LogEvent(ctx context.Context, db database.DB, args Event) error {
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	return LogEvents(ctx, db, []Event{args})
 }
 
 // LogEvents logs a batch of events.
 //
-// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
+// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
+// Learn more: https://sourcegraph.com/docs/dev/background-information/telemetry
 func LogEvents(ctx context.Context, db database.DB, events []Event) error {
 	if !conf.EventLoggingEnabled() {
 		return nil
 	}
 
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		go func() {
 			if err := publishSourcegraphDotComEvents(events); err != nil {
 				log15.Error("publishSourcegraphDotComEvents failed", "err", err)
@@ -170,7 +171,7 @@ var (
 
 // publishSourcegraphDotComEvents publishes Sourcegraph.com events to BigQuery.
 func publishSourcegraphDotComEvents(events []Event) error {
-	if !envvar.SourcegraphDotComMode() || pubSubDotComEventsTopicID == "" {
+	if !dotcom.SourcegraphDotComMode() || pubSubDotComEventsTopicID == "" {
 		return nil
 	}
 	pubsubClientOnce.Do(func() {
@@ -194,31 +195,36 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 		if event.FirstSourceURL != nil {
 			firstSourceURL = *event.FirstSourceURL
 		}
+
 		lastSourceURL := ""
 		if event.LastSourceURL != nil {
 			lastSourceURL = *event.LastSourceURL
 		}
+
 		referrer := ""
 		if event.Referrer != nil {
 			referrer = *event.Referrer
 		}
+
 		originalReferrer := ""
 		if event.OriginalReferrer != nil {
 			originalReferrer = *event.OriginalReferrer
 		}
+
 		sessionReferrer := ""
 		if event.SessionReferrer != nil {
 			sessionReferrer = *event.SessionReferrer
 		}
+
 		sessionFirstURL := ""
 		if event.SessionFirstURL != nil {
 			sessionFirstURL = *event.SessionFirstURL
 		}
+
 		featureFlagJSON, err := json.Marshal(event.EvaluatedFlagSet)
 		if err != nil {
 			return nil, err
 		}
-
 		saferUrl, err := redactSensitiveInfoFromCloudURL(event.URL)
 		if err != nil {
 			return nil, err
@@ -267,6 +273,9 @@ func logLocalEvents(ctx context.Context, db database.DB, events []Event) error {
 		return err
 	}
 
+	// Use EventRecorder from internal/telemetryrecorder instead - logLocalEvents
+	// should eventually be removed entirely.
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	return db.EventLogs().BulkInsert(ctx, databaseEvents)
 }
 
@@ -321,30 +330,17 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 // may contain sensitive info on Sourcegraph Cloud. We replace all paths,
 // and only maintain query parameters in a specified allowlist,
 // which are known to be essential for marketing analytics on Sourcegraph Cloud.
-//
-// Note that URL redaction also happens in web/src/tracking/util.ts.
+
 func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
+	// Because Sourcegraph.com only contains public code, URLs do not contain sensitive information.
+	// Redaction is only used for URLs from cloud and self-hosted instance telemetry.
+	if dotcom.SourcegraphDotComMode() {
+		return rawURL, nil
+	}
+
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
 		return "", err
-	}
-
-	if parsedURL.Host != "sourcegraph.com" {
-		return rawURL, nil
-	}
-
-	// Redact all GitHub.com code URLs, GitLab.com code URLs, and search URLs to ensure we do not leak sensitive information.
-	if strings.HasPrefix(parsedURL.Path, "/github.com") {
-		parsedURL.RawPath = "/github.com/redacted"
-		parsedURL.Path = "/github.com/redacted"
-	} else if strings.HasPrefix(parsedURL.Path, "/gitlab.com") {
-		parsedURL.RawPath = "/gitlab.com/redacted"
-		parsedURL.Path = "/gitlab.com/redacted"
-	} else if strings.HasPrefix(parsedURL.Path, "/search") {
-		parsedURL.RawPath = "/search/redacted"
-		parsedURL.Path = "/search/redacted"
-	} else {
-		return rawURL, nil
 	}
 
 	marketingQueryParameters := map[string]struct{}{
@@ -364,9 +360,24 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// Redact non-marketing query parameter values, while retaining keys for analytics.
+	// Allowlisted parameters remain unchanged to protect marketing data integrity.
 	for key := range urlQueryParams {
 		if _, ok := marketingQueryParameters[key]; !ok {
 			urlQueryParams[key] = []string{"redacted"}
+		}
+	}
+
+	// Retain only first part of the URL's path segment for security(avoid leaking sensitive path info)
+	pathParts := strings.Split(parsedURL.Path, "/")
+
+	// Check length to avoid index out of range error
+	if len(pathParts) > 1 {
+		parsedURL.Path = pathParts[1]
+
+		// Add '/redacted' if we removed parts of the original path
+		if len(pathParts) > 2 {
+			parsedURL.Path += "/redacted"
 		}
 	}
 

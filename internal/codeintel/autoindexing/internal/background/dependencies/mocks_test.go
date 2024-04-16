@@ -789,7 +789,7 @@ func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 			},
 		},
 		QueueIndexesForPackageFunc: &IndexEnqueuerQueueIndexesForPackageFunc{
-			defaultHook: func(context.Context, shared.MinimialVersionedPackageRepo, bool) (r0 error) {
+			defaultHook: func(context.Context, shared.MinimialVersionedPackageRepo) (r0 error) {
 				return
 			},
 		},
@@ -806,7 +806,7 @@ func NewStrictMockIndexEnqueuer() *MockIndexEnqueuer {
 			},
 		},
 		QueueIndexesForPackageFunc: &IndexEnqueuerQueueIndexesForPackageFunc{
-			defaultHook: func(context.Context, shared.MinimialVersionedPackageRepo, bool) error {
+			defaultHook: func(context.Context, shared.MinimialVersionedPackageRepo) error {
 				panic("unexpected invocation of MockIndexEnqueuer.QueueIndexesForPackage")
 			},
 		},
@@ -951,24 +951,24 @@ func (c IndexEnqueuerQueueIndexesFuncCall) Results() []interface{} {
 // QueueIndexesForPackage method of the parent MockIndexEnqueuer instance is
 // invoked.
 type IndexEnqueuerQueueIndexesForPackageFunc struct {
-	defaultHook func(context.Context, shared.MinimialVersionedPackageRepo, bool) error
-	hooks       []func(context.Context, shared.MinimialVersionedPackageRepo, bool) error
+	defaultHook func(context.Context, shared.MinimialVersionedPackageRepo) error
+	hooks       []func(context.Context, shared.MinimialVersionedPackageRepo) error
 	history     []IndexEnqueuerQueueIndexesForPackageFuncCall
 	mutex       sync.Mutex
 }
 
 // QueueIndexesForPackage delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockIndexEnqueuer) QueueIndexesForPackage(v0 context.Context, v1 shared.MinimialVersionedPackageRepo, v2 bool) error {
-	r0 := m.QueueIndexesForPackageFunc.nextHook()(v0, v1, v2)
-	m.QueueIndexesForPackageFunc.appendCall(IndexEnqueuerQueueIndexesForPackageFuncCall{v0, v1, v2, r0})
+func (m *MockIndexEnqueuer) QueueIndexesForPackage(v0 context.Context, v1 shared.MinimialVersionedPackageRepo) error {
+	r0 := m.QueueIndexesForPackageFunc.nextHook()(v0, v1)
+	m.QueueIndexesForPackageFunc.appendCall(IndexEnqueuerQueueIndexesForPackageFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // QueueIndexesForPackage method of the parent MockIndexEnqueuer instance is
 // invoked and the hook queue is empty.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultHook(hook func(context.Context, shared.MinimialVersionedPackageRepo, bool) error) {
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultHook(hook func(context.Context, shared.MinimialVersionedPackageRepo) error) {
 	f.defaultHook = hook
 }
 
@@ -977,7 +977,7 @@ func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushHook(hook func(context.Context, shared.MinimialVersionedPackageRepo, bool) error) {
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushHook(hook func(context.Context, shared.MinimialVersionedPackageRepo) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -986,19 +986,19 @@ func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushHook(hook func(context.Con
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, shared.MinimialVersionedPackageRepo, bool) error {
+	f.SetDefaultHook(func(context.Context, shared.MinimialVersionedPackageRepo) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, shared.MinimialVersionedPackageRepo, bool) error {
+	f.PushHook(func(context.Context, shared.MinimialVersionedPackageRepo) error {
 		return r0
 	})
 }
 
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) nextHook() func(context.Context, shared.MinimialVersionedPackageRepo, bool) error {
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) nextHook() func(context.Context, shared.MinimialVersionedPackageRepo) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1038,9 +1038,6 @@ type IndexEnqueuerQueueIndexesForPackageFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 shared.MinimialVersionedPackageRepo
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1049,7 +1046,7 @@ type IndexEnqueuerQueueIndexesForPackageFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c IndexEnqueuerQueueIndexesForPackageFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1935,10 +1932,6 @@ type MockStore struct {
 	// GetQueuedRepoRevFunc is an instance of a mock function object
 	// controlling the behavior of the method GetQueuedRepoRev.
 	GetQueuedRepoRevFunc *StoreGetQueuedRepoRevFunc
-	// GetRepositoriesForIndexScanFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// GetRepositoriesForIndexScan.
-	GetRepositoriesForIndexScanFunc *StoreGetRepositoriesForIndexScanFunc
 	// InsertDependencyIndexingJobFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// InsertDependencyIndexingJob.
@@ -2012,11 +2005,6 @@ func NewMockStore() *MockStore {
 		},
 		GetQueuedRepoRevFunc: &StoreGetQueuedRepoRevFunc{
 			defaultHook: func(context.Context, int) (r0 []store.RepoRev, r1 error) {
-				return
-			},
-		},
-		GetRepositoriesForIndexScanFunc: &StoreGetRepositoriesForIndexScanFunc{
-			defaultHook: func(context.Context, time.Duration, bool, *int, int, time.Time) (r0 []int, r1 error) {
 				return
 			},
 		},
@@ -2122,11 +2110,6 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.GetQueuedRepoRev")
 			},
 		},
-		GetRepositoriesForIndexScanFunc: &StoreGetRepositoriesForIndexScanFunc{
-			defaultHook: func(context.Context, time.Duration, bool, *int, int, time.Time) ([]int, error) {
-				panic("unexpected invocation of MockStore.GetRepositoriesForIndexScan")
-			},
-		},
 		InsertDependencyIndexingJobFunc: &StoreInsertDependencyIndexingJobFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
 				panic("unexpected invocation of MockStore.InsertDependencyIndexingJob")
@@ -2220,9 +2203,6 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		GetQueuedRepoRevFunc: &StoreGetQueuedRepoRevFunc{
 			defaultHook: i.GetQueuedRepoRev,
-		},
-		GetRepositoriesForIndexScanFunc: &StoreGetRepositoriesForIndexScanFunc{
-			defaultHook: i.GetRepositoriesForIndexScan,
 		},
 		InsertDependencyIndexingJobFunc: &StoreInsertDependencyIndexingJobFunc{
 			defaultHook: i.InsertDependencyIndexingJob,
@@ -2709,129 +2689,6 @@ func (c StoreGetQueuedRepoRevFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreGetQueuedRepoRevFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreGetRepositoriesForIndexScanFunc describes the behavior when the
-// GetRepositoriesForIndexScan method of the parent MockStore instance is
-// invoked.
-type StoreGetRepositoriesForIndexScanFunc struct {
-	defaultHook func(context.Context, time.Duration, bool, *int, int, time.Time) ([]int, error)
-	hooks       []func(context.Context, time.Duration, bool, *int, int, time.Time) ([]int, error)
-	history     []StoreGetRepositoriesForIndexScanFuncCall
-	mutex       sync.Mutex
-}
-
-// GetRepositoriesForIndexScan delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) GetRepositoriesForIndexScan(v0 context.Context, v1 time.Duration, v2 bool, v3 *int, v4 int, v5 time.Time) ([]int, error) {
-	r0, r1 := m.GetRepositoriesForIndexScanFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.GetRepositoriesForIndexScanFunc.appendCall(StoreGetRepositoriesForIndexScanFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetRepositoriesForIndexScan method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreGetRepositoriesForIndexScanFunc) SetDefaultHook(hook func(context.Context, time.Duration, bool, *int, int, time.Time) ([]int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetRepositoriesForIndexScan method of the parent MockStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *StoreGetRepositoriesForIndexScanFunc) PushHook(hook func(context.Context, time.Duration, bool, *int, int, time.Time) ([]int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreGetRepositoriesForIndexScanFunc) SetDefaultReturn(r0 []int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Duration, bool, *int, int, time.Time) ([]int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetRepositoriesForIndexScanFunc) PushReturn(r0 []int, r1 error) {
-	f.PushHook(func(context.Context, time.Duration, bool, *int, int, time.Time) ([]int, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreGetRepositoriesForIndexScanFunc) nextHook() func(context.Context, time.Duration, bool, *int, int, time.Time) ([]int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreGetRepositoriesForIndexScanFunc) appendCall(r0 StoreGetRepositoriesForIndexScanFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreGetRepositoriesForIndexScanFuncCall
-// objects describing the invocations of this function.
-func (f *StoreGetRepositoriesForIndexScanFunc) History() []StoreGetRepositoriesForIndexScanFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreGetRepositoriesForIndexScanFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreGetRepositoriesForIndexScanFuncCall is an object that describes an
-// invocation of method GetRepositoriesForIndexScan on an instance of
-// MockStore.
-type StoreGetRepositoriesForIndexScanFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 time.Duration
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 bool
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 *int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 int
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 time.Time
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreGetRepositoriesForIndexScanFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreGetRepositoriesForIndexScanFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

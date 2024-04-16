@@ -31,9 +31,10 @@ var Ubuntu = []category{
 			},
 			{
 				Name:  "git",
-				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.38.1"))),
+				Check: checkAction(check.Git),
 				Fix:   aptGetInstall("git", "sudo add-apt-repository -y ppa:git-core/ppa"),
-			}, {
+			},
+			{
 				Name:  "pcre",
 				Check: checkAction(check.HasUbuntuLibrary("libpcre3-dev")),
 				Fix:   aptGetInstall("libpcre3-dev"),
@@ -78,7 +79,7 @@ var Ubuntu = []category{
 				// Bazelisk is a wrapper for Bazel written in Go. It automatically picks a good version of Bazel given your current working directory
 				// Bazelisk replaces the bazel binary in your path
 				Name:  "bazelisk",
-				Check: checkAction(check.Combine(check.InPath("bazel"), check.CommandOutputContains("bazel version", "Bazelisk version"))),
+				Check: checkAction(check.Bazelisk),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					if err := check.InPath("bazel")(ctx); err == nil {
 						cio.WriteAlertf("There already exists a bazel binary in your path and it is not managed by Bazlisk. Please remove it as Bazelisk replaces the bazel binary")
@@ -95,7 +96,7 @@ var Ubuntu = []category{
 			{
 				Name: "asdf",
 				// TODO add the if Keegan check
-				Check: checkAction(check.CommandOutputContains("asdf", "version")),
+				Check: checkAction(check.ASDF),
 				Fix: func(ctx context.Context, cio check.IO, _ CheckArgs) error {
 					if err := usershell.Run(ctx, "git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.9.0").StreamLines(cio.Verbose); err != nil {
 						return err
@@ -168,8 +169,11 @@ var Ubuntu = []category{
 		Checks: []*dependency{
 			{
 				Name:  "Install Postgres",
-				Check: checkAction(check.Combine(check.InPath("psql"))),
-				Fix:   aptGetInstall("postgresql postgresql-contrib"),
+				Check: checkAction(check.InPath("psql")),
+				Fix: aptGetInstall(
+					"postgresql-12",
+					"DEBIAN_FRONTEND=noninteractive curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg && echo \"deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main\" | sudo tee  /etc/apt/sources.list.d/pgdg.list",
+				),
 			},
 			{
 				Name: "Start Postgres",
@@ -183,7 +187,7 @@ var Ubuntu = []category{
 					if err := checkSourcegraphDatabase(ctx, out, args); err == nil {
 						return nil
 					}
-					return checkPostgresConnection(ctx)
+					return check.PostgresConnection(ctx)
 				},
 				Description: `Sourcegraph requires the PostgreSQL database to be running.
 
@@ -232,7 +236,7 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 				Name: "Start Redis",
 				Description: `Sourcegraph requires the Redis database to be running.
 We recommend installing it with Homebrew and starting it as a system service.`,
-				Check: checkAction(check.Retry(checkRedisConnection, 5, 500*time.Millisecond)),
+				Check: checkAction(check.Redis),
 				Fix:   cmdFix("sudo systemctl enable --now redis-server.service"),
 			},
 		},
@@ -255,9 +259,9 @@ To do that, we need to add sourcegraph.test to the /etc/hosts file.`,
 				Description: `In order to use TLS to access your local Sourcegraph instance, you need to
 trust the certificate created by Caddy, the proxy we use locally.
 
-YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
+WARNING: if you just fixed (automatically or manually) this step, you must restart sg setup for the check to pass.`,
 				Enabled: disableInCI(), // Can't seem to get this working
-				Check:   checkAction(checkCaddyTrusted),
+				Check:   checkAction(check.Caddy),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					return root.Run(usershell.Command(ctx, `./dev/caddy.sh trust`)).StreamLines(cio.Verbose)
 				},
@@ -268,7 +272,7 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 	{
 		Name:      "Cloud services",
 		DependsOn: []string{depsBaseUtilities},
-		Enabled:   enableForTeammatesOnly(),
+		Enabled:   disableInCI(),
 		Checks: []*dependency{
 			dependencyGcloud(),
 		},

@@ -35,7 +35,7 @@ async function takeScreenshot({
     testName: string
 }): Promise<void> {
     await mkdir(screenshotDir, { recursive: true })
-    const fileName = testName.replace(/\W/g, '_') + '.png'
+    const fileName = testName.replaceAll(/\W/g, '_') + '.png'
     const filePath = path.join(screenshotDir, fileName)
     const screenshot = await page.screenshot({ path: filePath })
     if (process.env.CI) {

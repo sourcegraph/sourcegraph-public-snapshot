@@ -3,10 +3,13 @@ package jobutil
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
@@ -14,57 +17,85 @@ import (
 // Exhaustive exports what is needed for the search jobs product (exhaustive
 // search). The naming conflict between the product search jobs and the search
 // job infrastructure is unfortunate. So we use the name exhaustive to
-// differentiate ourself from the infrastructure.
+// differentiate ourselves from the infrastructure.
 type Exhaustive struct {
 	repoPagerJob *repoPagerJob
 }
+
+const (
+	exhaustiveSupportedResultTypes = result.TypeCommit | result.TypeDiff | result.TypeFile | result.TypePath
+	exhaustiveDefaultResultTypes   = result.TypeFile | result.TypePath
+)
 
 // NewExhaustive constructs Exhaustive from the search inputs.
 //
 // It will return an error if the input query is not supported by Exhaustive.
 func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
-	// TODO(keegan) a bunch of tests around this after branch cut pls
-
 	if inputs.Protocol != search.Exhaustive {
 		return Exhaustive{}, errors.New("only works for exhaustive search inputs")
 	}
 
-	// This doesn't lead to an error, but we will drop result types other than
-	// "file" which might be surprising to users.
-	types, _ := inputs.Query.StringValues(query.FieldType)
-	if len(types) != 1 || types[0] != "file" {
-		return Exhaustive{}, errors.Errorf("expected \"type:file\" only. Got %v", types)
-	}
-
 	if len(inputs.Plan) != 1 {
-		return Exhaustive{}, errors.Errorf("expected a simple expression (no and/or/etc). Got multiple jobs to run %v", inputs.Plan)
+		return Exhaustive{}, errors.Errorf("Invalid query: Search Jobs does not support using AND/OR with filters (for example \"file:.go or file:.rs\"). Consider splitting your query into multiple subqueries and creating separate search jobs for each.")
 	}
 
 	b := inputs.Plan[0]
-	term, ok := b.Pattern.(query.Pattern)
-	if !ok {
-		return Exhaustive{}, errors.Errorf("expected a simple expression (no and/or/etc). Got %v", b.Pattern)
+
+	if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
+		return Exhaustive{}, errors.Errorf("select: is not supported in Search Jobs")
 	}
 
-	// no predicates
-	if inputs.Query.Exists(query.FieldRepoHasFile) {
-		return Exhaustive{}, errors.Errorf("repoHasFile is not supported")
-	}
-	if pred, ok := hasPredicates(query.FieldRepo, inputs.Query); ok {
-		return Exhaustive{}, errors.Errorf("repo: predicates are not supported. Got %v", pred)
-	}
+	// We don't support file predicates, such as file:has.content(), because the
+	// search breaks in unexpected ways. For example, for interactive search
+	// file:has.content() is translated to an AND query which we don't support in
+	// Search Jobs yet.
 	if pred, ok := hasPredicates(query.FieldFile, inputs.Query); ok {
-		return Exhaustive{}, errors.Errorf("field: predicates are not supported. Got %v", pred)
+		return Exhaustive{}, errors.Errorf("file predicates are not supported. Got %v", pred)
 	}
 
 	// This is a very weak protection but should be enough to catch simple misuse.
-	if inputs.PatternType == query.SearchTypeRegex && term.Value == ".*" {
-		return Exhaustive{}, errors.Errorf("regex search with .* is not supported")
+	if inputs.PatternType == query.SearchTypeRegex {
+		if term, ok := b.Pattern.(query.Pattern); ok && term.Value == ".*" {
+			return Exhaustive{}, errors.Errorf("regex search with .* is not supported")
+		}
 	}
 
-	planJob, err := NewFlatJob(inputs, query.Flat{Parameters: b.Parameters, Pattern: &term})
-	if err != nil {
-		return Exhaustive{}, err
+	repoOptions := toRepoOptions(b, inputs.UserSettings)
+	resultTypes := computeResultTypes(b, inputs.PatternType, exhaustiveDefaultResultTypes)
+
+	if resultTypes.Without(exhaustiveSupportedResultTypes) != 0 {
+		return Exhaustive{}, errors.Errorf("your query contains the following type filters: %v. However Search Jobs only supports: %v.", resultTypes, exhaustiveSupportedResultTypes)
+	}
+
+	var planJob job.Job
+
+	if resultTypes.Has(result.TypeCommit | result.TypeDiff) {
+		_, _, own := isOwnershipSearch(b)
+		diff := resultTypes.Has(result.TypeDiff)
+		// Follows the logic of interactive search, see
+		// https://github.com/sourcegraph/sourcegraph/pull/35741
+		repoOptionsCopy := repoOptions
+		repoOptionsCopy.OnlyCloned = true
+
+		commitSearchJob := &commit.SearchJob{
+			Query:                commit.QueryToGitQuery(b, diff),
+			Diff:                 diff,
+			Limit:                b.MaxResults(inputs.DefaultLimit()),
+			IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
+		}
+
+		planJob =
+			&repoPagerJob{
+				child:            &reposPartialJob{commitSearchJob},
+				repoOpts:         repoOptionsCopy,
+				containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
+				skipPartitioning: true,
+			}
+	} else if resultTypes.Has(result.TypeFile | result.TypePath) {
+		planJob = NewTextSearchJob(b, inputs, resultTypes, repoOptions)
+	} else {
+		// This should never happen because we checked for supported types above.
+		return Exhaustive{}, errors.Errorf("internal error: unsupported result types %v", resultTypes)
 	}
 
 	repoPagerJob, ok := planJob.(*repoPagerJob)
@@ -107,5 +138,5 @@ func (e Exhaustive) ResolveRepositoryRevSpec(ctx context.Context, clients job.Ru
 }
 
 func reposNewResolver(clients job.RuntimeClients) *repos.Resolver {
-	return repos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
+	return repos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, clients.Zoekt)
 }

@@ -1,8 +1,8 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Notices no notices 1`] = `<DocumentFragment />`;
+exports[`Notices > no notices 1`] = `<DocumentFragment />`;
 
-exports[`Notices shows notices for location 1`] = `
+exports[`Notices > shows notices for location 1`] = `
 <DocumentFragment>
   <div
     class="notices"
@@ -56,6 +56,53 @@ exports[`Notices shows notices for location 1`] = `
           />
         </svg>
       </button>
+    </div>
+  </div>
+  <div
+    class="notices"
+  >
+    <div
+      aria-live="polite"
+      class="alert alertInfo"
+      data-testid="notice-alert"
+      role="alert"
+    >
+      <div
+        class="markdown"
+      >
+        <p>
+          b
+        </p>
+      </div>
+    </div>
+    <div
+      aria-live="polite"
+      class="alert alertNote"
+      data-testid="notice-alert"
+      role="alert"
+    >
+      <div
+        class="markdown"
+      >
+        <p>
+          a message with a variant
+        </p>
+      </div>
+    </div>
+    <div
+      aria-live="polite"
+      class="alert alertSuccess"
+      data-testid="notice-alert"
+      role="alert"
+      style="background-color: #00f0ff; text-align: center;"
+    >
+      <div
+        class="markdown"
+      >
+        <p>
+          a message with style overrides
+        </p>
+      </div>
     </div>
   </div>
 </DocumentFragment>

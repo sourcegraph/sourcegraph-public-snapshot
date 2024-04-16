@@ -1,0 +1,17 @@
+---
+source: crates/syntax-analysis/src/highlighting/syntect_scip.rs
+expression: "snapshot_sciptect_documents(&document, &contents)"
+---
+  int main() {
+//^^^ IdentifierType storage.type.c
+//    ^^^^ IdentifierFunction entity.name.function.c
+//        ^ PunctuationBracket punctuation.section.group.begin.c
+//         ^ PunctuationBracket punctuation.section.group.end.c
+//           ^ PunctuationBracket punctuation.section.block.begin.c
+    return 0;
+//  ^^^^^^ Keyword keyword.control.flow.return.c
+//         ^ NumericLiteral storage.type.numeric.c
+//          ^ PunctuationDelimiter punctuation.terminator.c
+  }
+//^ PunctuationBracket punctuation.section.block.end.c
+

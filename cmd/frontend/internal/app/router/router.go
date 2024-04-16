@@ -7,7 +7,6 @@ package router
 import (
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/codyapp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 )
 
@@ -41,9 +40,6 @@ const (
 
 	LatestPing = "pings.latest"
 
-	SetupGitHubAppCloud = "setup.github.app.cloud"
-	SetupGitHubApp      = "setup.github.app"
-
 	OldToolsRedirect = "old-tools-redirect"
 	OldTreeRedirect  = "old-tree-redirect"
 
@@ -55,8 +51,6 @@ const (
 	GopherconLiveBlog = "gophercon.live.blog"
 
 	UI = "ui"
-
-	AppUpdateCheck = codyapp.RouteAppUpdateCheck
 )
 
 // Router returns the frontend app router.
@@ -105,9 +99,6 @@ func newRouter() *mux.Router {
 	base.Path("/site-admin/data-export/archive").Methods("POST").Name(OneClickExportArchive)
 
 	base.Path("/site-admin/pings/latest").Methods("GET").Name(LatestPing)
-
-	base.Path("/setup/github/app/cloud").Methods("GET").Name(SetupGitHubAppCloud)
-	base.Path("/setup/github/app").Methods("GET").Name(SetupGitHubApp)
 
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()

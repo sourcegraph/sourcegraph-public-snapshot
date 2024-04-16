@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+
 	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -82,6 +84,8 @@ type Repo struct {
 	Blocked *RepoBlock `json:",omitempty"`
 	// KeyValuePairs is the set of key-value pairs associated with the repo
 	KeyValuePairs map[string]*string `json:",omitempty"`
+	// Topics synced from GitHub or GitLab
+	Topics []string `json:",omitempty"`
 }
 
 func (r *Repo) IDName() RepoIDName {
@@ -131,6 +135,8 @@ type SearchedRepo struct {
 	LastFetched *time.Time
 	// A set of key-value pairs associated with the repo
 	KeyValuePairs map[string]*string
+	// Topics synced from GitHub or GitLab
+	Topics []string
 }
 
 // RepoBlock contains data about a repo that has been blocked. Blocked repos aren't returned by store methods by default.
@@ -522,14 +528,6 @@ type MinimalRepo struct {
 	Stars int
 }
 
-func (r *MinimalRepo) ToRepo() *Repo {
-	return &Repo{
-		ID:    r.ID,
-		Name:  r.Name,
-		Stars: r.Stars,
-	}
-}
-
 // MinimalRepos is an utility type with convenience methods for operating on lists of repo names
 type MinimalRepos []MinimalRepo
 
@@ -585,9 +583,8 @@ func ParseCloneStatusFromGraphQL(s string) CloneStatus {
 type GitserverRepo struct {
 	RepoID api.RepoID
 	// Usually represented by a gitserver hostname
-	ShardID         string
-	CloneStatus     CloneStatus
-	CloningProgress string
+	ShardID     string
+	CloneStatus CloneStatus
 	// The last error that occurred or empty if the last action was successful
 	LastError string
 	// The last time fetch was called.
@@ -628,6 +625,8 @@ type ExternalService struct {
 	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
 	CodeHostID     *int32
+	CreatorID      *int32
+	LastUpdaterID  *int32
 }
 
 type ExternalServiceRepo struct {
@@ -857,6 +856,16 @@ type User struct {
 	SCIMControlled        bool
 }
 
+// Name returns a name for the user. If the user has a display name,
+// that is returned, otherwise their username is returned.
+func (u *User) Name() string {
+	if u.DisplayName != "" {
+		return u.DisplayName
+	}
+
+	return u.Username
+}
+
 // UserForSCIM extends user with email addresses and SCIM external ID.
 type UserForSCIM struct {
 	User
@@ -992,51 +1001,77 @@ type UserDates struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type CodyUsageStatistics struct {
-	Daily   []*CodyUsagePeriod
-	Weekly  []*CodyUsagePeriod
-	Monthly []*CodyUsagePeriod
+	Daily   *CodyUsagePeriodLimited
+	Weekly  *CodyUsagePeriodLimited
+	Monthly *CodyUsagePeriod
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type CodyUsagePeriod struct {
-	StartTime              time.Time
-	TotalUsers             *CodyCountStatistics
-	TotalRequests          *CodyCountStatistics
-	CodeGenerationRequests *CodyCountStatistics
-	ExplanationRequests    *CodyCountStatistics
-	InvalidRequests        *CodyCountStatistics
+	StartTime                  time.Time
+	TotalCodyUsers             *CodyCountStatistics `json:"TotalCodyUsers,omitempty"`
+	TotalProductUsers          *CodyCountStatistics `json:"TotalProductUsers,omitempty"`
+	TotalVSCodeProductUsers    *CodyCountStatistics `json:"TotalVSCodeProductUsers,omitempty"`
+	TotalJetBrainsProductUsers *CodyCountStatistics `json:"TotalJetBrainsProductUsers,omitempty"`
+	TotalNeovimProductUsers    *CodyCountStatistics `json:"TotalNeovimProductUsers,omitempty"`
+	TotalEmacsProductUsers     *CodyCountStatistics `json:"TotalEmacsProductUsers,omitempty"`
+	TotalWebProductUsers       *CodyCountStatistics `json:"TotalWebProductUsers,omitempty"`
+}
+
+type CodyUsagePeriodLimited struct {
+	StartTime         time.Time
+	TotalCodyUsers    *CodyCountStatistics `json:"TotalCodyUsers,omitempty"`
+	TotalProductUsers *CodyCountStatistics `json:"TotalProductUsers,omitempty"`
 }
 
 type CodyCountStatistics struct {
-	UserCount   *int32
-	EventsCount *int32
+	UserCount   *int32 `json:"UserCount,omitempty"`
+	EventsCount *int32 `json:"EventsCount,omitempty"`
 }
 
-// CodyAggregatedEvent represents the total requests, unique users, code
-// generation requests, explanation requests, and invalid requests over
-// the current month, week, and day for a single search event.
-type CodyAggregatedEvent struct {
-	Name                string
-	Month               time.Time
-	Week                time.Time
-	Day                 time.Time
-	TotalMonth          int32
-	TotalWeek           int32
-	TotalDay            int32
-	UniquesMonth        int32
-	UniquesWeek         int32
-	UniquesDay          int32
-	CodeGenerationMonth int32
-	CodeGenerationWeek  int32
-	CodeGenerationDay   int32
-	ExplanationMonth    int32
-	ExplanationWeek     int32
-	ExplanationDay      int32
-	InvalidMonth        int32
-	InvalidWeek         int32
-	InvalidDay          int32
+// CodyAggregatedUsage represents the total Cody-related event count and
+// unique users for the current day, week, and month, as well as the
+// count of total unique users by client for the current month.
+type CodyAggregatedUsage struct {
+	Month                      time.Time
+	Week                       time.Time
+	Day                        time.Time
+	TotalMonth                 int32
+	TotalWeek                  int32
+	TotalDay                   int32
+	UniquesMonth               int32
+	UniquesWeek                int32
+	UniquesDay                 int32
+	ProductUsersMonth          int32
+	ProductUsersWeek           int32
+	ProductUsersDay            int32
+	VSCodeProductUsersMonth    int32
+	JetBrainsProductUsersMonth int32
+	NeovimProductUsersMonth    int32
+	EmacsProductUsersMonth     int32
+	WebProductUsersMonth       int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodyProviders struct {
+	Completions *CodyCompletionProvider
+	Embeddings  *CodyEmbeddingsProvider
+}
+
+type CodyCompletionProvider struct {
+	ChatModel       string
+	CompletionModel string
+	FastChatModel   string
+	Provider        conftypes.CompletionsProviderName
+}
+
+type CodyEmbeddingsProvider struct {
+	Model    string
+	Provider conftypes.EmbeddingsProviderName
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -1655,16 +1690,10 @@ type SearchJobsUsageStatistics struct {
 	WeeklySearchJobsUniqueDownloadClicks *int32
 	WeeklySearchJobsUniqueViewLogsClicks *int32
 	WeeklySearchJobsSearchFormShown      []SearchJobsSearchFormShownPing
-	WeeklySearchJobsValidationErrors     []SearchJobsValidationErrorPing
 }
 
 type SearchJobsSearchFormShownPing struct {
 	ValidState string
-	TotalCount int
-}
-
-type SearchJobsValidationErrorPing struct {
-	Errors     []string
 	TotalCount int
 }
 
@@ -2075,6 +2104,7 @@ const (
 	AccessRequestStatusPending  AccessRequestStatus = "PENDING"
 	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
 	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
+	AccessRequestStatusCanceled AccessRequestStatus = "CANCELED"
 )
 
 type PerforceChangelist struct {

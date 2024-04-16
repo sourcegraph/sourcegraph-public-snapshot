@@ -24,7 +24,7 @@ export interface CacheObject {
 export const persistenceMapper = (data: CacheObject): Promise<CacheObject> => {
     // If `ROOT_QUERY` cache is empty, return initial data right away.
     if (!data[ROOT_QUERY_KEY] || Object.keys(data[ROOT_QUERY_KEY]).length === 0) {
-        return Promise.resolve(data as CacheObject)
+        return Promise.resolve(data)
     }
 
     const dataToPersist: CacheObject = {

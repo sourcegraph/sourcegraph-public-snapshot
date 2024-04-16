@@ -26,6 +26,12 @@ const decorator: Decorator = story => (
 const config: Meta = {
     title: 'wildcard/MultiCombobox',
     decorators: [decorator],
+    parameters: {
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
+    },
 }
 
 export default config

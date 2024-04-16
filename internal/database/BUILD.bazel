@@ -1,7 +1,6 @@
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("//dev:migrations.bzl", "generate_schemas")
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 go_library(
@@ -29,9 +28,6 @@ go_library(
         "conf.go",
         "database.go",
         "doc.go",
-        "encryption.go",
-        "encryption_tables.go",
-        "encryption_utils.go",
         "event_logs.go",
         "event_logs_scrape_state_own.go",
         "executor_secret_access_logs.go",
@@ -40,7 +36,6 @@ go_library(
         "external_accounts.go",
         "external_services.go",
         "feature_flags.go",
-        "gen.go",
         "gitserver_localclone_jobs.go",
         "gitserver_repos.go",
         "global_state.go",
@@ -93,8 +88,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/database",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
-        "//cmd/frontend/globals",
+        "//internal/accesstoken",
         "//internal/actor",
         "//internal/api",
         "//internal/audit",
@@ -104,12 +98,12 @@ go_library(
         "//internal/conf/confdefaults",
         "//internal/conf/conftypes",
         "//internal/conf/reposource",
-        "//internal/cookie",
         "//internal/database/basestore",
         "//internal/database/batch",
         "//internal/database/dbconn",
         "//internal/database/dbtest",
         "//internal/database/dbutil",
+        "//internal/dotcom",
         "//internal/encryption",
         "//internal/encryption/keyring",
         "//internal/env",
@@ -150,7 +144,6 @@ go_library(
         "//internal/trace",
         "//internal/types",
         "//internal/version",
-        "//internal/xcontext",
         "//lib/errors",
         "//lib/pointers",
         "//schema",
@@ -206,7 +199,6 @@ go_test(
         "conf_test.go",
         "database_test.go",
         "dbstore_db_test.go",
-        "encryption_test.go",
         "err_test.go",
         "event_logs_test.go",
         "executor_secret_access_logs_test.go",
@@ -272,18 +264,16 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//cmd/frontend/envvar",
-        "//cmd/frontend/globals",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
-        "//internal/collections",
         "//internal/conf",
         "//internal/database/basestore",
         "//internal/database/batch",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/database/dbutil",
+        "//internal/dotcom",
         "//internal/encryption",
         "//internal/encryption/keyring",
         "//internal/encryption/testing",
@@ -306,6 +296,7 @@ go_test(
         "//internal/temporarysettings",
         "//internal/timeutil",
         "//internal/trace",
+        "//internal/trace/tracetest",
         "//internal/types",
         "//internal/types/typestest",
         "//internal/version",
@@ -314,7 +305,6 @@ go_test(
         "//schema",
         "@com_github_cockroachdb_errors//errbase",
         "@com_github_gitchander_permutation//:permutation",
-        "@com_github_gofrs_uuid//:uuid",
         "@com_github_gomodule_oauth1//oauth",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
@@ -335,9 +325,7 @@ go_test(
         "@org_golang_google_protobuf//types/known/structpb",
         "@org_golang_google_protobuf//types/known/timestamppb",
         "@org_golang_x_exp//maps",
-        "@org_golang_x_exp//slices",
         "@org_golang_x_sync//errgroup",
-        "@tools_gotest//assert",
     ],
 )
 
@@ -371,4 +359,12 @@ write_generated_to_source_files(
         "schema.codeinsights.md": "_schema.codeinsights.md",
     },
     target = ":generate_schemas",
+)
+
+exports_files(
+    srcs = [
+        "schema.codeinsights.json",
+        "schema.codeintel.json",
+        "schema.json",
+    ],
 )

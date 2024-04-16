@@ -91,7 +91,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 
 	for _, user := range users {
 		var expectedContents []byte
-		for i := 0; i < 20000; i++ {
+		for i := range 20000 {
 			expectedContents = append(expectedContents, byte(i))
 		}
 
@@ -120,11 +120,12 @@ func TestHandleEnqueueAuth(t *testing.T) {
 				repoStore,
 				mockUploadStore,
 				mockDBStore,
-				uploadhandler.NewOperations(&observation.TestContext, "test"),
+				uploadhandler.NewOperations(observation.TestContextTB(t), "test"),
 			),
 			db.Users(),
+			repoStore,
 			authValidators,
-			newOperations(&observation.TestContext).authMiddleware,
+			newOperations(observation.TestContextTB(t)).authMiddleware,
 		).ServeHTTP(w, r)
 
 		if w.Code != user.statusCode {
@@ -146,7 +147,7 @@ func setupRepoMocks(t testing.TB) {
 		return &types.Repo{ID: 50}, nil
 	}
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		if rev != testCommit {
 			t.Errorf("unexpected commit. want=%s have=%s", testCommit, rev)
 		}

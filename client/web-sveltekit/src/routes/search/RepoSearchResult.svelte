@@ -1,47 +1,35 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import Icon from '$lib/Icon.svelte'
-    import { featureFlag } from '$lib/featureflags'
-    import { displayRepoName, getRepoMatchUrl, type RepositoryMatch } from '$lib/shared'
     import { mdiArchive, mdiLock, mdiSourceFork } from '@mdi/js'
-    import CodeHostIcon from './CodeHostIcon.svelte'
 
-    import SearchResult from './SearchResult.svelte'
-    import { Badge } from '$lib/wildcard'
-    import { getSearchResultsContext } from './SearchResults.svelte'
-    import { limitDescription, getMetadata, buildSearchURLQueryForMeta, simplifyLineRange } from '$lib/search/results'
     import { highlightRanges } from '$lib/dom'
+    import { featureFlag } from '$lib/featureflags'
+    import Icon from '$lib/Icon.svelte'
+    import RepoStars from '$lib/repo/RepoStars.svelte'
+    import { limitDescription, getRepositoryBadges, simplifyLineRange } from '$lib/search/results'
+    import type { RepositoryMatch } from '$lib/shared'
+    import { Badge } from '$lib/wildcard'
+
+    import RepoRev from './RepoRev.svelte'
+    import SearchResult from './SearchResult.svelte'
+    import { getSearchResultsContext } from './searchResultsContext'
 
     export let result: RepositoryMatch
 
     const enableRepositoryMetadata = featureFlag('repository-metadata')
     const queryState = getSearchResultsContext().queryState
 
-    $: repoAtRevisionURL = getRepoMatchUrl(result)
-    $: metadata = $enableRepositoryMetadata ? getMetadata(result) : []
+    $: badges = getRepositoryBadges($queryState, result, $enableRepositoryMetadata)
     $: description = limitDescription(result.description ?? '')
-    $: repoName = displayRepoName(result.repository)
-
     $: repositoryMatches = result.repositoryMatches?.map(simplifyLineRange) ?? []
-    $: if (repoName !== result.repository) {
-        // We only display part of the repository name, therefore we have to
-        // adjust the match ranges for highlighting
-        const delta = result.repository.length - repoName.length
-        repositoryMatches = repositoryMatches.map(([start, end]) => [start - delta, end - delta])
-    }
     $: descriptionMatches = result.descriptionMatches?.map(simplifyLineRange) ?? []
+    $: rev = result.branches?.[0]
 </script>
 
 <SearchResult>
-    <CodeHostIcon slot="icon" repository={result.repository} />
     <div slot="title">
-        <!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
-        {#key repositoryMatches}
-            <a href={repoAtRevisionURL} use:highlightRanges={{ ranges: repositoryMatches }}
-                >{displayRepoName(result.repository)}</a
-            >
-        {/key}
+        <RepoRev repoName={result.repository} {rev} highlights={repositoryMatches} />
         {#if result.fork}
             <span class="info">
                 <Icon aria-label="Forked repository" svgPath={mdiSourceFork} inline />
@@ -61,6 +49,11 @@
             </span>
         {/if}
     </div>
+    <svelte:fragment slot="info">
+        {#if result.repoStars}
+            <RepoStars repoStars={result.repoStars} />
+        {/if}
+    </svelte:fragment>
     {#if description}
         <!-- #key is needed here to recreate the paragraph because use:highlightRanges changes the DOM -->
         {#key description}
@@ -68,21 +61,15 @@
                 {limitDescription(description)}
             </p>
         {/key}
-    {/if}
-    {#if metadata.length > 0}
+    {/if}<!--
+        Intentional weird comment to avoid adding an empty line to the body
+    -->{#if badges.length > 0}
         <ul class="p-2">
-            {#each metadata as meta}
+            {#each badges as badge}
                 <li>
                     <Badge variant="outlineSecondary">
-                        <a
-                            slot="custom"
-                            let:class={className}
-                            class={className}
-                            href="/search?{buildSearchURLQueryForMeta($queryState, meta)}"
-                        >
-                            <code
-                                >{meta.key}{#if meta.value}:{meta.value}{/if}</code
-                            >
+                        <a slot="custom" let:class={className} class={className} href={`/search?${badge.urlQuery}`}>
+                            <code>{badge.label}</code>
                         </a>
                     </Badge>
                 </li>

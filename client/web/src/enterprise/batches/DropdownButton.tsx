@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
+import classNames from 'classnames'
 
 import {
     ProductStatusBadge,
@@ -179,7 +180,11 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
 
     return (
         <MenuItem className={styles.menuListItem} onSelect={onSelect} disabled={action.disabled}>
-            <H4 className="mb-1">
+            <H4
+                className={classNames('mb-1', {
+                    'text-muted': action.disabled,
+                })}
+            >
                 {action.dropdownTitle}
                 {action.experimental && (
                     <>

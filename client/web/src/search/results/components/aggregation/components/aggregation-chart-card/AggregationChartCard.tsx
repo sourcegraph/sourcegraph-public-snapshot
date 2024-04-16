@@ -50,23 +50,28 @@ function getAggregationError(
 export function getAggregationData(aggregations: SearchAggregationResult, limit?: number): SearchAggregationDatum[] {
     switch (aggregations?.__typename) {
         case 'ExhaustiveSearchAggregationResult':
-        case 'NonExhaustiveSearchAggregationResult':
+        case 'NonExhaustiveSearchAggregationResult': {
             return limit !== undefined ? aggregations.groups.slice(0, limit) : aggregations.groups
+        }
 
-        default:
+        default: {
             return []
+        }
     }
 }
 
 export function getOtherGroupCount(aggregations: SearchAggregationResult, limit: number): number {
     switch (aggregations?.__typename) {
-        case 'ExhaustiveSearchAggregationResult':
+        case 'ExhaustiveSearchAggregationResult': {
             return (aggregations.otherGroupCount ?? 0) + Math.max(aggregations.groups.length - limit, 0)
-        case 'NonExhaustiveSearchAggregationResult':
+        }
+        case 'NonExhaustiveSearchAggregationResult': {
             return (aggregations.approximateOtherGroupCount ?? 0) + Math.max(aggregations.groups.length - limit, 0)
+        }
 
-        default:
+        default: {
             return 0
+        }
     }
 }
 

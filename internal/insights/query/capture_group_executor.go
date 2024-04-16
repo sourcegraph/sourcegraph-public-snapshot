@@ -29,7 +29,7 @@ type CaptureGroupExecutor struct {
 
 func NewCaptureGroupExecutor(db database.DB, clock func() time.Time) *CaptureGroupExecutor {
 	return &CaptureGroupExecutor{
-		gitserverClient: internalGitserver.NewClient(),
+		gitserverClient: internalGitserver.NewClient("insights.capturegroupexecutor"),
 		previewExecutor: previewExecutor{
 			repoStore: db.Repos(),
 			// filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), insightsDb),

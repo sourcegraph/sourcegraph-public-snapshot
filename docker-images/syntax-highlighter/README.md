@@ -3,10 +3,9 @@
 Crates:
 
 - The main `syntect_server` executable
-- `crates/scip-treesitter-languages/`: All the grammars and parsers live here to make shipping parsers with the same tree-sitter version (and associated build tooling) very easy. All new grammars and parsers should be added here.
-- `crates/scip-treesitter/`: Associated utilities for tree-sitter and scip. Not required to be used for other projects
-- `crates/scip-syntax/`: local navigation calculation (and some other utilities) live here.
-- `crates/sg-syntax/`: Sourcegraph code to glue together whatever from the above crates to be used for our purposes.
+- `crates/tree-sitter-all-languages/`: All the grammars and parsers live here to make shipping parsers with the same tree-sitter version (and associated build tooling) very easy. All new grammars and parsers should be added here.
+- `crates/scip-syntax/`: Command line tool that produces a SCIP index file from the analysis performed by other `scip-*` crates in this project
+- `crates/syntax-analysis/`: local navigation calculation (and some other utilities) live here.
 
 # scip-ctags
 
@@ -39,7 +38,7 @@ See [API](./docs/api.md)
 
 ## Configuration
 
-By default on startup, `syntect_server` will list all features (themes + file types) it supports. This can be disabled by setting `QUIET=true` in the environment.
+By default on startup, `syntect_server` will list all file types it supports. This can be disabled by setting `QUIET=true` in the environment.
 
 ## Development
 
@@ -47,6 +46,18 @@ By default on startup, `syntect_server` will list all features (themes + file ty
    To update snapshots, run `cargo insta review`.
 2. Use `cargo run --bin syntect_server` to run the server locally.
 3. You can change the `SRC_SYNTECT_SERVER` option in your `sg.config.yaml` to point to whatever port you're running on (usually 8000) and test against that without building the docker image.
+
+### Testing syntect -> SCIP grammar mappings
+
+<!-- NOTE(id: only-flag) -->
+
+You can run a subset of tests for `syntect_scip` using the `ONLY` environment variable.
+Example:
+
+```bash
+cd crates/syntax-analysis
+ONLY=.java cargo test test_all_files -- --nocapture
+```
 
 ## Building docker image
 
@@ -63,18 +74,9 @@ Once published, the image version will need to be updated in the following locat
 
 Additionally, it's worth doing a [search](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+sourcegraph/syntect_server:&patternType=literal) for other uses in case this list is stale.
 
-## Adding themes
-
-TODO: Maybe we can just remove themes entirely. I think they are u
-
-- Copy a `.tmTheme` file anywhere under `./syntect/testdata` (make a new dir if needed) [in our fork](https://github.com/slimsag/syntect).
-- `cd syntect && make assets`
-- In this repo, `cargo update -p syntect`.
-- Build a new binary.
-
 ## Adding languages (tree-sitter):
 
-See [scip-treesitter-languages](./crates/scip-treesitter-languages/README.md)
+See [tree-sitter-all-languages](./crates/tree-sitter-all-languages/README.md)
 
 ## Adding languages (syntect -- outdated):
 
@@ -99,4 +101,4 @@ $ cargo update -p syntect
 
 ## Supported languages:
 
-Run: `cargo run --bin syntect_server` to see supported languages and themes.
+Run: `cargo run --bin syntect_server` to see supported languages.

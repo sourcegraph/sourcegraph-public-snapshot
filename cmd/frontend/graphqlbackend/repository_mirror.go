@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -91,7 +90,7 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 		return strings.Replace(strings.Replace(u.String(), "fake://", "", 1), "/", ":", 1)
 	}
 
-	repo, err := r.repository.repo(ctx)
+	repo, err := r.repository.getRepo(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -126,27 +125,12 @@ func (r *repositoryMirrorInfoResolver) CloneInProgress(ctx context.Context) (boo
 }
 
 func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*string, error) {
-	if featureflag.FromContext(ctx).GetBoolOr("clone-progress-logging", false) {
-		info, err := r.computeGitserverRepo(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if info.CloneStatus != types.CloneStatusCloning {
-			return nil, nil
-		}
-		return strptr(info.CloningProgress), nil
-	}
 	progress, err := r.gitServerClient.RepoCloneProgress(ctx, r.repository.RepoName())
 	if err != nil {
 		return nil, err
 	}
 
-	result, ok := progress.Results[r.repository.RepoName()]
-	if !ok {
-		return nil, errors.New("got empty result for repo from RepoCloneProgress")
-	}
-
-	return strptr(result.CloneProgress), nil
+	return strptr(progress.CloneProgress), nil
 }
 
 func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, error) {
@@ -159,7 +143,7 @@ func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, 
 }
 
 func (r *repositoryMirrorInfoResolver) LastSyncOutput(ctx context.Context) (*string, error) {
-	output, ok, err := r.db.GitserverRepos().GetLastSyncOutput(ctx, r.repository.innerRepo.Name)
+	output, ok, err := r.db.GitserverRepos().GetLastSyncOutput(ctx, r.repository.name)
 	if err != nil {
 		return nil, err
 	}

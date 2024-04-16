@@ -127,10 +127,10 @@ export function copyIntegrationAssets(): void {
     shelljs.cp('build/dist/css/contentPage.main.bundle.css', 'build/integration/css')
     shelljs.cp('src/native-integration/extensionHostFrame.html', 'build/integration')
     copyInlineExtensions('build/integration')
-    // Copy to the ui/assets directory so that these files can be served by
+    // Copy to the dist directory so that these files can be served by
     // the webapp.
-    shelljs.mkdir('-p', '../../ui/assets/extension')
-    shelljs.cp('-r', 'build/integration/*', '../../ui/assets/extension')
+    shelljs.mkdir('-p', '../../client/web/dist/extension')
+    shelljs.cp('-r', 'build/integration/*', '../../client/web/dist/extension')
 }
 
 const BROWSER_TITLES = {
@@ -227,7 +227,14 @@ const buildForBrowser = curry((browser: Browser, environment: BuildEnvironment):
     writeSchema(buildDirectory)
 
     copyExtensionAssets(buildDirectory)
-    copyInlineExtensions(buildDirectory)
+
+    // TODO(@camdencheek): figure out whether we actually want to continue
+    // shipping the inline extensions with the browser extensions. For now,
+    // skip them for the firefox extension because they are being detected
+    // as non-human-readable assets, and will cause removal from the addon store.
+    if (browser !== 'firefox') {
+        copyInlineExtensions(buildDirectory)
+    }
 
     // Create a bundle by zipping the web extension directory.
     const browserBundleZip = BROWSER_BUNDLE_ZIPS[browser]

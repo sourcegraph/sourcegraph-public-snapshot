@@ -10,20 +10,23 @@ implementation of the Sourcegraph app.
 ```bash
 # Install dependencies
 pnpm install
-# Generate GraphQL types
-pnpm run -w generate
 # Run dev server
 pnpm run dev
 ```
 
-You can also build the OSS or dotcom version by running `pnpm run dev:oss` and
-`pnpm run dev:dotcom` respectively, but they don't really differ in
-functionality yet.
+You can also build the dotcom version by running `pnpm run dev:dotcom`, but it doesn't really differ
+in functionality yet.
 
 The dev server can be accessed on http://localhost:5173. API requests and
 signin/signout are proxied to an actual Sourcegraph instance,
 https://sourcegraph.com by default (can be overwritten via the
 `SOURCEGRAPH_API_URL` environment variable.
+
+If you're a Sourcegraph employee you should run this command to use the right auth instance:
+
+```bash
+SOURCEGRAPH_API_URL=https://sourcegraph.sourcegraph.com pnpm run dev
+```
 
 ### Using code from `@sourcegraph/*`
 
@@ -32,10 +35,9 @@ packages:
 
 - Since we use the [barrel](https://basarat.gitbook.io/typescript/main-1/barrel)
   style of organizing our modules, many (unused) dependencies are imported into
-  the app. This isn't really available, and at best will only increase the
-  initial loading time. But some modules, especially those that access browser
-  specific features during module initialization, can even cause the dev build
-  to fail.
+  the app. This isn't ideal and at best will only increase the initial loading
+  time. Some modules, especially those that access browser specific features
+  during module initialization, can even cause the dev build to fail.
 - Reusing code is great, but also potentially exposes someone who modifies the
   reused code to this package and therefore Svelte (if the reused code changes
   in an incompatible way, this package needs to be updated too). To limit the
@@ -69,6 +71,39 @@ TypeScript, CSS, etc in Svelte components. This currently produces many errors
 because it also validates imported modules from other packages, and we are not
 explicitly marking type-only imports with `type` in other parts of the code
 base (which is required by this package).
+
+### Data loading with GraphQL
+
+This project makes use of query composition, i.e. components define their own
+data dependencies via fragments, which get composed by their callers and are
+eventually being used in a query in a loader.
+
+This goal of this approach is to make data dependencies co-located and easier
+to change, as well to make the flow of data clearer. Data fetching should only
+happen in data loaders, not components.
+
+There are a couple of issues to consider with this approach and sometimes we'll
+have to make exceptions:
+
+- Caching: If every loader composes its own query it's possible that two
+  queries fetch the same data, in which case we miss out on caching. If caching
+  the data is more important than data co-location it might be preferable to
+  define a reusable query function. Example: File list for currently opened
+  folder (sidebar + folder page)
+- Shared data from layout loaders: While it's very convenient that pages have
+  access to any data from the ancestor layout loaders, that doesn't work well
+  with data dependency co-location. The layout loaders don't know which
+  sub-layout or sub-page is loaded and what data it needs.
+  Fortunately we don't have a lot of data (yet) that is used this way. The
+  prime example for this right now is information about the authenticated user.
+  The current approach is to name data-dependencies on the current user as
+  `<ComponentName>_AuthenticatedUser` and use that fragment in the
+  `AuthenticatedUser` fragment in `src/routes/layout.gql`.
+  This approach might change as we uncover more use cases.
+- On demand data loading: Not all data is fetched/needed immediately for
+  rendering page. Data for e.g. typeaheads is fetched on demand. Ideally the
+  related queries are still composed by the data loader, which passes a
+  function for fetching the data to the page.
 
 ## Production build
 

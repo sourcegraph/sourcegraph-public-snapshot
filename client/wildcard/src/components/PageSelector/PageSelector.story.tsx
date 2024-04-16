@@ -19,7 +19,7 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = (args = {}) => {
+export const Simple: StoryFn = (args = {}) => {
     const [page, setPage] = useState(1)
     return <PageSelector currentPage={page} onPageChange={setPage} totalPages={args.totalPages} />
 }

@@ -1,4 +1,5 @@
 import { downloadAndUnzipVSCode } from '@vscode/test-electron'
+import { beforeEach, describe, it } from 'mocha'
 
 import {
     mixedSearchStreamEvents,

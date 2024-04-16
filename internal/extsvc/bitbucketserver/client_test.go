@@ -20,13 +20,14 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -91,7 +92,7 @@ func TestClientKeepsBaseURLPath(t *testing.T) {
 	srvURL, err := url.JoinPath(srv.URL, "/testpath")
 	require.NoError(t, err)
 	bbConf := &schema.BitbucketServerConnection{Url: srvURL}
-	client, err := NewClient("test", bbConf, nil)
+	client, err := NewClient("test", bbConf, httpcli.TestExternalDoer)
 	require.NoError(t, err)
 	client.rateLimit = ratelimit.NewInstrumentedLimiter("bitbucket", rate.NewLimiter(100, 10))
 
@@ -298,7 +299,7 @@ func TestClient_Users(t *testing.T) {
 			name: "maximum 50 permission filters",
 			page: &PageToken{Limit: 1000},
 			filters: func() (fs UserFilters) {
-				for i := 0; i < 51; i++ {
+				for range 51 {
 					fs = append(fs, UserFilter{
 						Permission: PermissionFilter{
 							Root: PermSysAdmin,
@@ -1083,7 +1084,7 @@ func checkGolden(t *testing.T, name string, got any) {
 
 	path := "testdata/golden/" + name
 	if *update {
-		if err = os.WriteFile(path, data, 0640); err != nil {
+		if err = os.WriteFile(path, data, 0o640); err != nil {
 			t.Fatalf("failed to update golden file %q: %s", path, err)
 		}
 	}
@@ -1151,7 +1152,6 @@ func TestAuth(t *testing.T) {
 			}, nil); err == nil {
 				t.Error("unexpected nil error")
 			}
-
 		})
 
 		t.Run("OAuth 1", func(t *testing.T) {

@@ -35,3 +35,4 @@ Support is generally poorly documented, but a search through the [cAdvisor repos
 - Metrics issues
   - `disk` metrics are not available in `containerd`: [cadvisor#2785](https://github.com/google/cadvisor/issues/2785)
   - `diskIO` metrics do not seem to be available in Kubernetes: [sourcegraph#12163](https://github.com/sourcegraph/sourcegraph/issues/12163)
+- When using a Kustomize non-privileged overlay in a deployment, cAdvisor is disabled by default and hence cannot scrape container metrics for visualization in Grafana. cAdvisor requires elevated privileges to collect this data and hence will not work with this overlay.

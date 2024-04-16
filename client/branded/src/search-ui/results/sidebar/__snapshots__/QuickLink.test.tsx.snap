@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`QuickLink should have correct links when quicklinks present 1`] = `
+exports[`QuickLink > should have correct links when quicklinks present 1`] = `
 <DocumentFragment>
   <a
     class="anchorLink sidebarSectionListItem"

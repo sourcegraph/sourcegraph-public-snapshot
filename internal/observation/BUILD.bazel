@@ -24,6 +24,7 @@ go_library(
         "@com_github_sourcegraph_log//logtest",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_trace//:trace",
+        "@io_opentelemetry_go_otel_trace//noop",
         "@org_uber_go_zap//:zap",
     ],
 )

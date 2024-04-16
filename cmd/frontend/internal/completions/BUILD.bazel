@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//cmd/frontend/enterprise",
         "//cmd/frontend/internal/completions/resolvers",
+        "//cmd/frontend/internal/guardrails",
         "//internal/codeintel",
         "//internal/cody",
         "//internal/completions/httpapi",

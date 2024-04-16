@@ -48,18 +48,21 @@ export function convertActionsForCreate(
 ): MonitorActionInput[] {
     return actions.map(action => {
         switch (action.__typename) {
-            case 'MonitorEmail':
+            case 'MonitorEmail': {
                 return {
                     email: convertEmailAction(action, authenticatedUserId),
                 }
-            case 'MonitorSlackWebhook':
+            }
+            case 'MonitorSlackWebhook': {
                 return {
                     slackWebhook: convertSlackWebhookAction(action),
                 }
-            case 'MonitorWebhook':
+            }
+            case 'MonitorWebhook': {
                 return {
                     webhook: convertWebhookAction(action),
                 }
+            }
         }
     })
 }
@@ -71,27 +74,30 @@ export function convertActionsForUpdate(
     return actions.map(action => {
         // Convert empty IDs to null so action is created
         switch (action.__typename) {
-            case 'MonitorEmail':
+            case 'MonitorEmail': {
                 return {
                     email: {
                         id: action.id || null,
                         update: convertEmailAction(action, authenticatedUserId),
                     },
                 }
-            case 'MonitorSlackWebhook':
+            }
+            case 'MonitorSlackWebhook': {
                 return {
                     slackWebhook: {
                         id: action.id || null,
                         update: convertSlackWebhookAction(action),
                     },
                 }
-            case 'MonitorWebhook':
+            }
+            case 'MonitorWebhook': {
                 return {
                     webhook: {
                         id: action.id || null,
                         update: convertWebhookAction(action),
                     },
                 }
+            }
         }
     })
 }

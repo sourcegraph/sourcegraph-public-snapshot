@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"strconv"
 	"strings"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -17,21 +19,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/sensitivemetadataallowlist"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// FeatureFlagTelemetryExport enables telemetry export by allowing events to be
-// queued for export via (TelemetryEventsExportQueueStore).QueueForExport
-//
-// It now defaults to 'true' as of 5.2.1.
-// TODO(5.2.2): Remove this flag entirely.
-const FeatureFlagTelemetryExport = "telemetry-export"
 
 var counterQueuedEvents = promauto.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "src",
@@ -68,20 +61,37 @@ type TelemetryEventsExportQueueStore interface {
 	// returning the number of affected events.
 	DeletedExported(ctx context.Context, before time.Time) (int64, error)
 
-	// CountUnexported returns the number of events not yet exported.
-	CountUnexported(ctx context.Context) (int64, error)
+	TelemetryEventsExportQueueDiagnosticsStore
+}
+
+// TelemetryEventsExportQueueDiagnosticsStore is a read-only subset of
+// TelemetryEventsExportQueueStore for diagnostics endpoints and helpers.
+type TelemetryEventsExportQueueDiagnosticsStore interface {
+	// CountUnexported returns the number of events not yet exported. The time
+	// returned indicates the timestamp of the oldest event - it may be a zero
+	// value if there are no events awaiting export.
+	CountUnexported(ctx context.Context) (int64, time.Time, error)
+
+	// CountRecentlyExported returns the number of events recently exported.
+	// Data retention depends on TELEMETRY_GATEWAY_EXPORTER_EXPORTED_EVENTS_RETENTION.
+	CountRecentlyExported(ctx context.Context) (int64, error)
+
+	// ListRecentlyExported returns the most recently exported events before
+	// the cursor timestamp.
+	// Data retention depends on TELEMETRY_GATEWAY_EXPORTER_EXPORTED_EVENTS_RETENTION.
+	ListRecentlyExported(ctx context.Context, first int, before *time.Time) ([]ExportedTelemetryEvent, error)
 }
 
 func TelemetryEventsExportQueueWith(logger log.Logger, other basestore.ShareableStore) TelemetryEventsExportQueueStore {
 	return &telemetryEventsExportQueueStore{
-		logger:         logger,
-		ShareableStore: other,
+		logger: logger,
+		Store:  basestore.NewWithHandle(other.Handle()),
 	}
 }
 
 type telemetryEventsExportQueueStore struct {
 	logger log.Logger
-	basestore.ShareableStore
+	*basestore.Store
 
 	// mockExportMode can be set in tests to imitate a particular export mode.
 	// It can be configured by casting the store into the
@@ -107,15 +117,6 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 	defer tr.EndWithErr(&err)
 
 	logger := trace.Logger(ctx, s.logger)
-
-	// Check FeatureFlagTelemetryExport, defaulting to true if there are no
-	// flags or the export flag is not present. This is currently only intended
-	// as an escape hatch.
-	// TODO(5.2.2): Remove this feature flag.
-	if flags := featureflag.FromContext(ctx); flags != nil && !flags.GetBoolOr(FeatureFlagTelemetryExport, true) {
-		tr.SetAttributes(attribute.Bool("flag-enabled", false))
-		return nil
-	}
 
 	// 🚨 SECURITY: Respect export mode carefully.
 	switch s.getExportMode() {
@@ -155,7 +156,7 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 	// Create a cancel-free context to avoid interrupting the insert when
 	// the parent context is cancelled, and add our own timeout on the insert
 	// to make sure things don't get stuck in an unbounded manner.
-	insertCtx, cancel := context.WithTimeout(xcontext.Detach(ctx), 5*time.Minute)
+	insertCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Minute)
 	defer cancel()
 
 	err = batch.InsertValues(
@@ -224,7 +225,7 @@ func (s *telemetryEventsExportQueueStore) ListForExport(ctx context.Context, lim
 
 	logger := trace.Logger(ctx, s.logger)
 
-	rows, err := s.ShareableStore.Handle().QueryContext(ctx, `
+	rows, err := s.Store.Handle().QueryContext(ctx, `
 		SELECT id, payload_pb
 		FROM telemetry_events_export_queue
 		WHERE exported_at IS NULL
@@ -266,7 +267,7 @@ func (s *telemetryEventsExportQueueStore) ListForExport(ctx context.Context, lim
 
 // See interface docstring.
 func (s *telemetryEventsExportQueueStore) MarkAsExported(ctx context.Context, eventIDs []string) error {
-	if _, err := s.ShareableStore.Handle().ExecContext(ctx, `
+	if _, err := s.Store.Handle().ExecContext(ctx, `
 		UPDATE telemetry_events_export_queue
 		SET exported_at = NOW()
 		WHERE id = ANY($1);
@@ -277,7 +278,7 @@ func (s *telemetryEventsExportQueueStore) MarkAsExported(ctx context.Context, ev
 }
 
 func (s *telemetryEventsExportQueueStore) DeletedExported(ctx context.Context, before time.Time) (int64, error) {
-	result, err := s.ShareableStore.Handle().ExecContext(ctx, `
+	result, err := s.Store.Handle().ExecContext(ctx, `
 	DELETE FROM telemetry_events_export_queue
 	WHERE
 		exported_at IS NOT NULL
@@ -289,13 +290,102 @@ func (s *telemetryEventsExportQueueStore) DeletedExported(ctx context.Context, b
 	return result.RowsAffected()
 }
 
-func (s *telemetryEventsExportQueueStore) CountUnexported(ctx context.Context) (int64, error) {
+func (s *telemetryEventsExportQueueStore) CountUnexported(ctx context.Context) (int64, time.Time, error) {
 	var count int64
-	return count, s.ShareableStore.Handle().QueryRowContext(ctx, `
+	var oldest sql.NullTime
+	err := s.Store.Handle().QueryRowContext(ctx, `
+	SELECT COUNT(*), MIN(timestamp)
+	FROM telemetry_events_export_queue
+	WHERE exported_at IS NULL;
+	`).Scan(&count, &oldest)
+	return count, oldest.Time, err
+}
+
+func (s *telemetryEventsExportQueueStore) CountRecentlyExported(ctx context.Context) (int64, error) {
+	var count int64
+	return count, s.Store.Handle().QueryRowContext(ctx, `
 	SELECT COUNT(*)
 	FROM telemetry_events_export_queue
-	WHERE exported_at IS NULL
+	WHERE exported_at IS NOT NULL
 	`).Scan(&count)
+}
+
+type ExportedTelemetryEvent struct {
+	// ID is the unique ID of the event.
+	ID string
+	// ExportedAt is the timestamp when the event was marked as exported.
+	ExportedAt time.Time
+	// Timestamp of the payload, also used as the cursor for pagination.
+	Timestamp time.Time
+	// Payload is the data that was exported from the instance.
+	Payload *telemetrygatewayv1.Event
+}
+
+func (s *telemetryEventsExportQueueStore) ListRecentlyExported(ctx context.Context, first int, before *time.Time) ([]ExportedTelemetryEvent, error) {
+	var tr trace.Trace
+	tr, ctx = trace.New(ctx, "telemetryevents.ListRecentlyExported")
+	defer tr.End()
+
+	logger := trace.Logger(ctx, s.logger)
+
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("exported_at IS NOT NULL"),
+	}
+	if before != nil {
+		// ListRecentlyExported is intended for reference, so we don't worry
+		// about timestamp collisions with page size - we just strictly
+		// get events older than the previous page.
+		conds = append(conds, sqlf.Sprintf("timestamp < %s", before))
+	}
+
+	rows, err := s.Store.Query(ctx, sqlf.Sprintf(`
+	SELECT
+		id, exported_at, timestamp, payload_pb
+	FROM telemetry_events_export_queue
+	WHERE
+		%s
+	ORDER BY
+		timestamp DESC -- get most recent entries first
+	LIMIT %s`, sqlf.Join(conds, "AND"), first))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	events := make([]ExportedTelemetryEvent, 0, first)
+	for rows.Next() {
+		var id string
+		var exportedAt time.Time
+		var timestamp time.Time
+		var payloadPB []byte
+		err := rows.Scan(&id, &exportedAt, &timestamp, &payloadPB)
+		if err != nil {
+			return nil, err
+		}
+
+		event := &telemetrygatewayv1.Event{}
+		if err := proto.Unmarshal(payloadPB, event); err != nil {
+			tr.RecordError(err)
+			logger.Error("failed to unmarshal telemetry event payload",
+				log.String("id", id),
+				log.Error(err))
+			// Not fatal, just ignore this event for now, leaving it in DB for
+			// investigation.
+			continue
+		}
+
+		events = append(events, ExportedTelemetryEvent{
+			ID:         id,
+			ExportedAt: exportedAt,
+			Timestamp:  timestamp,
+			Payload:    event,
+		})
+	}
+	tr.SetAttributes(attribute.Int("events", len(events)))
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return events, nil
 }
 
 // MockExportModeSetterTelemetryEventsExportQueueStore can be cast from

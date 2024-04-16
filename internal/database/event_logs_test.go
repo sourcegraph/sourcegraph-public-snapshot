@@ -24,6 +24,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/tracetest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,9 +39,9 @@ func TestSanitizeEventURL(t *testing.T) {
 		externalURL string
 		output      string
 	}{{
-		input:       "https://about.sourcegraph.com/test", // CI:URL_OK
+		input:       "https://sourcegraph.com/test", // CI:URL_OK
 		externalURL: "https://sourcegraph.com",
-		output:      "https://about.sourcegraph.com/test", // CI:URL_OK
+		output:      "https://sourcegraph.com/test", // CI:URL_OK
 	}, {
 		input:       "https://test.sourcegraph.com/test",
 		externalURL: "https://sourcegraph.com",
@@ -116,6 +118,7 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 			err := db.EventLogs().Insert(ctx, tc.event)
 
 			if have, want := fmt.Sprint(errors.Unwrap(err)), tc.err; have != want {
@@ -138,7 +141,7 @@ func TestEventLogs_CountUsersWithSetting(t *testing.T) {
 	settingsStore := db.TemporarySettings()
 	eventLogsStore := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
 
-	for i := 0; i < 24; i++ {
+	for i := range 24 {
 		user, err := usersStore.Create(ctx, NewUser{Username: fmt.Sprintf("u%d", i)})
 		if err != nil {
 			t.Fatal(err)
@@ -255,6 +258,10 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 		makeTestEvent(&Event{UserID: uint32(user3.ID), Timestamp: thirdDay}),
 		makeTestEvent(&Event{UserID: uint32(user4.ID), Timestamp: thirdDay}),
 	}
+
+	// TODO generate this ping from V2 events recorded using EventRecorder
+	// from internal/telemetryrecorder instead.
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	err = db.EventLogs().BulkInsert(ctx, events)
 	require.NoError(t, err)
 
@@ -295,7 +302,7 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 	for _, day := range days {
 		for _, user := range users {
 			for _, name := range names {
-				for i := 0; i < 25; i++ {
+				for range 25 {
 					e := &Event{
 						UserID:    user,
 						Name:      name,
@@ -304,6 +311,7 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60*12))),
 					}
 
+					//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 					if err := db.EventLogs().Insert(ctx, e); err != nil {
 						t.Fatal(err)
 					}
@@ -392,7 +400,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		for _, user := range data.users {
 			for _, name := range data.names {
 				for _, source := range data.sources {
-					for i := 0; i < 5; i++ {
+					for range 5 {
 						e := &Event{
 							UserID: user,
 							Name:   name,
@@ -406,6 +414,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 							e.AnonymousUserID = "deadbeef"
 						}
 
+						//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 						if err := db.EventLogs().Insert(ctx, e); err != nil {
 							t.Fatal(err)
 						}
@@ -519,7 +528,7 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 		for _, userID := range data.userIDs {
 			for _, name := range data.names {
 				for _, source := range data.sources {
-					for i := 0; i < 5; i++ {
+					for range 5 {
 						e := &Event{
 							UserID: userID,
 							Name:   name,
@@ -533,6 +542,7 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 							e.PublicArgument = json.RawMessage(fmt.Sprintf(`{"%s": true}`, EventLogsSourcegraphOperatorKey))
 						}
 
+						//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 						err := db.EventLogs().Insert(ctx, e)
 						require.NoError(t, err)
 					}
@@ -617,6 +627,7 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 				Timestamp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 			}
 
+			//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 			if err := db.EventLogs().Insert(ctx, e); err != nil {
 				t.Fatal(err)
 			}
@@ -631,6 +642,7 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 				Timestamp: now.Add(-time.Hour * 24 * 12).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 			}
 
+			//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 			if err := db.EventLogs().Insert(ctx, e); err != nil {
 				t.Fatal(err)
 			}
@@ -832,7 +844,7 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 
 	for _, name := range names {
 		for _, day := range days {
-			for i := 0; i < 25; i++ {
+			for i := range 25 {
 				e := &Event{
 					UserID:   1,
 					Name:     name,
@@ -844,6 +856,7 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 				}
 
 				g.Go(func() error {
+					//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 					return db.EventLogs().Insert(gctx, e)
 				})
 			}
@@ -896,7 +909,7 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 	for _, user := range users {
 		for _, name := range names {
 			for _, day := range days {
-				for i := 0; i < 25; i++ {
+				for i := range 25 {
 					e := &Event{
 						UserID:   user,
 						Name:     name,
@@ -908,6 +921,7 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 					}
 
 					g.Go(func() error {
+						//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 						return db.EventLogs().Insert(gctx, e)
 					})
 				}
@@ -959,7 +973,7 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 	// time that falls too near the edge of a week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		e := &Event{
 			UserID:    1,
 			Name:      "codeintel.searchReferences.xrepo",
@@ -969,6 +983,7 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 			Timestamp: now.Add(-time.Hour * 24 * 3), // This week
 		}
 
+		//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 		if err := db.EventLogs().Insert(ctx, e); err != nil {
 			t.Fatal(err)
 		}
@@ -1034,7 +1049,7 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 	for _, user := range users {
 		for _, name := range names {
 			for _, day := range days {
-				for i := 0; i < 25; i++ {
+				for range 25 {
 					e := &Event{
 						UserID: user,
 						Name:   name,
@@ -1045,6 +1060,7 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 					}
 
 					g.Go(func() error {
+						//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 						return db.EventLogs().Insert(gctx, e)
 					})
 				}
@@ -1089,7 +1105,7 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 	// time that falls too near the edge of a week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		e := &Event{
 			UserID: 1,
 			Name:   "search.latencies.structural",
@@ -1103,6 +1119,7 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 			Timestamp: now.Add(-time.Hour * 24 * 6), // This month
 		}
 
+		//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 		if err := db.EventLogs().Insert(ctx, e); err != nil {
 			t.Fatal(err)
 		}
@@ -1170,7 +1187,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 		for _, name := range names {
 			for _, duration := range durations {
 				for _, day := range days {
-					for i := 0; i < 25; i++ {
+					for range 25 {
 						durationOffset++
 
 						e := &Event{
@@ -1188,6 +1205,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 						}
 
 						g.Go(func() error {
+							//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 							return db.EventLogs().Insert(gctx, e)
 						})
 					}
@@ -1219,6 +1237,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 		Timestamp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	if err := db.EventLogs().Insert(gctx, e); err != nil {
 		t.Fatal(err)
 	}
@@ -1302,7 +1321,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 	}
 }
 
-func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
+func TestEventLogs_AggregatedCodyUsage(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1316,9 +1335,13 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 	// time that falls too near the edge of a week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	codyEventNames := []string{
+	codyNonProductEventNames := []string{
+		"CodyVSCodeExtension:completion:suggested",
+		"non-cody-event",
+	}
+	codyProductEventNames := []string{
 		"CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
-		"CodyVSCodeExtension:recipe:explain-code-high-level:executed",
+		"CodyVSCodeExtension:recipe:context-search:executed",
 	}
 	users := []uint32{1, 2}
 
@@ -1326,29 +1349,52 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 		now,                          // Today
 		now.Add(-time.Hour * 24 * 3), // This week
 		now.Add(-time.Hour * 24 * 4), // This week
-		now.Add(-time.Hour * 24 * 6), // This month
+		now.Add(-time.Hour * 24 * 9), // This month
+	}
+
+	clients := []string{
+		"VSCODE_CODY_EXTENSION",
+		"JETBRAINS_CODY_EXTENSION",
 	}
 
 	g, gctx := errgroup.WithContext(ctx)
 
 	// add some Cody events
-	for _, user := range users {
-		for _, name := range codyEventNames {
-			for _, day := range days {
-				for i := 0; i < 25; i++ {
-					e := &Event{
-						UserID: user,
-						Name:   name,
-						URL:    "http://sourcegraph.com",
-						Source: "test",
-						// Jitter current time +/- 30 minutes
-						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
-					}
-
-					g.Go(func() error {
-						return db.EventLogs().Insert(gctx, e)
-					})
+	for _, day := range days {
+		for _, name := range codyNonProductEventNames {
+			for range 15 {
+				e := &Event{
+					UserID: users[0],
+					Name:   name,
+					URL:    "http://sourcegraph.com",
+					Source: "test",
+					Client: &clients[0],
+					// Jitter current time +/- 30 minutes
+					Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 				}
+
+				g.Go(func() error {
+					//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
+					return db.EventLogs().Insert(gctx, e)
+				})
+			}
+		}
+		for _, name := range codyProductEventNames {
+			for range 15 {
+				e := &Event{
+					UserID: users[1],
+					Name:   name,
+					URL:    "http://sourcegraph.com",
+					Source: "test",
+					Client: &clients[1],
+					// Jitter current time +/- 30 minutes
+					Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+				}
+
+				g.Go(func() error {
+					//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
+					return db.EventLogs().Insert(gctx, e)
+				})
 			}
 		}
 	}
@@ -1357,46 +1403,32 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	events, err := db.EventLogs().AggregatedCodyEvents(ctx, now)
+	usage, err := db.EventLogs().AggregatedCodyUsage(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expectedEvents := []types.CodyAggregatedEvent{
-		{
-			Name:               "CodyVSCodeExtension:recipe:explain-code-high-level:executed",
-			Month:              time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:               now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
-			Day:                now.Truncate(time.Hour * 24),
-			TotalMonth:         200,
-			TotalWeek:          150,
-			TotalDay:           50,
-			UniquesMonth:       2,
-			UniquesWeek:        2,
-			UniquesDay:         2,
-			CodeGenerationWeek: 150,
-			CodeGenerationDay:  0,
-			ExplanationMonth:   200,
-			ExplanationWeek:    150,
-			ExplanationDay:     50,
-		},
-		{
-			Name:                "CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
-			Month:               time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:                now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
-			Day:                 now.Truncate(time.Hour * 24),
-			TotalMonth:          200,
-			TotalWeek:           150,
-			TotalDay:            50,
-			UniquesMonth:        2,
-			UniquesWeek:         2,
-			UniquesDay:          2,
-			CodeGenerationMonth: 200,
-			CodeGenerationDay:   50,
-		},
+	expectedUsage := &types.CodyAggregatedUsage{
+		Month:                      time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                       now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
+		Day:                        now.Truncate(time.Hour * 24),
+		TotalMonth:                 180,
+		TotalWeek:                  135,
+		TotalDay:                   45,
+		UniquesMonth:               2,
+		UniquesWeek:                2,
+		UniquesDay:                 2,
+		ProductUsersMonth:          1,
+		ProductUsersWeek:           1,
+		ProductUsersDay:            1,
+		VSCodeProductUsersMonth:    0,
+		JetBrainsProductUsersMonth: 1,
+		NeovimProductUsersMonth:    0,
+		EmacsProductUsersMonth:     0,
+		WebProductUsersMonth:       0,
 	}
 
-	if diff := cmp.Diff(expectedEvents, events); diff != "" {
+	if diff := cmp.Diff(expectedUsage, usage); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -1445,7 +1477,14 @@ func TestEventLogs_ListAll(t *testing.T) {
 		},
 	}
 
+	// Run all the inserts under a mock trace so we can test trace data being
+	// attached
+	tracetest.ConfigureStaticTracerProvider(t)
+	var tr trace.Trace
+	tr, ctx = trace.New(ctx, t.Name())
+
 	for _, event := range events {
+		//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 		if err := db.EventLogs().Insert(ctx, event); err != nil {
 			t.Fatal(err)
 		}
@@ -1478,6 +1517,18 @@ func TestEventLogs_ListAll(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, have, 1)
 		assert.Equal(t, uint32(3), have[0].UserID)
+	})
+
+	t.Run("all events have trace context", func(t *testing.T) {
+		got, err := db.EventLogs().ListAll(ctx, EventLogsListOptions{})
+		require.NoError(t, err)
+		assert.Len(t, got, len(events))
+		for _, e := range got {
+			args := make(map[string]any)
+			require.NoError(t, json.Unmarshal(e.PublicArgument, &args))
+			assert.NotEmpty(t, args["interaction.trace_id"])
+			assert.Equal(t, tr.SpanContext().TraceID().String(), args["interaction.trace_id"])
+		}
 	})
 }
 
@@ -1531,6 +1582,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			},
 		}
 		for _, event := range events {
+			//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 			if err := db.EventLogs().Insert(ctx, event); err != nil {
 				t.Fatal(err)
 			}
@@ -1652,6 +1704,11 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
 	for name, testCase := range map[string]struct {
 		now             time.Time
 		events          []*Event
@@ -1868,10 +1925,14 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			logger := logtest.Scoped(t)
-			db := NewDB(logger, dbtest.NewDB(t))
-			ctx := context.Background()
+			t.Cleanup(func() {
+				_, err := db.ExecContext(ctx, "DELETE FROM event_logs")
+				require.NoError(t, err)
+			})
+
 			for _, e := range testCase.events {
+				//lint:ignore SA1019 existing usage of deprecated functionality.
+				// Use EventRecorder from internal/telemetryrecorder instead.
 				if err := db.EventLogs().Insert(ctx, e); err != nil {
 					t.Fatalf("failed inserting test data: %s", err)
 				}
@@ -1936,6 +1997,7 @@ func TestEventLogs_AggregatedRepoMetadataStats(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	for _, e := range events {
+		//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 		if err := db.EventLogs().Insert(ctx, e); err != nil {
 			t.Fatalf("failed inserting test data: %s", err)
 		}

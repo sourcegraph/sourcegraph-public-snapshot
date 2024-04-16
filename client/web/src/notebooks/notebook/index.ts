@@ -1,9 +1,10 @@
 import { escapeRegExp } from 'lodash'
 // We're using marked import here to access the `marked` package type definitions.
+
 // eslint-disable-next-line no-restricted-imports
 import { type marked, Renderer } from 'marked'
 import { type Observable, forkJoin, of } from 'rxjs'
-import { startWith, catchError, mapTo, map, switchMap } from 'rxjs/operators'
+import { startWith, catchError, map, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { renderMarkdown, asError, isErrorLike } from '@sourcegraph/common'
@@ -144,7 +145,7 @@ export class Notebook {
             return
         }
         switch (block.type) {
-            case 'md':
+            case 'md': {
                 this.blocks.set(block.id, {
                     ...block,
                     output: renderMarkdown(block.input.text, {
@@ -153,9 +154,10 @@ export class Notebook {
                     }),
                 })
                 break
+            }
             case 'query': {
                 // Removes comments
-                const query = block.input.query.replace(/\/\/.*/g, '')
+                const query = block.input.query.replaceAll(/\/\/.*/g, '')
                 this.blocks.set(block.id, {
                     ...block,
                     output: aggregateStreamingSearch(of(query), {
@@ -168,7 +170,7 @@ export class Notebook {
                 })
                 break
             }
-            case 'file':
+            case 'file': {
                 this.blocks.set(block.id, {
                     ...block,
                     output: this.dependencies
@@ -187,6 +189,7 @@ export class Notebook {
                         ),
                 })
                 break
+            }
             case 'symbol': {
                 // Start by searching for the symbol at the latest HEAD (main) revision.
                 const output = findSymbolAtRevision(block.input, 'HEAD').pipe(
@@ -260,11 +263,11 @@ export class Notebook {
             }
             // Identical if/else if branches to make the TS compiler happy
             if (block.type === 'query') {
-                observables.push(block.output.pipe(mapTo(DONE)))
+                observables.push(block.output.pipe(map(() => DONE)))
             } else if (block.type === 'file') {
-                observables.push(block.output.pipe(mapTo(DONE)))
+                observables.push(block.output.pipe(map(() => DONE)))
             } else if (block.type === 'symbol') {
-                observables.push(block.output.pipe(mapTo(DONE)))
+                observables.push(block.output.pipe(map(() => DONE)))
             }
         }
         // We store output observables and join them into a single observable,
@@ -319,7 +322,7 @@ export class Notebook {
     }
 
     public getLastBlockId(): string | null {
-        return this.blockOrder.length > 0 ? this.blockOrder[this.blockOrder.length - 1] : null
+        return this.blockOrder.length > 0 ? this.blockOrder.at(-1)! : null
     }
 
     public getPreviousBlockId(id: string): string | null {

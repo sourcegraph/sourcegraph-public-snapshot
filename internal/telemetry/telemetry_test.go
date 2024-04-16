@@ -97,3 +97,52 @@ func TestRecorderEndToEnd(t *testing.T) {
 		assert.Len(t, eventLogs, wantEvents) // v1 unchanged
 	})
 }
+
+func TestMergeMetadata(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		inputs   []telemetry.EventMetadata
+		expected telemetry.EventMetadata
+	}{
+		{
+			name:     "no metadata",
+			inputs:   []telemetry.EventMetadata{},
+			expected: telemetry.EventMetadata{},
+		},
+		{
+			name: "single metadata",
+			inputs: []telemetry.EventMetadata{
+				{"key1": 1},
+			},
+			expected: telemetry.EventMetadata{
+				"key1": 1,
+			},
+		},
+		{
+			name: "multiple metadata",
+			inputs: []telemetry.EventMetadata{
+				{"key1": 1},
+				{"key2": 2},
+			},
+			expected: telemetry.EventMetadata{
+				"key1": 1,
+				"key2": 2,
+			},
+		},
+		{
+			name: "duplicate keys",
+			inputs: []telemetry.EventMetadata{
+				{"key1": 1},
+				{"key1": 2},
+			},
+			expected: telemetry.EventMetadata{
+				"key1": 2,
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			result := telemetry.MergeMetadata(tc.inputs...)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}

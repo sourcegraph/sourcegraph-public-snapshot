@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -19,7 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -33,6 +33,19 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// SCIM uses an auth token which is checked separately in the SCIM package.
 		if strings.HasPrefix(r.URL.Path, "/.api/scim/v2") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Temporary(sourcegraph#59625) SSC API uses SAMS auth token.
+		if strings.HasPrefix(r.URL.Path, "/.api/ssc/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// The license check handler uses a Bearer token and request body which
+		// is checked in `productsubscription/license_check_handler.go`
+		if dotcom.SourcegraphDotComMode() && strings.HasPrefix(r.URL.Path, "/.api/license/check") {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -55,9 +68,9 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 		if headerValue := r.Header.Get("Authorization"); headerValue != "" && token == "" {
 			// Handle Authorization header
 			var err error
-			token, sudoUser, err = authz.ParseAuthorizationHeader(logger, r, headerValue)
+			token, sudoUser, err = authz.ParseAuthorizationHeader(headerValue)
 			if err != nil {
-				if !envvar.SourcegraphDotComMode() && authz.IsUnrecognizedScheme(err) {
+				if !dotcom.SourcegraphDotComMode() && authz.IsUnrecognizedScheme(err) {
 					// Ignore Authorization headers that we don't handle.
 					// 🚨 SECURITY: sha256 the authorization header value so we redact it
 					// while still retaining the ability to link it back to a token, assuming
@@ -118,23 +131,28 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 			} else {
 				requiredScope = authz.ScopeSiteAdminSudo
 			}
-			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, requiredScope)
+
+			info, err := licensing.GetConfiguredProductLicenseInfo()
+			if err != nil {
+				http.Error(w, "Could not check license for access token authorization.", http.StatusInternalServerError)
+				return
+			}
+
+			opts := database.TokenLookupOpts{
+				RequiredScope: requiredScope,
+				OnlyAdmin:     info.IsExpired(),
+			}
+
+			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, opts)
 			if err != nil {
 				if err == database.ErrAccessTokenNotFound || errors.HasType(err, database.InvalidTokenError{}) {
 					anonymousId, anonCookieSet := cookie.AnonymousUID(r)
 					if !anonCookieSet {
 						anonymousId = fmt.Sprintf("unknown user @ %s", time.Now()) // we don't have a reliable user identifier at the time of the failure
 					}
-					db.SecurityEventLogs().LogEvent(
-						r.Context(),
-						&database.SecurityEvent{
-							Name:            database.SecurityEventAccessTokenInvalid,
-							URL:             r.URL.RequestURI(),
-							AnonymousUserID: anonymousId,
-							Source:          "BACKEND",
-							Timestamp:       time.Now(),
-						},
-					)
+					if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventAccessTokenInvalid, r.URL.RequestURI(), uint32(actor.FromContext(r.Context()).UID), anonymousId, "BACKEND", nil); err != nil {
+						logger.Error("Error logging security event", log.Error(err))
+					}
 
 					http.Error(w, "Invalid access token.", http.StatusUnauthorized)
 					return
@@ -181,29 +199,12 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 						log.Int32("subjectUserID", subjectUserID),
 						log.Error(err),
 					)
-
-					args, err := json.Marshal(map[string]any{
+					args := map[string]any{
 						"subject_user_id": subjectUserID,
-					})
-					if err != nil {
-						logger.Error(
-							"failed to marshal JSON for security event log argument",
-							log.String("eventName", string(database.SecurityEventAccessTokenSubjectNotSiteAdmin)),
-							log.Error(err),
-						)
-						// OK to continue, we still want the security event log to be created
 					}
-					db.SecurityEventLogs().LogEvent(
-						r.Context(),
-						&database.SecurityEvent{
-							Name:      database.SecurityEventAccessTokenSubjectNotSiteAdmin,
-							URL:       r.URL.RequestURI(),
-							UserID:    uint32(subjectUserID),
-							Argument:  args,
-							Source:    "BACKEND",
-							Timestamp: time.Now(),
-						},
-					)
+					if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventAccessTokenSubjectNotSiteAdmin, r.URL.RequestURI(), uint32(subjectUserID), "", "BACKEND", args); err != nil {
+						logger.Error("Error logging security event", log.Error(err))
+					}
 
 					http.Error(w, "The subject user of a sudo access token must be a site admin.", http.StatusForbidden)
 					return
@@ -244,39 +245,22 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 					log.Int32("actorUserID", actorUserID),
 					log.String("actorUsername", user.Username),
 				)
-
-				args, err := json.Marshal(map[string]any{
+				args := map[string]any{
 					"sudo_user_id":            actorUserID,
 					"sudo_user":               user.Username,
 					"token_subject_user_id":   subjectUserID,
 					"token_subject_user_name": tokenSubjectUserName,
-				})
-				if err != nil {
-					logger.Error(
-						"failed to marshal JSON for security event log argument",
-						log.String("eventName", string(database.SecurityEventAccessTokenImpersonated)),
-						log.String("sudoUser", sudoUser),
-						log.Error(err),
-					)
-					// OK to continue, we still want the security event log to be created
 				}
-				db.SecurityEventLogs().LogEvent(
-					actor.WithActor(
-						r.Context(),
-						&actor.Actor{
-							UID:                 subjectUserID,
-							SourcegraphOperator: sourcegraphOperator,
-						},
-					),
-					&database.SecurityEvent{
-						Name:      database.SecurityEventAccessTokenImpersonated,
-						URL:       r.URL.RequestURI(),
-						UserID:    uint32(subjectUserID),
-						Argument:  args,
-						Source:    "BACKEND",
-						Timestamp: time.Now(),
+				newContext := actor.WithActor(
+					r.Context(),
+					&actor.Actor{
+						UID:                 subjectUserID,
+						SourcegraphOperator: sourcegraphOperator,
 					},
 				)
+				if err := db.SecurityEventLogs().LogSecurityEvent(newContext, database.SecurityEventAccessTokenImpersonated, r.URL.RequestURI(), uint32(subjectUserID), "", "BACKEND", args); err != nil {
+					logger.Error("Error logging security event", log.Error(err))
+				}
 			}
 
 			r = r.WithContext(

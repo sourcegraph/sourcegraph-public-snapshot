@@ -1056,7 +1056,7 @@ func (s *store[T]) fetchDebugInformationForJob(ctx context.Context, recordID int
 		return "", err
 	}
 	if !ok {
-		return "", errors.Newf("fetching debug information for record %d didn't return rows")
+		return "", errors.Newf("fetching debug information for record %d didn't return rows", recordID)
 	}
 	return debug, nil
 }

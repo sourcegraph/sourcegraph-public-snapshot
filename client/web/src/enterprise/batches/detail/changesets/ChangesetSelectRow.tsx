@@ -4,6 +4,7 @@ import { mdiInformationOutline } from '@mdi/js'
 import { of } from 'rxjs'
 
 import { pluralize } from '@sourcegraph/common'
+import type { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { type AllChangesetIDsVariables, type Scalars, BulkOperationType } from '../../../../graphql-operations'
@@ -18,6 +19,7 @@ import {
 import { CloseChangesetsModal } from './CloseChangesetsModal'
 import { CreateCommentModal } from './CreateCommentModal'
 import { DetachChangesetsModal } from './DetachChangesetsModal'
+import { ExportChangesetsModal } from './ExportChangesetsModal'
 import { MergeChangesetsModal } from './MergeChangesetsModal'
 import { PublishChangesetsModal } from './PublishChangesetsModal'
 import { ReenqueueChangesetsModal } from './ReenqueueChangesetsModal'
@@ -34,7 +36,8 @@ interface ChangesetListAction extends Omit<Action, 'onTrigger'> {
         batchChangeID: Scalars['ID'],
         changesetIDs: Scalars['ID'][],
         onDone: () => void,
-        onCancel: () => void
+        onCancel: () => void,
+        telemetryRecorder: TelemetryRecorder
     ) => void | JSX.Element
 }
 
@@ -49,8 +52,9 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownTitle: 'Close changesets',
         dropdownDescription:
             'Attempt to close all selected changesets on the code hosts. The changesets will remain part of the batch change.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
             eventLogger.log('batch_change_details:bulk_action_close:clicked')
+            telemetryRecorder.recordEvent('batchChange.details.bulkAction', 'close')
             return (
                 <CloseChangesetsModal
                     batchChangeID={batchChangeID}
@@ -67,8 +71,9 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownTitle: 'Create comment',
         dropdownDescription:
             'Create a comment on all selected changesets. For example, you could ask people for reviews, give an update, or post a cat GIF.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
             eventLogger.log('batch_change_details:bulk_action_comment:clicked')
+            telemetryRecorder.recordEvent('batchChange.details.bulkAction', 'comment')
             return (
                 <CreateCommentModal
                     batchChangeID={batchChangeID}
@@ -86,15 +91,34 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownDescription:
             "Remove the selected changesets from this batch change. Unlike archive, this can't be undone.",
         // Only show on the archived tab.
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => (
             <DetachChangesetsModal
                 batchChangeID={batchChangeID}
                 changesetIDs={changesetIDs}
                 afterCreate={onDone}
                 onCancel={onCancel}
                 telemetryService={eventLogger}
+                telemetryRecorder={telemetryRecorder}
             />
         ),
+    },
+    [BulkOperationType.EXPORT]: {
+        type: 'export',
+        buttonLabel: 'Export Changeset(s)',
+        dropdownTitle: 'Export Changeset(s)',
+        dropdownDescription: 'Export selected changesets',
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
+            eventLogger.log('batch_change_details:bulk_action_export:clicked')
+            telemetryRecorder.recordEvent('batchChange.details.bulkAction', 'export')
+            return (
+                <ExportChangesetsModal
+                    batchChangeID={batchChangeID}
+                    changesetIDs={changesetIDs}
+                    afterCreate={onDone}
+                    onCancel={onCancel}
+                />
+            )
+        },
     },
     [BulkOperationType.MERGE]: {
         type: 'merge',
@@ -103,8 +127,9 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownTitle: 'Merge changesets',
         dropdownDescription:
             'Attempt to merge all selected changesets. Some changesets may be unmergeable if there are rules preventing merge, such as CI requirements.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
             eventLogger.log('batch_change_details:bulk_action_merge:clicked')
+            telemetryRecorder.recordEvent('batchChange.details.bulkAction', 'merge')
             return (
                 <MergeChangesetsModal
                     batchChangeID={batchChangeID}
@@ -120,8 +145,9 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         buttonLabel: 'Publish changesets',
         dropdownTitle: 'Publish changesets',
         dropdownDescription: 'Attempt to publish all selected changesets to the code hosts.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
             eventLogger.log('batch_change_details:bulk_action_published:clicked')
+            telemetryRecorder.recordEvent('batchChange.details.bulkAction', 'publish')
             return (
                 <PublishChangesetsModal
                     batchChangeID={batchChangeID}
@@ -137,8 +163,9 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         buttonLabel: 'Retry changesets',
         dropdownTitle: 'Retry changesets',
         dropdownDescription: 'Re-enqueues the selected changesets for processing, if they failed.',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
             eventLogger.log('batch_change_details:bulk_action_retry:clicked')
+            telemetryRecorder.recordEvent('batchChange.details.bulkAction', 'retry')
             return (
                 <ReenqueueChangesetsModal
                     batchChangeID={batchChangeID}
@@ -151,7 +178,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
     },
 }
 
-export interface ChangesetSelectRowProps {
+export interface ChangesetSelectRowProps extends TelemetryV2Props {
     batchChangeID: Scalars['ID']
     onSubmit: () => void
     queryArguments: Omit<AllChangesetIDsVariables, 'after'>
@@ -171,6 +198,7 @@ export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren
     queryArguments,
     queryAllChangesetIDs = _queryAllChangesetIDs,
     queryAvailableBulkOperations = _queryAvailableBulkOperations,
+    telemetryRecorder,
 }) => {
     const { areAllVisibleSelected, selected, selectAll } = useContext(MultiSelectContext)
 
@@ -215,13 +243,14 @@ export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren
                             onSubmit()
                             onDone()
                         },
-                        onCancel
+                        onCancel,
+                        telemetryRecorder
                     ),
             }
 
             return dropdownAction
         })
-    }, [availableBulkOperations, batchChangeID, ids, onSubmit])
+    }, [availableBulkOperations, batchChangeID, ids, onSubmit, telemetryRecorder])
 
     return (
         <>

@@ -1,21 +1,24 @@
 package gitserver
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"io/fs"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
-	"sort"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/google/go-cmp/cmp"
 	godiff "github.com/sourcegraph/go-diff/diff"
@@ -24,11 +27,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// Generate a random archive format.
+func (f ArchiveFormat) Generate(rand *rand.Rand, _ int) reflect.Value {
+	choices := []ArchiveFormat{ArchiveFormatZip, ArchiveFormatTar}
+	index := rand.Intn(len(choices))
+
+	return reflect.ValueOf(choices[index])
+}
 
 func TestParseShortLog(t *testing.T) {
 	tests := []struct {
@@ -204,7 +214,7 @@ func TestDiff(t *testing.T) {
 			".foo",
 		} {
 			t.Run("invalid base: "+input, func(t *testing.T) {
-				i, err := NewClient().Diff(ctx, DiffOptions{Base: input})
+				i, err := NewClient("test").Diff(ctx, DiffOptions{Base: input})
 				if i != nil {
 					t.Errorf("unexpected non-nil iterator: %+v", i)
 				}
@@ -344,297 +354,26 @@ index 9bd8209..d2acfa9 100644
 		if count != testDiffFiles {
 			t.Errorf("unexpected diff count: have %d; want %d", count, testDiffFiles)
 		}
+
+		t.Run("early close", func(t *testing.T) {
+			routinesBefore := runtime.NumGoroutine()
+
+			i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"})
+			require.NoError(t, err)
+
+			hunk, err := i.Next()
+			require.NoError(t, err)
+			require.Equal(t, "INSTALL.md", hunk.OrigName)
+
+			// We did not receive io.EOF above, but are closing the diff reader,
+			// this should not error.
+			require.NoError(t, i.Close())
+
+			// Expect no leaked routines.
+			routinesAfter := runtime.NumGoroutine()
+			require.Equal(t, routinesBefore, routinesAfter)
+		})
 	})
-}
-
-func TestDiffPath(t *testing.T) {
-	testDiff := `
-diff --git a/foo.md b/foo.md
-index 51a59ef1c..493090958 100644
---- a/foo.md
-+++ b/foo.md
-@@ -1 +1 @@
--this is my file content
-+this is my file contnent
-`
-	t.Run("basic", func(t *testing.T) {
-		checker := authz.NewMockSubRepoPermissionChecker()
-		c := NewMockClientWithExecReader(checker, func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
-			return io.NopCloser(strings.NewReader(testDiff)), nil
-		})
-		ctx := actor.WithActor(context.Background(), &actor.Actor{
-			UID: 1,
-		})
-		hunks, err := c.DiffPath(ctx, "", "sourceCommit", "", "file")
-		if err != nil {
-			t.Errorf("unexpected error: %s", err)
-		}
-		if len(hunks) != 1 {
-			t.Errorf("unexpected hunks returned: %d", len(hunks))
-		}
-	})
-	t.Run("with sub-repo permissions enabled", func(t *testing.T) {
-		checker := authz.NewMockSubRepoPermissionChecker()
-		ctx := actor.WithActor(context.Background(), &actor.Actor{
-			UID: 1,
-		})
-		fileName := "foo"
-		checker.EnabledFunc.SetDefaultHook(func() bool {
-			return true
-		})
-		// User doesn't have access to this file
-		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-			if content.Path == fileName {
-				return authz.None, nil
-			}
-			return authz.Read, nil
-		})
-		usePermissionsForFilePermissionsFunc(checker)
-		c := NewMockClientWithExecReader(checker, func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
-			return io.NopCloser(strings.NewReader(testDiff)), nil
-		})
-		hunks, err := c.DiffPath(ctx, "", "sourceCommit", "", fileName)
-		if !os.IsNotExist(err) {
-			t.Errorf("unexpected error: %s", err)
-		}
-		if hunks != nil {
-			t.Errorf("expected DiffPath to return no results, got %v", hunks)
-		}
-	})
-}
-
-func TestRepository_BlameFile(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	ctx := context.Background()
-
-	gitCommands := []string{
-		"echo line1 > f",
-		"git add f",
-		"git commit -m foo",
-		"echo line2 >> f",
-		"git add f",
-		"git commit -m foo",
-		"git mv f f2",
-		"echo line3 >> f2",
-		"git add f2",
-		"git commit -m foo",
-	}
-	gitWantHunks := []*Hunk{
-		{
-			StartLine: 1, EndLine: 2, StartByte: 0, EndByte: 6, CommitID: "e6093374dcf5725d8517db0dccbbf69df65dbde0",
-			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Filename: "f",
-		},
-		{
-			StartLine: 2, EndLine: 3, StartByte: 6, EndByte: 12, CommitID: "fad406f4fe02c358a09df0d03ec7a36c2c8a20f1",
-			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Filename: "f",
-		},
-		{
-			StartLine: 3, EndLine: 4, StartByte: 12, EndByte: 18, CommitID: "311d75a2b414a77f5158a0ed73ec476f5469b286",
-			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Filename: "f2",
-		},
-	}
-	tests := map[string]struct {
-		repo api.RepoName
-		path string
-		opt  *BlameOptions
-
-		wantHunks []*Hunk
-	}{
-		"git cmd": {
-			repo: MakeGitRepository(t, gitCommands...),
-			path: "f2",
-			opt: &BlameOptions{
-				NewestCommit: "master",
-			},
-			wantHunks: gitWantHunks,
-		},
-	}
-
-	client := NewClient()
-	for label, test := range tests {
-		newestCommitID, err := client.ResolveRevision(ctx, test.repo, string(test.opt.NewestCommit), ResolveRevisionOptions{})
-		if err != nil {
-			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.opt.NewestCommit, err)
-			continue
-		}
-
-		test.opt.NewestCommit = newestCommitID
-		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, nil, label, test.wantHunks)
-
-		checker := authz.NewMockSubRepoPermissionChecker()
-		ctx = actor.WithActor(ctx, &actor.Actor{
-			UID: 1,
-		})
-		// Sub-repo permissions
-		// Case: user has read access to file, doesn't filter anything
-		checker.EnabledFunc.SetDefaultHook(func() bool {
-			return true
-		})
-		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-			if content.Path == "f2" {
-				return authz.Read, nil
-			}
-			return authz.None, nil
-		})
-		usePermissionsForFilePermissionsFunc(checker)
-		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, checker, label, test.wantHunks)
-
-		// Sub-repo permissions
-		// Case: user doesn't have access to the file, nothing returned.
-		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-			return authz.None, nil
-		})
-		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, checker, label, nil)
-	}
-}
-
-func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path string, opt *BlameOptions,
-	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk,
-) {
-	t.Helper()
-	client := NewTestClient(t).WithChecker(checker)
-	hunks, err := client.BlameFile(ctx, repo, path, opt)
-	if err != nil {
-		t.Errorf("%s: BlameFile(%s, %+v): %s", label, path, opt, err)
-		return
-	}
-	if !reflect.DeepEqual(hunks, wantHunks) {
-		t.Errorf("%s: hunks != wantHunks\n\nhunks ==========\n%s\n\nwantHunks ==========\n%s", label, AsJSON(hunks), AsJSON(wantHunks))
-	}
-}
-
-func TestRepository_ResolveBranch(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-	}
-	tests := map[string]struct {
-		repo         api.RepoName
-		branch       string
-		wantCommitID api.CommitID
-	}{
-		"git cmd": {
-			repo:         MakeGitRepository(t, gitCommands...),
-			branch:       "master",
-			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
-		},
-	}
-
-	for label, test := range tests {
-		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
-		if err != nil {
-			t.Errorf("%s: ResolveRevision: %s", label, err)
-			continue
-		}
-
-		if commitID != test.wantCommitID {
-			t.Errorf("%s: got commitID == %v, want %v", label, commitID, test.wantCommitID)
-		}
-	}
-}
-
-func TestRepository_ResolveBranch_error(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-	}
-	tests := map[string]struct {
-		repo    api.RepoName
-		branch  string
-		wantErr func(error) bool
-	}{
-		"git cmd": {
-			repo:    MakeGitRepository(t, gitCommands...),
-			branch:  "doesntexist",
-			wantErr: func(err error) bool { return errors.HasType(err, &gitdomain.RevisionNotFoundError{}) },
-		},
-	}
-
-	for label, test := range tests {
-		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
-		if !test.wantErr(err) {
-			t.Errorf("%s: ResolveRevision: %s", label, err)
-			continue
-		}
-
-		if commitID != "" {
-			t.Errorf("%s: got commitID == %v, want empty", label, commitID)
-		}
-	}
-}
-
-func TestRepository_ResolveTag(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-		"git tag t",
-	}
-	tests := map[string]struct {
-		repo         api.RepoName
-		tag          string
-		wantCommitID api.CommitID
-	}{
-		"git cmd": {
-			repo:         MakeGitRepository(t, gitCommands...),
-			tag:          "t",
-			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
-		},
-	}
-
-	for label, test := range tests {
-		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
-		if err != nil {
-			t.Errorf("%s: ResolveRevision: %s", label, err)
-			continue
-		}
-
-		if commitID != test.wantCommitID {
-			t.Errorf("%s: got commitID == %v, want %v", label, commitID, test.wantCommitID)
-		}
-	}
-}
-
-func TestRepository_ResolveTag_error(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-	}
-	tests := map[string]struct {
-		repo    api.RepoName
-		tag     string
-		wantErr func(error) bool
-	}{
-		"git cmd": {
-			repo:    MakeGitRepository(t, gitCommands...),
-			tag:     "doesntexist",
-			wantErr: func(err error) bool { return errors.HasType(err, &gitdomain.RevisionNotFoundError{}) },
-		},
-	}
-
-	for label, test := range tests {
-		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
-		if !test.wantErr(err) {
-			t.Errorf("%s: ResolveRevision: %s", label, err)
-			continue
-		}
-
-		if commitID != "" {
-			t.Errorf("%s: got commitID == %v, want empty", label, commitID)
-		}
-	}
 }
 
 func TestLsFiles(t *testing.T) {
@@ -849,153 +588,6 @@ func TestListDirectoryChildren(t *testing.T) {
 	}
 }
 
-func TestListTags(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	dateEnv := "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z"
-	gitCommands := []string{
-		dateEnv + " git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"git tag t0",
-		"git tag t1",
-		dateEnv + " git tag --annotate -m foo t2",
-		dateEnv + " git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"git tag t3",
-	}
-
-	repo := MakeGitRepository(t, gitCommands...)
-	wantTags := []*gitdomain.Tag{
-		{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-		{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-		{Name: "t2", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-		{Name: "t3", CommitID: "afeafc4a918c144329807df307e68899e6b65018", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-	}
-
-	client := NewClient()
-	tags, err := client.ListTags(context.Background(), repo)
-	require.Nil(t, err)
-
-	sort.Sort(gitdomain.Tags(tags))
-	sort.Sort(gitdomain.Tags(wantTags))
-
-	if diff := cmp.Diff(wantTags, tags); diff != "" {
-		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
-	}
-
-	tags, err = client.ListTags(context.Background(), repo, "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8")
-	require.Nil(t, err)
-	if diff := cmp.Diff(wantTags[:3], tags); diff != "" {
-		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
-	}
-
-	tags, err = client.ListTags(context.Background(), repo, "afeafc4a918c144329807df307e68899e6b65018")
-	require.Nil(t, err)
-	if diff := cmp.Diff([]*gitdomain.Tag{wantTags[3]}, tags); diff != "" {
-		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
-	}
-}
-
-// See https://github.com/sourcegraph/sourcegraph/issues/5453
-func TestParseTags_WithoutCreatorDate(t *testing.T) {
-	have, err := parseTags([]byte(
-		"9ee1c939d1cb936b1f98e8d81aeffab57bae46ab\x00v2.6.12\x001119037709\n" +
-			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11-tree\x00\n" +
-			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11\x00\n",
-	))
-	if err != nil {
-		t.Fatalf("parseTags: have err %v, want nil", err)
-	}
-
-	want := []*gitdomain.Tag{
-		{
-			Name:        "v2.6.12",
-			CommitID:    "9ee1c939d1cb936b1f98e8d81aeffab57bae46ab",
-			CreatorDate: time.Unix(1119037709, 0).UTC(),
-		},
-		{
-			Name:     "v2.6.11-tree",
-			CommitID: "c39ae07f393806ccf406ef966e9a15afc43cc36a",
-		},
-		{
-			Name:     "v2.6.11",
-			CommitID: "c39ae07f393806ccf406ef966e9a15afc43cc36a",
-		},
-	}
-
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Fatal(diff)
-	}
-}
-
-func TestMerger_MergeBase(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	ctx := context.Background()
-	client := NewClient()
-
-	// TODO(sqs): implement for hg
-	// TODO(sqs): make a more complex test case
-
-	cmds := []string{
-		"echo line1 > f",
-		"git add f",
-		"git commit -m foo",
-		"git tag testbase",
-		"git checkout -b b2",
-		"echo line2 >> f",
-		"git add f",
-		"git commit -m foo",
-		"git checkout master",
-		"echo line3 > h",
-		"git add h",
-		"git commit -m qux",
-	}
-	tests := map[string]struct {
-		repo api.RepoName
-		a, b string // can be any revspec; is resolved during the test
-
-		wantMergeBase string // can be any revspec; is resolved during test
-	}{
-		"git cmd": {
-			repo: MakeGitRepository(t, cmds...),
-			a:    "master", b: "b2",
-			wantMergeBase: "testbase",
-		},
-	}
-
-	for label, test := range tests {
-		a, err := client.ResolveRevision(ctx, test.repo, test.a, ResolveRevisionOptions{})
-		if err != nil {
-			t.Errorf("%s: ResolveRevision(%q) on a: %s", label, test.a, err)
-			continue
-		}
-
-		b, err := client.ResolveRevision(ctx, test.repo, test.b, ResolveRevisionOptions{})
-		if err != nil {
-			t.Errorf("%s: ResolveRevision(%q) on b: %s", label, test.b, err)
-			continue
-		}
-
-		want, err := client.ResolveRevision(ctx, test.repo, test.wantMergeBase, ResolveRevisionOptions{})
-		if err != nil {
-			t.Errorf("%s: ResolveRevision(%q) on wantMergeBase: %s", label, test.wantMergeBase, err)
-			continue
-		}
-
-		mb, err := client.MergeBase(ctx, test.repo, a, b)
-		if err != nil {
-			t.Errorf("%s: MergeBase(%s, %s): %s", label, a, b, err)
-			continue
-		}
-
-		if mb != want {
-			t.Errorf("%s: MergeBase(%s, %s): got %q, want %q", label, a, b, mb, want)
-			continue
-		}
-	}
-}
-
 func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
@@ -1019,7 +611,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	dir := InitGitRepository(t, gitCommands...)
 	repo := api.RepoName(filepath.Base(dir))
 
-	client := NewClient()
+	client := NewClient("test")
 
 	commitID := api.CommitID(ComputeCommitHash(dir, true))
 
@@ -1150,130 +742,10 @@ func TestStat(t *testing.T) {
 	}
 }
 
-var (
-	fileWithAccess      = "file-with-access"
-	fileWithoutAccess   = "file-without-access"
-	NonExistentCommitID = api.CommitID(strings.Repeat("a", 40))
-)
+var NonExistentCommitID = api.CommitID(strings.Repeat("a", 40))
 
 func TestLogPartsPerCommitInSync(t *testing.T) {
 	require.Equal(t, partsPerCommit-1, strings.Count(logFormatWithoutRefs, "%x00"))
-}
-
-func TestRepository_GetCommit(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
-	}
-	gitCommandsWithFiles := getGitCommandsWithFiles(fileWithAccess, fileWithoutAccess)
-
-	oldRunCommitLog := runCommitLog
-
-	type testCase struct {
-		gitCmds               []string
-		id                    api.CommitID
-		wantCommit            *gitdomain.Commit
-		noEnsureRevision      bool
-		revisionNotFoundError bool
-	}
-
-	runGetCommitTests := func(checker authz.SubRepoPermissionChecker, tests map[string]testCase) {
-		for label, test := range tests {
-			t.Run(label, func(t *testing.T) {
-				client := NewTestClient(t).WithChecker(checker)
-
-				testRepo := MakeGitRepository(t, test.gitCmds...)
-				var noEnsureRevision bool
-				t.Cleanup(func() {
-					runCommitLog = oldRunCommitLog
-				})
-				runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions) ([]*wrappedCommit, error) {
-					// Track the value of NoEnsureRevision we pass to gitserver
-					noEnsureRevision = opt.NoEnsureRevision
-					return oldRunCommitLog(ctx, cmd, opt)
-				}
-
-				resolveRevisionOptions := ResolveRevisionOptions{
-					NoEnsureRevision: test.noEnsureRevision,
-				}
-				commit, err := client.GetCommit(ctx, testRepo, test.id, resolveRevisionOptions)
-				if err != nil {
-					if test.revisionNotFoundError {
-						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-							t.Errorf("%s: GetCommit: expected a RevisionNotFoundError, got %s", label, err)
-						}
-						return
-					}
-					t.Errorf("%s: GetCommit: %s", label, err)
-				}
-
-				if !CommitsEqual(commit, test.wantCommit) {
-					t.Errorf("%s: got commit == %+v, want %+v", label, commit, test.wantCommit)
-					return
-				}
-
-				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := client.GetCommit(ctx, testRepo, NonExistentCommitID, resolveRevisionOptions); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
-				}
-
-				if noEnsureRevision != test.noEnsureRevision {
-					t.Fatalf("Expected %t, got %t", test.noEnsureRevision, noEnsureRevision)
-				}
-			})
-		}
-	}
-
-	wantGitCommit := &gitdomain.Commit{
-		ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-		Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-		Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-		Message:   "bar",
-		Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
-	}
-	tests := map[string]testCase{
-		"git cmd with NoEnsureRevision false": {
-			gitCmds:          gitCommands,
-			id:               "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			wantCommit:       wantGitCommit,
-			noEnsureRevision: false,
-		},
-		"git cmd with NoEnsureRevision true": {
-			gitCmds:          gitCommands,
-			id:               "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			wantCommit:       wantGitCommit,
-			noEnsureRevision: true,
-		},
-	}
-	// Run basic tests w/o sub-repo permissions checker
-	runGetCommitTests(nil, tests)
-	checker := getTestSubRepoPermsChecker(fileWithoutAccess)
-	// Add test cases with file names for sub-repo permissions testing
-	tests["with sub-repo permissions and access to file"] = testCase{
-		gitCmds: gitCommandsWithFiles,
-		id:      "da50eed82c8ff3c17bb642000d8aad9d434283c1",
-		wantCommit: &gitdomain.Commit{
-			ID:        "da50eed82c8ff3c17bb642000d8aad9d434283c1",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Message:   "commit1",
-		},
-		noEnsureRevision: true,
-	}
-	tests["with sub-repo permissions and NO access to file"] = testCase{
-		gitCmds:               gitCommandsWithFiles,
-		id:                    "ee7773505e98390e809cbf518b2a92e4748b0187",
-		wantCommit:            &gitdomain.Commit{},
-		noEnsureRevision:      true,
-		revisionNotFoundError: true,
-	}
-	// Run test w/ sub-repo permissions filtering
-	runGetCommitTests(checker, tests)
 }
 
 func TestRepository_HasCommitAfter(t *testing.T) {
@@ -1353,9 +825,18 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 	}
 
 	t.Run("basic", func(t *testing.T) {
-		client := NewClient()
 		for _, tc := range testCases {
 			t.Run(tc.label, func(t *testing.T) {
+				client := NewTestClient(t).WithClientSource(NewTestClientSource(t, []string{"test"}, func(o *TestClientSourceOptions) {
+					o.ClientFunc = func(conn *grpc.ClientConn) proto.GitserverServiceClient {
+						c := NewMockGitserverServiceClient()
+						c.ResolveRevisionFunc.SetDefaultReturn(&proto.ResolveRevisionResponse{
+							CommitSha: tc.revspec,
+						}, nil)
+						return c
+					}
+				}))
+
 				gitCommands := make([]string, len(tc.commitDates))
 				for i, date := range tc.commitDates {
 					gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
@@ -1433,7 +914,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 			want: "2007-01-02T15:04:05Z",
 		},
 	}
-	client := NewClient()
+
 	t.Run("basic", func(t *testing.T) {
 		for _, tc := range testCases {
 			gitCommands := make([]string, len(tc.commitDates))
@@ -1442,6 +923,23 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 			}
 
 			repo := MakeGitRepository(t, gitCommands...)
+
+			client := NewTestClient(t).WithClientSource(NewTestClientSource(t, []string{"test"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(conn *grpc.ClientConn) proto.GitserverServiceClient {
+					date, err := time.Parse(time.RFC3339, tc.want)
+					require.NoError(t, err)
+					c := NewMockGitserverServiceClient()
+					c.GetCommitFunc.SetDefaultReturn(&proto.GetCommitResponse{
+						Commit: &proto.GitCommit{
+							Committer: &proto.GitSignature{
+								Date: timestamppb.New(date),
+							},
+						},
+					}, nil)
+					return c
+				}
+			}))
+
 			gotCommit, err := client.FirstEverCommit(ctx, repo)
 			if err != nil {
 				t.Fatal(err)
@@ -1456,97 +954,12 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 	// Added for awareness if this error message changes. Insights skip over empty repos and check against error message
 	t.Run("empty repo", func(t *testing.T) {
 		repo := MakeGitRepository(t)
-		_, err := client.FirstEverCommit(ctx, repo)
+		_, err := NewClient("test").FirstEverCommit(ctx, repo)
 		wantErr := `git command [rev-list --reverse --date-order --max-parents=0 HEAD] failed (output: ""): exit status 128`
 		if err.Error() != wantErr {
 			t.Errorf("expected :%s, got :%s", wantErr, err)
 		}
 	})
-
-	t.Run("with sub-repo permissions", func(t *testing.T) {
-		clientWithoutAccessFirstCommit := NewTestClient(t).WithChecker(getTestSubRepoPermsChecker("file0"))
-		clientWithAccessFirstCommit := NewTestClient(t).WithChecker(getTestSubRepoPermsChecker("file1"))
-		for _, tc := range testCases {
-			gitCommands := make([]string, 0, len(tc.commitDates))
-			for i, date := range tc.commitDates {
-				fileName := fmt.Sprintf("file%d", i)
-				gitCommands = append(gitCommands, fmt.Sprintf("touch %s", fileName))
-				gitCommands = append(gitCommands, fmt.Sprintf("git add %s", fileName))
-				gitCommands = append(gitCommands, fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit -m foo --author='a <a@a.com>'", date))
-			}
-
-			repo := MakeGitRepository(t, gitCommands...)
-
-			// Try to get first commit when user doesn't have permission to view
-			_, err := clientWithoutAccessFirstCommit.FirstEverCommit(ctx, repo)
-			if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-				t.Errorf("expected a RevisionNotFoundError since the user does not have access to view this commit, got :%s", err)
-			}
-			// Try to get first commit when user does have permission to view, should succeed
-			gotCommit, err := clientWithAccessFirstCommit.FirstEverCommit(ctx, repo)
-			if err != nil {
-				t.Fatal(err)
-			}
-			got := gotCommit.Committer.Date.Format(time.RFC3339)
-			if got != tc.want {
-				t.Errorf("got %q, want %q", got, tc.want)
-			}
-			// Internal actor should always have access and ignore sub-repo permissions
-			newCtx := actor.WithActor(context.Background(), &actor.Actor{
-				UID:      1,
-				Internal: true,
-			})
-			gotCommit, err = clientWithoutAccessFirstCommit.FirstEverCommit(newCtx, repo)
-			if err != nil {
-				t.Fatal(err)
-			}
-			got = gotCommit.Committer.Date.Format(time.RFC3339)
-			if got != tc.want {
-				t.Errorf("got %q, want %q", got, tc.want)
-			}
-		}
-	})
-}
-
-func TestCommitExists(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
-	testCommitExists := func(label string, gitCommands []string, commitID, nonExistentCommitID api.CommitID, checker authz.SubRepoPermissionChecker) {
-		t.Run(label, func(t *testing.T) {
-			client := NewTestClient(t).WithChecker(checker)
-			repo := MakeGitRepository(t, gitCommands...)
-
-			exists, err := client.CommitExists(ctx, repo, commitID)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !exists {
-				t.Fatal("Should exist")
-			}
-
-			exists, err = client.CommitExists(ctx, repo, nonExistentCommitID)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if exists {
-				t.Fatal("Should not exist")
-			}
-		})
-	}
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-	}
-	testCommitExists("basic", gitCommands, "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", NonExistentCommitID, nil)
-	gitCommandsWithFiles := getGitCommandsWithFiles(fileWithAccess, fileWithoutAccess)
-	commitIDWithAccess := api.CommitID("da50eed82c8ff3c17bb642000d8aad9d434283c1")
-	commitIDWithoutAccess := api.CommitID("ee7773505e98390e809cbf518b2a92e4748b0187")
-	// Test that the commit ID the user has access to exists, and CommitExists returns false for the commit ID the user
-	// doesn't have access to (since a file was modified in the commit that the user doesn't have permissions to view)
-	testCommitExists("with sub-repo permissions filtering", gitCommandsWithFiles, commitIDWithAccess, commitIDWithoutAccess, getTestSubRepoPermsChecker(fileWithoutAccess))
 }
 
 func TestRepository_Commits(t *testing.T) {
@@ -1591,7 +1004,7 @@ func TestRepository_Commits(t *testing.T) {
 			wantTotal:   2,
 		},
 	}
-	client := NewClient()
+	client := NewClient("test")
 	runCommitsTests := func(checker authz.SubRepoPermissionChecker) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
@@ -1875,7 +1288,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			before := ""
 			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
 			client := NewTestClient(t).WithChecker(checker)
-			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before})
+			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, DateOrder: true, After: after, Before: before})
 			if err == nil {
 				t.Error("expected error, got nil")
 			}
@@ -1958,26 +1371,6 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	runCommitsTest(checker)
 }
 
-func TestMessage(t *testing.T) { // KEEP
-	t.Run("Body", func(t *testing.T) {
-		tests := map[gitdomain.Message]string{
-			"hello":                 "",
-			"hello\n":               "",
-			"hello\n\n":             "",
-			"hello\nworld":          "world",
-			"hello\n\nworld":        "world",
-			"hello\n\nworld\nfoo":   "world\nfoo",
-			"hello\n\nworld\nfoo\n": "world\nfoo",
-		}
-		for input, want := range tests {
-			got := input.Body()
-			if got != want {
-				t.Errorf("got %q, want %q", got, want)
-			}
-		}
-	})
-}
-
 func TestParseCommitsUniqueToBranch(t *testing.T) { // KEEP
 	commits, err := parseCommitsUniqueToBranch([]string{
 		"c165bfff52e9d4f87891bba497e3b70fea144d89:2020-08-04T08:23:30-05:00",
@@ -2006,238 +1399,6 @@ func TestParseCommitsUniqueToBranch(t *testing.T) { // KEEP
 	}
 }
 
-func TestParseBranchesContaining(t *testing.T) { // KEEP
-	names := parseBranchesContaining([]string{
-		"refs/tags/v0.7.0",
-		"refs/tags/v0.5.1",
-		"refs/tags/v1.1.4",
-		"refs/heads/symbols", "refs/heads/bl/symbols",
-		"refs/tags/v1.2.0",
-		"refs/tags/v1.1.0",
-		"refs/tags/v0.10.0",
-		"refs/tags/v1.0.0",
-		"refs/heads/garo/index-specific-files",
-		"refs/heads/bl/symbols-2",
-		"refs/tags/v1.3.1",
-		"refs/tags/v0.5.2",
-		"refs/tags/v1.1.2",
-		"refs/tags/v0.8.0",
-		"refs/heads/ef/wtf",
-		"refs/tags/v1.5.0",
-		"refs/tags/v0.9.0",
-		"refs/heads/garo/go-and-typescript-lsif-indexing",
-		"refs/heads/master",
-		"refs/heads/sg/document-symbols",
-		"refs/tags/v1.1.1",
-		"refs/tags/v1.4.0",
-		"refs/heads/nsc/bump-go-version",
-		"refs/heads/nsc/random",
-		"refs/heads/nsc/markupcontent",
-		"refs/tags/v0.6.0",
-		"refs/tags/v1.1.3",
-		"refs/tags/v0.5.3",
-		"refs/tags/v1.3.0",
-	})
-
-	expectedNames := []string{
-		"bl/symbols",
-		"bl/symbols-2",
-		"ef/wtf",
-		"garo/go-and-typescript-lsif-indexing",
-		"garo/index-specific-files",
-		"master",
-		"nsc/bump-go-version",
-		"nsc/markupcontent",
-		"nsc/random",
-		"sg/document-symbols",
-		"symbols",
-		"v0.10.0",
-		"v0.5.1",
-		"v0.5.2",
-		"v0.5.3",
-		"v0.6.0",
-		"v0.7.0",
-		"v0.8.0",
-		"v0.9.0",
-		"v1.0.0",
-		"v1.1.0",
-		"v1.1.1",
-		"v1.1.2",
-		"v1.1.3",
-		"v1.1.4",
-		"v1.2.0",
-		"v1.3.0",
-		"v1.3.1",
-		"v1.4.0",
-		"v1.5.0",
-	}
-	if diff := cmp.Diff(expectedNames, names); diff != "" {
-		t.Errorf("unexpected names (-want +got):\n%s", diff)
-	}
-}
-
-func TestParseRefDescriptions(t *testing.T) { // KEEP
-	refDescriptions, err := parseRefDescriptions(bytes.Join([][]byte{
-		[]byte("66a7ac584740245fc523da443a3f540a52f8af72\x00refs/heads/bl/symbols\x00 \x002021-01-18T16:46:51-08:00"),
-		[]byte("58537c06cf7ba8a562a3f5208fb7a8efbc971d0e\x00refs/heads/bl/symbols-2\x00 \x002021-02-24T06:21:20-08:00"),
-		[]byte("a40716031ae97ee7c5cdf1dec913567a4a7c50c8\x00refs/heads/ef/wtf\x00 \x002021-02-10T10:50:08-06:00"),
-		[]byte("e2e283fdaf6ea4a419cdbad142bbfd4b730080f8\x00refs/heads/garo/go-and-typescript-lsif-indexing\x00 \x002020-04-29T16:45:46+00:00"),
-		[]byte("c485d92c3d2065041bf29b3fe0b55ffac7e66b2a\x00refs/heads/garo/index-specific-files\x00 \x002021-03-01T13:09:42-08:00"),
-		[]byte("ce30aee6cc56f39d0ac6fee03c4c151c08a8cd2e\x00refs/heads/master\x00*\x002021-06-16T11:51:09-07:00"),
-		[]byte("ec5cfc8ab33370c698273b1a097af73ea289c92b\x00refs/heads/nsc/bump-go-version\x00 \x002021-03-12T22:33:17+00:00"),
-		[]byte("22b2c4f734f62060cae69da856fe3854defdcc87\x00refs/heads/nsc/markupcontent\x00 \x002021-05-03T23:50:02+01:00"),
-		[]byte("9df3358a18792fa9dbd40d506f2e0ad23fc11ee8\x00refs/heads/nsc/random\x00 \x002021-02-10T16:29:06+00:00"),
-		[]byte("a02b85b63345a1406d7a19727f7a5472c976e053\x00refs/heads/sg/document-symbols\x00 \x002021-04-08T15:33:03-07:00"),
-		[]byte("234b0a484519129b251164ecb0674ec27d154d2f\x00refs/heads/symbols\x00 \x002021-01-01T22:51:55-08:00"),
-		[]byte("6b5ae2e0ce568a7641174072271d109d7d0977c7\x00refs/tags/v0.0.0\x00 \x00"),
-		[]byte("c165bfff52e9d4f87891bba497e3b70fea144d89\x00refs/tags/v0.10.0\x00 \x002020-08-04T08:23:30-05:00"),
-		[]byte("f73ee8ed601efea74f3b734eeb073307e1615606\x00refs/tags/v0.5.1\x00 \x002020-04-16T16:06:21-04:00"),
-		[]byte("6057f7ed8d331c82030c713b650fc8fd2c0c2347\x00refs/tags/v0.5.2\x00 \x002020-04-16T16:20:26-04:00"),
-		[]byte("7886287b8758d1baf19cf7b8253856128369a2a7\x00refs/tags/v0.5.3\x00 \x002020-04-16T16:55:58-04:00"),
-		[]byte("b69f89473bbcc04dc52cafaf6baa504e34791f5a\x00refs/tags/v0.6.0\x00 \x002020-04-20T12:10:49-04:00"),
-		[]byte("172b7fcf8b8c49b37b231693433586c2bfd1619e\x00refs/tags/v0.7.0\x00 \x002020-04-20T12:37:36-04:00"),
-		[]byte("5bc35c78fb5fb388891ca944cd12d85fd6dede95\x00refs/tags/v0.8.0\x00 \x002020-05-05T12:53:18-05:00"),
-		[]byte("14faa49ef098df9488536ca3c9b26d79e6bec4d6\x00refs/tags/v0.9.0\x00 \x002020-07-14T14:26:40-05:00"),
-		[]byte("0a82af8b6914d8c81326eee5f3a7e1d1106547f1\x00refs/tags/v1.0.0\x00 \x002020-08-19T19:33:39-05:00"),
-		[]byte("262defb72b96261a7d56b000d438c5c7ec6d0f3e\x00refs/tags/v1.1.0\x00 \x002020-08-21T14:15:44-05:00"),
-		[]byte("806b96eb544e7e632a617c26402eccee6d67faed\x00refs/tags/v1.1.1\x00 \x002020-08-21T16:02:35-05:00"),
-		[]byte("5d8865d6feacb4fce3313cade2c61dc29c6271e6\x00refs/tags/v1.1.2\x00 \x002020-08-22T13:45:26-05:00"),
-		[]byte("8c45a5635cf0a4968cc8c9dac2d61c388b53251e\x00refs/tags/v1.1.3\x00 \x002020-08-25T10:10:46-05:00"),
-		[]byte("fc212da31ce157ef0795e934381509c5a50654f6\x00refs/tags/v1.1.4\x00 \x002020-08-26T14:02:47-05:00"),
-		[]byte("4fd8b2c3522df32ffc8be983d42c3a504cc75fbc\x00refs/tags/v1.2.0\x00 \x002020-09-07T09:52:43-05:00"),
-		[]byte("9741f54aa0f14be1103b00c89406393ea4d8a08a\x00refs/tags/v1.3.0\x00 \x002021-02-10T23:21:31+00:00"),
-		[]byte("b358977103d2d66e2a3fc5f8081075c2834c4936\x00refs/tags/v1.3.1\x00 \x002021-02-24T20:16:45+00:00"),
-		[]byte("2882ad236da4b649b4c1259d815bf1a378e3b92f\x00refs/tags/v1.4.0\x00 \x002021-05-13T10:41:02-05:00"),
-		[]byte("340b84452286c18000afad9b140a32212a82840a\x00refs/tags/v1.5.0\x00 \x002021-05-20T18:41:41-05:00"),
-	}, []byte("\n")))
-	if err != nil {
-		t.Fatalf("unexpected error parsing ref descriptions: %s", err)
-	}
-
-	makeBranch := func(name, createdDate string, isDefaultBranch bool) gitdomain.RefDescription {
-		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate, t)}
-	}
-
-	makeTag := func(name, createdDate string) gitdomain.RefDescription {
-		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeTag, IsDefaultBranch: false, CreatedDate: mustParseDate(createdDate, t)}
-	}
-
-	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
-		"66a7ac584740245fc523da443a3f540a52f8af72": {makeBranch("bl/symbols", "2021-01-18T16:46:51-08:00", false)},
-		"58537c06cf7ba8a562a3f5208fb7a8efbc971d0e": {makeBranch("bl/symbols-2", "2021-02-24T06:21:20-08:00", false)},
-		"a40716031ae97ee7c5cdf1dec913567a4a7c50c8": {makeBranch("ef/wtf", "2021-02-10T10:50:08-06:00", false)},
-		"e2e283fdaf6ea4a419cdbad142bbfd4b730080f8": {makeBranch("garo/go-and-typescript-lsif-indexing", "2020-04-29T16:45:46+00:00", false)},
-		"c485d92c3d2065041bf29b3fe0b55ffac7e66b2a": {makeBranch("garo/index-specific-files", "2021-03-01T13:09:42-08:00", false)},
-		"ce30aee6cc56f39d0ac6fee03c4c151c08a8cd2e": {makeBranch("master", "2021-06-16T11:51:09-07:00", true)},
-		"ec5cfc8ab33370c698273b1a097af73ea289c92b": {makeBranch("nsc/bump-go-version", "2021-03-12T22:33:17+00:00", false)},
-		"22b2c4f734f62060cae69da856fe3854defdcc87": {makeBranch("nsc/markupcontent", "2021-05-03T23:50:02+01:00", false)},
-		"9df3358a18792fa9dbd40d506f2e0ad23fc11ee8": {makeBranch("nsc/random", "2021-02-10T16:29:06+00:00", false)},
-		"a02b85b63345a1406d7a19727f7a5472c976e053": {makeBranch("sg/document-symbols", "2021-04-08T15:33:03-07:00", false)},
-		"234b0a484519129b251164ecb0674ec27d154d2f": {makeBranch("symbols", "2021-01-01T22:51:55-08:00", false)},
-		"6b5ae2e0ce568a7641174072271d109d7d0977c7": {gitdomain.RefDescription{Name: "v0.0.0", Type: gitdomain.RefTypeTag, IsDefaultBranch: false}},
-		"c165bfff52e9d4f87891bba497e3b70fea144d89": {makeTag("v0.10.0", "2020-08-04T08:23:30-05:00")},
-		"f73ee8ed601efea74f3b734eeb073307e1615606": {makeTag("v0.5.1", "2020-04-16T16:06:21-04:00")},
-		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": {makeTag("v0.5.2", "2020-04-16T16:20:26-04:00")},
-		"7886287b8758d1baf19cf7b8253856128369a2a7": {makeTag("v0.5.3", "2020-04-16T16:55:58-04:00")},
-		"b69f89473bbcc04dc52cafaf6baa504e34791f5a": {makeTag("v0.6.0", "2020-04-20T12:10:49-04:00")},
-		"172b7fcf8b8c49b37b231693433586c2bfd1619e": {makeTag("v0.7.0", "2020-04-20T12:37:36-04:00")},
-		"5bc35c78fb5fb388891ca944cd12d85fd6dede95": {makeTag("v0.8.0", "2020-05-05T12:53:18-05:00")},
-		"14faa49ef098df9488536ca3c9b26d79e6bec4d6": {makeTag("v0.9.0", "2020-07-14T14:26:40-05:00")},
-		"0a82af8b6914d8c81326eee5f3a7e1d1106547f1": {makeTag("v1.0.0", "2020-08-19T19:33:39-05:00")},
-		"262defb72b96261a7d56b000d438c5c7ec6d0f3e": {makeTag("v1.1.0", "2020-08-21T14:15:44-05:00")},
-		"806b96eb544e7e632a617c26402eccee6d67faed": {makeTag("v1.1.1", "2020-08-21T16:02:35-05:00")},
-		"5d8865d6feacb4fce3313cade2c61dc29c6271e6": {makeTag("v1.1.2", "2020-08-22T13:45:26-05:00")},
-		"8c45a5635cf0a4968cc8c9dac2d61c388b53251e": {makeTag("v1.1.3", "2020-08-25T10:10:46-05:00")},
-		"fc212da31ce157ef0795e934381509c5a50654f6": {makeTag("v1.1.4", "2020-08-26T14:02:47-05:00")},
-		"4fd8b2c3522df32ffc8be983d42c3a504cc75fbc": {makeTag("v1.2.0", "2020-09-07T09:52:43-05:00")},
-		"9741f54aa0f14be1103b00c89406393ea4d8a08a": {makeTag("v1.3.0", "2021-02-10T23:21:31+00:00")},
-		"b358977103d2d66e2a3fc5f8081075c2834c4936": {makeTag("v1.3.1", "2021-02-24T20:16:45+00:00")},
-		"2882ad236da4b649b4c1259d815bf1a378e3b92f": {makeTag("v1.4.0", "2021-05-13T10:41:02-05:00")},
-		"340b84452286c18000afad9b140a32212a82840a": {makeTag("v1.5.0", "2021-05-20T18:41:41-05:00")},
-	}
-	if diff := cmp.Diff(expectedRefDescriptions, refDescriptions); diff != "" {
-		t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
-	}
-}
-
-func TestFilterRefDescriptions(t *testing.T) { // KEEP
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	gitCommands := append(getGitCommandsWithFiles("file1", "file2"), getGitCommandsWithFiles("file3", "file4")...)
-	repo := MakeGitRepository(t, gitCommands...)
-
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
-		"2775e60f523d3151a2a34ffdc659f500d0e73022": {},
-		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
-		"9019942b8b92d5a70a7f546d97c451621c5059a6": {},
-	}
-
-	checker := getTestSubRepoPermsChecker("file3")
-	client := NewTestClient(t).WithChecker(checker).(*clientImplementor)
-	filtered := client.filterRefDescriptions(ctx, repo, refDescriptions)
-	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
-		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
-		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
-		"9019942b8b92d5a70a7f546d97c451621c5059a6": {},
-	}
-	if diff := cmp.Diff(expectedRefDescriptions, filtered); diff != "" {
-		t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
-	}
-}
-
-func TestRefDescriptions(t *testing.T) { // KEEP
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
-	client := NewClient()
-	gitCommands := append(getGitCommandsWithFiles("file1", "file2"), "git checkout -b my-other-branch")
-	gitCommands = append(gitCommands, getGitCommandsWithFiles("file1-b2", "file2-b2")...)
-	gitCommands = append(gitCommands, "git checkout -b my-branch-no-access")
-	gitCommands = append(gitCommands, getGitCommandsWithFiles("file", "file-with-no-access")...)
-	repo := MakeGitRepository(t, gitCommands...)
-
-	makeBranch := func(name, createdDate string, isDefaultBranch bool) gitdomain.RefDescription {
-		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate, t)}
-	}
-
-	t.Run("basic", func(t *testing.T) {
-		refDescriptions, err := client.RefDescriptions(ctx, repo)
-		if err != nil {
-			t.Errorf("err calling RefDescriptions: %s", err)
-		}
-		expectedRefDescriptions := map[string][]gitdomain.RefDescription{
-			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {makeBranch("master", "2006-01-02T15:04:05Z", false)},
-			"9d7a382983098eed6cf911bd933dfacb13116e42": {makeBranch("my-other-branch", "2006-01-02T15:04:05Z", false)},
-			"7cf006d0599531db799c08d3b00d7fd06da33015": {makeBranch("my-branch-no-access", "2006-01-02T15:04:05Z", true)},
-		}
-		if diff := cmp.Diff(expectedRefDescriptions, refDescriptions); diff != "" {
-			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
-		}
-	})
-
-	t.Run("with sub-repo enabled", func(t *testing.T) {
-		checker := getTestSubRepoPermsChecker("file-with-no-access")
-		client2 := NewTestClient(t).WithChecker(checker)
-		refDescriptions, err := client2.RefDescriptions(ctx, repo)
-		if err != nil {
-			t.Errorf("err calling RefDescriptions: %s", err)
-		}
-		expectedRefDescriptions := map[string][]gitdomain.RefDescription{
-			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {makeBranch("master", "2006-01-02T15:04:05Z", false)},
-			"9d7a382983098eed6cf911bd933dfacb13116e42": {makeBranch("my-other-branch", "2006-01-02T15:04:05Z", false)},
-		}
-		if diff := cmp.Diff(expectedRefDescriptions, refDescriptions); diff != "" {
-			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
-		}
-	})
-}
-
 func TestCommitsUniqueToBranch(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
@@ -2248,78 +1409,53 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 	gitCommands = append(gitCommands, getGitCommandsWithFiles("file3", "file-with-no-access")...)
 	repo := MakeGitRepository(t, gitCommands...)
 
-	t.Run("basic", func(t *testing.T) {
-		client := NewClient()
-		commits, err := client.CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{})
-		if err != nil {
-			t.Errorf("err calling RefDescriptions: %s", err)
-		}
-		expectedCommits := map[string]time.Time{
-			"2775e60f523d3151a2a34ffdc659f500d0e73022": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"791ce7cd8ca2d855e12f47f8692a62bc42477edc": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"d38233a79e037d2ab8170b0d0bc0aa438473e6da": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-		}
-		if diff := cmp.Diff(expectedCommits, commits); diff != "" {
-			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
-		}
-	})
-
-	t.Run("with sub-repo enabled", func(t *testing.T) {
-		checker := getTestSubRepoPermsChecker("file-with-no-access")
-		client := NewTestClient(t).WithChecker(checker)
-		commits, err := client.CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{})
-		if err != nil {
-			t.Errorf("err calling RefDescriptions: %s", err)
-		}
-		expectedCommits := map[string]time.Time{
-			"2775e60f523d3151a2a34ffdc659f500d0e73022": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"d38233a79e037d2ab8170b0d0bc0aa438473e6da": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-		}
-		if diff := cmp.Diff(expectedCommits, commits); diff != "" {
-			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
-		}
-	})
+	client := NewClient("test")
+	commits, err := client.CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{})
+	if err != nil {
+		t.Errorf("err calling CommitsUniqueToBranch: %s", err)
+	}
+	expectedCommits := map[string]time.Time{
+		"2775e60f523d3151a2a34ffdc659f500d0e73022": *mustParseDate("2006-01-02T15:04:05-00:00", t),
+		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": *mustParseDate("2006-01-02T15:04:05-00:00", t),
+		"791ce7cd8ca2d855e12f47f8692a62bc42477edc": *mustParseDate("2006-01-02T15:04:05-00:00", t),
+		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": *mustParseDate("2006-01-02T15:04:05-00:00", t),
+	}
+	if diff := cmp.Diff(expectedCommits, commits); diff != "" {
+		t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
+	}
 }
 
-func TestCommitDate(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
-	gitCommands := getGitCommandsWithFiles("file1", "file2")
-	repo := MakeGitRepository(t, gitCommands...)
+func TestFilterCommitsUniqueToBranch(t *testing.T) {
+	commitMap := map[string]time.Time{
+		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
+		"2775e60f523d3151a2a34ffdc659f500d0e73022": {},
+		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
+		"9019942b8b92d5a70a7f546d97c451621c5059a6": {},
+	}
 
-	t.Run("basic", func(t *testing.T) {
-		client := NewClient()
-		_, date, commitExists, err := client.CommitDate(ctx, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da")
-		if err != nil {
-			t.Errorf("error fetching CommitDate: %s", err)
+	client := NewTestClient(t).WithClientSource(NewTestClientSource(t, []string{"test"}, func(o *TestClientSourceOptions) {
+		o.ClientFunc = func(conn *grpc.ClientConn) proto.GitserverServiceClient {
+			c := NewMockGitserverServiceClient()
+			c.GetCommitFunc.SetDefaultHook(func(ctx context.Context, gcr *proto.GetCommitRequest, co ...grpc.CallOption) (*proto.GetCommitResponse, error) {
+				if gcr.GetCommit() == "2775e60f523d3151a2a34ffdc659f500d0e73022" {
+					s, err := status.New(codes.NotFound, "bad revision").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
+					require.NoError(t, err)
+					return nil, s.Err()
+				}
+				return &proto.GetCommitResponse{}, nil
+			})
+			return c
 		}
-		if !commitExists {
-			t.Errorf("commit should exist")
-		}
-		if !date.Equal(time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC)) {
-			t.Errorf("unexpected date: %s", date)
-		}
-	})
-
-	t.Run("with sub-repo permissions enabled", func(t *testing.T) {
-		checker := getTestSubRepoPermsChecker("file1")
-		client := NewTestClient(t).WithChecker(checker)
-		_, date, commitExists, err := client.CommitDate(ctx, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da")
-		if err != nil {
-			t.Errorf("error fetching CommitDate: %s", err)
-		}
-		if commitExists {
-			t.Errorf("expect commit to not exist since the user doesn't have access")
-		}
-		if !date.IsZero() {
-			t.Errorf("expected date to be empty, got: %s", date)
-		}
-	})
+	})).(*clientImplementor)
+	filtered := client.filterCommitsUniqueToBranch(context.Background(), "repo", commitMap)
+	expected := map[string]time.Time{
+		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
+		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
+		"9019942b8b92d5a70a7f546d97c451621c5059a6": {},
+	}
+	if diff := cmp.Diff(expected, filtered); diff != "" {
+		t.Errorf("unexpected commits in result (-want +got):\n%s", diff)
+	}
 }
 
 func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantCommits []*gitdomain.Commit, t *testing.T) {
@@ -2394,10 +1530,10 @@ func getGitCommandsWithFiles(fileName1, fileName2 string) []string {
 	return []string{
 		fmt.Sprintf("touch %s", fileName1),
 		fmt.Sprintf("git add %s", fileName1),
-		"git commit -m commit1",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		fmt.Sprintf("touch %s", fileName2),
 		fmt.Sprintf("git add %s", fileName2),
-		"git commit -m commit2",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 }
 
@@ -2429,434 +1565,6 @@ func CommitsEqual(a, b *gitdomain.Commit) bool {
 	return reflect.DeepEqual(a, b)
 }
 
-func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
-	repoName := MakeGitRepository(t,
-		"echo abcd > file1",
-		"git add file1",
-		"git commit -m commit1",
-	)
-	const commitID = "3d689662de70f9e252d4f6f1d75284e23587d670"
-
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultHook(func() bool {
-		return true
-	})
-	checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (bool, error) {
-		// sub-repo permissions are enabled only for repo with repoID = 1
-		return name == repoName, nil
-	})
-	ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (io.ReadCloser, error) {
-		stringReader := strings.NewReader("1337")
-		return io.NopCloser(stringReader), nil
-	}
-	defer ResetClientMocks()
-
-	repo := &types.Repo{Name: repoName, ID: 1}
-
-	opts := ArchiveOptions{
-		Format:    ArchiveFormatZip,
-		Treeish:   commitID,
-		Pathspecs: []gitdomain.Pathspec{"."},
-	}
-	client := NewTestClient(t).WithChecker(checker)
-	if _, err := client.ArchiveReader(context.Background(), repo.Name, opts); err == nil {
-		t.Error("Error should not be null because ArchiveReader is invoked for a repo with sub-repo permissions")
-	}
-}
-
-func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
-	repoName := MakeGitRepository(t,
-		"echo abcd > file1",
-		"git add file1",
-		"git commit -m commit1",
-	)
-	const commitID = "3d689662de70f9e252d4f6f1d75284e23587d670"
-
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultHook(func() bool {
-		return true
-	})
-	checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (bool, error) {
-		// sub-repo permissions are not present for repo with repoID = 1
-		return name != repoName, nil
-	})
-	ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (io.ReadCloser, error) {
-		stringReader := strings.NewReader("1337")
-		return io.NopCloser(stringReader), nil
-	}
-	defer ResetClientMocks()
-
-	repo := &types.Repo{Name: repoName, ID: 1}
-
-	opts := ArchiveOptions{
-		Format:    ArchiveFormatZip,
-		Treeish:   commitID,
-		Pathspecs: []gitdomain.Pathspec{"."},
-	}
-	client := NewClient()
-	readCloser, err := client.ArchiveReader(context.Background(), repo.Name, opts)
-	if err != nil {
-		t.Error("Error should not be thrown because ArchiveReader is invoked for a repo without sub-repo permissions")
-	}
-	err = readCloser.Close()
-	if err != nil {
-		t.Error("Error during closing a reader")
-	}
-}
-
-func TestRead(t *testing.T) {
-	const commitCmd = "git commit -m commit1"
-	repo, dir := MakeGitRepositoryAndReturnDir(t,
-		// simple file
-		"echo abcd > file1",
-		"git add file1",
-		commitCmd,
-
-		// test we handle file names with .. (git show by default interprets
-		// this). Ensure past the .. exists as a branch. Then if we use git
-		// show it would return a diff instead of file contents.
-		"mkdir subdir",
-		"echo old > subdir/name",
-		"echo old > subdir/name..dev",
-		"git add subdir",
-		commitCmd,
-		"echo dotdot > subdir/name..dev",
-		"git add subdir",
-		commitCmd,
-		"git branch dev",
-	)
-	commitID := api.CommitID(GetHeadCommitFromGitDir(t, dir))
-
-	ctx := context.Background()
-
-	tests := map[string]struct {
-		file string
-		want string // if empty we treat as non-existant.
-	}{
-		"all": {
-			file: "file1",
-			want: "abcd\n",
-		},
-
-		"nonexistent": {
-			file: "filexyz",
-		},
-
-		"dotdot-all": {
-			file: "subdir/name..dev",
-			want: "dotdot\n",
-		},
-
-		"dotdot-nonexistent": {
-			file: "subdir/404..dev",
-		},
-
-		// This test case ensures we do not return a log with diff for the
-		// specially crafted "git show HASH:..branch". IE a way to bypass
-		// sub-repo permissions.
-		"dotdot-diff": {
-			file: "..dev",
-		},
-
-		// 3 dots ... as a prefix when using git show will return an error like
-		// error: object b5462a7c880ce339ba3f93ac343706c0fa35babc is a tree, not a commit
-		// fatal: Invalid symmetric difference expression 269e2b9bda9a95ad4181a7a6eb2058645d9bad82:...dev
-		"dotdotdot": {
-			file: "...dev",
-		},
-	}
-
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
-		ResetClientMocks()
-	})
-
-	for name, test := range tests {
-		checker := authz.NewMockSubRepoPermissionChecker()
-		usePermissionsForFilePermissionsFunc(checker)
-		ctx = actor.WithActor(ctx, &actor.Actor{
-			UID: 1,
-		})
-		checkFn := func(t *testing.T, err error, data []byte) {
-			if test.want == "" {
-				if err == nil {
-					t.Fatal("err == nil")
-				}
-				if !errors.Is(err, os.ErrNotExist) {
-					t.Fatalf("got err %v, want os.IsNotExist", err)
-				}
-			} else {
-				if err != nil {
-					t.Fatal(err)
-				}
-				if string(data) != test.want {
-					t.Errorf("got %q, want %q", data, test.want)
-				}
-			}
-		}
-
-		t.Run(name+"-ReadFile", func(t *testing.T) {
-			client := NewTestClient(t).WithChecker(checker)
-			data, err := client.ReadFile(ctx, repo, commitID, test.file)
-			checkFn(t, err, data)
-		})
-		t.Run(name+"-ReadFile-with-sub-repo-permissions-no-op", func(t *testing.T) {
-			checker.EnabledFunc.SetDefaultHook(func() bool {
-				return true
-			})
-			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-				if content.Path == test.file {
-					return authz.Read, nil
-				}
-				return authz.None, nil
-			})
-			client := NewTestClient(t).WithChecker(checker)
-			data, err := client.ReadFile(ctx, repo, commitID, test.file)
-			checkFn(t, err, data)
-		})
-		t.Run(name+"-ReadFile-with-sub-repo-permissions-filters-file", func(t *testing.T) {
-			checker.EnabledFunc.SetDefaultHook(func() bool {
-				return true
-			})
-			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-				return authz.None, nil
-			})
-			client := NewTestClient(t).WithChecker(checker)
-			data, err := client.ReadFile(ctx, repo, commitID, test.file)
-			if err != os.ErrNotExist {
-				t.Errorf("unexpected error reading file: %s", err)
-			}
-			if string(data) != "" {
-				t.Errorf("unexpected data: %s", data)
-			}
-		})
-		t.Run(name+"-GetFileReader", func(t *testing.T) {
-			runNewFileReaderTest(ctx, t, repo, commitID, test.file, nil, checkFn)
-		})
-		t.Run(name+"-GetFileReader-with-sub-repo-permissions-noop", func(t *testing.T) {
-			checker.EnabledFunc.SetDefaultHook(func() bool {
-				return true
-			})
-			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-				if content.Path == test.file {
-					return authz.Read, nil
-				}
-				return authz.None, nil
-			})
-			runNewFileReaderTest(ctx, t, repo, commitID, test.file, checker, checkFn)
-		})
-		t.Run(name+"-GetFileReader-with-sub-repo-permissions-filters-file", func(t *testing.T) {
-			checker.EnabledFunc.SetDefaultHook(func() bool {
-				return true
-			})
-			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-				return authz.None, nil
-			})
-			client := NewTestClient(t).WithChecker(checker)
-			rc, err := client.NewFileReader(ctx, repo, commitID, test.file)
-			if err != os.ErrNotExist {
-				t.Fatalf("unexpected error: %s", err)
-			}
-			if rc != nil {
-				t.Fatal("expected reader to be nil")
-			}
-		})
-	}
-}
-
-func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, commitID api.CommitID, file string,
-	checker authz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte)) {
-	t.Helper()
-	rc, err := NewClient().NewFileReader(ctx, repo, commitID, file)
-	if err != nil {
-		checkFn(t, err, nil)
-		return
-	}
-	defer func() {
-		if err := rc.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-	data, err := io.ReadAll(rc)
-	checkFn(t, err, data)
-}
-
-func TestRepository_ListBranches(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
-		ResetClientMocks()
-	})
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-		"git checkout -b b0",
-		"git checkout -b b1",
-	}
-
-	wantBranches := []*gitdomain.Branch{{Name: "b0", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "b1", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "master", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}}
-
-	testBranches(t, gitCommands, wantBranches, BranchesOptions{})
-}
-
-func TestRepository_Branches_MergedInto(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
-		ResetClientMocks()
-	})
-
-	gitCommands := []string{
-		"git checkout -b b0",
-		"echo 123 > some_other_file",
-		"git add some_other_file",
-		"git commit --allow-empty -am foo",
-		"git commit --allow-empty -am foo",
-
-		"git checkout HEAD^ -b b1",
-		"git merge b0",
-
-		"git checkout --orphan b2",
-		"echo 234 > somefile",
-		"git add somefile",
-		"git commit --allow-empty -am foo",
-	}
-
-	gitBranches := map[string][]*gitdomain.Branch{
-		"6520a4539a4cb664537c712216a53d80dd79bbdc": { // b1
-			{Name: "b0", Head: "6520a4539a4cb664537c712216a53d80dd79bbdc"},
-			{Name: "b1", Head: "6520a4539a4cb664537c712216a53d80dd79bbdc"},
-		},
-		"c3c691fc0fb1844a53b62b179e2fa9fdaf875718": { // b2
-			{Name: "b2", Head: "c3c691fc0fb1844a53b62b179e2fa9fdaf875718"},
-		},
-	}
-
-	repo := MakeGitRepository(t, gitCommands...)
-	wantBranches := gitBranches
-	for branch, mergedInto := range wantBranches {
-		branches, err := NewClient().ListBranches(context.Background(), repo, BranchesOptions{MergedInto: branch})
-		require.Nil(t, err)
-		if diff := cmp.Diff(mergedInto, branches); diff != "" {
-			t.Fatalf("branch mismatch (-want +got):\n%s", diff)
-		}
-	}
-}
-
-func TestRepository_Branches_ContainsCommit(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
-		ResetClientMocks()
-	})
-
-	gitCommands := []string{
-		"git commit --allow-empty -m base",
-		"git commit --allow-empty -m master",
-		"git checkout HEAD^ -b branch2",
-		"git commit --allow-empty -m branch2",
-	}
-
-	// Pre-sorted branches
-	gitWantBranches := map[string][]*gitdomain.Branch{
-		"920c0e9d7b287b030ac9770fd7ba3ee9dc1760d9": {{Name: "branch2", Head: "920c0e9d7b287b030ac9770fd7ba3ee9dc1760d9"}},
-		"1224d334dfe08f4693968ea618ad63ae86ec16ca": {{Name: "master", Head: "1224d334dfe08f4693968ea618ad63ae86ec16ca"}},
-		"2816a72df28f699722156e545d038a5203b959de": {{Name: "branch2", Head: "920c0e9d7b287b030ac9770fd7ba3ee9dc1760d9"}, {Name: "master", Head: "1224d334dfe08f4693968ea618ad63ae86ec16ca"}},
-	}
-
-	repo := MakeGitRepository(t, gitCommands...)
-	commitToWantBranches := gitWantBranches
-	for commit, wantBranches := range commitToWantBranches {
-		branches, err := NewClient().ListBranches(context.Background(), repo, BranchesOptions{ContainsCommit: commit})
-		require.Nil(t, err)
-
-		sort.Sort(gitdomain.Branches(branches))
-
-		if diff := cmp.Diff(wantBranches, branches); diff != "" {
-			t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
-		}
-	}
-}
-
-func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
-		ResetClientMocks()
-	})
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo0",
-		"git branch old_work",
-		"git commit --allow-empty -m foo1",
-		"git commit --allow-empty -m foo2",
-		"git commit --allow-empty -m foo3",
-		"git commit --allow-empty -m foo4",
-		"git commit --allow-empty -m foo5",
-		"git checkout -b dev",
-		"git commit --allow-empty -m foo6",
-		"git commit --allow-empty -m foo7",
-		"git commit --allow-empty -m foo8",
-		"git checkout old_work",
-		"git commit --allow-empty -m foo9",
-	}
-	wantBranches := []*gitdomain.Branch{
-		{Counts: &gitdomain.BehindAhead{Behind: 5, Ahead: 1}, Name: "old_work", Head: "26692c614c59ddaef4b57926810aac7d5f0e94f0"},
-		{Counts: &gitdomain.BehindAhead{Behind: 0, Ahead: 3}, Name: "dev", Head: "6724953367f0cd9a7755bac46ee57f4ab0c1aad8"},
-		{Counts: &gitdomain.BehindAhead{Behind: 0, Ahead: 0}, Name: "master", Head: "8ea26e077a8fb9aa502c3fe2cfa3ce4e052d1a76"},
-	}
-
-	testBranches(t, gitCommands, wantBranches, BranchesOptions{BehindAheadBranch: "master"})
-}
-
-func TestRepository_Branches_IncludeCommit(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
-		ResetClientMocks()
-	})
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo0",
-		"git checkout -b b0",
-		"GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com GIT_COMMITTER_DATE=2006-01-02T15:04:06Z git commit --allow-empty -m foo1 --author='b <b@b.com>' --date 2006-01-02T15:04:06Z",
-	}
-	wantBranches := []*gitdomain.Branch{
-		{
-			Name: "b0", Head: "c4a53701494d1d788b1ceeb8bf32e90224962473",
-			Commit: &gitdomain.Commit{
-				ID:        "c4a53701494d1d788b1ceeb8bf32e90224962473",
-				Author:    gitdomain.Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-				Committer: &gitdomain.Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-				Message:   "foo1",
-				Parents:   []api.CommitID{"a3c1537db9797215208eec56f8e7c9c37f8358ca"},
-			},
-		},
-		{
-			Name: "master", Head: "a3c1537db9797215208eec56f8e7c9c37f8358ca",
-			Commit: &gitdomain.Commit{
-				ID:        "a3c1537db9797215208eec56f8e7c9c37f8358ca",
-				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				Message:   "foo0",
-				Parents:   nil,
-			},
-		},
-	}
-
-	testBranches(t, gitCommands, wantBranches, BranchesOptions{IncludeCommit: true})
-}
-
-func testBranches(t *testing.T, gitCommands []string, wantBranches []*gitdomain.Branch, options BranchesOptions) {
-	t.Helper()
-
-	repo := MakeGitRepository(t, gitCommands...)
-	gotBranches, err := NewClient().ListBranches(context.Background(), repo, options)
-	require.Nil(t, err)
-
-	sort.Sort(gitdomain.Branches(wantBranches))
-	sort.Sort(gitdomain.Branches(gotBranches))
-
-	if diff := cmp.Diff(wantBranches, gotBranches); diff != "" {
-		t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
-	}
-}
-
 func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker) {
 	m.FilePermissionsFuncFunc.SetDefaultHook(func(ctx context.Context, userID int32, repo api.RepoName) (authz.FilePermissionFunc, error) {
 		return func(path string) (authz.Perms, error) {
@@ -2865,381 +1573,374 @@ func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker)
 	})
 }
 
-// testGitBlameOutput is produced by running
-//
-//	git blame -w --porcelain release.sh
-//
-// `sourcegraph/src-cli`
-const testGitBlameOutput = `3f61310114082d6179c23f75950b88d1842fe2de 1 1 4
-author Thorsten Ball
-author-mail <mrnugget@gmail.com>
-author-time 1592827635
-author-tz +0200
-committer GitHub
-committer-mail <noreply@github.com>
-committer-time 1592827635
-committer-tz +0200
-summary Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)
-previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
-filename release.sh
-	#!/usr/bin/env bash
-3f61310114082d6179c23f75950b88d1842fe2de 2 2
-
-3f61310114082d6179c23f75950b88d1842fe2de 3 3
-	set -euf -o pipefail
-3f61310114082d6179c23f75950b88d1842fe2de 4 4
-
-fbb98e0b7ff0752798463d9f49d922858a4188f6 5 5 10
-author Adam Harvey
-author-mail <aharvey@sourcegraph.com>
-author-time 1602630694
-author-tz -0700
-committer GitHub
-committer-mail <noreply@github.com>
-committer-time 1602630694
-committer-tz -0700
-summary release: add a prompt about DEVELOPMENT.md (#349)
-previous 18f59760f4260518c29f0f07056245ed5d1d0f08 release.sh
-filename release.sh
-	read -p 'Have you read DEVELOPMENT.md? [y/N] ' -n 1 -r
-fbb98e0b7ff0752798463d9f49d922858a4188f6 6 6
-	echo
-fbb98e0b7ff0752798463d9f49d922858a4188f6 7 7
-	case "$REPLY" in
-fbb98e0b7ff0752798463d9f49d922858a4188f6 8 8
-	  Y | y) ;;
-fbb98e0b7ff0752798463d9f49d922858a4188f6 9 9
-	  *)
-fbb98e0b7ff0752798463d9f49d922858a4188f6 10 10
-	    echo 'Please read the Releasing section of DEVELOPMENT.md before running this script.'
-fbb98e0b7ff0752798463d9f49d922858a4188f6 11 11
-	    exit 1
-fbb98e0b7ff0752798463d9f49d922858a4188f6 12 12
-	    ;;
-fbb98e0b7ff0752798463d9f49d922858a4188f6 13 13
-	esac
-fbb98e0b7ff0752798463d9f49d922858a4188f6 14 14
-
-8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498 15 15 1
-author Adam Harvey
-author-mail <adam@adamharvey.name>
-author-time 1660860583
-author-tz -0700
-committer GitHub
-committer-mail <noreply@github.com>
-committer-time 1660860583
-committer-tz +0000
-summary release.sh: allow -rc.X suffixes (#829)
-previous e6e03e850770dd0ba745f0fa4b23127e9d72ad30 release.sh
-filename release.sh
-	if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$'; then
-3f61310114082d6179c23f75950b88d1842fe2de 6 16 4
-	  echo "\$VERSION is not in MAJOR.MINOR.PATCH format"
-3f61310114082d6179c23f75950b88d1842fe2de 7 17
-	  exit 1
-3f61310114082d6179c23f75950b88d1842fe2de 8 18
-	fi
-3f61310114082d6179c23f75950b88d1842fe2de 9 19
-
-67b7b725a7ff913da520b997d71c840230351e30 10 20 1
-author Thorsten Ball
-author-mail <mrnugget@gmail.com>
-author-time 1600334460
-author-tz +0200
-committer Thorsten Ball
-committer-mail <mrnugget@gmail.com>
-committer-time 1600334460
-committer-tz +0200
-summary Fix goreleaser GitHub action setup and release script
-previous 6e931cc9745502184ce32d48b01f9a8706a4dfe8 release.sh
-filename release.sh
-	# Create a new tag and push it, this will trigger the goreleaser workflow in .github/workflows/goreleaser.yml
-3f61310114082d6179c23f75950b88d1842fe2de 10 21 1
-	git tag "${VERSION}" -a -m "release v${VERSION}"
-67b7b725a7ff913da520b997d71c840230351e30 12 22 2
-	# We use --atomic so that we push the tag and the commit if the commit was or wasn't pushed before
-67b7b725a7ff913da520b997d71c840230351e30 13 23
-	git push --atomic origin main "${VERSION}"
-`
-
-var testGitBlameOutputIncremental = `8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498 15 15 1
-author Adam Harvey
-author-mail <adam@adamharvey.name>
-author-time 1660860583
-author-tz -0700
-committer GitHub
-committer-mail <noreply@github.com>
-committer-time 1660860583
-committer-tz +0000
-summary release.sh: allow -rc.X suffixes (#829)
-previous e6e03e850770dd0ba745f0fa4b23127e9d72ad30 release.sh
-filename release.sh
-fbb98e0b7ff0752798463d9f49d922858a4188f6 5 5 10
-author Adam Harvey
-author-mail <aharvey@sourcegraph.com>
-author-time 1602630694
-author-tz -0700
-committer GitHub
-committer-mail <noreply@github.com>
-committer-time 1602630694
-committer-tz -0700
-summary release: add a prompt about DEVELOPMENT.md (#349)
-previous 18f59760f4260518c29f0f07056245ed5d1d0f08 release.sh
-filename release.sh
-67b7b725a7ff913da520b997d71c840230351e30 10 20 1
-author Thorsten Ball
-author-mail <mrnugget@gmail.com>
-author-time 1600334460
-author-tz +0200
-committer Thorsten Ball
-committer-mail <mrnugget@gmail.com>
-committer-time 1600334460
-committer-tz +0200
-summary Fix goreleaser GitHub action setup and release script
-previous 6e931cc9745502184ce32d48b01f9a8706a4dfe8 release.sh
-filename release.sh
-67b7b725a7ff913da520b997d71c840230351e30 12 22 2
-previous 6e931cc9745502184ce32d48b01f9a8706a4dfe8 release.sh
-filename release.sh
-3f61310114082d6179c23f75950b88d1842fe2de 1 1 4
-author Thorsten Ball
-author-mail <mrnugget@gmail.com>
-author-time 1592827635
-author-tz +0200
-committer GitHub
-committer-mail <noreply@github.com>
-committer-time 1592827635
-committer-tz +0200
-summary Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)
-previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
-filename release.sh
-3f61310114082d6179c23f75950b88d1842fe2de 6 16 4
-previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
-filename release.sh
-3f61310114082d6179c23f75950b88d1842fe2de 10 21 1
-previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
-filename release.sh
-`
-
-// This test-data includes the boundary keyword, which is not present in the previous one.
-var testGitBlameOutputIncremental2 = `bbca6551549492486ca1b0f8dee45553dd6aa6d7 16 16 1
-author French Ben
-author-mail <frenchben@docker.com>
-author-time 1517407262
-author-tz +0100
-committer French Ben
-committer-mail <frenchben@docker.com>
-committer-time 1517407262
-committer-tz +0100
-summary Update error output to be clean
-previous b7773ae218740a7be65057fc60b366a49b538a44 format.go
-filename format.go
-bbca6551549492486ca1b0f8dee45553dd6aa6d7 25 25 2
-previous b7773ae218740a7be65057fc60b366a49b538a44 format.go
-filename format.go
-2c87fda17de1def6ea288141b8e7600b888e535b 15 15 1
-author David Tolnay
-author-mail <dtolnay@gmail.com>
-author-time 1478451741
-author-tz -0800
-committer David Tolnay
-committer-mail <dtolnay@gmail.com>
-committer-time 1478451741
-committer-tz -0800
-summary Singular message for a single error
-previous 8c5f0ad9360406a3807ce7de6bc73269a91a6e51 format.go
-filename format.go
-2c87fda17de1def6ea288141b8e7600b888e535b 17 17 2
-previous 8c5f0ad9360406a3807ce7de6bc73269a91a6e51 format.go
-filename format.go
-31fee45604949934710ada68f0b307c4726fb4e8 1 1 14
-author Mitchell Hashimoto
-author-mail <mitchell.hashimoto@gmail.com>
-author-time 1418673320
-author-tz -0800
-committer Mitchell Hashimoto
-committer-mail <mitchell.hashimoto@gmail.com>
-committer-time 1418673320
-committer-tz -0800
-summary Initial commit
-boundary
-filename format.go
-31fee45604949934710ada68f0b307c4726fb4e8 15 19 6
-filename format.go
-31fee45604949934710ada68f0b307c4726fb4e8 23 27 1
-filename format.go
-`
-
-var testGitBlameOutputHunks = []*Hunk{
-	{
-		StartLine: 1, EndLine: 5, StartByte: 0, EndByte: 41,
-		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
-		},
-		Message:  "Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)",
-		Filename: "release.sh",
-	},
-	{
-		StartLine: 5, EndLine: 15, StartByte: 41, EndByte: 249,
-		CommitID: "fbb98e0b7ff0752798463d9f49d922858a4188f6",
-		Author: gitdomain.Signature{
-			Name:  "Adam Harvey",
-			Email: "aharvey@sourcegraph.com",
-			Date:  MustParseTime(time.RFC3339, "2020-10-13T23:11:34Z"),
-		},
-		Message:  "release: add a prompt about DEVELOPMENT.md (#349)",
-		Filename: "release.sh",
-	},
-	{
-		StartLine: 15, EndLine: 16, StartByte: 249, EndByte: 328,
-		CommitID: "8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498",
-		Author: gitdomain.Signature{
-			Name:  "Adam Harvey",
-			Email: "adam@adamharvey.name",
-			Date:  MustParseTime(time.RFC3339, "2022-08-18T22:09:43Z"),
-		},
-		Message:  "release.sh: allow -rc.X suffixes (#829)",
-		Filename: "release.sh",
-	},
-	{
-		StartLine: 16, EndLine: 20, StartByte: 328, EndByte: 394,
-		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
-		},
-		Message:  "Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)",
-		Filename: "release.sh",
-	},
-	{
-		StartLine: 20, EndLine: 21, StartByte: 394, EndByte: 504,
-		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-09-17T09:21:00Z"),
-		},
-		Message:  "Fix goreleaser GitHub action setup and release script",
-		Filename: "release.sh",
-	},
-	{
-		StartLine: 21, EndLine: 22, StartByte: 504, EndByte: 553,
-		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
-		},
-		Message:  "Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)",
-		Filename: "release.sh",
-	},
-	{
-		StartLine: 22, EndLine: 24, StartByte: 553, EndByte: 695,
-		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-09-17T09:21:00Z"),
-		},
-		Message:  "Fix goreleaser GitHub action setup and release script",
-		Filename: "release.sh",
-	},
-}
-
-func TestParseGitBlameOutput(t *testing.T) {
-	hunks, err := parseGitBlameOutput(testGitBlameOutput)
-	if err != nil {
-		t.Fatalf("parseGitBlameOutput failed: %s", err)
-	}
-
-	if d := cmp.Diff(testGitBlameOutputHunks, hunks); d != "" {
-		t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
-	}
-}
-
-func TestStreamBlameFile(t *testing.T) {
-	t.Run("NOK unauthorized", func(t *testing.T) {
-		ctx := actor.WithActor(context.Background(), &actor.Actor{
-			UID: 1,
+func TestClient_StreamBlameFile(t *testing.T) {
+	t.Run("firstChunk memoization", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				bc := NewMockGitserverService_BlameClient()
+				bc.RecvFunc.PushReturn(&proto.BlameResponse{Hunk: &proto.BlameHunk{Commit: "deadbeef"}}, nil)
+				bc.RecvFunc.PushReturn(&proto.BlameResponse{Hunk: &proto.BlameHunk{Commit: "deadbeef2"}}, nil)
+				bc.RecvFunc.PushReturn(nil, io.EOF)
+				c.BlameFunc.SetDefaultReturn(bc, nil)
+				return c
+			}
 		})
-		checker := authz.NewMockSubRepoPermissionChecker()
-		checker.EnabledFunc.SetDefaultHook(func() bool {
-			return true
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		hr, err := c.StreamBlameFile(context.Background(), "repo", "file", &BlameOptions{})
+		require.NoError(t, err)
+
+		// This chunk comes from the memoized first message.
+		h, err := hr.Read()
+		require.NoError(t, err)
+		require.Equal(t, h.CommitID, api.CommitID("deadbeef"))
+
+		// This chunk is returned from Recv inside the hunk reader.
+		h, err = hr.Read()
+		require.NoError(t, err)
+		require.Equal(t, h.CommitID, api.CommitID("deadbeef2"))
+
+		// Done.
+		_, err = hr.Read()
+		require.Error(t, err)
+		require.Equal(t, io.EOF, err)
+
+		require.NoError(t, hr.Close())
+	})
+	t.Run("permission errors are returned early", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				bc := NewMockGitserverService_BlameClient()
+				bc.RecvFunc.PushReturn(nil, status.New(codes.PermissionDenied, "bad actor").Err())
+				c.BlameFunc.SetDefaultReturn(bc, nil)
+				return c
+			}
 		})
-		// User doesn't have access to this file
-		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-			return authz.None, nil
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.StreamBlameFile(context.Background(), "repo", "file", &BlameOptions{})
+		require.Error(t, err)
+		require.True(t, os.IsNotExist(err))
+	})
+	t.Run("revision not found errors are returned early", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				bc := NewMockGitserverService_BlameClient()
+				s, err := status.New(codes.NotFound, "commit not found").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
+				require.NoError(t, err)
+				bc.RecvFunc.PushReturn(nil, s.Err())
+				c.BlameFunc.SetDefaultReturn(bc, nil)
+				return c
+			}
 		})
-		hr, err := streamBlameFileCmd(ctx, checker, "foobar", "README.md", nil, func(_ []string) GitCommand { return nil })
-		if hr != nil {
-			t.Fatalf("expected nil HunkReader")
-		}
-		if err == nil {
-			t.Fatalf("expected an error to be returned")
-		}
-		if !errcode.IsUnauthorized(err) {
-			t.Fatalf("expected err to be an authorization error, got %v", err)
-		}
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.StreamBlameFile(context.Background(), "repo", "file", &BlameOptions{})
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+	t.Run("file not found errors are returned early", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				bc := NewMockGitserverService_BlameClient()
+				s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{Repo: "repo", Commit: "deadbeef", Path: "file"})
+				require.NoError(t, err)
+				bc.RecvFunc.PushReturn(nil, s.Err())
+				c.BlameFunc.SetDefaultReturn(bc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.StreamBlameFile(context.Background(), "repo", "file", &BlameOptions{})
+		require.Error(t, err)
+		require.True(t, os.IsNotExist(err))
+	})
+	t.Run("empty blame doesn't fail", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				bc := NewMockGitserverService_BlameClient()
+				bc.RecvFunc.PushReturn(nil, io.EOF)
+				c.BlameFunc.SetDefaultReturn(bc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		r, err := c.StreamBlameFile(context.Background(), "repo", "file", &BlameOptions{})
+		require.NoError(t, err)
+		h, err := r.Read()
+		require.Equal(t, io.EOF, err)
+		require.Nil(t, h)
+		require.NoError(t, r.Close())
 	})
 }
 
-func TestBlameHunkReader(t *testing.T) {
-	t.Run("OK matching hunks", func(t *testing.T) {
-		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
-		reader := newBlameHunkReader(rc)
-		defer reader.Close()
-
-		hunks := []*Hunk{}
-		for {
-			hunk, err := reader.Read()
-			if errors.Is(err, io.EOF) {
-				break
-			} else if err != nil {
-				t.Fatalf("blameHunkReader.Read failed: %s", err)
+func TestClient_GetDefaultBranch(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.DefaultBranchFunc.SetDefaultReturn(&proto.DefaultBranchResponse{RefName: "refs/heads/master", Commit: "deadbeef"}, nil)
+				return c
 			}
-			hunks = append(hunks, hunk)
-		}
+		})
 
-		sortFn := func(x []*Hunk) func(i, j int) bool {
-			return func(i, j int) bool {
-				return x[i].Author.Date.After(x[j].Author.Date)
-			}
-		}
+		c := NewTestClient(t).WithClientSource(source)
 
-		// We're not giving back bytes, as the output of --incremental only gives back annotations.
-		expectedHunks := make([]*Hunk, 0, len(testGitBlameOutputHunks))
-		for _, h := range testGitBlameOutputHunks {
-			dup := *h
-			dup.EndByte = 0
-			dup.StartByte = 0
-			expectedHunks = append(expectedHunks, &dup)
-		}
-
-		// Sort expected hunks by the most recent first, as --incremental does.
-		sort.SliceStable(expectedHunks, sortFn(expectedHunks))
-
-		if d := cmp.Diff(expectedHunks, hunks); d != "" {
-			t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
-		}
+		refName, sha, err := c.GetDefaultBranch(context.Background(), "repo", false)
+		require.NoError(t, err)
+		require.Equal(t, "refs/heads/master", refName)
+		require.Equal(t, api.CommitID("deadbeef"), sha)
 	})
-
-	t.Run("OK parsing hunks", func(t *testing.T) {
-		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental2))
-		reader := newBlameHunkReader(rc)
-		defer reader.Close()
-
-		for {
-			_, err := reader.Read()
-			if errors.Is(err, io.EOF) {
-				break
-			} else if err != nil {
-				t.Fatalf("blameHunkReader.Read failed: %s", err)
+	t.Run("returns empty for common errors", func(t *testing.T) {
+		calls := 0
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				if calls == 0 {
+					s, err := status.New(codes.NotFound, "bad revision").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
+					require.NoError(t, err)
+					c.DefaultBranchFunc.PushReturn(nil, s.Err())
+					calls++
+					return c
+				}
+				s, err := status.New(codes.NotFound, "repo cloning").WithDetails(&proto.RepoNotFoundPayload{Repo: "repo", CloneInProgress: true})
+				require.NoError(t, err)
+				c.DefaultBranchFunc.PushReturn(nil, s.Err())
+				return c
 			}
-		}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		// First request fails with clone error
+		refName, sha, err := c.GetDefaultBranch(context.Background(), "repo", false)
+		require.NoError(t, err)
+		require.Equal(t, "", refName)
+		require.Equal(t, api.CommitID(""), sha)
+		// First request fails with bad rev error
+		refName, sha, err = c.GetDefaultBranch(context.Background(), "repo", false)
+		require.NoError(t, err)
+		require.Equal(t, "", refName)
+		require.Equal(t, api.CommitID(""), sha)
+	})
+}
+
+func TestClient_MergeBase(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.MergeBaseFunc.SetDefaultReturn(&proto.MergeBaseResponse{MergeBaseCommitSha: "deadbeef"}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		sha, err := c.MergeBase(context.Background(), "repo", "master", "b2")
+		require.NoError(t, err)
+		require.Equal(t, api.CommitID("deadbeef"), sha)
+	})
+	t.Run("returns empty for empty merge base", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.MergeBaseFunc.SetDefaultReturn(&proto.MergeBaseResponse{MergeBaseCommitSha: ""}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		sha, err := c.MergeBase(context.Background(), "repo", "master", "b2")
+		require.NoError(t, err)
+		require.Equal(t, api.CommitID(""), sha)
+	})
+	t.Run("revision not found", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s, err := status.New(codes.NotFound, "bad revision").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
+				require.NoError(t, err)
+				c.MergeBaseFunc.SetDefaultReturn(nil, s.Err())
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.MergeBase(context.Background(), "repo", "master", "b2")
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+}
+
+func TestClient_NewFileReader(t *testing.T) {
+	t.Run("firstChunk memoization", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_ReadFileClient()
+				rfc.RecvFunc.PushReturn(&proto.ReadFileResponse{Data: []byte("part1\n")}, nil)
+				rfc.RecvFunc.PushReturn(&proto.ReadFileResponse{Data: []byte("part2\n")}, nil)
+				rfc.RecvFunc.PushReturn(nil, io.EOF)
+				c.ReadFileFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		r, err := c.NewFileReader(context.Background(), "repo", "deadbeef", "file")
+		require.NoError(t, err)
+
+		content, err := io.ReadAll(r)
+		require.NoError(t, err)
+		require.NoError(t, r.Close())
+		require.Equal(t, "part1\npart2\n", string(content))
+	})
+	t.Run("firstChunk error memoization", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_ReadFileClient()
+				rfc.RecvFunc.PushReturn(nil, io.EOF)
+				c.ReadFileFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		r, err := c.NewFileReader(context.Background(), "repo", "deadbeef", "file")
+		require.NoError(t, err)
+
+		content, err := io.ReadAll(r)
+		require.NoError(t, err)
+		require.NoError(t, r.Close())
+		require.Equal(t, "", string(content))
+	})
+	t.Run("permission errors are returned early", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_ReadFileClient()
+				rfc.RecvFunc.PushReturn(nil, status.New(codes.PermissionDenied, "bad actor").Err())
+				c.ReadFileFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.NewFileReader(context.Background(), "repo", "deadbeef", "file")
+		require.Error(t, err)
+		require.True(t, os.IsNotExist(err))
+	})
+	t.Run("file not found errors are returned early", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_ReadFileClient()
+				s, err := status.New(codes.NotFound, "bad actor").WithDetails(&proto.FileNotFoundPayload{})
+				require.NoError(t, err)
+				rfc.RecvFunc.PushReturn(nil, s.Err())
+				c.ReadFileFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.NewFileReader(context.Background(), "repo", "deadbeef", "file")
+		require.Error(t, err)
+		require.True(t, os.IsNotExist(err))
+	})
+	t.Run("revision not found errors are returned early", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_ReadFileClient()
+				s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{})
+				require.NoError(t, err)
+				rfc.RecvFunc.PushReturn(nil, s.Err())
+				c.ReadFileFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.NewFileReader(context.Background(), "repo", "deadbeef", "file")
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+	t.Run("empty file", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_ReadFileClient()
+				rfc.RecvFunc.PushReturn(nil, io.EOF)
+				c.ReadFileFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		r, err := c.NewFileReader(context.Background(), "repo", "deadbeef", "file")
+		require.NoError(t, err)
+		content, err := io.ReadAll(r)
+		require.NoError(t, err)
+		require.Empty(t, content)
+		require.NoError(t, r.Close())
+	})
+}
+
+func TestClient_GetCommit(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.GetCommitFunc.SetDefaultReturn(&proto.GetCommitResponse{Commit: &proto.GitCommit{Oid: "deadbeef"}}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		commit, err := c.GetCommit(context.Background(), "repo", "deadbeef")
+		require.NoError(t, err)
+		require.Equal(t, api.CommitID("deadbeef"), commit.ID)
+	})
+	t.Run("returns correct error for not found", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s, err := status.New(codes.NotFound, "bad revision").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
+				require.NoError(t, err)
+				c.GetCommitFunc.PushReturn(nil, s.Err())
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.GetCommit(context.Background(), "repo", "deadbeef")
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 	})
 }
 
@@ -3276,7 +1977,7 @@ func Test_CommitLog(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			repo := MakeGitRepository(t, test.extraGitCommands...)
-			logResults, err := NewClient().CommitLog(context.Background(), repo, time.Time{})
+			logResults, err := NewClient("test").CommitLog(context.Background(), repo, time.Time{})
 			if err != nil {
 				require.ErrorContains(t, err, test.wantErr)
 			}
@@ -3315,5 +2016,266 @@ func TestErrorMessageTruncateOutput(t *testing.T) {
 		if diff := cmp.Diff(want, message); diff != "" {
 			t.Fatalf("wrong message. diff: %s", diff)
 		}
+	})
+}
+
+func TestClient_ArchiveReader(t *testing.T) {
+	t.Run("firstChunk memoization", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_ArchiveClient()
+				rfc.RecvFunc.PushReturn(&proto.ArchiveResponse{Data: []byte("part1\n")}, nil)
+				rfc.RecvFunc.PushReturn(&proto.ArchiveResponse{Data: []byte("part2\n")}, nil)
+				rfc.RecvFunc.PushReturn(nil, io.EOF)
+				c.ArchiveFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		r, err := c.ArchiveReader(context.Background(), "repo", ArchiveOptions{Treeish: "deadbeef", Format: ArchiveFormatTar, Paths: []string{"file"}})
+		require.NoError(t, err)
+
+		content, err := io.ReadAll(r)
+		require.NoError(t, err)
+		require.NoError(t, r.Close())
+		require.Equal(t, "part1\npart2\n", string(content))
+	})
+	t.Run("firstChunk error memoization", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_ArchiveClient()
+				rfc.RecvFunc.PushReturn(nil, io.EOF)
+				c.ArchiveFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		r, err := c.ArchiveReader(context.Background(), "repo", ArchiveOptions{Treeish: "deadbeef", Format: ArchiveFormatTar, Paths: []string{"file"}})
+		require.NoError(t, err)
+
+		content, err := io.ReadAll(r)
+		require.NoError(t, err)
+		require.NoError(t, r.Close())
+		require.Equal(t, "", string(content))
+	})
+	t.Run("file not found errors are returned early", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_ArchiveClient()
+				s, err := status.New(codes.NotFound, "not found").WithDetails(&proto.FileNotFoundPayload{})
+				require.NoError(t, err)
+				rfc.RecvFunc.PushReturn(nil, s.Err())
+				c.ArchiveFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.ArchiveReader(context.Background(), "repo", ArchiveOptions{Treeish: "deadbeef", Format: ArchiveFormatTar, Paths: []string{"file"}})
+		require.Error(t, err)
+		require.True(t, os.IsNotExist(err))
+	})
+	t.Run("revision not found errors are returned early", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_ArchiveClient()
+				s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{})
+				require.NoError(t, err)
+				rfc.RecvFunc.PushReturn(nil, s.Err())
+				c.ArchiveFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.ArchiveReader(context.Background(), "repo", ArchiveOptions{Treeish: "deadbeef", Format: ArchiveFormatTar, Paths: []string{"file"}})
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+	t.Run("empty archive", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_ArchiveClient()
+				rfc.RecvFunc.PushReturn(nil, io.EOF)
+				c.ArchiveFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		r, err := c.ArchiveReader(context.Background(), "repo", ArchiveOptions{Treeish: "deadbeef", Format: ArchiveFormatTar, Paths: []string{"file"}})
+		require.NoError(t, err)
+		content, err := io.ReadAll(r)
+		require.NoError(t, err)
+		require.Empty(t, content)
+		require.NoError(t, r.Close())
+	})
+}
+
+func TestClient_ResolveRevision(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.ResolveRevisionFunc.SetDefaultReturn(&proto.ResolveRevisionResponse{CommitSha: "deadbeef"}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		sha, err := c.ResolveRevision(context.Background(), "repo", "HEAD", ResolveRevisionOptions{})
+		require.NoError(t, err)
+		require.Equal(t, api.CommitID("deadbeef"), sha)
+	})
+	t.Run("returns common errors correctly", func(t *testing.T) {
+		calls := 0
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				if calls == 0 {
+					s, err := status.New(codes.NotFound, "bad revision").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
+					require.NoError(t, err)
+					c.ResolveRevisionFunc.PushReturn(nil, s.Err())
+					calls++
+					return c
+				}
+				s, err := status.New(codes.NotFound, "repo cloning").WithDetails(&proto.RepoNotFoundPayload{Repo: "repo", CloneInProgress: true})
+				require.NoError(t, err)
+				c.ResolveRevisionFunc.PushReturn(nil, s.Err())
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		// First request fails with revision error
+		_, err := c.ResolveRevision(context.Background(), "repo", "HEAD", ResolveRevisionOptions{})
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		// First request fails with clone error
+		_, err = c.ResolveRevision(context.Background(), "repo", "HEAD", ResolveRevisionOptions{})
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
+	})
+}
+
+func TestClient_RevAtTime(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.RevAtTimeFunc.SetDefaultReturn(&proto.RevAtTimeResponse{CommitSha: "deadbeef"}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		sha, found, err := c.RevAtTime(context.Background(), "repo", "HEAD", time.Now())
+		require.NoError(t, err)
+		require.True(t, found)
+		require.Equal(t, api.CommitID("deadbeef"), sha)
+	})
+
+	t.Run("correctly returns not found on empty sha", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.RevAtTimeFunc.SetDefaultReturn(&proto.RevAtTimeResponse{CommitSha: ""}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, found, err := c.RevAtTime(context.Background(), "repo", "HEAD", time.Now())
+		require.NoError(t, err)
+		require.False(t, found)
+	})
+
+	t.Run("returns common errors correctly", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+					Repo: "repo",
+					Spec: "HEAD",
+				})
+				require.NoError(t, err)
+				c.RevAtTimeFunc.PushReturn(nil, s.Err())
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, _, err := c.RevAtTime(context.Background(), "repo", "HEAD", time.Now())
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+}
+
+func TestClient_ListRefs(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		now := time.Now().UTC()
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				ss := NewMockGitserverService_ListRefsClient()
+				ss.RecvFunc.SetDefaultReturn(nil, io.EOF)
+				ss.RecvFunc.PushReturn(&proto.ListRefsResponse{Refs: []*proto.GitRef{
+					{
+						RefName:      "refs/heads/master",
+						TargetCommit: "deadbeef",
+						CreatedAt:    timestamppb.New(now),
+					},
+				}}, nil)
+				c.ListRefsFunc.SetDefaultReturn(ss, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		refs, err := c.ListRefs(context.Background(), "repo", ListRefsOpts{})
+		require.NoError(t, err)
+		require.Equal(t, []gitdomain.Ref{
+			{
+				Name:        "refs/heads/master",
+				CommitID:    "deadbeef",
+				CreatedDate: now,
+			},
+		}, refs)
+	})
+	t.Run("returns well known error types", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s, err := status.New(codes.NotFound, "repo cloning").WithDetails(&proto.RepoNotFoundPayload{Repo: "repo", CloneInProgress: true})
+				require.NoError(t, err)
+				c.ListRefsFunc.PushReturn(nil, s.Err())
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		// Should fail with clone error
+		_, err := c.ListRefs(context.Background(), "repo", ListRefsOpts{})
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
 	})
 }

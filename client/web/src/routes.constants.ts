@@ -24,9 +24,6 @@ export enum PageRoutes {
     Teams = '/teams/*',
     RequestAccess = '/request-access/*',
     GetCody = '/get-cody',
-}
-
-export enum EnterprisePageRoutes {
     BatchChanges = '/batch-changes/*',
     CodeMonitoring = '/code-monitoring/*',
     Insights = '/insights/*',
@@ -41,7 +38,20 @@ export enum EnterprisePageRoutes {
     SearchNotebook = '/search/notebook',
     CodySearch = '/search/cody',
     Cody = '/cody',
+    CodyChat = '/cody/chat',
+    CodyManagement = '/cody/manage',
+    CodySubscription = '/cody/subscription',
     Own = '/own',
-    AppAuthCallback = '/app/auth/callback',
-    AppSetup = '/app-setup',
+}
+
+export enum CommunityPageRoutes {
+    Kubernetes = '/kubernetes',
+    Stackstorm = '/stackstorm',
+    Temporal = '/temporal',
+    O3de = '/o3de',
+    ChakraUI = '/chakraui',
+    Stanford = '/stanford',
+    Cncf = '/cncf',
+    Julia = '/julia',
+    Backstage = '/backstage',
 }

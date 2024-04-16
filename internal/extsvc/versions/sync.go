@@ -6,12 +6,13 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -36,7 +37,7 @@ func (j *syncingJob) Config() []env.Config {
 }
 
 func (j *syncingJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		// If we're on sourcegraph.com we don't want to run this
 		return nil, nil
 	}
@@ -50,7 +51,7 @@ func (j *syncingJob) Routines(_ context.Context, observationCtx *observation.Con
 	sourcerCF := httpcli.NewExternalClientFactory(
 		httpcli.NewLoggingMiddleware(sourcerLogger),
 	)
-	sourcer := repos.NewSourcer(sourcerLogger, db, sourcerCF)
+	sourcer := repos.NewSourcer(sourcerLogger, db, sourcerCF, gitserver.NewClient("extsvc.version-syncer"))
 
 	store := db.ExternalServices()
 	handler := goroutine.HandlerFunc(func(ctx context.Context) error {

@@ -267,8 +267,9 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 
 		p := newSudoProvider(
 			SudoProviderOp{
-				BaseURL:   mustURL(t, "https://gitlab.com"),
-				SudoToken: "admin_token",
+				BaseURL:                     mustURL(t, "https://gitlab.com"),
+				SudoToken:                   "admin_token",
+				SyncInternalRepoPermissions: true,
 			},
 			&mockDoer{
 				do: func(r *http.Request) (*http.Response, error) {
@@ -276,7 +277,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 					if visibility != "private" && visibility != "internal" {
 						return nil, errors.Errorf("URL visibility: want private or internal, got %s", visibility)
 					}
-					want := fmt.Sprintf("https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=%s", visibility)
+					want := fmt.Sprintf("https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&simple=true&visibility=%s", visibility)
 					if r.URL.String() != want {
 						return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
 					}
@@ -349,7 +350,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 					if visibility != "private" && visibility != "internal" {
 						return nil, errors.Errorf("URL visibility: want private or internal, got %s", visibility)
 					}
-					want := fmt.Sprintf("https://gitlab.com/api/v4/projects?per_page=100&visibility=%s", visibility)
+					want := fmt.Sprintf("https://gitlab.com/api/v4/projects?per_page=100&simple=true&visibility=%s", visibility)
 					if r.URL.String() != want {
 						return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
 					}
@@ -380,23 +381,40 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 		)
 
 		accountData := json.RawMessage(`{"id": 999}`)
-		repoIDs, err := p.FetchUserPerms(ctx,
-			&extsvc.Account{
-				AccountSpec: extsvc.AccountSpec{
-					ServiceType: "gitlab",
-					ServiceID:   "https://gitlab.com/",
-				},
-				AccountData: extsvc.AccountData{
-					Data: extsvc.NewUnencryptedData(accountData),
-				},
+		acct := &extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "gitlab",
+				ServiceID:   "https://gitlab.com/",
 			},
+			AccountData: extsvc.AccountData{
+				Data: extsvc.NewUnencryptedData(accountData),
+			},
+		}
+		repoIDs, err := p.FetchUserPerms(ctx,
+			acct,
 			authz.FetchPermsOptions{},
 		)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		expRepoIDs := []extsvc.RepoID{"1", "2", "3"}
+		expRepoIDs := []extsvc.RepoID{"1", "2"}
+		if diff := cmp.Diff(expRepoIDs, repoIDs.Exacts); diff != "" {
+			t.Fatal(diff)
+		}
+
+		// Now sync internal repositories as well
+		p.syncInternalRepoPermissions = true
+
+		repoIDs, err = p.FetchUserPerms(ctx,
+			acct,
+			authz.FetchPermsOptions{},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expRepoIDs = []extsvc.RepoID{"1", "2", "3"}
 		if diff := cmp.Diff(expRepoIDs, repoIDs.Exacts); diff != "" {
 			t.Fatal(diff)
 		}

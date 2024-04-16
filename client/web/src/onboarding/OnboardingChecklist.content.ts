@@ -18,7 +18,7 @@ export const content = [
         isComplete: false,
         title: 'Set up SMTP',
         description: 'Must be set in order for Sourcegraph to send emails.',
-        link: 'https://docs.sourcegraph.com/admin/config/email',
+        link: 'https://sourcegraph.com/docs/admin/config/email',
     },
     {
         id: 'externalServices',
@@ -32,6 +32,6 @@ export const content = [
         isComplete: false,
         title: 'Set up user authentication',
         description: 'We recommend that enterprise instances use SSO or SAML to authenticate users.',
-        link: 'https://docs.sourcegraph.com/admin/config/authorization_and_authentication',
+        link: 'https://sourcegraph.com/docs/admin/config/authorization_and_authentication',
     },
 ]

@@ -3,21 +3,21 @@ package symbol
 import (
 	"context"
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
+	"sync"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
+	"github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/search/zoektquery"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,7 +28,7 @@ const DefaultSymbolLimit = 100
 // NOTE: this lives inside a syncx.OnceValue because search.Indexed depends on
 // conf.Get, and running conf.Get() at init time can cause a deadlock. So,
 // we construct it lazily instead.
-var DefaultZoektSymbolsClient = syncx.OnceValue(func() *ZoektSymbolsClient {
+var DefaultZoektSymbolsClient = sync.OnceValue(func() *ZoektSymbolsClient {
 	return &ZoektSymbolsClient{
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
 		zoektStreamer:       search.Indexed(),
@@ -82,7 +82,9 @@ func (s *ZoektSymbolsClient) Compute(ctx context.Context, repoName types.Minimal
 		searchArgs.Query = *query
 	}
 
-	symbols, err := s.symbols.Search(ctx, searchArgs)
+	// We ignore LimitHit, which is consistent with how we treat stats coming
+	// from Zoekt in indexedSymbolsBranch.
+	symbols, _, err := s.symbols.Search(ctx, searchArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -91,12 +93,13 @@ func (s *ZoektSymbolsClient) Compute(ctx context.Context, repoName types.Minimal
 		symbols[i].Line += 1 // callers expect 1-indexed lines
 	}
 
-	fileWithPath := func(path string) *result.File {
+	fileWithPathAndLanguage := func(path, language string) *result.File {
 		return &result.File{
-			Path:     path,
-			Repo:     repoName,
-			InputRev: inputRev,
-			CommitID: commitID,
+			Path:            path,
+			Repo:            repoName,
+			InputRev:        inputRev,
+			CommitID:        commitID,
+			PreciseLanguage: language,
 		}
 	}
 
@@ -104,7 +107,7 @@ func (s *ZoektSymbolsClient) Compute(ctx context.Context, repoName types.Minimal
 	for _, symbol := range symbols {
 		matches = append(matches, &result.SymbolMatch{
 			Symbol: symbol,
-			File:   fileWithPath(symbol.Path),
+			File:   fileWithPathAndLanguage(symbol.Path, symbol.Language),
 		})
 	}
 	return matches, err
@@ -202,28 +205,28 @@ func searchZoekt(
 		return
 	}
 
-	var query zoektquery.Q
+	var q query.Q
 	if expr.Op == syntax.OpLiteral {
-		query = &zoektquery.Substring{
+		q = &query.Substring{
 			Pattern: string(expr.Rune),
 			Content: true,
 		}
 	} else {
-		query = &zoektquery.Regexp{
+		q = &query.Regexp{
 			Regexp:  expr,
 			Content: true,
 		}
 	}
 
-	ands := []zoektquery.Q{
-		&zoektquery.BranchesRepos{List: []zoektquery.BranchRepos{
+	ands := []query.Q{
+		&query.BranchesRepos{List: []query.BranchRepos{
 			{Branch: branch, Repos: roaring.BitmapOf(uint32(repoName.ID))},
 		}},
-		&zoektquery.Symbol{Expr: query},
+		&query.Symbol{Expr: q},
 	}
 	if includePatterns != nil {
 		for _, p := range *includePatterns {
-			q, err := zoektutil.FileRe(p, true)
+			q, err := zoektquery.FileRe(p, true)
 			if err != nil {
 				return nil, err
 			}
@@ -231,7 +234,7 @@ func searchZoekt(
 		}
 	}
 
-	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))
+	final := query.Simplify(query.NewAnd(ands...))
 	match := limitOrDefault(first) + 1
 	resp, err := z.Search(ctx, final, &zoekt.SearchOptions{
 		Trace:              policy.ShouldTrace(ctx),
@@ -240,6 +243,7 @@ func searchZoekt(
 		TotalMaxMatchCount: match * 25,
 		MaxDocDisplayCount: match,
 		ChunkMatches:       true,
+		NumContextLines:    0,
 	})
 	if err != nil {
 		return nil, err
@@ -247,35 +251,11 @@ func searchZoekt(
 
 	for _, file := range resp.Files {
 		newFile := &result.File{
-			Repo:     repoName,
-			CommitID: commitID,
-			InputRev: inputRev,
-			Path:     file.FileName,
-		}
-
-		for _, l := range file.LineMatches {
-			if l.FileName {
-				continue
-			}
-
-			for _, m := range l.LineFragments {
-				if m.SymbolInfo == nil {
-					continue
-				}
-
-				res = append(res, result.NewSymbolMatch(
-					newFile,
-					l.LineNumber,
-					-1, // -1 means infer the column
-					m.SymbolInfo.Sym,
-					m.SymbolInfo.Kind,
-					m.SymbolInfo.Parent,
-					m.SymbolInfo.ParentKind,
-					file.Language,
-					string(l.Line),
-					false,
-				))
-			}
+			Repo:            repoName,
+			CommitID:        commitID,
+			InputRev:        inputRev,
+			Path:            file.FileName,
+			PreciseLanguage: file.Language,
 		}
 
 		for _, cm := range file.ChunkMatches {

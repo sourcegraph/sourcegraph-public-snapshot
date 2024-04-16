@@ -4,13 +4,24 @@ export type { ErrorLike } from '@sourcegraph/common/src/errors/types'
 export { isErrorLike } from '@sourcegraph/common/src/errors/utils'
 export { createAggregateError, asError } from '@sourcegraph/common/src/errors/errors'
 export { memoizeObservable, resetAllMemoizationCaches } from '@sourcegraph/common/src/util/rxjs/memoizeObservable'
-export {
-    encodeURIPathComponent,
-    toPositionOrRangeQueryParameter,
-    addLineRangeQueryParameter,
-    formatSearchParameters,
-} from '@sourcegraph/common/src/util/url'
+export { encodeURIPathComponent } from '@sourcegraph/common/src/util/url'
 export { pluralize, numberWithCommas } from '@sourcegraph/common/src/util/strings'
 export { renderMarkdown } from '@sourcegraph/common/src/util/markdown/markdown'
 export { highlightNodeMultiline, highlightNode } from '@sourcegraph/common/src/util/highlightNode'
 export { logger } from '@sourcegraph/common/src/util/logger'
+export { isSafari } from '@sourcegraph/common/src/util/browserDetection'
+export { isExternalLink, type LineOrPositionOrRange, SourcegraphURL } from '@sourcegraph/common/src/util/url'
+export { parseJSONCOrError } from '@sourcegraph/common/src/util/jsonc'
+export { isWindowsPlatform, isMacPlatform, isLinuxPlatform } from '@sourcegraph/common/src/util/browserDetection'
+
+let highlightingLoaded = false
+
+export function loadMarkdownSyntaxHighlighting(): void {
+    if (!highlightingLoaded) {
+        highlightingLoaded = true
+
+        import('@sourcegraph/common/src/util/markdown/contributions')
+            .then(({ registerHighlightContributions }) => registerHighlightContributions()) // no way to unregister these
+            .catch(() => {})
+    }
+}

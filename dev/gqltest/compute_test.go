@@ -20,7 +20,6 @@ func testComputeClient(t *testing.T, client computeClient) {
 		if len(results) == 0 {
 			t.Error("Expected results, got none")
 		}
-
 	})
 }
 

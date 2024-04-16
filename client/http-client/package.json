@@ -8,9 +8,10 @@
   "license": "Apache-2.0",
   "scripts": {
     "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
-    "test": "jest"
+    "test": "vitest"
   },
   "dependencies": {
-    "@sourcegraph/common": "workspace:*"
+    "@sourcegraph/common": "workspace:*",
+    "@sourcegraph/testing": "workspace:*"
   }
 }

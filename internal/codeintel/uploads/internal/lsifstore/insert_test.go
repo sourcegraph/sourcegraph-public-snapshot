@@ -16,7 +16,7 @@ import (
 func TestInsertMetadata(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, codeIntelDB)
+	store := New(observation.TestContextTB(t), codeIntelDB)
 	ctx := context.Background()
 
 	if err := store.InsertMetadata(ctx, 42, ProcessedMetadata{
@@ -33,14 +33,14 @@ func TestInsertMetadata(t *testing.T) {
 func TestInsertSharedDocumentsConcurrently(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
-	store := newInternal(&observation.TestContext, codeIntelDB)
+	store := newInternal(observation.TestContextTB(t), codeIntelDB)
 	ctx := context.Background()
 
 	tx1, err := store.Transact(ctx)
 	if err != nil {
 		t.Fatalf("failed to start transaction: %s", err)
 	}
-	scipWriter24, err := tx1.NewSCIPWriter(ctx, 24)
+	scipWriter24, err := tx1.NewPreciseSCIPWriter(ctx, 24)
 	if err != nil {
 		t.Fatalf("failed to create SCIP writer: %s", err)
 	}
@@ -66,7 +66,7 @@ func TestInsertSharedDocumentsConcurrently(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to start transaction: %s", err)
 	}
-	scipWriter25, err := tx2.NewSCIPWriter(ctx, 25)
+	scipWriter25, err := tx2.NewPreciseSCIPWriter(ctx, 25)
 	if err != nil {
 		t.Fatalf("failed to create SCIP writer: %s", err)
 	}
@@ -110,12 +110,12 @@ func TestInsertSharedDocumentsConcurrently(t *testing.T) {
 func TestInsertDocumentWithSymbols(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, codeIntelDB)
+	store := New(observation.TestContextTB(t), codeIntelDB)
 	ctx := context.Background()
 
 	var n uint32
 	if err := store.WithTransaction(ctx, func(tx Store) error {
-		scipWriter24, err := tx.NewSCIPWriter(ctx, 24)
+		scipWriter24, err := tx.NewPreciseSCIPWriter(ctx, 24)
 		if err != nil {
 			t.Fatalf("failed to write SCIP symbols: %s", err)
 		}

@@ -32,7 +32,7 @@ func TestProvider_FetchAccount(t *testing.T) {
 
 	gitserverClient := gitserver.NewStrictMockClient()
 	gitserverClient.PerforceUsersFunc.SetDefaultReturn([]*p4types.User{
-		{Username: "alice", Email: "alice@example.com"},
+		{Username: "alice", Email: "Alice@Example.com"},
 		{Username: "cindy", Email: "cindy@example.com"},
 	}, nil)
 
@@ -80,6 +80,39 @@ func TestProvider_FetchAccount(t *testing.T) {
 			t.Fatalf("Mismatch (-want got):\n%s", diff)
 		}
 	})
+
+	t.Run("found matching account case insensitive", func(t *testing.T) {
+		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		got, err := p.FetchAccount(ctx, user, nil, []string{"Alice@Example.com"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		accountData, err := jsoniter.Marshal(
+			perforce.AccountData{
+				Username: "alice",
+				Email:    "alice@example.com",
+			},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := &extsvc.Account{
+			UserID: user.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: p.codeHost.ServiceType,
+				ServiceID:   p.codeHost.ServiceID,
+				AccountID:   "alice@example.com",
+			},
+			AccountData: extsvc.AccountData{
+				Data: extsvc.NewUnencryptedData(accountData),
+			},
+		}
+		if diff := cmp.Diff(want, got, et.CompareEncryptable); diff != "" {
+			t.Fatalf("Mismatch (-want got):\n%s", diff)
+		}
+	})
 }
 
 func TestProvider_FetchUserPerms(t *testing.T) {
@@ -87,7 +120,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("nil account", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchUserPerms(ctx, nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -98,7 +131,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("not the code host of the account", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -117,7 +150,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("no user found in account data", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchUserPerms(ctx,
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -342,7 +375,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("nil repository", func(t *testing.T) {
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchRepoPerms(ctx, nil, authz.FetchPermsOptions{})
 		want := "no repository provided"
 		got := fmt.Sprintf("%v", err)
@@ -352,7 +385,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	})
 
 	t.Run("not the code host of the repository", func(t *testing.T) {
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchRepoPerms(ctx,
 			&extsvc.Repository{
 				URI: "gitlab.com/user/repo",

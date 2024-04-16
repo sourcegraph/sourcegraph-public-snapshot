@@ -7,10 +7,11 @@ import {
     CloneInProgressError,
     RepoNotFoundError,
     RepoSeeOtherError,
+    RepoDeniedError,
     RevisionNotFoundError,
 } from '@sourcegraph/shared/src/backend/errors'
 import {
-    makeRepoURI,
+    makeRepoGitURI,
     type RepoRevision,
     type RepoSpec,
     type ResolvedRevisionSpec,
@@ -57,6 +58,7 @@ export const repositoryFragment = gql`
             key
             value
         }
+        topics
     }
 `
 
@@ -124,6 +126,9 @@ export const resolveRepoRevision = memoizeObservable(
             { repoName, revision: revision || '' }
         ).pipe(
             map(({ data, errors }) => {
+                if (errors?.length === 1 && errors[0].extensions?.code === 'ErrRepoDenied') {
+                    throw new RepoDeniedError(errors[0].message)
+                }
                 if (!data) {
                     throw createAggregateError(errors)
                 }
@@ -163,7 +168,7 @@ export const resolveRepoRevision = memoizeObservable(
                 }
             })
         ),
-    makeRepoURI
+    makeRepoGitURI
 )
 
 export const fetchFileExternalLinks = memoizeObservable(
@@ -193,7 +198,7 @@ export const fetchFileExternalLinks = memoizeObservable(
                 return data.repository.commit.file.externalURLs
             })
         ),
-    makeRepoURI
+    makeRepoGitURI
 )
 
 interface FetchCommitMessageResult {
@@ -222,5 +227,5 @@ export const fetchCommitMessage = memoizeObservable(
             map(dataOrThrowErrors),
             map(data => data.repository.commit.message)
         ),
-    makeRepoURI
+    makeRepoGitURI
 )

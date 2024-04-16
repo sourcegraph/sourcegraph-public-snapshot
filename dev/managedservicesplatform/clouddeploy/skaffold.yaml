@@ -1,0 +1,55 @@
+# See https://cloud.google.com/deploy/docs/custom-targets for guidance on how
+# to build custom targets and the conventions that are expected.
+
+apiVersion: skaffold/v4beta7
+kind: Config
+metadata:
+  name: CloudRunServiceImageDeployment
+customActions:
+- name: cloud-run-image-deploy-render
+  containers:
+  - name: Render
+    # TODO: Pulling this image is super slow (~1 minute)
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli
+    command: ['/bin/bash']
+    args:
+      - '-c'
+      - |-
+        set -e
+        set -o pipefail
+
+        SERVICE_ID=$CLOUD_DEPLOY_customTarget_serviceID # customTarget/serviceID
+        REVISION=$CLOUD_DEPLOY_customTarget_tag # customTarget/tag
+        IMAGE=$CLOUD_DEPLOY_customTarget_image # customTarget/image
+
+        PROJECT_ID=$CLOUD_DEPLOY_customTarget_projectID # customTarget/projectID
+        REGION=$CLOUD_DEPLOY_LOCATION
+
+        CLOUDRUN_SERVICE="$SERVICE_ID-$CLOUD_DEPLOY_TARGET"
+
+        echo "gcloud run deploy $CLOUDRUN_SERVICE --project=$PROJECT_ID --image=$IMAGE:$REVISION --region=$REGION" > deploy.sh
+        gsutil cp deploy.sh $CLOUD_DEPLOY_OUTPUT_GCS_PATH/deploy.sh
+
+        # Provide results back to Cloud Deploy
+        echo {\"resultStatus\": \"SUCCEEDED\", \"manifestFile\": \"$CLOUD_DEPLOY_OUTPUT_GCS_PATH/deploy.sh\"} > results.json
+        gsutil cp results.json $CLOUD_DEPLOY_OUTPUT_GCS_PATH/results.json
+
+- name: cloud-run-image-deploy
+  containers:
+  - name: Deploy
+    # TODO: Pulling this image is super slow (~1 minute)
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli
+    command: ['/bin/bash']
+    args:
+      - '-c'
+      - |-
+        set -e
+        set -o pipefail
+
+        gsutil cp $CLOUD_DEPLOY_MANIFEST_GCS_PATH deploy.sh
+
+        bash deploy.sh
+
+        # Provide results back to Cloud Deploy
+        echo {\"resultStatus\": \"SUCCEEDED\"} > results.json
+        gsutil cp results.json $CLOUD_DEPLOY_OUTPUT_GCS_PATH/results.json

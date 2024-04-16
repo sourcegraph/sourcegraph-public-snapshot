@@ -6,7 +6,7 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import type { ResolveRawRepoNameResult, TreeEntriesResult, TreeFields } from '../graphql-operations'
 import type { PlatformContext } from '../platform/context'
-import { type AbsoluteRepoFile, makeRepoURI, type RepoSpec } from '../util/url'
+import { type AbsoluteRepoFile, makeRepoGitURI, type RepoSpec } from '../util/url'
 
 import { CloneInProgressError, RepoNotFoundError } from './errors'
 
@@ -74,8 +74,12 @@ export const fetchTreeEntries = memoizeObservable(
                 fragment TreeFields on GitTree {
                     isRoot
                     url
-                    entries(first: $first, recursiveSingleChild: true) {
+                    entries(first: $first) {
+                        __typename
                         ...TreeEntryFields
+                        ... on GitBlob {
+                            languages
+                        }
                     }
                 }
                 fragment TreeEntryFields on TreeEntry {
@@ -87,7 +91,6 @@ export const fetchTreeEntries = memoizeObservable(
                         url
                         commit
                     }
-                    isSingleChild
                 }
             `,
             variables: args,
@@ -100,5 +103,5 @@ export const fetchTreeEntries = memoizeObservable(
                 return data.repository.commit.tree
             })
         ),
-    ({ first, requestGraphQL, ...args }) => `${makeRepoURI(args)}:first-${String(first)}`
+    ({ first, requestGraphQL, ...args }) => `${makeRepoGitURI(args)}:first-${String(first)}`
 )

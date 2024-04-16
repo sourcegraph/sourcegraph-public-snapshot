@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestBackfillCommittedAtBatch(t *testing.T) {
@@ -28,19 +29,27 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 	n := 50
 	t0 := time.Unix(1587396557, 0).UTC()
 	expectedCommitDates := make(map[string]time.Time, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		expectedCommitDates[fmt.Sprintf("%040d", i)] = t0.Add(time.Second * time.Duration(i))
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error) {
-		date, ok := expectedCommitDates[string(commit)]
-		return string(commit), date, ok, nil
+	gitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commitID api.CommitID) (*gitdomain.Commit, error) {
+		commitDate, ok := expectedCommitDates[string(commitID)]
+		if !ok {
+			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(commitID)}
+		}
+		return &gitdomain.Commit{
+			ID: commitID,
+			Committer: &gitdomain.Signature{
+				Date: commitDate,
+			},
+		}, nil
 	})
 
 	pageSize := 50
 	for i := 0; i < n; i += pageSize {
 		commitsByRepo := map[int][]string{}
-		for j := 0; j < pageSize; j++ {
+		for j := range pageSize {
 			repositoryID := 42 + (i+j)/(n/2) // 50% id=42, 50% id=43
 			commitsByRepo[repositoryID] = append(commitsByRepo[repositoryID], fmt.Sprintf("%040d", i+j))
 		}
@@ -56,7 +65,7 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 		store.SourcedCommitsWithoutCommittedAtFunc.PushReturn(sourcedCommits, nil)
 	}
 
-	for i := 0; i < n/pageSize; i++ {
+	for range n / pageSize {
 		if err := svc.BackfillCommittedAtBatch(ctx, pageSize); err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -65,7 +74,7 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 	committedAtByCommit := map[string]time.Time{}
 	history := store.UpdateCommittedAtFunc.history
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if len(history) <= i {
 			t.Fatalf("not enough calls to UpdateCommittedAtFunc")
 		}
@@ -102,7 +111,7 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 	n := 50
 	t0 := time.Unix(1587396557, 0).UTC()
 	expectedCommitDates := make(map[string]time.Time, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if i%3 == 0 {
 			// Unknown commits
 			continue
@@ -111,15 +120,23 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 		expectedCommitDates[fmt.Sprintf("%040d", i)] = t0.Add(time.Second * time.Duration(i))
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error) {
-		date, ok := expectedCommitDates[string(commit)]
-		return string(commit), date, ok, nil
+	gitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commitID api.CommitID) (*gitdomain.Commit, error) {
+		commitDate, ok := expectedCommitDates[string(commitID)]
+		if !ok {
+			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(commitID)}
+		}
+		return &gitdomain.Commit{
+			ID: commitID,
+			Committer: &gitdomain.Signature{
+				Date: commitDate,
+			},
+		}, nil
 	})
 
 	pageSize := 50
 	for i := 0; i < n; i += pageSize {
 		commitsByRepo := map[int][]string{}
-		for j := 0; j < pageSize; j++ {
+		for j := range pageSize {
 			repositoryID := 42 + (i+j)/(n/2) // 50% id=42, 50% id=43
 			commitsByRepo[repositoryID] = append(commitsByRepo[repositoryID], fmt.Sprintf("%040d", i+j))
 		}
@@ -135,7 +152,7 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 		store.SourcedCommitsWithoutCommittedAtFunc.PushReturn(sourcedCommits, nil)
 	}
 
-	for i := 0; i < n/pageSize; i++ {
+	for range n / pageSize {
 		if err := svc.BackfillCommittedAtBatch(ctx, pageSize); err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -144,7 +161,7 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 	committedAtByCommit := map[string]time.Time{}
 	history := store.UpdateCommittedAtFunc.history
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if len(history) <= i {
 			t.Fatalf("not enough calls to UpdateCommittedAtFunc")
 		}

@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo } from 'react'
 
 import type * as H from 'history'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ReloadIcon from 'mdi-react/ReloadIcon'
+import { default as AlertCircleIcon } from 'mdi-react/AlertCircleIcon'
+import { default as ReloadIcon } from 'mdi-react/ReloadIcon'
 import { isRouteErrorResponse, useRouteError } from 'react-router-dom'
 
 import { asError, logger } from '@sourcegraph/common'

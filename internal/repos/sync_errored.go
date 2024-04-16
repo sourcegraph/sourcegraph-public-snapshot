@@ -27,7 +27,7 @@ var totalErroredRepos = promauto.NewGauge(prometheus.GaugeOpts{
 	Help: "Total number of repos with last error currently.",
 })
 
-func (s *Syncer) NewSyncReposWithLastErrorsWorker(ctx context.Context, rateLimiter *ratelimit.InstrumentedLimiter) goroutine.BackgroundRoutine {
+func (s *Syncer) newSyncReposWithLastErrorsWorker(ctx context.Context, rateLimiter *ratelimit.InstrumentedLimiter) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {

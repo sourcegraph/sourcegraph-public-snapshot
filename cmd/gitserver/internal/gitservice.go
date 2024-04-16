@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"io"
+	"net/http"
 	"os/exec"
 	"strconv"
 	"sync"
@@ -17,15 +18,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
 )
 
 var (
 	envGitServiceMaxEgressBytesPerSecond = env.Get(
 		"SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND",
-		"1000000000",
-		"Git service egress rate limit in bytes per second (-1 = no limit, default = 1Gbps)")
+		"10000000000",
+		"Git service egress rate limit in bytes per second (-1 = no limit, default = 10Gbps)")
 
 	// gitServiceMaxEgressBytesPerSecond must be retrieved by getGitServiceMaxEgressBytesPerSecond,
 	// which parses envGitServiceMaxEgressBytesPerSecond once and logs any error encountered
@@ -34,6 +37,33 @@ var (
 	getGitServiceMaxEgressBytesPerSecondOnce sync.Once
 )
 
+// NewHTTPHandler returns a HTTP handler that serves a git upload pack server,
+// plus a few other endpoints.
+func NewHTTPHandler(logger log.Logger, fs gitserverfs.FS) http.Handler {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	// This endpoint allows us to expose gitserver itself as a "git service"
+	// (ETOOMANYGITS!) that allows other services to run commands like "git fetch"
+	// directly against a gitserver replica and treat it as a git remote.
+	//
+	// Example use case for this is a repo migration from one replica to another during
+	// scaling events and the new destination gitserver replica can directly clone from
+	// the gitserver replica which hosts the repository currently.
+	mux.HandleFunc("/git/", trace.WithRouteName("git", accesslog.HTTPMiddleware(
+		logger.Scoped("git.accesslog"),
+		conf.DefaultClient(),
+		func(rw http.ResponseWriter, r *http.Request) {
+			http.StripPrefix("/git", gitServiceHandler(logger.Scoped("gitServiceHandler"), fs)).ServeHTTP(rw, r)
+		},
+	)))
+
+	return mux
+}
+
 // getGitServiceMaxEgressBytesPerSecond parses envGitServiceMaxEgressBytesPerSecond once
 // and returns the same value on subsequent calls.
 func getGitServiceMaxEgressBytesPerSecond(logger log.Logger) int64 {
@@ -41,7 +71,7 @@ func getGitServiceMaxEgressBytesPerSecond(logger log.Logger) int64 {
 		var err error
 		gitServiceMaxEgressBytesPerSecond, err = strconv.ParseInt(envGitServiceMaxEgressBytesPerSecond, 10, 64)
 		if err != nil {
-			gitServiceMaxEgressBytesPerSecond = 1000 * 1000 * 1000 // 1Gbps
+			gitServiceMaxEgressBytesPerSecond = 10 * 1000 * 1000 * 1000 // 1G0bps
 			logger.Error("failed parsing SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND, defaulting to 1Gbps",
 				log.Int64("bps", gitServiceMaxEgressBytesPerSecond),
 				log.Error(err))
@@ -71,12 +101,10 @@ func flowrateWriter(logger log.Logger, w io.Writer) io.Writer {
 	return w
 }
 
-func (s *Server) gitServiceHandler() *gitservice.Handler {
-	logger := s.Logger.Scoped("gitServiceHandler")
-
+func gitServiceHandler(logger log.Logger, fs gitserverfs.FS) *gitservice.Handler {
 	return &gitservice.Handler{
 		Dir: func(d string) string {
-			return string(gitserverfs.RepoDirFromName(s.ReposDir, api.RepoName(d)))
+			return string(fs.RepoDir(api.RepoName(d)))
 		},
 
 		ErrorHook: func(err error, stderr string) {

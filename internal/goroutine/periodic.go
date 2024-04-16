@@ -8,7 +8,7 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/log"
-	oteltrace "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -16,13 +16,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type getIntervalFunc func() time.Duration
-type getConcurrencyFunc func() int
+type (
+	getIntervalFunc    func() time.Duration
+	getConcurrencyFunc func() int
+)
 
 // PeriodicGoroutine represents a goroutine whose main behavior is reinvoked periodically.
 //
 // See
-// https://docs.sourcegraph.com/dev/background-information/backgroundroutine
+// https://sourcegraph.com/docs/dev/background-information/backgroundroutine
 // for more information and a step-by-step guide on how to implement a
 // PeriodicBackgroundRoutine.
 type PeriodicGoroutine struct {
@@ -129,7 +131,7 @@ func NewPeriodicGoroutine(ctx context.Context, handler Handler, options ...Optio
 	if r.operation == nil {
 		r.operation = observation.NewContext(
 			log.Scoped("periodic"),
-			observation.Tracer(oteltrace.NewNoopTracerProvider().Tracer("noop")),
+			observation.Tracer(noop.NewTracerProvider().Tracer("noop")),
 			observation.Metrics(metrics.NoOpRegisterer),
 		).Operation(observation.Op{
 			Name:        r.name,
@@ -239,7 +241,7 @@ func (r *PeriodicGoroutine) startPool(concurrency int) func() {
 	g := conc.NewWaitGroup()
 	ctx, cancel := context.WithCancel(context.Background())
 
-	for i := 0; i < concurrency; i++ {
+	for range concurrency {
 		g.Go(func() { r.runHandlerPeriodically(ctx) })
 	}
 
@@ -366,11 +368,11 @@ func (r *PeriodicGoroutine) withOperation(ctx context.Context, f func(ctx contex
 
 func (r *PeriodicGoroutine) withRecorder(ctx context.Context, f func(ctx context.Context) error) error {
 	if r.recorder == nil {
-		return f(ctx)
+		return runAndConvertPanicToError(ctx, f)
 	}
 
 	start := time.Now()
-	err := f(ctx)
+	err := runAndConvertPanicToError(ctx, f)
 	duration := time.Since(start)
 
 	go func() {
@@ -379,6 +381,21 @@ func (r *PeriodicGoroutine) withRecorder(ctx context.Context, f func(ctx context
 	}()
 
 	return err
+}
+
+// runAndConvertPanicToError invokes f with the given ctx and recovers any panics
+// by turning them into an error instead.
+func runAndConvertPanicToError(ctx context.Context, f func(ctx context.Context) error) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if e, ok := r.(error); ok {
+				err = errors.Wrap(e, "panic occurred")
+			} else {
+				err = errors.Newf("panic occurred: %v", r)
+			}
+		}
+	}()
+	return f(ctx)
 }
 
 func typeFromOperations(operation *observation.Operation) recorder.RoutineType {

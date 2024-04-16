@@ -1,5 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
+import { describe, expect, it } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -21,6 +23,7 @@ describe('SignUpPage', () => {
             authenticationURL: '',
             serviceID: '',
             clientID: '',
+            noSignIn: false,
         },
         {
             serviceType: 'github',
@@ -29,6 +32,7 @@ describe('SignUpPage', () => {
             authenticationURL: '/.auth/github/login?pc=f00bar',
             serviceID: 'https://github.com',
             clientID: '1234',
+            noSignIn: false,
         },
     ]
 
@@ -49,8 +53,10 @@ describe('SignUpPage', () => {
                                         authMinPasswordLength: 12,
                                         authProviders,
                                         xhrHeaders: {},
+                                        externalURL: 'https://sourcegraph.test:3443',
                                     }}
                                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                                    telemetryRecorder={noOpTelemetryRecorder}
                                 />
                             }
                         />
@@ -78,8 +84,10 @@ describe('SignUpPage', () => {
                                         authMinPasswordLength: 12,
                                         authProviders,
                                         xhrHeaders: {},
+                                        externalURL: 'https://sourcegraph.test:3443',
                                     }}
                                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                                    telemetryRecorder={noOpTelemetryRecorder}
                                 />
                             }
                         />
@@ -115,8 +123,10 @@ describe('SignUpPage', () => {
                                         authMinPasswordLength: 12,
                                         authProviders,
                                         xhrHeaders: {},
+                                        externalURL: 'https://sourcegraph.test:3443',
                                     }}
                                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                                    telemetryRecorder={noOpTelemetryRecorder}
                                 />
                             }
                         />

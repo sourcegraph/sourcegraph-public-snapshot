@@ -1,4 +1,5 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import AlertIcon from 'mdi-react/AlertIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import type { ErrorLike } from '@sourcegraph/common'
@@ -7,10 +8,11 @@ import {
     isCloneInProgressErrorLike,
     isRevisionNotFoundErrorLike,
     isRepoNotFoundErrorLike,
+    isRepoDeniedErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
 import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { Code, ErrorMessage } from '@sourcegraph/wildcard'
+import { Code, ErrorMessage, Link, Text } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../components/HeroPage'
 
@@ -35,21 +37,54 @@ export const RepoContainerError: React.FunctionComponent<React.PropsWithChildren
         return <RepositoryNotFoundPage repo={repoName} viewerCanAdminister={viewerCanAdminister} />
     }
 
+    if (isRepoDeniedErrorLike(repoFetchError)) {
+        return (
+            <HeroPage
+                icon={AlertIcon}
+                title={displayRepoName(repoName)}
+                body={<Text className="mt-4">Repository cannot be added on-demand: {repoFetchError.reason}.</Text>}
+            />
+        )
+    }
+
     if (isCloneInProgressErrorLike(repoFetchError)) {
         return (
             <HeroPage
                 icon={SourceRepositoryIcon}
                 title={displayRepoName(repoName)}
                 className="repository-cloning-in-progress-page"
-                subtitle="Cloning in progress"
-                detail={<Code>{(repoFetchError as CloneInProgressError).progress}</Code>}
+                subtitle={<Text>Cloning in progress</Text>}
+                detail={
+                    <>
+                        <Code>{(repoFetchError as CloneInProgressError).progress}</Code>
+                        {viewerCanAdminister && (
+                            <Text className="mt-4">
+                                <Link to={`${repoName}/-/settings`}>Go to settings</Link> to view details
+                            </Text>
+                        )}
+                    </>
+                }
                 body={<DirectImportRepoAlert className="mt-3" />}
             />
         )
     }
 
     if (isRevisionNotFoundErrorLike(repoFetchError)) {
-        return <HeroPage icon={RepoQuestionIcon} title="Empty repository" />
+        return (
+            <HeroPage
+                icon={RepoQuestionIcon}
+                title="Empty repository"
+                detail={
+                    <>
+                        {viewerCanAdminister && (
+                            <Text>
+                                <Link to={`${repoName}/-/settings`}>Go to settings</Link>
+                            </Text>
+                        )}
+                    </>
+                }
+            />
+        )
     }
 
     return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={repoFetchError} />} />

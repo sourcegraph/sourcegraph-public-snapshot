@@ -7,10 +7,9 @@ import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import '@storybook/addon-designs'
 
-import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
-
 import { TextArea, Button, Link, Select, Checkbox, Input, Text, Code, H1, H2, H3, H4, Form } from '../../components'
 import { BrandedStory } from '../../stories'
+import { highlightCodeSafe, registerHighlightContributions } from '../../utils'
 
 import { ColorVariants } from './ColorVariants'
 import { FormFieldVariants } from './FormFieldVariants'
@@ -401,7 +400,7 @@ export const ListGroups: StoryFn = () => (
 
 ListGroups.storyName = 'List groups'
 
-export const Meter: Story = args => (
+export const Meter: StoryFn = args => (
     <>
         <H1>Meter</H1>
         <Text>

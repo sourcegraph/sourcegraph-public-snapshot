@@ -5,208 +5,32 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/cacert"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/trace" //nolint:staticcheck // OT is deprecated
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/process"
 )
-
-// ShortGitCommandTimeout returns the timeout for git commands that should not
-// take a long time. Some commands such as "git archive" are allowed more time
-// than "git rev-parse", so this will return an appropriate timeout given the
-// command.
-func ShortGitCommandTimeout(args []string) time.Duration {
-	if len(args) < 1 {
-		return time.Minute
-	}
-	switch args[0] {
-	case "archive":
-		// This is a long time, but this never blocks a user request for this
-		// long. Even repos that are not that large can take a long time, for
-		// example a search over all repos in an organization may have several
-		// large repos. All of those repos will be competing for IO => we need
-		// a larger timeout.
-		return conf.GitLongCommandTimeout()
-
-	case "ls-remote":
-		return 30 * time.Second
-
-	default:
-		return time.Minute
-	}
-}
 
 // UnsetExitStatus is a sentinel value for an unknown/unset exit status.
 const UnsetExitStatus = -10810
-
-// UpdateRunCommandMock sets the runCommand mock function for use in tests
-func UpdateRunCommandMock(mock func(context.Context, *exec.Cmd) (int, error)) {
-	runCommandMockMu.Lock()
-	defer runCommandMockMu.Unlock()
-
-	RunCommandMock = mock
-}
-
-// runCommmandMockMu protects runCommandMock against simultaneous access across
-// multiple goroutines
-var runCommandMockMu sync.RWMutex
-
-// RunCommandMock is set by tests. When non-nil it is run instead of
-// runCommand
-var RunCommandMock func(context.Context, *exec.Cmd) (int, error)
-
-// RunCommand runs the command and returns the exit status. All clients of this function should set the context
-// in cmd themselves, but we have to pass the context separately here for the sake of tracing.
-func RunCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
-	runCommandMockMu.RLock()
-
-	if RunCommandMock != nil {
-		code, err := RunCommandMock(ctx, cmd.Unwrap())
-		runCommandMockMu.RUnlock()
-		return code, err
-	}
-	runCommandMockMu.RUnlock()
-
-	tr, _ := trace.New(ctx, "runCommand",
-		attribute.String("path", cmd.Unwrap().Path),
-		attribute.StringSlice("args", cmd.Unwrap().Args),
-		attribute.String("dir", cmd.Unwrap().Dir))
-	defer func() {
-		if err != nil {
-			tr.SetAttributes(attribute.Int("exitCode", exitCode))
-		}
-		tr.EndWithErr(&err)
-	}()
-
-	err = cmd.Run()
-	exitStatus := UnsetExitStatus
-	if cmd.Unwrap().ProcessState != nil { // is nil if process failed to start
-		exitStatus = cmd.Unwrap().ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
-	}
-	return exitStatus, err
-}
-
-// RunCommandCombinedOutput runs the command with runCommand and returns its
-// combined standard output and standard error.
-func RunCommandCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, error) {
-	var buf bytes.Buffer
-	cmd.Unwrap().Stdout = &buf
-	cmd.Unwrap().Stderr = &buf
-	_, err := RunCommand(ctx, cmd)
-	return buf.Bytes(), err
-}
-
-// RunRemoteGitCommand runs the command after applying the remote options. If
-// progress is not nil, all output is written to it in a separate goroutine.
-func RunRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
-	if configRemoteOpts {
-		// Inherit process environment. This allows admins to configure
-		// variables like http_proxy/etc.
-		if cmd.Unwrap().Env == nil {
-			cmd.Unwrap().Env = os.Environ()
-		}
-		configureRemoteGitCommand(cmd.Unwrap(), tlsExternal())
-	}
-
-	var b interface {
-		Bytes() []byte
-	}
-
-	if progress != nil {
-		var pw progressWriter
-		mr := io.MultiWriter(&pw, progress)
-		cmd.Unwrap().Stdout = mr
-		cmd.Unwrap().Stderr = mr
-		b = &pw
-	} else {
-		var buf bytes.Buffer
-		cmd.Unwrap().Stdout = &buf
-		cmd.Unwrap().Stderr = &buf
-		b = &buf
-	}
-
-	// We don't care about exitStatus, we just rely on error.
-	_, err := RunCommand(ctx, cmd)
-
-	return b.Bytes(), err
-}
 
 // tlsExternal will create a new cache for this gitserer process and store the certificates set in
 // the site config.
 // This creates a long lived
 var tlsExternal = conf.Cached(getTlsExternalDoNotInvoke)
-
-// progressWriter is an io.Writer that writes to a buffer.
-// '\r' resets the write offset to the index after last '\n' in the buffer,
-// or the beginning of the buffer if a '\n' has not been written yet.
-//
-// This exists to remove intermediate progress reports from "git clone
-// --progress".
-type progressWriter struct {
-	// writeOffset is the offset in buf where the next write should begin.
-	writeOffset int
-
-	// afterLastNewline is the index after the last '\n' in buf
-	// or 0 if there is no '\n' in buf.
-	afterLastNewline int
-
-	buf []byte
-}
-
-func (w *progressWriter) Write(p []byte) (n int, err error) {
-	l := len(p)
-	for {
-		if len(p) == 0 {
-			// If p ends in a '\r' we still want to include that in the buffer until it is overwritten.
-			break
-		}
-		idx := bytes.IndexAny(p, "\r\n")
-		if idx == -1 {
-			w.buf = append(w.buf[:w.writeOffset], p...)
-			w.writeOffset = len(w.buf)
-			break
-		}
-		switch p[idx] {
-		case '\n':
-			w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
-			w.writeOffset = len(w.buf)
-			w.afterLastNewline = len(w.buf)
-			p = p[idx+1:]
-		case '\r':
-			w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
-			// Record that our next write should overwrite the data after the most recent newline.
-			// Don't slice it off immediately here, because we want to be able to return that output
-			// until it is overwritten.
-			w.writeOffset = w.afterLastNewline
-			p = p[idx+1:]
-		default:
-			panic(fmt.Sprintf("unexpected char %q", p[idx]))
-		}
-	}
-	return l, nil
-}
-
-// String returns the contents of the buffer as a string.
-func (w *progressWriter) String() string {
-	return string(w.buf)
-}
-
-// Bytes returns the contents of the buffer.
-func (w *progressWriter) Bytes() []byte {
-	return w.buf
-}
 
 type tlsConfig struct {
 	// Whether to not verify the SSL certificate when fetching or pushing over
@@ -298,7 +122,16 @@ func getTlsExternalDoNotInvoke() *tlsConfig {
 	}
 }
 
-func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
+func ConfigureRemoteGitCommand(cmd *exec.Cmd, remoteURL *vcs.URL) {
+	// Inherit process environment. This allows admins to configure
+	// variables like http_proxy/etc.
+	if cmd.Env == nil {
+		cmd.Env = os.Environ()
+	}
+	configureRemoteGitCommand(cmd, remoteURL, tlsExternal())
+}
+
+func configureRemoteGitCommand(cmd *exec.Cmd, remoteURL *vcs.URL, tlsConf *tlsConfig) {
 	// We split here in case the first command is an absolute path to the executable
 	// which allows us to safely match lower down
 	_, executable := path.Split(cmd.Args[0])
@@ -327,9 +160,34 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 		cmd.Env = append(cmd.Env, "GIT_SSL_CAINFO="+tlsConf.SSLCAInfo)
 	}
 
+	// Unset credential helper because the command is non-interactive.
+	// Even when we pass a second credential helper for HTTP credentials below,
+	// we will need this. Otherwise, the original credential helper will be used
+	// as well.
 	extraArgs := []string{
-		// Unset credential helper because the command is non-interactive.
 		"-c", "credential.helper=",
+	}
+
+	// If we have creds in the URL, pass it in via the credHelper.
+	password, ok := remoteURL.User.Password()
+	if ok && executable == "git" && !remoteURL.IsSSH() {
+		// If the remote URL is one of the args, remove the user section from it.
+		hasCreds := false
+		for i, arg := range cmd.Args {
+			if arg == remoteURL.String() {
+				ru := *remoteURL
+				ru.User = nil
+				cmd.Args[i] = ru.String()
+				hasCreds = true
+			}
+		}
+		if hasCreds {
+			// Next up, add out credential helper.
+			// Note: We add an ADDITIONAL credential helper here, the previous
+			// one is just unsetting any existing ones.
+			extraArgs = append(extraArgs, "-c", "credential.helper=!f() { echo \"username=$GIT_SG_USERNAME\npassword=$GIT_SG_PASSWORD\"; }; f")
+			cmd.Env = append(cmd.Env, "GIT_SG_USERNAME="+remoteURL.User.Username(), "GIT_SG_PASSWORD="+password)
+		}
 	}
 
 	if len(cmd.Args) > 1 && cmd.Args[1] != "ls-remote" {
@@ -383,4 +241,125 @@ func WrapCmdError(cmd *exec.Cmd, err error) error {
 		return errors.Wrapf(err, "%s %s failed with stderr: %s", cmd.Path, strings.Join(cmd.Args, " "), string(e.Stderr))
 	}
 	return errors.Wrapf(err, "%s %s failed", cmd.Path, strings.Join(cmd.Args, " "))
+}
+
+type RedactorFunc func(string) string
+
+// The passed cmd should be bound to the passed context.
+func RunCommandWriteOutput(ctx context.Context, cmd wrexec.Cmder, writer io.Writer, redactor RedactorFunc) (int, error) {
+	exitStatus := UnsetExitStatus
+
+	// Create a cancel context so that on exit we always properly close the command
+	// pipes attached later by process.PipeOutputUnbuffered.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Make sure we only write to the writer from one goroutine at a time, either
+	// stdout or stderr.
+	syncWriter := newSynchronizedWriter(writer)
+
+	outputRedactor := func(w io.Writer, r io.Reader) error {
+		sc := process.NewOutputScannerWithSplit(r, scanLinesWithCRLF)
+		for sc.Scan() {
+			line := sc.Text()
+			if _, err := fmt.Fprint(w, redactor(line)); err != nil {
+				return err
+			}
+		}
+		// We can ignore ErrClosed because we get that if a process crashes, it will
+		// be handled by cmd.Wait.
+		if err := sc.Err(); err != nil && !errors.Is(err, fs.ErrClosed) {
+			return err
+		}
+		return nil
+	}
+
+	eg, err := process.PipeProcessOutput(
+		ctx,
+		cmd,
+		syncWriter,
+		syncWriter,
+		outputRedactor,
+	)
+	if err != nil {
+		return exitStatus, errors.Wrap(err, "failed to pipe output")
+	}
+
+	if err = cmd.Start(); err != nil {
+		return exitStatus, errors.Wrap(err, "failed to start command")
+	}
+
+	// Wait for either the command to finish (aka the pipewriters get closed), or
+	// for a context cancelation.
+	select {
+	case <-ctx.Done():
+	case err := <-watchErrGroup(eg):
+		if err != nil {
+			return exitStatus, errors.Wrap(err, "failed to read output")
+		}
+	}
+
+	err = cmd.Wait()
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		// Redact the stderr output if we have it.
+		exitErr.Stderr = []byte(redactor(string(exitErr.Stderr)))
+	}
+
+	if ps := cmd.Unwrap().ProcessState; ps != nil && ps.Sys() != nil {
+		if ws, ok := ps.Sys().(syscall.WaitStatus); ok {
+			exitStatus = ws.ExitStatus()
+		}
+	}
+
+	return exitStatus, errors.Wrap(err, "command failed")
+}
+
+// watchErrGroup turns a pool.ErrorPool into a channel that will receive the error
+// returned from the pool once it returns.
+func watchErrGroup(g *pool.ErrorPool) <-chan error {
+	ch := make(chan error)
+	go func() {
+		ch <- g.Wait()
+		close(ch)
+	}()
+
+	return ch
+}
+
+// scanLinesWithCRLF is a modified version of bufio.ScanLines that retains
+// the trailing newline byte(s) in the returned token and splits on either CR
+// or LF.
+func scanLinesWithCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+
+	if i := bytes.IndexAny(data, "\r\n"); i >= 0 {
+		// We have a full newline-terminated line.
+		return i + 1, data[0 : i+1], nil
+	}
+
+	// If we're at EOF, we have a final, non-terminated line. Return it.
+	if atEOF {
+		return len(data), data, nil
+	}
+
+	// Request more data.
+	return 0, nil, nil
+}
+
+func newSynchronizedWriter(w io.Writer) *synchronizedWriter {
+	return &synchronizedWriter{writer: w}
+}
+
+type synchronizedWriter struct {
+	mu     sync.Mutex
+	writer io.Writer
+}
+
+func (sw *synchronizedWriter) Write(p []byte) (n int, err error) {
+	sw.mu.Lock()
+	defer sw.mu.Unlock()
+	return sw.writer.Write(p)
 }

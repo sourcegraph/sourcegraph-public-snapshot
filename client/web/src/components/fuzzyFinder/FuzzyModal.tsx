@@ -59,7 +59,8 @@ export interface FuzzyModalProps extends FuzzyState {
     initialMaxResults: number
     initialQuery: string
     onClose: () => void
-    onClickItem: (eventName: 'FuzzyFinderResultClicked' | 'FuzzyFinderGoToResultsPageClicked') => void
+    onClickResult: () => void
+    onClickGoToResultsPage: () => void
     tabs: FuzzyTabs
     location: H.Location
 }
@@ -94,16 +95,19 @@ function newFuzzySearch(query: string, activeTab: FuzzyTabKey, scope: FuzzyScope
         tab.onQuery?.(query) // trigger downloads
         const fsm = tab.fsm()
         switch (fsm.key) {
-            case 'downloading':
+            case 'downloading': {
                 if (fsm.downloading?.partialFuzzy) {
                     searches.push(fsm.downloading.partialFuzzy)
                 }
                 break
-            case 'indexing':
+            }
+            case 'indexing': {
                 searches.push(fsm.indexing.partialFuzzy)
                 break
-            case 'ready':
+            }
+            case 'ready': {
                 searches.push(fsm.fuzzy)
+            }
         }
     }
     if (searches.length === 1) {
@@ -234,7 +238,8 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
     const {
         initialMaxResults,
         onClose,
-        onClickItem,
+        onClickResult,
+        onClickGoToResultsPage,
         fsmGeneration,
         rankingCache,
         query,
@@ -272,7 +277,6 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
     )
 
     // Stage 2: render results from the fuzzy matcher.
-    const handleResultClick = useCallback(() => onClickItem('FuzzyFinderResultClicked'), [onClickItem])
     const queryResult = useMemo<QueryResult>(() => {
         const fsmErrors = fuzzyErrors(tabs, activeTab, scope)
         if (fsmErrors.length > 0) {
@@ -284,7 +288,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             maxResults,
             initialMaxResults,
             setMaxResults,
-            handleResultClick
+            onClickResult
         )
     }, [
         activeTab,
@@ -294,7 +298,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
         maxResults,
         initialMaxResults,
         setMaxResults,
-        handleResultClick,
+        onClickResult,
         tabs,
     ])
 
@@ -323,35 +327,44 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
     const onInputKeyDown = useCallback(
         (event: KeyboardEvent<HTMLInputElement>): void => {
             switch (true) {
-                case event.key === 'Escape':
+                case event.key === 'Escape': {
                     onClose()
                     break
-                case event.key === 'g' && event.ctrlKey: // common Emacs binding to close things
+                }
+                case event.key === 'g' && event.ctrlKey: {
+                    // common Emacs binding to close things
                     onClose()
                     break
-                case event.key === 'n' && event.ctrlKey:
+                }
+                case event.key === 'n' && event.ctrlKey: {
                     event.preventDefault()
                     setRoundedFocusIndex(1)
                     break
-                case event.key === 'p' && event.ctrlKey:
+                }
+                case event.key === 'p' && event.ctrlKey: {
                     event.preventDefault()
                     setRoundedFocusIndex(-1)
                     break
-                case event.key === 'ArrowDown':
+                }
+                case event.key === 'ArrowDown': {
                     event.preventDefault() // Don't move the cursor to the end of the input.
                     setRoundedFocusIndex(1)
                     break
-                case event.key === 'PageDown':
+                }
+                case event.key === 'PageDown': {
                     setRoundedFocusIndex(PAGE_DOWN_INCREMENT)
                     break
-                case event.key === 'ArrowUp':
+                }
+                case event.key === 'ArrowUp': {
                     event.preventDefault() // Don't move the cursor to the start of input.
                     setRoundedFocusIndex(-1)
                     break
-                case event.key === 'PageUp':
+                }
+                case event.key === 'PageUp': {
                     setRoundedFocusIndex(-PAGE_DOWN_INCREMENT)
                     break
-                case event.key === 'Enter':
+                }
+                case event.key === 'Enter': {
                     if (focusIndex < queryResult.resultCount) {
                         const fileAnchor = document.querySelector<HTMLAnchorElement>(
                             `#fuzzy-modal-result-${focusIndex} .${linkStyle}`
@@ -359,6 +372,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                         fileAnchor?.click()
                     }
                     break
+                }
                 default:
             }
         },
@@ -374,11 +388,6 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
               onChange: (index: number) => setActiveTab(tabs.focusTab(index)),
           }
         : {}
-
-    const handleGoToResultsPageClick = useCallback(
-        () => onClickItem('FuzzyFinderGoToResultsPageClicked'),
-        [onClickItem]
-    )
 
     return (
         <Modal
@@ -471,7 +480,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                 )}
                 <hr className="my-0 w-100" />
                 <div className="d-flex align-items-center w-100 p-3">
-                    <SearchQueryLink {...props} onClickItem={handleGoToResultsPageClick} />
+                    <SearchQueryLink {...props} onClickItem={onClickGoToResultsPage} />
                     <span className="ml-auto mr-2">
                         <ArrowKeyExplanation />
                     </span>
@@ -501,16 +510,20 @@ interface ScopeSelectProps {
 
 const ToggleShortcut: React.FunctionComponent<{ activeTab: FuzzyTabKey }> = ({ activeTab }) => {
     switch (activeTab) {
-        case 'all':
+        case 'all': {
             return <Keybindings uppercaseOrdered={true} keybindings={KEYBOARD_SHORTCUTS.fuzzyFinder.keybindings} />
-        case 'files':
+        }
+        case 'files': {
             return <Keybindings uppercaseOrdered={true} keybindings={KEYBOARD_SHORTCUTS.fuzzyFinderFiles.keybindings} />
-        case 'symbols':
+        }
+        case 'symbols': {
             return (
                 <Keybindings uppercaseOrdered={true} keybindings={KEYBOARD_SHORTCUTS.fuzzyFinderSymbols.keybindings} />
             )
-        default:
+        }
+        default: {
             return <></>
+        }
     }
 }
 
@@ -531,9 +544,10 @@ const ScopeSelect: React.FunctionComponent<ScopeSelectProps> = ({
         onChange={value => {
             switch (value.target.value) {
                 case 'everywhere':
-                case 'repository':
+                case 'repository': {
                     setScope(value.target.value)
                     focusFuzzyInput()
+                }
             }
         }}
     >
@@ -565,18 +579,23 @@ const SearchQueryLink: React.FunctionComponent<FuzzyState & { onClickItem: () =>
     )
     const isScopeEverywhere = scope === 'everywhere'
     switch (props.activeTab) {
-        case 'symbols':
+        case 'symbols': {
             return searchQueryLink(`type:symbol ${props.query}${isScopeEverywhere ? '' : repoFilter(props)}`)
-        case 'files':
+        }
+        case 'files': {
             return searchQueryLink(
                 `type:path ${parseFuzzyFileQuery(props.query).filename}${isScopeEverywhere ? '' : repoFilter(props)}`
             )
-        case 'repos':
+        }
+        case 'repos': {
             return searchQueryLink(`type:repo ${props.query}`)
-        case 'all':
+        }
+        case 'all': {
             return searchQueryLink(`${props.query}${isScopeEverywhere ? '' : repoFilter(props)}`)
-        default:
+        }
+        default: {
             return <></>
+        }
     }
 }
 

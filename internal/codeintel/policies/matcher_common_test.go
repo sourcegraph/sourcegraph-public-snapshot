@@ -58,33 +58,45 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 		"deadbeef09": testCommitDateFor("deadbeef09", now),
 	}
 
-	commitDate := func(ctx context.Context, repo api.RepoName, commitID api.CommitID) (string, time.Time, bool, error) {
+	getCommit := func(ctx context.Context, repo api.RepoName, commitID api.CommitID) (*gitdomain.Commit, error) {
 		commitDate, ok := createdAt[string(commitID)]
-		return string(commitID), commitDate, ok, nil
+		if !ok {
+			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(commitID)}
+		}
+		return &gitdomain.Commit{
+			ID: commitID,
+			Committer: &gitdomain.Signature{
+				Date: commitDate,
+			},
+		}, nil
 	}
 
-	refDescriptions := func(ctx context.Context, repo api.RepoName, _ ...string) (map[string][]gitdomain.RefDescription, error) {
-		refDescriptions := map[string][]gitdomain.RefDescription{}
+	refs := func(ctx context.Context, repo api.RepoName, _ gitserver.ListRefsOpts) ([]gitdomain.Ref, error) {
+		refs := []gitdomain.Ref{}
 		for branch, commit := range branchHeads {
 			branchHeadCreateDate := createdAt[commit]
-			refDescriptions[commit] = append(refDescriptions[commit], gitdomain.RefDescription{
-				Name:            branch,
-				Type:            gitdomain.RefTypeBranch,
-				IsDefaultBranch: branch == defaultBranchName,
-				CreatedDate:     &branchHeadCreateDate,
+			refs = append(refs, gitdomain.Ref{
+				Name:        "refs/heads/" + branch,
+				ShortName:   branch,
+				Type:        gitdomain.RefTypeBranch,
+				IsHead:      branch == defaultBranchName,
+				CreatedDate: branchHeadCreateDate,
+				CommitID:    api.CommitID(commit),
 			})
 		}
 
 		for tag, commit := range tagHeads {
 			tagCreateDate := createdAt[commit]
-			refDescriptions[commit] = append(refDescriptions[commit], gitdomain.RefDescription{
-				Name:        tag,
+			refs = append(refs, gitdomain.Ref{
+				Name:        "refs/tags/" + tag,
+				ShortName:   tag,
 				Type:        gitdomain.RefTypeTag,
-				CreatedDate: &tagCreateDate,
+				CreatedDate: tagCreateDate,
+				CommitID:    api.CommitID(commit),
 			})
 		}
 
-		return refDescriptions, nil
+		return refs, nil
 	}
 
 	commitsUniqueToBranch := func(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error) {
@@ -99,8 +111,8 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 	}
 
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.CommitDateFunc.SetDefaultHook(commitDate)
-	gitserverClient.RefDescriptionsFunc.SetDefaultHook(refDescriptions)
+	gitserverClient.GetCommitFunc.SetDefaultHook(getCommit)
+	gitserverClient.ListRefsFunc.SetDefaultHook(refs)
 	gitserverClient.CommitsUniqueToBranchFunc.SetDefaultHook(commitsUniqueToBranch)
 
 	return gitserverClient
@@ -110,7 +122,7 @@ func hydrateCommittedAt(expectedPolicyMatches map[string][]PolicyMatch, now time
 	for commit, matches := range expectedPolicyMatches {
 		for i, match := range matches {
 			committedAt := testCommitDateFor(commit, now)
-			match.CommittedAt = &committedAt
+			match.CommittedAt = committedAt
 			matches[i] = match
 		}
 	}

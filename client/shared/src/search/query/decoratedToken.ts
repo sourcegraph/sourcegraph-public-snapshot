@@ -41,6 +41,7 @@ type MetaToken =
     | MetaSelector
     | MetaPath
     | MetaPredicate
+    | MetaKeyword
 
 /**
  * Defines common properties for meta tokens.
@@ -113,7 +114,7 @@ interface MetaFilterSeparator extends BaseMetaToken {
 /**
  * A token that is labeled and interpreted as repository revision syntax in Sourcegraph. Note: there
  * are syntactic differences from pure Git ref syntax.
- * See https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.
+ * See https://sourcegraph.com/docs/code_search/reference/queries#repository-revisions.
  */
 export interface MetaRevision extends BaseMetaToken {
     type: 'metaRevision'
@@ -200,6 +201,18 @@ export interface MetaPredicate {
     groupRange?: CharacterRange
     kind: MetaPredicateKind
     value: Predicate
+}
+
+enum MetaKeywordKind {
+    EscapedCharacter = 'EscapedCharacter',
+}
+
+/**
+ * Keyword tokens, which can be quoted and contain escape sequences.
+ */
+interface MetaKeyword extends BaseMetaToken {
+    type: 'metaKeyword'
+    kind: MetaKeywordKind
 }
 
 /**
@@ -470,10 +483,12 @@ const hasPathLikeValue = (field: string): boolean => {
         case 'file':
         case 'f':
         case 'path':
-        case 'repohasfile':
+        case 'repohasfile': {
             return true
-        default:
+        }
+        default: {
             return false
+        }
     }
 }
 
@@ -611,13 +626,15 @@ const mapRevisionMeta = (token: Literal): DecoratedToken[] => {
                 }
                 break
             }
-            case ':':
+            case ':': {
                 appendDecoratedToken(start - 1)
                 accumulator.push(current)
                 appendDecoratedToken(start, MetaSourcegraphRevision.Separator)
                 break
-            default:
+            }
+            default: {
                 accumulator.push(current)
+            }
         }
     }
     appendDecoratedToken(start)
@@ -704,7 +721,7 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
     while (pattern.value[start] !== undefined) {
         current = nextChar()
         switch (current) {
-            case '.':
+            case '.': {
                 // Look ahead and see if this is a ... hole alias.
                 if (pattern.value.slice(start, start + 2) === '..') {
                     // It is a ... hole.
@@ -720,7 +737,8 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                 }
                 token.push('.')
                 break
-            case ':':
+            }
+            case ':': {
                 if (open > 0) {
                     // ':' inside a hole, likely part of a regexp pattern.
                     token.push(':')
@@ -744,7 +762,8 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                 // Trailing ':'.
                 token.push(current)
                 break
-            case '\\':
+            }
+            case '\\': {
                 if (pattern.value[start] !== undefined && open > 0) {
                     // Assume this is an escape sequence inside a regexp hole.
                     current = nextChar()
@@ -753,7 +772,8 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                 }
                 token.push('\\')
                 break
-            case '[':
+            }
+            case '[': {
                 if (open > 0) {
                     // Assume this is a character set inside a regexp hole.
                     inside = inside + 1
@@ -762,7 +782,8 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                 }
                 token.push('[')
                 break
-            case ']':
+            }
+            case ']': {
                 if (open > 0 && inside > 0) {
                     // This ']' closes a regular expression inside a hole.
                     inside = inside - 1
@@ -778,8 +799,10 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                 }
                 token.push(current)
                 break
-            default:
+            }
+            default: {
                 token.push(current)
+            }
         }
     }
     if (token.length > 0) {
@@ -789,6 +812,41 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
     return decorated
 }
 
+/**
+ * Adds decorations for a quoted pattern, like "foo" and "foo \" bar" for
+ * escaped quotes inside the pattern. The result always contains the
+ * original token so that hover tooltips can show information about the
+ * whole pattern.
+ */
+const mapQuotedPattern = (token: Pattern): DecoratedToken[] => {
+    // We always include the original token so that hover tooltips can show
+    // information about the whole pattern.
+    const tokens: DecoratedToken[] = [token]
+    const { value, delimiter } = token
+
+    if (delimiter) {
+        // + 1 because `value` is the value without delimiters, but token.range.start is the position of the first delimiter
+        const startOffset = token.range.start + 1
+        let i = 0
+
+        while (i < value.length) {
+            if (value[i] === '\\' && value[i + 1] === delimiter) {
+                tokens.push({
+                    type: 'metaKeyword',
+                    kind: MetaKeywordKind.EscapedCharacter,
+                    value: value.slice(i, i + 2),
+                    range: {
+                        start: startOffset + i,
+                        end: startOffset + i + 2,
+                    },
+                })
+                i += 1
+            }
+            i += 1
+        }
+    }
+    return tokens
+}
 /**
  * Returns true for filter values that have regexp values, e.g., repo, file.
  * Excludes FilterType.content because that depends on the pattern kind.
@@ -806,10 +864,12 @@ const hasRegexpValue = (field: string): boolean => {
         case 'msg':
         case 'm':
         case 'commiter':
-        case 'author':
+        case 'author': {
             return true
-        default:
+        }
+        default: {
             return false
+        }
     }
 }
 
@@ -864,7 +924,7 @@ const decorateSelector = (token: Literal): DecoratedToken[] => {
  */
 const mapOffset = (token: Token, offset: number): Token => {
     switch (token.type) {
-        case 'filter':
+        case 'filter': {
             token.range = { start: token.range.start + offset, end: token.range.end + offset }
             token.field.range = token.range = {
                 start: token.field.range.start + offset,
@@ -876,8 +936,10 @@ const mapOffset = (token: Token, offset: number): Token => {
                     end: token.value.range.end + offset,
                 }
             }
-        default:
+        }
+        default: {
             token.range = { start: token.range.start + offset, end: token.range.end + offset }
+        }
     }
     return token
 }
@@ -991,13 +1053,14 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
         case 'has.path':
         case 'contains.content':
         case 'has.content':
-        case 'has.description':
+        case 'has.description': {
             return mapRegexpMetaSucceed({
                 type: 'pattern',
                 range: { start: offset, end: body.length },
                 value: body,
                 kind: PatternKind.Regexp,
             })
+        }
         case 'has': {
             const result = decorateRepoHasMetaBody(body, offset)
             if (result !== undefined) {
@@ -1015,7 +1078,7 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
         case 'has.tag':
         case 'has.owner':
         case 'has.key':
-        case 'has.topic':
+        case 'has.topic': {
             return [
                 {
                     type: 'literal',
@@ -1024,6 +1087,17 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
                     quoted: false,
                 },
             ]
+        }
+        case 'at.time': {
+            return [
+                {
+                    type: 'literal',
+                    range: { start: offset, end: offset + body.length },
+                    value: body,
+                    quoted: false,
+                },
+            ]
+        }
     }
     decorated.push({
         type: 'literal',
@@ -1081,19 +1155,27 @@ const decoratePredicate = (predicate: Predicate, range: CharacterRange): Decorat
 export const decorate = (token: Token): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (token.type) {
-        case 'pattern':
+        case 'pattern': {
             switch (token.kind) {
-                case PatternKind.Regexp:
+                case PatternKind.Regexp: {
                     decorated.push(...mapRegexpMetaSucceed(token))
                     break
-                case PatternKind.Structural:
+                }
+                case PatternKind.Structural: {
                     decorated.push(...mapStructuralMeta(token))
                     break
-                case PatternKind.Literal:
-                    decorated.push(token)
+                }
+                case PatternKind.Literal: {
+                    if (token.delimited) {
+                        decorated.push(...mapQuotedPattern(token))
+                    } else {
+                        decorated.push(token)
+                    }
                     break
+                }
             }
             break
+        }
         case 'filter': {
             decorated.push({
                 type: 'field',
@@ -1135,13 +1217,17 @@ export const decorate = (token: Token): DecoratedToken[] => {
             }
             break
         }
-        default:
+        default: {
             decorated.push(token)
+        }
     }
     return decorated
 }
 
-const tokenKindToCSSName: Record<MetaRevisionKind | MetaRegexpKind | MetaPredicateKind | MetaStructuralKind, string> = {
+const tokenKindToCSSName: Record<
+    MetaRevisionKind | MetaRegexpKind | MetaPredicateKind | MetaStructuralKind | MetaKeywordKind,
+    string
+> = {
     Separator: 'separator',
     IncludeGlobMarker: 'include-glob-marker',
     ExcludeGlobMarker: 'exclude-glob-marker',
@@ -1175,23 +1261,28 @@ const tokenKindToCSSName: Record<MetaRevisionKind | MetaRegexpKind | MetaPredica
  */
 export const toCSSClassName = (token: DecoratedToken): string => {
     switch (token.type) {
-        case 'field':
+        case 'field': {
             return 'search-filter-keyword'
+        }
         case 'keyword':
         case 'openingParen':
         case 'closingParen':
         case 'metaRepoRevisionSeparator':
-        case 'metaContextPrefix':
+        case 'metaContextPrefix': {
             return 'search-keyword'
-        case 'metaFilterSeparator':
+        }
+        case 'metaFilterSeparator': {
             return 'search-filter-separator'
-        case 'metaPath':
+        }
+        case 'metaPath': {
             return 'search-path-separator'
+        }
 
         case 'metaRevision': {
             return `search-revision-${tokenKindToCSSName[token.kind]}`
         }
 
+        case 'metaKeyword':
         case 'metaRegexp': {
             return `search-regexp-meta-${tokenKindToCSSName[token.kind]}`
         }
@@ -1204,12 +1295,14 @@ export const toCSSClassName = (token: DecoratedToken): string => {
             return `search-structural-${tokenKindToCSSName[token.kind]}`
         }
 
-        default:
+        default: {
             return 'search-query-text'
+        }
     }
 }
 
 export interface Decoration {
+    token: DecoratedToken
     value: string
     key: number
     className: string
@@ -1224,53 +1317,67 @@ export function toDecoration(query: string, token: DecoratedToken): Decoration {
         case 'metaPath':
         case 'metaRevision':
         case 'metaRegexp':
-        case 'metaStructural':
+        case 'metaStructural': {
             return {
+                token,
                 value: token.value,
                 key: token.range.start + token.range.end,
                 className,
             }
-        case 'openingParen':
+        }
+        case 'openingParen': {
             return {
+                token,
                 value: '(',
                 key: token.range.start + token.range.end,
                 className,
             }
-        case 'closingParen':
+        }
+        case 'closingParen': {
             return {
+                token,
                 value: ')',
                 key: token.range.start + token.range.end,
                 className,
             }
+        }
 
-        case 'metaFilterSeparator':
+        case 'metaFilterSeparator': {
             return {
+                token,
                 value: ':',
                 key: token.range.start + token.range.end,
                 className,
             }
+        }
         case 'metaRepoRevisionSeparator':
-        case 'metaContextPrefix':
+        case 'metaContextPrefix': {
             return {
+                token,
                 value: '@',
                 key: token.range.start + token.range.end,
                 className,
             }
+        }
 
         case 'metaPredicate': {
             let value = ''
             switch (token.kind) {
-                case 'NameAccess':
+                case 'NameAccess': {
                     value = query.slice(token.range.start, token.range.end)
                     break
-                case 'Dot':
+                }
+                case 'Dot': {
                     value = '.'
                     break
-                case 'Parenthesis':
+                }
+                case 'Parenthesis': {
                     value = query.slice(token.range.start, token.range.end)
                     break
+                }
             }
             return {
+                token,
                 value,
                 key: token.range.start + token.range.end,
                 className,
@@ -1278,6 +1385,7 @@ export function toDecoration(query: string, token: DecoratedToken): Decoration {
         }
     }
     return {
+        token,
         value: query.slice(token.range.start, token.range.end),
         key: token.range.start + token.range.end,
         className,

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cloudsqlproxy",
+    srcs = [
+        "binary.go",
+        "cloudsqlproxy.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/cloudsqlproxy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/sg/internal/background",
+        "//dev/sg/internal/std",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_sourcegraph_run//:run",
+    ],
+)

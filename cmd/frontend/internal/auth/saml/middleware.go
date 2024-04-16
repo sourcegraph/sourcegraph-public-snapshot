@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
@@ -61,7 +61,7 @@ func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next ht
 	// app request, and the sign-out cookie is not present, redirect to the sso sign-in immediately.
 	//
 	// For sign-out requests (sign-out cookie is  present), the user will be redirected to the Sourcegraph login page.
-	ps := providers.Providers()
+	ps := providers.SignInProviders()
 	if len(ps) == 1 && ps[0].Config().Saml != nil && !auth.HasSignOutCookie(r) && !isAPIRequest {
 		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
 		if handled {
@@ -174,14 +174,14 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 			// if info.SessionNotOnOrAfter != nil {
 			// 	exp = time.Until(*info.SessionNotOnOrAfter)
 			// }
-			if err := session.SetActor(w, r, actor, exp, user.CreatedAt); err != nil {
+			if _, err := session.SetActorFromUser(r.Context(), w, r, user, exp); err != nil {
 				log15.Error("Error setting SAML-authenticated actor in session.", "err", err)
 				http.Error(w, "Error starting SAML-authenticated session. Try signing in again.", http.StatusInternalServerError)
 				return
 			}
 
 			// Add a ?signup= or ?signin= parameter to the redirect URL.
-			redirectURL := auth.AddPostAuthRedirectParametersToString(relayState.ReturnToURL, newUserCreated)
+			redirectURL := auth.AddPostAuthRedirectParametersToString(relayState.ReturnToURL, newUserCreated, "SAML")
 
 			// 🚨 SECURITY: Call auth.SafeRedirectURL to avoid an open-redirect vuln.
 			http.Redirect(w, r, auth.SafeRedirectURL(redirectURL), http.StatusFound)

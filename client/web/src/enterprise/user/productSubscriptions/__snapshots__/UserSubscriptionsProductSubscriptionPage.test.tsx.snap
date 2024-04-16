@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
+exports[`UserSubscriptionsProductSubscriptionPage > renders 1`] = `
 <DocumentFragment>
   <div
     class="user-subscriptions-product-subscription-page"

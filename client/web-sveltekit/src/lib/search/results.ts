@@ -7,17 +7,16 @@ import {
     findFilter,
     getMatchUrl,
     omitFilter,
+    truncateGroups,
     type ContentMatch,
     type OwnerMatch,
     type RepositoryMatch,
-    type PerFileResultRanking,
-    type MatchItem,
-    type RankingResult,
+    type MatchGroup,
     type Range,
 } from '$lib/shared'
 
 import type { QueryState } from './state'
-import { resultToMatchItems } from './utils'
+import { resultToMatchGroups } from './utils'
 
 const REPO_DESCRIPTION_CHAR_LIMIT = 500
 
@@ -30,23 +29,43 @@ export interface Meta {
     value?: string | null
 }
 
-export function getMetadata(result: RepositoryMatch): Meta[] {
-    const { metadata } = result
-    if (!metadata) {
-        return []
-    }
-    return sortBy(
-        Object.entries(metadata).map(([key, value]) => ({ key, value })),
-        ['key', 'value']
+export interface RepositoryBadge {
+    label: string
+    urlQuery: string
+}
+
+export function getRepositoryBadges(
+    queryState: QueryState,
+    repo: RepositoryMatch,
+    enableMetadata: boolean
+): RepositoryBadge[] {
+    const topicBadges = (repo.topics ?? []).map(topic => ({
+        label: topic,
+        urlQuery: buildSearchURLQueryForTopic(queryState, topic),
+    }))
+    const metaBadges = enableMetadata
+        ? Object.entries(repo.metadata ?? {}).map(([key, value]) => ({
+              label: `${key}:${value}`,
+              urlQuery: buildSearchURLQueryForMeta(queryState, key, value),
+          }))
+        : []
+    return sortBy([...topicBadges, ...metaBadges], ['label'])
+}
+
+function buildSearchURLQueryForTopic(queryState: QueryState, topic: string): string {
+    const query = appendFilter(queryState.query, 'repo', `has.topic(${topic})`)
+
+    return buildSearchURLQuery(
+        query,
+        queryState.patternType,
+        queryState.caseSensitive,
+        queryState.searchContext,
+        queryState.searchMode
     )
 }
 
-export function buildSearchURLQueryForMeta(queryState: QueryState, meta: Meta): string {
-    const query = appendFilter(
-        queryState.query,
-        'repo',
-        meta.value ? `has.meta(${meta.key}:${meta.value})` : `has.meta(${meta.key})`
-    )
+function buildSearchURLQueryForMeta(queryState: QueryState, key: string, value?: string): string {
+    const query = appendFilter(queryState.query, 'repo', value ? `has.meta(${key}:${value})` : `has.meta(${key})`)
 
     return buildSearchURLQuery(
         query,
@@ -59,12 +78,14 @@ export function buildSearchURLQueryForMeta(queryState: QueryState, meta: Meta): 
 
 export function getOwnerDisplayName(result: OwnerMatch): string {
     switch (result.type) {
-        case 'team':
+        case 'team': {
             return result.displayName || result.name || result.handle || result.email || 'Unknown team'
-        case 'person':
+        }
+        case 'person': {
             return (
                 result.user?.displayName || result.user?.username || result.handle || result.email || 'Unknown person'
             )
+        }
     }
 }
 
@@ -95,34 +116,30 @@ export function buildSearchURLQueryForOwner(queryState: QueryState, result: Owne
     )
 }
 
-function sumHighlightRanges(count: number, item: MatchItem): number {
-    return count + item.highlightRanges.length
+function sumHighlightRanges(count: number, item: MatchGroup): number {
+    return count + item.matches.length
 }
 
 export function rankContentMatch(
     result: ContentMatch,
-    ranking: PerFileResultRanking,
+    ranking: (groups: MatchGroup[]) => MatchGroup[],
+    maxMatches: number,
     contextLines: number
 ): {
-    expandedMatchGroups: RankingResult
-    collapsedMatchGroups: RankingResult
-    collapsible: boolean
+    expandedMatchGroups: MatchGroup[]
+    collapsedMatchGroups: MatchGroup[]
     hiddenMatchesCount: number
 } {
-    const items = resultToMatchItems(result)
-    const expandedMatchGroups = ranking.expandedResults(items, contextLines)
-    const collapsedMatchGroups = ranking.collapsedResults(items, contextLines)
+    const expandedMatchGroups = ranking(resultToMatchGroups(result))
+    const collapsedMatchGroups = truncateGroups(expandedMatchGroups, maxMatches, contextLines)
 
-    const collapsible = items.length > collapsedMatchGroups.matches.length
-
-    const highlightRangesCount = items.reduce(sumHighlightRanges, 0)
-    const collapsedHighlightRangesCount = collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0)
+    const highlightRangesCount = expandedMatchGroups.reduce(sumHighlightRanges, 0)
+    const collapsedHighlightRangesCount = collapsedMatchGroups.reduce(sumHighlightRanges, 0)
     const hiddenMatchesCount = highlightRangesCount - collapsedHighlightRangesCount
 
     return {
         expandedMatchGroups,
         collapsedMatchGroups,
-        collapsible,
         hiddenMatchesCount,
     }
 }

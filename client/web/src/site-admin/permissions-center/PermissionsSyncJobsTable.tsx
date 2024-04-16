@@ -3,14 +3,14 @@ import React, { type ChangeEvent, type FC, useCallback, useEffect, useRef, useSt
 import type { ApolloError } from '@apollo/client/errors'
 import { mdiCancel, mdiClose, mdiDetails, mdiMapSearch, mdiReload, mdiSecurity } from '@mdi/js'
 import classNames from 'classnames'
-import { intervalToDuration } from 'date-fns'
-import formatDuration from 'date-fns/formatDuration'
+import { intervalToDuration, formatDuration } from 'date-fns'
 import { capitalize, noop } from 'lodash'
 import { animated, useSpring } from 'react-spring'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation } from '@sourcegraph/http-client'
 import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
@@ -95,7 +95,7 @@ const DEFAULT_FILTERS = {
 }
 export const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 2000
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     minimal?: boolean
     userID?: string
     repoID?: string
@@ -103,6 +103,7 @@ interface Props extends TelemetryProps {
 
 export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
     minimal = false,
     userID,
     repoID,
@@ -189,6 +190,9 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     const handleTriggerPermsSync = useCallback(
         ([job]: PermissionsSyncJob[]) => {
             if (job.subject.__typename === 'Repository') {
+                telemetryRecorder.recordEvent('permissions-center.repository.sync', 'trigger', {
+                    privateMetadata: { repo: job.subject.id },
+                })
                 triggerRepoSync({
                     variables: { repo: job.subject.id },
                     onCompleted: () =>
@@ -199,6 +203,9 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                     noop
                 )
             } else {
+                telemetryRecorder.recordEvent('permissions-center.user.sync', 'trigger', {
+                    privateMetadata: { user: job.subject.id },
+                })
                 triggerUserSync({
                     variables: { user: job.subject.id },
                     onCompleted: () => toggleNotification({ text: 'User permissions sync successfully scheduled' }),
@@ -209,7 +216,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 )
             }
         },
-        [triggerUserSync, triggerRepoSync, onError, toggleNotification]
+        [triggerUserSync, triggerRepoSync, onError, toggleNotification, telemetryRecorder]
     )
 
     const handleCancelSyncJob = useCallback(
@@ -223,16 +230,36 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 // noop here is used because an error is handled in `onError` option of `useMutation` above.
                 noop
             )
+
+            if (syncJob.subject.__typename === 'Repository') {
+                telemetryRecorder.recordEvent('permissions-center.repository.sync', 'cancel', {
+                    privateMetadata: { repo: syncJob.subject.id },
+                })
+            } else {
+                telemetryRecorder.recordEvent('permissions-center.user.sync', 'cancel', {
+                    privateMetadata: { user: syncJob.subject.id },
+                })
+            }
         },
-        [cancelSyncJob, onError, toggleNotification]
+        [cancelSyncJob, onError, toggleNotification, telemetryRecorder]
     )
 
     const handleViewJobDetails = useCallback(
         ([syncJob]: PermissionsSyncJob[]) => {
             setShowModal(true)
             setSelectedJob(syncJob)
+
+            if (syncJob.subject.__typename === 'Repository') {
+                telemetryRecorder.recordEvent('permissions-center.repository.sync', 'view', {
+                    privateMetadata: { repo: syncJob.subject.id },
+                })
+            } else {
+                telemetryRecorder.recordEvent('permissions-center.user.sync', 'view', {
+                    privateMetadata: { user: syncJob.subject.id },
+                })
+            }
         },
-        [setShowModal, setSelectedJob]
+        [setShowModal, setSelectedJob, telemetryRecorder]
     )
 
     if (minimal) {
@@ -541,13 +568,16 @@ const PermissionsSyncJobStatePicker: FC<PermissionsSyncJobStatePickerProps> = pr
         let nextValue = null
         let partial = false
         switch (event.target.value) {
-            case '':
+            case '': {
                 break
-            case 'partial':
+            }
+            case 'partial': {
                 partial = true
                 break
-            default:
+            }
+            default: {
                 nextValue = event.target.value as PermissionsSyncJobState
+            }
         }
         onChange(nextValue)
         onPartialSuccessChange(partial)
@@ -637,12 +667,15 @@ const finalState = (state: PermissionsSyncJobState): boolean =>
 
 const prettyPrintCancelSyncJobMessage = (message: CancelPermissionsSyncJobResultMessage): string => {
     switch (message) {
-        case CancelPermissionsSyncJobResultMessage.SUCCESS:
+        case CancelPermissionsSyncJobResultMessage.SUCCESS: {
             return 'Permissions sync job canceled.'
-        case CancelPermissionsSyncJobResultMessage.NOT_FOUND:
+        }
+        case CancelPermissionsSyncJobResultMessage.NOT_FOUND: {
             return 'Permissions sync job is already dequeued and cannot be canceled.'
-        case CancelPermissionsSyncJobResultMessage.ERROR:
+        }
+        case CancelPermissionsSyncJobResultMessage.ERROR: {
             return 'Error during permissions sync job cancelling.'
+        }
     }
 }
 

@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/providers/gitlab"
@@ -124,9 +123,10 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						Token:   "asdf",
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.mine"),
+						Token:                       "asdf",
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
@@ -156,7 +156,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.mine."},
+			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) exists for https://gitlab.mine."},
 		},
 		{
 			description: "1 GitLab connection with authz enabled, no GitLab auth provider",
@@ -177,7 +177,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.mine."},
+			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) exists for https://gitlab.mine."},
 		},
 		{
 			description: "Two GitLab connections with authz enabled, two matching GitLab auth providers",
@@ -224,16 +224,18 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						Token:   "asdf",
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.mine"),
+						Token:                       "asdf",
+						SyncInternalRepoPermissions: true,
 					},
 				},
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.com"),
-						Token:   "asdf",
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.com"),
+						Token:                       "asdf",
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
@@ -299,9 +301,10 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							Type: "saml",
 							ID:   "okta",
 						},
-						GitLabProvider:    "my-external",
-						SudoToken:         "asdf",
-						UseNativeUsername: false,
+						GitLabProvider:              "my-external",
+						SudoToken:                   "asdf",
+						UseNativeUsername:           false,
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
@@ -326,10 +329,11 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					SudoOp: gitlab.SudoProviderOp{
-						URN:               "extsvc:gitlab:0",
-						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
-						SudoToken:         "asdf",
-						UseNativeUsername: true,
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.mine"),
+						SudoToken:                   "asdf",
+						UseNativeUsername:           true,
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
@@ -437,9 +441,10 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						Token:   "asdf",
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.mine"),
+						Token:                       "asdf",
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
@@ -782,11 +787,15 @@ func (p *mockProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz
 }
 
 func mockExplicitPermissions(enabled bool) func() {
-	orig := globals.PermissionsUserMapping()
-	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: enabled})
-	return func() {
-		globals.SetPermissionsUserMapping(orig)
-	}
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			PermissionsUserMapping: &schema.PermissionsUserMapping{
+				Enabled: enabled,
+				BindID:  "email",
+			},
+		},
+	})
+	return func() { conf.Mock(nil) }
 }
 
 func TestPermissionSyncingDisabled(t *testing.T) {
@@ -842,8 +851,6 @@ func TestPermissionSyncingDisabled(t *testing.T) {
 	})
 }
 
-// This test lives in cmd/enterprise because it tests a proprietary
-// super-set of the validation performed by the OSS version.
 func TestValidateExternalServiceConfig(t *testing.T) {
 	t.Parallel()
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
@@ -1096,6 +1103,16 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 		},
 		{
 			kind: extsvc.KindBitbucketCloud,
+			desc: "valid with url, accessToken",
+			config: `
+			{
+				"url": "https://bitbucket.org/",
+				"accessToken": "access-token"
+			}`,
+			assert: equals("<nil>"),
+		},
+		{
+			kind: extsvc.KindBitbucketCloud,
 			desc: "valid with url, username, appPassword, teams",
 			config: `
 			{
@@ -1108,12 +1125,10 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 		},
 		{
 			kind:   extsvc.KindBitbucketCloud,
-			desc:   "without url, username nor appPassword",
+			desc:   "without url",
 			config: `{}`,
 			assert: includes(
 				"url is required",
-				"username is required",
-				"appPassword is required",
 			),
 		},
 		{
@@ -1794,7 +1809,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 				"authorization": { "identityProvider": { "type": "oauth" } }
 			}
 			`,
-			assert: includes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.foo.bar."),
+			assert: includes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) exists for https://gitlab.foo.bar."),
 		},
 		{
 			kind: extsvc.KindGitLab,
@@ -1808,7 +1823,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			ps: []schema.AuthProviders{
 				{Gitlab: &schema.GitLabAuthProvider{Url: "https://gitlab.foo.bar"}},
 			},
-			assert: excludes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.foo.bar."),
+			assert: excludes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) exists for https://gitlab.foo.bar."),
 		},
 		{
 			kind: extsvc.KindGitLab,
@@ -1826,7 +1841,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 				}
 			}
 			`,
-			assert: includes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
+			assert: includes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) matches the type and configID."),
 		},
 		{
 			kind: extsvc.KindGitLab,
@@ -1852,7 +1867,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 					},
 				},
 			},
-			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
+			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) matches the type and configID."),
 		},
 		{
 			kind: extsvc.KindGitLab,
@@ -1878,7 +1893,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 					},
 				},
 			},
-			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
+			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) matches the type and configID."),
 		},
 		{
 			kind: extsvc.KindGitLab,

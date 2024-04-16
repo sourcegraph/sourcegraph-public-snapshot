@@ -15,8 +15,8 @@ import (
 func TestCommit(t *testing.T) {
 	ctx := context.Background()
 	gsClient := gitserver.NewMockClient()
-	gsClient.ListTagsFunc.SetDefaultReturn([]*gitdomain.Tag{
-		{Name: "v1"}, {Name: "v2"}, {Name: "v3"}, {Name: "v4"}, {Name: "v5"},
+	gsClient.ListRefsFunc.SetDefaultReturn([]gitdomain.Ref{
+		{ShortName: "v1"}, {ShortName: "v2"}, {ShortName: "v3"}, {ShortName: "v4"}, {ShortName: "v5"},
 	}, nil)
 
 	repo := &repoResolver{repo: &types.Repo{
@@ -24,7 +24,7 @@ func TestCommit(t *testing.T) {
 	}}
 	resolver := NewGitCommitResolver(gsClient, repo, api.CommitID("deadbeef"), "")
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		tags, err := resolver.Tags(ctx)
 		if err != nil {
 			t.Fatalf("unexpected error from tags: %s", err)
@@ -34,7 +34,7 @@ func TestCommit(t *testing.T) {
 		}
 	}
 
-	if len(gsClient.ListTagsFunc.History()) != 1 {
+	if len(gsClient.ListRefsFunc.History()) != 1 {
 		t.Fatalf("expected function to be memoized")
 	}
 }

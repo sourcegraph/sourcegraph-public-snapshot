@@ -26,8 +26,10 @@ interface NavDropdownProps {
         /** Alternative path to match against if item is active */
         altPath?: string
     } & Pick<NavLinkProps, 'variant'>
-    /** The first item in the dropdown menu that serves as the "home" item.
-        It uses the path from the toggleItem. */
+    /**
+     * The first item in the dropdown menu that serves as the "home" item. It uses the path from the
+     * toggleItem.
+     */
     homeItem?: Omit<NavDropdownItem, 'path'>
     /** Items to display in the dropdown */
     items: NavDropdownItem[]

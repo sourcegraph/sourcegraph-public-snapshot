@@ -1,9 +1,10 @@
 import { type MouseEvent, useCallback } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiArrowRight } from '@mdi/js'
+import classNames from 'classnames'
 
 import { smartSearchIconSvgPath, SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
-import { pluralize, formatSearchParameters } from '@sourcegraph/common'
+import { pluralize, SourcegraphURL } from '@sourcegraph/common'
 import type {
     AggregateStreamingSearchResults,
     AlertKind,
@@ -29,6 +30,7 @@ import styles from './QuerySuggestion.module.scss'
 interface SmartSearchProps {
     alert: Required<AggregateStreamingSearchResults>['alert'] | undefined
     onDisableSmartSearch: () => void
+    className?: string
 }
 
 const alertContent: {
@@ -65,6 +67,7 @@ const alertContent: {
 export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartSearchProps>> = ({
     alert,
     onDisableSmartSearch,
+    className,
 }) => {
     const [isCollapsed, setIsCollapsed] = useTemporarySetting('search.results.collapseSmartSearch')
 
@@ -86,7 +89,7 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
     const content = alertContent[alert.kind](alert.proposedQueries?.length || 0)
 
     return (
-        <div className={styles.root}>
+        <div className={classNames(className, styles.root)}>
             <Collapse isOpen={!isCollapsed} onOpenChange={opened => setIsCollapsed(!opened)}>
                 <CollapseHeader className={styles.collapseButton}>
                     <div className={styles.header}>
@@ -128,10 +131,12 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
                         {alert?.proposedQueries?.map(entry => (
                             <li key={entry.query} className={styles.listItem}>
                                 <Link
-                                    to={createLinkUrl({
-                                        pathname: '/search',
-                                        search: formatSearchParameters(new URLSearchParams({ q: entry.query })),
-                                    })}
+                                    to={createLinkUrl(
+                                        SourcegraphURL.from({
+                                            pathname: '/search',
+                                            search: new URLSearchParams({ q: entry.query }),
+                                        })
+                                    )}
                                     className={styles.link}
                                 >
                                     <Text className="mb-0">

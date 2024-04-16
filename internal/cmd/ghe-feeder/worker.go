@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v55/github"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/oauth2"

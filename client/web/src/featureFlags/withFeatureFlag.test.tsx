@@ -1,4 +1,5 @@
 import { render } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -21,7 +22,7 @@ describe('withFeatureFlag', () => {
             </MockedTestProvider>
         )
 
-        expect(await findByTestId(trueComponentTestId)).toBeTruthy()
+        expect(await findByTestId(trueComponentTestId)).toBeInTheDocument()
     })
 
     it('renders correctly when flagValue=false', async () => {
@@ -31,7 +32,7 @@ describe('withFeatureFlag', () => {
             </MockedTestProvider>
         )
 
-        expect(await findByTestId(falseComponentTestId)).toBeTruthy()
+        expect(await findByTestId(falseComponentTestId)).toBeInTheDocument()
     })
 
     it('waits until flag value is resolved', () => {
@@ -41,8 +42,8 @@ describe('withFeatureFlag', () => {
             </MockedTestProvider>
         )
 
-        expect(queryByTestId(falseComponentTestId)).toBeFalsy()
-        expect(queryByTestId(trueComponentTestId)).toBeFalsy()
+        expect(queryByTestId(falseComponentTestId)).not.toBeInTheDocument()
+        expect(queryByTestId(trueComponentTestId)).not.toBeInTheDocument()
     })
 
     it('renders correctly when flagValue=false and FalseComponent omitted', () => {

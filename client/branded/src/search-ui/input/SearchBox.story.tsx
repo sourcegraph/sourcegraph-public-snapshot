@@ -24,10 +24,6 @@ export default config
 
 const defaultProps: SearchBoxProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    settingsCascade: {
-        final: null,
-        subjects: null,
-    },
     queryState: { query: 'hello repo:test' },
     isSourcegraphDotCom: false,
     patternType: SearchPatternType.standard,

@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
 import { render, renderHook, act as actHook } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
 
 import { TemporarySettingsContext } from './TemporarySettingsProvider'
 import { InMemoryMockSettingsBackend, TemporarySettingsStorage } from './TemporarySettingsStorage'

@@ -1,0 +1,20 @@
+---
+source: crates/syntax-analysis/src/globals.rs
+expression: dumped
+---
+  package scopes_of_go
+//^^^^^^^^^^^^^^^^^^^^ 0:0..10:0 definition(Package) scip-ctags scopes_of_go/
+  
+  func Something() int {
+//^^^^^^^^^^^^^^^^^^^^^^ 2:0..4:1 definition(Function) scip-ctags scopes_of_go/Something().
+   return 1
+  }
+  
+  type SomethingElse struct {
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^ 6:0..9:1 definition(Struct) scip-ctags scopes_of_go/SomethingElse#
+   a int
+// ^^^^^ definition(Field) scip-ctags scopes_of_go/SomethingElse#a.
+   b string
+// ^^^^^^^^ definition(Field) scip-ctags scopes_of_go/SomethingElse#b.
+  }
+

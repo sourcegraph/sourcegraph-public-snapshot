@@ -19,14 +19,12 @@ go env
 CHECKS=(
   ./gofmt.sh
   ./template-inlines.sh
-  ./go-enterprise-import.sh
   ./go-dbconn-import.sh
   ./go-lint.sh
   ./no-localhost-guard.sh
   ./bash-syntax.sh
   ./shfmt.sh
   ./shellcheck.sh
-  ./ts-enterprise-import.sh
   ./submodule.sh
 )
 
@@ -39,7 +37,7 @@ fi
 
 parallel_run "${MAYBE_TIME_PREFIX}" {} ::: "${CHECKS[@]}"
 
-# TODO(sqs): Reenable this check when about.sourcegraph.com is reliable. Most failures come from its
+# TODO(sqs): Reenable this check when sourcegraph.com is reliable. Most failures come from its
 # downtime, not from broken URLs.
 #
 # ./broken-urls.bash

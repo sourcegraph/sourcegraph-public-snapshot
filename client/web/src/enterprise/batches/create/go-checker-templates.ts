@@ -646,47 +646,68 @@ export function getTemplateRenderer(kind: string | null): ((name: string) => str
     }
 
     switch (kind) {
-        case 'goCheckerSA6005':
+        case 'goCheckerSA6005': {
             return goCheckerSA6005Template
-        case 'goCheckerS1002':
+        }
+        case 'goCheckerS1002': {
             return goCheckerS1002Template
-        case 'goCheckerS1003':
+        }
+        case 'goCheckerS1003': {
             return goCheckerS1003Template
-        case 'goCheckerS1004':
+        }
+        case 'goCheckerS1004': {
             return goCheckerS1004Template
-        case 'goCheckerS1005':
+        }
+        case 'goCheckerS1005': {
             return goCheckerS1005Template
-        case 'goCheckerS1006':
+        }
+        case 'goCheckerS1006': {
             return goCheckerS1006Template
-        case 'goCheckerS1010':
+        }
+        case 'goCheckerS1010': {
             return goCheckerS1010Template
-        case 'goCheckerS1012':
+        }
+        case 'goCheckerS1012': {
             return goCheckerS1012Template
-        case 'goCheckerS1019':
+        }
+        case 'goCheckerS1019': {
             return goCheckerS1019Template
-        case 'goCheckerS1020':
+        }
+        case 'goCheckerS1020': {
             return goCheckerS1020Template
-        case 'goCheckerS1023':
+        }
+        case 'goCheckerS1023': {
             return goCheckerS1023Template
-        case 'goCheckerS1024':
+        }
+        case 'goCheckerS1024': {
             return goCheckerS1024Template
-        case 'goCheckerS1025':
+        }
+        case 'goCheckerS1025': {
             return goCheckerS1025Template
-        case 'goCheckerS1028':
+        }
+        case 'goCheckerS1028': {
             return goCheckerS1028Template
-        case 'goCheckerS1029':
+        }
+        case 'goCheckerS1029': {
             return goCheckerS1029Template
-        case 'goCheckerS1032':
+        }
+        case 'goCheckerS1032': {
             return goCheckerS1032Template
-        case 'goCheckerS1035':
+        }
+        case 'goCheckerS1035': {
             return goCheckerS1035Template
-        case 'goCheckerS1037':
+        }
+        case 'goCheckerS1037': {
             return goCheckerS1037Template
-        case 'goCheckerS1038':
+        }
+        case 'goCheckerS1038': {
             return goCheckerS1038Template
-        case 'goCheckerS1039':
+        }
+        case 'goCheckerS1039': {
             return goCheckerS1039Template
-        default:
+        }
+        default: {
             return undefined
+        }
     }
 }

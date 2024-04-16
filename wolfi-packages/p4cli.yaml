@@ -1,6 +1,6 @@
 package:
   name: p4cli
-  version: 22.2
+  version: 23.1
   epoch: 2
   description: "Command line interface for Perforce"
   target-architecture:
@@ -25,9 +25,9 @@ environment:
 pipeline:
   - uses: fetch
     with:
-      uri: https://cdist2.perforce.com/perforce/r${{package.version}}/bin.linux26x86_64/p4
-      # Hash occasionally changes, available at https://filehost.perforce.com/perforce/r22.2/bin.linux26x86_64/SHA256SUMS (check version)
-      expected-sha256: 3dfa10fb0cca6e305037e1ec69df7f32cb4a04844bc8e0d662ebc562b470cf8b
+      uri: https://filehost.perforce.com/perforce/r${{package.version}}/bin.linux26x86_64/p4
+      # Hash occasionally changes, available at https://filehost.perforce.com/perforce/r23.1/bin.linux26x86_64/SHA256SUMS (check version)
+      expected-sha256: 1c053276f9379a55cfe98b0c191e03bec7d1d1673b416c7b9e1613cff699833a
       extract: false
   - runs: |
       chmod +x p4

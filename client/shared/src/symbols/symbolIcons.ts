@@ -29,60 +29,87 @@ import type { SymbolKind } from '../graphql-operations'
 
 export const getSymbolIconSVGPath = (kind: SymbolKind): string => {
     switch (kind) {
-        case 'FILE':
+        case 'FILE': {
             return mdiFileDocument
-        case 'MODULE':
+        }
+        case 'MODULE': {
             return mdiCodeBraces
-        case 'NAMESPACE':
+        }
+        case 'NAMESPACE': {
             return mdiWeb
-        case 'PACKAGE':
+        }
+        case 'PACKAGE': {
             return mdiPackage
-        case 'CLASS':
+        }
+        case 'CLASS': {
             return mdiSitemap
-        case 'METHOD':
+        }
+        case 'METHOD': {
             return mdiCubeOutline
-        case 'PROPERTY':
+        }
+        case 'PROPERTY': {
             return mdiWrench
-        case 'FIELD':
+        }
+        case 'FIELD': {
             return mdiTextBox
-        case 'CONSTRUCTOR':
+        }
+        case 'CONSTRUCTOR': {
             return mdiCubeOutline
-        case 'ENUM':
+        }
+        case 'ENUM': {
             return mdiNumeric
-        case 'INTERFACE':
+        }
+        case 'INTERFACE': {
             return mdiLink
-        case 'FUNCTION':
+        }
+        case 'FUNCTION': {
             return mdiFunction
-        case 'VARIABLE':
+        }
+        case 'VARIABLE': {
             return mdiCube
-        case 'CONSTANT':
+        }
+        case 'CONSTANT': {
             return mdiPiBox
-        case 'STRING':
+        }
+        case 'STRING': {
             return mdiCodeString
-        case 'NUMBER':
+        }
+        case 'NUMBER': {
             return mdiPound
-        case 'BOOLEAN':
+        }
+        case 'BOOLEAN': {
             return mdiMatrix
-        case 'ARRAY':
+        }
+        case 'ARRAY': {
             return mdiCodeArray
-        case 'OBJECT':
+        }
+        case 'OBJECT': {
             return mdiDrawingBox
-        case 'KEY':
+        }
+        case 'KEY': {
             return mdiKey
-        case 'NULL':
+        }
+        case 'NULL': {
             return mdiNull
-        case 'ENUMMEMBER':
+        }
+        case 'ENUMMEMBER': {
             return mdiNumeric
-        case 'STRUCT':
+        }
+        case 'STRUCT': {
             return mdiPillar
-        case 'EVENT':
+        }
+        case 'EVENT': {
             return mdiTimetable
-        case 'OPERATOR':
+        }
+        case 'OPERATOR': {
             return mdiCodeNotEqual
-        case 'TYPEPARAMETER':
+        }
+        case 'TYPEPARAMETER': {
             return mdiCube
+        }
         case 'UNKNOWN':
-        default:
+        default: {
             return mdiShape
+        }
     }
 }

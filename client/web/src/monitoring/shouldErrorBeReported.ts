@@ -15,11 +15,7 @@ export function shouldErrorBeReported(error: unknown): boolean {
 }
 
 export function isChunkLoadError(value: unknown): boolean {
-    return isWebpackChunkError(value) || isDynamicImportError(value)
-}
-
-function isWebpackChunkError(value: unknown): boolean {
-    return isErrorLike(value) && (value.name === 'ChunkLoadError' || /loading css chunk/gi.test(value.message))
+    return isDynamicImportError(value)
 }
 
 function isDynamicImportError(value: unknown): boolean {

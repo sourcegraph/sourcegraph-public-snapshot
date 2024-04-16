@@ -1,6 +1,7 @@
 import assert from 'assert'
 
 import expect from 'expect'
+import { beforeEach, describe, it } from 'mocha'
 
 import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'

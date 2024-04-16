@@ -8,13 +8,16 @@ npm_link_all_packages(name = "node_modules")
 
 js_library(
     name = "eslint-plugin-wildcard_lib",
-    srcs = glob(["lib/**/*.js"]),
+    srcs = [
+        "lib/index.js",
+        "lib/rules/forbid-class-name.js",
+    ],
 )
 
 npm_package(
     name = "eslint-plugin-wildcard_pkg",
     srcs = [
-        "eslint-plugin-wildcard_lib",  # keep
         "package.json",
+        ":eslint-plugin-wildcard_lib",
     ],
 )

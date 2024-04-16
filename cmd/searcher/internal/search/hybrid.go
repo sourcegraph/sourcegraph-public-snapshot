@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -52,6 +53,9 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 	// request. As such we centralize our observability to always take into
 	// account the state of the ctx.
 	defer func() {
+		// We can downgrade error logs to rootLogger.Warn
+		errorLogger := rootLogger.Error
+
 		if err != nil {
 			switch ctx.Err() {
 			case context.Canceled:
@@ -65,9 +69,15 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 				// path in this case.
 				recordHybridFinalState("search-timeout")
 				unsearched, ok = nil, true
+				errorLogger = rootLogger.Warn
 			}
 		}
 
+		if err != nil {
+			errorLogger("hybrid search failed", log.String("state", finalState), log.Error(err))
+		} else {
+			rootLogger.Debug("hybrid search done", log.String("state", finalState), log.Bool("ok", ok), log.Int("unsearched.len", len(unsearched)))
+		}
 		metricHybridFinalState.WithLabelValues(finalState).Inc()
 	}()
 
@@ -77,13 +87,13 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 	// actually searching since the index may update. If the index changes,
 	// which files we search need to change. As such we keep retrying until we
 	// know we have had a consistent list and search on zoekt.
-	for try := 0; try < 5; try++ {
+	for try := range 5 {
 		logger := rootLogger.With(log.Int("try", try))
 
 		indexed, ok, err := zoektIndexedCommit(ctx, client, p.Repo)
 		if err != nil {
 			recordHybridFinalState("zoekt-list-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to list indexed commits for %s", p.Repo)
 		}
 		if !ok {
 			logger.Debug("failed to find indexed commit")
@@ -96,9 +106,13 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 		// indexed and p.Commit and avoid the need of running diff for each
 		// search.
 		out, err := s.GitDiffSymbols(ctx, p.Repo, indexed, p.Commit)
-		if err != nil {
+		if errcode.IsNotFound(err) {
+			recordHybridFinalState("git-diff-not-found")
+			logger.Debug("not doing hybrid search due to likely missing indexed commit on gitserver", log.Error(err))
+			return nil, false, nil
+		} else if err != nil {
 			recordHybridFinalState("git-diff-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to find changed files in %s between %s and %s", p.Repo, indexed, p.Commit)
 		}
 
 		indexedIgnore, unindexedSearch, err := diff.ParseGitDiffNameStatus(out)
@@ -107,7 +121,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 				log.Binary("out", out),
 				log.Error(err))
 			recordHybridFinalState("git-diff-parse-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to parse git diff output of changed files in %s between %s and %s", p.Repo, indexed, p.Commit)
 		}
 
 		totalLenIndexedIgnore := totalStringsLen(indexedIgnore)
@@ -131,7 +145,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 		retryReason, err := zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
 		if err != nil {
 			recordHybridFinalState("zoekt-search-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to search indexed commit %s@%s", p.Repo, indexed)
 		} else if retryReason != "" {
 			metricHybridRetry.WithLabelValues(retryReason).Inc()
 			logger.Debug("retrying search since index changed while searching", log.String("retryReason", retryReason))
@@ -164,7 +178,8 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 	))
 
 	opts := (&search.ZoektParameters{
-		FileMatchLimit: int32(p.Limit),
+		FileMatchLimit:  int32(p.Limit),
+		NumContextLines: int(p.NumContextLines),
 	}).ToSearchOptions(ctx)
 	if deadline, ok := ctx.Deadline(); ok {
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond
@@ -197,6 +212,7 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 
 			sender.Send(protocol.FileMatch{
 				Path:         fm.FileName,
+				Language:     fm.Language,
 				ChunkMatches: zoektChunkMatches(fm.ChunkMatches),
 			})
 		}
@@ -240,47 +256,24 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 // zoektCompile builds a text search zoekt query for p.
 //
 // This function should support the same features as the "compile" function,
-// but return a zoektquery instead of a readerGrep.
+// but return a zoektquery instead of a regexMatchTree.
 //
 // Note: This is used by hybrid search and not structural search.
 func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	var parts []zoektquery.Q
 	// we are redoing work here, but ensures we generate the same regex and it
-	// feels nicer than passing in a readerGrep since handle path directly.
-	if rg, err := compile(p); err != nil {
+	// feels nicer than passing in a regexMatchTree since handle path directly.
+	if m, err := toMatchTree(p.Query, p.IsCaseSensitive); err != nil {
 		return nil, err
-	} else if rg.re == nil { // we are just matching paths
-		parts = append(parts, &zoektquery.Const{Value: true})
 	} else {
-		re, err := syntax.Parse(rg.re.String(), syntax.Perl)
+		q, err := m.ToZoektQuery(p.PatternMatchesContent, p.PatternMatchesPath)
 		if err != nil {
 			return nil, err
 		}
-		re = zoektquery.OptimizeRegexp(re, syntax.Perl)
-		if p.PatternMatchesContent && p.PatternMatchesPath {
-			parts = append(parts, zoektquery.NewOr(
-				&zoektquery.Regexp{
-					Regexp:        re,
-					Content:       true,
-					CaseSensitive: !rg.ignoreCase,
-				},
-				&zoektquery.Regexp{
-					Regexp:        re,
-					FileName:      true,
-					CaseSensitive: !rg.ignoreCase,
-				},
-			))
-		} else {
-			parts = append(parts, &zoektquery.Regexp{
-				Regexp:        re,
-				Content:       p.PatternMatchesContent,
-				FileName:      p.PatternMatchesPath,
-				CaseSensitive: !rg.ignoreCase,
-			})
-		}
+		parts = append(parts, q)
 	}
 
-	for _, pat := range p.IncludePatterns {
+	for _, pat := range p.IncludePaths {
 		re, err := syntax.Parse(pat, syntax.Perl)
 		if err != nil {
 			return nil, err
@@ -292,8 +285,8 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 		})
 	}
 
-	if p.ExcludePattern != "" {
-		re, err := syntax.Parse(p.ExcludePattern, syntax.Perl)
+	if p.ExcludePaths != "" {
+		re, err := syntax.Parse(p.ExcludePaths, syntax.Perl)
 		if err != nil {
 			return nil, err
 		}
@@ -301,6 +294,18 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 			Regexp:        re,
 			FileName:      true,
 			CaseSensitive: p.PathPatternsAreCaseSensitive,
+		}})
+	}
+
+	for _, lang := range p.IncludeLangs {
+		parts = append(parts, &zoektquery.Language{
+			Language: lang,
+		})
+	}
+
+	for _, lang := range p.ExcludeLangs {
+		parts = append(parts, &zoektquery.Not{Child: &zoektquery.Language{
+			Language: lang,
 		}})
 	}
 

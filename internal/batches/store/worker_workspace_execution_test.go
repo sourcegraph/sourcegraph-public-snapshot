@@ -31,8 +31,8 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 	user := bt.CreateTestUser(t, db, true)
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
-	s := New(db, &observation.TestContext, nil)
-	workStore := dbworkerstore.New(&observation.TestContext, s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions)
+	s := New(db, observation.TestContextTB(t), nil)
+	workStore := dbworkerstore.New(observation.TestContextTB(t), s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions)
 
 	// Setup all the associations
 	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
@@ -69,7 +69,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 	executionStore := &batchSpecWorkspaceExecutionWorkerStore{
 		Store:          workStore,
-		observationCtx: &observation.TestContext,
+		observationCtx: observation.TestContextTB(t),
 		logger:         logtest.Scoped(t),
 	}
 	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
@@ -225,8 +225,8 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkFailed(t *testing.T) {
 	user := bt.CreateTestUser(t, db, true)
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
-	s := New(db, &observation.TestContext, nil)
-	workStore := dbworkerstore.New(&observation.TestContext, s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions)
+	s := New(db, observation.TestContextTB(t), nil)
+	workStore := dbworkerstore.New(observation.TestContextTB(t), s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions)
 
 	// Setup all the associations
 	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
@@ -278,7 +278,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 	executionStore := &batchSpecWorkspaceExecutionWorkerStore{
 		Store:          workStore,
-		observationCtx: &observation.TestContext,
+		observationCtx: observation.TestContextTB(t),
 		logger:         logtest.Scoped(t),
 	}
 	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
@@ -381,8 +381,8 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete_EmptyDiff(t *testin
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
-	s := New(db, &observation.TestContext, nil)
-	workStore := dbworkerstore.New(&observation.TestContext, s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions)
+	s := New(db, observation.TestContextTB(t), nil)
+	workStore := dbworkerstore.New(observation.TestContextTB(t), s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions)
 
 	// Setup all the associations
 	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
@@ -423,7 +423,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 	executionStore := &batchSpecWorkspaceExecutionWorkerStore{
 		Store:          workStore,
-		observationCtx: &observation.TestContext,
+		observationCtx: observation.TestContextTB(t),
 	}
 	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
 
@@ -465,8 +465,8 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T)
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
-	s := New(db, &observation.TestContext, nil)
-	workerStore := dbworkerstore.New(&observation.TestContext, s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions)
+	s := New(db, observation.TestContextTB(t), nil)
+	workerStore := dbworkerstore.New(observation.TestContextTB(t), s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions)
 
 	user1 := bt.CreateTestUser(t, db, true)
 	user2 := bt.CreateTestUser(t, db, true)
@@ -514,8 +514,8 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin_NoDoubleDeque
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
-	s := New(db, &observation.TestContext, nil)
-	workerStore := dbworkerstore.New(&observation.TestContext, s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions)
+	s := New(db, observation.TestContextTB(t), nil)
+	workerStore := dbworkerstore.New(observation.TestContextTB(t), s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions)
 
 	user1 := bt.CreateTestUser(t, db, true)
 	user2 := bt.CreateTestUser(t, db, true)
@@ -528,7 +528,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin_NoDoubleDeque
 	// We create multiple jobs for each user because this test ensures jobs are
 	// dequeued in a round-robin fashion, starting with the user who dequeued
 	// the longest ago.
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		setupBatchSpecAssociation(ctx, s, t, user1BatchSpec, repo)
 		setupBatchSpecAssociation(ctx, s, t, user2BatchSpec, repo)
 		setupBatchSpecAssociation(ctx, s, t, user3BatchSpec, repo)
@@ -542,7 +542,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin_NoDoubleDeque
 	// We dequeue records until there are no more left. We spawn 8 concurrent
 	// "workers" to find potential locking issues.
 	var wg sync.WaitGroup
-	for i := 0; i < 8; i++ {
+	for range 8 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

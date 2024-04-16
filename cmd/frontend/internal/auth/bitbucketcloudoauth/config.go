@@ -3,7 +3,6 @@ package bitbucketcloudoauth
 import (
 	"fmt"
 
-	"github.com/dghubble/gologin/v2"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
@@ -75,15 +74,4 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 		existingProviders.Add(provider.CachedInfo().UniqueID())
 	}
 	return ps, problems
-}
-
-func getStateConfig() gologin.CookieConfig {
-	cfg := gologin.CookieConfig{
-		Name:     "bitbucketcloud-state-cookie",
-		Path:     "/",
-		MaxAge:   900, // 15 minutes
-		HTTPOnly: true,
-		Secure:   conf.IsExternalURLSecure(),
-	}
-	return cfg
 }

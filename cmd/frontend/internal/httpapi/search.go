@@ -1,15 +1,10 @@
 package httpapi
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
@@ -44,7 +39,7 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 	// try every "directory" in the repo name to assign it a value, so a repoName like
 	// "github.com/sourcegraph/zoekt" will have "github.com", "github.com/sourcegraph",
 	// and "github.com/sourcegraph/zoekt" tested.
-	for i := 0; i < len(repoName); i++ {
+	for i := range len(repoName) {
 		if repoName[i] == '/' {
 			val += scores[repoName[:i]]
 		}
@@ -183,72 +178,6 @@ type searchIndexerServer struct {
 	MinLastChangedDisabled bool
 }
 
-// serveConfiguration is _only_ used by the zoekt index server. Zoekt does
-// not depend on frontend and therefore does not have access to `conf.Watch`.
-// Additionally, it only cares about certain search specific settings so this
-// search specific endpoint is used rather than serving the entire site settings
-// from /.internal/configuration.
-//
-// This endpoint also supports batch requests to avoid managing concurrency in
-// zoekt. On vertically scaled instances we have observed zoekt requesting
-// this endpoint concurrently leading to socket starvation.
-func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.Request) error {
-	ctx := r.Context()
-	if err := r.ParseForm(); err != nil {
-		return err
-	}
-
-	indexedIDs := make([]api.RepoID, 0, len(r.Form["repoID"]))
-	for _, idStr := range r.Form["repoID"] {
-		id, err := strconv.Atoi(idStr)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("invalid repo id %s: %s", idStr, err), http.StatusBadRequest)
-			return nil
-		}
-		indexedIDs = append(indexedIDs, api.RepoID(id))
-	}
-
-	var clientFingerprint searchbackend.ConfigFingerprint
-	err := clientFingerprint.FromHeaders(r.Header)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("invalid fingerprint: %s", err), http.StatusBadRequest)
-		return nil
-	}
-
-	response, err := h.doSearchConfiguration(ctx, searchConfigurationParameters{
-		repoIDs:     indexedIDs,
-		fingerprint: clientFingerprint,
-	})
-
-	if err != nil {
-		var parameterErr *parameterError
-		code := http.StatusInternalServerError
-
-		if errors.As(err, &parameterErr) {
-			code = http.StatusBadRequest
-		}
-
-		http.Error(w, err.Error(), code)
-		return nil
-	}
-
-	response.fingerprint.ToHeaders(w.Header())
-
-	jsonOptions := make([][]byte, 0, len(response.options))
-	for _, opt := range response.options {
-		marshalled, err := json.Marshal(opt)
-		if err != nil {
-			_, _ = w.Write([]byte(err.Error()))
-		}
-
-		jsonOptions = append(jsonOptions, marshalled)
-	}
-
-	_, _ = w.Write(bytes.Join(jsonOptions, []byte("\n")))
-
-	return nil
-}
-
 func (h *searchIndexerServer) doSearchConfiguration(ctx context.Context, parameters searchConfigurationParameters) (*searchConfigurationResponse, error) {
 	siteConfig := conf.Get().SiteConfiguration
 
@@ -320,7 +249,7 @@ func (h *searchIndexerServer) doSearchConfiguration(ctx context.Context, paramet
 			metricGetVersion.Inc()
 			// Do not to trigger a repo-updater lookup since this is a batch job.
 			commitID, err := h.gitserverClient.ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
-				NoEnsureRevision: true,
+				EnsureRevision: false,
 			})
 			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
 				// GetIndexOptions wants an empty rev for a missing rev or empty
@@ -359,6 +288,7 @@ func (h *searchIndexerServer) doSearchConfiguration(ctx context.Context, paramet
 	}
 
 	indexOptions := searchbackend.GetIndexOptions(
+		h.logger,
 		&siteConfig,
 		getRepoIndexOptions,
 		getSearchContextRevisions,
@@ -385,32 +315,6 @@ type searchConfigurationParameters struct {
 type searchConfigurationResponse struct {
 	options     []searchbackend.ZoektIndexOptions
 	fingerprint searchbackend.ConfigFingerprint
-}
-
-// serveList is used by zoekt to get the list of repositories for it to index.
-func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) error {
-	var parameters listParameters
-	err := json.NewDecoder(r.Body).Decode(&parameters)
-	if err != nil {
-		return err
-	}
-
-	repoIDs, err := h.doList(r.Context(), &parameters)
-	if err != nil {
-		return err
-	}
-
-	// TODO: Avoid batching up so much in memory by:
-	// 1. Changing the schema from object of arrays to array of objects.
-	// 2. Stream out each object marshalled rather than marshall the full list in memory.
-
-	data := struct {
-		RepoIDs []api.RepoID
-	}{
-		RepoIDs: repoIDs,
-	}
-
-	return json.NewEncoder(w).Encode(&data)
 }
 
 func (h *searchIndexerServer) doList(ctx context.Context, parameters *listParameters) (repoIDS []api.RepoID, err error) {
@@ -459,47 +363,6 @@ var metricGetVersion = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_search_get_version_total",
 	Help: "The total number of times we poll gitserver for the version of a indexable branch.",
 })
-
-func (h *searchIndexerServer) serveDocumentRanks(w http.ResponseWriter, r *http.Request) error {
-	return serveRank(h.Ranking.GetDocumentRanks, w, r)
-}
-
-func serveRank[T []float64 | citypes.RepoPathRanks](
-	f func(ctx context.Context, name api.RepoName) (r T, err error),
-	w http.ResponseWriter,
-	r *http.Request,
-) error {
-	ctx := r.Context()
-
-	repoName := api.RepoName(mux.Vars(r)["RepoName"])
-
-	rank, err := f(ctx, repoName)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			http.Error(w, err.Error(), http.StatusNotFound)
-			return nil
-		}
-		return err
-	}
-
-	b, err := json.Marshal(rank)
-	if err != nil {
-		return err
-	}
-
-	_, _ = w.Write(b)
-	return nil
-}
-
-func (h *searchIndexerServer) handleIndexStatusUpdate(_ http.ResponseWriter, r *http.Request) error {
-	var args indexStatusUpdateArgs
-
-	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
-		return errors.Wrap(err, "failed to decode request args")
-	}
-
-	return h.doIndexStatusUpdate(r.Context(), &args)
-}
 
 func (h *searchIndexerServer) doIndexStatusUpdate(ctx context.Context, args *indexStatusUpdateArgs) error {
 	var (

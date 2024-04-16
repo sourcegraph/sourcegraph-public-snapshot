@@ -1,22 +1,25 @@
 import React, { useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
+import type * as H from 'history'
 import { identity } from 'lodash'
 import { combineLatest, from, ReplaySubject } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import type { Contributions, Evaluated } from '@sourcegraph/client-api'
+import type { Contributions, Evaluated, ContributableMenu } from '@sourcegraph/client-api'
 import type { Context } from '@sourcegraph/template-parser'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
 import type { ContributionScope } from '../api/extension/api/context/context'
+import type { ContributionOptions } from '../api/extension/extensionHostApi'
 import { getContributedActionItems } from '../contributions/contributions'
+import type { RequiredExtensionsControllerProps } from '../extensions/controller'
+import type { PlatformContextProps } from '../platform/context'
 import type { TelemetryProps } from '../telemetry/telemetryService'
 
 import { ActionItem, type ActionItemProps } from './ActionItem'
-import type { ActionsProps } from './ActionsContainer'
 
 import styles from './ActionsNavItems.module.scss'
 
@@ -37,6 +40,15 @@ export interface ActionNavItemsClassProps {
      * CSS class name for each `<li>` element wrapping the action item.
      */
     listItemClass?: string
+}
+
+interface ActionsProps
+    extends RequiredExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
+        PlatformContextProps<'settings'>,
+        ContributionOptions {
+    menu: ContributableMenu
+    listClass?: string
+    location: H.Location
 }
 
 export interface ActionsNavItemsProps
@@ -70,12 +82,12 @@ export interface ActionsNavItemsProps
 export const ActionsNavItems: React.FunctionComponent<React.PropsWithChildren<ActionsNavItemsProps>> = props => {
     const { scope, extraContext, extensionsController, menu, wrapInList, transformContributions = identity } = props
 
-    const scopeChanges = useMemo(() => new ReplaySubject<ContributionScope>(1), [])
+    const scopeChanges = useMemo(() => new ReplaySubject<ContributionScope | undefined>(1), [])
     useDeepCompareEffectNoCheck(() => {
         scopeChanges.next(scope)
     }, [scope])
 
-    const extraContextChanges = useMemo(() => new ReplaySubject<Context<unknown>>(1), [])
+    const extraContextChanges = useMemo(() => new ReplaySubject<Context<unknown> | undefined>(1), [])
     useDeepCompareEffectNoCheck(() => {
         extraContextChanges.next(extraContext)
     }, [extraContext])

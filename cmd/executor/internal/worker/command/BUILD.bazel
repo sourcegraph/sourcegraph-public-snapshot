@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
@@ -22,6 +23,7 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_kballard_go_shellquote//:go-shellquote",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
@@ -31,7 +33,6 @@ go_library(
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
         "@io_k8s_apimachinery//pkg/watch",
         "@io_k8s_client_go//kubernetes",
-        "@io_k8s_utils//pointer",
         "@io_opentelemetry_go_otel//attribute",
         "@org_golang_x_sync//errgroup",
     ],
@@ -70,5 +71,19 @@ go_test(
         "@io_k8s_client_go//kubernetes/fake",
         "@io_k8s_client_go//testing",
         "@io_k8s_utils//pointer",
+    ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [
+        ":command",
+        "//cmd/executor/internal/worker/cmdlogger",
     ],
 )

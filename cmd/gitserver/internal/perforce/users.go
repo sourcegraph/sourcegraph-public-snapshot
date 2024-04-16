@@ -4,34 +4,50 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"os/exec"
 
-	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// P4Users returns all of users known to the Perforce server.
-func P4Users(ctx context.Context, p4home, p4port, p4user, p4passwd string) ([]perforce.User, error) {
-	cmd := exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "users")
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+p4port,
-		"P4USER="+p4user,
-		"P4PASSWD="+p4passwd,
-		"HOME="+p4home,
-	)
+type P4UsersArguments struct {
+	// P4PORT is the address of the Perforce server.
+	P4Port string
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+}
 
-	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+// P4Users returns all of users known to the Perforce server.
+func P4Users(ctx context.Context, fs gitserverfs.FS, args P4UsersArguments) ([]perforce.User, error) {
+	options := []P4OptionFunc{
+		WithAuthentication(args.P4User, args.P4Passwd),
+		WithHost(args.P4Port),
+	}
+
+	options = append(options, WithArguments("-Mj", "-ztag", "users"))
+
+	p4home, err := fs.P4HomeDir()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create p4home dir")
+	}
+
+	scratchDir, err := fs.TempDir("p4-users-")
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 users'")
+	}
+	defer os.Remove(scratchDir)
+
+	cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = errors.Wrap(ctxerr, "p4 users context error")
 		}
 		if len(out) > 0 {
-			err = errors.Wrapf(err, `failed to run command "p4 users" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd))
+			err = errors.Wrapf(err, `failed to run command "p4 users" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd.Unwrap()))
 		}
 		return nil, err
 	}

@@ -4,8 +4,8 @@
 package search
 
 import (
+	"compress/gzip"
 	"context"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -13,26 +13,29 @@ import (
 	"sync"
 	"time"
 
+	"github.com/NYTimes/gziphandler"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -40,20 +43,41 @@ import (
 // StreamHandler is an http handler which streams back search results.
 func StreamHandler(db database.DB) http.Handler {
 	logger := log.Scoped("searchStreamHandler")
-	return &streamHandler{
+	return gzipMiddleware(&streamHandler{
 		logger:              logger,
 		db:                  db,
-		searchClient:        client.New(logger, db),
-		flushTickerInternal: 100 * time.Millisecond,
+		searchClient:        client.New(logger, db, gitserver.NewClient("http.search.stream")),
+		flushTickerInterval: 200 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
+	})
+}
+
+func gzipMiddleware(h *streamHandler) http.Handler {
+	// Always compress response since we can have large responses which are
+	// plain text inside of JSON. Setting a minimum size of 0 ensures the gzip
+	// handler won't buffer and respect calls to http flush. Additionally the
+	// stdlib default gzip compressor is quite slow. In our testing
+	// gzip.BestSpeed provides good enough compression on our plain text
+	// responses with minimal CPU overhead.
+	m, err := gziphandler.GzipHandlerWithOpts(
+		gziphandler.MinSize(0),
+		gziphandler.CompressionLevel(gzip.BestSpeed),
+	)
+	if err != nil {
+		// This should never happen since we have hardcoded options which
+		// work. If we update gziphandler and it doesn't like our options then
+		// our unit tests will catch this.
+		panic("gziphandler fatal error on creation of middleware: " + err.Error())
 	}
+
+	return m(h)
 }
 
 type streamHandler struct {
 	logger              log.Logger
 	db                  database.DB
 	searchClient        client.SearchClient
-	flushTickerInternal time.Duration
+	flushTickerInterval time.Duration
 	pingTickerInterval  time.Duration
 }
 
@@ -90,11 +114,13 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 	if err != nil {
 		return err
 	}
+	source := GuessSource(r)
 	tr.SetAttributes(
 		attribute.String("query", args.Query),
 		attribute.String("version", args.Version),
 		attribute.String("pattern_type", args.PatternType),
 		attribute.Int("search_mode", args.SearchMode),
+		attribute.String("source", string(source)),
 	)
 
 	inputs, err := h.searchClient.Plan(
@@ -104,6 +130,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 		args.Query,
 		search.Mode(args.SearchMode),
 		search.Streaming,
+		args.ContextLines,
 	)
 	if err != nil {
 		var queryErr *client.QueryError
@@ -115,20 +142,23 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 		}
 	}
 
-	// Display is the number of results we send down. If display is < 0 we
-	// want to send everything we find before hitting a limit. Otherwise we
-	// can only send up to limit results.
-	displayLimit := args.Display
-	limit := inputs.MaxResults()
-	if displayLimit < 0 || displayLimit > limit {
-		displayLimit = limit
+	if actor.FromContext(ctx).IsAuthenticated() {
+		// Used for development to quickly test different zoekt.SearchOptions without having
+		// to change the code.
+		inputs.Features.ZoektSearchOptionsOverride = args.ZoektSearchOptionsOverride
 	}
+
+	// displayFilter limits the matches we stream to the user. Once we have
+	// hit a display limit the search will continue, but we no longer stream
+	// the actual matches.
+	limit := inputs.MaxResults()
+	displayFilter := newDisplayFilter(args, limit)
 
 	progress := &streamclient.ProgressAggregator{
 		Start:        start,
 		Limit:        limit,
 		Trace:        trace.URL(trace.ID(ctx), conf.DefaultClient()),
-		DisplayLimit: displayLimit,
+		DisplayLimit: displayFilter.MatchLimit,
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
 
@@ -156,9 +186,10 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 			h.db,
 			eventWriter,
 			progress,
-			h.flushTickerInternal,
+			h.flushTickerInterval,
 			h.pingTickerInterval,
-			displayLimit,
+			displayFilter,
+			args.MaxLineLen,
 			args.EnableChunkMatches,
 			logLatency,
 		)
@@ -169,14 +200,29 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 
 		return h.searchClient.Execute(ctx, batchedStream, inputs)
 	}()
+
+	if err != nil && errors.HasType(err, &query.UnsupportedError{}) {
+		eventWriter.Alert(search.AlertForQuery(inputs.OriginalQuery, err))
+		err = nil
+	}
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}
-	logSearch(ctx, h.logger, alert, err, time.Since(start), latency, inputs.OriginalQuery, progress)
+	logSearch(ctx, h.logger, alert, err, time.Since(start), latency, inputs.OriginalQuery, progress, source)
 	return err
 }
 
-func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err error, duration time.Duration, latency *time.Duration, originalQuery string, progress *streamclient.ProgressAggregator) {
+func logSearch(
+	ctx context.Context,
+	logger log.Logger,
+	alert *search.Alert,
+	err error,
+	duration time.Duration,
+	latency *time.Duration,
+	originalQuery string,
+	progress *streamclient.ProgressAggregator,
+	source trace.SourceType,
+) {
 	if honey.Enabled() {
 		status := client.DetermineStatusForLogs(alert, progress.Stats, err)
 		var alertType string
@@ -193,7 +239,7 @@ func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err 
 		_ = searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
 			OriginalQuery: originalQuery,
 			Typ:           "stream",
-			Source:        string(trace.RequestSource(ctx)),
+			Source:        string(source),
 			Status:        status,
 			AlertType:     alertType,
 			DurationMs:    duration.Milliseconds(),
@@ -210,12 +256,15 @@ func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err 
 }
 
 type args struct {
-	Query              string
-	Version            string
-	PatternType        string
-	Display            int
-	EnableChunkMatches bool
-	SearchMode         int
+	Query                      string
+	Version                    string
+	PatternType                string
+	Display                    int
+	MaxLineLen                 int
+	EnableChunkMatches         bool
+	SearchMode                 int
+	ContextLines               *int32
+	ZoektSearchOptionsOverride string
 }
 
 func parseURLQuery(q url.Values) (*args, error) {
@@ -228,9 +277,10 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	a := args{
-		Query:       get("q", ""),
-		Version:     get("v", "V3"),
-		PatternType: get("t", ""),
+		Query:                      get("q", ""),
+		Version:                    get("v", "V3"),
+		PatternType:                get("t", ""),
+		ZoektSearchOptionsOverride: get("zoekt-search-opts", ""),
 	}
 
 	if a.Query == "" {
@@ -243,9 +293,22 @@ func parseURLQuery(q url.Values) (*args, error) {
 		return nil, errors.Errorf("display must be an integer, got %q: %w", display, err)
 	}
 
+	maxLineLen := get("max-line-len", "-1")
+	if a.MaxLineLen, err = strconv.Atoi(maxLineLen); err != nil {
+		return nil, errors.Errorf("max-line-len must be an integer, got %q: %w", display, err)
+	}
+
 	chunkMatches := get("cm", "f")
 	if a.EnableChunkMatches, err = strconv.ParseBool(chunkMatches); err != nil {
 		return nil, errors.Errorf("chunk matches must be parseable as a boolean, got %q: %w", chunkMatches, err)
+	}
+
+	if contextLines := q.Get("cl"); contextLines != "" {
+		parsedContextLines, err := strconv.ParseUint(contextLines, 10, 32)
+		if err != nil {
+			return nil, errors.Errorf("context lines must be parseable as a boolean, got %q: %w", contextLines, err)
+		}
+		a.ContextLines = pointers.Ptr(int32(parsedContextLines))
 	}
 
 	searchMode := get("sm", "0")
@@ -254,267 +317,6 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	return &a, nil
-}
-
-func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
-	switch v := match.(type) {
-	case *result.FileMatch:
-		return fromFileMatch(v, repoCache, enableChunkMatches)
-	case *result.RepoMatch:
-		return fromRepository(v, repoCache)
-	case *result.CommitMatch:
-		return fromCommit(v, repoCache)
-	case *result.OwnerMatch:
-		return fromOwner(v)
-	default:
-		panic(fmt.Sprintf("unknown match type %T", v))
-	}
-}
-
-func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
-	if len(fm.Symbols) > 0 {
-		return fromSymbolMatch(fm, repoCache)
-	} else if fm.ChunkMatches.MatchCount() > 0 {
-		return fromContentMatch(fm, repoCache, enableChunkMatches)
-	}
-	return fromPathMatch(fm, repoCache)
-}
-
-func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventPathMatch {
-	pathEvent := &streamhttp.EventPathMatch{
-		Type:         streamhttp.PathMatchType,
-		Path:         fm.Path,
-		PathMatches:  fromRanges(fm.PathMatches),
-		Repository:   string(fm.Repo.Name),
-		RepositoryID: int32(fm.Repo.ID),
-		Commit:       string(fm.CommitID),
-	}
-
-	if r, ok := repoCache[fm.Repo.ID]; ok {
-		pathEvent.RepoStars = r.Stars
-		pathEvent.RepoLastFetched = r.LastFetched
-	}
-
-	if fm.InputRev != nil {
-		pathEvent.Branches = []string{*fm.InputRev}
-	}
-
-	if fm.Debug != nil {
-		pathEvent.Debug = *fm.Debug
-	}
-
-	return pathEvent
-}
-
-func fromChunkMatches(cms result.ChunkMatches) []streamhttp.ChunkMatch {
-	res := make([]streamhttp.ChunkMatch, 0, len(cms))
-	for _, cm := range cms {
-		res = append(res, fromChunkMatch(cm))
-	}
-	return res
-}
-
-func fromChunkMatch(cm result.ChunkMatch) streamhttp.ChunkMatch {
-	return streamhttp.ChunkMatch{
-		Content:      cm.Content,
-		ContentStart: fromLocation(cm.ContentStart),
-		Ranges:       fromRanges(cm.Ranges),
-	}
-}
-
-func fromLocation(l result.Location) streamhttp.Location {
-	return streamhttp.Location{
-		Offset: l.Offset,
-		Line:   l.Line,
-		Column: l.Column,
-	}
-}
-
-func fromRanges(rs result.Ranges) []streamhttp.Range {
-	res := make([]streamhttp.Range, 0, len(rs))
-	for _, r := range rs {
-		res = append(res, streamhttp.Range{
-			Start: fromLocation(r.Start),
-			End:   fromLocation(r.End),
-		})
-	}
-	return res
-}
-
-func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) *streamhttp.EventContentMatch {
-
-	var (
-		eventLineMatches  []streamhttp.EventLineMatch
-		eventChunkMatches []streamhttp.ChunkMatch
-	)
-
-	if enableChunkMatches {
-		eventChunkMatches = fromChunkMatches(fm.ChunkMatches)
-	} else {
-		lineMatches := fm.ChunkMatches.AsLineMatches()
-		eventLineMatches = make([]streamhttp.EventLineMatch, 0, len(lineMatches))
-		for _, lm := range lineMatches {
-			eventLineMatches = append(eventLineMatches, streamhttp.EventLineMatch{
-				Line:             lm.Preview,
-				LineNumber:       lm.LineNumber,
-				OffsetAndLengths: lm.OffsetAndLengths,
-			})
-		}
-	}
-
-	contentEvent := &streamhttp.EventContentMatch{
-		Type:         streamhttp.ContentMatchType,
-		Path:         fm.Path,
-		PathMatches:  fromRanges(fm.PathMatches),
-		RepositoryID: int32(fm.Repo.ID),
-		Repository:   string(fm.Repo.Name),
-		Commit:       string(fm.CommitID),
-		LineMatches:  eventLineMatches,
-		ChunkMatches: eventChunkMatches,
-	}
-
-	if fm.InputRev != nil {
-		contentEvent.Branches = []string{*fm.InputRev}
-	}
-
-	if r, ok := repoCache[fm.Repo.ID]; ok {
-		contentEvent.RepoStars = r.Stars
-		contentEvent.RepoLastFetched = r.LastFetched
-	}
-
-	if fm.Debug != nil {
-		contentEvent.Debug = *fm.Debug
-	}
-
-	return contentEvent
-}
-
-func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventSymbolMatch {
-	symbols := make([]streamhttp.Symbol, 0, len(fm.Symbols))
-	for _, sym := range fm.Symbols {
-		kind := sym.Symbol.LSPKind()
-		kindString := "UNKNOWN"
-		if kind != 0 {
-			kindString = strings.ToUpper(kind.String())
-		}
-
-		symbols = append(symbols, streamhttp.Symbol{
-			URL:           sym.URL().String(),
-			Name:          sym.Symbol.Name,
-			ContainerName: sym.Symbol.Parent,
-			Kind:          kindString,
-			Line:          int32(sym.Symbol.Line),
-		})
-	}
-
-	symbolMatch := &streamhttp.EventSymbolMatch{
-		Type:         streamhttp.SymbolMatchType,
-		Path:         fm.Path,
-		Repository:   string(fm.Repo.Name),
-		RepositoryID: int32(fm.Repo.ID),
-		Commit:       string(fm.CommitID),
-		Symbols:      symbols,
-	}
-
-	if r, ok := repoCache[fm.Repo.ID]; ok {
-		symbolMatch.RepoStars = r.Stars
-		symbolMatch.RepoLastFetched = r.LastFetched
-	}
-
-	if fm.InputRev != nil {
-		symbolMatch.Branches = []string{*fm.InputRev}
-	}
-
-	return symbolMatch
-}
-
-func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventRepoMatch {
-	var branches []string
-	if rev := rm.Rev; rev != "" {
-		branches = []string{rev}
-	}
-
-	repoEvent := &streamhttp.EventRepoMatch{
-		Type:               streamhttp.RepoMatchType,
-		RepositoryID:       int32(rm.ID),
-		Repository:         string(rm.Name),
-		RepositoryMatches:  fromRanges(rm.RepoNameMatches),
-		Branches:           branches,
-		DescriptionMatches: fromRanges(rm.DescriptionMatches),
-	}
-
-	if r, ok := repoCache[rm.ID]; ok {
-		repoEvent.RepoStars = r.Stars
-		repoEvent.RepoLastFetched = r.LastFetched
-		repoEvent.Description = r.Description
-		repoEvent.Fork = r.Fork
-		repoEvent.Archived = r.Archived
-		repoEvent.Private = r.Private
-		repoEvent.Metadata = r.KeyValuePairs
-	}
-
-	return repoEvent
-}
-
-func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventCommitMatch {
-	hls := commit.Body().ToHighlightedString()
-	ranges := make([][3]int32, len(hls.Highlights))
-	for i, h := range hls.Highlights {
-		ranges[i] = [3]int32{h.Line, h.Character, h.Length}
-	}
-
-	commitEvent := &streamhttp.EventCommitMatch{
-		Type:          streamhttp.CommitMatchType,
-		Label:         commit.Label(),
-		URL:           commit.URL().String(),
-		Detail:        commit.Detail(),
-		Repository:    string(commit.Repo.Name),
-		RepositoryID:  int32(commit.Repo.ID),
-		OID:           string(commit.Commit.ID),
-		Message:       string(commit.Commit.Message),
-		AuthorName:    commit.Commit.Author.Name,
-		AuthorDate:    commit.Commit.Author.Date,
-		CommitterName: commit.Commit.Committer.Name,
-		CommitterDate: commit.Commit.Committer.Date,
-		Content:       hls.Value,
-		Ranges:        ranges,
-	}
-
-	if r, ok := repoCache[commit.Repo.ID]; ok {
-		commitEvent.RepoStars = r.Stars
-		commitEvent.RepoLastFetched = r.LastFetched
-	}
-
-	return commitEvent
-}
-
-func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
-	switch v := owner.ResolvedOwner.(type) {
-	case *result.OwnerPerson:
-		person := &streamhttp.EventPersonMatch{
-			Type:   streamhttp.PersonMatchType,
-			Handle: v.Handle,
-			Email:  v.Email,
-		}
-		if v.User != nil {
-			person.User = &streamhttp.UserMetadata{
-				Username:    v.User.Username,
-				DisplayName: v.User.DisplayName,
-				AvatarURL:   v.User.AvatarURL,
-			}
-		}
-		return person
-	case *result.OwnerTeam:
-		return &streamhttp.EventTeamMatch{
-			Type:        streamhttp.TeamMatchType,
-			Handle:      v.Handle,
-			Email:       v.Email,
-			Name:        v.Team.Name,
-			DisplayName: v.Team.DisplayName,
-		}
-	default:
-		panic(fmt.Sprintf("unknown owner match type %T", v))
-	}
 }
 
 // eventStreamTraceHook returns a StatHook which logs to log.
@@ -587,7 +389,8 @@ func newEventHandler(
 	progress *streamclient.ProgressAggregator,
 	flushInterval time.Duration,
 	progressInterval time.Duration,
-	displayLimit int,
+	displayFilter *displayFilter,
+	maxLineLen int,
 	enableChunkMatches bool,
 	logLatency func(),
 ) *eventHandler {
@@ -608,7 +411,8 @@ func newEventHandler(
 		flushInterval:      flushInterval,
 		progress:           progress,
 		progressInterval:   progressInterval,
-		displayRemaining:   displayLimit,
+		displayFilter:      displayFilter,
+		maxLineLen:         maxLineLen,
 		enableChunkMatches: enableChunkMatches,
 		first:              true,
 		logLatency:         logLatency,
@@ -632,6 +436,7 @@ type eventHandler struct {
 
 	// Config params
 	enableChunkMatches bool
+	maxLineLen         int
 	flushInterval      time.Duration
 	progressInterval   time.Duration
 
@@ -650,8 +455,8 @@ type eventHandler struct {
 	flushTimer    *time.Timer
 	progressTimer *time.Timer
 
-	displayRemaining int
-	first            bool
+	displayFilter *displayFilter
+	first         bool
 }
 
 func (h *eventHandler) Send(event streaming.SearchEvent) {
@@ -661,7 +466,9 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 	h.progress.Update(event)
 	h.filters.Update(event)
 
-	h.displayRemaining = event.Results.Limit(h.displayRemaining)
+	// We have computed internal stats, so now we can drop/limit matches if we
+	// hit display limits.
+	h.displayFilter.Limit(&event.Results)
 
 	repoMetadata, err := getEventRepoMetadata(h.ctx, h.db, event)
 	if err != nil {
@@ -681,14 +488,17 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 			continue
 		}
 
-		eventMatch := fromMatch(match, repoMetadata, h.enableChunkMatches)
+		eventMatch := search.FromMatch(match, repoMetadata, search.FromMatchOptions{
+			ChunkMatches:         h.enableChunkMatches,
+			MaxContentLineLength: h.maxLineLen,
+		})
 		h.matchesBuf.Append(eventMatch)
 	}
 
 	// Instantly send results if we have not sent any yet.
 	if h.first && len(event.Results) > 0 {
 		h.first = false
-		h.eventWriter.Filters(h.filters.Compute())
+		h.eventWriter.Filters(h.filters.Compute(), false)
 		h.matchesBuf.Flush()
 		h.logLatency()
 	}
@@ -706,7 +516,11 @@ func (h *eventHandler) Done() {
 	h.progressTimer = nil
 
 	// Flush the final state
-	h.eventWriter.Filters(h.filters.Compute())
+	// TODO: make sure we actually respect timeouts
+	exhaustive := !h.progress.Stats.IsLimitHit &&
+		!h.progress.Stats.Status.Any(search.RepoStatusLimitHit) &&
+		!h.progress.Stats.Status.Any(search.RepoStatusTimedOut)
+	h.eventWriter.Filters(h.filters.Compute(), exhaustive)
 	h.matchesBuf.Flush()
 	h.eventWriter.Progress(h.progress.Final())
 }
@@ -730,7 +544,9 @@ func (h *eventHandler) flushTick() {
 
 	// a nil flushTimer indicates that Done() was called
 	if h.flushTimer != nil {
-		h.eventWriter.Filters(h.filters.Compute())
+		if h.filters.Dirty {
+			h.eventWriter.Filters(h.filters.Compute(), false)
+		}
 		h.matchesBuf.Flush()
 		if h.progress.Dirty {
 			h.eventWriter.Progress(h.progress.Current())

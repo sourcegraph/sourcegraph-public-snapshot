@@ -6,7 +6,7 @@ FROM alpine:3.14@sha256:92d13cc58a46e012300ef49924edc56de5642ada25c9a457dce4a6db
 
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
-LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
+LABEL org.opencontainers.image.documentation=https://sourcegraph.com/docs/
 
 # Add the sourcegraph group, user, and create the home directory.
 #

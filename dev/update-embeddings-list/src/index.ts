@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 
-const fetch = require('node-fetch')
+import fetch from 'node-fetch'
 
 interface Repo {
     name: string
@@ -16,16 +16,16 @@ interface Embedding {
 const access_token = process.env.SOURCEGRAPH_DOCS_ACCESS_TOKEN
 const endpoint = 'https://sourcegraph.com/.api/graphql'
 
-async function start() {
+async function start(): Promise<void> {
     try {
         let embeddedRepos = await gqlRequest(endpoint)
         embeddedRepos = filter(embeddedRepos)
 
-        let markdown = embeddedReposToMarkdown(embeddedRepos)
+        const markdown = embeddedReposToMarkdown(embeddedRepos)
 
         fs.writeFileSync('embedded-repos.md', markdown)
-    } catch (err) {
-        console.error(err)
+    } catch (error: unknown) {
+        console.error(error)
     }
 }
 
@@ -36,7 +36,7 @@ async function gqlRequest(endpoint: string): Promise<Embedding[]> {
         let endCursor = ''
 
         while (pagination) {
-            let query = `
+            const query = `
                 query RepoEmbeddingJobs {
                     repoEmbeddingJobs(first: 100, after: ${endCursor ? '"' + endCursor + '"' : null}) {
                     totalCount
@@ -67,8 +67,8 @@ async function gqlRequest(endpoint: string): Promise<Embedding[]> {
             pagination = data.repoEmbeddingJobs.pageInfo.hasNextPage
             endCursor = data.repoEmbeddingJobs.pageInfo.endCursor
         }
-    } catch (err) {
-        console.error(err)
+    } catch (error: unknown) {
+        console.error(error)
     }
 
     return embeddedRepos
@@ -94,7 +94,7 @@ export function embeddedReposToMarkdown(repos: Embedding[] | undefined): string 
     const listOfRepos: Repo[] = []
     const today = new Date()
 
-    let markdown = `# Embeddings for repositories with 5+ stars\n\n`
+    let markdown = '# Embeddings for repositories with 5+ stars\n\n'
     markdown += `Last updated: ${today.toLocaleString('en-US', {
         month: '2-digit',
         day: '2-digit',
@@ -102,13 +102,13 @@ export function embeddedReposToMarkdown(repos: Embedding[] | undefined): string 
         hour: '2-digit',
         minute: '2-digit',
         timeZoneName: 'short',
-    })} \n\n`
+    })}\n\n`
 
-    repos?.forEach(repo => {
-        let repoName: string | undefined = repo.repo?.name
-        let repoUrl: string | undefined = repo.repo?.url
+    for (const repo of repos || []) {
+        const repoName: string | undefined = repo.repo?.name
+        const repoUrl: string | undefined = repo.repo?.url
         if (repoName === undefined || repoUrl === undefined) {
-            return
+            continue
         }
 
         const r: Repo = {
@@ -116,16 +116,16 @@ export function embeddedReposToMarkdown(repos: Embedding[] | undefined): string 
             url: repoUrl.replace(/^\//, 'https://'),
         }
         listOfRepos.push(r)
-    })
+    }
 
     if (listOfRepos.length === 0) {
         throw new Error('no embedded repos found!')
     }
 
     const sorted = sort(listOfRepos)
-    sorted?.forEach(repo => {
+    for (const repo of sorted) {
         markdown += `1. [${repo?.name}](${repo?.url})\n`
-    })
+    }
 
     return markdown
 }

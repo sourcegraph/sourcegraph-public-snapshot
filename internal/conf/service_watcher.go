@@ -1,7 +1,7 @@
 package conf
 
 import (
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )

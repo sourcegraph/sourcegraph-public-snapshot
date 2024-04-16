@@ -4,7 +4,7 @@ import { mdiHelpCircleOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import type * as H from 'history'
 import { from, Subject, Subscription } from 'rxjs'
-import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
+import { catchError, map, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import type { ActionContribution, Evaluated } from '@sourcegraph/client-api'
 import { asError, type ErrorLike, isExternalLink, logger } from '@sourcegraph/common'
@@ -21,7 +21,6 @@ import {
 import type { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { urlForOpenPanel } from '../commands/commands'
 import type { ExtensionsControllerProps } from '../extensions/controller'
-import type { PlatformContextProps } from '../platform/context'
 import type { TelemetryProps } from '../telemetry/telemetryService'
 
 import styles from './ActionItem.module.scss'
@@ -52,9 +51,7 @@ export interface ActionItemStyleProps {
     actionItemOutline?: ButtonLinkProps['outline']
 }
 
-export interface ActionItemComponentProps
-    extends ExtensionsControllerProps<'executeCommand'>,
-        PlatformContextProps<'settings'> {
+export interface ActionItemComponentProps extends ExtensionsControllerProps<'executeCommand'> {
     location: H.Location
 
     iconClassName?: string
@@ -116,6 +113,12 @@ interface State {
     actionOrError: typeof LOADING | null | ErrorLike
 }
 
+/**
+ * For testing only, used to set the window.location value for {@link isExternalLink}.
+ * @internal
+ */
+export const windowLocation__testingOnly: { value: Pick<URL, 'origin' | 'href'> | null } = { value: null }
+
 export class ActionItem extends React.PureComponent<ActionItemProps, State, typeof WildcardThemeContext> {
     public static contextType = WildcardThemeContext
     public context!: React.ContextType<typeof WildcardThemeContext>
@@ -139,7 +142,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                                       )
                                   )
                         ).pipe(
-                            mapTo(null),
+                            map(() => null),
                             catchError(error => [asError(error)]),
                             map(actionOrError => ({ actionOrError })),
                             tap(() => {
@@ -237,7 +240,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         const to = primaryTo || altTo
         // Open in new tab if an external link
         const newTabProps =
-            to && isExternalLink(to)
+            to && isExternalLink(to, windowLocation__testingOnly.value ?? window.location)
                 ? {
                       target: '_blank',
                       rel: 'noopener noreferrer',

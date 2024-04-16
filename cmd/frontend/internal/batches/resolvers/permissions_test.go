@@ -49,7 +49,7 @@ func TestPermissionLevels(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	key := et.TestKey{}
 
-	bstore := store.New(db, &observation.TestContext, key)
+	bstore := store.New(db, observation.TestContextTB(t), key)
 	sr := New(db, bstore, gitserver.NewMockClient(), logger)
 	s, err := newSchema(db, sr)
 	if err != nil {
@@ -1361,7 +1361,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 	gitserverClient := gitserver.NewMockClient()
 	sr := &Resolver{store: bstore}
 	s, err := newSchema(db, sr)
@@ -1382,7 +1382,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	// Create 2 repositories
 	repos := make([]*types.Repo, 0, 2)
-	for i := 0; i < cap(repos); i++ {
+	for i := range cap(repos) {
 		name := fmt.Sprintf("github.com/sourcegraph/test-repository-permissions-repo-%d", i)
 		r := newGitHubTestRepo(name, newGitHubExternalService(t, esStore))
 		if err := repoStore.Create(ctx, r); err != nil {

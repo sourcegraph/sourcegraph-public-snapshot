@@ -34,10 +34,14 @@ func requestOverrides(r *http.Request) (flags map[string]bool, ok bool) {
 
 	flags = make(map[string]bool, len(values))
 	for _, k := range values {
-		// flags starting with "-" override to false
-		v := !strings.HasPrefix(k, "-")
-		k = strings.TrimPrefix(k, "-")
-		flags[k] = v
+		// The web application uses the '~' prefix to indicate that the
+		// feature flag should be reset. We need to ignore such values.
+		if !strings.HasPrefix(k, "~") {
+			// flags starting with "-" override to false
+			v := !strings.HasPrefix(k, "-")
+			k = strings.TrimPrefix(k, "-")
+			flags[k] = v
+		}
 	}
 
 	return flags, true

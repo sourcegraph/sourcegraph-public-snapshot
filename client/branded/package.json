@@ -9,15 +9,13 @@
     "storybook": "STORIES_GLOB='client/branded/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
     "lint:js": "eslint --cache '**/*.[jt]s?(x)'",
     "lint:css": "stylelint 'src/**/*.scss' --quiet",
-    "test": "jest"
+    "test": "vitest"
   },
   "devDependencies": {
     "@sourcegraph/extension-api-types": "workspace:*",
     "@sourcegraph/testing": "workspace:*"
   },
   "dependencies": {
-    "@sourcegraph/client-api": "workspace:*",
-    "@sourcegraph/codeintellify": "workspace:*",
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/observability-client": "workspace:*",
     "@sourcegraph/shared": "workspace:*",

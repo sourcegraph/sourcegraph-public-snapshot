@@ -61,10 +61,10 @@
 </script>
 
 <!-- TODO: implement keyboard handlers. See https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/ -->
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div
     bind:this={divider}
     role="separator"
-    tabindex="0"
     aria-valuemin={0}
     aria-valuemax={100}
     aria-valuenow={$currentPosition}
@@ -93,8 +93,14 @@
         }
 
         &.dragging {
+            z-index: 1;
+            outline: 1px solid var(--oc-blue-3);
             background-color: var(--oc-blue-3);
-            width: 3px;
+        }
+
+        &:hover:not(.dragging) {
+            z-index: 1;
+            outline: 1px solid var(--border-color);
         }
     }
 </style>

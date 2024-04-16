@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
@@ -26,7 +27,6 @@ go_library(
         "//internal/codeintel/uploads/internal/store",
         "//internal/codeintel/uploads/shared",
         "//internal/database",
-        "//internal/env",
         "//internal/gitserver",
         "//internal/goroutine",
         "//internal/metrics",
@@ -61,6 +61,21 @@ go_test(
         "//internal/workerutil/dbworker/store",
         "//lib/codeintel/precise",
         "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_sourcegraph_scip//bindings/go/scip",
+    ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [
+        ":uploads",
+        "//internal/codeintel/uploads/internal/lsifstore",
+        "//internal/codeintel/uploads/internal/store",
+        "//internal/workerutil/dbworker/store",
     ],
 )

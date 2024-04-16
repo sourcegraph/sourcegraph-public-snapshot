@@ -17,9 +17,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-go@v2
-        with: { go-version: '1.19' }
-
+      - uses: actions/setup-go@v4
+        with: { go-version: '1.22' }
       - run: ./dev/buildchecker/run-check.sh
         env:
           GITHUB_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_GITHUB_TOKEN }}
@@ -27,3 +26,9 @@ jobs:
           SLACK_ANNOUNCE_WEBHOOK: ${{ secrets.AUTOBUILDSHERRIF_SLACK_WEBHOOK }}
           SLACK_DEBUG_WEBHOOK: ${{ secrets.AUTOBUILDSHERRIF_SLACK_DEBUG_WEBHOOK }}
           SLACK_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_SLACK_TOKEN }}
+
+  report_failure:
+    needs: run
+    if: ${{ failure() }}
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@main
+    secrets: inherit

@@ -1,0 +1,86 @@
+[
+  {
+    "and": [
+      {
+        "value": "a",
+        "negated": false,
+        "labels": [
+          "HeuristicHoisted",
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 3
+          },
+          "end": {
+            "line": 0,
+            "column": 4
+          }
+        }
+      },
+      {
+        "value": "b",
+        "negated": false,
+        "labels": [
+          "HeuristicHoisted",
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 5
+          },
+          "end": {
+            "line": 0,
+            "column": 6
+          }
+        }
+      },
+      {
+        "value": "c",
+        "negated": false,
+        "labels": [
+          "HeuristicHoisted",
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 7
+          },
+          "end": {
+            "line": 0,
+            "column": 8
+          }
+        }
+      },
+      {
+        "value": "d",
+        "negated": false,
+        "labels": [
+          "HeuristicHoisted",
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 16
+          },
+          "end": {
+            "line": 0,
+            "column": 17
+          }
+        }
+      }
+    ]
+  }
+]

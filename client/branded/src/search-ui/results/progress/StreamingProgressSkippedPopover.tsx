@@ -1,14 +1,13 @@
-import React, { useCallback, useState, FC, useMemo, useEffect } from 'react'
+import React, { useCallback, useState, type FC, useEffect } from 'react'
 
 import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
-import { useMutation, gql } from '@sourcegraph/http-client'
-import type { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Progress } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useMutation, gql, useQuery } from '@sourcegraph/http-client'
+import type { Skipped, Progress } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Collapse,
@@ -29,7 +28,6 @@ import {
 
 import { SyntaxHighlightedSearchQuery } from '../../components'
 
-import { validateQueryForExhaustiveSearch } from './exhaustive-search/exhaustive-search-validation'
 import { sortBySeverity, limitHit } from './utils'
 
 import styles from './StreamingProgressSkippedPopover.module.scss'
@@ -303,6 +301,14 @@ const SkippedItemsSearch: FC<SkippedItemsSearchProps> = props => {
     )
 }
 
+const VALIDATE_SEARCH_JOB = gql`
+    query ValidateSearchJob($query: String!) {
+        validateSearchJob(query: $query) {
+            alwaysNil
+        }
+    }
+`
+
 const CREATE_SEARCH_JOB = gql`
     mutation CreateSearchJob($query: String!) {
         createSearchJob(query: $query) {
@@ -336,20 +342,16 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
     const { query, telemetryService } = props
     const navigate = useNavigate()
     const [createSearchJob, { loading, error }] = useMutation(CREATE_SEARCH_JOB)
-
-    const validationErrors = useMemo(() => validateQueryForExhaustiveSearch(query), [query])
+    const { error: validationError, loading: validationLoading } = useQuery(VALIDATE_SEARCH_JOB, {
+        variables: { query },
+    })
 
     useEffect(() => {
-        const validState = validationErrors.length > 0 ? 'invalid' : 'valid'
-
-        telemetryService.log('SearchJobsSearchFormShown', { validState }, { validState })
-
-        if (validationErrors.length > 0) {
-            const errorTypes = validationErrors.map(error => error.type)
-
-            telemetryService.log('SearchJobsValidationErrors', { errors: errorTypes }, { errors: errorTypes })
+        const validState = validationError ? 'invalid' : 'valid'
+        if (!validationLoading) {
+            telemetryService.log('SearchJobsSearchFormShown', { validState }, { validState })
         }
-    }, [telemetryService, validationErrors])
+    }, [telemetryService, validationError, validationLoading])
 
     const handleCreateSearchJobClick = async (): Promise<void> => {
         await createSearchJob({ variables: { query } })
@@ -362,28 +364,24 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
         <section className={styles.exhaustiveSearch}>
             <header className={styles.exhaustiveSearchHeader}>
                 <Text className="m-0">Create a search job:</Text>
-                <ProductStatusBadge status="experimental" />
+                <ProductStatusBadge status="beta" />
             </header>
 
-            {validationErrors.length > 0 && (
-                <Alert variant="secondary" withIcon={false}>
-                    <ul className={styles.exhaustiveSearchWarningList}>
-                        {validationErrors.map(validationError => (
-                            <li key={validationError.reason}>{validationError.reason}</li>
-                        ))}
-                    </ul>
+            {validationError && (
+                <Alert variant="info" withIcon={true}>
+                    {validationError.message}
                 </Alert>
             )}
 
-            <Text className={classNames(validationErrors.length > 0 && 'text-muted', styles.exhaustiveSearchText)}>
-                Search jobs exhaustively return all matches of a query. Results can be downloaded via CSV.
+            <Text className={classNames(validationError && 'text-muted', styles.exhaustiveSearchText)}>
+                Search jobs exhaustively returns all matches of a query. Results can be downloaded in JSON Lines format.
             </Text>
 
             {error && <ErrorAlert error={error} className="mt-3" />}
             <Button
                 variant="secondary"
                 size="sm"
-                disabled={validationErrors.length > 0 || loading}
+                disabled={Boolean(validationError) || validationLoading || loading}
                 className={styles.exhaustiveSearchSubmit}
                 onClick={handleCreateSearchJobClick}
             >

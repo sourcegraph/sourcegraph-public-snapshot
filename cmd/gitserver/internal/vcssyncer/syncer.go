@@ -2,9 +2,13 @@ package vcssyncer
 
 import (
 	"context"
-	"os/exec"
+	"io"
 
 	jsoniter "github.com/json-iterator/go"
+
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
@@ -20,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -33,9 +36,27 @@ type VCSSyncer interface {
 	Type() string
 	// IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
 	// error indicates there is a problem.
-	IsCloneable(ctx context.Context, repoName api.RepoName, remoteURL *vcs.URL) error
-	// CloneCommand returns the command to be executed for cloning from remote.
-	CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error)
+	//
+	// All implementations should redact any sensitive information from the
+	// error message.
+	IsCloneable(ctx context.Context, repoName api.RepoName) error
+	// Clone should clone the repo onto disk into the given tmpPath.
+	//
+	// For now, regardless of the VCSSyncer implementation, the result that ends
+	// up in tmpPath is expected to be a valid Git repository and should be initially
+	// optimized (repacked, commit-graph written, etc).
+	//
+	// targetDir is passed for reporting purposes, but should not be written to
+	// during this process.
+	//
+	// Progress can be reported by writing to the progressWriter.
+	// 🚨 SECURITY:
+	// Content written to this writer should NEVER contain sensitive information.
+	// The VCSSyncer implementation is responsible of redacting potentially
+	// sensitive data like secrets.
+	// Progress reported through the progressWriter will be streamed line-by-line
+	// with both LF and CR being valid line terminators.
+	Clone(ctx context.Context, repo api.RepoName, targetDir common.GitDir, tmpPath string, progressWriter io.Writer) error
 	// Fetch tries to fetch updates from the remote to given directory.
 	// The revspec parameter is optional and specifies that the client is specifically
 	// interested in fetching the provided revspec (example "v2.3.4^0").
@@ -43,9 +64,7 @@ type VCSSyncer interface {
 	// to lazily fetch package versions. More details at
 	// https://github.com/sourcegraph/sourcegraph/issues/37921#issuecomment-1184301885
 	// Beware that the revspec parameter can be any random user-provided string.
-	Fetch(ctx context.Context, remoteURL *vcs.URL, repoName api.RepoName, dir common.GitDir, revspec string) ([]byte, error)
-	// RemoteShowCommand returns the command to be executed for showing remote.
-	RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error)
+	Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir, revspec string) ([]byte, error)
 }
 
 type NewVCSSyncerOpts struct {
@@ -53,9 +72,11 @@ type NewVCSSyncerOpts struct {
 	RepoStore               database.RepoStore
 	DepsSvc                 *dependencies.Service
 	Repo                    api.RepoName
-	ReposDir                string
 	CoursierCacheDir        string
 	RecordingCommandFactory *wrexec.RecordingCommandFactory
+	Logger                  log.Logger
+	FS                      gitserverfs.FS
+	GetRemoteURLSource      func(ctx context.Context, repo api.RepoName) (RemoteURLSource, error)
 }
 
 func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error) {
@@ -89,81 +110,104 @@ func NewVCSSyncer(ctx context.Context, opts *NewVCSSyncerOpts) (VCSSyncer, error
 		return "", errors.Errorf("unexpected empty Sources map in %v", r)
 	}
 
-	switch r.ExternalRepo.ServiceType {
-	case extsvc.TypePerforce:
-		var c schema.PerforceConnection
-		if _, err := extractOptions(&c); err != nil {
-			return nil, err
+	out, err := func() (VCSSyncer, error) {
+		switch r.ExternalRepo.ServiceType {
+		case extsvc.TypePerforce:
+			var c schema.PerforceConnection
+			if _, err := extractOptions(&c); err != nil {
+				return nil, err
+			}
+
+			return NewPerforceDepotSyncer(opts.Logger, opts.RecordingCommandFactory, opts.FS, &c, opts.GetRemoteURLSource), nil
+		case extsvc.TypeJVMPackages:
+			var c schema.JVMPackagesConnection
+			if _, err := extractOptions(&c); err != nil {
+				return nil, err
+			}
+			return NewJVMPackagesSyncer(&c, opts.DepsSvc, opts.GetRemoteURLSource, opts.CoursierCacheDir, opts.FS), nil
+		case extsvc.TypeNpmPackages:
+			var c schema.NpmPackagesConnection
+			urn, err := extractOptions(&c)
+			if err != nil {
+				return nil, err
+			}
+			cli, err := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalClientFactory)
+			if err != nil {
+				return nil, err
+			}
+			return NewNpmPackagesSyncer(c, opts.DepsSvc, cli, opts.FS, opts.GetRemoteURLSource), nil
+		case extsvc.TypeGoModules:
+			var c schema.GoModulesConnection
+			urn, err := extractOptions(&c)
+			if err != nil {
+				return nil, err
+			}
+			cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
+			return NewGoModulesSyncer(&c, opts.DepsSvc, cli, opts.FS, opts.GetRemoteURLSource), nil
+		case extsvc.TypePythonPackages:
+			var c schema.PythonPackagesConnection
+			urn, err := extractOptions(&c)
+			if err != nil {
+				return nil, err
+			}
+			cli, err := pypi.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
+			if err != nil {
+				return nil, err
+			}
+			return NewPythonPackagesSyncer(&c, opts.DepsSvc, cli, opts.FS, opts.GetRemoteURLSource), nil
+		case extsvc.TypeRustPackages:
+			var c schema.RustPackagesConnection
+			urn, err := extractOptions(&c)
+			if err != nil {
+				return nil, err
+			}
+			cli, err := crates.NewClient(urn, httpcli.ExternalClientFactory)
+			if err != nil {
+				return nil, err
+			}
+			return NewRustPackagesSyncer(&c, opts.DepsSvc, cli, opts.FS, opts.GetRemoteURLSource), nil
+		case extsvc.TypeRubyPackages:
+			var c schema.RubyPackagesConnection
+			urn, err := extractOptions(&c)
+			if err != nil {
+				return nil, err
+			}
+			cli, err := rubygems.NewClient(urn, c.Repository, httpcli.ExternalClientFactory)
+			if err != nil {
+				return nil, err
+			}
+			return NewRubyPackagesSyncer(&c, opts.DepsSvc, cli, opts.FS, opts.GetRemoteURLSource), nil
 		}
 
-		p4Home, err := gitserverfs.MakeP4HomeDir(opts.ReposDir)
-		if err != nil {
-			return nil, err
-		}
+		return NewGitRepoSyncer(opts.Logger, opts.RecordingCommandFactory, opts.GetRemoteURLSource), nil
+	}()
 
-		return NewPerforceDepotSyncer(&c, p4Home), nil
-	case extsvc.TypeJVMPackages:
-		var c schema.JVMPackagesConnection
-		if _, err := extractOptions(&c); err != nil {
-			return nil, err
-		}
-		return NewJVMPackagesSyncer(&c, opts.DepsSvc, opts.CoursierCacheDir), nil
-	case extsvc.TypeNpmPackages:
-		var c schema.NpmPackagesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli, err := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalClientFactory)
-		if err != nil {
-			return nil, err
-		}
-		return NewNpmPackagesSyncer(c, opts.DepsSvc, cli), nil
-	case extsvc.TypeGoModules:
-		var c schema.GoModulesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
-		return NewGoModulesSyncer(&c, opts.DepsSvc, cli), nil
-	case extsvc.TypePythonPackages:
-		var c schema.PythonPackagesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli, err := pypi.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
-		if err != nil {
-			return nil, err
-		}
-		return NewPythonPackagesSyncer(&c, opts.DepsSvc, cli, opts.ReposDir), nil
-	case extsvc.TypeRustPackages:
-		var c schema.RustPackagesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli, err := crates.NewClient(urn, httpcli.ExternalClientFactory)
-		if err != nil {
-			return nil, err
-		}
-		return NewRustPackagesSyncer(&c, opts.DepsSvc, cli), nil
-	case extsvc.TypeRubyPackages:
-		var c schema.RubyPackagesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli, err := rubygems.NewClient(urn, c.Repository, httpcli.ExternalClientFactory)
-		if err != nil {
-			return nil, err
-		}
-		return NewRubyPackagesSyncer(&c, opts.DepsSvc, cli), nil
+	if err != nil {
+		return nil, err
 	}
-	return NewGitRepoSyncer(opts.RecordingCommandFactory), nil
+
+	return newInstrumentedSyncer(out), nil
 }
 
 type notFoundError struct{ error }
 
 func (e notFoundError) NotFound() bool { return true }
+
+// RemoteURLSource is a source of a remote URL for a repository.
+//
+// The remote URL may change over time, so it's important to use this interface
+// to get the remote URL every time instead of caching it at the call site.
+type RemoteURLSource interface {
+	// RemoteURL returns the latest remote URL for a repository.
+	RemoteURL(ctx context.Context) (*vcs.URL, error)
+}
+
+// RemoteURLSourceFunc is an adapter to allow the use of ordinary functions as
+// RemoteURLSource.
+type RemoteURLSourceFunc func(ctx context.Context) (*vcs.URL, error)
+
+func (f RemoteURLSourceFunc) RemoteURL(ctx context.Context) (*vcs.URL, error) {
+	return f(ctx)
+}
+
+var _ RemoteURLSource = RemoteURLSourceFunc(nil)

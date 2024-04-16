@@ -41,7 +41,7 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
                     repoName: repositoryMatch.repository,
                     commitID: '',
                     revision: repositoryMatch.branches?.[0] ?? 'HEAD',
-                    filePath: directoryStack.length > 0 ? directoryStack[directoryStack.length - 1] : '',
+                    filePath: directoryStack.length > 0 ? directoryStack.at(-1)! : '',
                     requestGraphQL: platformContext.requestGraphQL,
                 }).pipe(
                     catchError(error => {
@@ -58,7 +58,7 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
         const newDirectoryStack = directoryStack.slice(0, -1)
         setQueryState({
             query: `repo:^${repositoryMatch.repository}$ ${
-                newDirectoryStack.length > 0 ? `file:^${newDirectoryStack[newDirectoryStack.length - 1]}` : ''
+                newDirectoryStack.length > 0 ? `file:^${newDirectoryStack.at(-1)}` : ''
             }`,
         })
         setDirectoryStack(newDirectoryStack)

@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`SearchContextMenu should filter list by spec when searching 1`] = `
+exports[`SearchContextMenu > should filter list by spec when searching 1`] = `
 Array [
   <li
     aria-selected="false"

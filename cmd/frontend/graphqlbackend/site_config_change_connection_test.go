@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -20,12 +19,6 @@ type siteConfigStubs struct {
 	db            database.DB
 	users         []*types.User
 	expectedDiffs map[int32]string
-}
-
-func toStringPtr(n int) *string {
-	str := strconv.Itoa(n)
-
-	return &str
 }
 
 func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
@@ -57,7 +50,11 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 		// ID: 2 (because first time we create a config an initial config will be created first)
 		{
 			Contents: `{
-  "auth.Providers": []
+  "auth.providers": [
+    {
+      "type": "builtin"
+    }
+  ],
 }`,
 		},
 		// ID: 3
@@ -66,7 +63,11 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 			// A new line is added.
 			Contents: `{
   "disableAutoGitUpdates": true,
-  "auth.Providers": []
+  "auth.providers": [
+    {
+      "type": "builtin"
+    }
+  ],
 }`,
 		},
 		// ID: 4
@@ -75,7 +76,11 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 			// Existing line is changed.
 			Contents: `{
   "disableAutoGitUpdates": false,
-  "auth.Providers": []
+  "auth.providers": [
+    {
+      "type": "builtin"
+    }
+  ],
 }`,
 		},
 		// ID: 5
@@ -87,7 +92,11 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 			// any query that lists the diffs.
 			Contents: `{
   "disableAutoGitUpdates": false,
-  "auth.Providers": []
+  "auth.providers": [
+    {
+      "type": "builtin"
+    }
+  ],
 }`,
 		},
 		// ID: 6
@@ -95,7 +104,11 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 			AuthorUserID: 3, // This user no longer exists
 			// Existing line is removed.
 			Contents: `{
-  "auth.Providers": []
+  "auth.providers": [
+    {
+      "type": "builtin"
+    }
+  ],
 }`,
 		},
 	}
@@ -122,38 +135,38 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 		// 6 and 5.
 		6: `--- ID: 4
 +++ ID: 6
-@@ -1,4 +1,3 @@
+@@ -1,5 +1,4 @@
  {
 -  "disableAutoGitUpdates": false,
-   "auth.Providers": []
- }
-\ No newline at end of file
+   "auth.providers": [
+     {
+       "type": "builtin"
 `,
 
 		4: `--- ID: 3
 +++ ID: 4
-@@ -1,4 +1,4 @@
+@@ -1,5 +1,5 @@
  {
 -  "disableAutoGitUpdates": true,
 +  "disableAutoGitUpdates": false,
-   "auth.Providers": []
- }
-\ No newline at end of file
+   "auth.providers": [
+     {
+       "type": "builtin"
 `,
 
 		3: `--- ID: 2
 +++ ID: 3
-@@ -1,3 +1,4 @@
+@@ -1,4 +1,5 @@
  {
 +  "disableAutoGitUpdates": true,
-   "auth.Providers": []
- }
-\ No newline at end of file
+   "auth.providers": [
+     {
+       "type": "builtin"
 `,
 
 		2: `--- ID: 1
 +++ ID: 2
-@@ -1,17 +1,3 @@
+@@ -1,14 +1,4 @@
  {
 -  // The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
 -  // This is required to be configured for Sourcegraph to work correctly.
@@ -164,15 +177,10 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 -  // The builtin auth provider with signup disallowed (shown below) means that
 -  // after the initial site admin signs in, all other users must be invited.
 -  //
--  // Other providers are documented at https://docs.sourcegraph.com/admin/auth.
--  "auth.providers": [
--    {
--      "type": "builtin"
--    }
--  ],
-+  "auth.Providers": []
- }
-\ No newline at end of file
+-  // Other providers are documented at https://sourcegraph.com/docs/admin/auth.
+   "auth.providers": [
+     {
+       "type": "builtin"
 `,
 
 		1: `--- ID: 0
@@ -188,7 +196,7 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 +  // The builtin auth provider with signup disallowed (shown below) means that
 +  // after the initial site admin signs in, all other users must be invited.
 +  //
-+  // Other providers are documented at https://docs.sourcegraph.com/admin/auth.
++  // Other providers are documented at https://sourcegraph.com/docs/admin/auth.
 +  "auth.providers": [
 +    {
 +      "type": "builtin"
@@ -573,7 +581,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "first: 2, after: 6",
 			paginationArgs: &database.PaginationArgs{
 				First: pointers.Ptr(2),
-				After: toStringPtr(6),
+				After: []any{int32(6)},
 			},
 			expectedSiteConfigIDs:         []int32{4, 3},
 			expectedPreviousSiteConfigIDs: []int32{3, 2},
@@ -582,7 +590,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "first: 10, after: 6",
 			paginationArgs: &database.PaginationArgs{
 				First: pointers.Ptr(10),
-				After: toStringPtr(6),
+				After: []any{int32(6)},
 			},
 			expectedSiteConfigIDs:         []int32{4, 3, 2, 1},
 			expectedPreviousSiteConfigIDs: []int32{3, 2, 1, 0},
@@ -591,7 +599,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "first: 2, after: 1",
 			paginationArgs: &database.PaginationArgs{
 				First: pointers.Ptr(2),
-				After: toStringPtr(1),
+				After: []any{int32(1)},
 			},
 			expectedSiteConfigIDs:         []int32{},
 			expectedPreviousSiteConfigIDs: []int32{},
@@ -600,7 +608,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "last: 2, before: 2",
 			paginationArgs: &database.PaginationArgs{
 				Last:   pointers.Ptr(2),
-				Before: toStringPtr(2),
+				Before: []any{int32(2)},
 			},
 			expectedSiteConfigIDs:         []int32{3, 4},
 			expectedPreviousSiteConfigIDs: []int32{2, 3},
@@ -609,7 +617,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "last: 10, before: 2",
 			paginationArgs: &database.PaginationArgs{
 				Last:   pointers.Ptr(10),
-				Before: toStringPtr(2),
+				Before: []any{int32(2)},
 			},
 			expectedSiteConfigIDs:         []int32{3, 4, 6},
 			expectedPreviousSiteConfigIDs: []int32{2, 3, 4},
@@ -618,7 +626,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "last: 2, before: 6",
 			paginationArgs: &database.PaginationArgs{
 				Last:   pointers.Ptr(2),
-				Before: toStringPtr(6),
+				Before: []any{int32(6)},
 			},
 			expectedSiteConfigIDs:         []int32{},
 			expectedPreviousSiteConfigIDs: []int32{},
@@ -682,8 +690,8 @@ func TestModifyArgs(t *testing.T) {
 		},
 		{
 			name:             "first: 5, after: 10 (next page)",
-			args:             &database.PaginationArgs{First: pointers.Ptr(5), After: toStringPtr(10)},
-			expectedArgs:     &database.PaginationArgs{First: pointers.Ptr(6), After: toStringPtr(10)},
+			args:             &database.PaginationArgs{First: pointers.Ptr(5), After: []any{int32(10)}},
+			expectedArgs:     &database.PaginationArgs{First: pointers.Ptr(6), After: []any{int32(10)}},
 			expectedModified: true,
 		},
 		{
@@ -694,30 +702,27 @@ func TestModifyArgs(t *testing.T) {
 		},
 		{
 			name:             "last: 5, before: 10 (previous page)",
-			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(10)},
-			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(6), Before: toStringPtr(9)},
+			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: []any{int32(10)}},
+			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(6), Before: []any{int32(9)}},
 			expectedModified: true,
 		},
 		{
 			name:             "last: 5, before: 1 (edge case)",
-			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(1)},
-			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(6), Before: toStringPtr(0)},
+			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: []any{int32(1)}},
+			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(6), Before: []any{int32(0)}},
 			expectedModified: true,
 		},
 		{
 			name:             "last: 5, before: 0 (same as last page but a mathematical  edge case)",
-			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(0)},
-			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(0)},
+			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: []any{int32(0)}},
+			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(5), Before: []any{int32(0)}},
 			expectedModified: false,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			modified, err := modifyArgs(tc.args)
-			if err != nil {
-				t.Fatal(err)
-			}
+			modified := modifyArgs(tc.args)
 
 			if modified != tc.expectedModified {
 				t.Errorf("Expected modified to be %v, but got %v", modified, tc.expectedModified)

@@ -25,8 +25,10 @@ type GitserverClient interface {
 	// GitDiff returns the paths that have changed between two commits.
 	GitDiff(context.Context, api.RepoName, api.CommitID, api.CommitID) (Changes, error)
 
-	// ReadFile returns the file content for the given file at a repo commit.
-	ReadFile(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error)
+	// NewFileReader returns an io.ReadCloser reading from the named file at commit.
+	// The caller should always close the reader after use.
+	// (If you just need to check a file's existence, use Stat, not a file reader.)
+	NewFileReader(ctx context.Context, repoCommitPath types.RepoCommitPath) (io.ReadCloser, error)
 
 	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
 	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
@@ -50,7 +52,7 @@ type gitserverClient struct {
 
 func NewClient(observationCtx *observation.Context, db database.DB) GitserverClient {
 	return &gitserverClient{
-		innerClient: gitserver.NewClient(),
+		innerClient: gitserver.NewClient("symbols"),
 		operations:  newOperations(observationCtx),
 	}
 }
@@ -63,15 +65,10 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 	}})
 	defer endObservation(1, observation.Args{})
 
-	pathSpecs := []gitdomain.Pathspec{}
-	for _, path := range paths {
-		pathSpecs = append(pathSpecs, gitdomain.PathspecLiteral(path))
-	}
-
 	opts := gitserver.ArchiveOptions{
-		Treeish:   string(commit),
-		Format:    gitserver.ArchiveFormatTar,
-		Pathspecs: pathSpecs,
+		Treeish: string(commit),
+		Format:  gitserver.ArchiveFormatTar,
+		Paths:   paths,
 	}
 
 	// Note: the sub-repo perms checker is nil here because we do the sub-repo filtering at a higher level
@@ -96,12 +93,8 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 	return changes, nil
 }
 
-func (c *gitserverClient) ReadFile(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
-	data, err := c.innerClient.ReadFile(ctx, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get file contents")
-	}
-	return data, nil
+func (c *gitserverClient) NewFileReader(ctx context.Context, repoCommitPath types.RepoCommitPath) (io.ReadCloser, error) {
+	return c.innerClient.NewFileReader(ctx, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path)
 }
 
 func (c *gitserverClient) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {

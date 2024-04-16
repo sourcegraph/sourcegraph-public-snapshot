@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`FeedbackText render a FeedbackText 1`] = `
+exports[`FeedbackText > render a FeedbackText 1`] = `
 <DocumentFragment>
   <p
     class=""
@@ -37,7 +37,7 @@ exports[`FeedbackText render a FeedbackText 1`] = `
 </DocumentFragment>
 `;
 
-exports[`FeedbackText render feedbackText with footer 1`] = `
+exports[`FeedbackText > render feedbackText with footer 1`] = `
 <DocumentFragment>
   <p
     class=""
@@ -74,7 +74,7 @@ exports[`FeedbackText render feedbackText with footer 1`] = `
 </DocumentFragment>
 `;
 
-exports[`FeedbackText render feedbackText with header 1`] = `
+exports[`FeedbackText > render feedbackText with header 1`] = `
 <DocumentFragment>
   <p
     class=""

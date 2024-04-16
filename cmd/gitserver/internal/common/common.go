@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,6 +14,9 @@ type GitDir string
 
 // Path is a helper which returns filepath.Join(dir, elem...)
 func (dir GitDir) Path(elem ...string) string {
+	if len(elem) == 0 {
+		return string(dir)
+	}
 	return filepath.Join(append([]string{string(dir)}, elem...)...)
 }
 
@@ -32,18 +34,12 @@ func (dir GitDir) Set(cmd *exec.Cmd) {
 	cmd.Env = append(cmd.Env, "GIT_DIR="+string(dir))
 }
 
-// GitCommandError is an error of a failed Git command.
-type GitCommandError struct {
-	// Err is the original error produced by the git command that failed.
-	Err error
-	// Output is the std error output of the command that failed.
-	Output string
+// ErrRepoCorrupted is an error indicating that the repository is potentially
+// corrupted.
+type ErrRepoCorrupted struct {
+	Reason string
 }
 
-func (e *GitCommandError) Error() string {
-	return fmt.Sprintf("%s - output: %q", e.Err, e.Output)
-}
-
-func (e *GitCommandError) Unwrap() error {
-	return e.Err
+func (e ErrRepoCorrupted) Error() string {
+	return "repository is corrupted: " + e.Reason
 }

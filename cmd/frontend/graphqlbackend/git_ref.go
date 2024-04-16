@@ -15,8 +15,6 @@ const (
 	gitRefTypeBranch = "GIT_BRANCH"
 	gitRefTypeTag    = "GIT_TAG"
 	gitRefTypeOther  = "GIT_REF_OTHER"
-
-	gitRefOrderAuthoredOrCommittedAt = "AUTHORED_OR_COMMITTED_AT"
 )
 
 func gitRefPrefix(ref string) string {
@@ -106,21 +104,20 @@ func unmarshalGitRefID(id graphql.ID) (repoID graphql.ID, rev string, err error)
 	return spec.Repository, spec.Rev, err
 }
 
+type GitTarget interface {
+	OID(context.Context) (GitObjectID, error)
+	AbbreviatedOID(context.Context) (string, error)
+	Commit(context.Context) (*GitCommitResolver, error)
+	Type(context.Context) (GitObjectType, error)
+}
+
 func (r *GitRefResolver) ID() graphql.ID      { return marshalGitRefID(r.repo.ID(), r.name) }
 func (r *GitRefResolver) Name() string        { return r.name }
 func (r *GitRefResolver) AbbrevName() string  { return strings.TrimPrefix(r.name, gitRefPrefix(r.name)) }
 func (r *GitRefResolver) DisplayName() string { return gitRefDisplayName(r.name) }
 func (r *GitRefResolver) Prefix() string      { return gitRefPrefix(r.name) }
 func (r *GitRefResolver) Type() string        { return gitRefType(r.name) }
-func (r *GitRefResolver) Target() interface {
-	OID(context.Context) (GitObjectID, error)
-	//lint:ignore U1000 is used by graphql via reflection
-	AbbreviatedOID(context.Context) (string, error)
-	//lint:ignore U1000 is used by graphql via reflection
-	Commit(context.Context) (*GitCommitResolver, error)
-	//lint:ignore U1000 is used by graphql via reflection
-	Type(context.Context) (GitObjectType, error)
-} {
+func (r *GitRefResolver) Target() GitTarget {
 	if r.target != "" {
 		return &gitObject{repo: r.repo, oid: r.target, typ: GitObjectTypeCommit}
 	}

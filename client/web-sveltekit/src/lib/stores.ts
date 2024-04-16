@@ -1,28 +1,34 @@
-import { getContext } from 'svelte'
+import { getContext, setContext } from 'svelte'
 import { readable, writable, type Readable, type Writable } from 'svelte/store'
 
-import type { SettingsCascade, AuthenticatedUser, TemporarySettingsStorage } from '$lib/shared'
+import type { Settings, TemporarySettingsStorage } from '$lib/shared'
 
-import type { FeatureFlag } from './featureflags'
-import type { GraphQLClient } from './graphql'
+import type { AuthenticatedUser, FeatureFlag } from '../routes/layout.gql'
 
-export { isLightTheme } from './theme'
+export { themeSetting, theme, isLightTheme } from './theme'
+
+// Only exported to be used for mocking tests
+// TODO (fkling): Find a better way to initialize mocked contexts and stores
+export const KEY = '__sourcegraph__'
 
 export interface SourcegraphContext {
-    settings: Readable<SettingsCascade['final'] | null>
+    settings: Readable<Settings | null>
     user: Readable<AuthenticatedUser | null>
     temporarySettingsStorage: Readable<TemporarySettingsStorage>
     featureFlags: Readable<FeatureFlag[]>
-    client: Readable<GraphQLClient>
 }
 
-export const KEY = '__sourcegraph__'
+export function setAppContext(context: SourcegraphContext): void {
+    setContext<SourcegraphContext>(KEY, context)
+}
 
 export function getStores(): SourcegraphContext {
-    const { settings, user, temporarySettingsStorage, featureFlags, client } = getContext<SourcegraphContext>(KEY)
-    return { settings, user, temporarySettingsStorage, featureFlags, client }
+    return getContext<SourcegraphContext>(KEY)
 }
 
+/**
+ * This store returns the currently logged in user.
+ */
 export const user = {
     subscribe(subscriber: (user: AuthenticatedUser | null) => void) {
         const { user } = getStores()
@@ -30,17 +36,13 @@ export const user = {
     },
 }
 
+/**
+ * This store returns the user's settings.
+ */
 export const settings = {
-    subscribe(subscriber: (settings: SettingsCascade['final'] | null) => void) {
+    subscribe(subscriber: (settings: Settings | null) => void) {
         const { settings } = getStores()
         return settings.subscribe(subscriber)
-    },
-}
-
-export const graphqlClient = {
-    subscribe(subscriber: (client: GraphQLClient) => void) {
-        const { client } = getStores()
-        return client.subscribe(subscriber)
     },
 }
 

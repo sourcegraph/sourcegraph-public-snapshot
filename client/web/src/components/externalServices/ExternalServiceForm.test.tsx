@@ -1,6 +1,8 @@
 import * as H from 'history'
 import { noop } from 'rxjs'
+import { describe, expect, test, vi } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
@@ -8,7 +10,7 @@ import { ExternalServiceKind } from '../../graphql-operations'
 
 import { ExternalServiceForm } from './ExternalServiceForm'
 
-jest.mock('../../settings/DynamicallyImportedMonacoSettingsEditor', () => ({
+vi.mock('../../settings/DynamicallyImportedMonacoSettingsEditor', () => ({
     DynamicallyImportedMonacoSettingsEditor: () => 'DynamicallyImportedMonacoSettingsEditor',
 }))
 
@@ -36,6 +38,7 @@ describe('ExternalServiceForm', () => {
                 mode="create"
                 loading={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )
         expect(component.asFragment()).toMatchSnapshot()
@@ -52,6 +55,7 @@ describe('ExternalServiceForm', () => {
                 mode="create"
                 loading={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )
         expect(component.asFragment()).toMatchSnapshot()
@@ -68,6 +72,7 @@ describe('ExternalServiceForm', () => {
                 mode="create"
                 loading={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )
         expect(component.asFragment()).toMatchSnapshot()

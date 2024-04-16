@@ -16,14 +16,10 @@ const (
 	PullRequest       RunType = iota // pull request build
 	ManuallyTriggered                // build that is manually triggred - typically used to start CI for external contributions
 
-	// Nightly builds - must be first because they take precedence
-
-	ReleaseNightly   // release branch nightly healthcheck builds
-	BextNightly      // browser extension nightly build
-	VsceNightly      // vs code extension nightly build
-	AppRelease       // app release build
-	AppInsiders      // app insiders build
-	WolfiBaseRebuild // wolfi base image build
+	BextNightly       // browser extension nightly build
+	BextManualNightly // browser extension nightly build, triggered with a branch pattern
+	VsceNightly       // vs code extension nightly build
+	WolfiBaseRebuild  // wolfi base image build
 
 	// Release branches
 
@@ -31,6 +27,9 @@ const (
 	ReleaseBranch     // release branch build
 	BextReleaseBranch // browser extension release build
 	VsceReleaseBranch // vs code extension release build
+
+	InternalRelease // Internal release
+	PromoteRelease  // Public release
 
 	// Main branches
 
@@ -43,11 +42,9 @@ const (
 	ImagePatchNoTest    // build a patched image without testing
 	ExecutorPatchNoTest // build executor image without testing
 	CandidatesNoTest    // build one or all candidate images without testing
+	CloudEphemeral      // build all images and push to cloud ephemeral registry for use with cloud deployment
 
-	// Special test branches
-
-	BackendIntegrationTests // run backend tests that are used on main
-	BazelDo                 // run a specific bazel command
+	BazelDo // run a specific bazel command
 
 	// None is a no-op, add all run types above this type.
 	None
@@ -86,10 +83,16 @@ func (t RunType) Is(oneOfTypes ...RunType) bool {
 // Matcher returns the requirements for a build to be considered of this RunType.
 func (t RunType) Matcher() *RunTypeMatcher {
 	switch t {
-	case ReleaseNightly:
+	case PromoteRelease:
 		return &RunTypeMatcher{
 			EnvIncludes: map[string]string{
-				"RELEASE_NIGHTLY": "true",
+				"RELEASE_PUBLIC": "true",
+			},
+		}
+	case InternalRelease:
+		return &RunTypeMatcher{
+			EnvIncludes: map[string]string{
+				"RELEASE_INTERNAL": "true",
 			},
 		}
 	case BextNightly:
@@ -97,6 +100,10 @@ func (t RunType) Matcher() *RunTypeMatcher {
 			EnvIncludes: map[string]string{
 				"BEXT_NIGHTLY": "true",
 			},
+		}
+	case BextManualNightly:
+		return &RunTypeMatcher{
+			Branch: "bext-nightly/",
 		}
 	case VsceNightly:
 		return &RunTypeMatcher{
@@ -115,18 +122,6 @@ func (t RunType) Matcher() *RunTypeMatcher {
 				"WOLFI_BASE_REBUILD": "true",
 			},
 		}
-
-	case AppRelease:
-		return &RunTypeMatcher{
-			Branch:      "app/release",
-			BranchExact: true,
-		}
-	case AppInsiders:
-		return &RunTypeMatcher{
-			Branch:      "app/insiders",
-			BranchExact: true,
-		}
-
 	case TaggedRelease:
 		return &RunTypeMatcher{
 			TagPrefix: "v",
@@ -170,10 +165,6 @@ func (t RunType) Matcher() *RunTypeMatcher {
 			Branch: "executor-patch-notest/",
 		}
 
-	case BackendIntegrationTests:
-		return &RunTypeMatcher{
-			Branch: "backend-integration/",
-		}
 	case CandidatesNoTest:
 		return &RunTypeMatcher{
 			Branch: "docker-images-candidates-notest/",
@@ -182,6 +173,11 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		return &RunTypeMatcher{
 			Branch: "bazel-do/",
 		}
+	case CloudEphemeral:
+		return &RunTypeMatcher{
+			Branch: "cloud-ephemeral/",
+		}
+
 	}
 
 	return nil
@@ -193,18 +189,14 @@ func (t RunType) String() string {
 		return "Pull request"
 	case ManuallyTriggered:
 		return "Manually Triggered External Build"
-	case ReleaseNightly:
-		return "Release branch nightly healthcheck build"
 	case BextNightly:
 		return "Browser extension nightly release build"
+	case BextManualNightly:
+		return "Manually triggered browser extension nightly release build"
 	case VsceNightly:
 		return "VS Code extension nightly release build"
 	case WolfiBaseRebuild:
 		return "Wolfi base images rebuild"
-	case AppRelease:
-		return "App release build"
-	case AppInsiders:
-		return "App insiders build"
 	case TaggedRelease:
 		return "Tagged release"
 	case ReleaseBranch:
@@ -225,12 +217,16 @@ func (t RunType) String() string {
 		return "Build all candidates without testing"
 	case ExecutorPatchNoTest:
 		return "Build executor without testing"
-	case BackendIntegrationTests:
-		return "Backend integration tests"
 	case BazelDo:
 		return "Bazel command"
+	case InternalRelease:
+		return "Internal release"
+	case PromoteRelease:
+		return "Public release"
+	case CloudEphemeral:
+		return "Cloud ephemeral"
 	}
-	return ""
+	return "None"
 }
 
 // RunTypeMatcher defines the requirements for any given build to be considered a build of

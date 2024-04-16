@@ -32,7 +32,6 @@ go_library(
         "@com_github_prometheus_client_model//go",
         "@com_github_prometheus_common//expfmt",
         "@com_github_sourcegraph_log//:log",
-        "@org_golang_x_exp//slices",
     ],
 )
 
@@ -64,8 +63,6 @@ go_test(
         "//lib/pointers",
         "//schema",
         "@com_github_gorilla_mux//:mux",
-        "@com_github_prometheus_client_model//go",
-        "@com_github_prometheus_common//expfmt",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//mock",
         "@com_github_stretchr_testify//require",

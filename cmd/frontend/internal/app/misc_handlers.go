@@ -10,10 +10,10 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
@@ -30,8 +30,9 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 	fmt.Fprintln(&buf, "User-agent: *")
 	if allowRobots {
 		fmt.Fprintln(&buf, "Allow: /")
-		if envvar.SourcegraphDotComMode() {
+		if dotcom.SourcegraphDotComMode() {
 			fmt.Fprintln(&buf, "Sitemap: https://sourcegraph.com/sitemap.xml.gz")
+			fmt.Fprintln(&buf, "Disallow: /search?q=*")
 		}
 	} else {
 		fmt.Fprintln(&buf, "Disallow: /")
@@ -41,7 +42,7 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 }
 
 func sitemapXmlGz(w http.ResponseWriter, r *http.Request) {
-	if envvar.SourcegraphDotComMode() || deploy.Type() == deploy.Dev {
+	if dotcom.SourcegraphDotComMode() || deploy.Type() == deploy.Dev {
 		number := mux.Vars(r)["number"]
 		http.Redirect(w, r, fmt.Sprintf("https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap%s.xml.gz", number), http.StatusFound)
 		return
@@ -58,7 +59,7 @@ func favicon(w http.ResponseWriter, r *http.Request) {
 	url.RawQuery = query.Encode()
 	path := strings.Replace(url.String(), "v2=", "v2", 1)
 
-	if branding := globals.Branding(); branding.Favicon != "" {
+	if branding := conf.Branding(); branding.Favicon != "" {
 		path = branding.Favicon
 	}
 	http.Redirect(w, r, path, http.StatusMovedPermanently)

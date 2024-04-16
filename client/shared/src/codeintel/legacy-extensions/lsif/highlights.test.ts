@@ -1,5 +1,7 @@
 import * as assert from 'assert'
 
+import { describe, it } from 'vitest'
+
 import { filterLocationsForDocumentHighlights } from './highlights'
 import { range1, range2, range3, range4, document } from './util.test'
 

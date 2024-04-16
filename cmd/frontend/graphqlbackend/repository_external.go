@@ -18,14 +18,14 @@ type externalRepositoryResolver struct {
 }
 
 func (r *externalRepositoryResolver) ID(ctx context.Context) (string, error) {
-	repo, err := r.repository.repo(ctx)
+	repo, err := r.repository.getRepo(ctx)
 	if err != nil {
 		return "", err
 	}
 	return repo.ExternalRepo.ID, nil
 }
 func (r *externalRepositoryResolver) ServiceType(ctx context.Context) (string, error) {
-	repo, err := r.repository.repo(ctx)
+	repo, err := r.repository.getRepo(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -34,7 +34,7 @@ func (r *externalRepositoryResolver) ServiceType(ctx context.Context) (string, e
 }
 
 func (r *externalRepositoryResolver) ServiceID(ctx context.Context) (string, error) {
-	repo, err := r.repository.repo(ctx)
+	repo, err := r.repository.getRepo(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -50,7 +50,7 @@ func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}

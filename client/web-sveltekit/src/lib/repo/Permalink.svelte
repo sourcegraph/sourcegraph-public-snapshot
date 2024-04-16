@@ -1,22 +1,30 @@
+<!--
+    @component
+    Renders a permalink to the current page with the given Git commit ID.
+-->
 <script lang="ts">
     import { mdiLink } from '@mdi/js'
 
     import { page } from '$app/stores'
-    import { isErrorLike, type ErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
     import { replaceRevisionInURL } from '$lib/web'
-    import type { ResolvedRevision } from '$lib/repo/api/repo'
 
-    export let resolvedRevision: ResolvedRevision | ErrorLike
+    export let commitID: string
 
-    $: href = !isErrorLike(resolvedRevision)
-        ? replaceRevisionInURL($page.url.toString(), resolvedRevision.commitID)
-        : ''
+    $: href = commitID ? replaceRevisionInURL($page.url.toString(), commitID) : ''
 </script>
 
 {#if href}
-    <Tooltip tooltip="Permalink (with full Git commit SHA)">
-        <a {href}><Icon svgPath={mdiLink} inline /></a>
+    <Tooltip tooltip="Permalink (with full git commit SHA)">
+        <a {href}><Icon svgPath={mdiLink} inline /> <span data-action-label>Permalink</span></a>
     </Tooltip>
 {/if}
+
+<style lang="scss">
+    a {
+        color: var(--body-color);
+        text-decoration: none;
+        white-space: nowrap;
+    }
+</style>

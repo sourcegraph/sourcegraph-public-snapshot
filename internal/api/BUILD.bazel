@@ -3,14 +3,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "api",
-    srcs = [
-        "api.go",
-        "httpapi_schema.go",
-    ],
+    srcs = ["api.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/api",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/gitserver/v1:gitserver",
         "//internal/lazyregexp",
         "//lib/errors",
         "@io_opentelemetry_go_otel//attribute",

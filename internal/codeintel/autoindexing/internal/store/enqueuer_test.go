@@ -20,7 +20,7 @@ import (
 func TestIsQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
 	insertIndexes(t, db, uploadsshared.Index{ID: 2, RepositoryID: 1, Commit: makeCommit(1), ShouldReindex: true})
@@ -64,7 +64,7 @@ func TestIsQueued(t *testing.T) {
 func TestIsQueuedRootIndexer(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	now := time.Now()
 	insertIndexes(t, db, uploadsshared.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
@@ -106,7 +106,7 @@ func TestInsertIndexes(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertRepo(t, db, 50, "")
 
@@ -143,9 +143,9 @@ func TestInsertIndexes(t *testing.T) {
 			},
 			LocalSteps:  nil,
 			Root:        "/baz",
-			Indexer:     "sourcegraph/lsif-rust:15",
+			Indexer:     "sourcegraph/scip-rust:15",
 			IndexerArgs: []string{"-v"},
-			Outfile:     "dump.lsif",
+			Outfile:     "out.scip",
 			ExecutionLogs: []executor.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
@@ -207,9 +207,9 @@ func TestInsertIndexes(t *testing.T) {
 			},
 			LocalSteps:  []string{},
 			Root:        "/baz",
-			Indexer:     "sourcegraph/lsif-rust:15",
+			Indexer:     "sourcegraph/scip-rust:15",
 			IndexerArgs: []string{"-v"},
-			Outfile:     "dump.lsif",
+			Outfile:     "out.scip",
 			ExecutionLogs: []executor.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
@@ -231,7 +231,7 @@ func TestInsertIndexes(t *testing.T) {
 func TestInsertIndexWithActor(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertRepo(t, db, 50, "")
 

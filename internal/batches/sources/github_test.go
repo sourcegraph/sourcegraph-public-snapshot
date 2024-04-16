@@ -115,7 +115,6 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 }
 
 func TestGithubSource_CreateChangeset_CreationLimit(t *testing.T) {
-	github.SetupForTest(t)
 	cli := new(mockDoer)
 	// Version lookup
 	versionMatchedBy := func(req *http.Request) bool {
@@ -175,7 +174,7 @@ func TestGithubSource_CreateChangeset_CreationLimit(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(
 		t,
-		"reached GitHub's internal creation limit: see https://docs.sourcegraph.com/admin/config/batch_changes#avoiding-hitting-rate-limits: error in GraphQL response: error in GraphQL response: was submitted too quickly",
+		"reached GitHub's internal creation limit: see https://sourcegraph.com/docs/admin/config/batch_changes#avoiding-hitting-rate-limits: error in GraphQL response: error in GraphQL response: was submitted too quickly",
 		err.Error(),
 	)
 }
@@ -888,7 +887,6 @@ func setup(t *testing.T, ctx context.Context, tName string) (src *GitHubSource, 
 	// The GithubSource uses the github.Client under the hood, which uses rcache, a
 	// caching layer that uses Redis. We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
-	github.SetupForTest(t)
 
 	cf, save := newClientFactory(t, tName)
 

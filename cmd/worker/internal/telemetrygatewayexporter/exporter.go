@@ -78,7 +78,7 @@ func (j *exporterJob) Handle(ctx context.Context) error {
 	// Check the current licensing mode.
 	if licensing.GetTelemetryEventsExportMode(conf.DefaultClient()) ==
 		licensing.TelemetryEventsExportDisabled {
-		logger.Debug("export is currently disabled entirely via licensing")
+		logger.Info("export is currently disabled entirely via licensing")
 		return nil
 	}
 

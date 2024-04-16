@@ -1,6 +1,7 @@
 import assert from 'assert'
 
 import { addDays, subDays } from 'date-fns'
+import { afterEach, beforeEach, describe, it } from 'mocha'
 
 import {
     BatchSpecSource,
@@ -162,6 +163,7 @@ const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => 
         __typename: 'BatchChange',
         changesetCountsOverTime: [
             {
+                __typename: 'ChangesetCounts',
                 closed: 12,
                 date: subDays(now, 2).toISOString(),
                 merged: 10,
@@ -172,6 +174,7 @@ const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => 
                 draft: 10,
             },
             {
+                __typename: 'ChangesetCounts',
                 closed: 12,
                 date: subDays(now, 1).toISOString(),
                 merged: 10,

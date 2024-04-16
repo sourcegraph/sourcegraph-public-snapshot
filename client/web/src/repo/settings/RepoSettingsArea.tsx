@@ -7,7 +7,8 @@ import { Routes, Route } from 'react-router-dom'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
-import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable, ErrorMessage } from '@sourcegraph/wildcard'
 
@@ -22,13 +23,13 @@ import { RepoSettingsSidebar, type RepoSettingsSideBarGroups } from './RepoSetti
 
 import styles from './RepoSettingsArea.module.scss'
 
-export interface RepoSettingsAreaRouteContext extends TelemetryProps {
+export interface RepoSettingsAreaRouteContext extends TelemetryProps, TelemetryV2Props {
     repo: SettingsAreaRepositoryFields
 }
 
 export interface RepoSettingsAreaRoute extends RouteV6Descriptor<RepoSettingsAreaRouteContext> {}
 
-interface Props extends BreadcrumbSetters, TelemetryProps {
+interface Props extends BreadcrumbSetters, TelemetryProps, TelemetryV2Props {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
     repoName: string
@@ -45,10 +46,7 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
 }) => {
     const repoName = props.repoName
     const repoOrError = useObservable(
-        useMemo(
-            () => fetchSettingsAreaRepository(repoName).pipe(catchError(error => of<ErrorLike>(asError(error)))),
-            [repoName]
-        )
+        useMemo(() => fetchSettingsAreaRepository(repoName).pipe(catchError(error => of(asError(error)))), [repoName])
     )
 
     useBreadcrumb(useMemo(() => ({ key: 'settings', element: 'Settings' }), []))
@@ -82,6 +80,7 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
     const context: RepoSettingsAreaRouteContext = {
         repo: repoOrError,
         telemetryService: props.telemetryService,
+        telemetryRecorder: props.telemetryRecorder,
     }
 
     return (

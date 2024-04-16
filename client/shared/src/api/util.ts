@@ -6,14 +6,8 @@ import {
     type Remote,
     proxyMarker,
 } from 'comlink'
-import {
-    type Unsubscribable,
-    type Subscribable,
-    Observable,
-    type Observer,
-    type PartialObserver,
-    Subscription,
-} from 'rxjs'
+import { type Unsubscribable, Observable, type Observer, type PartialObserver, Subscription } from 'rxjs'
+import { Subscribable } from 'sourcegraph'
 
 import { hasProperty, AbortError } from '@sourcegraph/common'
 
@@ -54,7 +48,7 @@ export const syncRemoteSubscription = (
     subscriptionPromise: Promise<Remote<Unsubscribable & ProxyMarked>>
 ): Subscription =>
     // We cannot pass the proxy subscription directly to Rx because it is a Proxy that looks like a function
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+
     new Subscription(async () => {
         const subscriptionProxy = await subscriptionPromise
         await subscriptionProxy.unsubscribe()

@@ -25,5 +25,5 @@
       "path": "../wildcard",
     },
   ],
-  "include": ["src", "*.js"],
+  "include": ["src"],
 }

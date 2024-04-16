@@ -118,7 +118,12 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>(authStateVariables)
                     .toPromise()
                 currentAuthStateResult
-                    .then(async ({ data }) => {
+                    .then(async result => {
+                        if (!result) {
+                            return
+                        }
+
+                        const { data } = result
                         if (data?.currentUser) {
                             await extensionCoreAPI.setEndpointUri(accessToken, endpointUrl)
                             setState('success')

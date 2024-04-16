@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -162,18 +162,15 @@ func TestNPMPackagesSource_ListRepos(t *testing.T) {
 		},
 	})
 
-	svc := types.ExternalService{
-		Kind: extsvc.KindNpmPackages,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.NpmPackagesConnection{
-			Registry:     "https://registry.npmjs.org",
-			Dependencies: []string{"@sourcegraph/prettierrc@2.2.0"},
-		})),
-	}
+	svc := typestest.MakeExternalService(t, extsvc.VariantNpmPackages, &schema.NpmPackagesConnection{
+		Registry:     "https://registry.npmjs.org",
+		Dependencies: []string{"@sourcegraph/prettierrc@2.2.0"},
+	})
 
 	cf, save := NewClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
-	src, err := NewNpmPackagesSource(ctx, &svc, cf)
+	src, err := NewNpmPackagesSource(ctx, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

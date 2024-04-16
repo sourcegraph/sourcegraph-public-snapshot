@@ -1,5 +1,7 @@
 import * as assert from 'assert'
 
+import { describe, it } from 'vitest'
+
 import { javaSpec } from './java'
 import { nilFilterContext, nilResult } from './spec.test'
 

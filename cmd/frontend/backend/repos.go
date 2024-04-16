@@ -11,16 +11,15 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -34,11 +33,10 @@ type ReposService interface {
 	GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error)
 	List(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error)
 	ListIndexable(ctx context.Context) ([]types.MinimalRepo, error)
-	GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
+	GetInventory(ctx context.Context, repoName api.RepoName, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
 	DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) error
-	RequestRepositoryClone(ctx context.Context, repoID api.RepoID) error
-	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
-	GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*gitdomain.Commit, error)
+	RequestRepositoryUpdate(ctx context.Context, repoID api.RepoID) error
+	ResolveRev(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error)
 }
 
 // NewRepos uses the provided `database.DB` to initialize a new RepoService.
@@ -97,7 +95,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		return nil, err
 	}
 
-	if errcode.IsNotFound(err) && !envvar.SourcegraphDotComMode() {
+	if errcode.IsNotFound(err) && !dotcom.SourcegraphDotComMode() {
 		// The repo doesn't exist and we're not on sourcegraph.com, we should not lazy
 		// clone it.
 		return nil, err
@@ -243,7 +241,7 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 		done()
 	}()
 
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		return s.cache.List(ctx)
 	}
 
@@ -252,24 +250,24 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 	})
 }
 
-func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
+func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
 
-	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
+	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo, "commitID": commitID}, &err)
 	defer done()
 
 	// Cap GetInventory operation to some reasonable time.
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	invCtx, err := InventoryContext(s.logger, repo.Name, s.gitserverClient, commitID, forceEnhancedLanguageDetection)
+	invCtx, err := InventoryContext(s.logger, repo, s.gitserverClient, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}
 
-	root, err := s.gitserverClient.Stat(ctx, repo.Name, commitID, "")
+	root, err := s.gitserverClient.Stat(ctx, repo, commitID, "")
 	if err != nil {
 		return nil, err
 	}
@@ -302,21 +300,21 @@ func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID)
 	return err
 }
 
-func (s *repos) RequestRepositoryClone(ctx context.Context, repoID api.RepoID) (err error) {
+func (s *repos) RequestRepositoryUpdate(ctx context.Context, repoID api.RepoID) (err error) {
 	repo, err := s.Get(ctx, repoID)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
 	}
 
-	ctx, done := startTrace(ctx, "RequestRepositoryClone", repoID, &err)
+	ctx, done := startTrace(ctx, "RequestRepositoryUpdate", repoID, &err)
 	defer done()
 
-	resp, err := s.gitserverClient.RequestRepoClone(ctx, repo.Name)
+	resp, err := s.gitserverClient.RequestRepoUpdate(ctx, repo.Name)
 	if err != nil {
 		return err
 	}
 	if resp.Error != "" {
-		return errors.Newf("requesting clone for repo ID %d failed: %s", repoID, resp.Error)
+		return errors.Newf("requesting update for repo ID %d failed: %s", repoID, resp.Error)
 	}
 
 	return nil
@@ -330,28 +328,15 @@ func (s *repos) RequestRepositoryClone(ctx context.Context, repoID api.RepoID) (
 // * Empty repository: gitdomain.RevisionNotFoundError
 // * The user does not have permission: errcode.IsNotFound
 // * Other unexpected errors.
-func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (commitID api.CommitID, err error) {
+func (s *repos) ResolveRev(ctx context.Context, repo api.RepoName, rev string) (commitID api.CommitID, err error) {
 	if Mocks.Repos.ResolveRev != nil {
 		return Mocks.Repos.ResolveRev(ctx, repo, rev)
 	}
 
-	ctx, done := startTrace(ctx, "ResolveRev", map[string]any{"repo": repo.Name, "rev": rev}, &err)
+	ctx, done := startTrace(ctx, "ResolveRev", map[string]any{"repo": repo, "rev": rev}, &err)
 	defer done()
 
-	return s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
-}
-
-func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *gitdomain.Commit, err error) {
-	ctx, done := startTrace(ctx, "GetCommit", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
-	defer done()
-
-	s.logger.Debug("GetCommit", log.String("repo", string(repo.Name)), log.String("commitID", string(commitID)))
-
-	if !gitdomain.IsAbsoluteRevision(string(commitID)) {
-		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
-	}
-
-	return s.gitserverClient.GetCommit(ctx, repo.Name, commitID, gitserver.ResolveRevisionOptions{})
+	return s.gitserverClient.ResolveRevision(ctx, repo, rev, gitserver.ResolveRevisionOptions{EnsureRevision: true})
 }
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
