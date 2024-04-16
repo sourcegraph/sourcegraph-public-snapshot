@@ -100,7 +100,7 @@ type Mutation {
 
     Only authenticated users may perform this mutation.
     """
-    createOrganization(name: String!, displayName: String, statsID: ID): Org!
+    createOrganization(name: String!, displayName: String): Org!
     """
     Updates an organization.
 
