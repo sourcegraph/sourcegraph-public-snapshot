@@ -168,10 +168,10 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 	for {
 		// Retrieve the set of configuration policies that affect indexing for this repository.
 		policies, totalCount, err := b.policiesSvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
-			RepositoryID: repositoryID,
-			ForIndexing:  &t,
-			Limit:        policyBatchSize,
-			Offset:       offset,
+			RepositoryID:       repositoryID,
+			ForPreciseIndexing: &t,
+			Limit:              policyBatchSize,
+			Offset:             offset,
 		})
 		if err != nil {
 			return errors.Wrap(err, "policySvc.GetConfigurationPolicies")

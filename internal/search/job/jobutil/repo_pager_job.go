@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -79,6 +80,11 @@ func setRepos(j job.Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.Rep
 		case *commit.SearchJob:
 			cp := *v
 			cp.Repos = unindexed
+			return &cp
+		case *structural.SearchJob:
+			cp := *v
+			cp.Unindexed = unindexed
+			cp.Indexed = indexed
 			return &cp
 		default:
 			return j

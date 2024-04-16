@@ -34,6 +34,7 @@ func (s sourcegraphClient) ProviderName() string {
 	return "Sourcegraph"
 }
 
+// GenerateEmbeddings uses a Triton-compatible API to generate embedding vectors for items from request.Input
 func (s sourcegraphClient) GenerateEmbeddings(ctx context.Context, request codygateway.EmbeddingsRequest) (*codygateway.EmbeddingsResponse, int, error) {
 	items := len(request.Input)
 	input := tritonInput{

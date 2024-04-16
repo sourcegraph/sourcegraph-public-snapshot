@@ -59,7 +59,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	s := store.New(db, &observation.TestContext, nil)
+	s := store.New(db, observation.TestContextTB(t), nil)
 
 	u := bt.CreateTestUser(t, db, false)
 

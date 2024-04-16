@@ -12,7 +12,3 @@ datasources:
     type: jaeger
     access: proxy
     url: http://host.docker.internal:16686/-/debug/jaeger
-  - name: Loki
-    type: loki
-    access: proxy
-    url: http://host.docker.internal:3100

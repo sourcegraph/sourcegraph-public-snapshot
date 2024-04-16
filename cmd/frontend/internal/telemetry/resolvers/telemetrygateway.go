@@ -23,6 +23,13 @@ func newTelemetryGatewayEvents(
 ) ([]*telemetrygatewayv1.Event, error) {
 	gatewayEvents := make([]*telemetrygatewayv1.Event, len(gqlEvents))
 	for i, gqlEvent := range gqlEvents {
+		if gqlEvent.Feature == "" {
+			return nil, errors.Newf("feature is required for event %d", i)
+		}
+		if gqlEvent.Action == "" {
+			return nil, errors.Newf("action is required for event %d", i)
+		}
+
 		event := telemetrygatewayv1.NewEventWithDefaults(ctx, now, newUUID)
 
 		if gqlEvent.Timestamp != nil {

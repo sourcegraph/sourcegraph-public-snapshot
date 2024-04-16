@@ -175,15 +175,16 @@ func NewHandler(
 
 		registerSimpleGETEndpoint("v1.embeddings.models", "/embeddings/models", embeddings.NewListHandler())
 
+		factoryMap := embeddings.ModelFactoryMap{
+			embeddings.ModelNameOpenAIAda:            embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
+			embeddings.ModelNameSourcegraphSTMultiQA: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL),
+		}
 		embeddingsHandler := embeddings.NewHandler(
 			logger,
 			eventLogger,
 			rs,
 			config.RateLimitNotifier,
-			embeddings.ModelFactoryMap{
-				embeddings.ModelNameOpenAIAda:         embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
-				embeddings.ModelNameSourcegraphTriton: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.TritonURL),
-			},
+			factoryMap,
 			config.EmbeddingsAllowedModels)
 		// TODO: If embeddings.ModelFactoryMap includes more than just OpenAI, we might want to
 		// revisit how we count concurrent requests into the handler. (Instead of assuming they are

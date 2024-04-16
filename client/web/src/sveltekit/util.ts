@@ -1,74 +1,65 @@
 import { ApolloClient, gql } from '@apollo/client'
 import { memoize } from 'lodash'
-import { matchPath } from 'react-router-dom'
 
-import { PageRoutes, CommunityPageRoutes } from '../routes.constants'
+import { svelteKitRoutes } from './routes'
 
-const allRoutes: string[] = (Object.values(PageRoutes) as string[]).concat(Object.values(CommunityPageRoutes)).filter(
-    route =>
-        // Remove the repository catch-all route because it matches everything
-        route !== PageRoutes.RepoContainer &&
-        // Remove index route because it will be a prefix of every pathname
-        route !== PageRoutes.Index
-)
+let knownRoutesRegex: RegExp | undefined
 
-// All the routes that are supported by SvelteKit.
-// Also see `SVELTEKIT_SUPPORTED_REPO_PATHS` for the list of supported repo sub-pages.
-const supportedRoutes = new Set<string>([PageRoutes.Search, PageRoutes.RepoContainer])
-
-// All the routes that are enabled for SvelteKit. This is used for a gradual rollout of SvelteKit.
-// Should be a subset of `supportedRoutes`.
-// Keep in sync with 'cmd/frontend/internal/app/ui/sveltekit.go' and 'client/web-sveltekit/src/lib/navigation.ts'
-const rolledoutRoutes = new Set<string>([PageRoutes.Search])
-
-const SVELTEKIT_SUPPORTED_REPO_PATHS = /^\/.*?\/-\/(blob\/|tree\/|branches$|commit\/|commits$|stats$|tags$)/
-
-function isRepoSubPage(href: string): boolean {
-    return href.includes('/-/')
+function getKnownRoutesRegex(): RegExp {
+    if (!knownRoutesRegex) {
+        knownRoutesRegex = new RegExp(`(${window.context?.svelteKit?.knownRoutes?.join(')|(')})`)
+    }
+    return knownRoutesRegex
 }
 
-const getSvelteKitSupportedRoute = memoize((pathname: string): string | null => {
-    if (!pathname) {
-        return null
+function findSupportedRouteIndex(pathname: string): number {
+    let index = -1
+
+    for (let i = 0; i < svelteKitRoutes.length; i++) {
+        const route = svelteKitRoutes[i]
+        if (route.pattern.test(pathname)) {
+            index = i
+            if (!route.isRepoRoot) {
+                break
+            }
+            // If the found route is the repo root we have to keep going
+            // to find a more specific route.
+        }
     }
-    const route = allRoutes.find(
-        route =>
-            // Some routes in PageRoutes are not actually the exact paths passed to react router. Some are "extended"
-            // in routes.tsx. For example, PageRoutes.CodyChat is used as PageRoutes.CodyChat + '/*' in routes.tsx.
-            // But we cannot use routes.tsx directly here because it causes import ordering issues, specifically
-            // for CSS.
-            pathname.startsWith(route) || matchPath(route, pathname)
-    )
-    if (route && supportedRoutes.has(route)) {
-        return route
+
+    if (index !== -1) {
+        // Check known routes to see if there is a more specific route
+        // if yes then we should load the React app.
+        // (if the more specific route is enabled)
+        if (svelteKitRoutes[index].isRepoRoot && getKnownRoutesRegex().test(pathname)) {
+            return -1
+        }
     }
-    // At this point we have to assume pathname is interprted as the repo container route
-    // because that is the catch-all route /*.
-    if (!route && (!isRepoSubPage(pathname) || SVELTEKIT_SUPPORTED_REPO_PATHS.test(pathname))) {
-        return PageRoutes.RepoContainer
-    }
-    return null
+
+    return index
+}
+
+/**
+ * Returns true if SvelteKit is enabled for the given pathname.
+ * In that case the caller should trigger a page reload to load the SvelteKit app.
+ */
+export const isEnabledRoute = memoize((pathname: string): boolean => {
+    // Maps server route names to path regex patterns. These are the routes for which
+    // the server will render the SvelteKit app.
+    const enabledRoutes = window.context?.svelteKit?.enabledRoutes ?? []
+    const index = findSupportedRouteIndex(pathname)
+    return index !== -1 && enabledRoutes.includes(index)
 })
 
 /**
- * Returns true if the current route is supported (i.e. implemented) by SvelteKit.
+ * Returns true if the SvelteKit app supports the given pathname, irrespective of whether it is enabled or not.
  */
-export function isSupportedRoute(pathname: string): boolean {
-    return getSvelteKitSupportedRoute(pathname) !== null
-}
-
-/**
- * Returns true if the current route is enabled for SvelteKit.
- * This is used for a gradual rollout of SvelteKit.
- * This should be used togehther with the `web-next-enabled` feature flag.
- */
-export function isRolledOutRoute(pathname: string): boolean {
-    const route = getSvelteKitSupportedRoute(pathname)
-    if (route) {
-        return rolledoutRoutes.has(route)
+export const canEnableSvelteKit = memoize((pathname: string): boolean => {
+    if (!window.context?.svelteKit?.showToggle) {
+        return false
     }
-    return false
-}
+    return findSupportedRouteIndex(pathname) !== -1
+})
 
 export async function enableSvelteAndReload(client: ApolloClient<{}>, userID: string): Promise<void> {
     await client.mutate({

@@ -22,8 +22,6 @@
                 return avatar.displayName || avatar.name || ''
             case 'Team':
                 return avatar.displayName || ''
-            default:
-                return ''
         }
     }
 
@@ -42,8 +40,9 @@
 <style lang="scss">
     span {
         z-index: 1;
-        color: var(--white);
+        color: var(--text-muted);
         font-size: calc(var(--size) * 0.5);
+        font-weight: 300;
     }
 
     img,
@@ -63,7 +62,7 @@
         align-items: center;
         justify-content: center;
         position: relative;
-        background: linear-gradient(to bottom, var(--logo-purple), var(--logo-orange));
+        background: var(--secondary);
     }
 
     div::after {
@@ -74,7 +73,5 @@
         bottom: 0;
         left: 0;
         border-radius: 50%;
-        background: linear-gradient(to right, var(--logo-purple), var(--logo-blue));
-        mask-image: linear-gradient(to bottom, #000000, transparent);
     }
 </style>

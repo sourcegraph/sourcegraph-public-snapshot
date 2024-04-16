@@ -90,14 +90,6 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	return pl.Wait()
 }
 
-type queueSearchResult struct {
-	*zoekt.SearchResult
-
-	// optimization: It can be expensive to calculate sizeBytes, hence we cache it
-	// in the queue.
-	sizeBytes uint64
-}
-
 // Search aggregates search over every endpoint in Map.
 func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
 	return AggregateStreamSearch(ctx, s.StreamSearch, q, opts)

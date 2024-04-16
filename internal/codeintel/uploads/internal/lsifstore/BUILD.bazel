@@ -16,6 +16,7 @@ go_library(
         "//internal/codeintel/shared/ranges",
         "//internal/codeintel/shared/trie",
         "//internal/codeintel/uploads/shared",
+        "//internal/collections",
         "//internal/database/basestore",
         "//internal/database/batch",
         "//internal/database/dbutil",

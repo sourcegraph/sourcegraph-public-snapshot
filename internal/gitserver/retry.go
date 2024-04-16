@@ -75,11 +75,6 @@ func (r *automaticRetryClient) Archive(ctx context.Context, in *proto.ArchiveReq
 	return r.base.Archive(ctx, in, opts...)
 }
 
-func (r *automaticRetryClient) RepoClone(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (*proto.RepoCloneResponse, error) {
-	opts = append(defaults.RetryPolicy, opts...)
-	return r.base.RepoClone(ctx, in, opts...)
-}
-
 func (r *automaticRetryClient) RepoCloneProgress(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.RepoCloneProgress(ctx, in, opts...)
@@ -150,6 +145,11 @@ func (r *automaticRetryClient) ReadFile(ctx context.Context, in *proto.ReadFileR
 	return r.base.ReadFile(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) ListRefs(ctx context.Context, in *proto.ListRefsRequest, opts ...grpc.CallOption) (proto.GitserverService_ListRefsClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ListRefs(ctx, in, opts...)
+}
+
 func (r *automaticRetryClient) GetCommit(ctx context.Context, in *proto.GetCommitRequest, opts ...grpc.CallOption) (*proto.GetCommitResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.GetCommit(ctx, in, opts...)
@@ -158,6 +158,11 @@ func (r *automaticRetryClient) GetCommit(ctx context.Context, in *proto.GetCommi
 func (r *automaticRetryClient) ResolveRevision(ctx context.Context, in *proto.ResolveRevisionRequest, opts ...grpc.CallOption) (*proto.ResolveRevisionResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.ResolveRevision(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) RevAtTime(ctx context.Context, in *proto.RevAtTimeRequest, opts ...grpc.CallOption) (*proto.RevAtTimeResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.RevAtTime(ctx, in, opts...)
 }
 
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

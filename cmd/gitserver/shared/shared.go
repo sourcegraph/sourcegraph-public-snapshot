@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/log"
 	"google.golang.org/grpc"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/cloneurl"
@@ -90,7 +91,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// Setup our server megastruct.
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
-	cloneQueue := server.NewCloneQueue(observationCtx, list.New())
 	locker := server.NewRepositoryLocker()
 	hostname := config.ExternalAddress
 	gitserver := server.NewServer(&server.ServerOpts{
@@ -99,7 +99,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			return git.NewObservableBackend(gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName))
 		},
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
-			return getRemoteURLFunc(ctx, logger, db, repo)
+			return getRemoteURLFunc(ctx, db, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (vcssyncer.VCSSyncer, error) {
 			return vcssyncer.NewVCSSyncer(ctx, &vcssyncer.NewVCSSyncerOpts{
@@ -113,7 +113,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 				FS:                      fs,
 				GetRemoteURLSource: func(ctx context.Context, repo api.RepoName) (vcssyncer.RemoteURLSource, error) {
 					return vcssyncer.RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
-						rawURL, err := getRemoteURLFunc(ctx, logger, db, repo)
+						rawURL, err := getRemoteURLFunc(ctx, db, repo)
 						if err != nil {
 							return nil, errors.Wrapf(err, "getting remote URL for %q", repo)
 
@@ -135,7 +135,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		FS:                      fs,
 		Hostname:                hostname,
 		DB:                      db,
-		CloneQueue:              cloneQueue,
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
 		Locker:                  locker,
@@ -157,9 +156,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos, recordingConf.IgnoredGitCommands), recordingConf.Size)
 	})
 
-	gitserver.RegisterMetrics(observationCtx, db)
+	internal.RegisterEchoMetric(logger.Scoped("echoMetricReporter"))
 
-	handler := gitserver.Handler()
+	handler := internal.NewHTTPHandler(logger, fs)
 	handler = actor.HTTPMiddleware(logger, handler)
 	handler = requestclient.InternalHTTPMiddleware(handler)
 	handler = requestinteraction.HTTPMiddleware(handler)
@@ -174,7 +173,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		httpserver.NewFromAddr(config.ListenAddress, &http.Server{
 			Handler: handler,
 		}),
-		gitserver.NewClonePipeline(logger, cloneQueue),
 		server.NewRepoStateSyncer(
 			ctx,
 			logger,
@@ -197,7 +195,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			db,
 			fs,
 			recordingCommandFactory,
-			gitserver.CloneRepo,
 			logger,
 		),
 	}
@@ -276,7 +273,6 @@ func getDB(observationCtx *observation.Context) (*sql.DB, error) {
 // cloning successfully.
 func getRemoteURLFunc(
 	ctx context.Context,
-	logger log.Logger,
 	db database.DB,
 	repo api.RepoName,
 ) (string, error) {
@@ -293,7 +289,7 @@ func getRemoteURLFunc(
 			return "", err
 		}
 
-		return cloneurl.ForEncryptableConfig(ctx, logger.Scoped("repos.CloneURL"), db, svc.Kind, svc.Config, r)
+		return cloneurl.ForEncryptableConfig(ctx, db, svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
 }

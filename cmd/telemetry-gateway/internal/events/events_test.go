@@ -48,8 +48,9 @@ func TestPublish(t *testing.T) {
 		})
 	require.NoError(t, err)
 
-	// Check the evaluated source
+	// Check evaluated attributes
 	assert.Equal(t, "licensed_instance", publisher.GetSourceName())
+	assert.True(t, publisher.IsSourcegraphInstance())
 
 	events := make([]*telemetrygatewayv1.Event, concurrency)
 	for i := range events {

@@ -236,7 +236,9 @@ export const routes: RouteObject[] = [
         path: PageRoutes.Notebooks + '/*',
         element: (
             <LegacyRoute
-                render={props => <GlobalNotebooksArea {...props} />}
+                render={props => (
+                    <GlobalNotebooksArea {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),
