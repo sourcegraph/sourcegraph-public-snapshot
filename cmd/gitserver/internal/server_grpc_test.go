@@ -898,7 +898,7 @@ func TestGRPCServer_ListRefs(t *testing.T) {
 		b.ListRefsFunc.SetDefaultReturn(it, nil)
 		gs := &grpcServer{
 			svc: NewMockService(),
-			fs:  gitserverfs.NewMockFS(),
+			fs:  fs,
 			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
