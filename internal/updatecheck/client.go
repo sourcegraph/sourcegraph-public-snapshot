@@ -415,8 +415,7 @@ func storeTokenUsageinDbBeforeRedisSync(ctx context.Context, db database.DB) err
 	}
 	convertedTokenUsageData := make(telemetry.EventMetadata)
 	for key, value := range tokenUsageData {
-		castedKey := telemetry.ConstString(key) // Cast the key to telemetry.ConstString
-		convertedTokenUsageData[castedKey] = value
+		convertedTokenUsageData[telemetry.SafeMetadataKey(key)] = value
 	}
 
 	// This extra variable helps demarcate that this was the final fetch and sync before the redis was reset

@@ -23,7 +23,6 @@ import (
 )
 
 type s3Store struct {
-	logger       log.Logger
 	bucket       string
 	manageBucket bool
 	client       s3API

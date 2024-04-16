@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/chunk"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -1183,6 +1184,130 @@ func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRev
 	return &proto.ResolveRevisionResponse{
 		CommitSha: string(sha),
 	}, nil
+}
+
+func (gs *grpcServer) RevAtTime(ctx context.Context, req *proto.RevAtTimeRequest) (*proto.RevAtTimeResponse, error) {
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("revspec", string(req.GetRevSpec())),
+	)
+
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
+		return nil, err
+	}
+
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	commitID, err := backend.RevAtTime(ctx, string(req.GetRevSpec()), req.GetTime().AsTime())
+	if err != nil {
+		// TODO: make sure to translate this on the other side
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+		return nil, status.New(codes.Internal, err.Error()).Err()
+	}
+
+	return &proto.RevAtTimeResponse{
+		CommitSha: string(commitID),
+	}, nil
+}
+
+func (gs *grpcServer) ListRefs(req *proto.ListRefsRequest, ss proto.GitserverService_ListRefsServer) error {
+	accesslog.Record(
+		ss.Context(),
+		req.GetRepoName(),
+	)
+
+	if req.GetRepoName() == "" {
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.checkRepoExists(ss.Context(), repoName); err != nil {
+		return err
+	}
+
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	pointsAtCommit := []api.CommitID{}
+	for _, c := range req.GetPointsAtCommit() {
+		pointsAtCommit = append(pointsAtCommit, api.CommitID(c))
+	}
+
+	contains := []api.CommitID{}
+	if c := req.GetContainsSha(); c != "" {
+		contains = append(contains, api.CommitID(c))
+	}
+
+	opt := git.ListRefsOpts{
+		HeadsOnly:      req.GetHeadsOnly(),
+		TagsOnly:       req.GetTagsOnly(),
+		PointsAtCommit: pointsAtCommit,
+		Contains:       contains,
+	}
+
+	it, err := backend.ListRefs(ss.Context(), opt)
+	if err != nil {
+		gs.svc.LogIfCorrupt(ss.Context(), repoName, err)
+		// TODO: Better error checking.
+		return err
+	}
+
+	sendFunc := func(refs []*proto.GitRef) error {
+		return ss.Send(&proto.ListRefsResponse{Refs: refs})
+	}
+
+	// We use a chunker here to make sure we don't send too large gRPC messages.
+	// For repos with thousands or even millions of refs, sending them all in one
+	// message would be very slow, but sending them all in individual messages
+	// would be slow either, so we chunk them instead.
+	chunker := chunk.New(sendFunc)
+
+	for {
+		ref, err := it.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			it.Close()
+			return err
+		}
+		err = chunker.Send(ref.ToProto())
+		if err != nil {
+			it.Close()
+			return errors.Wrap(err, "failed to send ref chunk")
+		}
+	}
+
+	err = chunker.Flush()
+	if err != nil {
+		it.Close()
+		return errors.Wrap(err, "failed to flush refs")
+	}
+
+	if err := it.Close(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // checkRepoExists checks if a given repository is cloned on disk, and returns an

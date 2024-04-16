@@ -360,12 +360,6 @@ func TestFirecrackerRunner_Teardown(t *testing.T) {
 	assert.Equal(t, []string{"ignite", "rm", "-f", "test"}, cmd.RunFunc.History()[1].Arg2.Command)
 }
 
-func matchCmd(key string) func(spec command.Spec) bool {
-	return func(spec command.Spec) bool {
-		return spec.Key == key
-	}
-}
-
 func TestFirecrackerRunner_Run(t *testing.T) {
 	cmd := runner.NewMockCommand()
 	logger := runner.NewMockLogger()

@@ -1293,3 +1293,17 @@ func PermissionsUserMapping() *schema.PermissionsUserMapping {
 	}
 	return c
 }
+
+func Branding() *schema.Branding {
+	br := Get().Branding
+	if br == nil {
+		br = &schema.Branding{
+			BrandName: "Sourcegraph",
+		}
+	} else if br.BrandName == "" {
+		bcopy := *br
+		bcopy.BrandName = "Sourcegraph"
+		br = &bcopy
+	}
+	return br
+}

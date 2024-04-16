@@ -22,6 +22,12 @@ signin/signout are proxied to an actual Sourcegraph instance,
 https://sourcegraph.com by default (can be overwritten via the
 `SOURCEGRAPH_API_URL` environment variable.
 
+If you're a Sourcegraph employee you should run this command to use the right auth instance:
+
+```bash
+SOURCEGRAPH_API_URL=https://sourcegraph.sourcegraph.com pnpm run dev
+```
+
 ### Using code from `@sourcegraph/*`
 
 There are some things to consider when using code from other `@sourcegraph`
