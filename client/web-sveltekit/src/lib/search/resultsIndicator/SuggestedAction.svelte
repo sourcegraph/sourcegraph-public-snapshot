@@ -67,7 +67,8 @@
     .info-badge {
         background-color: var(--primary-2);
         border-radius: 3px;
-        padding: 0rem 0.2rem 0rem 0.2rem;
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
 
         &.error-text {
             background: var(--danger-2);
@@ -75,7 +76,7 @@
     }
 
     .more-details {
-        color: var(--text-body);
+        color: var(--text-muted);
     }
 
     .error {
@@ -83,7 +84,8 @@
         flex-flow: row nowrap;
         align-items: center;
         justify-content: flex-end;
-        gap: 0.5rem 0.25rem;
+        gap: 0.5rem 0.5rem;
+        margin-left: 0.5rem;
     }
 
     .separator {
@@ -95,7 +97,7 @@
         display: flex;
         flex-flow: row nowrap;
         align-items: center;
-        justify-content: space-evenly;
+        justify-content: flex-end;
     }
 
     .code-font {

@@ -27,6 +27,7 @@
     $: severity = progress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
         ? 'error'
         : 'info'
+    $: isError = severity === 'error' || state === 'error'
     /*
      * NOTE: progress.done and state === 'complete' will sometimes be different values.
      * Only one of them needs to evaluate to true in order for the ResultIndicator to
@@ -39,7 +40,7 @@
     {#if loading}
         <LoadingSpinner inline />
     {:else}
-        <Icon svgPath={icons[severity]} size={18} />
+        <Icon svgPath={icons[severity]} size={18} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
     {/if}
 
     <div class="messages">
@@ -54,7 +55,7 @@
             {/if}
         </div>
     </div>
-    <Icon svgPath={mdiChevronDown} size={18} />
+    <Icon svgPath={mdiChevronDown} size={18} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
 </div>
 
 <style lang="scss">
@@ -64,13 +65,16 @@
         justify-content: space-between;
         align-items: center;
         gap: 0.5rem;
+        width: fit-content;
 
         .messages {
             display: flex;
             flex-flow: column nowrap;
             justify-content: center;
             align-items: flex-start;
-            gap: 0.25rem;
+            margin-right: 0.75rem;
+            margin-left: 0.5rem;
+            row-gap: 0.25rem;
         }
 
         small {

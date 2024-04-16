@@ -18,14 +18,13 @@
         flex-flow: row nowrap;
         align-items: center;
         justify-content: flex-end;
-        gap: 0.5rem 0.25rem;
+        gap: 0.5rem 0.5rem;
 
         .info-badge {
             background-color: var(--warning-2);
             border-radius: 3px;
-            color: var(--text-body);
-            padding-left: 0.2rem;
-            padding-right: 0.2rem;
+            padding-left: 0.25rem;
+            padding-right: 0.25rem;
         }
     }
 </style>
