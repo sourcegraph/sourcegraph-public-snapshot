@@ -274,4 +274,8 @@ write_generated_to_source_files(
         "src/lib/routes.ts": "cmd/frontend/internal/app/ui/sveltekit/_routes.ts",
     },
     target = "//cmd/frontend/internal/app/ui/sveltekit:generate_route_info",
+    additional_update_targets = [
+        "//cmd/frontend/internal/app/ui/sveltekit:write_generated",
+        "//client/web:write_generated_sveltekit_routes",
+    ],
 )

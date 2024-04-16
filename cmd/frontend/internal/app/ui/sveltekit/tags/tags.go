@@ -3,7 +3,7 @@ package tags
 type Tag int
 
 const (
-	RepoRoot     Tag = 1 << iota
+	RepoRoot Tag = 1 << iota
 	// EnableAlways always renders the SvelteKit app for this route
 	EnableAlways
 	// EnableRollout renders the SvelteKit app for this route when the "web-next-rollout" feature flag is enabled

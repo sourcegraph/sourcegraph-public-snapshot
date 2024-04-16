@@ -42,7 +42,7 @@ type contextKey struct{}
 type contextValue struct {
 	enabledRoutes []int
 	knownRoutes   []string
-	enabled bool
+	enabled       bool
 }
 
 func (r *svelteKitRoute) isRepoRoot() bool {
@@ -76,7 +76,7 @@ func RegisterSvelteKit(r *mux.Router, repoRootRoute *mux.Route) {
 		return nil
 	})
 
-	r.Use(func (next http.Handler) http.Handler {
+	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			ctx := req.Context()
 			ff := featureflag.FromContext(ctx)
@@ -142,8 +142,8 @@ func GetJSContext(ctx context.Context) JSContext {
 	ff := featureflag.FromContext(ctx)
 
 	return JSContext{
-		ShowToggle: ff.GetBoolOr("web-next-toggle", false),
-		KnownRoutes: skctx.knownRoutes,
+		ShowToggle:    ff.GetBoolOr("web-next-toggle", false),
+		KnownRoutes:   skctx.knownRoutes,
 		EnabledRoutes: skctx.enabledRoutes,
 	}
 }
