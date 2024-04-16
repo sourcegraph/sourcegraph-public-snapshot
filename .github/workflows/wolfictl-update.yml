@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
+
       - uses: wolfi-dev/actions/install-wolfictl@main
 
       - name: List
@@ -31,5 +33,7 @@ jobs:
 
       - name: "wolfictl update"
         run: |
-          wolfictl update --dry-run --path wolfi-packages/ --github-labels SSDLC,wolfi-auto-update $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
+          cd $GITHUB_WORKSPACE
+          cd ../..
+          wolfictl update --dry-run --path wolfi-packages/ --github-labels SSDLC,wolfi-auto-update $GITHUB_REPOSITORY
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
