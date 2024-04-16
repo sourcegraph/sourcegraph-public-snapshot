@@ -43,3 +43,9 @@ pipeline:
       cd /sourcegraph/docker-images/syntax-highlighter
       mkdir -p ${{targets.destdir}}/usr/local/bin/
       cp target/release/syntect_server ${{targets.destdir}}/usr/local/bin/syntax_highlighter
+
+update:
+  enabled: true
+  github:
+    identifier: sourcegraph/sourcegraph
+    strip-prefix: "Sourcegraph "

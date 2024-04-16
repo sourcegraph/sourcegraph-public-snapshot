@@ -34,3 +34,7 @@ pipeline:
       mkdir -p ${{targets.destdir}}/usr/bin/
       cp docker/docker ${{targets.destdir}}/usr/bin/
 
+update:
+  enabled: true
+  release-monitor:
+    identifier: 11719 # https://release-monitoring.org/project/11719/

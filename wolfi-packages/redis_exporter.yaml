@@ -35,3 +35,9 @@ pipeline:
       ldflags: "-s -w -extldflags \"-static\""
       prefix: /usr/local
       output: redis_exporter
+
+update:
+  enabled: true
+  github:
+    identifier: oliver006/redis_exporter
+    strip-prefix: "v"
