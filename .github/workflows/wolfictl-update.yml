@@ -34,7 +34,12 @@ jobs:
       - name: "wolfictl update"
         run: |
           cd $GITHUB_WORKSPACE
-          cd ../..
-          wolfictl update --dry-run --path wolfi-packages/ --github-labels SSDLC,wolfi-auto-update ./$GITHUB_REPOSITORY
+          mkdir -p /$GITHUB_REPOSITORY
+          ls -al /sourcegraph
+          ls -al /sourcegraph/sourcegraph/
+          mv ./$GITHUB_REPOSITORY /$GITHUB_REPOSITORY
+          ls -al /sourcegraph/sourcegraph/
+
+          wolfictl update --dry-run --path wolfi-packages/ --github-labels SSDLC,wolfi-auto-update /$GITHUB_REPOSITORY
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
