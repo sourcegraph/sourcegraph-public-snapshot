@@ -315,14 +315,6 @@ func streamChat(
 	}
 }
 
-func inputText(messages []types.Message) string {
-	allText := ""
-	for _, message := range messages {
-		allText += message.Text
-	}
-	return allText
-}
-
 // hasValidChatChoice checks to ensure there is a choice and the first one contains non-nil values
 func hasValidFirstChatChoice(choices []azopenai.ChatChoice) bool {
 	return len(choices) > 0 &&

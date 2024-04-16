@@ -70,6 +70,7 @@ func parseProvider(logger log.Logger, p *schema.GitHubAuthProvider, db database.
 				&oauth2Cfg,
 				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{
 					CodeHost:     codeHost,
+					logger:       log.Scoped("sessionIssuerHelper"),
 					db:           db,
 					clientID:     p.ClientID,
 					allowSignup:  p.AllowSignup,

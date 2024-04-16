@@ -9,7 +9,6 @@ import (
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/elimity-com/scim/optional"
-	"github.com/elimity-com/scim/schema"
 
 	"github.com/sourcegraph/log"
 
@@ -47,22 +46,6 @@ const (
 	AttrExternalId    = "externalId"
 	AttrActive        = "active"
 )
-
-// UserResourceHandler implements the scim.ResourceHandler interface for users.
-type UserResourceHandler struct {
-	ctx              context.Context
-	observationCtx   *observation.Context
-	db               database.DB
-	coreSchema       schema.Schema
-	schemaExtensions []scim.SchemaExtension
-}
-
-func (h *UserResourceHandler) getLogger() log.Logger {
-	if h.observationCtx != nil && h.observationCtx.Logger != nil {
-		return h.observationCtx.Logger.Scoped("scim.user")
-	}
-	return log.Scoped("scim.user")
-}
 
 // NewUserResourceHandler returns a new UserResourceHandler.
 func NewUserResourceHandler(ctx context.Context, observationCtx *observation.Context, db database.DB) *ResourceHandler {

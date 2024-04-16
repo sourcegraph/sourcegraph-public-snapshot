@@ -51,6 +51,7 @@ go_library(
         "//internal/gitserver/protocol",
         "//internal/gitserver/v1:gitserver",
         "//internal/goroutine",
+        "//internal/grpc/chunk",
         "//internal/grpc/streamio",
         "//internal/honey",
         "//internal/hostname",

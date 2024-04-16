@@ -40,7 +40,7 @@ import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { requestGraphQLAdapter } from '../../platform/context'
-import type { BlameHunkData } from '../blame/useBlameHunks'
+import type { BlameHunkData } from '../blame/shared'
 import type { HoverThresholdProps } from '../RepoContainer'
 
 import { BlameDecoration } from './BlameDecoration'

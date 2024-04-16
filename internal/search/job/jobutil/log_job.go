@@ -148,7 +148,7 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 		a := actor.FromContext(ctx)
 		if a.IsAuthenticated() && !a.IsMockUser() { // Do not log in tests
 			// New event
-			events.Record(ctx, "search.latencies", telemetry.Action(types[0]), &telemetry.EventParameters{
+			events.Record(ctx, "search.latencies", telemetry.SafeAction(types[0]), &telemetry.EventParameters{
 				Metadata: telemetry.EventMetadata{
 					"durationMs": float64(duration.Milliseconds()),
 				},

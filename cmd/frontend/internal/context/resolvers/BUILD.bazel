@@ -34,6 +34,7 @@ go_test(
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",
+        "//internal/dotcom",
         "//internal/embeddings",
         "//internal/gitserver",
         "//internal/licensing",
