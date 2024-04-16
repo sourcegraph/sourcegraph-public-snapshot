@@ -104,12 +104,6 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	t.Run("iterate only repos without shard", func(t *testing.T) {
 		assert(t, 2, 2, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true})
 	})
-	t.Run("include deleted", func(t *testing.T) {
-		assert(t, 3, 3, IterateRepoGitserverStatusOptions{IncludeDeleted: true}) // Note that we still only get 3 repos here, not 4, because for the one deleted repo there exists a second repo that has the same name.
-	})
-	t.Run("include deleted, but still only without shard", func(t *testing.T) {
-		assert(t, 2, 2, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true, IncludeDeleted: true})
-	})
 }
 
 func TestListPurgeableRepos(t *testing.T) {

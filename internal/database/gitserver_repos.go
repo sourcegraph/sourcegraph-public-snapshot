@@ -245,19 +245,12 @@ ORDER BY deleted_at ASC
 type IterateRepoGitserverStatusOptions struct {
 	// If set, will only iterate over repos that have not been assigned to a shard
 	OnlyWithoutShard bool
-	// If true, also include deleted repos. Note that their repo name will start with
-	// 'DELETED-'
-	IncludeDeleted bool
-	BatchSize      int
-	NextCursor     int
+	BatchSize        int
+	NextCursor       int
 }
 
 func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions) (rs []types.RepoGitserverStatus, nextCursor int, err error) {
 	preds := []*sqlf.Query{}
-
-	if !options.IncludeDeleted {
-		preds = append(preds, sqlf.Sprintf("repo.deleted_at IS NULL"))
-	}
 
 	if options.OnlyWithoutShard {
 		preds = append(preds, sqlf.Sprintf("gr.shard_id = ''"))
