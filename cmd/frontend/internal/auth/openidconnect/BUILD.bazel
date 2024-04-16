@@ -67,6 +67,7 @@ go_test(
         "//internal/httpcli",
         "//internal/licensing",
         "//internal/telemetry",
+        "//internal/telemetry/telemetrytest",
         "//internal/types",
         "//lib/errors",
         "//schema",

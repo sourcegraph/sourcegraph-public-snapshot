@@ -12,6 +12,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/telemetry",
         "//internal/telemetrygateway/v1:telemetrygateway",
         "@com_github_sourcegraph_log//logtest",
