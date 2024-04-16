@@ -508,8 +508,10 @@ func TestGetAndSaveUser(t *testing.T) {
 						}
 
 						// All telemetry should have the expected user (or lack
-						// of user) attached
+						// of user) attached, and all code paths should generate
+						// at least 1 user event.
 						gotEvents := telemetrytest.CollectStoredEvents(eventsStore)
+						assert.NotEmpty(t, gotEvents)
 						for _, ev := range gotEvents {
 							switch {
 							// We are expecting a specific user ID
@@ -520,17 +522,24 @@ func TestGetAndSaveUser(t *testing.T) {
 							// Scenarios where we should have a user found
 							case oc.mock.updateErr != nil ||
 								oc.mock.getByIDErr != nil ||
-								oc.mock.upsertErr != nil:
+								oc.mock.upsertErr != nil ||
+								c.op.SingleIdentityPerUser:
 								assert.NotEmptyf(t, ev.GetUser().GetUserId(),
 									"Event '%s#%s' should have a user ID", ev.GetFeature(), ev.GetAction())
 
 							// Scenarios where we should not have any user found
 							case oc.mock.getByUsernameErr != nil ||
 								oc.mock.getByVerifiedEmailErr != nil ||
-								oc.mock.externalAccountUpdateErr != nil:
+								oc.mock.externalAccountUpdateErr != nil ||
+								oc.mock.createWithExternalAccountErr != nil ||
+								!c.op.CreateIfNotExist:
 								assert.Nil(t, ev.GetUser(),
 									"Event '%s#%s' should not have user ID, found: %s",
 									ev.GetFeature(), ev.GetAction(), ev.GetUser().GetUserId())
+
+							default:
+								assert.Failf(t, "no telemetry handling available for test case",
+									"got event: %s", ev.String())
 							}
 						}
 					})
