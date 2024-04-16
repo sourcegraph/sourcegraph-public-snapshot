@@ -21,6 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/appliance/hash"
 )
 
+const (
+	annotationKeyCurrentVersion = "appliance.sourcegraph.com/currentVersion"
+)
+
 var _ reconcile.Reconciler = &Reconciler{}
 
 type Reconciler struct {
@@ -61,6 +65,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// based on the actual object being reconciled, so that more deeply-nested
 	// code can treat it like a CRD.
 	sourcegraph.Namespace = applianceSpec.GetNamespace()
+
+	// Similarly, we simulate a CRD status using an annotation. ConfigMaps don't
+	// have Statuses, so we must use annotations to drive this.
+	// This can be empty string.
+	sourcegraph.Status.CurrentVersion = applianceSpec.GetAnnotations()[annotationKeyCurrentVersion]
+
+	// Reconcile services here
+
+	// Set the current version annotation in case migration logic depends on it.
+	applianceSpec.Annotations[annotationKeyCurrentVersion] = sourcegraph.Spec.RequestedVersion
+	if err := r.Client.Update(ctx, &applianceSpec); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to update current version annotation: %w", err)
+	}
 
 	return ctrl.Result{}, nil
 }
