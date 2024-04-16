@@ -8,8 +8,9 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	v1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
@@ -41,6 +42,10 @@ type MockTelemetryEventsExportQueueStore struct {
 	events []*telemetrygatewayv1.Event
 }
 
+// NewMockEventsExportQueueStore should be used by default for all dbmock usage
+// in tests - it only implements QueueForExport, ensuring that callsites only
+// use what is expected. It also offers utilities for collecting the recorded
+// events for assertion.
 func NewMockEventsExportQueueStore() *MockTelemetryEventsExportQueueStore {
 	return &MockTelemetryEventsExportQueueStore{}
 }
@@ -75,4 +80,17 @@ func (s *MockEventsStore) CollectStoredEvents() Events {
 		got = append(got, s.Arg1...)
 	}
 	return got
+}
+
+// AddDBMocks attaches basic, no-op mocks to the given MockDB so that your test
+// will not implode because some code path happens to record some telemetry.
+//
+// It provides a MockTelemetryEventsExportQueueStore that can be used to inspect
+// recorded events.
+func AddDBMocks(db *dbmocks.MockDB) *MockTelemetryEventsExportQueueStore {
+	s := NewMockEventsExportQueueStore()
+	db.TelemetryEventsExportQueueFunc.SetDefaultReturn(s)
+	// we still tee to v1 store, so most cases will use this.
+	db.EventLogsFunc.SetDefaultReturn(dbmocks.NewMockEventLogStore())
+	return s
 }
