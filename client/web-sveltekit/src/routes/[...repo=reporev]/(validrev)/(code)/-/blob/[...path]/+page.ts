@@ -1,4 +1,4 @@
-import { Observable, concatMap, from, map } from 'rxjs'
+import { BehaviorSubject, concatMap, from, map } from 'rxjs'
 
 import { fetchBlameHunksMemoized, type BlameHunkData } from '@sourcegraph/web/src/repo/blame/shared'
 
@@ -16,7 +16,8 @@ export const load: PageLoad = ({ parent, params, url }) => {
     const resolvedRevision = resolveRevision(parent, revision)
     const isBlame = url.searchParams.get('view') === 'blame'
 
-    var blameData: Observable<BlameHunkData> | undefined = undefined
+    // Create a BehaviorSubject so preloading does not create a subscriberless observable
+    const blameData = new BehaviorSubject<BlameHunkData>({ current: undefined, externalURLs: undefined })
     if (isBlame) {
         const blameHunks = from(resolvedRevision).pipe(
             concatMap(resolvedRevision =>
@@ -24,16 +25,18 @@ export const load: PageLoad = ({ parent, params, url }) => {
             )
         )
 
-        blameData = from(parent()).pipe(
-            concatMap(({ resolvedRevision }) =>
-                blameHunks.pipe(
-                    map(blameHunks => ({
-                        externalURLs: resolvedRevision.repo.externalURLs,
-                        current: blameHunks,
-                    }))
+        from(parent())
+            .pipe(
+                concatMap(({ resolvedRevision }) =>
+                    blameHunks.pipe(
+                        map(blameHunks => ({
+                            externalURLs: resolvedRevision.repo.externalURLs,
+                            current: blameHunks,
+                        }))
+                    )
                 )
             )
-        )
+            .subscribe(v => blameData.next(v))
     }
 
     return {

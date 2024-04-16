@@ -6,7 +6,7 @@
     import { from } from 'rxjs'
     import { writable } from 'svelte/store'
 
-    import { goto } from '$app/navigation'
+    import { goto, preloadData } from '$app/navigation'
     import { page } from '$app/stores'
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import { isErrorLike, SourcegraphURL, type LineOrPositionOrRange, pluralize } from '$lib/common'
@@ -64,7 +64,7 @@
 
     $: showBlame = viewMode === ViewMode.Blame
 
-    function changeViewMode({ detail: viewMode }: { detail: ViewMode }) {
+    function viewModeURL(viewMode: ViewMode) {
         switch (viewMode) {
             case ViewMode.Code: {
                 const url = SourcegraphURL.from($page.url)
@@ -73,20 +73,14 @@
                 } else {
                     url.deleteSearchParameter('view')
                 }
-                goto(url.toString(), { replaceState: true, keepFocus: true })
-                break
+                return url.toString()
             }
             case ViewMode.Blame:
                 const url = SourcegraphURL.from($page.url)
                 url.setSearchParameter('view', 'blame')
-                goto(url.toString(), { replaceState: true, keepFocus: true })
-                break
+                return url.toString()
             case ViewMode.Default:
-                goto(SourcegraphURL.from($page.url).deleteSearchParameter('view').toString(), {
-                    replaceState: true,
-                    keepFocus: true,
-                })
-                break
+                return SourcegraphURL.from($page.url).deleteSearchParameter('view').toString()
         }
     }
 </script>
@@ -135,7 +129,8 @@
             options={isFormatted
                 ? [ViewMode.Default, ViewMode.Code, ViewMode.Blame]
                 : [ViewMode.Default, ViewMode.Blame]}
-            on:change={changeViewMode}
+            on:preload={event => preloadData(viewModeURL(event.detail))}
+            on:change={event => goto(viewModeURL(event.detail), { replaceState: true, keepFocus: true })}
         >
             <svelte:fragment slot="label" let:value>
                 {value === ViewMode.Default ? (isFormatted ? 'Formatted' : 'Code') : capitalize(value)}
