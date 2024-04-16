@@ -47,12 +47,12 @@ const (
 	ActionAttempted eventAction = "attempted"
 )
 
-// Action is an escape hatch for constructing eventAction from variable strings
+// SafeAction is an escape hatch for constructing eventAction from variable strings
 // for known string enums. Where possible, prefer to use a constant string or a
 // predefined action constant in the internal/telemetry package instead.
 //
 // 🚨 SECURITY: Use with care, as variable strings can accidentally contain data
 // sensitive to standalone Sourcegraph instances.
-func Action(parts ...string) eventAction {
+func SafeAction(parts ...string) eventAction {
 	return eventAction(strings.Join(parts, "."))
 }
