@@ -31,6 +31,6 @@ jobs:
 
       - name: "wolfictl update"
         run: |
-          wolfictl update --dry-run --path wolfi-packages/ --github-labels SSDLC --github-labels wolfi-auto-update $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
+          wolfictl update --dry-run --create-issues false --package-name qdrant --path wolfi-packages/ --github-labels SSDLC --github-labels wolfi-auto-update $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
