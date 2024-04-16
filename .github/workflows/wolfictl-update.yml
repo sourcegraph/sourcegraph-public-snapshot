@@ -31,6 +31,6 @@ jobs:
 
       - name: "wolfictl update"
         run: |
-          wolfictl update --dry-run --path wolfi-packages/ --github-labels SSDLC,wolfi-auto-update --pull-request-base-branch will/add-package-update-metadata-partial $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
+          wolfictl update --dry-run --path wolfi-packages/ --github-labels SSDLC,wolfi-auto-update $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
