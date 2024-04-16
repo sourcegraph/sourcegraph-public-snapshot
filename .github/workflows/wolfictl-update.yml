@@ -29,8 +29,4 @@ jobs:
 
       - name: "wolfictl update"
         run: |
-          wolfictl update \
-            --dry-run \
-            --path wolfi-packages/ \
-            --github-labels SSDLC,wolfi-auto-update
-            /sourcegraph
+          wolfictl update --dry-run --path wolfi-packages/ --github-labels SSDLC,wolfi-auto-update $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
