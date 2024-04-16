@@ -74,9 +74,9 @@ export const shouldShowExternalAccountsModal = (
 
 function filterAuthProviders(authProviders: AuthProvider[], authzProviders: AuthzProvidersResult['authzProviders']): AuthProvider[] {
     const filteredProviders = authProviders.filter(provider => {
-        if (authzProviders.find(authzProvider => {
+        if (authzProviders.find(authzProvider =>
             authzProvider.serviceID === provider.serviceID && authzProvider.serviceType === provider.serviceType
-        })) {
+        )) {
             return true
         }
 
