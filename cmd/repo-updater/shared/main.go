@@ -383,7 +383,7 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegra
 // watchAuthzProviders updates authz providers if config changes.
 func watchAuthzProviders(ctx context.Context, db database.DB) {
 	go func() {
-		t := time.NewTicker(providers.RefreshInterval())
+		t := time.NewTicker(providers.RefreshInterval(conf.Get()))
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(
 				ctx,

@@ -15,7 +15,6 @@ go_library(
         "//internal/authz/providers/github",
         "//internal/authz/providers/gitlab",
         "//internal/authz/providers/perforce",
-        "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/extsvc",
