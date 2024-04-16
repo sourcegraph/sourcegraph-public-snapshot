@@ -22,8 +22,6 @@
                 return avatar.displayName || avatar.name || ''
             case 'Team':
                 return avatar.displayName || ''
-            default:
-                return ''
         }
     }
 

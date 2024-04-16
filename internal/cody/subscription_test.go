@@ -16,10 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func toTimePtr(t time.Time) *time.Time {
-	return &t
-}
-
 func TestGetSubscriptionForUser(t *testing.T) {
 	SAMSAccountIDWithSubscription := "having-subscription"
 	SAMSAccountIDWithoutSubscription := "no-subscription"

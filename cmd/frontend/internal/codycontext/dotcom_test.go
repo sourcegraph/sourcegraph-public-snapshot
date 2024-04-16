@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewFilter(t *testing.T) {
+func TestNewDotcomFilter(t *testing.T) {
 	repos := []types.RepoIDName{
 		{ID: 1, Name: "repo1"},
 		{ID: 2, Name: "repo2"},
@@ -39,7 +39,7 @@ func TestNewFilter(t *testing.T) {
 		client := gitserver.NewMockClient()
 		client.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
 		client.NewFileReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
-		f := NewCodyIgnoreFilter(client)
+		f := newDotcomFilter(logger, client)
 
 		chunks := []FileChunkContext{
 			{
@@ -53,7 +53,7 @@ func TestNewFilter(t *testing.T) {
 				Path:     "/file2.go",
 			},
 		}
-		_, filter := f.GetFilter(repos, logger)
+		_, filter, _ := f.GetFilter(context.Background(), repos)
 		filtered := filter(chunks)
 		require.Equal(t, 2, len(filtered))
 	})
@@ -68,7 +68,7 @@ func TestNewFilter(t *testing.T) {
 			return nil, os.ErrNotExist
 		})
 
-		f := NewCodyIgnoreFilter(client)
+		f := newDotcomFilter(logger, client)
 
 		chunks := []FileChunkContext{
 			{
@@ -93,7 +93,7 @@ func TestNewFilter(t *testing.T) {
 			},
 		}
 
-		_, filter := f.GetFilter(repos, logger)
+		_, filter, _ := f.GetFilter(context.Background(), repos)
 		filtered := filter(chunks)
 		require.Equal(t, 1, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
@@ -112,7 +112,7 @@ func TestNewFilter(t *testing.T) {
 				return nil, os.ErrNotExist
 			}
 		})
-		f := NewCodyIgnoreFilter(client)
+		f := newDotcomFilter(logger, client)
 
 		chunks := []FileChunkContext{
 			{
@@ -137,7 +137,7 @@ func TestNewFilter(t *testing.T) {
 			},
 		}
 
-		_, filter := f.GetFilter(repos, logger)
+		_, filter, _ := f.GetFilter(context.Background(), repos)
 		filtered := filter(chunks)
 		require.Equal(t, 2, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
@@ -154,8 +154,8 @@ func TestNewFilter(t *testing.T) {
 			return nil, nil
 		})
 
-		f := NewCodyIgnoreFilter(client)
-		filterableRepos, _ := f.GetFilter(repos, logger)
+		f := newDotcomFilter(logger, client)
+		filterableRepos, _, _ := f.GetFilter(context.Background(), repos)
 		require.Len(t, filterableRepos, 0)
 	})
 
@@ -167,8 +167,8 @@ func TestNewFilter(t *testing.T) {
 			return nil, nil
 		})
 
-		f := NewCodyIgnoreFilter(client)
-		filterableRepos, _ := f.GetFilter(repos, logger)
+		f := newDotcomFilter(logger, client)
+		filterableRepos, _, _ := f.GetFilter(context.Background(), repos)
 		require.Len(t, filterableRepos, 0)
 	})
 
@@ -179,45 +179,13 @@ func TestNewFilter(t *testing.T) {
 			return nil, errors.New("fail")
 		})
 
-		f := NewCodyIgnoreFilter(client)
-		filterableRepos, _ := f.GetFilter(repos, logger)
+		f := newDotcomFilter(logger, client)
+		filterableRepos, _, _ := f.GetFilter(context.Background(), repos)
 		require.Len(t, filterableRepos, 0)
-	})
-
-	t.Run("uses cache", func(t *testing.T) {
-		client := gitserver.NewMockClient()
-		client.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
-		client.NewFileReaderFunc.SetDefaultReturn(io.NopCloser(strings.NewReader("**/file1.go")), nil)
-		f := NewCodyIgnoreFilter(client)
-
-		chunks := []FileChunkContext{
-			{
-				RepoName: "repo1",
-				RepoID:   1,
-				Path:     "/file1.go",
-			},
-			{
-				RepoName: "repo2",
-				RepoID:   2,
-				Path:     "/file2.go",
-			},
-		}
-		// simulate 1st call
-		_, filter := f.GetFilter(repos, logger)
-		filtered := filter(chunks)
-		require.Equal(t, 1, len(filtered))
-
-		//simulate 2nd call
-		_, filter2 := f.GetFilter(repos, logger)
-		filtered2 := filter2(chunks)
-		require.Equal(t, 1, len(filtered2))
-
-		// This should be called once for each repo
-		require.Equal(t, len(client.NewFileReaderFunc.History()), 2)
 	})
 }
 
-func TestFilterDisabled(t *testing.T) {
+func TestDotcomFilterDisabled(t *testing.T) {
 	repos := []types.RepoIDName{
 		{ID: 1, Name: "repo1"},
 		{ID: 2, Name: "repo2"},
@@ -239,7 +207,7 @@ func TestFilterDisabled(t *testing.T) {
 			return nil, errors.New("should not be called")
 		})
 
-		f := NewCodyIgnoreFilter(client)
+		f := newDotcomFilter(logger, client)
 
 		chunks := []FileChunkContext{
 			{
@@ -264,7 +232,7 @@ func TestFilterDisabled(t *testing.T) {
 			},
 		}
 
-		_, filter := f.GetFilter(repos, logger)
+		_, filter, _ := f.GetFilter(context.Background(), repos)
 		filtered := filter(chunks)
 		require.Equal(t, 4, len(filtered))
 	})

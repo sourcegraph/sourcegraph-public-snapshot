@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -24,6 +25,7 @@ func TestSnapshotForDocument(t *testing.T) {
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
+	mockGitserverClient.DiffFunc.SetDefaultReturn(gitserver.NewDiffFileIterator(io.NopCloser(strings.NewReader(""))), nil)
 
 	// Init service
 	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
