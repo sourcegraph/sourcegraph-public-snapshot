@@ -10,6 +10,7 @@ import { gql } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, PageHeader, ErrorMessage } from '@sourcegraph/wildcard'
 
@@ -40,7 +41,7 @@ interface SettingsData {
 }
 
 /** Properties passed to all pages in the settings area. */
-export interface SettingsAreaPageProps extends SettingsAreaPageCommonProps {
+export interface SettingsAreaPageProps extends SettingsAreaPageCommonProps, TelemetryV2Props {
     /** The settings data, or null if the subject has no settings yet. */
     data: SettingsData
 
@@ -78,6 +79,32 @@ export class SettingsArea extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         eventLogger.logViewEvent(`Settings${this.props.subject.__typename}`)
+        switch (this.props.subject.__typename) {
+            case 'User': {
+                this.props.platformContext.telemetryRecorder.recordEvent('user.settings', 'view')
+                break
+            }
+            case 'Org': {
+                this.props.platformContext.telemetryRecorder.recordEvent('org.settings', 'view')
+                break
+            }
+            case 'Site': {
+                this.props.platformContext.telemetryRecorder.recordEvent('admin.settings', 'view')
+                break
+            }
+            case 'DefaultSettings': {
+                this.props.platformContext.telemetryRecorder.recordEvent('defaultSettings', 'view')
+                break
+            }
+            case 'Client': {
+                this.props.platformContext.telemetryRecorder.recordEvent('client.settings', 'view')
+            }
+            default: {
+                this.props.platformContext.telemetryRecorder.recordEvent('otherSettings', 'view')
+                break
+            }
+        }
+
         // Load settings.
         this.subscriptions.add(
             combineLatest([
@@ -160,6 +187,7 @@ export class SettingsArea extends React.Component<Props, State> {
             platformContext: this.props.platformContext,
             settingsCascade: this.props.settingsCascade,
             telemetryService: this.props.telemetryService,
+            telemetryRecorder: this.props.platformContext.telemetryRecorder,
         }
 
         return (

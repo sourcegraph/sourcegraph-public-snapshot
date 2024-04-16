@@ -2,12 +2,16 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "platforms",
-    sha256 = "8150406605389ececb6da07cbcb509d5637a3ab9a24bc69b1101531367d89d74",
+    sha256 = "5eda539c841265031c2f82d8ae7a3a6490bd62176e0c038fc469eabf91f6149b",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
-        "https://github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.9/platforms-0.0.9.tar.gz",
+        "https://github.com/bazelbuild/platforms/releases/download/0.0.9/platforms-0.0.9.tar.gz",
     ],
 )
+
+load("@platforms//host:extension.bzl", "host_platform_repo")
+
+host_platform_repo(name = "host_platform")
 
 http_archive(
     name = "bazel_skylib",
@@ -170,6 +174,8 @@ http_archive(
         "//third_party/rules_apko:repository_label_strip.patch",
         # required until a release contains https://github.com/chainguard-dev/rules_apko/pull/53
         "//third_party/rules_apko:apko_run_runfiles_path.patch",
+        # symlinking the lockfile appears to be problematic in CI https://github.com/sourcegraph/sourcegraph/pull/61877
+        "//third_party/rules_apko:copy_dont_symlink_lockfile.patch",
     ],
     sha256 = "f176171f95ee2b6eef1572c6da796d627940a1e898a32d476a2d7a9a99332960",
     strip_prefix = "rules_apko-1.2.2",
