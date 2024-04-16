@@ -10,6 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	protobuf "google.golang.org/protobuf/proto"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -187,22 +189,30 @@ func TestRoundTripBlameHunk(t *testing.T) {
 func TestRoundTripCommit(t *testing.T) {
 	diff := ""
 
-	err := quick.Check(func(id api.CommitID, message Message, parents []api.CommitID, authorName, authorEmail, committerName, committerEmail string, authorDate, committerDate fuzzTime) bool {
+	err := quick.Check(func(id api.CommitID, message []byte, parents []api.CommitID, authorName, authorEmail, committerName, committerEmail []byte, authorDate, committerDate fuzzTime) bool {
 		original := &Commit{
 			ID:      id,
-			Message: message,
+			Message: Message(message),
 			Parents: parents,
 			Author: Signature{
-				Name:  authorName,
-				Email: authorEmail,
+				Name:  string(authorName),
+				Email: string(authorEmail),
 				Date:  time.Time(authorDate),
 			},
 			Committer: &Signature{
-				Name:  committerName,
-				Email: committerEmail,
+				Name:  string(committerName),
+				Email: string(committerEmail),
 				Date:  time.Time(committerDate),
 			},
 		}
+		p := original.ToProto()
+
+		// try encoding message to protobuf to ensure no errors occur
+		_, err := protobuf.Marshal(p)
+		if err != nil {
+			t.Fatalf("unexpected error when marshalling protobuf message: %v", err)
+		}
+
 		converted := CommitFromProto(original.ToProto())
 		if diff = cmp.Diff(original, converted); diff != "" {
 			return false
