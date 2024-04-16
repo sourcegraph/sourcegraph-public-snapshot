@@ -282,13 +282,13 @@ message GitCommit {
   string oid = 1;
   GitSignature author = 2;
   GitSignature committer = 3;
-  string message = 4;
+  bytes message = 4;
   repeated string parents = 5;
 }
 
 message GitSignature {
-  string name = 1;
-  string email = 2;
+  bytes name = 1;
+  bytes email = 2;
   google.protobuf.Timestamp date = 3;
 }
 
