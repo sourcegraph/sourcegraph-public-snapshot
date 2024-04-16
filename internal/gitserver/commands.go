@@ -158,15 +158,15 @@ func (i *DiffFileIterator) Next() (*diff.FileDiff, error) {
 
 // ContributorOptions contains options for filtering contributor commit counts
 type ContributorOptions struct {
-	Range string // the range for which stats will be fetched
-	After string // the date after which to collect commits
-	Path  string // compute stats for commits that touch this path
+	Range string    // the range for which stats will be fetched
+	After time.Time // the date after which to collect commits
+	Path  string    // compute stats for commits that touch this path
 }
 
 func (o *ContributorOptions) Attrs() []attribute.KeyValue {
 	return []attribute.KeyValue{
 		attribute.String("range", o.Range),
-		attribute.String("after", o.After),
+		attribute.String("after", o.After.Format(time.RFC3339)),
 		attribute.String("path", o.Path),
 	}
 }
@@ -184,8 +184,8 @@ func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoN
 
 	// We split the individual args for the shortlog command instead of -sne for easier arg checking in the allowlist.
 	args := []string{"shortlog", "-s", "-n", "-e", "--no-merges"}
-	if opt.After != "" {
-		args = append(args, "--after="+opt.After)
+	if !opt.After.IsZero() {
+		args = append(args, fmt.Sprintf("--after=%d", opt.After.Unix()))
 	}
 	args = append(args, opt.Range, "--")
 	if opt.Path != "" {
