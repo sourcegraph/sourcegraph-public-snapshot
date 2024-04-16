@@ -22,7 +22,7 @@ This document provides a list of options to try when debugging permissions issue
 1. As a site administrator, navigate to the user's settings and select **Account security**.
 ![](https://storage.googleapis.com/sourcegraph-assets/Docs/how-to/debug-permissions/account_security_page.png)
     - This page shows a user's connected external accounts. An external account is required to sync user permissions from code hosts.
-2. If a user has not connected their code host account, the user will have to do that by visiting their Account security settings and clicking on Add. Without a connected code host account, Sourcegraph is not able to associate their Sourcegraph identity with a code host identity to map permissions. If you don’t see the provider for your code host here, you have to [configure it first](/admin/auth).
+2. If a user has not connected their code host account, the user will have to do that by visiting their Account security settings and clicking on Add. Without a connected code host account, Sourcegraph is not able to associate their Sourcegraph identity with a code host identity to map permissions. If you don’t see the provider for your code host here, you have to [configure it first](https://sourcegraph.com/docs/admin/auth).
 3. If the account is connected, you can revisit the Permissions page, schedule another permissions sync, and see if anything changes. If nothing changes when a permission sync is complete, check the outbound requests log to verify that code host API calls are succeeding.
 
 ## Check the outbound requests log
@@ -42,7 +42,7 @@ This document provides a list of options to try when debugging permissions issue
 2. Select the code host that you’d like to view, which should show you its configuration page.
 ![](https://storage.googleapis.com/sourcegraph-assets/Docs/how-to/debug-permissions/gitlab_connection.png)
     - Here you can see that this GitLab connection is configured with authorization. If the authorization field is missing completely then the code host connection will be marked as “unrestricted” and all repositories synced by that code host connection will be accessible to everyone on Sourcegraph.
-    - Not all authorization configurations are the same. Visit the [code hosts docs page](/admin/external_service#configure-a-code-host-connection) for more detailed information on configuring authorization for the specific code host you’re dealing with.
+    - Not all authorization configurations are the same. Visit the [code hosts docs page](https://sourcegraph.com/docs/admin/external_service#configure-a-code-host-connection) for more detailed information on configuring authorization for the specific code host you’re dealing with.
 3. Once you’ve adjusted and saved the config, a sync should be triggered for the code host. If no sync was triggered, hit the Trigger manual sync button.
 4. Next, check the user permissions screen to see if things are behaving as expected now, and if nothing has changed, try scheduling a permissions sync.
 
