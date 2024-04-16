@@ -11167,7 +11167,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		DiffFunc: &GitserverClientDiffFunc{
-			defaultHook: func(context.Context, gitserver.DiffOptions) (r0 *gitserver.DiffFileIterator, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, gitserver.DiffOptions) (r0 *gitserver.DiffFileIterator, r1 error) {
 				return
 			},
 		},
@@ -11399,7 +11399,7 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		DiffFunc: &GitserverClientDiffFunc{
-			defaultHook: func(context.Context, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
+			defaultHook: func(context.Context, api.RepoName, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
 				panic("unexpected invocation of MockGitserverClient.Diff")
 			},
 		},
@@ -12733,24 +12733,24 @@ func (c GitserverClientCreateCommitFromPatchFuncCall) Results() []interface{} {
 // GitserverClientDiffFunc describes the behavior when the Diff method of
 // the parent MockGitserverClient instance is invoked.
 type GitserverClientDiffFunc struct {
-	defaultHook func(context.Context, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error)
-	hooks       []func(context.Context, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error)
+	defaultHook func(context.Context, api.RepoName, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error)
+	hooks       []func(context.Context, api.RepoName, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error)
 	history     []GitserverClientDiffFuncCall
 	mutex       sync.Mutex
 }
 
 // Diff delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) Diff(v0 context.Context, v1 gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
-	r0, r1 := m.DiffFunc.nextHook()(v0, v1)
-	m.DiffFunc.appendCall(GitserverClientDiffFuncCall{v0, v1, r0, r1})
+func (m *MockGitserverClient) Diff(v0 context.Context, v1 api.RepoName, v2 gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
+	r0, r1 := m.DiffFunc.nextHook()(v0, v1, v2)
+	m.DiffFunc.appendCall(GitserverClientDiffFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Diff method of the
 // parent MockGitserverClient instance is invoked and the hook queue is
 // empty.
-func (f *GitserverClientDiffFunc) SetDefaultHook(hook func(context.Context, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error)) {
+func (f *GitserverClientDiffFunc) SetDefaultHook(hook func(context.Context, api.RepoName, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error)) {
 	f.defaultHook = hook
 }
 
@@ -12758,7 +12758,7 @@ func (f *GitserverClientDiffFunc) SetDefaultHook(hook func(context.Context, gits
 // Diff method of the parent MockGitserverClient instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *GitserverClientDiffFunc) PushHook(hook func(context.Context, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error)) {
+func (f *GitserverClientDiffFunc) PushHook(hook func(context.Context, api.RepoName, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -12767,19 +12767,19 @@ func (f *GitserverClientDiffFunc) PushHook(hook func(context.Context, gitserver.
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverClientDiffFunc) SetDefaultReturn(r0 *gitserver.DiffFileIterator, r1 error) {
-	f.SetDefaultHook(func(context.Context, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientDiffFunc) PushReturn(r0 *gitserver.DiffFileIterator, r1 error) {
-	f.PushHook(func(context.Context, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
+	f.PushHook(func(context.Context, api.RepoName, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientDiffFunc) nextHook() func(context.Context, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
+func (f *GitserverClientDiffFunc) nextHook() func(context.Context, api.RepoName, gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -12817,7 +12817,10 @@ type GitserverClientDiffFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 gitserver.DiffOptions
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 gitserver.DiffOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *gitserver.DiffFileIterator
@@ -12829,7 +12832,7 @@ type GitserverClientDiffFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientDiffFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

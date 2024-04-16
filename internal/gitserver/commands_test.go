@@ -105,73 +105,71 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 		UID: 1,
 	})
 
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	cmds := getGitCommandsWithFileLists([]string{"file0"}, []string{"file1", "file1.1"}, []string{"file2"}, []string{"file3", "file3.3"})
 	checker := getTestSubRepoPermsChecker("file1.1", "file2")
 	testCases := []struct {
-		label               string
-		extraGitCommands    []string
-		expectedDiffFiles   []string
-		expectedFileStat    *godiff.Stat
-		rangeOverAllCommits bool
+		label             string
+		expectedDiffFiles []string
+		expectedFileStat  *godiff.Stat
+		diffFile          string
 	}{
 		{
-			label:               "adding files",
-			expectedDiffFiles:   []string{"file1", "file3", "file3.3"},
-			expectedFileStat:    &godiff.Stat{Added: 3},
-			rangeOverAllCommits: true,
+			label:             "adding files",
+			expectedDiffFiles: []string{"file1", "file3", "file3.3"},
+			expectedFileStat:  &godiff.Stat{Added: 3},
+			diffFile:          "testdata/TestDiffWithSubRepoFiltering/adding_files",
 		},
 		{
 			label: "changing filename",
-			extraGitCommands: []string{
-				"mv file1.1 file_can_access",
-				"git add file_can_access",
-				makeGitCommit("rename", 7),
-			},
+			// Additional git commands used:
+			// "mv file1.1 file_can_access",
+			// "git add file_can_access",
+			// makeGitCommit("rename", 7),
 			expectedDiffFiles: []string{"file_can_access"},
 			expectedFileStat:  &godiff.Stat{Added: 1},
+			diffFile:          "testdata/TestDiffWithSubRepoFiltering/changing_filename",
 		},
 		{
 			label: "file modified",
-			extraGitCommands: []string{
-				"echo new_file_content > file2",
-				"echo more_new_file_content > file1",
-				"git add file2",
-				"git add file1",
-				makeGitCommit("edit_files", 7),
-			},
+			// Additional git commands used:
+			// "echo new_file_content > file2",
+			// "echo more_new_file_content > file1",
+			// "git add file2",
+			// "git add file1",
+			// makeGitCommit("edit_files", 7),
 			expectedDiffFiles: []string{"file1"}, // file2 is updated but user doesn't have access
 			expectedFileStat:  &godiff.Stat{Changed: 1},
+			diffFile:          "testdata/TestDiffWithSubRepoFiltering/file_modified",
 		},
 		{
 			label: "diff for commit w/ no access returns empty result",
-			extraGitCommands: []string{
-				"echo new_file_content > file2",
-				"git add file2",
-				makeGitCommit("no_access", 7),
-			},
+			// Additional git commands used:
+			// "echo new_file_content > file2",
+			// "git add file2",
+			// makeGitCommit("no_access", 7),
 			expectedDiffFiles: []string{},
 			expectedFileStat:  &godiff.Stat{},
+			diffFile:          "testdata/TestDiffWithSubRepoFiltering/diff_for_commit_with_no_access_returns_empty_result",
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.label, func(t *testing.T) {
-			repo := MakeGitRepository(t, append(cmds, tc.extraGitCommands...)...)
-			c := NewTestClient(t)
-			commits, err := c.Commits(ctx, repo, CommitsOptions{})
-			if err != nil {
-				t.Fatalf("err fetching commits: %s", err)
+			if tc.diffFile == "" {
+				t.Fatal("diffFile must be specified")
 			}
-			baseCommit := commits[1]
-			headCommit := commits[0]
-			if tc.rangeOverAllCommits {
-				baseCommit = commits[len(commits)-1]
-			}
+			diff, err := os.ReadFile(tc.diffFile)
+			require.NoError(t, err)
+			c := NewTestClient(t).WithClientSource(NewTestClientSource(t, []string{"test"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(conn *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					d := NewMockGitserverService_RawDiffClient()
+					d.RecvFunc.PushReturn(&proto.RawDiffResponse{Chunk: diff}, nil)
+					d.RecvFunc.PushReturn(nil, io.EOF)
+					c.RawDiffFunc.SetDefaultReturn(d, nil)
+					return c
+				}
+			})).WithChecker(checker)
 
-			c = c.WithChecker(checker)
-			iter, err := c.Diff(ctx, DiffOptions{Base: string(baseCommit.ID), Head: string(headCommit.ID), Repo: repo})
+			iter, err := c.Diff(ctx, "repo", DiffOptions{Base: "base", Head: "head"})
 			if err != nil {
 				t.Fatalf("error fetching diff: %s", err)
 			}
@@ -202,178 +200,6 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestDiff(t *testing.T) {
-	ctx := context.Background()
-
-	t.Run("invalid bases", func(t *testing.T) {
-		for _, input := range []string{
-			"",
-			"-foo",
-			".foo",
-		} {
-			t.Run("invalid base: "+input, func(t *testing.T) {
-				i, err := NewClient("test").Diff(ctx, DiffOptions{Base: input})
-				if i != nil {
-					t.Errorf("unexpected non-nil iterator: %+v", i)
-				}
-				if err == nil {
-					t.Error("unexpected nil error")
-				}
-			})
-		}
-	})
-
-	t.Run("rangeSpec calculation", func(t *testing.T) {
-		for _, tc := range []struct {
-			opts DiffOptions
-			want string
-		}{
-			{opts: DiffOptions{Base: "foo", Head: "bar"}, want: "foo...bar"},
-		} {
-			t.Run("rangeSpec: "+tc.want, func(t *testing.T) {
-				c := NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
-					// The range spec is the sixth argument.
-					if args[5] != tc.want {
-						t.Errorf("unexpected rangeSpec: have: %s; want: %s", args[5], tc.want)
-					}
-					return nil, nil
-				})
-				_, _ = c.Diff(ctx, tc.opts)
-			})
-		}
-	})
-
-	t.Run("ExecReader error", func(t *testing.T) {
-		c := NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
-			return nil, errors.New("ExecReader error")
-		})
-		i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"})
-		if i != nil {
-			t.Errorf("unexpected non-nil iterator: %+v", i)
-		}
-		if err == nil {
-			t.Error("unexpected nil error")
-		}
-	})
-
-	t.Run("success", func(t *testing.T) {
-		const testDiffFiles = 3
-		const testDiff = `diff --git INSTALL.md INSTALL.md
-index e5af166..d44c3fc 100644
---- INSTALL.md
-+++ INSTALL.md
-@@ -3,10 +3,10 @@
- Line 1
- Line 2
- Line 3
--Line 4
-+This is cool: Line 4
- Line 5
- Line 6
--Line 7
--Line 8
-+Another Line 7
-+Foobar Line 8
- Line 9
- Line 10
-diff --git JOKES.md JOKES.md
-index ea80abf..1b86505 100644
---- JOKES.md
-+++ JOKES.md
-@@ -4,10 +4,10 @@ Joke #1
- Joke #2
- Joke #3
- Joke #4
--Joke #5
-+This is not funny: Joke #5
- Joke #6
--Joke #7
-+This one is good: Joke #7
- Joke #8
--Joke #9
-+Waffle: Joke #9
- Joke #10
- Joke #11
-diff --git README.md README.md
-index 9bd8209..d2acfa9 100644
---- README.md
-+++ README.md
-@@ -1,12 +1,13 @@
- # README
-
--Line 1
-+Foobar Line 1
- Line 2
- Line 3
- Line 4
- Line 5
--Line 6
-+Barfoo Line 6
- Line 7
- Line 8
- Line 9
- Line 10
-+Another line
-`
-
-		testDiffFileNames := []string{
-			"INSTALL.md",
-			"JOKES.md",
-			"README.md",
-		}
-
-		c := NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
-			return io.NopCloser(strings.NewReader(testDiff)), nil
-		})
-
-		i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"})
-		if i == nil {
-			t.Error("unexpected nil iterator")
-		}
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		defer i.Close()
-
-		count := 0
-		for {
-			diff, err := i.Next()
-			if err == io.EOF {
-				break
-			} else if err != nil {
-				t.Errorf("unexpected iteration error: %+v", err)
-			}
-
-			if diff.OrigName != testDiffFileNames[count] {
-				t.Errorf("unexpected diff file name: have: %s; want: %s", diff.OrigName, testDiffFileNames[count])
-			}
-			count++
-		}
-		if count != testDiffFiles {
-			t.Errorf("unexpected diff count: have %d; want %d", count, testDiffFiles)
-		}
-
-		t.Run("early close", func(t *testing.T) {
-			routinesBefore := runtime.NumGoroutine()
-
-			i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"})
-			require.NoError(t, err)
-
-			hunk, err := i.Next()
-			require.NoError(t, err)
-			require.Equal(t, "INSTALL.md", hunk.OrigName)
-
-			// We did not receive io.EOF above, but are closing the diff reader,
-			// this should not error.
-			require.NoError(t, i.Close())
-
-			// Expect no leaked routines.
-			routinesAfter := runtime.NumGoroutine()
-			require.Equal(t, routinesBefore, routinesAfter)
-		})
-	})
 }
 
 func TestLsFiles(t *testing.T) {
@@ -2121,6 +1947,91 @@ func TestClient_ArchiveReader(t *testing.T) {
 		require.NoError(t, err)
 		require.Empty(t, content)
 		require.NoError(t, r.Close())
+	})
+}
+
+func TestClient_Diff(t *testing.T) {
+	var testDiff = []byte(`diff --git INSTALL.md INSTALL.md
+index e5af166..d44c3fc 100644
+--- INSTALL.md
++++ INSTALL.md
+@@ -3,10 +3,10 @@
+ Line 1
+ Line 2
+ Line 3
+-Line 4
++This is cool: Line 4
+ Line 5
+ Line 6
+-Line 7
+-Line 8
++Another Line 7
++Foobar Line 8
+ Line 9
+ Line 10
+`)
+	t.Run("firstChunk memoization", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_RawDiffClient()
+				rfc.RecvFunc.PushReturn(&proto.RawDiffResponse{Chunk: testDiff[:len(testDiff)/2]}, nil)
+				rfc.RecvFunc.PushReturn(&proto.RawDiffResponse{Chunk: testDiff[len(testDiff)/2:]}, nil)
+				rfc.RecvFunc.PushReturn(nil, io.EOF)
+				c.RawDiffFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		r, err := c.Diff(context.Background(), "repo", DiffOptions{})
+		require.NoError(t, err)
+
+		fd, err := r.Next()
+		require.NoError(t, err)
+		require.NoError(t, r.Close())
+		// Verify the parsing works.
+		require.Equal(t, "INSTALL.md", fd.OrigName)
+	})
+	t.Run("firstChunk error memoization", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_RawDiffClient()
+				rfc.RecvFunc.PushReturn(nil, io.EOF)
+				c.RawDiffFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		r, err := c.Diff(context.Background(), "repo", DiffOptions{})
+		require.NoError(t, err)
+
+		_, err = r.Next()
+		require.True(t, errors.Is(err, io.EOF))
+		require.NoError(t, r.Close())
+	})
+	t.Run("revision not found errors are returned early", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_RawDiffClient()
+				s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{})
+				require.NoError(t, err)
+				rfc.RecvFunc.PushReturn(nil, s.Err())
+				c.RawDiffFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.Diff(context.Background(), "repo", DiffOptions{})
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 	})
 }
 

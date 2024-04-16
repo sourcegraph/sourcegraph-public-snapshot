@@ -165,4 +165,9 @@ func (r *automaticRetryClient) RevAtTime(ctx context.Context, in *proto.RevAtTim
 	return r.base.RevAtTime(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) RawDiff(ctx context.Context, in *proto.RawDiffRequest, opts ...grpc.CallOption) (proto.GitserverService_RawDiffClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.RawDiff(ctx, in, opts...)
+}
+
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

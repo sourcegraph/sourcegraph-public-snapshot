@@ -145,6 +145,8 @@
     - GitserverService_ReadFileClient
     - GitserverService_ListRefsServer
     - GitserverService_ListRefsClient
+    - GitserverService_RawDiffServer
+    - GitserverService_RawDiffClient
 - filename: cmd/gitserver/internal/git/mock.go
   path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git
   interfaces:
