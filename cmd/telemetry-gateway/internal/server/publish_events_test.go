@@ -35,11 +35,11 @@ func TestSummarizeFailedEvents(t *testing.T) {
 		}
 		results := make([]events.PublishEventResult, len(submitted))
 		for i, event := range submitted {
-			results[i] = events.NewPublishEventResult(event, errors.New(failureMessage))
+			results[i] = events.NewPublishEventResult(event, errors.New(failureMessage), true)
 		}
 		require.False(t, len(results) == 0)
 
-		summary := summarizePublishEventsResults(results)
+		summary := summarizePublishEventsResults(results, summarizePublishEventsResultsOpts{})
 		autogold.Expect("all events in batch failed to submit").Equal(t, summary.message)
 		autogold.Expect("complete_failure").Equal(t, summary.result)
 		assert.Len(t, summary.errorFields, len(results))
@@ -97,12 +97,38 @@ func TestSummarizeFailedEvents(t *testing.T) {
 			EventID: "asdfasdf",
 		}}
 
-		summary := summarizePublishEventsResults(results)
+		summary := summarizePublishEventsResults(results, summarizePublishEventsResultsOpts{})
 		autogold.Expect("some events in batch failed to submit").Equal(t, summary.message)
 		autogold.Expect("partial_failure").Equal(t, summary.result)
 		assert.Len(t, summary.errorFields, 1)
 		assert.Len(t, summary.succeededEvents, 1)
 		autogold.Expect([]string{"asdfasdf"}).Equal(t, summary.succeededEvents)
+		assert.Len(t, summary.failedEvents, 1)
+	})
+
+	t.Run("some failed, ignore unretriable errors", func(t *testing.T) {
+		results := []events.PublishEventResult{{
+			EventID:      "retriable",
+			PublishError: errors.New("oh no"),
+			Retryable:    true,
+		}, {
+			EventID: "ok",
+		}, {
+			EventID:      "unretriable",
+			PublishError: errors.New("unretriable error"),
+			Retryable:    false,
+		}}
+
+		summary := summarizePublishEventsResults(results, summarizePublishEventsResultsOpts{
+			onlyReportRetriableAsFailed: true,
+		})
+		autogold.Expect("some events in batch failed to submit").Equal(t, summary.message)
+		autogold.Expect("partial_failure").Equal(t, summary.result)
+		// non-retriable pretends to succeed
+		autogold.Expect([]string{"ok", "unretriable"}).Equal(t, summary.succeededEvents)
+		assert.Len(t, summary.succeededEvents, 2)
+		assert.Len(t, summary.errorFields, 2)  // both errors are included in error logs
+		assert.Len(t, summary.failedEvents, 1) // only retryable is marked as failed
 		assert.Len(t, summary.failedEvents, 1)
 	})
 
@@ -113,7 +139,7 @@ func TestSummarizeFailedEvents(t *testing.T) {
 			EventID: "asdfasdf",
 		}}
 
-		summary := summarizePublishEventsResults(results)
+		summary := summarizePublishEventsResults(results, summarizePublishEventsResultsOpts{})
 		autogold.Expect("all events in batch submitted successfully").Equal(t, summary.message)
 		autogold.Expect("success").Equal(t, summary.result)
 		assert.Len(t, summary.errorFields, 0)
@@ -131,7 +157,7 @@ func TestSummarizeFailedEvents(t *testing.T) {
 			wantSucceeded[id] = false
 		}
 
-		summary := summarizePublishEventsResults(results)
+		summary := summarizePublishEventsResults(results, summarizePublishEventsResultsOpts{})
 		autogold.Expect("all events in batch submitted successfully").Equal(t, summary.message)
 		autogold.Expect("success").Equal(t, summary.result)
 		assert.Len(t, summary.errorFields, 0)

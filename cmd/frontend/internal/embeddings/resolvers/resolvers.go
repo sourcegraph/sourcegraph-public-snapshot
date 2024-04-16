@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -47,7 +46,6 @@ type Resolver struct {
 	gitserverClient        gitserver.Client
 	embeddingsClient       embeddings.Client
 	repoEmbeddingJobsStore repobg.RepoEmbeddingJobsStore
-	emails                 backend.UserEmailsService
 }
 
 func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.EmbeddingsSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {

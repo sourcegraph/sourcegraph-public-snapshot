@@ -1,4 +1,4 @@
-package database
+package encryption
 
 import (
 	"context"
@@ -10,17 +10,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 )
 
-type RecordEncrypter struct {
+type recordEncrypter struct {
 	*basestore.Store
 }
 
-func NewRecordEncrypter(db DB) *RecordEncrypter {
-	return &RecordEncrypter{
-		Store: basestore.NewWithHandle(db.Handle()),
+func newRecordEncrypter(store *basestore.Store) *recordEncrypter {
+	return &recordEncrypter{
+		Store: store,
 	}
 }
 
-func (s *RecordEncrypter) Count(ctx context.Context, config EncryptionConfig) (numEncrypted int, numUnencrypted int, _ error) {
+func (s *recordEncrypter) Count(ctx context.Context, config encryptionConfig) (numEncrypted int, numUnencrypted int, _ error) {
 	countQuery := sqlf.Sprintf(`
 		SELECT
 			(SELECT COUNT(*) FROM %s WHERE %s NOT IN ('', %s)) AS   encrypted,
@@ -40,7 +40,7 @@ func (s *RecordEncrypter) Count(ctx context.Context, config EncryptionConfig) (n
 	return numEncrypted, numUnencrypted, nil
 }
 
-func (s *RecordEncrypter) EncryptBatch(ctx context.Context, config EncryptionConfig) (count int, err error) {
+func (s *recordEncrypter) EncryptBatch(ctx context.Context, config encryptionConfig) (count int, err error) {
 	key := config.Key()
 	if key == nil {
 		return 0, nil
@@ -89,7 +89,7 @@ func (s *RecordEncrypter) EncryptBatch(ctx context.Context, config EncryptionCon
 	return len(encryptedValues), nil
 }
 
-func (s *RecordEncrypter) DecryptBatch(ctx context.Context, config EncryptionConfig) (count int, err error) {
+func (s *recordEncrypter) DecryptBatch(ctx context.Context, config encryptionConfig) (count int, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return 0, err
@@ -129,14 +129,14 @@ func (s *RecordEncrypter) DecryptBatch(ctx context.Context, config EncryptionCon
 	return len(decryptedValues), nil
 }
 
-func fields(c EncryptionConfig) *sqlf.Query {
+func fields(c encryptionConfig) *sqlf.Query {
 	names := make([]*sqlf.Query, 0, len(c.EncryptedFieldNames)+2)
 	names = append(names, quote(c.IDFieldName), quote(c.KeyIDFieldName))
 	names = append(names, quoteSlice(c.EncryptedFieldNames)...)
 	return sqlf.Join(names, ", ")
 }
 
-func updatePairs(c EncryptionConfig, ev Encrypted) *sqlf.Query {
+func updatePairs(c encryptionConfig, ev Encrypted) *sqlf.Query {
 	m := make(map[string]string, len(ev.Values)+1)
 	for i, value := range ev.Values {
 		m[c.EncryptedFieldNames[i]] = value

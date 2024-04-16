@@ -164,7 +164,7 @@ WHERE id = %s;
 func (s *TestStore) SetJobStatus(ctx context.Context, table JobTable, state JobState, id int) error {
 	st := []string{"queued", "processing", "completed", "errored", "failed"}[state]
 	t := []string{"cm_trigger_jobs", "cm_action_jobs"}[table]
-	return s.Exec(ctx, sqlf.Sprintf(setStatusFmtStr, quote(t), st, s.Now(), s.Now(), id))
+	return s.Exec(ctx, sqlf.Sprintf(setStatusFmtStr, sqlf.Sprintf(t), st, s.Now(), s.Now(), id))
 }
 
 type TestStore struct {

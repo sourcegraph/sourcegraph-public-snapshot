@@ -186,10 +186,8 @@ env:
 commands:
   gitserver:
     install: |
-      config=""
-      [[ $(uname) == "Darwin" ]] && config="--config darwin-docker"
-      bazel build //cmd/gitserver:image_tarball ${config} && \
-      docker load --input $(bazel cquery //cmd/gitserver:image_tarball ${config} --output=files)
+      bazel build //cmd/gitserver:image_tarball && \
+      docker load --input $(bazel cquery //cmd/gitserver:image_tarball --output=files)
   gitserver-0:
     cmd: |
       docker inspect gitserver-${GITSERVER_INDEX} >/dev/null 2>&1 && docker stop gitserver-${GITSERVER_INDEX}

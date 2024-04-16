@@ -206,7 +206,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	globals.WatchBranding()
 	globals.WatchExternalURL()
 
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
