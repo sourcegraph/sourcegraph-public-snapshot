@@ -1,0 +1,28 @@
+name: 'wolfictl-update'
+
+on:
+  push:
+  # schedule:
+    # everyday at 0:00 UTC
+    # - cron:  0 0 * * *
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  wolfictl-update:
+    name: Wolfictl Update
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: wolfi-dev/actions/install-wolfictl@main
+
+      - name: List
+        run: |
+          which wolfictl
+
+
+      - name: List2
+        run: |
+          wolfictl version
