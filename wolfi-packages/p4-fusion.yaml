@@ -84,3 +84,9 @@ pipeline:
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/local/bin/
       cp p4-fusion-src/build/p4-fusion/p4-fusion ${{targets.destdir}}/usr/local/bin/p4-fusion-binary
+
+update:
+  enabled: true
+  github:
+    identifier: salesforce/p4-fusion
+    strip-prefix: "p4-fusion v"

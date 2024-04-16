@@ -34,3 +34,9 @@ pipeline:
       packages: ./...
       prefix: /usr/local
       output: http-server-stabilizer
+
+update:
+  enabled: true
+  github:
+    identifier: sourcegraph/http-server-stabilizer
+    strip-prefix: "v"

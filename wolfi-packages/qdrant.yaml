@@ -33,3 +33,9 @@ pipeline:
       chmod +x qdrant
       mkdir -p ${{targets.destdir}}/usr/local/bin
       mv qdrant ${{targets.destdir}}/usr/local/bin/qdrant
+
+update:
+  enabled: true
+  github:
+    identifier: qdrant/qdrant
+    strip-prefix: "v"

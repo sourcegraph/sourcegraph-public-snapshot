@@ -42,3 +42,11 @@ pipeline:
       mkdir -p ${{targets.destdir}}/opt/
       cp -r target/ ${{targets.destdir}}/opt/s3proxy
       cp src/main/resources/run-docker-container.sh ${{targets.destdir}}/opt/s3proxy
+
+update:
+  enabled: true
+  github:
+    identifier: universal-ctags/ctags
+    strip-prefix: "s3proxy-"
+    # strip-suffix: "-*" # TOOD: Unsure
+    use-tag: true

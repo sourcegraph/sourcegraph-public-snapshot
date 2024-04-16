@@ -45,3 +45,9 @@ pipeline:
     runs: |
       mkdir -p ${{targets.destdir}}/bin/
       cp /tmp/otelcol-sourcegraph/otelcol-sourcegraph ${{targets.destdir}}/bin/otelcol-sourcegraph
+
+update:
+  enabled: true
+  github:
+    identifier: open-telemetry/opentelemetry-collector
+    strip-prefix: "v"
