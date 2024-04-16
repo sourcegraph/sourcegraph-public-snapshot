@@ -374,6 +374,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 
 	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
+	_ = telemetrytest.AddDBMocks(db)
 
 	securityLogs := dbmocks.NewStrictMockSecurityEventLogsStore()
 	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)
