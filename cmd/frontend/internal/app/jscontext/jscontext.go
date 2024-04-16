@@ -399,7 +399,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		AuthAccessRequest: conf.Get().AuthAccessRequest,
 
-		Branding: globals.Branding(),
+		Branding: conf.Branding(),
 
 		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
