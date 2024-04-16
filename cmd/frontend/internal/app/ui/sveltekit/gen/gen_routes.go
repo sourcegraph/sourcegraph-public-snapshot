@@ -75,7 +75,7 @@ export const svelteKitRoutes: SvelteKitRoute[] = [
 const SRC_ROUTES_PREFIX = "src/routes"
 
 func main() {
-	routes := []routeInfo{}
+	routes := []*routeInfo{}
 
 	dest := flag.String("d", ".", "output directory")
 	flag.Parse()
@@ -91,14 +91,12 @@ func main() {
 		}
 		routeInfo, err := getRouteInfo(path)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error getting route info for %s: %v", path, err)
-			os.Exit(1)
+			panic(fmt.Sprintf("Error getting route info for %s: %v", path, err))
 		}
 		routeInfo.Id = routeID
 		pattern, err := patternForRouteId(routeID)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error getting pattern for route %s: %v", routeID, err)
-			os.Exit(1)
+			panic(fmt.Sprintf("Error getting pattern for route %s: %v", routeID, err))
 		}
 		routeInfo.Pattern = pattern
 
@@ -110,12 +108,11 @@ func main() {
 	writeTSFile(filepath.Join(*dest, "_routes.ts"), routes)
 }
 
-func writeGoFile(dest string, routes []routeInfo) error {
+func writeGoFile(dest string, routes []*routeInfo) error {
 	t := template.Must(template.New("routes").Funcs(template.FuncMap{
-		"joinTags": func(tags []string, sep string) string {
-			if len(tags) == 0 {
-				return ""
-			}
+		// The template has to ensure that this function is only
+		// called when there are tags to join.
+		"joinTags": func(tags []string) string {
 			return "tags." + strings.Join(tags, " | tags.")
 		},
 	}).Parse(goFileTemplate))
@@ -131,7 +128,7 @@ func writeGoFile(dest string, routes []routeInfo) error {
 	})
 }
 
-func writeTSFile(dest string, routes []routeInfo) error {
+func writeTSFile(dest string, routes []*routeInfo) error {
 	t := template.Must(template.New("routes").Funcs(template.FuncMap{
 		"isRepoRoot": func(route routeInfo) bool {
 			for _, tag := range route.Tags {
@@ -173,8 +170,7 @@ func getPagePaths() []string {
 		return nil
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error walking directory: %v", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("Error walking directory: %v", err))
 	}
 	return paths
 }
@@ -191,12 +187,10 @@ var (
 // extractTags finds lines of the forms
 //     // @sg tag1 tag2 tag3
 // and returns the tags found.
-func getRouteInfo(path string) (routeInfo, error) {
-	var info routeInfo
-
+func getRouteInfo(path string) (*routeInfo, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return info, err
+		return nil, err
 	}
 	defer f.Close()
 
@@ -216,16 +210,14 @@ func getRouteInfo(path string) (routeInfo, error) {
 
 	for _, tag := range tagNames {
 		if !tags.IsTagValid(tag) {
-			return info, errors.Newf("Invalid tag '%s'. Valid tags: %s", tag, tags.AvailableTags())
+			return nil, errors.Newf("Invalid tag '%s'. Valid tags: %s", tag, tags.AvailableTags())
 		}
 	}
-	info.Tags = tagNames
-
 	if err := scanner.Err(); err != nil {
-		return info, err
+		return nil, err
 	}
 
-	return info, nil
+	return &routeInfo{Tags: tagNames}, nil
 }
 
 // Map SvelteKit specific parameter matchers to regular expressions. This is a "best effort" approach
@@ -241,7 +233,7 @@ func patternForRouteId(routeId string) (string, error) {
 		return "^/$", nil
 	}
 
-	b := strings.Builder{}
+	var b strings.Builder
 	b.WriteByte('^')
 
 	for _, segment := range toSegments(routeId) {
@@ -268,13 +260,13 @@ func patternForRouteId(routeId string) (string, error) {
 			continue
 		}
 
-		b.WriteByte('/')
 		// We don't use params within a segement, e.g.
 		// foo-[bar]-[[baz]], so for simplicity we don't support that.
 		if strings.Contains(segment, "[") {
 			return "", errors.New("params within a segment are not supported")
 		}
 
+		b.WriteByte('/')
 		b.WriteString(regexp.QuoteMeta(segment))
 	}
 
@@ -288,7 +280,7 @@ func patternForRouteId(routeId string) (string, error) {
 	return b.String(), nil
 }
 
-// toSegements converts a routeId to a slice of relevat segments.
+// toSegments converts a routeId to a slice of relevat segments.
 // It skips empty segments and group segments.
 func toSegments(routeId string) []string {
 	var segments []string

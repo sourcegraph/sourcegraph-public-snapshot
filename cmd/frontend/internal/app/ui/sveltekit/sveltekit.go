@@ -6,16 +6,16 @@ import (
 	"html/template"
 	"io"
 	"net/http"
-	"strings"
-	"sync"
+	"net/url"
 	"regexp"
+	"sync"
 
 	"github.com/gorilla/mux"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit/tags"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
-    "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit/tags"
 )
 
 var namedCaptureGroup = regexp.MustCompile(`\(\?P<[^>]+>`)
@@ -48,8 +48,8 @@ func (r *svelteKitRoute) isRepoRoot() bool {
 	return r.Tag&tags.RepoRoot != 0
 }
 
-func (r *svelteKitRoute) matches(req *http.Request) bool {
-	return r.Pattern.MatchString(req.URL.Path)
+func (r *svelteKitRoute) matches(url *url.URL) bool {
+	return r.Pattern.MatchString(url.Path)
 }
 
 // RegisterSvelteKit registers a middleware that determines which routes are enabled for SvelteKit.
@@ -99,7 +99,7 @@ func RegisterSvelteKit(r *mux.Router, repoRootRoute *mux.Route) {
 					if !enabled {
 						// The repo root is essentially a catch-all route. If it matches we need
 						// to make sure that the server also interprets it as the repo root route.
-						if skr.matches(req) && (!skr.isRepoRoot() || route == repoRootRoute) {
+						if skr.matches(req.URL) && (!skr.isRepoRoot() || route == repoRootRoute) {
 							enabled = true
 						}
 					}
@@ -121,35 +121,30 @@ func fromContext(ctx context.Context) *contextValue {
 }
 
 // Enabled returns true if the route is configured to be supported by useSvelteKit
-func Enabled(r *http.Request) bool {
-	ctx := fromContext(r.Context())
-	if ctx == nil {
+func Enabled(ctx context.Context) bool {
+	skctx := fromContext(ctx)
+	if skctx == nil {
 		return false
 	}
-	return ctx.enabled
+	return skctx.enabled
 }
 
 // SvelteKitJSContext is the context object that is passed to the client apps
 // to determine which routes are enabled for SvelteKit.
-func GetJSContext(r *http.Request) JSContext {
-	ctx := fromContext(r.Context())
+func GetJSContext(ctx context.Context) JSContext {
+	skctx := fromContext(ctx)
 
-	if ctx == nil {
+	if skctx == nil {
 		return JSContext{}
 	}
 
-	ff := featureflag.FromContext(r.Context())
+	ff := featureflag.FromContext(ctx)
 
-	jsCtx := JSContext{
+	return JSContext{
 		ShowToggle: ff.GetBoolOr("web-next-toggle", false),
-		KnownRoutes: ctx.knownRoutes,
+		KnownRoutes: skctx.knownRoutes,
+		EnabledRoutes: skctx.enabledRoutes,
 	}
-
-	for _, routeIndex := range ctx.enabledRoutes {
-		jsCtx.EnabledRoutes = append(jsCtx.EnabledRoutes, routeIndex)
-	}
-
-	return jsCtx
 }
 
 func loadSvelteKitTemplate() (*template.Template, error) {
@@ -159,10 +154,12 @@ func loadSvelteKitTemplate() (*template.Template, error) {
 		return nil, errors.Errorf("failed to open %s: %w", fileName, err)
 	}
 	defer file.Close()
-	buf := new(strings.Builder)
-	io.Copy(buf, file)
+	content, err := io.ReadAll(file)
+	if err != nil {
+		return nil, errors.Errorf("failed to read %s: %w", fileName, err)
+	}
 
-	tmpl, err := template.New(fileName).Parse(buf.String())
+	tmpl, err := template.New(fileName).Parse(string(content))
 	if err != nil {
 		return nil, errors.Errorf("failed to parse template %s: %w", fileName, err)
 	}

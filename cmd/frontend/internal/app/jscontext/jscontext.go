@@ -450,7 +450,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		RunningOnMacOS: runningOnMacOS,
 
-		SvelteKit: sveltekit.GetJSContext(req),
+		SvelteKit: sveltekit.GetJSContext(req.Context()),
 	}
 
 	// If the license a Sourcegraph instance is running under does not support Code Search features
