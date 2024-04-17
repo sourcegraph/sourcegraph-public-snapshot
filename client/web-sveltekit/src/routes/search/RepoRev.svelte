@@ -84,7 +84,5 @@
     .spinner {
         width: 480px;
         height: 350px;
-
-
     }
 </style>

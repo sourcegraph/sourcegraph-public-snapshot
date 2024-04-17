@@ -119,6 +119,8 @@ For example:
 <style lang="scss">
     .root {
         width: 480px;
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
     }
 
     .header {
@@ -168,6 +170,11 @@ For example:
     }
 
     .description-and-tags {
+        display: flex;
+        flex-flow: column nowrap;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 0.5rem 0.5rem;
         padding: 0.75rem;
         width: 100%;
 
@@ -182,7 +189,6 @@ For example:
             flex-flow: row wrap;
             gap: 0.5rem 0.5rem;
             justify-content: flex-start;
-            margin-top: 1rem;
 
             small {
                 background-color: var(--subtle-bg);
