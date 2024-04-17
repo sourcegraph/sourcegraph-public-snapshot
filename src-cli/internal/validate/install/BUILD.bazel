@@ -11,9 +11,9 @@ go_library(
     importpath = "github.com/sourcegraph/src-cli/internal/validate/install",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/api",
-        "//internal/validate",
-        "@com_github_sourcegraph_sourcegraph_lib//errors",
+        "//lib/errors",
+        "//src-cli/internal/api",
+        "//src-cli/internal/validate",
         "@in_gopkg_yaml_v3//:yaml_v3",
     ],
 )

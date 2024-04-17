@@ -5,5 +5,5 @@ go_library(
     srcs = ["repo.go"],
     importpath = "github.com/sourcegraph/src-cli/internal/batches/util",
     visibility = ["//:__subpackages__"],
-    deps = ["@com_github_sourcegraph_sourcegraph_lib//batches/template"],
+    deps = ["//lib/batches/template"],
 )

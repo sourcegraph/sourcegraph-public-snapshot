@@ -8,5 +8,5 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/src-cli/internal/batches/graphql",
     visibility = ["//:__subpackages__"],
-    deps = ["//internal/batches/util"],
+    deps = ["//src-cli/internal/batches/util"],
 )

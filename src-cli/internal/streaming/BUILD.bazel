@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "streaming",
@@ -12,8 +13,8 @@ go_library(
     importpath = "github.com/sourcegraph/src-cli/internal/streaming",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/api",
-        "@com_github_sourcegraph_sourcegraph_lib//errors",
+        "//lib/errors",
+        "//src-cli/internal/api",
     ],
 )
 

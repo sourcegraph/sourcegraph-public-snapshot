@@ -6,8 +6,8 @@ go_library(
     importpath = "github.com/sourcegraph/src-cli/internal/users",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/lazyregexp",
+        "//lib/errors",
+        "//src-cli/internal/lazyregexp",
         "@com_github_json_iterator_go//:go",
-        "@com_github_sourcegraph_sourcegraph_lib//errors",
     ],
 )

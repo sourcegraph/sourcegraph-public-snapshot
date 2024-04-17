@@ -12,7 +12,7 @@ go_library(
     importpath = "github.com/sourcegraph/src-cli/internal/batches/mock",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/batches/docker",
-        "//internal/batches/log",
+        "//src-cli/internal/batches/docker",
+        "//src-cli/internal/batches/log",
     ],
 )

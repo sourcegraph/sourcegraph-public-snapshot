@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/src-cli/internal/api/mock",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/api",
+        "//src-cli/internal/api",
         "@com_github_stretchr_testify//mock",
     ],
 )

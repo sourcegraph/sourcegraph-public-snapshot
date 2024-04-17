@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "usage",
+    srcs = [
+        "k8s.go",
+        "usage.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/scout/usage",
+    visibility = ["//src-cli:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//src-cli/internal/scout",
+        "//src-cli/internal/scout/kube",
+        "//src-cli/internal/scout/style",
+        "@com_github_charmbracelet_bubbles//table:go_default_library",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_metrics//pkg/client/clientset/versioned:go_default_library",
+    ],
+)
+
+go_test(
+    name = "usage_test",
+    srcs = ["usage_test.go"],
+    embed = [":usage"],
+    deps = [
+        "//src-cli/internal/scout",
+        "//src-cli/internal/scout/kube",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/resource",
+    ],
+)

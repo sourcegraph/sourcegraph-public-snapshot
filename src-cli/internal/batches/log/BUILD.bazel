@@ -10,5 +10,5 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/src-cli/internal/batches/log",
     visibility = ["//:__subpackages__"],
-    deps = ["@com_github_sourcegraph_sourcegraph_lib//errors"],
+    deps = ["//lib/errors"],
 )

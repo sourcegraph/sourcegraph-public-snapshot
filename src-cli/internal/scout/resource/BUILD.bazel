@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "resource",
+    srcs = ["resource.go"],
+    importpath = "github.com/sourcegraph/src-cli/internal/scout/resource",
+    visibility = ["//src-cli:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//src-cli/internal/scout",
+        "//src-cli/internal/scout/kube",
+        "//src-cli/internal/scout/style",
+        "@com_github_charmbracelet_bubbles//table:go_default_library",
+        "@com_github_charmbracelet_lipgloss//:go_default_library",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+    ],
+)
+
+go_test(
+    name = "resource_test",
+    srcs = ["resource_test.go"],
+    embed = [":resource"],
+    deps = ["//lib/errors"],
+)

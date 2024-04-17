@@ -10,8 +10,8 @@ go_library(
     importpath = "github.com/sourcegraph/src-cli/internal/batches",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/batches/graphql",
-        "@com_github_sourcegraph_sourcegraph_lib//api",
-        "@com_github_sourcegraph_sourcegraph_lib//errors",
+        "//lib/api",
+        "//lib/errors",
+        "//src-cli/internal/batches/graphql",
     ],
 )
