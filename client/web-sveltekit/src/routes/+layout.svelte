@@ -80,10 +80,10 @@
     $: currentUserID = data.user?.id
     $: handleOptOut = currentUserID
         ? async (): Promise<void> => {
-            if (currentUserID) {
+              if (currentUserID) {
                   await data.disableSvelteFeatureFlags(currentUserID)
                   window.location.reload()
-            }
+              }
           }
         : undefined
 </script>

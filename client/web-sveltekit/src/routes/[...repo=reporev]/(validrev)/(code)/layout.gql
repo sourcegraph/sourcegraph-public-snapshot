@@ -23,14 +23,14 @@ query LastCommitQuery($repoName: String!, $revspec: String!, $filePath: String!)
     }
 }
 
-query RepositoryGitRefs($repo: ID!, $query: String, $type: GitRefType!) {
-    node(id: $repo) {
+query RepositoryGitRefs($repoName: String!, $query: String, $type: GitRefType!) {
+    repository(name: $repoName) {
         ...RepositoryGitRefs
     }
 }
 
-query RepositoryGitCommits($repo: ID!, $query: String, $revision: String!) {
-    node(id: $repo) {
+query RepositoryGitCommits($repoName: String!, $query: String, $revision: String!) {
+    repository(name: $repoName) {
         ...RepositoryGitCommits
     }
 }
