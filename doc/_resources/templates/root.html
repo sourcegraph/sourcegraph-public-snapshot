@@ -53,9 +53,13 @@
 
         <!-- Default to light theme if no JavaScript -->
 		<body class="theme-light">
-             <nav class="notice" style="display: flex; flex-direction: row; width: 100%; position: fixed; z-index: 9999; background: #ec624d; padding: 0.5rem; text-align: center; margin: 0 auto .5rem; color: black;">
-                    <p style="text-align: center; display: flex; margin: 0 auto; align-items: center;">⚠️ You're viewing our old docs, which we no longer maintain. For all the new updates, read our <a style="background: black; padding: 0.2rem 0.6rem; border-radius: 5px; margin-left: 0.5rem; color: white;" href="https://sourcegraph.com/docs" id="latest-docs-redirect">Latest Docs »</a></p>
+             <nav id="notice-old-docs" class="notice" style="display: none; flex-direction: row; width: 100%; position: fixed; z-index: 9999; background: #ec624d; padding: 0.5rem; text-align: center; margin: 0 auto .5rem; color: black;">
+                    <p style="text-align: center; display: flex; margin: 0 auto; align-items: center;">⚠️You're viewing our legacy docs, which we no longer maintain. For all the new updates, read our <a style="background: black; padding: 0.2rem 0.6rem; border-radius: 5px; margin-left: 0.5rem; color: white;" href="https://sourcegraph.com/docs" id="latest-docs-redirect">Latest Docs »</a></p>
             </nav>
+             <nav id="notice-dev-docs" class="notice" style="display: none; flex-direction: row; width: 100%; position: fixed; z-index: 9999; background: #FFAC1C; padding: 0.5rem; text-align: center; margin: 0 auto .5rem; color: black;">
+                    <p style="text-align: center; display: flex; margin: 0 auto; align-items: center;">⚠️You're viewing our dev docs, which are in the process of being migrated. Last sync done on April 16th, for up to date content please read them from<a style="background: black; padding: 0.2rem 0.6rem; border-radius: 5px; margin-left: 0.5rem; color: white;" href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/doc/dev/index.md">here</a> &nbsp; for the time being.</p>
+            </nav>
+
             <script>
                 // If dark theme is requested, set it immediately to avoid flashing.
                 // The rest of theme handling happens in docsite.js.
@@ -70,8 +74,21 @@
 
             <script>
                 document.addEventListener("DOMContentLoaded", function() {
-                    // append the current path to the redirect link
-                    document.getElementById("latest-docs-redirect").href += window.location.pathname
+                    if ( window.location.pathname.startsWith("/dev") ) {
+                        document.getElementById("notice-old-docs").style.display = "none";
+                        document.getElementById("notice-dev-docs").style.display = "flex";
+                    } else {
+                        document.getElementById("notice-old-docs").style.display = "flex";
+                        document.getElementById("notice-dev-docs").style.display = "none";
+                    }
+
+                    // Append the current path to the redirect link.
+                    //
+                    // The resource estimator doesn't have yet an equivalent on the new docsite, so for that
+                    // one we don't append the path.
+                    if ( ! window.location.pathname.startsWith("/admin/deploy/resource_estimator") ) {
+                        document.getElementById("latest-docs-redirect").href += window.location.pathname
+                    }
                 });
             </script>
             <script type="module">
