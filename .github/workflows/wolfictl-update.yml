@@ -25,7 +25,7 @@ jobs:
 
       # Build and install a fork of wolfictl
       - name: Check out code from external repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: 'willdollman/wolfictl'
           ref: 'main'
@@ -55,19 +55,23 @@ jobs:
           echo "$TMP" >> $GITHUB_PATH
 
       # TODO: Replace above wolfictl build step once the bugfix PR is accepted
+      # TODO: Pin commit hash
       # - uses: wolfi-dev/actions/install-wolfictl@main
 
-      - name: List
+      - name: Check wolfictl
         run: |
           which wolfictl
-
-
-      - name: List2
-        run: |
           wolfictl version
 
       - name: "wolfictl update"
         run: |
+          DRY_RUN='--dry-run'
+          echo "Github ref is $GITHUB_REF and parsed ref is ${GITHUB_REF##*/}"
+          if [[ "${GITHUB_REF##*/}" == "main" ]]; then
+            echo "This is the main branch."
+            DRY_RUN=''
+          fi
+          echo "Dryrun is $DRY_RUN"
           wolfictl update --dry-run --create-issues='false' --package-name='qdrant' --path='wolfi-packages/' --github-labels='SSDLC' --github-labels='security-auto-update' --github-labels='security-auto-update/packages' $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
