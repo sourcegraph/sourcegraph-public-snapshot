@@ -69,8 +69,8 @@ type GitserverServiceClient interface {
 	// currently not filter parts of the archive, so this would be considered
 	// leaking information.
 	//
-	// If the given treeish does not exist, an error with a
-	// RevisionNotFoundPayload is returned.
+	// If the given treeish does not exist, an error with a RevisionNotFoundPayload
+	// is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -668,8 +668,8 @@ type GitserverServiceServer interface {
 	// currently not filter parts of the archive, so this would be considered
 	// leaking information.
 	//
-	// If the given treeish does not exist, an error with a
-	// RevisionNotFoundPayload is returned.
+	// If the given treeish does not exist, an error with a RevisionNotFoundPayload
+	// is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.

@@ -907,7 +907,7 @@ func TestGRPCServer_ListRefs(t *testing.T) {
 		}
 		if diff := cmp.Diff([]*v1.GitRef{
 			{
-				RefName:   "refs/heads/master",
+				RefName:   []byte("refs/heads/master"),
 				CreatedAt: timestamppb.New(time.Time{}),
 			},
 		}, refs, cmpopts.IgnoreUnexported(v1.GitRef{}, timestamppb.Timestamp{})); diff != "" {
