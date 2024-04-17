@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const allowByDefault = true
+var allowByDefault = true
 
 var (
 	metricCacheHit = promauto.NewCounter(prometheus.CounterOpts{

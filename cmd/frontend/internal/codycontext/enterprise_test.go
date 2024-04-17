@@ -17,7 +17,11 @@ import (
 )
 
 func TestNewEnterpriseFilter(t *testing.T) {
-	t.Cleanup(func() { conf.Mock(nil) })
+	originalAllowByDefault := allowByDefault
+	t.Cleanup(func() {
+		conf.Mock(nil)
+		allowByDefault = originalAllowByDefault
+	})
 	logger := logtest.Scoped(t)
 
 	_, file, _, ok := runtime.Caller(0)
@@ -72,6 +76,7 @@ func TestNewEnterpriseFilter(t *testing.T) {
 
 	for _, tt := range data.TestCases {
 		t.Run(tt.Name, func(t *testing.T) {
+			allowByDefault = tt.IncludeByDefault
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					CodyContextFilters: tt.Ccf,
