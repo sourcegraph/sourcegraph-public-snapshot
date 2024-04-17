@@ -1,6 +1,7 @@
 name: 'wolfictl-update'
 
 on:
+  push:
   schedule:
     # everyday at 0:00 UTC
     - cron:  0 0 * * *
@@ -67,7 +68,11 @@ jobs:
       # Run wolfictl update
       - name: "wolfictl update"
         run: |
-          wolfictl update --create-issues='false' --path='wolfi-packages/' --github-labels='SSDLC' --github-labels='security-auto-update' --github-labels='security-auto-update/packages' $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
+          wolfictl update \
+            --create-issues='false' \
+            --path='wolfi-packages/' \
+            --github-labels='SSDLC' --github-labels='security-auto-update' --github-labels='security-auto-update/packages' \
+            $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GIT_AUTHOR_NAME: sourcegraph secbot
