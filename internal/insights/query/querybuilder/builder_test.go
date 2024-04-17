@@ -16,31 +16,31 @@ func TestWithDefaults(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		want     string
+		want     autogold.Value
 		defaults query.Parameters
 	}{
 		{
 			name:     "no defaults",
 			input:    "repo:myrepo testquery",
-			want:     "repo:myrepo testquery",
+			want:     autogold.Expect("repo:myrepo testquery"),
 			defaults: []query.Parameter{},
 		},
 		{
 			name:     "no defaults with fork archived",
 			input:    "repo:myrepo testquery fork:no archived:no",
-			want:     "repo:myrepo fork:no archived:no testquery",
+			want:     autogold.Expect("repo:myrepo testquery fork:no archived:no"),
 			defaults: []query.Parameter{},
 		},
 		{
 			name:     "no defaults with patterntype",
 			input:    "repo:myrepo testquery patterntype:standard",
-			want:     "repo:myrepo patterntype:standard testquery",
+			want:     autogold.Expect("repo:myrepo testquery patterntype:standard"),
 			defaults: []query.Parameter{},
 		},
 		{
 			name:  "default archived",
 			input: "repo:myrepo testquery fork:no",
-			want:  "archived:yes repo:myrepo fork:no testquery",
+			want:  autogold.Expect("archived:yes repo:myrepo fork:no testquery"),
 			defaults: []query.Parameter{{
 				Field:      query.FieldArchived,
 				Value:      string(query.Yes),
@@ -51,7 +51,7 @@ func TestWithDefaults(t *testing.T) {
 		{
 			name:  "default fork and archived",
 			input: "repo:myrepo testquery",
-			want:  "archived:no fork:no repo:myrepo testquery",
+			want:  autogold.Expect("archived:no fork:no repo:myrepo testquery"),
 			defaults: []query.Parameter{{
 				Field:      query.FieldArchived,
 				Value:      string(query.No),
@@ -67,7 +67,7 @@ func TestWithDefaults(t *testing.T) {
 		{
 			name:  "default patterntype",
 			input: "repo:myrepo testquery",
-			want:  "patterntype:literal repo:myrepo testquery",
+			want:  autogold.Expect("patterntype:literal repo:myrepo testquery"),
 			defaults: []query.Parameter{{
 				Field:      query.FieldPatternType,
 				Value:      "literal",
@@ -78,7 +78,7 @@ func TestWithDefaults(t *testing.T) {
 		{
 			name:  "default patterntype does not override",
 			input: "patterntype:standard repo:myrepo testquery",
-			want:  "patterntype:standard repo:myrepo testquery",
+			want:  autogold.Expect("patterntype:standard repo:myrepo testquery"),
 			defaults: []query.Parameter{{
 				Field:      query.FieldPatternType,
 				Value:      "literal",
@@ -93,9 +93,7 @@ func TestWithDefaults(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(test.want, string(got)); diff != "" {
-				t.Fatalf("%s failed (want/got): %s", test.name, diff)
-			}
+			test.want.Equal(t, string(got))
 		})
 	}
 }
@@ -104,56 +102,56 @@ func TestWithDefaultsPatternTypes(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		want     string
+		want     autogold.Value
 		defaults query.Parameters
 	}{
 		{
 			// It's worth noting that we always append patterntype:regexp to capture group queries.
 			name:     "regexp query without patterntype",
 			input:    `file:go\.mod$ go\s*(\d\.\d+)`,
-			want:     `file:go\.mod$ go\s*(\d\.\d+)`,
+			want:     autogold.Expect("file:go\\.mod$ go\\s*(\\d\\.\\d+)"),
 			defaults: []query.Parameter{},
 		},
 		{
 			name:     "regexp query with patterntype",
 			input:    `file:go\.mod$ go\s*(\d\.\d+) patterntype:regexp`,
-			want:     `file:go\.mod$ patterntype:regexp go\s*(\d\.\d+)`,
+			want:     autogold.Expect("file:go\\.mod$ go\\s*(\\d\\.\\d+) patterntype:regexp"),
 			defaults: []query.Parameter{},
 		},
 		{
 			name:     "literal query without patterntype",
 			input:    `package search`,
-			want:     `package search`,
+			want:     autogold.Expect("package search"),
 			defaults: []query.Parameter{},
 		},
 		{
 			name:     "literal query with patterntype",
 			input:    `package search patterntype:literal`,
-			want:     `patterntype:literal package search`,
+			want:     autogold.Expect("package search patterntype:literal"),
 			defaults: []query.Parameter{},
 		},
 		{
 			name:     "literal query with quotes without patterntype",
 			input:    `"license": "A`,
-			want:     `"license": "A`,
+			want:     autogold.Expect(`"license": "A`),
 			defaults: []query.Parameter{},
 		},
 		{
 			name:     "literal query with quotes with patterntype",
 			input:    `"license": "A patterntype:literal`,
-			want:     `patterntype:literal "license": "A`,
+			want:     autogold.Expect(`"license": "A patterntype:literal`),
 			defaults: []query.Parameter{},
 		},
 		{
 			name:     "structural query without patterntype",
 			input:    `TODO(...)`,
-			want:     `TODO(...)`,
+			want:     autogold.Expect("TODO(...)"),
 			defaults: []query.Parameter{},
 		},
 		{
 			name:     "structural query with patterntype",
 			input:    `TODO(...) patterntype:structural`,
-			want:     `patterntype:structural TODO(...)`,
+			want:     autogold.Expect("TODO(...) patterntype:structural"),
 			defaults: []query.Parameter{},
 		},
 	}
@@ -163,9 +161,7 @@ func TestWithDefaultsPatternTypes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(test.want, string(got)); diff != "" {
-				t.Fatalf("%s failed (want/got): %s", test.name, diff)
-			}
+			test.want.Equal(t, string(got))
 		})
 	}
 }
@@ -174,19 +170,19 @@ func TestMultiRepoQuery(t *testing.T) {
 	tests := []struct {
 		name     string
 		repos    []string
-		want     string
+		want     autogold.Value
 		defaults query.Parameters
 	}{
 		{
 			name:     "single repo",
 			repos:    []string{"repo1"},
-			want:     `count:99999999 testquery repo:^(repo1)$`,
+			want:     autogold.Expect("testquery count:all repo:^(repo1)$"),
 			defaults: []query.Parameter{},
 		},
 		{
 			name:  "multiple repo",
 			repos: []string{"repo1", "repo2"},
-			want:  `archived:no fork:no count:99999999 testquery repo:^(repo1|repo2)$`,
+			want:  autogold.Expect("archived:no fork:no count:99999999 testquery repo:^(repo1|repo2)$"),
 			defaults: []query.Parameter{{
 				Field:      query.FieldArchived,
 				Value:      string(query.No),
@@ -202,7 +198,7 @@ func TestMultiRepoQuery(t *testing.T) {
 		{
 			name:  "multiple repo",
 			repos: []string{"github.com/myrepos/repo1", "github.com/myrepos/repo2"},
-			want:  `archived:no fork:no count:99999999 testquery repo:^(github\.com/myrepos/repo1|github\.com/myrepos/repo2)$`,
+			want:  autogold.Expect("archived:no fork:no count:99999999 testquery repo:^(github\\.com/myrepos/repo1|github\\.com/myrepos/repo2)$"),
 			defaults: []query.Parameter{{
 				Field:      query.FieldArchived,
 				Value:      string(query.No),
@@ -222,9 +218,7 @@ func TestMultiRepoQuery(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(test.want, string(got)); diff != "" {
-				t.Fatalf("%s failed (want/got): %s", test.name, diff)
-			}
+			test.want.Equal(t, string(got))
 		})
 	}
 }
