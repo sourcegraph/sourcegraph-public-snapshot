@@ -20,6 +20,7 @@ jobs:
 
     steps:
       # Install wolfictl
+
       # NOTE: The main wolfictl binary has a bug which prevents us from using it
       # Once https://github.com/wolfi-dev/wolfictl/pull/763 is merged, we can remove the following which
       # builds wolfictl from a patched fork.
@@ -55,8 +56,9 @@ jobs:
           ls -al $TMP
           echo "$TMP" >> $GITHUB_PATH
 
-      # TODO: Replace above wolfictl build step once the bugfix PR is accepted
-      # TODO: Pin commit hash
+      # TODO: Once the bugfix PR is accepted:
+      #   * Replace above wolfictl build step with the following
+      #   * Pin commit hash
       # - uses: wolfi-dev/actions/install-wolfictl@main
 
       - name: Check wolfictl
