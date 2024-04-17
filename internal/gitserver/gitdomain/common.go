@@ -167,16 +167,16 @@ func (c *Commit) ToProto() *proto.GitCommit {
 
 	return &proto.GitCommit{
 		Oid:     string(c.ID),
-		Message: string(c.Message),
+		Message: []byte(c.Message),
 		Parents: parents,
 		Author: &proto.GitSignature{
-			Name:  c.Author.Name,
-			Email: c.Author.Email,
+			Name:  []byte(c.Author.Name),
+			Email: []byte(c.Author.Email),
 			Date:  timestamppb.New(c.Author.Date),
 		},
 		Committer: &proto.GitSignature{
-			Name:  c.Committer.Name,
-			Email: c.Committer.Email,
+			Name:  []byte(c.Committer.Name),
+			Email: []byte(c.Committer.Email),
 			Date:  timestamppb.New(c.Committer.Date),
 		},
 	}
@@ -192,13 +192,17 @@ func CommitFromProto(p *proto.GitCommit) *Commit {
 		ID:      api.CommitID(p.GetOid()),
 		Message: Message(p.GetMessage()),
 		Author: Signature{
-			Name:  p.GetAuthor().GetName(),
-			Email: p.GetAuthor().GetEmail(),
+			// TODO@ggilmore: It's entirely possible that the "name" could include non-utf8 characters, as there is no such enforcement in the git cli. We should consider using []byte here.
+			Name: string(p.GetAuthor().GetName()),
+			// TODO@ggilmore: It's entirely possible that the "email" could include non-utf8 characters, as there is no such enforcement in the git cli. We should consider using []byte here.
+			Email: string(p.GetAuthor().GetEmail()),
 			Date:  p.GetAuthor().GetDate().AsTime(),
 		},
 		Committer: &Signature{
-			Name:  p.GetCommitter().GetName(),
-			Email: p.GetCommitter().GetEmail(),
+			// TODO@ggilmore: It's entirely possible that the "name" could include non-utf8 characters, as there is no such enforcement in the git cli. We should consider using []byte here.
+			Name: string(p.GetCommitter().GetName()),
+			// TODO@ggilmore: It's entirely possible that the "email" could include non-utf8 characters, as there is no such enforcement in the git cli. We should consider using []byte here.
+			Email: string(p.GetCommitter().GetEmail()),
 			Date:  p.GetCommitter().GetDate().AsTime(),
 		},
 		Parents: parents,
@@ -284,7 +288,15 @@ func (h *Hunk) ToProto() *proto.BlameHunk {
 
 // Signature represents a commit signature
 type Signature struct {
-	Name  string    `json:"Name,omitempty"`
+	// Name is the name of the author or committer.
+	//
+	// Note: This is not necessarily a valid UTF-8 string, as git does not enforce
+	// this. It's up to the caller to check validity or sanitize the string as needed.
+	Name string `json:"Name,omitempty"`
+	// Email is the email of the author or committer.
+	//
+	// Note: This is not necessarily a valid UTF-8 string, as git does not enforce
+	// this. It's up to the caller to check validity or sanitize the string as needed.
 	Email string    `json:"Email,omitempty"`
 	Date  time.Time `json:"Date"`
 }
