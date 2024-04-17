@@ -25,6 +25,7 @@ For example:
 
     export let repo: RepoPopoverFragment
     export let withHeader = false
+    export let orgSVGPath: string | null = null
 
     const CENTER_DOT = '\u00B7' // interpunct
 
@@ -58,7 +59,9 @@ For example:
         <div class="header">
             <div class="icon-name-access">
                 <!-- @TODO: We need to use our customer's logo here. mdiAlienOutline is a place holder-->
-                <Icon svgPath={mdiAlienOutline} --color="var(--primary)" />
+                {#if orgSVGPath}
+                    <Icon svgPath={mdiAlienOutline} --color="var(--primary)" />
+                {/if}
                 <div>
                     <h4 class="repo-name">{formatRepoName(repo.name)}</h4>
                 </div>
@@ -121,6 +124,10 @@ For example:
         width: 480px;
         border: 1px solid var(--border-color);
         border-radius: 0.5rem;
+    }
+
+    .root:hover {
+        visibility: visible;
     }
 
     .header {

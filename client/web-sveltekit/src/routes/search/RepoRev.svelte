@@ -11,12 +11,12 @@
     export let repoName: string
     export let rev: string | undefined
     export let highlights: [number, number][] = []
+
     let repo: RepoPopoverResult
 
     const loadOnHover = async () => {
         const client = getGraphQLClient()
         const response = await client.query(RepoPopoverQuery, { repoName })
-        // must be site admin
         if (response.data) {
             repo = response.data
         }
@@ -36,17 +36,15 @@
     <CodeHostIcon repository={repoName} />
     <!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
     {#key highlights}
-        <Popover let:registerTrigger let:toggle placement="bottom-start">
+        <Popover showOnHover let:registerTrigger placement="bottom-start">
             <a
                 class="repo-link"
                 {href}
                 use:highlightRanges={{ ranges: highlights }}
                 use:registerTrigger
                 on:mouseenter={() => {
-                    toggle(true)
                     loadOnHover()
                 }}
-                on:mouseleave={() => toggle(false)}
             >
                 {displayRepoName(repoName)}
                 {#if rev}
@@ -83,6 +81,6 @@
 
     .spinner {
         width: 480px;
-        height: 350px;
+        height: 200px;
     }
 </style>
