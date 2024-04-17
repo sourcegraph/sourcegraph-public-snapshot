@@ -680,7 +680,7 @@ message ArchiveRequest {
   ArchiveFormat format = 3;
   // paths is the list of paths to include in the archive. If empty, all
   // paths are included.
-  repeated string paths = 4;
+  repeated bytes paths = 4;
 }
 
 // ArchiveResponse is the response from the Archive RPC that returns a chunk of

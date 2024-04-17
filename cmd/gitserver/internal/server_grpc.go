@@ -260,7 +260,7 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 	accesslog.Record(ctx, req.GetRepo(),
 		log.String("treeish", req.GetTreeish()),
 		log.String("format", string(format)),
-		log.Strings("path", req.GetPaths()),
+		log.Strings("path", byteSlicesToStrings(req.GetPaths())),
 	)
 
 	repoName := api.RepoName(req.GetRepo())
@@ -289,7 +289,7 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 
 	backend := gs.getBackendFunc(repoDir, repoName)
 
-	r, err := backend.ArchiveReader(ctx, format, req.GetTreeish(), req.GetPaths())
+	r, err := backend.ArchiveReader(ctx, format, req.GetTreeish(), byteSlicesToStrings(req.GetPaths()))
 	if err != nil {
 		if os.IsNotExist(err) {
 			var path string
