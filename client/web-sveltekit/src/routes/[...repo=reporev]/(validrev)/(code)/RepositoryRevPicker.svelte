@@ -1,13 +1,13 @@
 <script context="module" lang="ts">
-    import type { RepositoryGitRefs_Repository_, RepositoryGitCommits_Repository_ } from './RepositoryRevPicker.gql'
+    import type { RepositoryGitRefs, RepositoryGitCommits } from './RepositoryRevPicker.gql'
 
-    export type RepositoryBranches = RepositoryGitRefs_Repository_['gitRefs']
+    export type RepositoryBranches = RepositoryGitRefs['gitRefs']
     export type RepositoryBranch = RepositoryBranches['nodes'][number]
 
-    export type RepositoryTags = RepositoryGitRefs_Repository_['gitRefs']
+    export type RepositoryTags = RepositoryGitRefs['gitRefs']
     export type RepositoryTag = RepositoryTags['nodes'][number]
 
-    export type RepositoryCommits = NonNullable<RepositoryGitCommits_Repository_['commit']>['ancestors']
+    export type RepositoryCommits = NonNullable<RepositoryGitCommits['commit']>['ancestors']
     export type RepositoryGitCommit = RepositoryCommits['nodes'][number]
 </script>
 
