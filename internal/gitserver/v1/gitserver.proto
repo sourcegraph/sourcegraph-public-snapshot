@@ -191,6 +191,39 @@ service GitserverService {
   rpc RawDiff(RawDiffRequest) returns (stream RawDiffResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // ContributorCounts returns the number of commits grouped by commit author.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc ContributorCounts(ContributorCountsRequest) returns (ContributorCountsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message ContributorCountsRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // Optional range to limit the commits inspected. If not given, all commits are considered.
+  // This can either be a revspec, which will be interpreted as "every commit since
+  // root until this commit", or a range, with either .. or ... separator.
+  bytes range = 3;
+  // After is an optional parameter to specify the earliest commit to consider in
+  // the aggregation. If not specified, all commits will be returned.
+  google.protobuf.Timestamp after = 4;
+  // path can optionally be specified to limit the commits to a single path.
+  // If not specified, the commits will be returned for all paths.
+  // Path can also be a path prefix, for example cmd/gitserver/.
+  bytes path = 5;
+}
+
+message ContributorCount {
+  GitSignature author = 1;
+  int32 count = 2;
+}
+
+message ContributorCountsResponse {
+  repeated ContributorCount counts = 1;
 }
 
 message RawDiffRequest {

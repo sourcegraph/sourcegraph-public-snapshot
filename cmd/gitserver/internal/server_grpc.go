@@ -1385,6 +1385,58 @@ func (gs *grpcServer) RawDiff(req *proto.RawDiffRequest, ss proto.GitserverServi
 	return err
 }
 
+func (gs *grpcServer) ContributorCounts(ctx context.Context, req *proto.ContributorCountsRequest) (*proto.ContributorCountsResponse, error) {
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("range", string(req.GetRange())),
+		log.String("path", string(req.GetPath())),
+	)
+
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
+		return nil, err
+	}
+
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	counts, err := backend.ContributorCounts(ctx, git.ContributorCountsOpts{
+		Range: string(req.GetRange()),
+		After: req.GetAfter().AsTime(),
+		Path:  string(req.GetPath()),
+	})
+	if err != nil {
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		// TODO: Better error checking.
+		return nil, err
+	}
+
+	res := &proto.ContributorCountsResponse{}
+	for _, c := range counts {
+		res.Counts = append(res.Counts, c.ToProto())
+	}
+
+	return res, nil
+}
+
 // checkRepoExists checks if a given repository is cloned on disk, and returns an
 // error otherwise.
 // On Sourcegraph.com, not all repos are managed by the scheduler. We thus

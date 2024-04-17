@@ -31,7 +31,6 @@ go_library(
         "//internal/gitserver/v1:gitserver",
         "//internal/grpc/defaults",
         "//internal/grpc/streamio",
-        "//internal/lazyregexp",
         "//internal/metrics",
         "//internal/observation",
         "//internal/perforce",

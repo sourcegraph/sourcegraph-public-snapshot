@@ -170,4 +170,9 @@ func (r *automaticRetryClient) RawDiff(ctx context.Context, in *proto.RawDiffReq
 	return r.base.RawDiff(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) ContributorCounts(ctx context.Context, in *proto.ContributorCountsRequest, opts ...grpc.CallOption) (*proto.ContributorCountsResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ContributorCounts(ctx, in, opts...)
+}
+
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

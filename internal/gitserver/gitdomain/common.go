@@ -366,6 +366,33 @@ func (p *ContributorCount) String() string {
 	return fmt.Sprintf("%d %s <%s>", p.Count, p.Name, p.Email)
 }
 
+func ContributorCountFromProto(p *proto.ContributorCount) *ContributorCount {
+	if p == nil {
+		return nil
+	}
+	c := &ContributorCount{
+		Count: p.GetCount(),
+	}
+	if p.GetAuthor() != nil {
+		c.Name = string(p.GetAuthor().GetName())
+		c.Email = string(p.GetAuthor().GetEmail())
+	}
+	return c
+}
+
+func (c *ContributorCount) ToProto() *proto.ContributorCount {
+	if c == nil {
+		return nil
+	}
+	return &proto.ContributorCount{
+		Count: c.Count,
+		Author: &proto.GitSignature{
+			Name:  []byte(c.Name),
+			Email: []byte(c.Email),
+		},
+	}
+}
+
 // Ref describes a Git ref.
 type Ref struct {
 	// Name the full name of the ref (e.g., "refs/heads/mybranch").

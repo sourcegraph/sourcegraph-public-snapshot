@@ -324,4 +324,9 @@ func (r *errorTranslatingRawDiffClient) Recv() (*proto.RawDiffResponse, error) {
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
+func (r *errorTranslatingClient) ContributorCounts(ctx context.Context, in *proto.ContributorCountsRequest, opts ...grpc.CallOption) (*proto.ContributorCountsResponse, error) {
+	res, err := r.base.ContributorCounts(ctx, in, opts...)
+	return res, convertGRPCErrorToGitDomainError(err)
+}
+
 var _ proto.GitserverServiceClient = &errorTranslatingClient{}

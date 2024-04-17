@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"net/mail"
 	"os"
 	stdlibpath "path"
 	"path/filepath"
@@ -34,7 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -188,90 +186,36 @@ func (o *ContributorOptions) Attrs() []attribute.KeyValue {
 }
 
 func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) (_ []*gitdomain.ContributorCount, err error) {
-	ctx, _, endObservation := c.operations.contributorCount.With(ctx, &err, observation.Args{Attrs: opt.Attrs(), MetricLabelValues: []string{c.scope}})
+	ctx, _, endObservation := c.operations.contributorCount.With(ctx,
+		&err,
+		observation.Args{
+			Attrs:             opt.Attrs(),
+			MetricLabelValues: []string{c.scope},
+		},
+	)
 	defer endObservation(1, observation.Args{})
 
-	if opt.Range == "" {
-		opt.Range = "HEAD"
-	}
-	if err := checkSpecArgSafety(opt.Range); err != nil {
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
 		return nil, err
 	}
 
-	// We split the individual args for the shortlog command instead of -sne for easier arg checking in the allowlist.
-	args := []string{"shortlog", "-s", "-n", "-e", "--no-merges"}
-	if !opt.After.IsZero() {
-		args = append(args, fmt.Sprintf("--after=%d", opt.After.Unix()))
-	}
-	args = append(args, opt.Range, "--")
-	if opt.Path != "" {
-		args = append(args, opt.Path)
-	}
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.Output(ctx)
+	res, err := client.ContributorCounts(ctx, &proto.ContributorCountsRequest{
+		RepoName: string(repo),
+		Range:    []byte(opt.Range),
+		After:    timestamppb.New(opt.After),
+		Path:     []byte(opt.Path),
+	})
 	if err != nil {
-		return nil, errors.Errorf("exec `git shortlog -s -n -e` failed: %v", err)
+		return nil, err
 	}
-	return parseShortLog(out)
-}
 
-// logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
-// -sne` command.
-var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
+	counts := make([]*gitdomain.ContributorCount, len(res.GetCounts()))
+	for i, c := range res.GetCounts() {
+		counts[i] = gitdomain.ContributorCountFromProto(c)
+	}
 
-func parseShortLog(out []byte) ([]*gitdomain.ContributorCount, error) {
-	out = bytes.TrimSpace(out)
-	if len(out) == 0 {
-		return nil, nil
-	}
-	lines := bytes.Split(out, []byte{'\n'})
-	results := make([]*gitdomain.ContributorCount, len(lines))
-	for i, line := range lines {
-		// example line: "1125\tJane Doe <jane@sourcegraph.com>"
-		match := logEntryPattern.FindSubmatch(line)
-		if match == nil {
-			return nil, errors.Errorf("invalid git shortlog line: %q", line)
-		}
-		// example match: ["1125\tJane Doe <jane@sourcegraph.com>" "1125" "Jane Doe <jane@sourcegraph.com>"]
-		count, err := strconv.Atoi(string(match[1]))
-		if err != nil {
-			return nil, err
-		}
-		addr, err := lenientParseAddress(string(match[2]))
-		if err != nil || addr == nil {
-			addr = &mail.Address{Name: string(match[2])}
-		}
-		results[i] = &gitdomain.ContributorCount{
-			Count: int32(count),
-			Name:  addr.Name,
-			Email: addr.Address,
-		}
-	}
-	return results, nil
-}
-
-// lenientParseAddress is just like mail.ParseAddress, except that it treats
-// the following somewhat-common malformed syntax where a user has misconfigured
-// their email address as their name:
-//
-//	foo@gmail.com <foo@gmail.com>
-//
-// As a valid name, whereas mail.ParseAddress would return an error:
-//
-//	mail: expected single address, got "<foo@gmail.com>"
-func lenientParseAddress(address string) (*mail.Address, error) {
-	addr, err := mail.ParseAddress(address)
-	if err != nil && strings.Contains(err.Error(), "expected single address") {
-		p := strings.LastIndex(address, "<")
-		if p == -1 {
-			return addr, err
-		}
-		return &mail.Address{
-			Name:    strings.TrimSpace(address[:p]),
-			Address: strings.Trim(address[p:], " <>"),
-		}, nil
-	}
-	return addr, err
+	return counts, nil
 }
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which
