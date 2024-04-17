@@ -1,7 +1,9 @@
 <script lang="ts" context="module">
     import { Story } from '@storybook/addon-svelte-csf'
 
+    import Popover from '$lib/Popover.svelte'
     import type { Progress, Skipped } from '$lib/shared'
+    import Button from '$lib/wildcard/Button.svelte'
 
     import ResultsIndicator from './ResultsIndicator.svelte'
 
@@ -90,7 +92,7 @@
         },
         {
             stateName: 'should display "Error" state',
-            state: 'complete',
+            state: 'error',
             severity: 'error',
             progress: {
                 done: true,
@@ -102,6 +104,29 @@
                         title: 'Internal server error',
                         message: 'There was an error',
                         severity: 'error',
+                    },
+                ],
+            },
+            suggestedItems: [],
+        },
+        {
+            stateName: 'should display "Error with suggested" state',
+            state: 'error',
+            severity: 'error',
+            progress: {
+                done: true,
+                matchCount: 2364,
+                durationMs: 19000,
+                skipped: [
+                    {
+                        reason: 'shard-timedout',
+                        title: 'Internal server error',
+                        message: 'There was an error',
+                        severity: 'error',
+                        suggested: {
+                            title: 'There was an error',
+                            queryExpression: '404',
+                        },
                     },
                 ],
             },
@@ -180,31 +205,19 @@
     <h1>ResultsIndicator.svelte</h1>
     <section>
         {#each states as { stateName, state, progress, suggestedItems, severity }}
-            <div class="scene">
-                <h4>It {stateName}</h4>
-                <div>
-                    <ResultsIndicator {state} {progress} {suggestedItems} {severity} />
-                </div>
-            </div>
+            <h4>It {stateName}</h4>
+            <Button variant={state === 'error' ? 'danger' : 'secondary'} size="sm" outline>
+                <svelte:fragment slot="custom" let:buttonClass>
+                    <button class="{buttonClass} progress-button">
+                        <ResultsIndicator {state} {suggestedItems} {progress} {severity} />
+                    </button>
+                </svelte:fragment>
+            </Button>
+            <br />
+            <br />
         {/each}
     </section>
 </Story>
 
 <style lang="scss">
-    section {
-        display: flex;
-        flex-flow: column wrap;
-        max-height: 65vh;
-        max-width: 100vw;
-        gap: 0.5rem 0.5rem;
-    }
-    .scene {
-        div {
-            border: 1px solid var(--border-color);
-            width: fit-content;
-            padding: 0.5rem;
-            border-radius: 4px;
-            margin-bottom: 3rem;
-        }
-    }
 </style>

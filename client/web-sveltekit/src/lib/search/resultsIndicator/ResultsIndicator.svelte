@@ -68,6 +68,8 @@
         min-width: 200px;
         max-width: fit-content;
 
+        padding: 0.25rem;
+
         .messages {
             display: flex;
             flex-flow: column nowrap;
