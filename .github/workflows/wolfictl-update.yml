@@ -1,11 +1,9 @@
 name: 'wolfictl-update'
 
 on:
-  push: # TODO: Remove
-  # TODO: Uncomment
-  # schedule:
+  schedule:
     # everyday at 0:00 UTC
-    # - cron:  0 0 * * *
+    - cron:  0 0 * * *
   workflow_dispatch: {}
 
 permissions:
@@ -56,7 +54,7 @@ jobs:
           ls -al $TMP
           echo "$TMP" >> $GITHUB_PATH
 
-      # TODO: Once the bugfix PR is accepted:
+      # TODO(will): Once the bugfix PR is accepted:
       #   * Replace above wolfictl build step with the following
       #   * Pin commit hash
       # - uses: wolfi-dev/actions/install-wolfictl@main
