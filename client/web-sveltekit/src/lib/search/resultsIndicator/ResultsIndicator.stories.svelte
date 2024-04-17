@@ -120,7 +120,7 @@
                 skipped: [
                     {
                         reason: 'shard-timedout',
-                        title: 'Internal server error',
+                        title: 'NOT FOUND',
                         message: 'There was an error',
                         severity: 'error',
                         suggested: {

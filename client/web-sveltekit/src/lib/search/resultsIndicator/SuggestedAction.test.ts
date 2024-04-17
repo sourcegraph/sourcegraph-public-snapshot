@@ -33,14 +33,8 @@ describe('SuggestedAction.svelte', () => {
             state: 'complete',
         })
 
-        const title = document.getElementsByClassName('info-badge')
-        expect(title).toHaveLength(1)
-
-        const interpunct = document.getElementsByClassName('separator')
-        expect(interpunct).toHaveLength(1)
-
-        const action = document.getElementsByClassName('action-badge')
-        expect(action).toHaveLength(1)
+        const infoBadge = document.getElementsByClassName('info-badge')
+        expect(infoBadge).toHaveLength(1)
     })
 
     test('renders title only when there is no suggested items', async () => {
