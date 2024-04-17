@@ -70,6 +70,10 @@ class InnerSavedSearchCreateForm extends React.Component<Props, State> {
                     this.setState({ createdOrError })
                     if (createdOrError === true) {
                         eventLogger.log('SavedSearchCreated')
+                        this.props.telemetryRecorder.recordEvent(
+                            `${this.props.namespace.__typename.toLowerCase()}.savedSearch`,
+                            'create'
+                        )
                         screenReaderAnnounce(`Saved ${queryDescription} search`)
                         this.props.navigate(`${this.props.namespace.url}/searches`, {
                             state: { description: queryDescription },
@@ -78,6 +82,10 @@ class InnerSavedSearchCreateForm extends React.Component<Props, State> {
                 })
         )
         eventLogger.logViewEvent('NewSavedSearchPage')
+        this.props.telemetryRecorder.recordEvent(
+            `${this.props.namespace.__typename.toLowerCase()}.savedSearches.new`,
+            'view'
+        )
     }
 
     public render(): JSX.Element | null {

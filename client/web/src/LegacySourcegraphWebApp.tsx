@@ -259,10 +259,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                     <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage} />,
                     <SearchResultsCacheProvider />,
                     <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState} />,
-                    <LegacyRouteContextProvider
-                        context={legacyContext}
-                        telemetryRecorder={window.context.telemetryRecorder}
-                    />,
+                    <LegacyRouteContextProvider context={legacyContext} />,
                     /* eslint-enable react/no-children-prop, react/jsx-key */
                 ]}
             >

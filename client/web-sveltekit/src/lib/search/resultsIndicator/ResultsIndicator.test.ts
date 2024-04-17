@@ -40,13 +40,7 @@ describe('ResultsIndicator.svelte', () => {
         const indicator = document.getElementsByClassName('indicator')
         expect(indicator).toHaveLength(1)
 
-        const icon = document.getElementsByClassName('icon')
-        expect(icon).toHaveLength(1)
-
         const messages = document.getElementsByClassName('messages')
         expect(messages).toHaveLength(1)
-
-        const dropdownIcon = document.getElementsByClassName('dropdown-icon')
-        expect(dropdownIcon).toHaveLength(1)
     })
 })

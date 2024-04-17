@@ -305,7 +305,6 @@ go_test(
         "//schema",
         "@com_github_cockroachdb_errors//errbase",
         "@com_github_gitchander_permutation//:permutation",
-        "@com_github_gofrs_uuid//:uuid",
         "@com_github_gomodule_oauth1//oauth",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",

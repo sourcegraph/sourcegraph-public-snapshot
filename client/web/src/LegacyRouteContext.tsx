@@ -117,7 +117,7 @@ export const LegacyRoute: FC<LegacyRouteProps> = ({ render, condition }) => {
     return render(context)
 }
 
-export interface LegacyRouteContextProviderProps extends TelemetryV2Props {
+export interface LegacyRouteContextProviderProps {
     context: StaticAppConfig & StaticSourcegraphWebAppContext & DynamicSourcegraphWebAppContext
 }
 
@@ -152,7 +152,7 @@ export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContext
         streamSearch: aggregateStreamingSearch,
         fetchHighlightedFileLineRanges: _fetchHighlightedFileLineRanges,
         telemetryService: eventLogger,
-        telemetryRecorder: props.telemetryRecorder,
+        telemetryRecorder: platformContext.telemetryRecorder,
         /**
          * Breadcrumb props
          */

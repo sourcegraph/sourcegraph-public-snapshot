@@ -60,6 +60,7 @@ func parseProvider(logger log.Logger, db database.DB, callbackURL string, p *sch
 			return CallbackHandler(
 				&oauth2Cfg,
 				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{
+					logger:      logger.Scoped("sessionIssuerHelper"),
 					db:          db,
 					CodeHost:    codeHost,
 					clientID:    p.ClientID,
