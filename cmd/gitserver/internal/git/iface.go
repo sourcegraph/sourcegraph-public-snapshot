@@ -53,7 +53,6 @@ type GitBackend interface {
 	// paths to include in the archive. If empty, all paths are included.
 	//
 	// If the commit does not exist, a RevisionNotFoundError is returned.
-	// If any path does not exist, a os.PathError is returned.
 	ArchiveReader(ctx context.Context, format ArchiveFormat, treeish string, paths []string) (io.ReadCloser, error)
 	// ResolveRevision resolves the given revspec to a commit ID.
 	// I.e., HEAD, deadbeefdeadbeefdeadbeefdeadbeef, or refs/heads/main.

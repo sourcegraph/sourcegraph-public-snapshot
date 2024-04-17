@@ -1827,25 +1827,6 @@ func TestClient_ArchiveReader(t *testing.T) {
 		require.NoError(t, r.Close())
 		require.Equal(t, "", string(content))
 	})
-	t.Run("file not found errors are returned early", func(t *testing.T) {
-		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
-			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
-				c := NewMockGitserverServiceClient()
-				rfc := NewMockGitserverService_ArchiveClient()
-				s, err := status.New(codes.NotFound, "not found").WithDetails(&proto.FileNotFoundPayload{})
-				require.NoError(t, err)
-				rfc.RecvFunc.PushReturn(nil, s.Err())
-				c.ArchiveFunc.SetDefaultReturn(rfc, nil)
-				return c
-			}
-		})
-
-		c := NewTestClient(t).WithClientSource(source)
-
-		_, err := c.ArchiveReader(context.Background(), "repo", ArchiveOptions{Treeish: "deadbeef", Format: ArchiveFormatTar, Paths: []string{"file"}})
-		require.Error(t, err)
-		require.True(t, os.IsNotExist(err))
-	})
 	t.Run("revision not found errors are returned early", func(t *testing.T) {
 		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
 			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {

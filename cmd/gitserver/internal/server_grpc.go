@@ -291,25 +291,6 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 
 	r, err := backend.ArchiveReader(ctx, format, req.GetTreeish(), byteSlicesToStrings(req.GetPaths()))
 	if err != nil {
-		if os.IsNotExist(err) {
-			var path string
-			var pathError *os.PathError
-			if errors.As(err, &pathError) {
-				path = pathError.Path
-			}
-			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
-				Repo: string(repoName),
-				// TODO: I'm not sure this should be allowed, a treeish is not necessarily
-				// a commit.
-				Commit: string(req.GetTreeish()),
-				Path:   path,
-			})
-			if err != nil {
-				return err
-			}
-			return s.Err()
-		}
-
 		var e *gitdomain.RevisionNotFoundError
 		if errors.As(err, &e) {
 			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
