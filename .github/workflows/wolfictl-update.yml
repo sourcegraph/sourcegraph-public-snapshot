@@ -48,6 +48,8 @@ jobs:
         run: |
           TMP=$(mktemp -d)
           echo "Temp dir: $TMP"
+          cd $GITHUB_WORKSPACE/wolfictl
+          ls -al ./
           mv ./wolfictl $TMP/
           ls -al $TMP
           echo "$TMP" >> $GITHUB_PATH
