@@ -2,6 +2,12 @@ package codycontext
 
 import (
 	"context"
+	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"os"
+	"path/filepath"
+	"runtime"
+	"slices"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -83,6 +89,10 @@ func TestNewEnterpriseFilter(t *testing.T) {
 			},
 		},
 		{
+			// This scenario shouldn't happen.
+			// "cody.contextFilters" if defined in the site config, should have at least one property.
+			// Thus, either "include" or "exclude" should be defined.
+			// We rely on site config schema validation.
 			name: "include and exclude rules are not defined",
 			ccf:  &schema.CodyContextFilters{},
 			repos: []types.RepoIDName{
@@ -143,6 +153,8 @@ func TestNewEnterpriseFilter(t *testing.T) {
 			},
 		},
 		{
+			// This scenario shouldn't happen. If either "include" or "exclude" field is defined, it should have at least one item.
+			// We rely on site config schema validation.
 			name: "include and exclude rules empty",
 			ccf: &schema.CodyContextFilters{
 				Include: []*schema.CodyContextFilterItem{},
@@ -529,6 +541,50 @@ func TestNewEnterpriseFilter(t *testing.T) {
 
 			require.Equal(t, tt.wantRepos, allowedRepos)
 			require.Equal(t, tt.wantChunks, filter(tt.chunks))
+		})
+	}
+}
+
+func TestFiltersConfig(t *testing.T) {
+	_, file, _, ok := runtime.Caller(0)
+	require.Equal(t, true, ok)
+	content, err := os.ReadFile(filepath.Join(filepath.Dir(file), "enterprise_test_data.json"))
+	require.NoError(t, err)
+
+	type repo struct {
+		Name api.RepoName
+		Id   api.RepoID `json:"id"`
+	}
+	type testCase struct {
+		Name             string                     `json:"name"`
+		Description      string                     `json:"description"`
+		IncludeByDefault bool                       `json:"includeByDefault"`
+		IncludeUnknown   bool                       `json:"includeUnknown"`
+		Ccf              *schema.CodyContextFilters `json:"cody.contextFilters"`
+		Repos            []repo                     `json:"repos"`
+		IncludeRepos     []repo                     `json:"includeRepos"`
+	}
+	var data struct {
+		TestCases []testCase `json:"testCases"`
+	}
+
+	err = json.Unmarshal(content, &data)
+	require.NoError(t, err)
+
+	for _, tt := range data.TestCases {
+		t.Run(tt.Name, func(t *testing.T) {
+			fc, _ := parseCodyContextFilters(tt.Ccf)
+			n := 0
+			for _, r := range tt.Repos {
+				want := slices.ContainsFunc(tt.IncludeRepos, func(p repo) bool { return r.Id == p.Id })
+				got := fc.isRepoAllowed(types.RepoIDName{ID: r.Id, Name: r.Name})
+				if got {
+					n++
+				}
+				require.Equal(t, want, got)
+			}
+
+			require.Equal(t, len(tt.IncludeRepos), n)
 		})
 	}
 }
