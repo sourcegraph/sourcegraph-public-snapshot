@@ -70,7 +70,7 @@
         {/if}
 
         <!-- Error state (show error immediately) -->
-        {#if $data.error}
+        {#if !$data.pending && $data.error}
             <span class="error-state">
                 <Alert variant="danger">
                     Unable to load {name} information: {$data.error.message}
