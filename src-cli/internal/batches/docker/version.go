@@ -2,7 +2,8 @@ package docker
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // CheckVersion is used to check if docker is running. We use this method instead of
@@ -11,7 +12,7 @@ import (
 func CheckVersion(ctx context.Context) error {
 	_, err := executeFastCommand(ctx, "version")
 	if err != nil {
-		return fmt.Errorf(
+		return errors.Newf(
 			"failed to execute \"docker version\":\n\t%s\n\n'src batch' requires \"docker\" to be available.",
 			err,
 		)

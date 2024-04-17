@@ -8,6 +8,8 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/src-cli/internal/api"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Opts contains the search options supported by Search.
@@ -42,14 +44,14 @@ func Search(query string, opts Opts, client api.Client, decoder Decoder) error {
 	// Send request.
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("error sending request: %w", err)
+		return errors.Newf("error sending request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	// Process response.
 	err = decoder.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("error during decoding: %w", err)
+		return errors.Newf("error during decoding: %w", err)
 	}
 
 	// Output trace.

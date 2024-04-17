@@ -169,7 +169,7 @@ func appendExcludeRepositories(input string, excludeRepoNames []string) (string,
 		for i, exclude := range exclude {
 			obj, ok := exclude.(map[string]interface{})
 			if !ok {
-				return "", fmt.Errorf("existing JSONx external service configuration is invalid (exclude.%d is not object)", i)
+				return "", errors.Newf("existing JSONx external service configuration is invalid (exclude.%d is not object)", i)
 			}
 			name, ok := obj["name"]
 			if !ok {
@@ -210,7 +210,7 @@ func appendExcludeRepositories(input string, excludeRepoNames []string) (string,
 func jsonxToJSON(text string) ([]byte, error) {
 	data, errs := jsonx.Parse(text, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
 	if len(errs) > 0 {
-		return data, fmt.Errorf("failed to parse JSON: %v", errs)
+		return data, errors.Newf("failed to parse JSON: %v", errs)
 	}
 	return data, nil
 }

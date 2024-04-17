@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -617,7 +616,7 @@ func getBatchSpecDirectory(file string) (string, error) {
 
 func checkExecutable(cmd string, args ...string) error {
 	if err := exec.Command(cmd, args...).Run(); err != nil {
-		return fmt.Errorf(
+		return errors.Newf(
 			"failed to execute \"%s %s\":\n\t%s\n\n'src batch' requires %q to be available.",
 			cmd,
 			strings.Join(args, " "),

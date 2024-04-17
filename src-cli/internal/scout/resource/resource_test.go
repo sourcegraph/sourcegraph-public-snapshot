@@ -1,8 +1,9 @@
 package resource
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGetMemUnits(t *testing.T) {
@@ -39,7 +40,7 @@ func TestGetMemUnits(t *testing.T) {
 			param:     -300,
 			wantUnit:  "",
 			wantValue: -300,
-			wantError: fmt.Errorf("invalid memory value: %d", -300),
+			wantError: errors.Newf("invalid memory value: %d", -300),
 		},
 	}
 

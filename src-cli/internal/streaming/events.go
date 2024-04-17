@@ -2,7 +2,8 @@ package streaming
 
 import (
 	"bytes"
-	"fmt"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // EventMatch is an interface which only the top level match event types
@@ -168,7 +169,7 @@ func (t MatchType) MarshalJSON() ([]byte, error) {
 	case PathMatchType:
 		return []byte(`"path"`), nil
 	default:
-		return nil, fmt.Errorf("unknown MatchType: %d", t)
+		return nil, errors.Newf("unknown MatchType: %d", t)
 	}
 
 }
@@ -185,7 +186,7 @@ func (t *MatchType) UnmarshalJSON(b []byte) error {
 	} else if bytes.Equal(b, []byte(`"path"`)) {
 		*t = PathMatchType
 	} else {
-		return fmt.Errorf("unknown MatchType: %s", b)
+		return errors.Newf("unknown MatchType: %s", b)
 	}
 	return nil
 }

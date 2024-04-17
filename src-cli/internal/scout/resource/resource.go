@@ -7,12 +7,13 @@ import (
 
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/src-cli/internal/scout"
 	"github.com/sourcegraph/src-cli/internal/scout/kube"
 	"github.com/sourcegraph/src-cli/internal/scout/style"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Option = func(config *scout.Config)
@@ -58,11 +59,11 @@ func listPodResources(ctx context.Context, cfg *scout.Config) error {
 	if len(pods) == 0 {
 		msg := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFA500"))
 		fmt.Println(msg.Render(`
-        No pods exist in this namespace. 
+        No pods exist in this namespace.
         Did you mean to use the --namespace flag?
-        
-        If you are attemptying to check 
-        resources for a docker deployment, you 
+
+        If you are attemptying to check
+        resources for a docker deployment, you
         must use the --docker flag.
         See --help for more info.
         `))
@@ -103,7 +104,7 @@ func listPodResources(ctx context.Context, cfg *scout.Config) error {
 // getMemUnits converts a byte value to the appropriate memory unit.
 func getMemUnits(valToConvert int64) (string, int64, error) {
 	if valToConvert < 0 {
-		return "", valToConvert, fmt.Errorf("invalid memory value: %d", valToConvert)
+		return "", valToConvert, errors.Newf("invalid memory value: %d", valToConvert)
 	}
 
 	var memUnit string

@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewRequest returns an http.Request against the streaming API for query.
@@ -61,17 +62,17 @@ func (rr Decoder) ReadAll(r io.Reader) error {
 		data := scanner.Bytes()
 		nl := bytes.Index(data, []byte("\n"))
 		if nl < 0 {
-			return fmt.Errorf("malformed event, no newline: %s", data)
+			return errors.Newf("malformed event, no newline: %s", data)
 		}
 
 		eventK, event := splitColon(data[:nl])
 		dataK, data := splitColon(data[nl+1:])
 
 		if !bytes.Equal(eventK, []byte("event")) {
-			return fmt.Errorf("malformed event, expected event: %s", eventK)
+			return errors.Newf("malformed event, expected event: %s", eventK)
 		}
 		if !bytes.Equal(dataK, []byte("data")) {
-			return fmt.Errorf("malformed event %s, expected data: %s", eventK, dataK)
+			return errors.Newf("malformed event %s, expected data: %s", eventK, dataK)
 		}
 
 		if bytes.Equal(event, []byte("progress")) {
@@ -80,7 +81,7 @@ func (rr Decoder) ReadAll(r io.Reader) error {
 			}
 			var d Progress
 			if err := json.Unmarshal(data, &d); err != nil {
-				return fmt.Errorf("failed to decode progress payload: %w", err)
+				return errors.Newf("failed to decode progress payload: %w", err)
 			}
 			rr.OnProgress(&d)
 		} else if bytes.Equal(event, []byte("matches")) {
@@ -89,7 +90,7 @@ func (rr Decoder) ReadAll(r io.Reader) error {
 			}
 			var d []eventMatchUnmarshaller
 			if err := json.Unmarshal(data, &d); err != nil {
-				return fmt.Errorf("failed to decode matches payload: %w", err)
+				return errors.Newf("failed to decode matches payload: %w", err)
 			}
 			m := make([]EventMatch, 0, len(d))
 			for _, e := range d {
@@ -102,7 +103,7 @@ func (rr Decoder) ReadAll(r io.Reader) error {
 			}
 			var d []*EventFilter
 			if err := json.Unmarshal(data, &d); err != nil {
-				return fmt.Errorf("failed to decode filters payload: %w", err)
+				return errors.Newf("failed to decode filters payload: %w", err)
 			}
 			rr.OnFilters(d)
 		} else if bytes.Equal(event, []byte("alert")) {
@@ -111,7 +112,7 @@ func (rr Decoder) ReadAll(r io.Reader) error {
 			}
 			var d EventAlert
 			if err := json.Unmarshal(data, &d); err != nil {
-				return fmt.Errorf("failed to decode alert payload: %w", err)
+				return errors.Newf("failed to decode alert payload: %w", err)
 			}
 			rr.OnAlert(&d)
 		} else if bytes.Equal(event, []byte("error")) {
@@ -120,7 +121,7 @@ func (rr Decoder) ReadAll(r io.Reader) error {
 			}
 			var d EventError
 			if err := json.Unmarshal(data, &d); err != nil {
-				return fmt.Errorf("failed to decode error payload: %w", err)
+				return errors.Newf("failed to decode error payload: %w", err)
 			}
 			rr.OnError(&d)
 		} else if bytes.Equal(event, []byte("done")) {
@@ -169,7 +170,7 @@ func (r *eventMatchUnmarshaller) UnmarshalJSON(b []byte) error {
 	case PathMatchType:
 		r.EventMatch = &EventPathMatch{}
 	default:
-		return fmt.Errorf("unknown MatchType %v", typeU.Type)
+		return errors.Newf("unknown MatchType %v", typeU.Type)
 	}
 	return json.Unmarshal(b, r.EventMatch)
 }

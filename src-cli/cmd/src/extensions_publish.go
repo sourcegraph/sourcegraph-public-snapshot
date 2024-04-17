@@ -68,7 +68,7 @@ Notes:
 
 		manifest, err := os.ReadFile(manifestPath)
 		if err != nil {
-			return fmt.Errorf("%s\n\nRun this command in a directory with a %s file for an extension.\n\nSee 'src extensions %s -h' for help", err, *manifestFlag, flagSet.Name())
+			return errors.Newf("%s\n\nRun this command in a directory with a %s file for an extension.\n\nSee 'src extensions %s -h' for help", err, *manifestFlag, flagSet.Name())
 		}
 		extensionID := *extensionIDFlag
 		if extensionID == "" {
@@ -208,7 +208,7 @@ func runManifestPrepublishScript(manifest []byte, dir string) error {
 	cmd.Stderr = os.Stderr
 	fmt.Fprintf(os.Stderr, "# sourcegraph:prepublish: %s\n", o.Scripts.SourcegraphPrepublish)
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("sourcegraph:prepublish script failed: %w (see output above)", err)
+		return errors.Newf("sourcegraph:prepublish script failed: %w (see output above)", err)
 	}
 	fmt.Fprintln(os.Stderr)
 	return nil
@@ -231,10 +231,10 @@ func readExtensionIDFromManifest(manifest []byte) (string, error) {
 		return "", errors.New(`extension manifest must contain "name" and "publisher" string properties (the extension ID is of the form "publisher/name" and uses these values)`)
 	}
 	if name == "" {
-		return "", fmt.Errorf(`extension manifest must contain a "name" string property for the extension name (the extension ID will be %q)`, publisher+"/name")
+		return "", errors.Newf(`extension manifest must contain a "name" string property for the extension name (the extension ID will be %q)`, publisher+"/name")
 	}
 	if publisher == "" {
-		return "", fmt.Errorf(`extension manifest must contain a "publisher" string property referring to a username or organization name on Sourcegraph (the extension ID will be %q)`, "publisher/"+name)
+		return "", errors.Newf(`extension manifest must contain a "publisher" string property referring to a username or organization name on Sourcegraph (the extension ID will be %q)`, "publisher/"+name)
 	}
 	return publisher + "/" + name, nil
 }
@@ -297,7 +297,7 @@ func readExtensionArtifacts(manifest []byte, dir string) (bundle, sourceMap *str
 
 	data, err := os.ReadFile(mainPath)
 	if err != nil {
-		return nil, nil, fmt.Errorf(`extension manifest "main" bundle file: %s`, err)
+		return nil, nil, errors.Newf(`extension manifest "main" bundle file: %s`, err)
 	}
 	{
 		tmp := string(data)

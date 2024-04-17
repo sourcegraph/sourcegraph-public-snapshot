@@ -17,6 +17,8 @@ import (
 	"github.com/kballard/go-shellquote"
 	"github.com/mattn/go-isatty"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/sourcegraph/src-cli/internal/version"
 )
 
@@ -235,7 +237,7 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		return false, fmt.Errorf("error: %s\n\n%s", resp.Status, body)
+		return false, errors.Newf("error: %s\n\n%s", resp.Status, body)
 	}
 
 	body := resp.Body

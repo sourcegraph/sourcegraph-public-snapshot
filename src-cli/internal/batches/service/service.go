@@ -122,7 +122,7 @@ mutation CreateBatchSpec(
     $changesetSpecs: [ID!]!
 ) {
     createBatchSpec(
-        namespace: $namespace, 
+        namespace: $namespace,
         batchSpec: $spec,
         changesetSpecs: $changesetSpecs
     ) {
@@ -542,7 +542,7 @@ func (svc *Service) GenerateExampleSpec(ctx context.Context, fileName string) er
 	f, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
 		if os.IsExist(err) {
-			return fmt.Errorf("file %s already exists", fileName)
+			return errors.Newf("file %s already exists", fileName)
 		}
 		return errors.Wrapf(err, "failed to create file %s", fileName)
 	}
@@ -656,7 +656,7 @@ func (svc *Service) ResolveNamespace(ctx context.Context, namespace string) (Nam
 			URL: result.Data.Organization.URL,
 		}, nil
 	}
-	return Namespace{}, fmt.Errorf("failed to resolve namespace %q: no user or organization found", namespace)
+	return Namespace{}, errors.Newf("failed to resolve namespace %q: no user or organization found", namespace)
 }
 
 const repositoryNameQuery = `

@@ -240,7 +240,7 @@ func (s *Serve) Repos() ([]Repo, error) {
 	// give a better name than "." for repos root
 	abs, err := filepath.Abs(root)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get the absolute path of reposRoot: %w", err)
+		return nil, errors.Newf("failed to get the absolute path of reposRoot: %w", err)
 	}
 	rootName := filepath.Base(abs)
 	for i := range repos {

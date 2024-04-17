@@ -84,7 +84,7 @@ func getRecommendedVersion(ctx context.Context, client api.Client) (string, erro
 			return "", nil
 		}
 
-		return "", fmt.Errorf("error: %s\n\n%s", resp.Status, body)
+		return "", errors.Newf("error: %s\n\n%s", resp.Status, body)
 	}
 
 	payload := struct {

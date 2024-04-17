@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/src-cli/internal/api"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func withCfg(new *config, f func()) {
@@ -43,17 +45,17 @@ Copy an extension from Sourcegraph.com to your private registry.
 
 		extensionID := *extensionIDFlag
 		if extensionID == "" {
-			return fmt.Errorf("must provide -extension-id")
+			return errors.Newf("must provide -extension-id")
 		}
 
 		currentUser := *currentUserFlag
 		if currentUser == "" {
-			return fmt.Errorf("must provide -current-user")
+			return errors.Newf("must provide -current-user")
 		}
 
 		extensionIDParts := strings.Split(extensionID, "/")
 		if len(extensionIDParts) != 2 {
-			return fmt.Errorf("-extension-id must have the form <publisher>/<name>")
+			return errors.Newf("-extension-id must have the form <publisher>/<name>")
 		}
 		extensionName := extensionIDParts[1]
 

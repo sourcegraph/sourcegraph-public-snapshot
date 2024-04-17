@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/src-cli/internal/api"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {
@@ -84,7 +86,7 @@ Examples:
 		}
 
 		if result.ExtensionRegistry.Extensions.Error != "" {
-			return fmt.Errorf("%s", result.ExtensionRegistry.Extensions.Error)
+			return errors.Newf("%s", result.ExtensionRegistry.Extensions.Error)
 		}
 
 		for _, extension := range result.ExtensionRegistry.Extensions.Nodes {

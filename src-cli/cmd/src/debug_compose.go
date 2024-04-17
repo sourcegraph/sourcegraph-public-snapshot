@@ -12,15 +12,16 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {
 	usage := `
-'src debug compose' invokes docker cli diagnostic commands targeting a set of containers that are members of a docker-compose network, 
-writing an archive file from their returns. 
+'src debug compose' invokes docker cli diagnostic commands targeting a set of containers that are members of a docker-compose network,
+writing an archive file from their returns.
 
 Usage:
 
@@ -52,7 +53,7 @@ Examples:
 
 		// process -o flag to get zipfile and base directory names
 		if base == "" {
-			return fmt.Errorf("empty -o flag")
+			return errors.Newf("empty -o flag")
 		}
 		// declare basedir for archive file structure
 		base, baseDir := processBaseDir(base)

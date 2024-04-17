@@ -123,7 +123,7 @@ func fetchRepositoryID(ctx context.Context, client api.Client, repoName string) 
 		return "", err
 	}
 	if result.Repository.ID == "" {
-		return "", fmt.Errorf("repository not found: %s", repoName)
+		return "", errors.Newf("repository not found: %s", repoName)
 	}
 	return result.Repository.ID, nil
 }

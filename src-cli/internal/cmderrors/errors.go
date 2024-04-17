@@ -17,7 +17,7 @@ func Usage(msg string) *UsageError {
 }
 
 func Usagef(f string, args ...interface{}) *UsageError {
-	return &UsageError{fmt.Errorf(f, args...)}
+	return &UsageError{errors.Newf(f, args...)}
 }
 
 func ExitCode(code int, err error) *ExitCodeError {

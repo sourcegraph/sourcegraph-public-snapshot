@@ -1,11 +1,12 @@
 package codeintel
 
 import (
-	"fmt"
 	"net/url"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // InferRepo gets a Sourcegraph-friendly repo name from the git clone enclosing the working dir.
@@ -35,7 +36,7 @@ func parseRemote(remoteURL string) (string, error) {
 		return url.Hostname() + strings.TrimSuffix(url.Path, ".git"), nil
 	}
 
-	return "", fmt.Errorf("unrecognized remote URL: %s", remoteURL)
+	return "", errors.Newf("unrecognized remote URL: %s", remoteURL)
 }
 
 // InferCommit gets a 40-character rev hash from the git clone enclosing the working dir.
@@ -67,7 +68,7 @@ func InferRoot(file string) (string, error) {
 func runGitCommand(args ...string) (string, error) {
 	output, err := exec.Command("git", args...).CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("failed to run git command: %s\n%s", err, output)
+		return "", errors.Newf("failed to run git command: %s\n%s", err, output)
 	}
 
 	return strings.TrimSpace(string(output)), nil

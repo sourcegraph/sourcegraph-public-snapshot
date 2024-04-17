@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/src-cli/internal/api"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {
@@ -98,7 +100,7 @@ Examples:
 		case "created-at":
 			orderBy = "REPO_CREATED_AT"
 		default:
-			return fmt.Errorf("invalid -order-by flag value: %q", *orderByFlag)
+			return errors.Newf("invalid -order-by flag value: %q", *orderByFlag)
 		}
 
 		var result struct {

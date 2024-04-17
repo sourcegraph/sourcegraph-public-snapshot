@@ -71,7 +71,7 @@ func (wc *dockerBindWorkspaceCreator) copyToWorkspace(ctx context.Context, w *do
 		}
 
 		if !srcStat.Mode().IsRegular() {
-			return fmt.Errorf("%s is not a regular file", src)
+			return errors.Newf("%s is not a regular file", src)
 		}
 
 		srcFile, err := os.Open(src)
@@ -203,7 +203,7 @@ func unzip(ctx context.Context, zipFile, dest string) error {
 
 		// Check for ZipSlip. More Info: https://snyk.io/research/zip-slip-vulnerability#go
 		if !strings.HasPrefix(fpath, outputBase) {
-			return fmt.Errorf("%s: illegal file path", fpath)
+			return errors.Newf("%s: illegal file path", fpath)
 		}
 
 		if f.FileInfo().IsDir() {

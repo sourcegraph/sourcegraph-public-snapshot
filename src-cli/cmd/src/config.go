@@ -166,7 +166,7 @@ query SettingsSubjectLatestSettingsID($subject: ID!) {
 	}
 
 	if result.SettingsSubject == nil {
-		return nil, fmt.Errorf("unable to find settings subject with ID %s", subjectID)
+		return nil, errors.Newf("unable to find settings subject with ID %s", subjectID)
 	}
 	if result.SettingsSubject.LatestSettings == nil {
 		return nil, nil
