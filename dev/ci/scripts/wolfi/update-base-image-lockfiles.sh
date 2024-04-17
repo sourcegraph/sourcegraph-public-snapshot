@@ -17,8 +17,9 @@ export BAZELRC="$aspectRC"
 
 # Update hashes for all base images
 bazel --bazelrc="$aspectRC" run //dev/sg -- wolfi lock
-# Print diff
-git diff wolfi-images/*.lock.json
+# Print git status
+echo "[$(date)] Running git status"
+git status
 
 # Git and GitHub config
 BRANCH_NAME="wolfi-auto-update/${BUILDKITE_BRANCH}"
@@ -35,10 +36,15 @@ Built from Buildkite run [#${BUILDKITE_BUILD_NUMBER}](https://buildkite.com/sour
 
 # Commit changes to dev/oci-deps.bzl
 # Delete branch if it exists; catch status code if not
+echo "[$(date)] Deleting branch ${BRANCH_NAME} if it exists"
 git branch -D "${BRANCH_NAME}" || true
+echo "[$(date)] Switching to new branch ${BRANCH_NAME}"
 git switch -c "${BRANCH_NAME}"
+echo "[$(date)] Git add lockfiles"
 git add wolfi-images/*.lock.json
+echo "[$(date)] Git commit"
 git commit -m "Auto-update package lockfiles for Wolfi base images at ${TIMESTAMP}"
+echo "[$(date)] Git push"
 git push --force -u origin "${BRANCH_NAME}"
 echo ":git: Successfully commited changes and pushed to branch ${BRANCH_NAME}"
 
