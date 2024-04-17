@@ -79,13 +79,13 @@ type GitBackend interface {
 	// If no commit exists in the history of revspec before time, an empty
 	// commitID is returned.
 	RevAtTime(ctx context.Context, revspec string, time time.Time) (api.CommitID, error)
-	// ReadDiff returns the raw git diff for the given range.
+	// RawDiff returns the raw git diff for the given range.
 	// Diffs returned from this function will have the following settings applied:
 	// - 3 lines of context
 	// - No a/ b/ prefixes
 	// - Rename detection
 	// If either base or head don't exist, a RevisionNotFoundError is returned.
-	ReadDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, paths ...string) (io.ReadCloser, error)
+	RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, paths ...string) (io.ReadCloser, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will

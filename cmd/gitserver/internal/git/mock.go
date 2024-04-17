@@ -308,9 +308,9 @@ type MockGitBackend struct {
 	// MergeBaseFunc is an instance of a mock function object controlling
 	// the behavior of the method MergeBase.
 	MergeBaseFunc *GitBackendMergeBaseFunc
-	// ReadDiffFunc is an instance of a mock function object controlling the
-	// behavior of the method ReadDiff.
-	ReadDiffFunc *GitBackendReadDiffFunc
+	// RawDiffFunc is an instance of a mock function object controlling the
+	// behavior of the method RawDiff.
+	RawDiffFunc *GitBackendRawDiffFunc
 	// ReadFileFunc is an instance of a mock function object controlling the
 	// behavior of the method ReadFile.
 	ReadFileFunc *GitBackendReadFileFunc
@@ -372,7 +372,7 @@ func NewMockGitBackend() *MockGitBackend {
 				return
 			},
 		},
-		ReadDiffFunc: &GitBackendReadDiffFunc{
+		RawDiffFunc: &GitBackendRawDiffFunc{
 			defaultHook: func(context.Context, string, string, GitDiffComparisonType, ...string) (r0 io.ReadCloser, r1 error) {
 				return
 			},
@@ -449,9 +449,9 @@ func NewStrictMockGitBackend() *MockGitBackend {
 				panic("unexpected invocation of MockGitBackend.MergeBase")
 			},
 		},
-		ReadDiffFunc: &GitBackendReadDiffFunc{
+		RawDiffFunc: &GitBackendRawDiffFunc{
 			defaultHook: func(context.Context, string, string, GitDiffComparisonType, ...string) (io.ReadCloser, error) {
-				panic("unexpected invocation of MockGitBackend.ReadDiff")
+				panic("unexpected invocation of MockGitBackend.RawDiff")
 			},
 		},
 		ReadFileFunc: &GitBackendReadFileFunc{
@@ -510,8 +510,8 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 		MergeBaseFunc: &GitBackendMergeBaseFunc{
 			defaultHook: i.MergeBase,
 		},
-		ReadDiffFunc: &GitBackendReadDiffFunc{
-			defaultHook: i.ReadDiff,
+		RawDiffFunc: &GitBackendRawDiffFunc{
+			defaultHook: i.RawDiff,
 		},
 		ReadFileFunc: &GitBackendReadFileFunc{
 			defaultHook: i.ReadFile,
@@ -1408,35 +1408,35 @@ func (c GitBackendMergeBaseFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitBackendReadDiffFunc describes the behavior when the ReadDiff method of
+// GitBackendRawDiffFunc describes the behavior when the RawDiff method of
 // the parent MockGitBackend instance is invoked.
-type GitBackendReadDiffFunc struct {
+type GitBackendRawDiffFunc struct {
 	defaultHook func(context.Context, string, string, GitDiffComparisonType, ...string) (io.ReadCloser, error)
 	hooks       []func(context.Context, string, string, GitDiffComparisonType, ...string) (io.ReadCloser, error)
-	history     []GitBackendReadDiffFuncCall
+	history     []GitBackendRawDiffFuncCall
 	mutex       sync.Mutex
 }
 
-// ReadDiff delegates to the next hook function in the queue and stores the
+// RawDiff delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitBackend) ReadDiff(v0 context.Context, v1 string, v2 string, v3 GitDiffComparisonType, v4 ...string) (io.ReadCloser, error) {
-	r0, r1 := m.ReadDiffFunc.nextHook()(v0, v1, v2, v3, v4...)
-	m.ReadDiffFunc.appendCall(GitBackendReadDiffFuncCall{v0, v1, v2, v3, v4, r0, r1})
+func (m *MockGitBackend) RawDiff(v0 context.Context, v1 string, v2 string, v3 GitDiffComparisonType, v4 ...string) (io.ReadCloser, error) {
+	r0, r1 := m.RawDiffFunc.nextHook()(v0, v1, v2, v3, v4...)
+	m.RawDiffFunc.appendCall(GitBackendRawDiffFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the ReadDiff method of
+// SetDefaultHook sets function that is called when the RawDiff method of
 // the parent MockGitBackend instance is invoked and the hook queue is
 // empty.
-func (f *GitBackendReadDiffFunc) SetDefaultHook(hook func(context.Context, string, string, GitDiffComparisonType, ...string) (io.ReadCloser, error)) {
+func (f *GitBackendRawDiffFunc) SetDefaultHook(hook func(context.Context, string, string, GitDiffComparisonType, ...string) (io.ReadCloser, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ReadDiff method of the parent MockGitBackend instance invokes the hook at
+// RawDiff method of the parent MockGitBackend instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *GitBackendReadDiffFunc) PushHook(hook func(context.Context, string, string, GitDiffComparisonType, ...string) (io.ReadCloser, error)) {
+func (f *GitBackendRawDiffFunc) PushHook(hook func(context.Context, string, string, GitDiffComparisonType, ...string) (io.ReadCloser, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1444,20 +1444,20 @@ func (f *GitBackendReadDiffFunc) PushHook(hook func(context.Context, string, str
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBackendReadDiffFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
+func (f *GitBackendRawDiffFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
 	f.SetDefaultHook(func(context.Context, string, string, GitDiffComparisonType, ...string) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBackendReadDiffFunc) PushReturn(r0 io.ReadCloser, r1 error) {
+func (f *GitBackendRawDiffFunc) PushReturn(r0 io.ReadCloser, r1 error) {
 	f.PushHook(func(context.Context, string, string, GitDiffComparisonType, ...string) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitBackendReadDiffFunc) nextHook() func(context.Context, string, string, GitDiffComparisonType, ...string) (io.ReadCloser, error) {
+func (f *GitBackendRawDiffFunc) nextHook() func(context.Context, string, string, GitDiffComparisonType, ...string) (io.ReadCloser, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1470,26 +1470,26 @@ func (f *GitBackendReadDiffFunc) nextHook() func(context.Context, string, string
 	return hook
 }
 
-func (f *GitBackendReadDiffFunc) appendCall(r0 GitBackendReadDiffFuncCall) {
+func (f *GitBackendRawDiffFunc) appendCall(r0 GitBackendRawDiffFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitBackendReadDiffFuncCall objects
+// History returns a sequence of GitBackendRawDiffFuncCall objects
 // describing the invocations of this function.
-func (f *GitBackendReadDiffFunc) History() []GitBackendReadDiffFuncCall {
+func (f *GitBackendRawDiffFunc) History() []GitBackendRawDiffFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBackendReadDiffFuncCall, len(f.history))
+	history := make([]GitBackendRawDiffFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBackendReadDiffFuncCall is an object that describes an invocation of
-// method ReadDiff on an instance of MockGitBackend.
-type GitBackendReadDiffFuncCall struct {
+// GitBackendRawDiffFuncCall is an object that describes an invocation of
+// method RawDiff on an instance of MockGitBackend.
+type GitBackendRawDiffFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1517,7 +1517,7 @@ type GitBackendReadDiffFuncCall struct {
 // invocation. The variadic slice argument is flattened in this array such
 // that one positional argument and three variadic arguments would result in
 // a slice of four, not two.
-func (c GitBackendReadDiffFuncCall) Args() []interface{} {
+func (c GitBackendRawDiffFuncCall) Args() []interface{} {
 	trailing := []interface{}{}
 	for _, val := range c.Arg4 {
 		trailing = append(trailing, val)
@@ -1528,7 +1528,7 @@ func (c GitBackendReadDiffFuncCall) Args() []interface{} {
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBackendReadDiffFuncCall) Results() []interface{} {
+func (c GitBackendRawDiffFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

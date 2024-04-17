@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-func (g *gitCLIBackend) ReadDiff(ctx context.Context, base string, head string, typ git.GitDiffComparisonType, paths ...string) (io.ReadCloser, error) {
+func (g *gitCLIBackend) RawDiff(ctx context.Context, base string, head string, typ git.GitDiffComparisonType, paths ...string) (io.ReadCloser, error) {
 	baseOID, err := g.revParse(ctx, base)
 	if err != nil {
 		return nil, err
@@ -18,10 +18,10 @@ func (g *gitCLIBackend) ReadDiff(ctx context.Context, base string, head string, 
 		return nil, err
 	}
 
-	return g.NewCommand(ctx, WithArguments(buildReadDiffArgs(baseOID, headOID, typ, paths)...))
+	return g.NewCommand(ctx, WithArguments(buildRawDiffArgs(baseOID, headOID, typ, paths)...))
 }
 
-func buildReadDiffArgs(base, head api.CommitID, typ git.GitDiffComparisonType, paths []string) []string {
+func buildRawDiffArgs(base, head api.CommitID, typ git.GitDiffComparisonType, paths []string) []string {
 	var rangeType string
 	switch typ {
 	case git.GitDiffComparisonTypeIntersection:

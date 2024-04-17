@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestGitCLIBackend_ReadDiff(t *testing.T) {
+func TestGitCLIBackend_RawDiff(t *testing.T) {
 	var f1Diff = []byte(`diff --git f f
 index a29bdeb434d874c9b1d8969c40c42161b03fafdc..c0d0fb45c382919737f8d0c20aaf57cf89b74af8 100644
 --- f
@@ -43,7 +43,7 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 	)
 
 	t.Run("streams diff", func(t *testing.T) {
-		r, err := backend.ReadDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead)
+		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead)
 		require.NoError(t, err)
 		diff, err := io.ReadAll(r)
 		require.NoError(t, err)
@@ -62,7 +62,7 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 			"git commit -m foo --author='Foo Author <foo@sourcegraph.com>'",
 		)
 
-		r, err := backend.ReadDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead, "f2")
+		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead, "f2")
 		require.NoError(t, err)
 		diff, err := io.ReadAll(r)
 		require.NoError(t, err)
@@ -79,11 +79,11 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 			"git tag test",
 		)
 
-		_, err := backend.ReadDiff(ctx, "unknown", "test", git.GitDiffComparisonTypeOnlyInHead)
+		_, err := backend.RawDiff(ctx, "unknown", "test", git.GitDiffComparisonTypeOnlyInHead)
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 
-		_, err = backend.ReadDiff(ctx, "test", "unknown", git.GitDiffComparisonTypeOnlyInHead)
+		_, err = backend.RawDiff(ctx, "test", "unknown", git.GitDiffComparisonTypeOnlyInHead)
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 	})
@@ -92,7 +92,7 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 		ctx, cancel := context.WithCancel(ctx)
 		t.Cleanup(cancel)
 
-		r, err := backend.ReadDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead)
+		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead)
 		require.NoError(t, err)
 
 		cancel()

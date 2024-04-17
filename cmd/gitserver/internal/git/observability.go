@@ -329,16 +329,16 @@ func (hr *observableRefIterator) Close() error {
 	return err
 }
 
-func (b *observableBackend) ReadDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, paths ...string) (_ io.ReadCloser, err error) {
-	ctx, errCollector, endObservation := b.operations.readDiff.WithErrors(ctx, &err, observation.Args{})
+func (b *observableBackend) RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, paths ...string) (_ io.ReadCloser, err error) {
+	ctx, errCollector, endObservation := b.operations.rawDiff.WithErrors(ctx, &err, observation.Args{})
 	ctx, cancel := context.WithCancel(ctx)
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	concurrentOps.WithLabelValues("ReadDiff").Inc()
+	concurrentOps.WithLabelValues("RawDiff").Inc()
 
-	r, err := b.backend.ReadDiff(ctx, base, head, typ, paths...)
+	r, err := b.backend.RawDiff(ctx, base, head, typ, paths...)
 	if err != nil {
-		concurrentOps.WithLabelValues("ReadDiff").Dec()
+		concurrentOps.WithLabelValues("RawDiff").Dec()
 		cancel()
 		return nil, err
 	}
@@ -346,7 +346,7 @@ func (b *observableBackend) ReadDiff(ctx context.Context, base string, head stri
 	return &observableReadCloser{
 		inner: r,
 		endObservation: func(err error) {
-			concurrentOps.WithLabelValues("ReadDiff").Dec()
+			concurrentOps.WithLabelValues("RawDiff").Dec()
 			errCollector.Collect(&err)
 			cancel()
 		},
@@ -369,7 +369,7 @@ type operations struct {
 	resolveRevision *observation.Operation
 	listRefs        *observation.Operation
 	revAtTime       *observation.Operation
-	readDiff        *observation.Operation
+	rawDiff         *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -413,7 +413,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		resolveRevision: op("resolve-revision"),
 		listRefs:        op("list-refs"),
 		revAtTime:       op("rev-at-time"),
-		readDiff:        op("read-diff"),
+		rawDiff:         op("raw-diff"),
 	}
 }
 

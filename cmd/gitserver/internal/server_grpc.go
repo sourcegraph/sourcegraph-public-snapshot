@@ -1358,7 +1358,7 @@ func (gs *grpcServer) RawDiff(req *proto.RawDiffRequest, ss proto.GitserverServi
 		typ = git.GitDiffComparisonTypeOnlyInHead
 	}
 
-	r, err := backend.ReadDiff(ctx, string(req.GetBaseRevSpec()), string(req.GetHeadRevSpec()), typ, paths...)
+	r, err := backend.RawDiff(ctx, string(req.GetBaseRevSpec()), string(req.GetHeadRevSpec()), typ, paths...)
 	if err != nil {
 		var e *gitdomain.RevisionNotFoundError
 		if errors.As(err, &e) {

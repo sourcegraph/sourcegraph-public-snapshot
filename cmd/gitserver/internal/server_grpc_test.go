@@ -971,7 +971,7 @@ func TestGRPCServer_RawDiff(t *testing.T) {
 		// Repo is cloned, proceed!
 		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
 		b := git.NewMockGitBackend()
-		b.ReadDiffFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("diffcontent"))), nil)
+		b.RawDiffFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("diffcontent"))), nil)
 		gs := &grpcServer{
 			subRepoChecker: srp,
 			svc:            NewMockService(),
@@ -1004,7 +1004,7 @@ func TestGRPCServer_RawDiff(t *testing.T) {
 			}
 		}
 
-		b.ReadDiffFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{})
+		b.RawDiffFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{})
 		r, err = cli.RawDiff(context.Background(), &v1.RawDiffRequest{
 			RepoName:       "therepo",
 			BaseRevSpec:    []byte("base"),
