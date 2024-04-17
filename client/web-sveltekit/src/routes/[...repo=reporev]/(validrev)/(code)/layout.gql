@@ -23,6 +23,18 @@ query LastCommitQuery($repoName: String!, $revspec: String!, $filePath: String!)
     }
 }
 
+query RepositoryGitRefs($repoName: String!, $query: String, $type: GitRefType!) {
+    repository(name: $repoName) {
+        ...RepositoryGitRefs
+    }
+}
+
+query RepositoryGitCommits($repoName: String!, $query: String, $revision: String!) {
+    repository(name: $repoName) {
+        ...RepositoryGitCommits
+    }
+}
+
 fragment GitHistory_HistoryConnection on GitCommitConnection {
     ...HistoryPanel_HistoryConnection
     pageInfo {

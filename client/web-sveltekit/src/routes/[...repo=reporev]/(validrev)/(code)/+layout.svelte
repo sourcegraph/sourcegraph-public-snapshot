@@ -19,6 +19,7 @@
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
+    import RepositoryRevPicker from './RepositoryRevPicker.svelte'
     import { createFileTreeStore } from './fileTreeStore'
     import { type GitHistory_HistoryConnection } from './layout.gql'
 
@@ -125,9 +126,19 @@
 
 <section bind:this={rootElement}>
     <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
-        <h3>
-            <SidebarToggleButton />&nbsp; Files
-        </h3>
+        <header>
+            <h3>
+                <SidebarToggleButton />&nbsp; Files
+            </h3>
+            <RepositoryRevPicker
+                repoURL={data.repoURL}
+                revision={data.revision}
+                resolvedRevision={data.resolvedRevision}
+                getRepositoryBranches={data.getRepoBranches}
+                getRepositoryCommits={data.getRepoCommits}
+                getRepositoryTags={data.getRepoTags}
+            />
+        </header>
         {#if $fileTreeStore}
             {#if isErrorLike($fileTreeStore)}
                 <Alert variant="danger">
@@ -176,6 +187,14 @@
         min-height: 100vh;
     }
 
+    header {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
     .sidebar {
         &.open {
             display: flex;
@@ -187,7 +206,7 @@
         padding: 0.5rem;
         padding-bottom: 0;
         position: sticky;
-        top: 0px;
+        top: 0;
         max-height: 100vh;
     }
 
@@ -201,7 +220,15 @@
     h3 {
         display: flex;
         align-items: center;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    // Revision picker trigger button
+    header > :global(button) {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
     }
 
     .bottom-panel {

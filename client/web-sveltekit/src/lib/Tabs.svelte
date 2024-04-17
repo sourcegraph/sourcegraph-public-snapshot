@@ -61,7 +61,7 @@
 </script>
 
 <div class="tabs">
-    <div class="tabs-header" role="tablist">
+    <div class="tabs-header" role="tablist" data-tab-header>
         {#each $tabs as tab, index (tab.id)}
             <button
                 id="{id}--tab--{index}"
@@ -69,7 +69,9 @@
                 aria-selected={$selectedTab === index}
                 tabindex={$selectedTab === index ? 0 : -1}
                 role="tab"
-                on:click={selectTab}>{tab.title}</button
+                on:click={selectTab}
+                data-tab-title={tab.title}
+                data-tab>{tab.title}</button
             >
         {/each}
     </div>
@@ -84,8 +86,8 @@
 
     .tabs-header {
         display: flex;
-        gap: 1rem;
         justify-content: var(--align-tabs, center);
+        gap: var(--tabs-gap, 0);
     }
 
     button {
@@ -96,12 +98,14 @@
         letter-spacing: normal;
         margin: 0;
         min-height: 2rem;
-        padding: 0 0.25rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.125rem;
         color: var(--body-color);
         text-transform: none;
         display: inline-flex;
         flex-direction: column;
         justify-content: center;
+        white-space: nowrap;
         border-bottom: 2px solid transparent;
 
         &[aria-selected='true'],
@@ -112,6 +116,14 @@
 
         &[aria-selected='true'] {
             font-weight: 700;
+        }
+
+        &::before {
+            content: attr(data-tab-title);
+            display: block;
+            font-weight: 700;
+            height: 0;
+            visibility: hidden;
         }
     }
 </style>

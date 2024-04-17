@@ -27,7 +27,6 @@ query BlobPageQuery($repoName: String!, $revspec: String!, $path: String!) {
     }
 }
 
-
 fragment BlobPage_ResolvedRevision on Repository {
     externalRepository {
         serviceType
