@@ -30,6 +30,7 @@ jobs:
           repository: 'willdollman/wolfictl'
           ref: 'main'
           token: ${{ secrets.GITHUB_TOKEN }}
+          path: 'wolfictl'
 
       - name: Set up Go
         uses: actions/setup-go@v3
@@ -38,7 +39,7 @@ jobs:
 
       - name: Build binary
         run: |
-          /home/runner/work/willdollman/wolfictl
+          /home/runner/work/wolfictl
           ls -al ./
           go build -o wolfictl ./
           ls -al ./
