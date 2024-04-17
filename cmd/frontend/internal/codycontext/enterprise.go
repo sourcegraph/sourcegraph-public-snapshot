@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var allowByDefault = true
+var includeByDefault = true
 
 var (
 	metricCacheHit = promauto.NewCounter(prometheus.CounterOpts{
@@ -72,18 +72,18 @@ func (f *enterpriseRepoFilter) GetFilter(_ context.Context, repos []types.RepoID
 		return []types.RepoIDName{}, func(fcc []FileChunkContext) []FileChunkContext { return nil }, errors.New("Cody context filters configuration is invalid. Please contact your admin.")
 	}
 
-	allowedRepos := make([]types.RepoIDName, 0, len(repos))
+	includedRepos := make([]types.RepoIDName, 0, len(repos))
 	for _, repo := range repos {
-		if fc.isRepoAllowed(repo) {
-			allowedRepos = append(allowedRepos, repo)
+		if fc.isRepoIncluded(repo) {
+			includedRepos = append(includedRepos, repo)
 		}
 	}
 
-	return allowedRepos, func(fcc []FileChunkContext) []FileChunkContext {
+	return includedRepos, func(fcc []FileChunkContext) []FileChunkContext {
 		filtered := make([]FileChunkContext, 0, len(fcc))
 		for _, fc := range fcc {
-			isFromAllowedRepo := slices.ContainsFunc(allowedRepos, func(r types.RepoIDName) bool { return r.ID == fc.RepoID })
-			if isFromAllowedRepo {
+			isFromIncludedRepo := slices.ContainsFunc(includedRepos, func(r types.RepoIDName) bool { return r.ID == fc.RepoID })
+			if isFromIncludedRepo {
 				filtered = append(filtered, fc)
 			}
 		}
@@ -140,8 +140,8 @@ func parseCodyContextFilters(ccf *schema.CodyContextFilters) (filtersConfig, err
 	}, nil
 }
 
-// isRepoAllowed checks if repo name matches Cody context include and exclude rules from the site config and stores result in cache.
-func (f filtersConfig) isRepoAllowed(repo types.RepoIDName) bool {
+// isRepoIncluded checks if repo name matches Cody context include and exclude rules from the site config and stores result in cache.
+func (f filtersConfig) isRepoIncluded(repo types.RepoIDName) bool {
 	cached, ok := f.cache.Get(repo.ID)
 	if ok {
 		metricCacheHit.Inc()
@@ -149,13 +149,12 @@ func (f filtersConfig) isRepoAllowed(repo types.RepoIDName) bool {
 	}
 	metricCacheMiss.Inc()
 
-	allowed := allowByDefault
+	included := includeByDefault
 
 	if len(f.include) > 0 {
 		for _, p := range f.include {
-			include := p.RepoNamePattern.MatchString(string(repo.Name))
-			allowed = include
-			if include {
+			included = p.RepoNamePattern.MatchString(string(repo.Name))
+			if included {
 				break
 			}
 		}
@@ -163,14 +162,13 @@ func (f filtersConfig) isRepoAllowed(repo types.RepoIDName) bool {
 
 	if len(f.exclude) > 0 {
 		for _, p := range f.exclude {
-			exclude := p.RepoNamePattern.MatchString(string(repo.Name))
-			if exclude {
-				allowed = false
+			if p.RepoNamePattern.MatchString(string(repo.Name)) {
+				included = false
 				break
 			}
 		}
 	}
 
-	f.cache.Add(repo.ID, allowed)
-	return allowed
+	f.cache.Add(repo.ID, included)
+	return included
 }

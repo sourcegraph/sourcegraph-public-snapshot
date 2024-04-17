@@ -17,10 +17,10 @@ import (
 )
 
 func TestNewEnterpriseFilter(t *testing.T) {
-	originalAllowByDefault := allowByDefault
+	originalIncludeByDefault := includeByDefault
 	t.Cleanup(func() {
 		conf.Mock(nil)
-		allowByDefault = originalAllowByDefault
+		includeByDefault = originalIncludeByDefault
 	})
 	logger := logtest.Scoped(t)
 
@@ -76,7 +76,7 @@ func TestNewEnterpriseFilter(t *testing.T) {
 
 	for _, tt := range data.TestCases {
 		t.Run(tt.Name, func(t *testing.T) {
-			allowByDefault = tt.IncludeByDefault
+			includeByDefault = tt.IncludeByDefault
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					CodyContextFilters: tt.Ccf,
@@ -90,8 +90,8 @@ func TestNewEnterpriseFilter(t *testing.T) {
 				repos = append(repos, types.RepoIDName{ID: r.Id, Name: r.Name})
 			}
 
-			allowedRepos, filter, _ := f.GetFilter(context.Background(), normalizeRepos(tt.Repos))
-			require.Equal(t, normalizeRepos(tt.IncludeRepos), allowedRepos)
+			includedRepos, filter, _ := f.GetFilter(context.Background(), normalizeRepos(tt.Repos))
+			require.Equal(t, normalizeRepos(tt.IncludeRepos), includedRepos)
 			require.Equal(t, normalizeFileChunks(tt.IncludeFileChunks), filter(normalizeFileChunks(tt.FileChunks)))
 		})
 	}
