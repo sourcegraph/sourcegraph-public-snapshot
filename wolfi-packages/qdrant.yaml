@@ -1,13 +1,13 @@
 package:
   name: qdrant
-  version: 1.5.1
-  epoch: 4
+  version: 1.8.4
+  epoch: 0
   description: "Qdrant vector database"
   target-architecture:
     - x86_64
   copyright:
     - paths:
-      - "*"
+        - "*"
       license: 'Apache 2.0'
   dependencies:
     runtime:
@@ -19,16 +19,17 @@ environment:
     keyring:
       - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
     packages:
-      - wolfi-base
       - busybox
       - ca-certificates-bundle
+      - wolfi-base
 
 pipeline:
   - uses: fetch
     with:
       uri: https://github.com/qdrant/qdrant/releases/download/v${{package.version}}/qdrant-x86_64-unknown-linux-gnu.tar.gz
-      expected-sha256: 0d8b385590c1f1145f6114cde39eb8105305c6123b9a0505606cd489f322dbaa
+      expected-sha256: e1e9fe4728cc40ca8076df705c480b519a44a8bbeb66cbb4cd890c562eb171ca
       strip-components: 0
+
   - runs: |
       chmod +x qdrant
       mkdir -p ${{targets.destdir}}/usr/local/bin
