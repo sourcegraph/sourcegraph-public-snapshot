@@ -225,19 +225,7 @@ def oci_deps():
     )
 
     oci_pull(
-        name = "legacy_codeinsights-db_base",
-        digest = "sha256:c2384743265457f816d83358d8fb4810b9aac9f049fd462d1f630174076e0d94",
-        image = "index.docker.io/sourcegraph/codeinsights-db",
-    )
-
-    oci_pull(
-        name = "legacy_codeintel-db_base",
-        digest = "sha256:dcc32a6d845356288186f2ced62346cf7e0120977ff1a0d6758f4e11120401f7",
-        image = "index.docker.io/sourcegraph/codeintel-db",
-    )
-
-    oci_pull(
         name = "legacy_postgres-12-alpine_base",
-        digest = "sha256:dcc32a6d845356288186f2ced62346cf7e0120977ff1a0d6758f4e11120401f7",
-        image = "index.docker.io/sourcegraph/postgres-12-alpine",
+        digest = "sha256:090eea940ca3db9214120b0bada22616f3961ac06d669d5389ed60510ce4d2cd",
+        image = "index.docker.io/library/postgres",
     )

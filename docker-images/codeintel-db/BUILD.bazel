@@ -31,11 +31,24 @@ container_structure_test(
 #     repository = image_repository("codeintel-db"),
 # )
 
-# The above postgres-12-codeinsights image is built from the wolfi base image. Where as we're still shipping the legacy
+# The above postgres-12-codeintel image is built from the wolfi base image. Where as we're still shipping the legacy
 # image built, postgres-12-alpine, for backwards compatibility.
 oci_image(
     name = "legacy_image",
-    base = "@legacy_codeintel-db_base",
+    base = "@legacy_postgres-12-alpine_base",
+    entrypoint = ["/postgres.sh"],
+    env = {
+        "POSTGRES_PASSWORD": "",
+        "POSTGRES_USER": "sg",
+        "POSTGRES_DB": "sg",
+        "PGDATA": "/data/pgdata-12",
+    },
+    tars = [
+        "//docker-images/postgres-12-alpine:rootfs_tar",
+        "//docker-images/postgres-12-alpine::passwd_groups_tar",
+        "//docker-images/postgres-12-alpine::pgdata-12-dir_tar",
+    ],
+    user = "postgres",
 )
 
 oci_tarball(
