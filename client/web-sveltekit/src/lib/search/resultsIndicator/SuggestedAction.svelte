@@ -23,9 +23,7 @@
         }
 
         const filteredItems = items.filter((item: Skipped) => {
-            const isNotFork = item.reason !== 'repository-fork'
-            const isNotArchive = item.reason !== 'excluded-archive'
-            return isNotFork && isNotArchive
+            return !['repository-fork', 'excluded-archive'].includes(item.reason)
         })
 
         const sorted = sortBySeverity(filteredItems)
@@ -40,56 +38,46 @@
 
 <div class="suggested-action">
     {#if hasSkippedItems && mostSevere}
-        <div class="info-badge" class:error-text={isError}>
-            <small>{capitalize(mostSevere?.title ?? mostSevere.title)}</small>
-        </div>
+        <small class="info-badge" class:error-text={isError}>{capitalize(mostSevere?.title ?? mostSevere.title)}</small>
         {#if mostSevere.suggested}
-            <small class="separator">{CENTER_DOT}</small>
-            <small class="action-badge">
-                {capitalize(mostSevere?.suggested ? mostSevere.suggested.title : '')}&nbsp;
-                <span class="code-font">{mostSevere.suggested?.queryExpression}</span>
-            </small>
+            <small>{CENTER_DOT}</small>
+            <small>{capitalize(mostSevere?.suggested ? mostSevere.suggested.title : '')}</small>
+            <small class="code-font">{mostSevere.suggested?.queryExpression}</small>
         {/if}
     {:else}
-        <div class="more-details"><small>{SEE_MORE}</small></div>
+        <small>{SEE_MORE}</small>
     {/if}
 </div>
 
 <style lang="scss">
-    .info-badge {
-        background-color: var(--primary-2);
-        border-radius: 3px;
-        padding-left: 0.25rem;
-        padding-right: 0.25rem;
-
-        &.error-text {
-            background: var(--danger-2);
-        }
-    }
-
-    .more-details {
-        color: var(--text-muted);
-    }
-
-    .separator {
-        padding-left: 0.4rem;
-        padding-right: 0.4rem;
-    }
-
     .suggested-action {
         display: flex;
         flex-flow: row nowrap;
         align-items: center;
         justify-content: flex-end;
-    }
+        column-gap: 0.5rem;
+        color: var(--text-muted);
+        white-space: nowrap;
 
-    .code-font {
-        background-color: var(--secondary);
-        border-radius: 3px;
-        font-family: var(--code-font-family);
-        padding-right: 0.25rem;
-        padding-left: 0.25rem;
-        padding-top: 0.25rem;
-        padding-bottom: 0.25rem;
+        .info-badge {
+            background-color: var(--primary-2);
+            border-radius: 3px;
+            padding: 0rem 0.15rem;
+            color: var(--text-title);
+            white-space: nowrap;
+
+            &.error-text {
+                background: var(--danger-2);
+            }
+        }
+
+        .code-font {
+            background-color: var(--secondary);
+            border-radius: 3px;
+            padding: 0rem 0.15rem;
+            color: var(--text-title);
+            white-space: nowrap;
+            font-family: var(--code-font-family);
+        }
     }
 </style>

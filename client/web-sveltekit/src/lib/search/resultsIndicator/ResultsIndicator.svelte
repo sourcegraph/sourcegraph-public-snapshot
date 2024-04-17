@@ -65,7 +65,7 @@
         justify-content: space-evenly;
         align-items: center;
         gap: 0.5rem;
-        min-width: 250px;
+        min-width: 200px;
         max-width: fit-content;
 
         .messages {
@@ -76,7 +76,6 @@
             margin-right: 0.75rem;
             margin-left: 0.5rem;
             row-gap: 0.25rem;
-            margin-right: auto;
         }
 
         small {
