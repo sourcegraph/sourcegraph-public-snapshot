@@ -1,7 +1,8 @@
 name: 'wolfictl-update'
 
 on:
-  push:
+  push: # TODO: Remove
+  # TODO: Uncomment
   # schedule:
     # everyday at 0:00 UTC
     # - cron:  0 0 * * *
@@ -63,15 +64,9 @@ jobs:
           which wolfictl
           wolfictl version
 
+      # Run wolfictl update
       - name: "wolfictl update"
         run: |
-          DRY_RUN='--dry-run'
-          echo "Github ref is $GITHUB_REF and parsed ref is ${GITHUB_REF##*/}"
-          if [[ "${GITHUB_REF##*/}" == "main" ]]; then
-            echo "This is the main branch."
-            DRY_RUN=''
-          fi
-          echo "Dryrun is $DRY_RUN"
-          wolfictl update --dry-run --create-issues='false' --package-name='qdrant' --path='wolfi-packages/' --github-labels='SSDLC' --github-labels='security-auto-update' --github-labels='security-auto-update/packages' $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
+          wolfictl update --create-issues='false' --package-name='qdrant' --path='wolfi-packages/' --github-labels='SSDLC' --github-labels='security-auto-update' --github-labels='security-auto-update/packages' $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
