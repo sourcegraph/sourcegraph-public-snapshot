@@ -212,7 +212,7 @@
         :global([data-picker-suggestions-list]) {
             display: grid;
             grid-template-rows: auto;
-            grid-template-columns: [title] auto [author] 10rem [timestamp] 6rem;
+            grid-template-columns: [title] auto [author] minmax(0, 10rem) [timestamp] minmax(0, 6rem);
         }
 
         :global([data-picker-suggestions-list-item]) {
@@ -225,11 +225,6 @@
         .commit-subject {
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-
-        // Tags picker layout override
-        :global([data-tab-panel='Tags']) :global([data-picker-suggestions-list]) {
-            grid-template-columns: [title] auto [author] 13rem [timestamp] 7rem;
         }
 
         // Local override for commits picker abbreviatedOID badge
