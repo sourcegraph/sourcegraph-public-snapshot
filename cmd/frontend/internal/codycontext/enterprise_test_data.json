@@ -17,6 +17,66 @@
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
         { "name": "github.com/docker/compose", "id": 4 }
+      ],
+      "fileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "Path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "Path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "Path": "/file3.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/docker/compose",
+            "id": 4
+          },
+          "Path": "/file4.go"
+        }
+      ],
+      "includeFileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "Path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "Path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "Path": "/file3.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/docker/compose",
+            "id": 4
+          },
+          "Path": "/file4.go"
+        }
       ]
     },
     {
@@ -36,6 +96,66 @@
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
         { "name": "github.com/docker/compose", "id": 4 }
+      ],
+      "fileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "path": "/file3.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/docker/compose",
+            "id": 4
+          },
+          "path": "/file4.go"
+        }
+      ],
+      "includeFileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "path": "/file3.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/docker/compose",
+            "id": 4
+          },
+          "path": "/file4.go"
+        }
       ]
     },
     {
@@ -58,6 +178,66 @@
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
         { "name": "github.com/docker/compose", "id": 4 }
+      ],
+      "fileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "path": "/file3.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/docker/compose",
+            "id": 4
+          },
+          "path": "/file4.go"
+        }
+      ],
+      "includeFileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "path": "/file3.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/docker/compose",
+            "id": 4
+          },
+          "path": "/file4.go"
+        }
       ]
     },
     {
@@ -78,6 +258,59 @@
         { "name": "github.com/sourcegraph/about", "id": 1 },
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 }
+      ],
+      "fileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "path": "/file3.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/docker/compose",
+            "id": 4
+          },
+          "path": "/file4.go"
+        }
+      ],
+      "includeFileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "path": "/file3.go"
+        }
       ]
     },
     {
@@ -94,7 +327,46 @@
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
         { "name": "github.com/docker/compose", "id": 4 }
       ],
-      "includeRepos": [{ "name": "github.com/docker/compose", "id": 4 }]
+      "includeRepos": [{ "name": "github.com/docker/compose", "id": 4 }],
+      "fileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "path": "/file3.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/docker/compose",
+            "id": 4
+          },
+          "path": "/file4.go"
+        }
+      ],
+      "includeFileChunks": [
+        {
+          "repo": {
+            "name": "github.com/docker/compose",
+            "id": 4
+          },
+          "path": "/file4.go"
+        }
+      ]
     },
     {
       "name": "Include and exclude rules are defined",
@@ -116,6 +388,66 @@
         { "name": "github.com/sourcegraph/about", "id": 1 },
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 }
+      ],
+      "fileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "path": "/file3.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/docker/compose",
+            "id": 4
+          },
+          "path": "/file4.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/cody",
+            "id": 5
+          },
+          "path": "/index.ts"
+        }
+      ],
+      "includeFileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "path": "/file3.go"
+        }
       ]
     },
     {
@@ -144,6 +476,80 @@
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
         { "name": "github.com/facebook/react", "id": 6 }
+      ],
+      "fileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "path": "/file3.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/docker/compose",
+            "id": 4
+          },
+          "path": "/file4.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/cody",
+            "id": 5
+          },
+          "path": "/index.ts"
+        },
+        {
+          "repo": {
+            "name": "github.com/facebook/react",
+            "id": 6
+          },
+          "path": "/hooks.ts"
+        }
+      ],
+      "includeFileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "path": "/file3.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/facebook/react",
+            "id": 6
+          },
+          "path": "/hooks.ts"
+        }
       ]
     },
     {
@@ -158,13 +564,105 @@
         { "name": "github.com/sourcegraph/about", "id": 1 },
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
-        { "name": "github.com/docker/compose", "id": 4 }
+        { "name": "github.com/docker/compose", "id": 4 },
+        { "name": "github.com/sourcegraph/cody", "id": 5 },
+        { "name": "github.com/facebook/react", "id": 6 }
       ],
       "includeRepos": [
         { "name": "github.com/sourcegraph/about", "id": 1 },
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
-        { "name": "github.com/docker/compose", "id": 4 }
+        { "name": "github.com/docker/compose", "id": 4 },
+        { "name": "github.com/sourcegraph/cody", "id": 5 },
+        { "name": "github.com/facebook/react", "id": 6 }
+      ],
+      "fileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "path": "/file3.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/docker/compose",
+            "id": 4
+          },
+          "path": "/file4.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/cody",
+            "id": 5
+          },
+          "path": "/index.ts"
+        },
+        {
+          "repo": {
+            "name": "github.com/facebook/react",
+            "id": 6
+          },
+          "path": "/hooks.ts"
+        }
+      ],
+      "includeFileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "path": "/file3.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/docker/compose",
+            "id": 4
+          },
+          "path": "/file4.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/cody",
+            "id": 5
+          },
+          "path": "/index.ts"
+        },
+        {
+          "repo": {
+            "name": "github.com/facebook/react",
+            "id": 6
+          },
+          "path": "/hooks.ts"
+        }
       ]
     },
     {
@@ -182,7 +680,38 @@
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
         { "name": "github.com/docker/compose", "id": 4 }
       ],
-      "includeRepos": []
+      "includeRepos": [],
+      "fileChunks": [
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/about",
+            "id": 1
+          },
+          "path": "/file1.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/annotate",
+            "id": 2
+          },
+          "path": "/file2.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/sourcegraph/sourcegraph",
+            "id": 3
+          },
+          "path": "/file3.go"
+        },
+        {
+          "repo": {
+            "name": "github.com/docker/compose",
+            "id": 4
+          },
+          "path": "/file4.go"
+        }
+      ],
+      "includeFileChunks": []
     }
   ]
 }
