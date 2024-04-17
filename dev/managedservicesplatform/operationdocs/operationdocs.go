@@ -8,14 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/exp/maps"
-
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/internal/markdown"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/internal/terraform"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/terraform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
-	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"golang.org/x/exp/maps"
 )
 
 type Options struct {
@@ -53,7 +51,7 @@ Last updated: %s
 
 // Render creates a Markdown string with operational guidance for a MSP specification
 // and runtime properties using OutputsClient.
-func Render(s spec.Spec, opts Options) (string, error) {
+func Render(s spec.Spec, alertPolicies map[string]terraform.AlertPolicy, opts Options) (string, error) {
 	md := markdown.NewBuilder()
 
 	md.Headingf(1, "%s infrastructure operations", s.Service.GetName())
@@ -336,24 +334,17 @@ If you make your Entitle request, then log in, you will be removed from any team
 		md.CodeBlockf("bash", `sg msp tfc view %s %s`, s.Service.ID, env.ID)
 	}
 
-	md.Headingf(4, "Alert Policies")
+	md.Headingf(3, "Alert Policies")
 
-	md.Paragraphf("The following alert policies are defined for this environment")
+	md.Paragraphf("The following alert policies are defined for each of this service's environments.")
 
-	// Deduplicate alerts across environments into a single map
-	collectedAlerts := make(map[string]terraform.AlertPolicies)
-	for _, env := range s.ListEnvironmentIDs() {
-		// Parse the generated alert policies to create alerting docs
-		monitoringPath := msprepo.ServiceStackCDKTF(s.Service.ID, env, "monitoring")
-		monitoring, err := terraform.ParseMonitoringCDKTF(monitoringPath)
-		if err != nil {
-			return "", nil
-		}
-		maps.Copy(collectedAlerts, monitoring.ResourceType.GoogleMonitoringAlertPolicy)
-	}
 	// Render alerts
-	for _, policy := range collectedAlerts {
-		md.Headingf(5, policy.DisplayName)
+	// Sort the map keys to make order deterministic
+	alertKeys := maps.Keys(alertPolicies)
+	slices.Sort(alertKeys)
+	for _, key := range alertKeys {
+		policy := alertPolicies[key]
+		md.Headingf(4, policy.DisplayName)
 		// We need to remove the footer text we add to each alert policy description
 		b := []byte(policy.Documentation.Content)
 		lastParagraphIndex := bytes.LastIndex(b, []byte("\n\n"))

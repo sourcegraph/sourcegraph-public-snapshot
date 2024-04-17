@@ -13,11 +13,11 @@ type Monitoring struct {
 
 // ResourceType is a terraform resource type e.g. `google_monitoring_alert_policy`
 type ResourceType struct {
-	GoogleMonitoringAlertPolicy map[string]AlertPolicies `json:"google_monitoring_alert_policy"`
+	GoogleMonitoringAlertPolicy map[string]AlertPolicy `json:"google_monitoring_alert_policy"`
 }
 
-// AlertPolicies is the configuration for an alert policy
-type AlertPolicies struct {
+// AlertPolicy is the configuration for an alert policy
+type AlertPolicy struct {
 	DisplayName   string        `json:"display_name,omitempty"`
 	Documentation Documentation `json:"documentation"`
 	Severity      string        `json:"severity"`

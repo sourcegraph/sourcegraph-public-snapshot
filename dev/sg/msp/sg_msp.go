@@ -375,7 +375,12 @@ sg msp generate -all
 					return errors.Wrap(err, "msprepo.GitRevision")
 				}
 
-				doc, err := operationdocs.Render(*svc, operationdocs.Options{
+				collectedAlerts, err := CollectAlertPolicies(svc)
+				if err != nil {
+					return err
+				}
+
+				doc, err := operationdocs.Render(*svc, collectedAlerts, operationdocs.Options{
 					ManagedServicesRevision: repoRev,
 				})
 				if err != nil {
@@ -451,7 +456,11 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 								return errors.Wrapf(err, "load service %q", s)
 							}
 							serviceSpecs = append(serviceSpecs, svc)
-							doc, err := operationdocs.Render(*svc, opts)
+							collectedAlerts, err := CollectAlertPolicies(svc)
+							if err != nil {
+								return err
+							}
+							doc, err := operationdocs.Render(*svc, collectedAlerts, opts)
 							if err != nil {
 								return errors.Wrap(err, s)
 							}
