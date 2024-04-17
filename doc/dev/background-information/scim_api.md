@@ -31,11 +31,11 @@ You can also just use [cURL](https://curl.se/) if you prefer a CLI tool.
 
 The creators of major IdPs supply validators that one can use to test their SCIM implementation.
 
-We used three validators when testing our implementation: two for Okta and one for Azure AD.
+We used three validators when testing our implementation: two for Okta and one for Microsoft Entra ID.
 
 1. Okta SPEC test – Follow [this guide](https://developer.okta.com/docs/guides/scim-provisioning-integration-prepare/main/#test-your-scim-api) to set it up in five minutes. Tests should be green.
 2. Okta CRUD test – Follow [this guide](https://developer.okta.com/docs/guides/scim-provisioning-integration-test/main/) to set up these tests in your Runscope. This also needs access to an Okta application, which you can find [here](https://dev-433675-admin.oktapreview.com/admin/app/dev-433675_k8ssgdevorgsamlscim_1/instance/0oa1l85zn9a0tgzKP0h8/). Log in with shared credentials in 1Password. Tests should be green, except for the last ones that rely on soft deletion which we don't support yet.
-3. Azure AD validator – It's [here](https://scimvalidator.microsoft.com). It doesn't have a lot of docs. Just use "Discover my schema", then enter the endpoint (for example, https://sourcegraph.test:3443/search/.api/scim/v2) and the token you have in your settings. It should work right away, and all tests should pass.
+3. Microsoft Entra ID validator – It's [here](https://scimvalidator.microsoft.com). It doesn't have a lot of docs. Just use "Discover my schema", then enter the endpoint (for example, https://sourcegraph.test:3443/search/.api/scim/v2) and the token you have in your settings. It should work right away, and all tests should pass.
 
 ## Publishing on Okta
 

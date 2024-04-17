@@ -18,15 +18,18 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Added rate and latency instrumentation for git / package repository syncing operations. These are visible in the gitserver dashboards (VCS "Clone/Fetch/IsCloneable" Metrics). [#61708](https://github.com/sourcegraph/sourcegraph/pull/61708)
-- Added syntax highlighting for the [PKl](https://pkl-lang.org/) configuration language. [#61478](https://github.com/sourcegraph/sourcegraph/pull/61478)
+- Added syntax highlighting for the [Pkl](https://pkl-lang.org/) configuration language. [#61478](https://github.com/sourcegraph/sourcegraph/pull/61478)
+- New `rev:at.time()` search filter that allows you to search a branch at a point in time. [#61513](https://github.com/sourcegraph/sourcegraph/pull/61513)
 
 ### Changed
 
+- Improved syntax highlighting for Dart. [#58480](https://github.com/sourcegraph/sourcegraph/pull/58480)
 - The default noop Event type in the honey package has been replaced with a new type that aggregates fields in memory for testing and logging purposes. [#61854](https://github.com/sourcegraph/sourcegraph/pull/61854)
 
 ### Fixed
 
 - Updated the Docker-in-Docker image to 26.0.0 to resolve several vulnerabilities. [#61735](https://github.com/sourcegraph/sourcegraph/pull/61735)
+- The GetCommit() RPC in the gitserver service now uses the correct protobuf type that allows for non-utf8 byte sequences in commit messages, author names, and author emails. [#61940](https://github.com/sourcegraph/sourcegraph/pull/61940)
 
 ## Unreleased (April Patch Release - 22nd April, 2024)
 
@@ -52,7 +55,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Added support for the `gitURLType` setting for Gerrit, Sourcegraph now supports cloning from Gerrit via SSH. Note: Not on Cloud yet, like for all code hosts. [#61537](https://github.com/sourcegraph/sourcegraph/pull/61537)
 - Support for OpenAI chat models for enterprise customers. [#61539](https://github.com/sourcegraph/sourcegraph/pull/61539)
 - Added support for explicitly enumerating repositories to sync from Bitbucket Cloud. Previously, Sourcegraph would automatically sync all repositories from a Bitbucket Cloud workspace. [#61536](https://github.com/sourcegraph/sourcegraph/pull/61536)
-- New `rev:at.time()` search filter that allows you to search a branch at a point in time. [#61513](https://github.com/sourcegraph/sourcegraph/pull/61513)
 
 ### Changed
 

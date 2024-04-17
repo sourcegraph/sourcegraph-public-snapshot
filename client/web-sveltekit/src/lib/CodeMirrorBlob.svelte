@@ -44,6 +44,7 @@
             fontSize: 'var(--code-font-size)',
         },
         '.cm-content': {
+            padding: 0,
             '&:focus-visible': {
                 outline: 'none',
                 boxShadow: 'none',
@@ -136,8 +137,12 @@
         createCodeIntelExtension,
         syncSelection,
         temporaryTooltip,
+        showBlame as showBlameColumn,
+        blameData as blameDataFacet,
+        type BlameHunkData,
     } from '$lib/web'
 
+    import BlameDecoration from './blame/BlameDecoration.svelte'
     import { type Range, staticHighlights } from './codemirror/static-highlights'
     import { goToDefinition, openImplementations, openReferences } from './repo/blob'
 
@@ -147,6 +152,9 @@
     export let selectedLines: LineOrPositionOrRange | null = null
     export let codeIntelAPI: CodeIntelAPI
     export let staticHighlightRanges: Range[] = []
+
+    export let showBlame: boolean = false
+    export let blameData: BlameHunkData | undefined = undefined
 
     const dispatch = createEventDispatcher<{ selectline: SelectedLineRange }>()
 
@@ -194,6 +202,20 @@
     $: sh = configureSyntaxHighlighting(blobInfo.content, highlights)
     $: staticHighlightExtension = staticHighlights(staticHighlightRanges)
 
+    $: blameColumnExtension = showBlame
+        ? showBlameColumn({
+              createBlameDecoration(target, props) {
+                  const decoration = new BlameDecoration({ target, props })
+                  return {
+                      destroy() {
+                          decoration.$destroy()
+                      },
+                  }
+              },
+          })
+        : []
+    $: blameDataExtension = blameDataFacet(blameData)
+
     $: extensions = [
         sh,
         settings,
@@ -202,6 +224,8 @@
         codeIntelExtension,
         staticExtensions,
         staticHighlightExtension,
+        blameColumnExtension,
+        blameDataExtension,
     ]
 
     function update(blobInfo: BlobInfo, extensions: Extension, range: LineOrPositionOrRange | null) {
@@ -250,6 +274,8 @@
 <style lang="scss">
     .root {
         display: contents;
+        --blame-decoration-width: 400px;
+        --blame-recency-width: 4px;
     }
     pre {
         margin: 0;

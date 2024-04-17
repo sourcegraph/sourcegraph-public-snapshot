@@ -19,7 +19,10 @@ type BestEffortEventRecorder struct {
 // implementation. In general, prefer to use the telemetryrecorder.NewBestEffort()
 // constructor instead.
 func NewBestEffortEventRecorder(logger log.Logger, recorder *EventRecorder) *BestEffortEventRecorder {
-	return &BestEffortEventRecorder{logger: logger, recorder: recorder}
+	return &BestEffortEventRecorder{
+		logger:   logger.AddCallerSkip(1), // report from Recorder callsite
+		recorder: recorder,
+	}
 }
 
 // Record records a single telemetry event with the context's Sourcegraph
