@@ -10,15 +10,11 @@ fragment RepoPopoverFragment on Repository {
     stars
     isPrivate
     language
+    topics
     externalServices {
         totalCount
         nodes {
             kind
-        }
-    }
-    tags {
-        nodes {
-            name
         }
     }
 

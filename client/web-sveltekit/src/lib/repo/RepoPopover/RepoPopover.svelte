@@ -43,7 +43,6 @@ For example:
         return `${org} / ${repo}`
     }
 
-    $: firstFiveTags = repo.tags.nodes.slice(0, 5)
     $: subject = repo.commit?.subject
     $: url = repo.commit?.canonicalURL
     $: author = repo.commit?.author.person.name
@@ -70,16 +69,18 @@ For example:
         <div class="divider" />
     {/if}
 
-    {#if repo.description || firstFiveTags.length > 0}
+    {#if repo.description}
         <div class="description-and-tags">
             <div class="description">
                 {repo.description}
             </div>
-            <div class="tags">
-                {#each firstFiveTags as tag}
-                    <small>{tag.name}</small>
-                {/each}
-            </div>
+            {#if repo.topics.length > 0}
+                <div class="tags">
+                    {#each repo.topics as topic}
+                        <small>{topic}</small>
+                    {/each}
+                </div>
+            {/if}
         </div>
     {/if}
 
@@ -178,6 +179,7 @@ For example:
 
         .description {
             padding: 0rem;
+            color: var(--text-body);
         }
 
         .tags {
