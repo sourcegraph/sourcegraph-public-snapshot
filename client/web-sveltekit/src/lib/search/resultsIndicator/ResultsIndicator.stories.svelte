@@ -1,7 +1,6 @@
 <script lang="ts" context="module">
     import { Story } from '@storybook/addon-svelte-csf'
 
-    import Popover from '$lib/Popover.svelte'
     import type { Progress, Skipped } from '$lib/shared'
     import Button from '$lib/wildcard/Button.svelte'
 
