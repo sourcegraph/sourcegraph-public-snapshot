@@ -39,13 +39,32 @@ func TestDashboardCreation(t *testing.T) {
 					Columns: 48,
 					Tiles: []tile{
 						{
-							Width:  24,
-							Height: 16,
-							Widget: widget{AlertChart: &alertChart{
-								Name: "/projects/msp-testbed/alertPolicies/00000",
+							Width:  48,
+							Height: 8,
+							Widget: widget{Text: &text{
+								Content: `Auto-generated - Please do not edit
+
+For more details see: [go/msp-ops/msp-testbed](https://handbook.sourcegraph.com/departments/engineering/managed-services/msp-testbed/)`,
+								Format: "MARKDOWN",
+								Style: textStyle{
+									BackgroundColor:     "#FFFFFF",
+									FontSize:            "FS_EXTRA_LARGE",
+									HorizontalAlignment: "H_CENTER",
+									Padding:             "P_EXTRA_SMALL",
+									PointerLocation:     "POINTER_LOCATION_UNSPECIFIED",
+									TextColor:           "#000000",
+									VerticalAlignment:   "V_CENTER",
+								},
 							}},
 						},
 						{
+							YPos:   8,
+							Width:  24,
+							Height: 16,
+							Widget: widget{AlertChart: &alertChart{Name: "/projects/msp-testbed/alertPolicies/00000"}},
+						},
+						{
+							YPos:   8,
 							Width:  48,
 							Height: 16,
 							Widget: widget{
@@ -73,19 +92,39 @@ func TestDashboardCreation(t *testing.T) {
 					Columns: 48,
 					Tiles: []tile{
 						{
-							Width:  24,
-							Height: 16,
-							Widget: widget{AlertChart: &alertChart{
-								Name: "/projects/msp-testbed/alertPolicies/00000",
+							Width:  48,
+							Height: 8,
+							Widget: widget{Text: &text{
+								Content: `Auto-generated - Please do not edit
+
+For more details see: [go/msp-ops/msp-testbed](https://handbook.sourcegraph.com/departments/engineering/managed-services/msp-testbed/)`,
+								Format: "MARKDOWN",
+								Style: textStyle{
+									BackgroundColor:     "#FFFFFF",
+									FontSize:            "FS_EXTRA_LARGE",
+									HorizontalAlignment: "H_CENTER",
+									Padding:             "P_EXTRA_SMALL",
+									PointerLocation:     "POINTER_LOCATION_UNSPECIFIED",
+									TextColor:           "#000000",
+									VerticalAlignment:   "V_CENTER",
+								},
 							}},
 						},
 						{
+							YPos:   8,
+							Width:  24,
+							Height: 16,
+							Widget: widget{AlertChart: &alertChart{Name: "/projects/msp-testbed/alertPolicies/00000"}},
+						},
+						{
+							YPos:   8,
 							XPos:   24,
 							Width:  24,
 							Height: 16,
 							Widget: widget{AlertChart: &alertChart{Name: "/projects/msp-testbed/alertPolicies/00001"}},
 						},
 						{
+							YPos:   8,
 							Width:  48,
 							Height: 16,
 							Widget: widget{
@@ -114,25 +153,45 @@ func TestDashboardCreation(t *testing.T) {
 					Columns: 48,
 					Tiles: []tile{
 						{
-							Width:  24,
-							Height: 16,
-							Widget: widget{AlertChart: &alertChart{
-								Name: "/projects/msp-testbed/alertPolicies/00000",
+							Width:  48,
+							Height: 8,
+							Widget: widget{Text: &text{
+								Content: `Auto-generated - Please do not edit
+
+For more details see: [go/msp-ops/msp-testbed](https://handbook.sourcegraph.com/departments/engineering/managed-services/msp-testbed/)`,
+								Format: "MARKDOWN",
+								Style: textStyle{
+									BackgroundColor:     "#FFFFFF",
+									FontSize:            "FS_EXTRA_LARGE",
+									HorizontalAlignment: "H_CENTER",
+									Padding:             "P_EXTRA_SMALL",
+									PointerLocation:     "POINTER_LOCATION_UNSPECIFIED",
+									TextColor:           "#000000",
+									VerticalAlignment:   "V_CENTER",
+								},
 							}},
 						},
 						{
+							YPos:   8,
+							Width:  24,
+							Height: 16,
+							Widget: widget{AlertChart: &alertChart{Name: "/projects/msp-testbed/alertPolicies/00000"}},
+						},
+						{
+							YPos:   8,
 							XPos:   24,
 							Width:  24,
 							Height: 16,
 							Widget: widget{AlertChart: &alertChart{Name: "/projects/msp-testbed/alertPolicies/00001"}},
 						},
 						{
-							YPos:   16,
+							YPos:   24,
 							Width:  24,
 							Height: 16,
 							Widget: widget{AlertChart: &alertChart{Name: "/projects/msp-testbed/alertPolicies/00002"}},
 						},
 						{
+							YPos:   8,
 							Width:  48,
 							Height: 32,
 							Widget: widget{
@@ -166,57 +225,77 @@ func TestDashboardCreation(t *testing.T) {
 					Columns: 48,
 					Tiles: []tile{
 						{
-							Width:  24,
-							Height: 16,
-							Widget: widget{AlertChart: &alertChart{
-								Name: "/projects/msp-testbed/alertPolicies/00000",
+							Width:  48,
+							Height: 8,
+							Widget: widget{Text: &text{
+								Content: `Auto-generated - Please do not edit
+
+For more details see: [go/msp-ops/msp-testbed](https://handbook.sourcegraph.com/departments/engineering/managed-services/msp-testbed/)`,
+								Format: "MARKDOWN",
+								Style: textStyle{
+									BackgroundColor:     "#FFFFFF",
+									FontSize:            "FS_EXTRA_LARGE",
+									HorizontalAlignment: "H_CENTER",
+									Padding:             "P_EXTRA_SMALL",
+									PointerLocation:     "POINTER_LOCATION_UNSPECIFIED",
+									TextColor:           "#000000",
+									VerticalAlignment:   "V_CENTER",
+								},
 							}},
 						},
 						{
-							XPos:   24,
-							Width:  24,
-							Height: 16,
-							Widget: widget{AlertChart: &alertChart{Name: "/projects/msp-testbed/alertPolicies/00001"}},
-						},
-						{
-							YPos:   16,
-							Width:  24,
-							Height: 16,
-							Widget: widget{AlertChart: &alertChart{Name: "/projects/msp-testbed/alertPolicies/00002"}},
-						},
-						{
-							Width:  48,
-							Height: 32,
-							Widget: widget{
-								Title:            "Container Alerts",
-								CollapsibleGroup: &collapsibleGroup{},
-							},
-						},
-						{
-							YPos:   32,
+							YPos:   8,
 							Width:  24,
 							Height: 16,
 							Widget: widget{AlertChart: &alertChart{Name: "/projects/msp-testbed/alertPolicies/00010"}},
 						},
 						{
-							YPos:   32,
+							YPos:   8,
 							XPos:   24,
 							Width:  24,
 							Height: 16,
 							Widget: widget{AlertChart: &alertChart{Name: "/projects/msp-testbed/alertPolicies/00020"}},
 						},
 						{
-							YPos:   48,
+							YPos:   24,
 							Width:  24,
 							Height: 16,
 							Widget: widget{AlertChart: &alertChart{Name: "/projects/msp-testbed/alertPolicies/00030"}},
 						},
 						{
-							YPos:   32,
+							YPos:   8,
 							Width:  48,
 							Height: 32,
 							Widget: widget{
 								Title:            "Cloud SQL Alerts",
+								CollapsibleGroup: &collapsibleGroup{},
+							},
+						},
+						{
+							YPos:   40,
+							Width:  24,
+							Height: 16,
+							Widget: widget{AlertChart: &alertChart{Name: "/projects/msp-testbed/alertPolicies/00000"}},
+						},
+						{
+							YPos:   40,
+							XPos:   24,
+							Width:  24,
+							Height: 16,
+							Widget: widget{AlertChart: &alertChart{Name: "/projects/msp-testbed/alertPolicies/00001"}},
+						},
+						{
+							YPos:   56,
+							Width:  24,
+							Height: 16,
+							Widget: widget{AlertChart: &alertChart{Name: "/projects/msp-testbed/alertPolicies/00002"}},
+						},
+						{
+							YPos:   40,
+							Width:  48,
+							Height: 32,
+							Widget: widget{
+								Title:            "Container Alerts",
 								CollapsibleGroup: &collapsibleGroup{},
 							},
 						},
