@@ -86,6 +86,11 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 		return nil, NoAccessError{}
 	}
 
+	// To work better with the abuse detection system, we consider the rate limit of 1 as no access.
+	if l.Limit == 1 {
+		return nil, NoAccessError{}
+	}
+
 	// Check the current usage. If no record exists, redis will return 0.
 	currentUsage, err = l.Redis.GetInt(l.Identifier)
 	if err != nil {
