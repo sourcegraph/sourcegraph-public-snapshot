@@ -17,14 +17,19 @@ linters:
 
 linters-settings:
   depguard:
-    list-type: blacklist
-    include-go-root: true
-    packages-with-error-message:
-      - errors: 'Use github.com/sourcegraph/sourcegraph/lib/errors instead'
-      - github.com/pkg/errors: 'Use github.com/sourcegraph/sourcegraph/lib/errors instead'
-      - github.com/cockroachdb/errors: 'Use github.com/sourcegraph/sourcegraph/lib/errors instead'
-      - github.com/hashicorp/go-multierror: 'Use github.com/sourcegraph/sourcegraph/lib/errors instead'
-      - io/ioutil: 'The ioutil package has been deprecated'
+    rules:
+      main:
+        deny:
+          - pkg: "errors"
+            desc: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
+          - pkg: "github.com/pkg/errors"
+            desc: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
+          - pkg: "github.com/cockroachdb/errors"
+            desc: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
+          - pkg: "github.com/hashicorp/go-multierror"
+            desc: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
+          - pkg: "io/ioutil"
+            desc: "The ioutil package has been deprecated"
   gocritic:
     disabled-checks:
       - appendAssign # Too many false positives
