@@ -45,9 +45,10 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 			AutoCreateSubnetworks: false,
 		})
 
-	// This is similar to the setup in Cloud v1.1 for connecting to Cloud SQL - we
-	// set up an arbitrary ip_cidr_range that covers enough IPs for VPC direct access.
+	// Cloud Run supports a small set of IPv4 ranges for the subnet:
 	// https://cloud.google.com/run/docs/configuring/vpc-direct-vpc#supported-ip-ranges
+	// We choose one with a generous IP range to avoid limitations documented
+	// here: https://cloud.google.com/run/docs/configuring/vpc-direct-vpc#limitations
 	subnetworkIPCIDRRange := "172.16.0.0/12"
 	subnetworkName := random.New(scope, id.Group("subnetwork-name"), random.Config{
 		Prefix:     config.ServiceID,
