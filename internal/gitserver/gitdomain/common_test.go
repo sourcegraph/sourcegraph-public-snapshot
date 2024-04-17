@@ -348,7 +348,7 @@ func TestRoundTripContributorCount(t *testing.T) {
 			Count: count,
 		}
 		converted := ContributorCountFromProto(original.ToProto())
-		if diff = cmp.Diff(original, converted); diff != "" {
+		if diff = cmp.Diff(&original, converted); diff != "" {
 			return false
 		}
 
