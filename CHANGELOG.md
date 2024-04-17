@@ -30,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Updated the Docker-in-Docker image to 26.0.0 to resolve several vulnerabilities. [#61735](https://github.com/sourcegraph/sourcegraph/pull/61735)
 - The GetCommit() RPC in the gitserver service now uses the correct protobuf type that allows for non-utf8 byte sequences in commit messages, author names, and author emails. [#61940](https://github.com/sourcegraph/sourcegraph/pull/61940)
+- The ArchiveReader() RPC in the gitserver service now uses the correct protobuf type that allows for non-utf8 byte sequences in file paths. [#61970](https://github.com/sourcegraph/sourcegraph/pull/61970)
 
 ## Unreleased (April Patch Release - 22nd April, 2024)
 
