@@ -18,11 +18,12 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Added rate and latency instrumentation for git / package repository syncing operations. These are visible in the gitserver dashboards (VCS "Clone/Fetch/IsCloneable" Metrics). [#61708](https://github.com/sourcegraph/sourcegraph/pull/61708)
-- Added syntax highlighting for the [PKl](https://pkl-lang.org/) configuration language. [#61478](https://github.com/sourcegraph/sourcegraph/pull/61478)
+- Added syntax highlighting for the [Pkl](https://pkl-lang.org/) configuration language. [#61478](https://github.com/sourcegraph/sourcegraph/pull/61478)
 - New `rev:at.time()` search filter that allows you to search a branch at a point in time. [#61513](https://github.com/sourcegraph/sourcegraph/pull/61513)
 
 ### Changed
 
+- Improved syntax highlighting for Dart. [#58480](https://github.com/sourcegraph/sourcegraph/pull/58480)
 - The default noop Event type in the honey package has been replaced with a new type that aggregates fields in memory for testing and logging purposes. [#61854](https://github.com/sourcegraph/sourcegraph/pull/61854)
 
 ### Fixed
