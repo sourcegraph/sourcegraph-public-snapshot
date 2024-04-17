@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { onMount } from 'svelte'
+
     import { highlightRanges } from '$lib/dom'
     import { getGraphQLClient } from '$lib/graphql'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
@@ -14,13 +16,13 @@
 
     let repo: RepoPopoverResult
 
-    const loadOnHover = async () => {
+    onMount(async () => {
         const client = getGraphQLClient()
         const response = await client.query(RepoPopoverQuery, { repoName })
         if (response.data) {
             repo = response.data
         }
-    }
+    })
 
     $: href = `/${repoName}${rev ? `@${rev}` : ''}`
     $: displayName = displayRepoName(repoName)
@@ -37,15 +39,7 @@
     <!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
     {#key highlights}
         <Popover showOnHover let:registerTrigger placement="bottom-start">
-            <a
-                class="repo-link"
-                {href}
-                use:highlightRanges={{ ranges: highlights }}
-                use:registerTrigger
-                on:mouseenter={() => {
-                    loadOnHover()
-                }}
-            >
+            <a class="repo-link" {href} use:highlightRanges={{ ranges: highlights }} use:registerTrigger>
                 {displayRepoName(repoName)}
                 {#if rev}
                     <small class="rev"> @ {rev}</small>
@@ -55,7 +49,7 @@
                 {#if repo}
                     <RepoPopover repo={repo.repository} withHeader={true} />
                 {:else}
-                    <div class="spinner">
+                    <div class="loading">
                         <LoadingSpinner />
                     </div>
                 {/if}
@@ -79,8 +73,14 @@
         }
     }
 
-    .spinner {
+    .loading {
+        display: flex;
+        flex-flow: column nowrap;
+        align-items: center;
+        justify-content: flex-start;
         width: 480px;
         height: 200px;
+        gap: 0.5rem;
+        padding: 1.5rem 1rem;
     }
 </style>

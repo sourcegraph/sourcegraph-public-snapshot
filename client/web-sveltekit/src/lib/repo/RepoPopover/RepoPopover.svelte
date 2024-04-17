@@ -11,7 +11,7 @@ For example:
 </Popover>
 -->
 <script lang="ts">
-    import { mdiAlienOutline } from '@mdi/js'
+    import { mdiSourceMerge } from '@mdi/js'
     import { capitalize } from 'lodash'
 
     import Avatar from '$lib/Avatar.svelte'
@@ -25,7 +25,7 @@ For example:
 
     export let repo: RepoPopoverFragment
     export let withHeader = false
-    export let orgSVGPath: string | null = null
+    export let orgSVGPath: string = mdiSourceMerge
 
     const CENTER_DOT = '\u00B7' // interpunct
 
@@ -58,13 +58,8 @@ For example:
     {#if withHeader}
         <div class="header">
             <div class="icon-name-access">
-                <!-- @TODO: We need to use our customer's logo here. mdiAlienOutline is a place holder-->
-                {#if orgSVGPath}
-                    <Icon svgPath={mdiAlienOutline} --color="var(--primary)" />
-                {/if}
-                <div>
-                    <h4 class="repo-name">{formatRepoName(repo.name)}</h4>
-                </div>
+                <Icon svgPath={orgSVGPath} --color="var(--primary)" />
+                <h4 class="repo-name">{formatRepoName(repo.name)}</h4>
                 <small>{repo.isPrivate ? 'Private' : 'Public'}</small>
             </div>
             <div class="code-host">
@@ -126,10 +121,6 @@ For example:
         border-radius: 0.5rem;
     }
 
-    .root:hover {
-        visibility: visible;
-    }
-
     .header {
         display: flex;
         flex-flow: row nowrap;
@@ -141,7 +132,7 @@ For example:
         .icon-name-access {
             display: flex;
             flex-flow: row nowrap;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
             gap: 0.25rem 0.5rem;
 
