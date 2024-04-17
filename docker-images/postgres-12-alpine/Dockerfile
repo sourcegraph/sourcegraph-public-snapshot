@@ -2,7 +2,7 @@
 # Please review the changes in /usr/local/share/postgresql/postgresql.conf.sample
 # If there is any change, you should ping @team/delivery
 # And Delivery will make sure changes are reflected in our deploy repository
-FROM postgres:12.11-alpine@sha256:41eb5461276b12ff88cb38a82f7d939f2acb0dfddcedb93d1f4d69418c51cc5d
+FROM postgres:12.18-alpine3.18@sha256:090eea940ca3db9214120b0bada22616f3961ac06d669d5389ed60510ce4d2cd
 
 ARG PING_UID=99
 ARG POSTGRES_UID=999
@@ -17,14 +17,7 @@ RUN apk add --no-cache nss su-exec shadow &&\
     chown -R postgres:postgres /var/lib/postgresql &&\
     chown -R postgres:postgres /var/run/postgresql
 
-RUN apk add --upgrade --no-cache \
-    'busybox>=1.35.0-r17' \
-    'libxslt>=1.1.35' \
-    'libxml2>=2.9.14-r2' \
-    'libgcrypt>=1.8.8' \
-    'apk-tools>=2.12.7' \
-    'krb5-libs>=1.19.4-r0' \
-    'ncurses-libs>=6.3_p20220521-r1'
+RUN apk add --upgrade --no-cache
 
 ENV POSTGRES_PASSWORD='' \
     POSTGRES_USER=sg \
