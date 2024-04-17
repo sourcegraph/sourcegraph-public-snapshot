@@ -29,12 +29,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: 'willdollman/wolfictl'
-          ref: 'main'
+          ref: 'will/fix-update-pkgpath'
           token: ${{ secrets.GITHUB_TOKEN }}
           path: 'wolfictl'
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
          go-version: '1.22.2'
 
