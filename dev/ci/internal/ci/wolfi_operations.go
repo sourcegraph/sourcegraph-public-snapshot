@@ -302,6 +302,7 @@ func wolfiBaseImageLockAndCreatePR() *operations.Set {
 				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-lockfiles.sh"),
 				bk.Agent("queue", AspectWorkflows.QueueSmall),
 				bk.Key("updateBaseImageHashes"),
+				bk.DependsOn("bazel-prechecks"),
 			)
 		},
 	)

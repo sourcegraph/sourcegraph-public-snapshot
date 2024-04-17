@@ -11,12 +11,15 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 echo "~~~ :aspect: :stethoscope: Agent Health check"
 /etc/aspect/workflows/bin/agent_health_check
 
-aspectRC="/tmp/aspect-generated.bazelrc"
-rosetta bazelrc >"$aspectRC"
-export BAZELRC="$aspectRC"
+echo "~~~ Running script"
+
+buildkite-agent artifact download sg . --step bazel-prechecks
+
+# TODO: Remove
+ls -al ./
 
 # Update hashes for all base images
-bazel --bazelrc="$aspectRC" run //dev/sg -- wolfi lock
+./sg wolfi lock
 # Print git status
 echo "[$(date)] Running git status"
 git status
