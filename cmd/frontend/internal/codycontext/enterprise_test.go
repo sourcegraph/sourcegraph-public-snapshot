@@ -38,15 +38,15 @@ func TestNewEnterpriseFilter(t *testing.T) {
 		Path string
 	}
 	type testCase struct {
-		Name              string                     `json:"name"`
-		Description       string                     `json:"description"`
-		IncludeByDefault  bool                       `json:"includeByDefault"`
-		IncludeUnknown    bool                       `json:"includeUnknown"`
-		Ccf               *schema.CodyContextFilters `json:"cody.contextFilters"`
-		Repos             []repo                     `json:"repos"`
-		IncludeRepos      []repo                     `json:"includeRepos"`
-		FileChunks        []fileChunk                `json:"fileChunks"`
-		IncludeFileChunks []fileChunk                `json:"includeFileChunks"`
+		Name               string                     `json:"name"`
+		Description        string                     `json:"description"`
+		IncludeByDefault   bool                       `json:"includeByDefault"`
+		IncludeUnknown     bool                       `json:"includeUnknown"`
+		Ccf                *schema.CodyContextFilters `json:"cody.contextFilters"`
+		Repos              []repo                     `json:"repos"`
+		IncludedRepos      []repo                     `json:"includedRepos"`
+		FileChunks         []fileChunk                `json:"fileChunks"`
+		IncludedFileChunks []fileChunk                `json:"includedFileChunks"`
 	}
 	var data struct {
 		TestCases []testCase `json:"testCases"`
@@ -90,9 +90,9 @@ func TestNewEnterpriseFilter(t *testing.T) {
 				repos = append(repos, types.RepoIDName{ID: r.Id, Name: r.Name})
 			}
 
-			includedRepos, filter, _ := f.GetFilter(context.Background(), normalizeRepos(tt.Repos))
-			require.Equal(t, normalizeRepos(tt.IncludeRepos), includedRepos)
-			require.Equal(t, normalizeFileChunks(tt.IncludeFileChunks), filter(normalizeFileChunks(tt.FileChunks)))
+			actualIncludedRepos, filter, _ := f.GetFilter(context.Background(), normalizeRepos(tt.Repos))
+			require.Equal(t, normalizeRepos(tt.IncludedRepos), actualIncludedRepos)
+			require.Equal(t, normalizeFileChunks(tt.IncludedFileChunks), filter(normalizeFileChunks(tt.FileChunks)))
 		})
 	}
 }

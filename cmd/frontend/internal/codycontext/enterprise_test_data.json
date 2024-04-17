@@ -12,7 +12,7 @@
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
         { "name": "github.com/docker/compose", "id": 4 }
       ],
-      "includeRepos": [
+      "includedRepos": [
         { "name": "github.com/sourcegraph/about", "id": 1 },
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
@@ -48,7 +48,7 @@
           "Path": "/file4.go"
         }
       ],
-      "includeFileChunks": [
+      "includedFileChunks": [
         {
           "repo": {
             "name": "github.com/sourcegraph/about",
@@ -91,7 +91,7 @@
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
         { "name": "github.com/docker/compose", "id": 4 }
       ],
-      "includeRepos": [
+      "includedRepos": [
         { "name": "github.com/sourcegraph/about", "id": 1 },
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
@@ -127,7 +127,7 @@
           "path": "/file4.go"
         }
       ],
-      "includeFileChunks": [
+      "includedFileChunks": [
         {
           "repo": {
             "name": "github.com/sourcegraph/about",
@@ -173,7 +173,7 @@
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
         { "name": "github.com/docker/compose", "id": 4 }
       ],
-      "includeRepos": [
+      "includedRepos": [
         { "name": "github.com/sourcegraph/about", "id": 1 },
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
@@ -209,7 +209,7 @@
           "path": "/file4.go"
         }
       ],
-      "includeFileChunks": [
+      "includedFileChunks": [
         {
           "repo": {
             "name": "github.com/sourcegraph/about",
@@ -254,7 +254,7 @@
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
         { "name": "github.com/docker/compose", "id": 4 }
       ],
-      "includeRepos": [
+      "includedRepos": [
         { "name": "github.com/sourcegraph/about", "id": 1 },
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 }
@@ -289,7 +289,7 @@
           "path": "/file4.go"
         }
       ],
-      "includeFileChunks": [
+      "includedFileChunks": [
         {
           "repo": {
             "name": "github.com/sourcegraph/about",
@@ -327,7 +327,7 @@
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
         { "name": "github.com/docker/compose", "id": 4 }
       ],
-      "includeRepos": [{ "name": "github.com/docker/compose", "id": 4 }],
+      "includedRepos": [{ "name": "github.com/docker/compose", "id": 4 }],
       "fileChunks": [
         {
           "repo": {
@@ -358,7 +358,7 @@
           "path": "/file4.go"
         }
       ],
-      "includeFileChunks": [
+      "includedFileChunks": [
         {
           "repo": {
             "name": "github.com/docker/compose",
@@ -384,7 +384,7 @@
         { "name": "github.com/docker/compose", "id": 4 },
         { "name": "github.com/sourcegraph/cody", "id": 5 }
       ],
-      "includeRepos": [
+      "includedRepos": [
         { "name": "github.com/sourcegraph/about", "id": 1 },
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 }
@@ -426,7 +426,7 @@
           "path": "/index.ts"
         }
       ],
-      "includeFileChunks": [
+      "includedFileChunks": [
         {
           "repo": {
             "name": "github.com/sourcegraph/about",
@@ -471,7 +471,7 @@
         { "name": "github.com/sourcegraph/cody", "id": 5 },
         { "name": "github.com/facebook/react", "id": 6 }
       ],
-      "includeRepos": [
+      "includedRepos": [
         { "name": "github.com/sourcegraph/about", "id": 1 },
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
@@ -521,7 +521,7 @@
           "path": "/hooks.ts"
         }
       ],
-      "includeFileChunks": [
+      "includedFileChunks": [
         {
           "repo": {
             "name": "github.com/sourcegraph/about",
@@ -568,7 +568,7 @@
         { "name": "github.com/sourcegraph/cody", "id": 5 },
         { "name": "github.com/facebook/react", "id": 6 }
       ],
-      "includeRepos": [
+      "includedRepos": [
         { "name": "github.com/sourcegraph/about", "id": 1 },
         { "name": "github.com/sourcegraph/annotate", "id": 2 },
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
@@ -620,7 +620,7 @@
           "path": "/hooks.ts"
         }
       ],
-      "includeFileChunks": [
+      "includedFileChunks": [
         {
           "repo": {
             "name": "github.com/sourcegraph/about",
@@ -680,7 +680,7 @@
         { "name": "github.com/sourcegraph/sourcegraph", "id": 3 },
         { "name": "github.com/docker/compose", "id": 4 }
       ],
-      "includeRepos": [],
+      "includedRepos": [],
       "fileChunks": [
         {
           "repo": {
@@ -711,7 +711,7 @@
           "path": "/file4.go"
         }
       ],
-      "includeFileChunks": []
+      "includedFileChunks": []
     }
   ]
 }
