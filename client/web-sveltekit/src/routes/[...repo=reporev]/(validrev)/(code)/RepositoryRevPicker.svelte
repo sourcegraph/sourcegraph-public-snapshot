@@ -33,9 +33,9 @@
     export let resolvedRevision: ResolvedRevision
 
     // Pickers data sources
-    export let getRepositoryTags: (query: string) => Promise<RepositoryTags>
-    export let getRepositoryCommits: (query: string) => Promise<RepositoryCommits>
-    export let getRepositoryBranches: (query: string) => Promise<RepositoryBranches>
+    export let getRepositoryTags: (query: string) => PromiseLike<RepositoryTags>
+    export let getRepositoryCommits: (query: string) => PromiseLike<RepositoryCommits>
+    export let getRepositoryBranches: (query: string) => PromiseLike<RepositoryBranches>
 
     // Show specific short revision if it's presented in the URL
     // otherwise fallback on the default branch name

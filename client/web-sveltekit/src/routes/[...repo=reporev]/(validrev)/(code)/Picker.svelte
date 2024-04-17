@@ -16,7 +16,7 @@
 
     export let name: string
     export let seeAllItemsURL: string
-    export let getData: (query: string) => Promise<Result<T>>
+    export let getData: (query: string) => PromiseLike<Result<T>>
     export let onSelect: (item: T) => void
     export let toOption: (item: T) => ComboboxOptionProps<string>
 
