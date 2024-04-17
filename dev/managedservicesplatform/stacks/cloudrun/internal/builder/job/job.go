@@ -91,7 +91,7 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 				Network:    vars.PrivateNetwork.Network.Id(),
 				Subnetwork: vars.PrivateNetwork.Subnetwork.Id(),
 			}},
-			Egress: pointers.Ptr("ALL_TRAFFIC"),
+			Egress: pointers.Ptr("PRIVATE_RANGES_ONLY"),
 		}
 	}
 
