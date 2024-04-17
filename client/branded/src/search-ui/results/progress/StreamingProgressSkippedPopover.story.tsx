@@ -73,7 +73,7 @@ export const Popover: StoryFn = () => {
                     query=""
                     progress={progress}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
-                    onSearchAgain={() => { }}
+                    onSearchAgain={() => {}}
                 />
             )}
         </BrandedStory>
@@ -116,7 +116,7 @@ export const ShouldCloseAllInfo: StoryFn = () => {
                     query=""
                     progress={progress}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
-                    onSearchAgain={() => { }}
+                    onSearchAgain={() => {}}
                 />
             )}
         </BrandedStory>
@@ -151,7 +151,7 @@ export const ShouldOpenOneInfo: StoryFn = () => {
                     query=""
                     progress={progress}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
-                    onSearchAgain={() => { }}
+                    onSearchAgain={() => {}}
                 />
             )}
         </BrandedStory>

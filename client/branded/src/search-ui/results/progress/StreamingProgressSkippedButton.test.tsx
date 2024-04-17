@@ -11,9 +11,9 @@ import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton
 
 describe('StreamingProgressSkippedButton', () => {
     beforeAll(() => {
-        ; (global as any).document.createRange = () => ({
-            setStart: () => { },
-            setEnd: () => { },
+        ;(global as any).document.createRange = () => ({
+            setStart: () => {},
+            setEnd: () => {},
             commonAncestorContainer: {
                 nodeName: 'BODY',
                 ownerDocument: document,
