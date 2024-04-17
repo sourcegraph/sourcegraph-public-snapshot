@@ -18,7 +18,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: wolfi-dev/actions/install-wolfictl@main
+      # Install wolfictl
+      # NOTE: The main wolfictl binary has a bug which prevents us from using it
+      # Once https://github.com/wolfi-dev/wolfictl/pull/763 is merged, we can remove the following which
+      # builds wolfictl from a patched fork.
+
+      # Build and install a fork of wolfictl
+      - name: Check out code from external repository
+        uses: actions/checkout@v3
+        with:
+          repository: 'willdollman/wolfictl'
+          ref: 'main'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+         go-version: '1.22.2'
+
+      - name: Build binary
+        run: |
+          /home/runner/work/willdollman/wolfictl
+          ls -al ./
+          go build -o wolfictl ./
+          ls -al ./
+
+      - name: Add wolfictl to path
+        run: |
+          TMP=$(mktemp -d)
+          echo "Temp dir: $TMP"
+          mv ./wolfictl $TMP/
+          ls -al $TMP
+          echo "$TMP" >> $GITHUB_PATH
+
+      # TODO: Replace above wolfictl build step once the bugfix PR is accepted
+      # - uses: wolfi-dev/actions/install-wolfictl@main
 
       - name: List
         run: |
@@ -31,6 +65,6 @@ jobs:
 
       - name: "wolfictl update"
         run: |
-          wolfictl update --dry-run --create-issues='false' --package-name='qdrant' --path='wolfi-packages/' --github-labels='SSDLC' --github-labels='wolfi-auto-update' $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
+          wolfictl update --dry-run --create-issues='false' --package-name='qdrant' --path='wolfi-packages/' --github-labels='SSDLC' --github-labels='security-auto-update' --github-labels='security-auto-update/packages' $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
