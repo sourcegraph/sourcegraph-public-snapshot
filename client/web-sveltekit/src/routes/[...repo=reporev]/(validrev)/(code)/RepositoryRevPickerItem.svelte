@@ -61,19 +61,18 @@
     .title {
         padding-left: 1rem;
 
-        // Branch icon
-        :global(svg) {
+        :global([data-icon]) {
             flex-shrink: 0;
             color: var(--icon-muted);
 
             :global([data-highlighted]) &,
-            :global([data-picker-suggestions-list-item]):hover {
+            :global([data-picker-suggestions-list-item]):hover & {
                 color: var(--icon-color);
             }
         }
 
         // Branch name badge
-        :global(span) {
+        :global([data-badge]) {
             overflow: hidden;
             text-overflow: ellipsis;
         }
