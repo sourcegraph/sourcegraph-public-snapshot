@@ -1,7 +1,6 @@
 name: 'wolfictl-update'
 
 on:
-  push:
   schedule:
     # everyday at 0:00 UTC
     - cron:  0 0 * * *
