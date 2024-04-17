@@ -451,6 +451,21 @@
           "ws": "*"
         }
       },
+      "mz": {
+        "dependencies": {
+          "graceful-fs": "*"
+        }
+      },
+      "follow-redirects": {
+        "dependencies": {
+          "debug": "*"
+        }
+      },
+      "debug": {
+        "dependencies": {
+          "supports-color": "*"
+        }
+      },
       "@graphql-codegen/cli@5": {
         "peerDependencies": {
           "@graphql-codegen/typescript": "*",
