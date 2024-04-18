@@ -2,8 +2,6 @@ package cloud
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -28,12 +26,6 @@ var DeployEphemeralCommand = cli.Command{
 	Description: "Deploy the specified branch or tag to an ephemeral Sourcegraph Cloud environment",
 	Action:      deployCloudEphemeral,
 	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name: "branch",
-		},
-		&cli.StringFlag{
-			Name: "tag",
-		},
 		&cli.StringFlag{
 			Name:        "version",
 			DefaultText: "deploys an ephemeral cloud Sourcegraph environment with the specified version. The version MUST exist and implies that no build will be created",
@@ -103,7 +95,6 @@ func printWIPNotice(ctx *cli.Context) error {
 	}
 
 	return ErrUserCancelled
-
 }
 
 func createDeploymentForVersion(ctx context.Context, version string) error {
@@ -123,51 +114,24 @@ func createDeploymentForVersion(ctx context.Context, version string) error {
 	return nil
 }
 
-func createEphemeralBranchName(ctx context.Context, branch string) (string, error) {
-	account, err := getGcloudAccount(ctx)
-	if err != nil {
-		return "", err
-	}
-	user := strings.ReplaceAll(account[:strings.Index(account, "@")], ".", "-")
-	// create a branch of the format cloud-ephemeral/<user>_<branch>
-	return fmt.Sprintf("cloud-ephemeral/%s_%s", user, strings.ReplaceAll(branch, "/", "-")), nil
-}
-
 func deployCloudEphemeral(ctx *cli.Context) error {
 	// while we work on this command we print a notice and ask to continue
 	if err := printWIPNotice(ctx); err != nil {
 		return err
 	}
-	branch := ctx.String("branch")
 	currentBranch, err := repo.GetCurrentBranch(ctx.Context)
 	if err != nil {
 		return errors.Wrap(err, "failed to determine current branch")
 	}
-	// if the tag is set - we should prefer it over the branch
-	tag := ctx.String("tag")
 
-	// if neither the branch nor the tag is set - then we assume the current branch
-	if branch == "" && tag == "" {
-		branch = currentBranch
-	}
-
+	// TODO(burmudar): We need to handle tags
 	var currRepo *repo.GitRepo
-	if branch != currentBranch {
-		wrongBranch := `You are currently on branch %q, but want to deploy %q.
-
-We currently do not support deploying a branch that is different to the one you're currently on.
-
-Please switch to branch %q and make sure it is up to date before trying again.`
-		std.Out.WriteWarningf(wrongBranch, currentBranch, branch, branch)
-		return ErrWrongBranch
-	} else {
-		// We are on the branch we want to deploy, so we use the current commit
-		head, err := repo.GetHeadCommit(ctx.Context)
-		if err != nil {
-			return errors.Wrap(err, "failed to determine current commit")
-		}
-		currRepo = repo.NewGitRepo(currentBranch, head)
+	// We are on the branch we want to deploy, so we use the current commit
+	head, err := repo.GetHeadCommit(ctx.Context)
+	if err != nil {
+		return errors.Wrap(err, "failed to determine current commit")
 	}
+	currRepo = repo.NewGitRepo(currentBranch, head)
 
 	version := ctx.String("version")
 	// if a version is specified we do not build anything and just trigger the cloud deployment
@@ -181,7 +145,7 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 			}
 			return err
 		}
-		_ = determineVersion(build, tag)
+		_ = determineVersion(build, "")
 	}
 	// we could check if the version exists?
 

@@ -9,6 +9,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// ErrBranchNotFound is returned when a branch is not found
+var ErrBranchNotFound = errors.New("branch not found")
+
+// pushOpt is a function that modifies the arguments to git push
+type pushOpt func(args []string) []string
+
+// GitRepo represents a branch at a commit of a git repository. No assumption is made on what repository is operated on.
 type GitRepo struct {
 	// Branch is the branch of the repository
 	Branch string
@@ -16,21 +23,18 @@ type GitRepo struct {
 	Ref string
 }
 
-var ErrBranchNotFound = errors.New("branch not found")
+// NewGitRepo returns a new GitRepo with the given branch and commit
+func NewGitRepo(branch, ref string) *GitRepo {
+	return &GitRepo{Branch: branch, Ref: ref}
+}
 
-type pushOpt func(args []string) []string
-
-// WithForceLease adds --force-with-lease to the args
+// WithForceLease adds --force-with-lease to the args. The provided args are arguments a git push command
 func WithForceLease(args []string) []string {
 	return append(args, "--force-with-lease")
 }
 
-// WithForce adds --force to the args
-func WithForce(args []string) []string {
-	return append(args, "--force")
-}
-
-// WithPushRefSpec adds a refspec to the args. If the it replaces the branch argument if it is already specified
+// WithPushRefSpec adds a refspec to the args. If the it replaces the branch argument if it is already specified.
+// The provided args are arguments for a git push command.
 func WithPushRefSpec(ref, branch string) pushOpt {
 	return func(args []string) []string {
 		idx := -1
@@ -46,10 +50,6 @@ func WithPushRefSpec(ref, branch string) pushOpt {
 		args[idx] = fmt.Sprintf("%s:refs/heads/%s", ref, branch)
 		return args
 	}
-}
-
-func NewGitRepo(branch, ref string) *GitRepo {
-	return &GitRepo{Branch: branch, Ref: ref}
 }
 
 // IsOutOfSync checks whether the remote state of this branch is in sync with the local state of this branch
@@ -128,7 +128,7 @@ func (g *GitRepo) HasRemoteCommit(ctx context.Context) bool {
 	return HasCommit(ctx, g.Ref)
 }
 
-// FetchOrigin fetches the current branch from origin
+// FetchOrigin fetches the current branch from origin. If the branch ref doesn't exist remotely ErrBranchNotFound is returned
 func (g *GitRepo) FetchOrigin(ctx context.Context) (string, error) {
 	output, err := run.Cmd(ctx, "git", "fetch", "origin", g.Branch).Run().String()
 	if err != nil {

@@ -162,7 +162,7 @@ func inferVersion(runType runtype.RunType, tag string, commit string, buildNumbe
 		latestTag = ""
 	}
 	// "main" branch is used for continuous deployment and has a special-case format
-	version := images.BranchImageTag(now, commit, buildNumber, sanitizeBranchForDockerTag(branch), latestTag)
+	version := images.BranchImageTag(now, commit, buildNumber, branch, latestTag)
 
 	// Add additional patch suffix
 	if runType.Is(runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.ExecutorPatchNoTest) {
