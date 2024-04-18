@@ -43,20 +43,13 @@ jobs:
           TMP=$(mktemp -d)
           export GOBIN=$TMP
           cd $GITHUB_WORKSPACE/wolfictl
-          ls -al $TMP
           go install ./...
-          ls -al $TMP
           echo "$TMP" >> $GITHUB_PATH
 
       # TODO(will): Once the bugfix PR is accepted:
       #   * Replace above wolfictl build step with the following
       #   * Pin commit hash
       # - uses: wolfi-dev/actions/install-wolfictl@main
-
-      - name: Check wolfictl
-        run: |
-          which wolfictl
-          wolfictl version
 
       # Run wolfictl update
       - name: wolfictl update
