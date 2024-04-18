@@ -81,7 +81,13 @@ func chunksToMatches(buf []byte, chunks []rangeChunk, contextLines int32) []prot
 func extendRangeToLines(inputRange protocol.Range, buf []byte) protocol.Range {
 	firstLineStart := lineStart(buf, inputRange.Start.Offset)
 	lastLineStart := lineStart(buf, inputRange.End.Offset)
-	lastLineEnd := lineEnd(buf, max(inputRange.End.Offset, max(inputRange.End.Offset, 1)-1))
+	lastLineEnd := lineEnd(buf,
+		// We want the end of the line containing the last byte of the
+		// match, not the first byte after the match. In the case of a
+		// zero-width match between lines, prefer the line after rather
+		// than the line before (like we do for lineStart).
+		max(inputRange.End.Offset, max(inputRange.End.Offset, 1)-1 /* prevent underflow */),
+	)
 
 	return protocol.Range{
 		Start: protocol.Location{
