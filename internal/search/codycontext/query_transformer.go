@@ -31,11 +31,8 @@ func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Paramet
 		return nil, nil
 	}
 
-	patterns := []string{}
-	parameters := []query.Parameter{
-		// Only search file content
-		{Field: query.FieldType, Value: "file"},
-	}
+	var patterns []string
+	var parameters []query.Parameter
 
 	switch operator.Kind {
 	case query.And:
@@ -49,7 +46,7 @@ func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Paramet
 				if op.Field == query.FieldContent {
 					// Split any content field on white space into a set of patterns
 					patterns = append(patterns, strings.Fields(op.Value)...)
-				} else if op.Field != query.FieldCase && op.Field != query.FieldType {
+				} else if op.Field != query.FieldCase {
 					parameters = append(parameters, op)
 				}
 			case query.Pattern:

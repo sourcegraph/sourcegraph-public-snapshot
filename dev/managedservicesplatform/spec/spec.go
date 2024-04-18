@@ -38,6 +38,8 @@ type Spec struct {
 	README []byte
 }
 
+var ErrServiceDoesNotExist = errors.New("service does not exist")
+
 // Open a specification file, validate it, unmarshal the data as a MSP spec,
 // and load any extraneous configuration. Callsites that return an error to the
 // user should wrap the error with the name of the service to avoid any confusion,
@@ -53,7 +55,7 @@ func Open(specPath string) (*Spec, error) {
 	specData, err := os.ReadFile(specPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil, errors.Wrap(err, "service does not exist")
+			return nil, ErrServiceDoesNotExist
 		}
 		return nil, errors.Wrap(err, "read service specification")
 	}

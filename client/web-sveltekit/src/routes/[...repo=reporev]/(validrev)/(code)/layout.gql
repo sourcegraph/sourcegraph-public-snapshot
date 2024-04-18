@@ -14,12 +14,24 @@ query LastCommitQuery($repoName: String!, $revspec: String!, $filePath: String!)
     repository(name: $repoName) {
         lastCommit: commit(rev: $revspec) {
             id
-            ancestors(first:1, path: $filePath) {
+            ancestors(first: 1, path: $filePath) {
                 nodes {
                     ...LastCommitFragment
                 }
             }
         }
+    }
+}
+
+query RepositoryGitRefs($repoName: String!, $query: String, $type: GitRefType!) {
+    repository(name: $repoName) {
+        ...RepositoryGitRefs
+    }
+}
+
+query RepositoryGitCommits($repoName: String!, $query: String, $revision: String!) {
+    repository(name: $repoName) {
+        ...RepositoryGitCommits
     }
 }
 

@@ -9,6 +9,7 @@ load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
 load("//dev:esbuild.bzl", "esbuild_web_app")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 # gazelle:js_resolve **/*.schema.json //schema:schema-json
 # gazelle:js_resolve **/*.module.scss :module_style_typings
@@ -48,6 +49,8 @@ ts_config(
         "//client/build-config:tsconfig",
         "//client/client-api:tsconfig",
         "//client/codeintellify:tsconfig",
+        "//client/cody-shared:tsconfig",
+        "//client/cody-ui:tsconfig",
         "//client/common:tsconfig",
         "//client/extension-api-types:tsconfig",
         "//client/http-client:tsconfig",
@@ -1249,8 +1252,8 @@ ts_project(
         "src/repo/actions/GoToCodeHostAction.tsx",
         "src/repo/actions/ToggleBlameAction.tsx",
         "src/repo/backend.ts",
-        "src/repo/blame/useBlameHunks.ts",
-        "src/repo/blame/useBlameVisibility.tsx",
+        "src/repo/blame/hooks.ts",
+        "src/repo/blame/shared.ts",
         "src/repo/blob/BlameDecoration.tsx",
         "src/repo/blob/BlobLoadingSpinner.tsx",
         "src/repo/blob/BlobPage.tsx",
@@ -1264,7 +1267,7 @@ ts_project(
         "src/repo/blob/actions/utils.ts",
         "src/repo/blob/backend.ts",
         "src/repo/blob/blameRecency.tsx",
-        "src/repo/blob/codemirror/blame-decorations.tsx",
+        "src/repo/blob/codemirror/blame-decorations.ts",
         "src/repo/blob/codemirror/code-folding.tsx",
         "src/repo/blob/codemirror/codeintel/api.ts",
         "src/repo/blob/codemirror/codeintel/decorations.ts",
@@ -1313,6 +1316,7 @@ ts_project(
         "src/repo/branches/RepositoryBranchesArea.tsx",
         "src/repo/branches/RepositoryBranchesNavbar.tsx",
         "src/repo/branches/RepositoryBranchesOverviewPage.tsx",
+        "src/repo/branches/backend.ts",
         "src/repo/cody/AskCodyButton.tsx",
         "src/repo/commit/CommitMessageWithLinks.tsx",
         "src/repo/commit/DiffModeSelector.tsx",
@@ -1618,6 +1622,7 @@ ts_project(
         "src/storm/routes.tsx",
         "src/sveltekit/SvelteKitNavItem.tsx",
         "src/sveltekit/WebNextAwareLink.tsx",
+        "src/sveltekit/routes.ts",
         "src/sveltekit/util.ts",
         "src/team/TeamsArea.tsx",
         "src/team/area/EditParentTeamModal.tsx",
@@ -1776,6 +1781,7 @@ ts_project(
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",
+        "//:node_modules/@types/d3-scale-chromatic",
         "//:node_modules/@types/d3-time-format",
         "//:node_modules/@types/history",
         "//:node_modules/@types/js-cookie",
@@ -1801,6 +1807,7 @@ ts_project(
         "//:node_modules/bloomfilter",
         "//:node_modules/classnames",
         "//:node_modules/copy-to-clipboard",
+        "//:node_modules/d3-scale-chromatic",
         "//:node_modules/d3-time-format",
         "//:node_modules/date-fns",
         "//:node_modules/fast-json-stable-stringify",
@@ -2445,4 +2452,12 @@ ts_project(
         "//:node_modules/wildcard-mock-link",
         "//client/web/src/rbac:constants",
     ],
+)
+
+write_generated_to_source_files(
+    name = "write_generated_sveltekit_routes",
+    output_files = {
+        "src/sveltekit/routes.ts": "cmd/frontend/internal/app/ui/sveltekit/_routes.ts",
+    },
+    target = "//cmd/frontend/internal/app/ui/sveltekit:generate_route_info",
 )

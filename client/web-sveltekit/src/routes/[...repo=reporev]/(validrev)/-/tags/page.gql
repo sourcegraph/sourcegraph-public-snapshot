@@ -1,7 +1,7 @@
 query TagsPage_TagsQuery($repoName: String!, $first: Int!, $withBehindAhead: Boolean!, $revspec: String = "") {
     repository(name: $repoName) {
         id
-        gitRefs(first: $first, type: GIT_TAG, orderBy: AUTHORED_OR_COMMITTED_AT) {
+        gitRefs(first: $first, type: GIT_TAG) {
             ...GitTagsConnection
         }
     }

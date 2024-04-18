@@ -369,6 +369,8 @@ type BitbucketCloudConnection struct {
 	GitURLType string `json:"gitURLType,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to Bitbucket Cloud.
 	RateLimit *BitbucketCloudRateLimit `json:"rateLimit,omitempty"`
+	// Repos description: An array of repository "projectKey/repositorySlug" strings specifying repositories to mirror on Sourcegraph.
+	Repos []string `json:"repos,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Cloud repository.
 	//
 	//  - "{host}" is replaced with the Bitbucket Cloud URL's host (such as bitbucket.org),  and "{nameWithOwner}" is replaced with the Bitbucket Cloud repository's "owner/path" (such as "myorg/myrepo").
@@ -614,6 +616,18 @@ type Codeintel struct {
 	Limit int `json:"limit"`
 	// Weight description: The relative weight of this queue. Higher weights mean a higher chance of being picked at random.
 	Weight int `json:"weight"`
+}
+type CodyContextFilterItem struct {
+	// RepoNamePattern description: Regular expression which matches a set of repository names. The pattern is evaluated using Go regular expression syntax (https://golang.org/pkg/regexp/). By default, the pattern matches partially. Use \"^...$\" for whole-string matching.
+	RepoNamePattern string `json:"repoNamePattern"`
+}
+
+// CodyContextFilters description: Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
+type CodyContextFilters struct {
+	// Exclude description: List of rules specifying repositories that Cody should excluded from context in requests to third-party LLMs. These rules are applied only to repositories matching the include rules.
+	Exclude []*CodyContextFilterItem `json:"exclude,omitempty"`
+	// Include description: List of rules specifying repositories that Cody may include as context in requests to third-party LLMs. If defined, only repositories matching these rules will be considered for sharing. If not defined, all repositories may be shared.
+	Include []*CodyContextFilterItem `json:"include,omitempty"`
 }
 
 // CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
@@ -1653,6 +1667,9 @@ type Notice struct {
 	Location string `json:"location"`
 	// Message description: The message to display. Markdown formatting is supported.
 	Message string `json:"message"`
+	// StyleOverrides description: Overrides for the notice's default style. You probably want to use notice 'variant' setting instead.
+	StyleOverrides *StyleOverrides `json:"styleOverrides,omitempty"`
+	Variant        string          `json:"variant,omitempty"`
 }
 type Notifications struct {
 	// Key description: e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.
@@ -2776,6 +2793,8 @@ type SiteConfiguration struct {
 	CodeIntelRankingDocumentReferenceCountsGraphKey string `json:"codeIntelRanking.documentReferenceCountsGraphKey,omitempty"`
 	// CodeIntelRankingStaleResultsAge description: The interval at which to run the reduce job that computes document reference counts. Default is 24hrs.
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
+	// CodyContextFilters description: Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
+	CodyContextFilters *CodyContextFilters `json:"cody.contextFilters,omitempty"`
 	// CodyEnabled description: Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.
 	CodyEnabled *bool `json:"cody.enabled,omitempty"`
 	// CodyPermissions description: Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://sourcegraph.com/docs/admin/access_control
@@ -3046,6 +3065,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelRanking.documentReferenceCountsEnabled")
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")
 	delete(m, "codeIntelRanking.staleResultsAge")
+	delete(m, "cody.contextFilters")
 	delete(m, "cody.enabled")
 	delete(m, "cody.permissions")
 	delete(m, "cody.restrictUsersFeatureFlag")
@@ -3180,6 +3200,16 @@ type Step struct {
 	Outputs map[string]OutputVariable `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 	Run string `json:"run"`
+}
+
+// StyleOverrides description: Overrides for the notice's default style. You probably want to use notice 'variant' setting instead.
+type StyleOverrides struct {
+	// BackgroundColor description: The hex code of the background color for this notice.
+	BackgroundColor string `json:"backgroundColor,omitempty"`
+	// TextCentered description: Whether the notice text should be centered.
+	TextCentered bool `json:"textCentered,omitempty"`
+	// TextColor description: The hex code of the text color for this notice.
+	TextColor string `json:"textColor,omitempty"`
 }
 type SubRepoPermissions struct {
 	// Enabled description: Enables sub-repo permission checking

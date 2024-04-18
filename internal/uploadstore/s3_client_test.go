@@ -53,7 +53,7 @@ func TestS3InitBucketExists(t *testing.T) {
 
 func TestS3UnmanagedInit(t *testing.T) {
 	s3Client := NewMockS3API()
-	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(&observation.TestContext, "test", "brittleStore"))
+	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(observation.TestContextTB(t), "test", "brittleStore"))
 	if err := client.Init(context.Background()); err != nil {
 		t.Fatalf("unexpected error initializing client: %s", err)
 	}
@@ -69,7 +69,7 @@ func TestS3Get(t *testing.T) {
 		Body: io.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))),
 	}, nil)
 
-	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(&observation.TestContext, "test", "brittleStore"))
+	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(observation.TestContextTB(t), "test", "brittleStore"))
 	rc, err := client.Get(context.Background(), "test-key")
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err)
@@ -121,7 +121,7 @@ func TestS3GetTransientErrors(t *testing.T) {
 	}
 
 	s3Client := fullContentsS3API()
-	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(&observation.TestContext, "test", "brittleStore"))
+	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(observation.TestContextTB(t), "test", "brittleStore"))
 	rc, err := client.Get(context.Background(), "test-key")
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err)
@@ -145,12 +145,12 @@ func TestS3GetTransientErrors(t *testing.T) {
 
 func TestS3GetReadNothingLoop(t *testing.T) {
 	// read nothing then return a connection reset error
-	ioCopyHook = func(w io.Writer, r io.Reader) (int64, error) {
+	ioCopyHook = func(_ io.Writer, _ io.Reader) (int64, error) {
 		return 0, errors.New("read: connection reset by peer")
 	}
 
 	s3Client := fullContentsS3API()
-	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(&observation.TestContext, "test", "brittleStore"))
+	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(observation.TestContextTB(t), "test", "brittleStore"))
 	rc, err := client.Get(context.Background(), "test-key")
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err)

@@ -27,11 +27,26 @@ query BlobPageQuery($repoName: String!, $revspec: String!, $path: String!) {
     }
 }
 
+fragment BlobPage_ResolvedRevision on Repository {
+    externalRepository {
+        serviceType
+    }
+    externalURLs {
+        url
+        serviceKind
+    }
+}
+
 fragment BlobPage_Blob on GitBlob {
     canonicalURL
     content
     richHTML
     languages
+    binary
+    totalLines
+    byteSize
+    ...OpenInCodeHostAction
+    ...FileIcon_GitBlob
 }
 
 query BlobSyntaxHighlightQuery(

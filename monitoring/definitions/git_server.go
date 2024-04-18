@@ -2,6 +2,9 @@ package definitions
 
 import (
 	"fmt"
+	"github.com/iancoleman/strcase"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -25,7 +28,81 @@ func GitServer() *monitoring.Dashboard {
 		ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
 	}
 
+	vcsSyncerVariableName := "vcsSyncerType"
+
 	grpcMethodVariable := shared.GRPCMethodVariable("gitserver", grpcServiceName)
+
+	titleCaser := cases.Title(language.English)
+
+	type vcsMetricsOptions struct {
+		// The name of the VCS operation.
+		operation                 string
+		metric                    string
+		interpretationDescription string
+	}
+
+	genVCSMetricsGroup := func(o vcsMetricsOptions) monitoring.Group {
+		var rows []monitoring.Row
+
+		for _, succeeded := range []bool{true, false} {
+
+			successString := "successful"
+			if !succeeded {
+				successString = "failed"
+			}
+
+			var row []monitoring.Observable
+
+			for _, percentile := range []struct {
+				description string
+				raw         string
+			}{
+				{
+					description: "99.9th percentile",
+					raw:         "999",
+				},
+				{
+					description: "99th percentile",
+					raw:         "99",
+				},
+				{
+					description: "95th percentile",
+					raw:         "95",
+				},
+			} {
+				row = append(row, monitoring.Observable{
+					Name:        fmt.Sprintf("vcs_syncer_%s_%s_%s_duration", percentile.raw, successString, strcase.ToSnake(o.operation)),
+					Description: fmt.Sprintf("%s %s %s duration over 1m", percentile.description, successString, titleCaser.String(o.operation)),
+					Query:       fmt.Sprintf("histogram_quantile(0.%s, sum by (type, le) (rate(%s_bucket{type=~`%s`, success=\"%t\"}[1m])))", percentile.raw, o.metric, fmt.Sprintf("${%s:regex}", vcsSyncerVariableName), succeeded),
+					Panel:       monitoring.Panel().LegendFormat("{{le}}").Unit(monitoring.Seconds).With(monitoring.PanelOptions.ZeroIfNoData()),
+					NoAlert:     true,
+
+					Owner:          monitoring.ObservableOwnerSource,
+					Interpretation: fmt.Sprintf("The %s duration for %s `%s` VCS operations. %s", percentile.description, successString, titleCaser.String(o.operation), o.interpretationDescription),
+				})
+			}
+
+			rows = append(rows, row)
+
+			rows = append(rows, []monitoring.Observable{
+				{
+					Name:           fmt.Sprintf("vcs_syncer_%s_%s_rate", successString, strcase.ToSnake(o.operation)),
+					Description:    fmt.Sprintf("rate of %s %s VCS operations over 1m", successString, titleCaser.String(o.operation)),
+					Query:          fmt.Sprintf("sum by (type) (rate(%s_count{type=~`%s`, success=\"%t\"}[1m]))", o.metric, fmt.Sprintf("${%s:regex}", vcsSyncerVariableName), succeeded),
+					Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.RequestsPerSecond).With(monitoring.PanelOptions.ZeroIfNoData()),
+					NoAlert:        true,
+					Owner:          monitoring.ObservableOwnerSource,
+					Interpretation: fmt.Sprintf("The rate of %s `%s` VCS operations. %s", successString, titleCaser.String(o.operation), o.interpretationDescription),
+				},
+			})
+		}
+
+		return monitoring.Group{
+			Title:  fmt.Sprintf("VCS %s metrics", titleCaser.String(o.operation)),
+			Hidden: true,
+			Rows:   rows,
+		}
+	}
 
 	return &monitoring.Dashboard{
 		Name:        "gitserver",
@@ -43,6 +120,17 @@ func GitServer() *monitoring.Dashboard {
 				Multi: true,
 			},
 			grpcMethodVariable,
+			{
+				Label: "VCS Syncer Kind",
+				Name:  vcsSyncerVariableName,
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "vcssyncer_fetch_duration_seconds_bucket",
+					LabelName:     "type",
+					ExampleOption: "jvm",
+				},
+				Multi:            true,
+				WildcardAllValue: true,
+			},
 		},
 		Groups: []monitoring.Group{
 			{
@@ -458,6 +546,22 @@ func GitServer() *monitoring.Dashboard {
 					},
 				},
 			},
+
+			genVCSMetricsGroup(vcsMetricsOptions{
+				operation:                 "clone",
+				metric:                    "vcssyncer_clone_duration_seconds",
+				interpretationDescription: "This is the time taken to clone a repository from the upstream source.",
+			}),
+			genVCSMetricsGroup(vcsMetricsOptions{
+				operation:                 "fetch",
+				metric:                    "vcssyncer_fetch_duration_seconds",
+				interpretationDescription: "This is the time taken to fetch a repository from the upstream source.",
+			}),
+			genVCSMetricsGroup(vcsMetricsOptions{
+				operation:                 "is_cloneable",
+				metric:                    "vcssyncer_is_cloneable_duration_seconds",
+				interpretationDescription: "This is the time taken to check to see if a repository is cloneable from the upstream source.",
+			}),
 
 			shared.GitServer.NewBackendGroup(containerName, true),
 			shared.GitServer.NewClientGroup("*"),

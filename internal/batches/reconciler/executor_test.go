@@ -81,7 +81,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, et.TestKey{}, clock)
+	bstore := store.NewWithClock(db, observation.TestContextTB(t), et.TestKey{}, clock)
 	wstore := database.OutboundWebhookJobsWith(bstore, nil)
 
 	admin := bt.CreateTestUser(t, db, true)
@@ -878,7 +878,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
-	bstore := store.New(db, &observation.TestContext, et.TestKey{})
+	bstore := store.New(db, observation.TestContextTB(t), et.TestKey{})
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
@@ -920,7 +920,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	bstore := store.New(db, &observation.TestContext, et.TestKey{})
+	bstore := store.New(db, observation.TestContextTB(t), et.TestKey{})
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
 	changesetSpec := bt.BuildChangesetSpec(t, bt.TestSpecOpts{
@@ -999,7 +999,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
-	bstore := store.New(db, &observation.TestContext, et.TestKey{})
+	bstore := store.New(db, observation.TestContextTB(t), et.TestKey{})
 
 	admin := bt.CreateTestUser(t, db, true)
 	user := bt.CreateTestUser(t, db, false)

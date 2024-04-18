@@ -17,10 +17,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 )
@@ -36,8 +33,6 @@ func TestMain(m *testing.M) {
 const testCommit = "deadbeef01deadbeef02deadbeef03deadbeef04"
 
 func TestHandleEnqueueSinglePayload(t *testing.T) {
-	setupRepoMocks(t)
-
 	mockDBStore := NewMockDBStore[testUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -117,8 +112,6 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 }
 
 func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
-	setupRepoMocks(t)
-
 	mockDBStore := NewMockDBStore[testUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -179,8 +172,6 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 }
 
 func TestHandleEnqueueMultipartSetup(t *testing.T) {
-	setupRepoMocks(t)
-
 	mockDBStore := NewMockDBStore[testUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -239,8 +230,6 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 }
 
 func TestHandleEnqueueMultipartUpload(t *testing.T) {
-	setupRepoMocks(t)
-
 	mockDBStore := NewMockDBStore[testUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -311,8 +300,6 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 }
 
 func TestHandleEnqueueMultipartFinalize(t *testing.T) {
-	setupRepoMocks(t)
-
 	mockDBStore := NewMockDBStore[testUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -374,8 +361,6 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 }
 
 func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
-	setupRepoMocks(t)
-
 	mockDBStore := NewMockDBStore[testUploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -404,7 +389,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	h := &UploadHandler[testUploadMetadata]{
 		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
-		operations:  NewOperations(&observation.TestContext, "test"),
+		operations:  NewOperations(observation.TestContextTB(t), "test"),
 		logger:      logtest.Scoped(t),
 	}
 	h.handleEnqueue(w, r)
@@ -439,28 +424,7 @@ func newTestUploadHandler(t *testing.T, dbStore DBStore[testUploadMetadata], upl
 		logtest.Scoped(t),
 		dbStore,
 		uploadStore,
-		NewOperations(&observation.TestContext, "test"),
+		NewOperations(observation.TestContextTB(t), "test"),
 		metadataFromRequest,
 	)
-}
-
-func setupRepoMocks(t testing.TB) {
-	t.Cleanup(func() {
-		backend.Mocks.Repos.GetByName = nil
-		backend.Mocks.Repos.ResolveRev = nil
-	})
-
-	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		if name != "github.com/test/test" {
-			t.Errorf("unexpected repository name. want=%s have=%s", "github.com/test/test", name)
-		}
-		return &types.Repo{ID: 50}, nil
-	}
-
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
-		if rev != testCommit {
-			t.Errorf("unexpected commit. want=%s have=%s", testCommit, rev)
-		}
-		return "", nil
-	}
 }

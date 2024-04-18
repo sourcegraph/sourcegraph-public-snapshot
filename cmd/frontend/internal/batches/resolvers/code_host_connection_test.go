@@ -36,7 +36,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	ghRepo, _ := bt.CreateTestRepo(t, ctx, db)
 	glRepos, _ := bt.CreateGitlabTestRepos(t, ctx, db, 1)

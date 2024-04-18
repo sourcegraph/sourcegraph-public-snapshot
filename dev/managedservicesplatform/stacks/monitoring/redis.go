@@ -3,6 +3,7 @@ package monitoring
 import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringalertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 )
@@ -12,7 +13,10 @@ func createRedisAlerts(
 	id resourceid.ID,
 	vars Variables,
 	channels alertpolicy.NotificationChannels,
-) error {
+) ([]monitoringalertpolicy.MonitoringAlertPolicy, error) {
+	// Collect all alerts to aggregate in a dashboard
+	var alerts []monitoringalertpolicy.MonitoringAlertPolicy
+
 	// Iterate over a list of Redis alert configurations. Custom struct defines
 	// the field we expect to vary between each.
 	for _, config := range []struct {
@@ -68,7 +72,7 @@ func createRedisAlerts(
 		config.ThresholdAggregation.ResourceKind = alertpolicy.CloudRedis
 		config.ThresholdAggregation.ResourceName = *vars.RedisInstanceID
 
-		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+		alert, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 
 			// Alert policy
 			ID:                   config.ID,
@@ -81,10 +85,12 @@ func createRedisAlerts(
 			EnvironmentID:        vars.EnvironmentID,
 			ProjectID:            vars.ProjectID,
 			NotificationChannels: channels,
-		}); err != nil {
-			return err
+		})
+		if err != nil {
+			return nil, err
 		}
+		alerts = append(alerts, alert.AlertPolicy)
 	}
 
-	return nil
+	return alerts, nil
 }

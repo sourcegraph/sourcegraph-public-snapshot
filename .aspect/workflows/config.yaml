@@ -11,11 +11,13 @@ tasks:
   # Checks that BUILD files are formatted
   - buildifier:
       queue: aspect-small
+      timeout_in_minutes: 2
   # Checks that BUILD file content is up-to-date with sources
   - gazelle:
       queue: aspect-small
       target: //:configure
       fix_target: //:configure
+      timeout_in_minutes: 5
   # Checks that all tests are passing
   - test:
       targets:

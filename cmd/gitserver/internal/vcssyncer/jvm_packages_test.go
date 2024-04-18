@@ -136,7 +136,7 @@ func TestNoMaliciousFiles(t *testing.T) {
 
 	cacheDir := filepath.Join(dir, "cache")
 	s := jvmPackagesSyncer{
-		coursier: coursier.NewCoursierHandle(&observation.TestContext, cacheDir),
+		coursier: coursier.NewCoursierHandle(observation.TestContextTB(t), cacheDir),
 		config:   &schema.JVMPackagesConnection{Maven: schema.Maven{Dependencies: []string{}}},
 		fetch: func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error) {
 			jarPath := path.Join(dir, "sampletext.zip")
@@ -219,7 +219,7 @@ func TestJVMCloneCommand(t *testing.T) {
 
 	depsSvc := dependencies.TestService(database.NewDB(logger, dbtest.NewDB(t)))
 	cacheDir := filepath.Join(dir, "cache")
-	fs := gitserverfs.New(&observation.TestContext, dir)
+	fs := gitserverfs.New(observation.TestContextTB(t), dir)
 	require.NoError(t, fs.Initialize())
 	s := NewJVMPackagesSyncer(&schema.JVMPackagesConnection{Maven: schema.Maven{Dependencies: []string{}}}, depsSvc, testGetRemoteURLSource, cacheDir, fs).(*vcsPackagesSyncer)
 	bareGitDirectory := path.Join(dir, "git")

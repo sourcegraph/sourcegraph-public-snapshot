@@ -1,0 +1,107 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli
+    method: GET
+  response:
+    body: '{"type": "repository", "full_name": "sourcegraph-testing/src-cli", "links":
+      {"self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli"}, "avatar":
+      {"href": "https://bytebucket.org/ravatar/%7Bb090a669-ac7b-44cd-9610-02d027cb39f3%7D?ts=default"},
+      "pullrequests": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests"},
+      "commits": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/commits"},
+      "forks": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/forks"},
+      "watchers": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/watchers"},
+      "branches": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/refs/branches"},
+      "tags": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/refs/tags"},
+      "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/downloads"},
+      "source": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/src"},
+      "clone": [{"name": "https", "href": "https://sourcegraph-testing@bitbucket.org/sourcegraph-testing/src-cli.git"},
+      {"name": "ssh", "href": "git@bitbucket.org:sourcegraph-testing/src-cli.git"}],
+      "hooks": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/hooks"}},
+      "name": "src-cli", "slug": "src-cli", "description": "", "scm": "git", "website":
+      null, "owner": {"display_name": "Sourcegraph Testing", "links": {"self": {"href":
+      "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"},
+      "avatar": {"href": "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"},
+      "html": {"href": "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"}},
+      "type": "user", "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}", "account_id":
+      "623316f53fbb880068413f6b", "nickname": "Sourcegraph Testing"}, "workspace":
+      {"type": "workspace", "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}", "name":
+      "Sourcegraph Testing", "slug": "sourcegraph-testing", "links": {"avatar": {"href":
+      "https://bitbucket.org/workspaces/sourcegraph-testing/avatar/?ts=1647515473"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/"}, "self": {"href":
+      "https://api.bitbucket.org/2.0/workspaces/sourcegraph-testing"}}}, "is_private":
+      true, "project": {"type": "project", "key": "SOUR", "uuid": "{a862a17c-1726-47a2-bcd1-d9b37313b350}",
+      "name": "sourcegraph-testing", "links": {"self": {"href": "https://api.bitbucket.org/2.0/workspaces/sourcegraph-testing/projects/SOUR"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/workspace/projects/SOUR"},
+      "avatar": {"href": "https://bitbucket.org/account/user/sourcegraph-testing/projects/SOUR/avatar/32?ts=1647515868"}}},
+      "fork_policy": "no_public_forks", "created_on": "2022-03-17T11:17:48.581867+00:00",
+      "updated_on": "2022-04-14T20:49:52.967015+00:00", "size": 3566870, "language":
+      "", "uuid": "{b090a669-ac7b-44cd-9610-02d027cb39f3}", "mainbranch": {"name":
+      "master", "type": "branch"}, "override_settings": {"default_merge_strategy":
+      true, "branching_model": true}, "parent": null, "has_issues": false, "has_wiki":
+      false}'
+    headers:
+      Cache-Control:
+      - private
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 03 Apr 2024 00:29:31 GMT
+      Etag:
+      - '"a0a3ff29cb18a5af66fa6ab09c0d9c3f"'
+      Server:
+      - envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Authorization, Origin, cookie, user-context
+      X-B3-Spanid:
+      - fef36b6ccad0b2d4
+      X-B3-Traceid:
+      - 6a2473a1b92c2c31
+      X-Content-Type-Options:
+      - nosniff
+      X-Credential-Type:
+      - apppassword
+      X-Dc-Location:
+      - Micros-3
+      X-Envoy-Upstream-Service-Time:
+      - "184"
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Render-Time:
+      - "0.16698527336120605"
+      X-Request-Count:
+      - "2419"
+      X-Request-Id:
+      - 6a2473a1b92c2c31
+      X-Served-By:
+      - 03b017e4a0d3
+      X-Static-Version:
+      - bcd2fa8cae08
+      X-Trace-Id:
+      - 6a2473a1b92c2c31
+      X-Usage-Input-Ops:
+      - "0"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.011698"
+      X-Usage-User-Time:
+      - "0.090983"
+      X-Used-Mesh:
+      - "False"
+      X-Version:
+      - bcd2fa8cae08
+      X-View-Name:
+      - bitbucket.apps.repo2.api.v20.repo.RepositoryHandler
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""

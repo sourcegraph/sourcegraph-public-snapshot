@@ -608,7 +608,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
 		_, err = r.gitserverClient.ResolveRevision(ctx, repo.Name, targetRef, gitserver.ResolveRevisionOptions{
-			NoEnsureRevision: true,
+			EnsureRevision: false,
 		})
 		if err != nil {
 			return nil, err
@@ -777,7 +777,7 @@ func (r *RepositoryResolver) getLinker(ctx context.Context) (externallink.Reposi
 
 		defaultBranch := ""
 		if defaultBranchResolver != nil {
-			defaultBranch = defaultBranchResolver.name
+			defaultBranch = defaultBranchResolver.Name()
 		}
 
 		repo, err := r.getRepo(ctx)

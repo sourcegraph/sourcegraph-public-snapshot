@@ -22,7 +22,7 @@ func TestPackageRepoFiltersBlockOnly(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	s := store.New(&observation.TestContext, db)
+	s := store.New(observation.TestContextTB(t), db)
 
 	deps := []shared.MinimalPackageRepoRef{
 		{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}, {Version: "2.0.1"}, {Version: "3.0.0"}}},
@@ -63,7 +63,7 @@ func TestPackageRepoFiltersBlockOnly(t *testing.T) {
 	job := packagesFilterApplicatorJob{
 		store:       s,
 		extsvcStore: db.ExternalServices(),
-		operations:  newOperations(&observation.TestContext),
+		operations:  newOperations(observation.TestContextTB(t)),
 	}
 
 	if err := job.handle(ctx); err != nil {
@@ -114,7 +114,7 @@ func TestPackageRepoFiltersBlockAllow(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	s := store.New(&observation.TestContext, db)
+	s := store.New(observation.TestContextTB(t), db)
 
 	deps := []shared.MinimalPackageRepoRef{
 		{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}, {Version: "2.0.1"}, {Version: "3.0.0"}}},
@@ -168,7 +168,7 @@ func TestPackageRepoFiltersBlockAllow(t *testing.T) {
 	job := packagesFilterApplicatorJob{
 		store:       s,
 		extsvcStore: db.ExternalServices(),
-		operations:  newOperations(&observation.TestContext),
+		operations:  newOperations(observation.TestContextTB(t)),
 	}
 
 	if err := job.handle(ctx); err != nil {
