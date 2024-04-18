@@ -25,7 +25,7 @@ import (
 //	println(resp.GetDotcom().ProductSubscriptionByAccessToken.LlmProxyAccess.Enabled)
 //
 // The client generator automatically ensures we're up-to-date with the GraphQL schema.
-func NewClient(endpoint, token string) graphql.Client {
+func NewClient(endpoint, token, clientID string) graphql.Client {
 	return &tracedClient{graphql.NewClient(endpoint, &http.Client{
 		Transport: &tokenAuthTransport{
 			token:   token,
@@ -71,8 +71,9 @@ func (tc *tracedClient) MakeRequest(
 
 // tokenAuthTransport adds token header authentication to requests.
 type tokenAuthTransport struct {
-	token   string
-	wrapped http.RoundTripper
+	token    string
+	clientID string
+	wrapped  http.RoundTripper
 }
 
 func (t *tokenAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -82,5 +83,8 @@ func (t *tokenAuthTransport) RoundTrip(req *http.Request) (*http.Response, error
 	req.URL.RawQuery = req.Context().Value(contextKeyOp).(string)
 
 	req.Header.Set("Authorization", fmt.Sprintf("token %s", t.token))
+	if t.clientID != "" {
+		req.Header.Set("X-Sourcegraph-Client-ID", t.clientID)
+	}
 	return t.wrapped.RoundTrip(req)
 }

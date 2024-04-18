@@ -33,6 +33,8 @@ type Config struct {
 		// Prompts that get flagged are stored in Redis for a short-time, for
 		// better understanding the nature of any ongoing spam/abuse waves.
 		FlaggedPromptRecorderTTL time.Duration
+
+		ClientID string
 	}
 
 	Anthropic AnthropicConfig
@@ -151,6 +153,8 @@ func (c *Config) Load() {
 
 	c.Dotcom.AccessToken = c.GetOptional("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN",
 		"The Sourcegraph.com access token to be used. If not provided, dotcom-based actor sources will be disabled.")
+	c.Dotcom.ClientID = c.GetOptional("CODY_GATEWAY_DOTCOM_CLIENT_ID",
+		"Value of X-Sourcegraph-Client-Id header to be passed to sourcegraph.com.")
 	c.Dotcom.URL = c.Get("CODY_GATEWAY_DOTCOM_API_URL", "https://sourcegraph.com/.api/graphql", "Custom override for the dotcom API endpoint")
 	if _, err := url.Parse(c.Dotcom.URL); err != nil {
 		c.AddError(errors.Wrap(err, "invalid CODY_GATEWAY_DOTCOM_API_URL"))
