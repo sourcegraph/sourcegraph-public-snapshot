@@ -307,7 +307,7 @@ func CollectAlertPolicies(svc *spec.Spec) (map[string]terraform.AlertPolicy, err
 	collectedAlerts := make(map[string]terraform.AlertPolicy)
 	for _, env := range svc.ListEnvironmentIDs() {
 		// Parse the generated alert policies to create alerting docs
-		monitoringPath := msprepo.ServiceStackCDKTF(svc.Service.ID, env, "monitoring")
+		monitoringPath := msprepo.ServiceStackCDKTFPath(svc.Service.ID, env, "monitoring")
 		monitoring, err := terraform.ParseMonitoringCDKTF(monitoringPath)
 		if err != nil {
 			return nil, err

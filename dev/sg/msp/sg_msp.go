@@ -377,11 +377,12 @@ sg msp generate -all
 
 				collectedAlerts, err := CollectAlertPolicies(svc)
 				if err != nil {
-					return err
+					return errors.Wrap(err, "CollectAlertPolicies")
 				}
 
-				doc, err := operationdocs.Render(*svc, collectedAlerts, operationdocs.Options{
+				doc, err := operationdocs.Render(*svc, operationdocs.Options{
 					ManagedServicesRevision: repoRev,
+					AlertPolicies:           collectedAlerts,
 				})
 				if err != nil {
 					return errors.Wrap(err, "operationdocs.Render")
@@ -457,10 +458,11 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 							}
 							serviceSpecs = append(serviceSpecs, svc)
 							collectedAlerts, err := CollectAlertPolicies(svc)
+							opts.AlertPolicies = collectedAlerts
 							if err != nil {
-								return err
+								return errors.Wrapf(err, "%s: CollectAlertPolicies", s)
 							}
-							doc, err := operationdocs.Render(*svc, collectedAlerts, opts)
+							doc, err := operationdocs.Render(*svc, opts)
 							if err != nil {
 								return errors.Wrap(err, s)
 							}

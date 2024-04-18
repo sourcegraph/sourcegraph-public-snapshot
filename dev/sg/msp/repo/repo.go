@@ -102,7 +102,7 @@ func ServiceStackPath(serviceID, envID, stackID string) string {
 	return filepath.Join("services", serviceID, "terraform", envID, "stacks", stackID)
 }
 
-func ServiceStackCDKTF(serviceID, envID, stackID string) string {
+func ServiceStackCDKTFPath(serviceID, envID, stackID string) string {
 	return filepath.Join(ServiceStackPath(serviceID, envID, stackID), "cdk.tf.json")
 }
 

@@ -25,6 +25,9 @@ type Options struct {
 	GenerateCommand string
 	// Handbook indicates we are generating output for sourcegraph/handbook.
 	Handbook bool
+	// AlertPolicies is a deduplicated map of alert policies defined for all
+	// environments of a service
+	AlertPolicies map[string]terraform.AlertPolicy
 }
 
 // AddDocumentComment adds a comment to the markdown document with details about
@@ -51,7 +54,7 @@ Last updated: %s
 
 // Render creates a Markdown string with operational guidance for a MSP specification
 // and runtime properties using OutputsClient.
-func Render(s spec.Spec, alertPolicies map[string]terraform.AlertPolicy, opts Options) (string, error) {
+func Render(s spec.Spec, opts Options) (string, error) {
 	md := markdown.NewBuilder()
 
 	md.Headingf(1, "%s infrastructure operations", s.Service.GetName())
@@ -187,7 +190,7 @@ This service is operated on the %s.`,
 			{"Slack notifications", markdown.Linkf("#"+slackChannelName, "https://sourcegraph.slack.com/archives/"+slackChannelName)},
 			{"Alert policies",
 				fmt.Sprintf("%s, %s",
-					markdown.Linkf("Listing", "https://console.cloud.google.com/monitoring/alerting/policies?project=%s", env.ProjectID),
+					markdown.Linkf("GCP Monitoring alert policies list", "https://console.cloud.google.com/monitoring/alerting/policies?project=%s", env.ProjectID),
 					AlertPolicyDashboardURL(env.ProjectID))},
 			{"Errors", sentryLink},
 		}
@@ -343,10 +346,10 @@ If you make your Entitle request, then log in, you will be removed from any team
 
 	// Render alerts
 	// Sort the map keys to make order deterministic
-	alertKeys := maps.Keys(alertPolicies)
+	alertKeys := maps.Keys(opts.AlertPolicies)
 	slices.Sort(alertKeys)
 	for _, key := range alertKeys {
-		policy := alertPolicies[key]
+		policy := opts.AlertPolicies[key]
 		md.Headingf(4, policy.DisplayName)
 		// We need to remove the footer text we add to each alert policy description
 		b := []byte(policy.Documentation.Content)
