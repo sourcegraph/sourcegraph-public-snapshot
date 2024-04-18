@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -20,8 +21,47 @@ func (l *loggingGRPCServer) doLog(message string, fields ...log.Field) {
 	l.logger.Debug(message, fields...)
 }
 
-func (l *loggingGRPCServer) CreateCommitFromPatchBinary(server proto.GitserverService_CreateCommitFromPatchBinaryServer) error {
-	return l.GitserverServiceServer.CreateCommitFromPatchBinary(server)
+func (l *loggingGRPCServer) CreateCommitFromPatchBinary(server proto.GitserverService_CreateCommitFromPatchBinaryServer) (err error) {
+	start := time.Now()
+	var atomicMetadata atomic.Pointer[proto.CreateCommitFromPatchBinaryRequest_Metadata]
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		fields := []log.Field{
+			log.String("traceID", trace.Context(server.Context()).TraceID),
+			log.String("method", "CreateCommitFromPatchBinary"),
+			log.String("status", status.Code(err).String()),
+			log.Duration("duration", elapsed),
+		}
+
+		meta := atomicMetadata.Load()
+		if meta != nil {
+			fields = append(fields, log.Object("request", log.String("metadata", protojson.Format(meta))))
+		} else {
+			fields = append(fields, log.Object("request", log.String("metadata", "<empty>")))
+		}
+
+		l.doLog("Received CreateCommitFromPatchBinary request", fields...)
+	}()
+
+	recvCallback := func(req *proto.CreateCommitFromPatchBinaryRequest, err error) {
+		if err != nil {
+			return
+		}
+
+		switch req.GetPayload().(type) {
+		case *proto.CreateCommitFromPatchBinaryRequest_Metadata_:
+			// Save the first metadata message that we receive for later logging
+			meta := req.GetMetadata()
+			atomicMetadata.CompareAndSwap(nil, meta)
+		default:
+			return
+		}
+	}
+
+	s := newCreateCommitFromPatchBinaryCallbackServer(server, recvCallback)
+	return l.GitserverServiceServer.CreateCommitFromPatchBinary(s)
 }
 
 func (l *loggingGRPCServer) DiskInfo(ctx context.Context, request *proto.DiskInfoRequest) (response *proto.DiskInfoResponse, err error) {
@@ -158,24 +198,24 @@ func (l *loggingGRPCServer) Archive(request *proto.ArchiveRequest, server proto.
 	return l.GitserverServiceServer.Archive(request, server)
 }
 
-func (l *loggingGRPCServer) RepoClone(ctx context.Context, request *proto.RepoCloneRequest) (response *proto.RepoCloneResponse, err error) {
-	start := time.Now()
-
-	defer func() {
-		elapsed := time.Since(start)
-		fields := []log.Field{
-			log.String("traceID", trace.Context(ctx).TraceID),
-			log.String("method", "RepoClone"),
-			log.String("status", status.Code(err).String()),
-			log.String("request", protojson.Format(request)),
-			log.Duration("duration", elapsed),
-		}
-
-		l.doLog("Received RepoClone request", fields...)
-	}()
-
-	return l.GitserverServiceServer.RepoClone(ctx, request)
-}
+//func (l *loggingGRPCServer) RepoClone(ctx context.Context, request *proto.repocl) (response *proto.RepoCloneResponse, err error) {
+//	start := time.Now()
+//
+//	defer func() {
+//		elapsed := time.Since(start)
+//		fields := []log.Field{
+//			log.String("traceID", trace.Context(ctx).TraceID),
+//			log.String("method", "RepoClone"),
+//			log.String("status", status.Code(err).String()),
+//			log.String("request", protojson.Format(request)),
+//			log.Duration("duration", elapsed),
+//		}
+//
+//		l.doLog("Received RepoClone request", fields...)
+//	}()
+//
+//	return l.GitserverServiceServer.RepoClone(ctx, request)
+//}
 
 func (l *loggingGRPCServer) RepoCloneProgress(ctx context.Context, request *proto.RepoCloneProgressRequest) (response *proto.RepoCloneProgressResponse, err error) {
 	start := time.Now()

@@ -3,6 +3,9 @@ package internal
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/google/go-cmp/cmp"
+	"google.golang.org/protobuf/testing/protocmp"
 	"testing"
 
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -56,11 +59,14 @@ func (s *mockCreateCommitFromPatchBinaryServer) SetTrailer(metadata.MD) {
 
 func TestCreateCommitFromPatchBinaryCallbackServer_Recv(t *testing.T) {
 	tests := []struct {
-		name           string
-		mockServer     *mockCreateCommitFromPatchBinaryServer
-		expectedReq    *proto.CreateCommitFromPatchBinaryRequest
-		expectedErr    error
-		callbackInvoke bool
+		name string
+
+		mockServer        *mockCreateCommitFromPatchBinaryServer
+		shouldSetCallback bool
+
+		expectedReq             *proto.CreateCommitFromPatchBinaryRequest
+		expectedErr             error
+		callbackShouldBeInvoked bool
 	}{
 		{
 			name: "successful receive",
@@ -80,22 +86,25 @@ func TestCreateCommitFromPatchBinaryCallbackServer_Recv(t *testing.T) {
 					},
 				},
 			},
-			expectedErr:    nil,
-			callbackInvoke: true,
+			shouldSetCallback:       true,
+			expectedErr:             nil,
+			callbackShouldBeInvoked: true,
 		},
 		{
 			name: "receive error",
 			mockServer: &mockCreateCommitFromPatchBinaryServer{
 				recvErr: errors.New("receive error"),
 			},
-			expectedErr:    errors.New("receive error"),
-			callbackInvoke: true,
+			shouldSetCallback:       true,
+			expectedErr:             errors.New("receive error"),
+			callbackShouldBeInvoked: true,
 		},
 		{
-			name:           "no callback set",
-			mockServer:     &mockCreateCommitFromPatchBinaryServer{},
-			expectedErr:    nil,
-			callbackInvoke: false,
+			name:                    "no recvCallback set",
+			mockServer:              &mockCreateCommitFromPatchBinaryServer{},
+			shouldSetCallback:       false,
+			expectedErr:             nil,
+			callbackShouldBeInvoked: false,
 		},
 	}
 
@@ -104,27 +113,36 @@ func TestCreateCommitFromPatchBinaryCallbackServer_Recv(t *testing.T) {
 			var callbackInvoked bool
 			callback := func(req *proto.CreateCommitFromPatchBinaryRequest, err error) {
 				callbackInvoked = true
-				if req != test.expectedReq {
-					t.Errorf("Expected request %v, but got %v", test.expectedReq, req)
+
+				if diff := cmp.Diff(test.expectedReq, req, protocmp.Transform()); diff != "" {
+					t.Errorf("Unexpected request (-want +got):\n%s", diff)
 				}
-				if !errors.Is(err, test.expectedErr) {
-					t.Errorf("Expected error %v, but got %v", test.expectedErr, err)
+
+				if diff := cmp.Diff(fmt.Sprintf("%s", test.expectedErr), fmt.Sprintf("%s", err)); diff != "" {
+					t.Errorf("Unexpected error (-want +got):\n%s", diff)
 				}
-			}
-			server := &createCommitFromPatchBinaryCallbackServer{
-				stream:   test.mockServer,
-				callback: callback,
 			}
 
+			if !test.shouldSetCallback {
+				callback = nil
+			}
+
+			server := newCreateCommitFromPatchBinaryCallbackServer(
+				test.mockServer,
+				callback,
+			)
+
 			req, err := server.Recv()
-			if err != test.expectedErr {
-				t.Errorf("Expected error %v, but got %v", test.expectedErr, err)
+			if diff := cmp.Diff(req, test.expectedReq, protocmp.Transform()); diff != "" {
+				t.Errorf("Unexpected request (-want +got):\n%s", diff)
 			}
-			if req != test.expectedReq {
-				t.Errorf("Expected request %v, but got %v", test.expectedReq, req)
+
+			if diff := cmp.Diff(fmt.Sprintf("%s", test.expectedErr), fmt.Sprintf("%s", err)); diff != "" {
+				t.Errorf("Unexpected error (-want +got):\n%s", diff)
 			}
-			if callbackInvoked != test.callbackInvoke {
-				t.Errorf("Expected callback invoked %v, but got %v", test.callbackInvoke, callbackInvoked)
+
+			if callbackInvoked != test.callbackShouldBeInvoked {
+				t.Errorf("Expected recvCallback invoked %v, but got %v", test.callbackShouldBeInvoked, callbackInvoked)
 			}
 		})
 	}
