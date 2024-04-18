@@ -96,38 +96,38 @@ func (s *vcsPackagesSyncer) Clone(ctx context.Context, repo api.RepoName, _ comm
 
 	// The Fetch method is responsible for cleaning up temporary directories.
 	// TODO: We should have more fine-grained progress reporting here.
-	tryWrite(s.logger, progressWriter, "Fetching package revisions\n")
-	if _, err := s.Fetch(ctx, repo, common.GitDir(tmpPath)); err != nil {
+	if err := s.Fetch(ctx, repo, common.GitDir(tmpPath), progressWriter); err != nil {
 		return errors.Wrapf(err, "failed to fetch repo for %s", repo)
 	}
 
 	return nil
 }
 
-func (s *vcsPackagesSyncer) Fetch(ctx context.Context, repo api.RepoName, dir common.GitDir) ([]byte, error) {
+func (s *vcsPackagesSyncer) Fetch(ctx context.Context, repo api.RepoName, dir common.GitDir, progressWriter io.Writer) error {
+	tryWrite(s.logger, progressWriter, "Fetching package revisions\n")
 	source, err := s.getRemoteURLSource(ctx, repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting remote URL source")
+		return errors.Wrap(err, "getting remote URL source")
 	}
 
 	remoteURL, err := source.RemoteURL(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting remote URL") // This should never happen for Perforce
+		return errors.Wrap(err, "getting remote URL") // This should never happen for Perforce
 	}
 
 	var pkg reposource.Package
 	pkg, err = s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	name := pkg.PackageSyntax()
 
 	versions, err := s.versions(ctx, name)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return nil, s.fetchVersions(ctx, name, dir, versions)
+	return s.fetchVersions(ctx, name, dir, versions)
 }
 
 // fetchVersions checks whether the given versions are all valid version

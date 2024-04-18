@@ -66,7 +66,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsSource.Add("foo@0.0.1")
 
 	t.Run("one version from service", func(t *testing.T) {
-		_, err := s.Fetch(ctx, "", dir)
+		err := s.Fetch(ctx, "", dir, io.Discard)
 		require.NoError(t, err)
 
 		s.assertRefs(t, dir, map[string]string{
@@ -89,7 +89,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	oneVersionOneDownload := map[string]int{"foo@0.0.1": 1, "foo@0.0.2": 1}
 
 	t.Run("two versions, service and config", func(t *testing.T) {
-		_, err := s.Fetch(ctx, "", dir)
+		err := s.Fetch(ctx, "", dir, io.Discard)
 		require.NoError(t, err)
 
 		s.assertRefs(t, dir, allVersionsHaveRefs)
@@ -99,7 +99,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsSource.Delete("foo@0.0.2")
 
 	t.Run("cached tag not re-downloaded (404 not found)", func(t *testing.T) {
-		_, err := s.Fetch(ctx, "", dir)
+		err := s.Fetch(ctx, "", dir, io.Discard)
 		require.NoError(t, err)
 
 		// v0.0.2 is still present in the git repo because we didn't send a second download request.
@@ -111,7 +111,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsSource.download["foo@0.0.1"] = errors.New("401 unauthorized")
 
 	t.Run("cached tag not re-downloaded (401 unauthorized)", func(t *testing.T) {
-		_, err := s.Fetch(ctx, "", dir)
+		err := s.Fetch(ctx, "", dir, io.Discard)
 		// v0.0.1 is still present in the git repo because we didn't send a second download request.
 		require.NoError(t, err)
 		s.assertRefs(t, dir, allVersionsHaveRefs)
@@ -126,7 +126,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	}
 
 	t.Run("service version deleted", func(t *testing.T) {
-		_, err := s.Fetch(ctx, "", dir)
+		err := s.Fetch(ctx, "", dir, io.Discard)
 		require.NoError(t, err)
 
 		s.assertRefs(t, dir, onlyV2Refs)
@@ -136,7 +136,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	s.configDeps = []string{}
 
 	t.Run("all versions deleted", func(t *testing.T) {
-		_, err := s.Fetch(ctx, "", dir)
+		err := s.Fetch(ctx, "", dir, io.Discard)
 		require.NoError(t, err)
 
 		s.assertRefs(t, dir, map[string]string{})
@@ -148,7 +148,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsService.Add("foo@0.0.2")
 	depsSource.Add("foo@0.0.2")
 	t.Run("error aggregation", func(t *testing.T) {
-		_, err := s.Fetch(ctx, "", dir)
+		err := s.Fetch(ctx, "", dir, io.Discard)
 		require.ErrorContains(t, err, "401 unauthorized")
 
 		// The foo@0.0.1 tag was not created because of the 401 error.

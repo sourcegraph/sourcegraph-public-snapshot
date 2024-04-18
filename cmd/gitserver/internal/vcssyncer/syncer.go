@@ -62,7 +62,9 @@ type VCSSyncer interface {
 	// Output returned from this function should NEVER contain sensitive information.
 	// The VCSSyncer implementation is responsible of redacting potentially
 	// sensitive data like secrets.
-	Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir) ([]byte, error)
+	// Progress reported through the progressWriter will be streamed line-by-line
+	// with both LF and CR being valid line terminators.
+	Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir, progressWriter io.Writer) error
 }
 
 type NewVCSSyncerOpts struct {

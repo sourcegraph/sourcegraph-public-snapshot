@@ -1,7 +1,6 @@
 package vcssyncer
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"os"
@@ -162,24 +161,22 @@ func (s *gitRepoSyncer) Clone(ctx context.Context, repo api.RepoName, _ common.G
 }
 
 // Fetch tries to fetch updates of a Git repository.
-func (s *gitRepoSyncer) Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir) ([]byte, error) {
+func (s *gitRepoSyncer) Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir, progressWriter io.Writer) error {
 	source, err := s.getRemoteURLSource(ctx, repoName)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get remote URL source for %s", repoName)
+		return errors.Wrapf(err, "failed to get remote URL source for %s", repoName)
 	}
-
-	var output bytes.Buffer
 
 	// Fetch the remote contents.
 	{
-		tryWrite(s.logger, &output, "Fetching remote contents\n")
+		tryWrite(s.logger, progressWriter, "Fetching remote contents\n")
 
-		exitCode, err := s.runFetchCommand(ctx, repoName, source, &output, dir)
+		exitCode, err := s.runFetchCommand(ctx, repoName, source, progressWriter, dir)
 		if err != nil {
-			return nil, errors.Wrapf(err, "exit code: %d, failed to fetch from remote: %s", exitCode, output.String())
+			return errors.Wrapf(err, "exit code: %d, failed to fetch from remote", exitCode)
 		}
 
-		tryWrite(s.logger, &output, "Fetched remote contents\n")
+		tryWrite(s.logger, progressWriter, "Fetched remote contents\n")
 
 	}
 
@@ -189,17 +186,17 @@ func (s *gitRepoSyncer) Fetch(ctx context.Context, repoName api.RepoName, dir co
 
 	// Set the local HEAD to the remote HEAD.
 	{
-		tryWrite(s.logger, &output, "Setting local HEAD to remote HEAD\n")
+		tryWrite(s.logger, progressWriter, "Setting local HEAD to remote HEAD\n")
 
 		err := s.setHEAD(ctx, repoName, dir, source)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to set local HEAD to remote HEAD")
+			return errors.Wrap(err, "failed to set local HEAD to remote HEAD")
 		}
 
-		tryWrite(s.logger, &output, "Finished setting local HEAD to remote HEAD\n")
+		tryWrite(s.logger, progressWriter, "Finished setting local HEAD to remote HEAD\n")
 	}
 
-	return output.Bytes(), nil
+	return nil
 }
 
 func (s *gitRepoSyncer) runFetchCommand(ctx context.Context, repoName api.RepoName, source RemoteURLSource, progressWriter io.Writer, dir common.GitDir) (exitCode int, err error) {
