@@ -2067,7 +2067,7 @@ func TestClient_ListRefs(t *testing.T) {
 				ss.RecvFunc.SetDefaultReturn(nil, io.EOF)
 				ss.RecvFunc.PushReturn(&proto.ListRefsResponse{Refs: []*proto.GitRef{
 					{
-						RefName:      "refs/heads/master",
+						RefName:      []byte("refs/heads/master"),
 						TargetCommit: "deadbeef",
 						CreatedAt:    timestamppb.New(now),
 					},

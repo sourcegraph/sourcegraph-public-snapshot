@@ -417,8 +417,8 @@ type Ref struct {
 
 func RefFromProto(r *proto.GitRef) Ref {
 	return Ref{
-		Name:        r.GetRefName(),
-		ShortName:   r.GetShortRefName(),
+		Name:        string(r.GetRefName()),
+		ShortName:   string(r.GetShortRefName()),
 		Type:        RefTypeFromProto(r.GetRefType()),
 		CommitID:    api.CommitID(r.GetTargetCommit()),
 		RefOID:      api.CommitID(r.GetRefOid()),
@@ -429,8 +429,8 @@ func RefFromProto(r *proto.GitRef) Ref {
 
 func (r *Ref) ToProto() *proto.GitRef {
 	return &proto.GitRef{
-		RefName:      r.Name,
-		ShortRefName: r.ShortName,
+		RefName:      []byte(r.Name),
+		ShortRefName: []byte(r.ShortName),
 		TargetCommit: string(r.CommitID),
 		RefOid:       string(r.RefOID),
 		CreatedAt:    timestamppb.New(r.CreatedDate),
