@@ -4824,13 +4824,6 @@ def go_dependencies():
         version = "v0.0.0-20170810143723-de5bf2ad4578",
     )
     go_repository(
-        name = "com_github_qdrant_go_client",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/qdrant/go-client",
-        sum = "h1:kh5B4yWjrd5BcynJoA4014mZlI/j6++inCMMQoKUOtI=",
-        version = "v1.4.1",
-    )
-    go_repository(
         name = "com_github_qustavo_sqlhooks_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/qustavo/sqlhooks/v2",

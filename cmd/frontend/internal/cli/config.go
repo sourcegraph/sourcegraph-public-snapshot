@@ -598,7 +598,6 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		Searchers:            searcherAddrs,
 		Symbols:              symbolsAddrs,
 		Embeddings:           embeddingsAddrs,
-		Qdrant:               qdrantAddr,
 		Zoekts:               zoektAddrs,
 		ZoektListTTL:         indexedListTTL,
 	}
@@ -616,8 +615,6 @@ var (
 
 	embeddingsURLsOnce sync.Once
 	embeddingsURLs     *endpoint.Map
-
-	qdrantAddr = os.Getenv("QDRANT_ENDPOINT")
 
 	indexedListTTL = func() time.Duration {
 		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))

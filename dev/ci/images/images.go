@@ -124,7 +124,6 @@ var DeploySourcegraphDockerImages = []string{
 	"postgres_exporter",
 	"precise-code-intel-worker",
 	"prometheus",
-	"qdrant",
 	"redis-cache",
 	"redis-store",
 	"redis_exporter",
