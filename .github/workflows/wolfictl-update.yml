@@ -35,22 +35,15 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-         go-version: '1.22.2'
+         go-version: '1.22'
 
       - name: Build binary
         run: |
-          cd $GITHUB_WORKSPACE/wolfictl
-          ls -al ./
-          go build -o wolfictl ./
-          ls -al ./
-
-      - name: Add wolfictl to path
-        run: |
           TMP=$(mktemp -d)
-          echo "Temp dir: $TMP"
+          export GOBIN=$TMP
           cd $GITHUB_WORKSPACE/wolfictl
-          ls -al ./
-          mv ./wolfictl $TMP/
+          ls -al $TMP
+          go install ./...
           ls -al $TMP
           echo "$TMP" >> $GITHUB_PATH
 
@@ -65,7 +58,7 @@ jobs:
           wolfictl version
 
       # Run wolfictl update
-      - name: "wolfictl update"
+      - name: wolfictl update
         run: |
           wolfictl update \
             --create-issues='false' \
