@@ -86,6 +86,11 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 		return nil, NoAccessError{}
 	}
 
+	// To work better with the abuse detection system, we consider the rate limit of 1 as no access.
+	if l.Limit == 1 {
+		return nil, NoAccessError{}
+	}
+
 	// Check the current usage. If no record exists, redis will return 0.
 	currentUsage, err = l.Redis.GetInt(l.Identifier)
 	if err != nil {
@@ -95,12 +100,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 	// If the usage exceeds the maximum, we return an error. Consumers can check if
 	// the error is of type RateLimitExceededError and extract additional information
 	// like the limit and the time by when they should retry.
-	//
-	// Subtract one because (for reasons) we set a user's quota to 1 instead of 0 in order to
-	// ban them. And it is important (for other reasons) that we block the request instead of
-	// waiting to set the usage count from 0 to 1 and blocking the _next_ request... but sadly,
-	// this does mean that when we say users get 250 chats a day, we only give them 249. Sorry.
-	if int64(currentUsage) >= l.Limit-1 {
+	if int64(currentUsage) >= l.Limit {
 		retryAfter, err := RetryAfterWithTTL(l.Redis, l.NowFunc, l.Identifier)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get TTL for rate limit counter")
