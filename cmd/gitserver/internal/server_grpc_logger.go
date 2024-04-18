@@ -17,6 +17,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// loggingGRPCServer is a wrapper around the provided GitserverServiceServer
+// that logs requests, durations, and status codes.
 type loggingGRPCServer struct {
 	proto.GitserverServiceServer
 	logger log.Logger
