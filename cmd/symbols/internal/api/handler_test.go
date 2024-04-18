@@ -78,10 +78,10 @@ func TestHandler(t *testing.T) {
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(files))
 
-	symbolParser := parser.NewParser(&observation.TestContext, parserPool, fetcher.NewRepositoryFetcher(&observation.TestContext, gitserverClient, 1000, 1_000_000), 0, 10)
+	symbolParser := parser.NewParser(observation.TestContextTB(t), parserPool, fetcher.NewRepositoryFetcher(observation.TestContextTB(t), gitserverClient, 1000, 1_000_000), 0, 10)
 	databaseWriter := writer.NewDatabaseWriter(observation.TestContextTB(t), tmpDir, gitserverClient, symbolParser, semaphore.NewWeighted(1))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	handler := NewHandler(MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, dbmocks.NewMockDB()), func(ctx context.Context, rcp types.RepoCommitPath) ([]byte, error) { return nil, nil }, nil, "")
+	handler := NewHandler(MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, dbmocks.NewMockDB()), func(ctx context.Context, rcp types.RepoCommitPath) ([]byte, error) { return nil, nil }, nil)
 
 	server := httptest.NewServer(handler)
 	defer server.Close()
@@ -158,11 +158,13 @@ func TestHandler(t *testing.T) {
 
 	for label, testCase := range testCases {
 		t.Run(label, func(t *testing.T) {
-			resultSymbols, err := client.Search(context.Background(), testCase.args)
+			resultSymbols, limitHit, err := client.Search(context.Background(), testCase.args)
 			if err != nil {
 				t.Fatalf("unexpected error performing search: %s", err)
 			}
-
+			if limitHit {
+				t.Fatalf("unexpected limitHit")
+			}
 			if resultSymbols == nil {
 				if testCase.expected != nil {
 					t.Errorf("unexpected search result. want=%+v, have=nil", testCase.expected)

@@ -20,7 +20,7 @@ func releasePromoteImages(c Config) operations.Operation {
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
 			bk.Env("VERSION", c.Version),
 			bk.Env("INTERNAL_REGISTRY", images.SourcegraphInternalReleaseRegistry),
-			bk.Env("PUBLIC_REGISTRY", images.SourcegraphPublicReleaseRegistry),
+			bk.Env("PUBLIC_REGISTRY", images.SourcegraphDockerPublishRegistry),
 			bk.AnnotatedCmd(
 				fmt.Sprintf("./tools/release/promote_images.sh %s", image_args),
 				bk.AnnotatedCmdOpts{
@@ -36,12 +36,21 @@ func releasePromoteImages(c Config) operations.Operation {
 
 // releaseTestOperations runs the script defined in release.yaml that tests the release.
 func releaseTestOperation(c Config) operations.Operation {
+	devRegistry := images.SourcegraphDockerDevRegistry
+	prodRegistry := images.SourcegraphDockerPublishRegistry
+
+	if c.RunType.Is(runtype.InternalRelease) {
+		prodRegistry = images.SourcegraphInternalReleaseRegistry
+	}
+
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep("Release tests",
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
+			bk.Env("DEV_REGISTRY", devRegistry),
+			bk.Env("PROD_REGISTRY", prodRegistry),
 			bk.Env("VERSION", c.Version),
 			bk.AnnotatedCmd(
-				bazelCmd(`run --run_under="cd $$PWD &&" //dev/sg -- release run test --branch $$BUILDKITE_BRANCH`),
+				bazelCmd(`run --run_under="cd $$PWD &&" //dev/sg -- release run test --branch $$BUILDKITE_BRANCH --version $$VERSION`),
 				bk.AnnotatedCmdOpts{
 					Annotations: &bk.AnnotationOpts{
 						Type:         bk.AnnotationTypeInfo,
@@ -70,7 +79,7 @@ func releaseFinalizeOperation(c Config) operations.Operation {
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
 			bk.Env("VERSION", c.Version),
 			bk.AnnotatedCmd(
-				bazelCmd(fmt.Sprintf(`run --run_under="cd $$PWD &&" //dev/sg -- release run %s finalize --branch $$BUILDKITE_BRANCH`, command)),
+				bazelCmd(fmt.Sprintf(`run --run_under="cd $$PWD &&" //dev/sg -- release run %s finalize --branch $$BUILDKITE_BRANCH --version $$VERSION`, command)),
 				bk.AnnotatedCmdOpts{
 					Annotations: &bk.AnnotationOpts{
 						Type:         bk.AnnotationTypeInfo,

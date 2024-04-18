@@ -150,7 +150,11 @@ func (s searchQuery) toRepoRevSpecs(ctx context.Context, repoRevSpec types.Repos
 
 	var revs []query.RevisionSpecifier
 	for _, revspec := range repoRevSpec.RevisionSpecifiers.Get() {
-		revs = append(revs, query.ParseRevisionSpecifier(revspec))
+		rs, err := query.ParseRevisionSpecifier(revspec)
+		if err != nil {
+			return repos.RepoRevSpecs{}, err
+		}
+		revs = append(revs, rs)
 	}
 
 	return repos.RepoRevSpecs{

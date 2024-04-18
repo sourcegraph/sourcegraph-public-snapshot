@@ -7,6 +7,7 @@ import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/Que
 import type { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Label, Tooltip, useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -34,8 +35,9 @@ interface SearchPageContentProps {
 export const SearchPageContent: FC<SearchPageContentProps> = props => {
     const { shouldShowAddCodeHostWidget } = props
 
-    const { telemetryService, selectedSearchContextSpec, isSourcegraphDotCom, authenticatedUser } =
+    const { telemetryService, selectedSearchContextSpec, isSourcegraphDotCom, authenticatedUser, platformContext } =
         useLegacyContext_onlyInStormRoutes()
+    const { telemetryRecorder } = platformContext
 
     const isLightTheme = useIsLightTheme()
     const [v2QueryInput] = useV2QueryInput()
@@ -45,7 +47,10 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         query: '',
     })
 
-    useEffect(() => telemetryService.logViewEvent('Home'), [telemetryService])
+    useEffect(() => {
+        telemetryService.logViewEvent('Home')
+        telemetryRecorder.recordEvent('home', 'view')
+    }, [telemetryService, telemetryRecorder])
     useEffect(() => {
         // TODO (#48103): Remove/simplify when new search input is released
         // Because the current and the new search input handle the context: selector differently
@@ -94,6 +99,9 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             onToggle={val => {
                                 const arg = { state: val }
                                 telemetryService.log('SimpleSearchToggle', arg, arg)
+                                telemetryRecorder.recordEvent('home.simpleSearch', 'toggle', {
+                                    metadata: { enabled: val ? 1 : 0 },
+                                })
                                 setSimpleSearch(val)
                             }}
                         />
@@ -129,6 +137,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             <GettingStartedTour
                                 className="mt-5"
                                 telemetryService={telemetryService}
+                                telemetryRecorder={noOpTelemetryRecorder}
                                 variant="horizontal"
                                 authenticatedUser={authenticatedUser}
                             />

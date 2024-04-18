@@ -1,0 +1,54 @@
+# Used to query data for repository branches and tags
+# NOTE: the query which is going to use this fragment is supposed
+# to have query and type (branch or tag) variables
+fragment RepositoryGitRefs on Repository {
+    __typename
+    gitRefs(first: 15, query: $query, type: $type) {
+        __typename
+        nodes {
+            __typename
+            id
+            name
+            url
+            abbrevName
+            displayName
+            target {
+                commit {
+                    ...RepositoryGitRevAuthor
+                }
+            }
+        }
+        totalCount
+    }
+}
+
+# Used to query data for repository git commits
+# NOTE: the query which is going to use this fragment is supposed
+# to have query and anchor revision variables
+fragment RepositoryGitCommits on Repository {
+    __typename
+    commit(rev: $revision) {
+        __typename
+        ancestors(first: 15, query: $query) {
+            __typename
+            nodes {
+                __typename
+                id
+                oid
+                subject
+                abbreviatedOID
+                ...RepositoryGitRevAuthor
+            }
+        }
+    }
+}
+
+fragment RepositoryGitRevAuthor on GitCommit {
+    author {
+        date
+        person {
+            __typename
+            ...Avatar_Person
+        }
+    }
+}

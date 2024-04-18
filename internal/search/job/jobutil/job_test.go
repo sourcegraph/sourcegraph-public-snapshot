@@ -241,7 +241,7 @@ func TestNewPlanJob(t *testing.T) {
               (repoScope . [(and branch="HEAD" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)])
               (includePrivate . true)
               (globalZoektQueryRegexps . [(?i)(?-s:ok.*?ok)])
-              (query . regex:"(?-s:ok.*?ok)")
+              (query . regex:"ok(?-s:.)*?ok")
               (type . text))
             (REPOSEARCH
               (repoOpts.repoFilters . [(?:ok).*?(?:ok)])
@@ -386,7 +386,7 @@ func TestNewPlanJob(t *testing.T) {
             (repoScope . [(and branch="HEAD" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)])
             (includePrivate . true)
             (globalZoektQueryRegexps . [(?i)(?-s:foo.*?@bar)])
-            (query . regex:"(?-s:foo.*?@bar)")
+            (query . regex:"foo(?-s:.)*?@bar")
             (type . text))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))
@@ -880,7 +880,7 @@ func TestNewPlanJob(t *testing.T) {
               (repoScope . [(and branch="HEAD" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived)])
               (includePrivate . true)
               (globalZoektQueryRegexps . [(?i)(?-s:a.*b)])
-              (query . regex:"(?-s:a.*b)")
+              (query . regex:"a(?-s:.)*b")
               (type . text))
             REPOSCOMPUTEEXCLUDED
             NOOP))))))
@@ -915,7 +915,7 @@ func TestNewPlanJob(t *testing.T) {
                   (fileMatchLimit . 10000)
                   (select . )
                   (zoektQueryRegexps . [(?i)(?-s:a.*b)])
-                  (query . regex:"(?-s:a.*b)")
+                  (query . regex:"a(?-s:.)*b")
                   (type . text))))
             (REPOPAGER
               (containsRefGlobs . false)
@@ -1101,13 +1101,31 @@ func TestNewPlanJob(t *testing.T) {
         (limit . 10000)
         (PARALLEL
           REPOSCOMPUTEEXCLUDED
-          (STRUCTURALSEARCH
-            (useFullDeadline . true)
+          (REPOPAGER
             (containsRefGlobs . false)
-            (useIndex . yes)
-            (patternInfo.query . "(:[_])")
-            (patternInfo.isStructural . true)
-            (patternInfo.fileMatchLimit . 10000)))))))
+            (PARTIALREPOS
+              (STRUCTURALSEARCH
+                (useFullDeadline . true)
+                (useIndex . yes)
+                (patternInfo.query . "(:[_])")
+                (patternInfo.isStructural . true)
+                (patternInfo.fileMatchLimit . 10000)))))))))
+`),
+		},
+		{
+			query:      `context:global repo:sourcegraph/.* what's going on'? lang:go`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeCodyContext,
+			want: autogold.Expect(`
+(LOG
+  (ALERT
+    (features . error decoding features)
+    (protocol . Streaming)
+    (onSourcegraphDotCom . true)
+    (query . )
+    (originalQuery . )
+    (patternType . codycontext)
+    ))
 `),
 		},
 		// The next query shows an unexpected way that a query is
@@ -1294,7 +1312,7 @@ func TestToTextPatternInfo(t *testing.T) {
 		output: autogold.Expect(`{"Query":{"Value":"FORK_SENTINEL","IsNegated":false,"IsRegExp":true},"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
 		input:  `\bfunc\b lang:go type:file patterntype:regexp`,
-		output: autogold.Expect(`{"Query":{"Value":"\\bfunc\\b","IsNegated":false,"IsRegExp":true},"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":["\\.go$"],"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":false,"Languages":["go"]}`),
+		output: autogold.Expect(`{"Query":{"Value":"\\bfunc\\b","IsNegated":false,"IsRegExp":true},"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":["(?i)\\.go$"],"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":false,"Languages":["go"]}`),
 	}, {
 		input:  `no results for { ... } raises alert repo:^github\.com/sgtest/go-diff$`,
 		output: autogold.Expect(`{"Query":{"Value":"no results for { ... } raises alert","IsNegated":false,"IsRegExp":false},"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
@@ -1366,7 +1384,7 @@ func TestToTextPatternInfo(t *testing.T) {
 		output: autogold.Expect(`{"Query":{"Value":"make(:[1])","IsNegated":false,"IsRegExp":false},"IsStructuralPat":true,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":3,"Index":"only","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
 		input:  `repo:^github\.com/sgtest/go-diff$ make(:[1]) lang:go rule:'where "backcompat" == "backcompat"' patterntype:structural`,
-		output: autogold.Expect(`{"Query":{"Value":"make(:[1])","IsNegated":false,"IsRegExp":false},"IsStructuralPat":true,"CombyRule":"where \"backcompat\" == \"backcompat\"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":["\\.go$"],"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":["go"]}`),
+		output: autogold.Expect(`{"Query":{"Value":"make(:[1])","IsNegated":false,"IsRegExp":false},"IsStructuralPat":true,"CombyRule":"where \"backcompat\" == \"backcompat\"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":["(?i)\\.go$"],"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":["go"]}`),
 	}, {
 		input:  `repo:^github\.com/sgtest/go-diff$@adde71 make(:[1]) index:no patterntype:structural count:3`,
 		output: autogold.Expect(`{"Query":{"Value":"make(:[1])","IsNegated":false,"IsRegExp":false},"IsStructuralPat":true,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":3,"Index":"no","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
@@ -1419,7 +1437,7 @@ func TestToSymbolSearchRequest(t *testing.T) {
 		wantErr: true,
 	}, {
 		input:  `repo:go-diff type:symbol HunkNoChunksize lang:Julia -lang:R`,
-		output: autogold.Expect(`{"RegexpPattern":"HunkNoChunksize","IsCaseSensitive":false,"IncludePatterns":["\\.jl$"],"ExcludePattern":"(?:\\.r$)|(?:\\.rd$)|(?:\\.rsx$)|(?:(^|/)\\.Rprofile$)|(?:(^|/)expr-dist$)","IncludeLangs":null,"ExcludeLangs":null}`),
+		output: autogold.Expect(`{"RegexpPattern":"HunkNoChunksize","IsCaseSensitive":false,"IncludePatterns":["(?i)\\.jl$"],"ExcludePattern":"(?i)(?:\\.r$)|(?:\\.rd$)|(?:\\.rsx$)|(?:(^|/)\\.Rprofile$)|(?:(^|/)expr-dist$)","IncludeLangs":null,"ExcludeLangs":null}`),
 	}, {
 		input:  `repo:go-diff type:symbol HunkNoChunksize lang:Julia -lang:R`,
 		feat:   search.Features{ContentBasedLangFilters: true},

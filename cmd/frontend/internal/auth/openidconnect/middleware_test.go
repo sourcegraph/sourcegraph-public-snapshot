@@ -16,6 +16,8 @@ import (
 	"github.com/coreos/go-oidc"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -24,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -118,6 +121,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 }
 
 func TestMiddleware(t *testing.T) {
+	logger := logtest.Scoped(t)
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 	defer licensing.TestingSkipFeatureChecks()()
@@ -148,6 +152,7 @@ func TestMiddleware(t *testing.T) {
 
 	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
+	_ = telemetrytest.AddDBMocks(db)
 
 	securityLogs := dbmocks.NewStrictMockSecurityEventLogsStore()
 	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)
@@ -183,8 +188,8 @@ func TestMiddleware(t *testing.T) {
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", Middleware(db).API(h))
-	authedHandler.Handle("/", Middleware(db).App(h))
+	authedHandler.Handle("/.api/", Middleware(logger, db).API(h))
+	authedHandler.Handle("/", Middleware(logger, db).App(h))
 
 	doRequest := func(method, urlStr, body string, state string, cookies []*http.Cookie, authed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
@@ -321,6 +326,7 @@ func TestMiddleware(t *testing.T) {
 }
 
 func TestMiddleware_NoOpenRedirect(t *testing.T) {
+	logger := logtest.Scoped(t)
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
@@ -368,6 +374,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 
 	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
+	_ = telemetrytest.AddDBMocks(db)
 
 	securityLogs := dbmocks.NewStrictMockSecurityEventLogsStore()
 	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)
@@ -380,7 +387,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 	})
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	authedHandler := Middleware(db).App(h)
+	authedHandler := Middleware(logger, db).App(h)
 
 	doRequest := func(method, urlStr, body string, state string, cookies []*http.Cookie) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))

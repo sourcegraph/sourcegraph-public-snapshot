@@ -16,14 +16,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropicmessages"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
-
-const anthropicMessagesAPIURL = "https://api.anthropic.com/v1/messages"
 
 // This implements the newer `/messages` API by Anthropic
 // https://docs.anthropic.com/claude/reference/messages_post
@@ -38,7 +36,7 @@ func NewAnthropicMessagesHandler(
 	autoFlushStreamingResponses bool,
 ) (http.Handler, error) {
 	// Tokenizer only needs to be initialized once, and can be shared globally.
-	tokenizer, err := tokenizer.NewAnthropicClaudeTokenizer()
+	tokenizer, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
 	if err != nil {
 		return nil, err
 	}
@@ -49,9 +47,9 @@ func NewAnthropicMessagesHandler(
 		rateLimitNotifier,
 		httpClient,
 		string(conftypes.CompletionsProviderNameAnthropic),
-		func(_ codygateway.Feature) string { return anthropicMessagesAPIURL },
 		config.AllowedModels,
-		&AnthropicMessagesHandlerMethods{config: config, tokenizer: tokenizer, promptRecorder: promptRecorder},
+		&AnthropicMessagesHandlerMethods{config: config, tokenizer: tokenizer},
+		promptRecorder,
 
 		// Anthropic primarily uses concurrent requests to rate-limit spikes
 		// in requests, so set a default retry-after that is likely to be
@@ -61,7 +59,6 @@ func NewAnthropicMessagesHandler(
 		// user.
 		2, // seconds
 		autoFlushStreamingResponses,
-		nil,
 	), nil
 }
 
@@ -160,32 +157,40 @@ type anthropicMessagesResponseUsage struct {
 }
 
 type AnthropicMessagesHandlerMethods struct {
-	tokenizer      *tokenizer.Tokenizer
-	promptRecorder PromptRecorder
-	config         config.AnthropicConfig
+	tokenizer tokenizer.Tokenizer
+	config    config.AnthropicConfig
 }
 
-func (a *AnthropicMessagesHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicMessagesRequest) (int, *flaggingResult, error) {
-	if ar.MaxTokens > int32(a.config.MaxTokensToSample) {
-		return http.StatusBadRequest, nil, errors.Errorf("max_tokens exceeds maximum allowed value of %d: %d", a.config.MaxTokensToSample, ar.MaxTokens)
-	}
-
-	if result, err := isFlaggedAnthropicMessagesRequest(a.tokenizer, ar, a.config); err != nil {
-		logger.Error("error checking AnthropicMessages request - treating as non-flagged",
-			log.Error(err))
-	} else if result.IsFlagged() {
-		// Record flagged prompts in hotpath - they usually take a long time on the backend side, so this isn't going to make things meaningfully worse
-		if err := a.promptRecorder.Record(ctx, ar.BuildPrompt()); err != nil {
-			logger.Warn("failed to record flagged prompt", log.Error(err))
-		}
-		if a.config.RequestBlockingEnabled && result.shouldBlock {
-			return http.StatusBadRequest, result, requestBlockedError(ctx)
-		}
-		return 0, result, nil
-	}
-
-	return 0, nil, nil
+func (a *AnthropicMessagesHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+	return "https://api.anthropic.com/v1/messages"
 }
+
+func (a *AnthropicMessagesHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicMessagesRequest) error {
+	if ar.Messages == nil {
+		// https://docs.anthropic.com/claude/reference/messages_post#:~:text=details%20and%20options.-,messages,-array%20of%20objects
+		return errors.New("request body must contain \"messages\" field")
+	}
+
+	maxTokensToSample := a.config.FlaggingConfig.MaxTokensToSample
+	if ar.MaxTokens > int32(maxTokensToSample) {
+		return errors.Errorf("max_tokens exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokens)
+	}
+	return nil
+}
+
+func (a *AnthropicMessagesHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, ar anthropicMessagesRequest) (*flaggingResult, error) {
+	result, err := isFlaggedRequest(a.tokenizer,
+		flaggingRequest{
+			FlattenedPrompt: ar.BuildPrompt(),
+			MaxTokens:       int(ar.MaxTokens),
+		},
+		makeFlaggingConfig(a.config.FlaggingConfig))
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func (a *AnthropicMessagesHandlerMethods) transformBody(body *anthropicMessagesRequest, identifier string) {
 	// Overwrite the metadata field, we don't want to allow users to specify it:
 	body.Metadata = &anthropicMessagesRequestMetadata{
@@ -203,23 +208,34 @@ func (a *AnthropicMessagesHandlerMethods) transformBody(body *anthropicMessagesR
 		body.Messages = body.Messages[1:]
 	}
 }
+
 func (a *AnthropicMessagesHandlerMethods) getRequestMetadata(body anthropicMessagesRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{
 		"stream":     body.Stream,
 		"max_tokens": body.MaxTokens,
 	}
 }
+
 func (a *AnthropicMessagesHandlerMethods) transformRequest(r *http.Request) {
 	r.Header.Set("Content-Type", "application/json")
 	r.Header.Set("X-API-Key", a.config.AccessToken)
 	r.Header.Set("anthropic-version", "2023-06-01")
 }
+
 func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logger, body anthropicMessagesRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	for _, m := range body.Messages {
 		promptUsage.characters += len(m.Content)
 	}
-	promptUsage.characters = len(body.System)
+	// Setting a default -1 value so that in case of errors the tokenizer computed tokens don't impact the data
+	completionUsage.tokenizerTokens = -1
+	promptUsage.tokenizerTokens = -1
+
+	promptUsageTokens, err := a.tokenizer.Tokenize(body.BuildPrompt())
+	if err == nil {
+		promptUsage.tokenizerTokens = len(promptUsageTokens)
+	}
+	promptUsage.characters += len(body.System)
 
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
@@ -229,10 +245,15 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 			logger.Error("failed to parse Anthropic response as JSON", log.Error(err))
 			return promptUsage, completionUsage
 		}
-
+		var completionString string
 		// Extract character data from response by summing up all text
 		for _, c := range res.Content {
-			completionUsage.characters += len(c.Text)
+			completionString += c.Text
+		}
+		completionUsage.characters = len(completionString)
+		completionUsageTokens, err := a.tokenizer.Tokenize(completionString)
+		if err == nil {
+			completionUsage.tokenizerTokens = len(completionUsageTokens)
 		}
 		// Extract prompt usage data from the response
 		completionUsage.tokens = res.Usage.OutputTokens
@@ -242,7 +263,7 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 	}
 
 	// Otherwise, we have to parse the event stream from anthropic.
-	dec := anthropicmessages.NewDecoder(r)
+	dec := anthropic.NewDecoder(r)
 	for dec.Scan() {
 		data := dec.Data()
 
@@ -257,7 +278,7 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 			logger.Error("failed to decode event payload", log.Error(err), log.String("body", string(data)))
 			continue
 		}
-
+		var completionString string
 		switch event.Type {
 		case "message_start":
 			if event.Message != nil && event.Message.Usage != nil {
@@ -265,12 +286,17 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 			}
 		case "content_block_delta":
 			if event.Delta != nil {
-				completionUsage.characters += len(event.Delta.Text)
+				completionString += event.Delta.Text
 			}
 		case "message_delta":
 			if event.Usage != nil {
 				completionUsage.tokens = event.Usage.OutputTokens
 			}
+		}
+		completionUsage.characters += len(completionString)
+		completionUsageTokens, err := a.tokenizer.Tokenize(completionString)
+		if err == nil {
+			completionUsage.tokenizerTokens = len(completionUsageTokens)
 		}
 	}
 	if err := dec.Err(); err != nil {
@@ -278,21 +304,4 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 	}
 
 	return promptUsage, completionUsage
-}
-
-func isFlaggedAnthropicMessagesRequest(tk *tokenizer.Tokenizer, r anthropicMessagesRequest, cfg config.AnthropicConfig) (*flaggingResult, error) {
-	return isFlaggedRequest(tk,
-		flaggingRequest{
-			FlattenedPrompt: r.BuildPrompt(),
-			MaxTokens:       int(r.MaxTokens),
-		},
-		flaggingConfig{
-			AllowedPromptPatterns:          cfg.AllowedPromptPatterns,
-			BlockedPromptPatterns:          cfg.BlockedPromptPatterns,
-			PromptTokenFlaggingLimit:       cfg.PromptTokenFlaggingLimit,
-			PromptTokenBlockingLimit:       cfg.PromptTokenBlockingLimit,
-			MaxTokensToSampleFlaggingLimit: cfg.MaxTokensToSampleFlaggingLimit,
-			ResponseTokenBlockingLimit:     cfg.ResponseTokenBlockingLimit,
-		},
-	)
 }

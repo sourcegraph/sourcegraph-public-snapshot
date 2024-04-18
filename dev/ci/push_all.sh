@@ -26,31 +26,22 @@ function preview_tags() {
 # doing it.
 function echo_append_annotation() {
   repository="$1"
-  IFS=' ' read -r -a registries <<<"$2"
+  registry="$2"
   IFS=' ' read -r -a tag_args <<<"$3"
   formatted_tags=""
-  formatted_registries=""
 
   for arg in "${tag_args[@]}"; do
     if [ "$arg" != "--tag" ]; then
       if [ "$formatted_tags" == "" ]; then
         # Do not insert a comma for the first element
-        formatted_tags="\`$arg\`"
+        formatted_tags="<code>$arg</code>"
       else
-        formatted_tags="${formatted_tags}, \`$arg\`"
+        formatted_tags="${formatted_tags}, <code>$arg</code>"
       fi
     fi
   done
 
-  for reg in "${registries[@]}"; do
-    if [ "$formatted_registries" == "" ]; then
-      formatted_registries="\`$reg\`"
-    else
-      formatted_registries="${formatted_registries}, \`$reg\`"
-    fi
-  done
-
-  raw="| ${repository} | ${formatted_registries} | ${formatted_tags} |"
+  raw="<tr><td>${repository}</td><td><code>${registry}</code></td><td>${formatted_tags}</td></tr>"
   echo "echo -e '${raw}' >>./annotations/pushed_images.md"
 }
 
@@ -65,19 +56,16 @@ function create_push_command() {
     repository="scip-ctags"
   fi
 
-  repositories_args=""
   for registry in "${registries[@]}"; do
-    repositories_args="$repositories_args --repository ${registry}/${repository}"
+    cmd="bazel \
+      ${bazelrc[*]} \
+      run \
+      $target \
+      --stamp \
+      --workspace_status_command=./dev/bazel_stamp_vars.sh"
+
+    echo "$cmd -- $tags_args --repository ${registry}/${repository} && $(echo_append_annotation "$repository" "$registry" "${tags_args[@]}")"
   done
-
-  cmd="bazel \
-    ${bazelrc[*]} \
-    run \
-    $target \
-    --stamp \
-    --workspace_status_command=./dev/bazel_stamp_vars.sh"
-
-  echo "$cmd -- $tags_args $repositories_args && $(echo_append_annotation "$repository" "${registries[@]}" "${tags_args[@]}")"
 }
 
 dev_registries=(
@@ -87,6 +75,11 @@ dev_registries=(
 prod_registries=(
   "$PROD_REGISTRY"
 )
+
+additional_prod_registry=${ADDITIONAL_PROD_REGISTRY:-""}
+if [ -n "$additional_prod_registry" ]; then
+  prod_registries+=("$additional_prod_registry")
+fi
 
 date_fragment="$(date +%Y-%m-%d)"
 
@@ -146,14 +139,13 @@ fi
 
 # Posting the preamble for image pushes.
 echo -e "### ${BUILDKITE_LABEL}" > ./annotations/pushed_images.md
-echo -e "\n| Name | Registries | Tags |\n|---|---|---|" >> ./annotations/pushed_images.md
+echo -e "<details><summary>Click to expand table</summary><table>\n" >>./annotations/pushed_images.md
+echo -e "<tr><th>Name</th><th>Registry</th><th>Tags</th></tr>\n" >> ./annotations/pushed_images.md
 
 preview_tags "${dev_registries[*]}" "${dev_tags[*]}"
 if $push_prod; then
   preview_tags "${prod_registries[*]}" "${prod_tags[*]}"
 fi
-
-echo "--- done"
 
 dev_tags_args=""
 for t in "${dev_tags[@]}"; do
@@ -184,9 +176,8 @@ for target in ${images[@]}; do
   fi
 done
 
-echo "-- jobfile"
+echo "--- :bash: Generated jobfile"
 cat "$job_file"
-echo "--- done"
 
 echo "--- :bazel::docker: Pushing images..."
 log_file=$(mktemp)
@@ -211,6 +202,7 @@ while read -r line; do
   fi
 done <"$log_file"
 
+echo -e "</table></details>" >>./annotations/pushed_images.md
+
 echo "--- :bazel::docker: detailed summary"
 cat "$log_file"
-echo "--- done"

@@ -13,6 +13,7 @@ import (
 )
 
 // Keep: allows building an array of images on one agent. Useful for streamlining and rules_oci in the future.
+// TODO(burmudar): I think we can remove this
 func legacyBuildCandidateDockerImages(apps []string, version string, tag string, rt runtype.RunType) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{}

@@ -181,11 +181,6 @@ func (r *errorTranslatingArchiveClient) Recv() (*proto.ArchiveResponse, error) {
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
-func (r *errorTranslatingClient) RepoClone(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (*proto.RepoCloneResponse, error) {
-	res, err := r.base.RepoClone(ctx, in, opts...)
-	return res, convertGRPCErrorToGitDomainError(err)
-}
-
 func (r *errorTranslatingClient) RepoCloneProgress(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error) {
 	res, err := r.base.RepoCloneProgress(ctx, in, opts...)
 	return res, convertGRPCErrorToGitDomainError(err)
@@ -271,6 +266,23 @@ func (r *errorTranslatingClient) ReadFile(ctx context.Context, in *proto.ReadFil
 	return &errorTranslatingReadFileClient{cc}, nil
 }
 
+func (r *errorTranslatingClient) ListRefs(ctx context.Context, in *proto.ListRefsRequest, opts ...grpc.CallOption) (proto.GitserverService_ListRefsClient, error) {
+	cc, err := r.base.ListRefs(ctx, in, opts...)
+	if err != nil {
+		return nil, convertGRPCErrorToGitDomainError(err)
+	}
+	return &errorTranslatingListRefsClient{cc}, nil
+}
+
+type errorTranslatingListRefsClient struct {
+	proto.GitserverService_ListRefsClient
+}
+
+func (r *errorTranslatingListRefsClient) Recv() (*proto.ListRefsResponse, error) {
+	res, err := r.GitserverService_ListRefsClient.Recv()
+	return res, convertGRPCErrorToGitDomainError(err)
+}
+
 type errorTranslatingReadFileClient struct {
 	proto.GitserverService_ReadFileClient
 }
@@ -287,6 +299,11 @@ func (r *errorTranslatingClient) GetCommit(ctx context.Context, in *proto.GetCom
 
 func (r *errorTranslatingClient) ResolveRevision(ctx context.Context, in *proto.ResolveRevisionRequest, opts ...grpc.CallOption) (*proto.ResolveRevisionResponse, error) {
 	res, err := r.base.ResolveRevision(ctx, in, opts...)
+	return res, convertGRPCErrorToGitDomainError(err)
+}
+
+func (r *errorTranslatingClient) RevAtTime(ctx context.Context, in *proto.RevAtTimeRequest, opts ...grpc.CallOption) (*proto.RevAtTimeResponse, error) {
+	res, err := r.base.RevAtTime(ctx, in, opts...)
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 

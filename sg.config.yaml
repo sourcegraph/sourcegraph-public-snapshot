@@ -129,7 +129,14 @@ env:
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: '1KB'
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: '100MB'
 
-  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: 'http://127.0.0.1:6080'
+  # Telemetry V2 export configuration. By default, this points to a test
+  # instance (go/msp-ops/telemetry-gateway#dev). Set the following:
+  #
+  #   TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: 'http://127.0.0.1:6080'
+  #
+  # in 'sg.config.overwrite.yaml' to point to a locally running Telemetry
+  # Gateway instead (via 'sg run telemetry-gateway')
+  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: "https://telemetry-gateway.sgdev.org:443"
   SRC_TELEMETRY_EVENTS_EXPORT_ALL: 'true'
 
   # By default, allow temporary edits to external services.
@@ -287,6 +294,7 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
       go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
+    checkBinary: .bin/worker
     watch:
       - lib
       - internal
@@ -337,8 +345,8 @@ commands:
       # Set for convenience - use real values in sg.config.overwrite.yaml if you
       # are interacting with RPCs that enforce SAMS M2M auth. See
       # https://github.com/sourcegraph/accounts.sourcegraph.com/wiki/Operators-Cheat-Sheet#create-a-new-idp-client
-      TELEMETRY_GATEWAY_SAMS_CLIENT_ID: "foo"
-      TELEMETRY_GATEWAY_SAMS_CLIENT_SECRET: "bar"
+      TELEMETRY_GATEWAY_SAMS_CLIENT_ID: 'foo'
+      TELEMETRY_GATEWAY_SAMS_CLIENT_SECRET: 'bar'
     watch:
       - lib
       - internal
@@ -356,6 +364,7 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/pings github.com/sourcegraph/sourcegraph/cmd/pings
     checkBinary: .bin/pings
     env:
+      PORT: '6080'
       SRC_LOG_LEVEL: info
       DIAGNOSTICS_SECRET: 'lifeisgood'
       PINGS_PUBSUB_PROJECT_ID: 'telligentsourcegraph'
@@ -416,6 +425,12 @@ commands:
       ENABLE_OPEN_TELEMETRY: true
       # Needed so that node can ping the caddy server
       NODE_TLS_REJECT_UNAUTHORIZED: 0
+
+  web-sveltekit:
+    description: Enterprise version of the web sveltekit app
+    cmd: pnpm --filter @sourcegraph/web-sveltekit dev:enterprise
+    install: |
+      pnpm install
 
   web-standalone-http:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
@@ -928,22 +943,6 @@ commands:
     cmd: echo "monitoring-generator is deprecated, please run 'sg generate go' or 'bazel run //dev:write_all_generated' instead"
     env:
 
-  loki:
-    cmd: |
-      echo "Loki: serving on http://localhost:3100"
-      echo "Loki: note that logs are piped to ${LOKI_LOG_FILE}"
-      docker run --rm --name=loki \
-        -p 3100:3100 -v $LOKI_DISK:/loki \
-        index.docker.io/grafana/loki:$LOKI_VERSION >"${LOKI_LOG_FILE}" 2>&1
-    install: |
-      mkdir -p "${LOKI_DISK}"
-      mkdir -p "$(dirname ${LOKI_LOG_FILE})"
-      docker pull index.docker.io/grafana/loki:$LOKI_VERSION
-    env:
-      LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
-      LOKI_VERSION: '2.3.0'
-      LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
-
   otel-collector:
     install: |
       bazel build //docker-images/opentelemetry-collector:image_tarball
@@ -1150,17 +1149,6 @@ dockerCommands:
       # docker containers must access things via docker host on non-linux platforms
       CACHE: false
 
-  loki:
-    logfile: $HOME/.sourcegraph-dev/logs/loki/loki.log
-    docker:
-      image: index.docker.io/grafana/loki:2.3.0
-      pull: true
-      ports:
-        - 3100
-      volumes:
-        - from: $HOME/.sourcegraph-dev/data/loki
-          to: /loki
-
   otel-collector:
     target: //docker-images/opentelemetry-collector:image_tarball
     description: OpenTelemetry collector
@@ -1337,7 +1325,6 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - embeddings
-      - telemetry-gateway
     env:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
@@ -1375,8 +1362,6 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - embeddings
-      - telemetry-gateway
-    bazelCommands:
       - cody-gateway
     env:
       SOURCEGRAPHDOTCOM_MODE: true
@@ -1520,7 +1505,7 @@ commandsets:
       - blobstore
       - codeintel-worker
       - codeintel-executor
-      # - otel-collector
+      - otel-collector
       - jaeger
       - grafana
       - prometheus
@@ -1793,6 +1778,27 @@ commandsets:
 
   enterprise-sveltekit:
     <<: *enterprise_set
+    # Keep in sync with &enterprise_set.commands
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - web-sveltekit
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - caddy
+      - symbols
+      # TODO https://github.com/sourcegraph/devx-support/issues/537
+      # - docsite
+      - syntax-highlighter
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - embeddings
     env:
       SVELTEKIT: true
 
@@ -1827,13 +1833,13 @@ tests:
       export SOURCEGRAPH_LICENSE_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_KEY --quiet --project=sourcegraph-ci)
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_GENERATION_KEY --quiet --project=sourcegraph-ci)
 
-      bazel test //testing:e2e_test --action_env=HEADLESS=false --action_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --action_env=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --action_env=GH_TOKEN=$GH_TOKEN --action_env=DISPLAY=$DISPLAY
+      bazel test //testing:e2e_test --test_env=HEADLESS=false --test_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --test_env=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --test_env=GH_TOKEN=$GH_TOKEN --test_env=DISPLAY=$DISPLAY
 
   bazel-web-integration:
     cmd: |
       export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
       export PERCY_TOKEN=$(gcloud secrets versions access latest --secret=PERCY_TOKEN --quiet --project=sourcegraph-ci)
-      bazel test //client/web/src/integration:integration-tests --action_env=HEADLESS=false --action_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --action_env=GH_TOKEN=$GH_TOKEN --action_env=DISPLAY=$DISPLAY --action_env=PERCY_TOKEN=$PERCY_TOKEN
+      bazel test //client/web/src/integration:integration-tests --test_env=HEADLESS=false --test_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --test_env=GH_TOKEN=$GH_TOKEN --test_env=DISPLAY=$DISPLAY --test_env=PERCY_TOKEN=$PERCY_TOKEN
 
   backend-integration:
     cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest

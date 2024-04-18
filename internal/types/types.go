@@ -583,9 +583,8 @@ func ParseCloneStatusFromGraphQL(s string) CloneStatus {
 type GitserverRepo struct {
 	RepoID api.RepoID
 	// Usually represented by a gitserver hostname
-	ShardID         string
-	CloneStatus     CloneStatus
-	CloningProgress string
+	ShardID     string
+	CloneStatus CloneStatus
 	// The last error that occurred or empty if the last action was successful
 	LastError string
 	// The last time fetch was called.

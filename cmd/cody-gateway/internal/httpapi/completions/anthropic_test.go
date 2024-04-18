@@ -1,6 +1,7 @@
 package completions
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -9,33 +10,54 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
 )
 
 func TestIsFlaggedAnthropicRequest(t *testing.T) {
 	validPreamble := "You are cody-gateway."
 
-	cfg := config.AnthropicConfig{
+	cfg := config.FlaggingConfig{
 		PromptTokenFlaggingLimit:       18000,
 		PromptTokenBlockingLimit:       20000,
-		MaxTokensToSampleFlaggingLimit: 1000,
-		ResponseTokenBlockingLimit:     1000,
+		MaxTokensToSample:              0, // Not used within isFlaggedRequest.
+		MaxTokensToSampleFlaggingLimit: 4000,
+		ResponseTokenBlockingLimit:     4000,
+		RequestBlockingEnabled:         true,
 	}
-	cfgWithPreamble := config.AnthropicConfig{
+	cfgWithPreamble := config.FlaggingConfig{
 		PromptTokenFlaggingLimit:       18000,
 		PromptTokenBlockingLimit:       20000,
-		MaxTokensToSampleFlaggingLimit: 1000,
-		ResponseTokenBlockingLimit:     1000,
+		MaxTokensToSample:              0, // Not used within isFlaggedRequest.
+		MaxTokensToSampleFlaggingLimit: 4000,
+		ResponseTokenBlockingLimit:     4000,
+		RequestBlockingEnabled:         true,
 		AllowedPromptPatterns:          []string{strings.ToLower(validPreamble)},
 	}
-	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
+	tk, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
 	require.NoError(t, err)
+
+	// Helper function for calling the AnthropicHandlerMethod's shouldFlagRequest, using the supplied
+	// request and configuration.
+	callShouldFlagRequest := func(t *testing.T, ar anthropicRequest, flaggingConfig config.FlaggingConfig) (*flaggingResult, error) {
+		t.Helper()
+		anthropicUpstream := &AnthropicHandlerMethods{
+			anthropicTokenizer: tk,
+			config: config.AnthropicConfig{
+				FlaggingConfig: flaggingConfig,
+			},
+		}
+		ctx := context.Background()
+		logger := logtest.NoOp(t)
+		return anthropicUpstream.shouldFlagRequest(ctx, logger, ar)
+	}
 
 	t.Run("missing known preamble", func(t *testing.T) {
 		ar := anthropicRequest{Model: "claude-2", Prompt: "some prompt without known preamble"}
-		result, err := isFlaggedAnthropicRequest(tk, ar, cfgWithPreamble)
+		result, err := callShouldFlagRequest(t, ar, cfgWithPreamble)
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.False(t, result.shouldBlock)
@@ -44,14 +66,14 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 
 	t.Run("preamble not configured ", func(t *testing.T) {
 		ar := anthropicRequest{Model: "claude-2", Prompt: "some prompt without known preamble"}
-		result, err := isFlaggedAnthropicRequest(tk, ar, cfg)
+		result, err := callShouldFlagRequest(t, ar, cfg)
 		require.NoError(t, err)
 		require.False(t, result.IsFlagged())
 	})
 
 	t.Run("high max tokens to sample", func(t *testing.T) {
 		ar := anthropicRequest{Model: "claude-2", MaxTokensToSample: 10000, Prompt: validPreamble}
-		result, err := isFlaggedAnthropicRequest(tk, ar, cfg)
+		result, err := callShouldFlagRequest(t, ar, cfg)
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.True(t, result.shouldBlock)
@@ -66,7 +88,7 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 		validPreambleTokens := len(tokenLengths)
 		longPrompt := strings.Repeat("word ", cfg.PromptTokenFlaggingLimit+1)
 		ar := anthropicRequest{Model: "claude-2", Prompt: validPreamble + " " + longPrompt}
-		result, err := isFlaggedAnthropicRequest(tk, ar, cfgWithPreamble)
+		result, err := callShouldFlagRequest(t, ar, cfgWithPreamble)
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.False(t, result.shouldBlock)
@@ -75,22 +97,22 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 	})
 
 	t.Run("high prompt token count and bad phrase", func(t *testing.T) {
-		cfgWithBadPhrase := &cfgWithPreamble
+		cfgWithBadPhrase := cfgWithPreamble
 		cfgWithBadPhrase.BlockedPromptPatterns = []string{"bad phrase"}
 		longPrompt := strings.Repeat("word ", cfg.PromptTokenFlaggingLimit+1)
 		ar := anthropicRequest{Model: "claude-2", Prompt: validPreamble + " " + longPrompt + "bad phrase"}
-		result, err := isFlaggedAnthropicRequest(tk, ar, *cfgWithBadPhrase)
+		result, err := callShouldFlagRequest(t, ar, cfgWithBadPhrase)
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.True(t, result.shouldBlock)
 	})
 
 	t.Run("low prompt token count and bad phrase", func(t *testing.T) {
-		cfgWithBadPhrase := &cfgWithPreamble
+		cfgWithBadPhrase := cfgWithPreamble
 		cfgWithBadPhrase.BlockedPromptPatterns = []string{"bad phrase"}
 		longPrompt := strings.Repeat("word ", 5)
 		ar := anthropicRequest{Model: "claude-2", Prompt: validPreamble + " " + longPrompt + "bad phrase"}
-		result, err := isFlaggedAnthropicRequest(tk, ar, *cfgWithBadPhrase)
+		result, err := callShouldFlagRequest(t, ar, cfgWithBadPhrase)
 		require.NoError(t, err)
 		// for now, we should not flag requests purely because of bad phrases
 		require.False(t, result.IsFlagged())
@@ -103,7 +125,7 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 		validPreambleTokens := len(tokenLengths)
 		longPrompt := strings.Repeat("word ", cfg.PromptTokenBlockingLimit+1)
 		ar := anthropicRequest{Model: "claude-2", Prompt: validPreamble + " " + longPrompt}
-		result, err := isFlaggedAnthropicRequest(tk, ar, cfgWithPreamble)
+		result, err := callShouldFlagRequest(t, ar, cfgWithPreamble)
 		require.NoError(t, err)
 		require.True(t, result.IsFlagged())
 		require.True(t, result.shouldBlock)
@@ -113,7 +135,7 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 }
 
 func TestAnthropicRequestJSON(t *testing.T) {
-	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
+	tk, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
 	require.NoError(t, err)
 
 	ar := anthropicRequest{Prompt: "Hello world"}
@@ -130,7 +152,7 @@ func TestAnthropicRequestJSON(t *testing.T) {
 }
 
 func TestAnthropicRequestGetPromptTokenCount(t *testing.T) {
-	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
+	tk, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
 	require.NoError(t, err)
 
 	originalRequest := anthropicRequest{Prompt: "Hello world"}

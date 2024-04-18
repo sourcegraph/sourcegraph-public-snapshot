@@ -13,12 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type grpcService struct {
 	searchFunc   types.SearchFunc
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error)
-	ctagsBinary  string
 	proto.UnimplementedSymbolsServiceServer
 	logger logger.Logger
 }
@@ -27,18 +27,24 @@ func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*prot
 	var response proto.SearchResponse
 
 	params := r.ToInternal()
-	symbols, err := s.searchFunc(ctx, params)
+	res, err := s.searchFunc(ctx, params)
 	if err != nil {
 		s.logger.Error("symbol search failed",
 			logger.String("arguments", fmt.Sprintf("%+v", params)),
 			logger.Error(err),
 		)
 
+		var limitErr *limitHitError
+		if errors.As(err, &limitErr) {
+			response.FromInternal(&search.SymbolsResponse{Symbols: res, LimitHit: true})
+			return &response, nil
+		}
+
 		response.FromInternal(&search.SymbolsResponse{Err: err.Error()})
-	} else {
-		response.FromInternal(&search.SymbolsResponse{Symbols: symbols})
+		return &response, nil
 	}
 
+	response.FromInternal(&search.SymbolsResponse{Symbols: res})
 	return &response, nil
 }
 
@@ -55,7 +61,6 @@ func NewHandler(
 	searchFunc types.SearchFunc,
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error),
 	handleStatus func(http.ResponseWriter, *http.Request),
-	ctagsBinary string,
 ) http.Handler {
 	rootLogger := logger.Scoped("symbolsServer")
 
@@ -64,7 +69,6 @@ func NewHandler(
 	proto.RegisterSymbolsServiceServer(grpcServer, &grpcService{
 		searchFunc:   searchFunc,
 		readFileFunc: readFileFunc,
-		ctagsBinary:  ctagsBinary,
 		logger:       rootLogger.Scoped("grpc"),
 	})
 

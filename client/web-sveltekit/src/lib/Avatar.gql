@@ -1,16 +1,19 @@
 fragment Avatar_User on User {
+    __typename
     avatarURL
     displayName
     username
 }
 
 fragment Avatar_Person on Person {
+    __typename
     displayName
     avatarURL
     name
 }
 
 fragment Avatar_Team on Team {
+    __typename
     avatarURL
     displayName
 }

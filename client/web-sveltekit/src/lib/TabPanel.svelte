@@ -20,7 +20,13 @@
 </script>
 
 {#if selected}
-    <div id="{context.id}-panel-{id}" aria-labelledby={tabId} role="tabpanel" tabindex={selected ? 0 : -1}>
+    <div
+        id="{context.id}-panel-{id}"
+        aria-labelledby={tabId}
+        role="tabpanel"
+        tabindex={selected ? 0 : -1}
+        data-tab-panel={title}
+    >
         <slot />
     </div>
 {/if}

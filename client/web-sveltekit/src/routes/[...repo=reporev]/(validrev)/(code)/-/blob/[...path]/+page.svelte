@@ -1,43 +1,53 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { mdiCodeBracesBox, mdiFileCodeOutline, mdiMapSearch } from '@mdi/js'
+    import { mdiFileEyeOutline, mdiMapSearch, mdiWrap, mdiWrapDisabled } from '@mdi/js'
+    import { capitalize } from 'lodash'
     import { from } from 'rxjs'
+    import { writable } from 'svelte/store'
 
-    import { goto } from '$app/navigation'
+    import { goto, preloadData } from '$app/navigation'
     import { page } from '$app/stores'
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
-    import { isErrorLike, type LineOrPositionOrRange } from '$lib/common'
+    import { isErrorLike, SourcegraphURL, type LineOrPositionOrRange, pluralize } from '$lib/common'
     import { toGraphQLResult } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import { updateSearchParamsWithLineInformation, createBlobDataHandler } from '$lib/repo/blob'
+    import { createBlobDataHandler } from '$lib/repo/blob'
     import FileDiff from '$lib/repo/FileDiff.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
+    import FileIcon from '$lib/repo/FileIcon.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
-    import { createCodeIntelAPI, parseQueryAndHash } from '$lib/shared'
-    import { Alert } from '$lib/wildcard'
+    import { createCodeIntelAPI } from '$lib/shared'
+    import { formatBytes } from '$lib/utils'
+    import { Alert, MenuButton, MenuLink } from '$lib/wildcard'
+    import markdownStyles from '$lib/wildcard/Markdown.module.scss'
 
     import type { PageData } from './$types'
-    import FormatAction from './FormatAction.svelte'
-    import WrapLinesAction, { lineWrap } from './WrapLinesAction.svelte'
+    import FileViewModeSwitcher from './FileViewModeSwitcher.svelte'
+    import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
+    import { toViewMode, ViewMode } from './util'
 
     export let data: PageData
 
     const combinedBlobData = createBlobDataHandler()
     let selectedPosition: LineOrPositionOrRange | null = null
+    const lineWrap = writable<boolean>(false)
 
     $: ({
+        repoURL,
         revision,
         resolvedRevision: { commitID },
         repoName,
         filePath,
         settings,
         graphQLClient,
+        blameData,
     } = data)
+    $: viewMode = toViewMode($page.url.searchParams.get('view'))
     $: combinedBlobData.set(data.blob, data.highlights)
     $: ({ blob, highlights, blobPending } = $combinedBlobData)
-    $: formatted = !!blob?.richHTML
+    $: isFormatted = !!blob?.richHTML
     $: fileNotFound = !blob && !blobPending
     $: fileLoadingError = (!blobPending && !blob && $combinedBlobData.blobError) || null
     $: showRaw = $page.url.searchParams.get('view') === 'raw'
@@ -49,7 +59,29 @@
     })
     $: if (!blobPending) {
         // Update selected position as soon as blob is loaded
-        selectedPosition = parseQueryAndHash($page.url.search, $page.url.hash)
+        selectedPosition = SourcegraphURL.from($page.url).lineRange
+    }
+
+    $: showBlame = viewMode === ViewMode.Blame
+
+    function viewModeURL(viewMode: ViewMode) {
+        switch (viewMode) {
+            case ViewMode.Code: {
+                const url = SourcegraphURL.from($page.url)
+                if (isFormatted) {
+                    url.setSearchParameter('view', 'raw')
+                } else {
+                    url.deleteSearchParameter('view')
+                }
+                return url.toString()
+            }
+            case ViewMode.Blame:
+                const url = SourcegraphURL.from($page.url)
+                url.setSearchParameter('view', 'blame')
+                return url.toString()
+            case ViewMode.Default:
+                return SourcegraphURL.from($page.url).deleteSearchParameter('view').toString()
+        }
     }
 </script>
 
@@ -57,22 +89,59 @@
     <title>{filePath} - {data.displayRepoName} - Sourcegraph</title>
 </svelte:head>
 
-<FileHeader>
-    <Icon slot="icon" svgPath={data.compare ? mdiCodeBracesBox : mdiFileCodeOutline} />
-    <svelte:fragment slot="actions">
-        {#if data.compare}
+<!-- Note: Splitting this at this level is not great but Svelte doesn't allow to conditionally render slots (yet) -->
+{#if data.compare}
+    <FileHeader>
+        <FileIcon slot="icon" file={blob} inline />
+        <svelte:fragment slot="actions">
             <span>{data.compare.revisionToCompare}</span>
-        {:else}
-            {#if !formatted || showRaw}
-                <WrapLinesAction />
-            {/if}
-            {#if formatted}
-                <FormatAction />
+        </svelte:fragment>
+    </FileHeader>
+{:else}
+    <FileHeader>
+        <FileIcon slot="icon" file={blob} inline />
+        <svelte:fragment slot="actions">
+            {#if blob}
+                <OpenInCodeHostAction data={blob} />
             {/if}
             <Permalink {commitID} />
-        {/if}
-    </svelte:fragment>
-</FileHeader>
+        </svelte:fragment>
+        <svelte:fragment slot="actionmenu">
+            <MenuLink href="{repoURL}/-/raw/{filePath}" target="_blank">
+                <Icon svgPath={mdiFileEyeOutline} inline /> View raw
+            </MenuLink>
+            <MenuButton
+                on:click={() => lineWrap.update(wrap => !wrap)}
+                disabled={viewMode === ViewMode.Default && isFormatted}
+            >
+                <Icon svgPath={$lineWrap ? mdiWrap : mdiWrapDisabled} inline />
+                {$lineWrap ? 'Disable' : 'Enable'} wrapping long lines
+            </MenuButton>
+        </svelte:fragment>
+    </FileHeader>
+{/if}
+
+{#if !blobPending && blob && !blob.binary && !data.compare}
+    <div class="file-info">
+        <FileViewModeSwitcher
+            aria-label="View mode"
+            value={viewMode}
+            options={isFormatted
+                ? [ViewMode.Default, ViewMode.Code, ViewMode.Blame]
+                : [ViewMode.Default, ViewMode.Blame]}
+            on:preload={event => preloadData(viewModeURL(event.detail))}
+            on:change={event => goto(viewModeURL(event.detail), { replaceState: true, keepFocus: true })}
+        >
+            <svelte:fragment slot="label" let:value>
+                {value === ViewMode.Default ? (isFormatted ? 'Formatted' : 'Code') : capitalize(value)}
+            </svelte:fragment>
+        </FileViewModeSwitcher>
+        <code>
+            {blob.totalLines}
+            {pluralize('line', blob.totalLines)} · {formatBytes(blob.byteSize)}
+        </code>
+    </div>
+{/if}
 
 <div class="content" class:loading={blobPending} class:compare={!!data.compare} class:fileNotFound>
     {#if !$combinedBlobData.highlightsPending && $combinedBlobData.highlightsError}
@@ -91,8 +160,8 @@
             {/if}
         {/await}
     {:else if blob}
-        {#if blob.richHTML && !showRaw}
-            <div class="rich">
+        {#if blob.richHTML && !showRaw && !showBlame}
+            <div class={`rich ${markdownStyles.markdown}`}>
                 {@html blob.richHTML}
             </div>
         {:else}
@@ -104,11 +173,17 @@
                     repoName: repoName,
                     filePath,
                 }}
+                {showBlame}
+                blameData={$blameData}
                 {highlights}
                 wrapLines={$lineWrap}
                 selectedLines={selectedPosition?.line ? selectedPosition : null}
-                on:selectline={event => {
-                    goto('?' + updateSearchParamsWithLineInformation($page.url.searchParams, event.detail))
+                on:selectline={({ detail: range }) => {
+                    goto(
+                        SourcegraphURL.from($page.url.searchParams)
+                            .setLineRange(range ? { line: range.line, endLine: range.endLine } : null)
+                            .deleteSearchParameter('popover').search
+                    )
                 }}
                 {codeIntelAPI}
             />
@@ -145,6 +220,14 @@
         }
     }
 
+    .file-info {
+        padding: 0.5rem 0.5rem;
+        color: var(--text-muted);
+        display: flex;
+        gap: 1rem;
+        align-items: baseline;
+    }
+
     .loading {
         filter: blur(1px);
     }
@@ -152,6 +235,7 @@
     .rich {
         padding: 1rem;
         overflow: auto;
+        max-width: 50rem;
     }
 
     .circle {
@@ -159,5 +243,9 @@
         border-radius: 50%;
         padding: 1.5rem;
         margin: 1rem;
+    }
+
+    .actions {
+        margin-left: auto;
     }
 </style>

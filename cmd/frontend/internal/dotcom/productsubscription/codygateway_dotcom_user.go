@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -198,7 +200,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 	intervalSeconds := int32(math.MaxInt32)
 
 	// Apply self-serve limits if available
-	cfg := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	cfg := conf.Get().SiteConfig().Embeddings
 	if cfg != nil {
 		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
@@ -228,7 +230,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 	}
 
 	return licensing.CodyGatewayRateLimit{
-		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/triton"},
+		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/st-multi-qa-mpnet-base-dot-v1"},
 		Limit:           limit,
 		IntervalSeconds: intervalSeconds,
 	}, nil
@@ -348,7 +350,8 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 
 		if !isProUser {
 			return []string{
-				"anthropic/claude-3-haiku-20240307",
+				"anthropic/" + anthropic.Claude3Haiku,
+				"anthropic/" + anthropic.Claude3Sonnet,
 				// Remove after the Claude 3 rollout is complete
 				"anthropic/claude-2.0",
 				"anthropic/claude-instant-v1",
@@ -358,12 +361,14 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 		}
 
 		return []string{
-			"anthropic/claude-3-sonnet-20240229",
-			"anthropic/claude-3-opus-20240229",
-			"anthropic/claude-3-haiku-20240307",
+			"anthropic/" + anthropic.Claude3Haiku,
+			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude3Opus,
 			"fireworks/" + fireworks.Mixtral8x7bInstruct,
+			"fireworks/" + fireworks.Mixtral8x22InstructPreview,
 			"openai/gpt-3.5-turbo",
-			"openai/gpt-4-1106-preview",
+			"openai/gpt-4-turbo",
+			"openai/gpt-4-turbo-preview",
 
 			// Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",
@@ -376,7 +381,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 		}
 	case types.CompletionsFeatureCode:
 		return []string{
-			"anthropic/claude-3-haiku-20240307",
+			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
 			"anthropic/claude-instant-1.2-cyan",
@@ -389,4 +394,31 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 	default:
 		return []string{}
 	}
+}
+
+func (r CodyGatewayDotcomUserResolver) CodyGatewayRateLimitStatusByUserName(ctx context.Context, args *graphqlbackend.CodyGatewayRateLimitStatusByUserNameArgs) (*[]graphqlbackend.RateLimitStatus, error) {
+	user, err := r.DB.Users().GetByUsername(ctx, args.Username)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
+	// settings, because they may contain secrets or other sensitive data.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.DB, user.ID); err != nil {
+		return nil, err
+	}
+
+	limits, err := cody.GetGatewayRateLimits(ctx, user.ID, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	rateLimits := make([]graphqlbackend.RateLimitStatus, 0, len(limits))
+	for _, limit := range limits {
+		rateLimits = append(rateLimits, &graphqlbackend.CodyRateLimit{
+			RateLimitStatus: limit,
+		})
+	}
+
+	return &rateLimits, nil
 }

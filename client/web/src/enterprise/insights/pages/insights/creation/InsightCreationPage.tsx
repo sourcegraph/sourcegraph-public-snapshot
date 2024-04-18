@@ -1,8 +1,10 @@
 import { type FC, useContext } from 'react'
 
 import { useNavigate } from 'react-router-dom'
+import { lastValueFrom } from 'rxjs'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CodeInsightsBackendContext, type CreationInsightInput } from '../../../core'
@@ -25,12 +27,12 @@ interface InsightCreateEvent {
     insight: CreationInsightInput
 }
 
-interface InsightCreationPageProps extends TelemetryProps {
+interface InsightCreationPageProps extends TelemetryProps, TelemetryV2Props {
     mode: InsightCreationPageType
 }
 
 export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
-    const { mode, telemetryService } = props
+    const { mode, telemetryService, telemetryRecorder } = props
 
     const navigate = useNavigate()
     const { createInsight } = useContext(CodeInsightsBackendContext)
@@ -41,7 +43,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<unknown> => {
         const { insight } = event
 
-        return createInsight({ insight, dashboardId: dashboardId ?? null }).toPromise()
+        return lastValueFrom(createInsight({ insight, dashboardId: dashboardId ?? null }), { defaultValue: undefined })
     }
 
     const handleInsightSuccessfulCreation = (): void => {
@@ -72,6 +74,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
             <CaptureGroupCreationPage
                 backUrl={backCreateUrl}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
                 onCancel={handleCancel}
@@ -84,6 +87,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
             <SearchInsightCreationPage
                 backUrl={backCreateUrl}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
                 onCancel={handleCancel}
@@ -96,6 +100,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
             <ComputeInsightCreationPage
                 backUrl={backCreateUrl}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
                 onCancel={handleCancel}
@@ -107,6 +112,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
         <LangStatsInsightCreationPage
             backUrl={backCreateUrl}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             onInsightCreateRequest={handleInsightCreateRequest}
             onSuccessfulCreation={handleInsightSuccessfulCreation}
             onCancel={handleCancel}

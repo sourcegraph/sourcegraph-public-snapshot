@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	uploadsstore "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -41,11 +40,6 @@ func NewService(
 
 	return svc
 }
-
-var (
-	bucketName                   = env.Get("CODEINTEL_UPLOADS_RANKING_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")
-	rankingBucketCredentialsFile = env.Get("CODEINTEL_UPLOADS_RANKING_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")
-)
 
 var (
 	BackfillerConfigInst  = &backfiller.Config{}

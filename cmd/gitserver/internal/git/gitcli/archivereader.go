@@ -1,12 +1,14 @@
 package gitcli
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"io"
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -44,15 +46,23 @@ func buildArchiveArgs(format git.ArchiveFormat, treeish string, paths []string) 
 func pathspecLiteral(s string) string { return ":(literal)" + s }
 
 func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths []string) error {
-	args := []string{"ls-tree", treeish, "--"}
-	args = append(args, paths...)
+	args := []string{"ls-tree", "-z", "--name-only", treeish, "--"}
+	for _, p := range paths {
+		args = append(args, pathspecLiteral(p))
+	}
 	r, err := g.NewCommand(ctx, WithArguments(args...))
 	if err != nil {
 		return err
 	}
 	defer r.Close()
 
-	stdout, err := io.ReadAll(r)
+	scanner := bufio.NewScanner(r)
+	scanner.Split(byteutils.ScanNullLines)
+	fileSet := make(collections.Set[string], len(paths))
+	for scanner.Scan() {
+		fileSet.Add(scanner.Text())
+	}
+	err = scanner.Err()
 	if err != nil {
 		// If exit code is 128 and `not a tree object` is part of stderr, most likely we
 		// are referencing a commit that does not exist.
@@ -65,27 +75,17 @@ func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths [
 		return err
 	}
 
+	// Check if the resulting objects match the requested
+	// paths. If not, one or more of the requested
+	// file paths don't exist.
+
 	if len(paths) == 0 {
 		return nil
 	}
 
-	// Check if the resulting objects match the requested
-	// paths. If not, one or more of the requested
-	// file paths don't exist.
-	gotPaths := bytes.Split(bytes.TrimSpace(stdout), []byte("\n"))
-	fileSet := collections.NewSet[string]()
-	for _, p := range gotPaths {
-		if len(p) == 0 {
-			continue
-		}
-		pathSegments := bytes.Fields(p)
-		fileSet.Add(string(pathSegments[len(pathSegments)-1]))
-	}
+	pathsSet := make(collections.Set[string], len(paths))
+	pathsSet.Add(paths...)
 
-	pathsSet := collections.NewSet[string]()
-	for _, path := range paths {
-		pathsSet.Add(path)
-	}
 	diff := pathsSet.Difference(fileSet)
 
 	if len(diff) != 0 {

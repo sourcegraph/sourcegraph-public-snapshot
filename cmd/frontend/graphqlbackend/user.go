@@ -34,8 +34,9 @@ import (
 func (r *schemaResolver) User(
 	ctx context.Context,
 	args struct {
-		Username *string
-		Email    *string
+		Username   *string
+		Email      *string
+		DatabaseID *int32
 	},
 ) (*UserResolver, error) {
 	var err error
@@ -43,6 +44,9 @@ func (r *schemaResolver) User(
 	switch {
 	case args.Username != nil:
 		user, err = r.db.Users().GetByUsername(ctx, *args.Username)
+
+	case args.DatabaseID != nil:
+		user, err = r.db.Users().GetByID(ctx, *args.DatabaseID)
 
 	case args.Email != nil:
 		// 🚨 SECURITY: Only site admins are allowed to look up by email address on
@@ -53,7 +57,6 @@ func (r *schemaResolver) User(
 			}
 		}
 		user, err = r.db.Users().GetByVerifiedEmail(ctx, *args.Email)
-
 	default:
 		return nil, errors.New("must specify either username or email to look up a user")
 	}
@@ -231,32 +234,6 @@ func (r *UserResolver) CodySubscription(ctx context.Context) (*CodySubscriptionR
 	}
 
 	return &CodySubscriptionResolver{subscription: subscription}, nil
-}
-
-func (r *UserResolver) CodyGatewayRateLimitStatus(ctx context.Context) (*[]RateLimitStatus, error) {
-	if !dotcom.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
-	}
-
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
-	// settings, because they may contain secrets or other sensitive data.
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
-		return nil, err
-	}
-
-	limits, err := cody.GetGatewayRateLimits(ctx, r.user.ID, r.db)
-	if err != nil {
-		return nil, err
-	}
-
-	rateLimits := make([]RateLimitStatus, 0, len(limits))
-	for _, limit := range limits {
-		rateLimits = append(rateLimits, &codyRateLimit{
-			rl: limit,
-		})
-	}
-
-	return &rateLimits, nil
 }
 
 func (r *UserResolver) CreatedAt() gqlutil.DateTime {
@@ -873,6 +850,7 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
+	requestingActor := actor.FromContext(ctx)
 
 	if args.Quota != nil && *args.Quota <= 0 {
 		return nil, errors.New("quota must be 1 or greater")
@@ -889,17 +867,28 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 		return nil, err
 	}
 
-	var quota *int
-	if args.Quota != nil {
-		i := int(*args.Quota)
-		quota = &i
-	}
-	if err := r.db.Users().SetChatCompletionsQuota(ctx, user.ID, quota); err != nil {
+	// Lookup the current quota, so we can log the delta.
+	oldQuota, err := r.db.Users().GetChatCompletionsQuota(ctx, user.ID)
+	if err != nil {
 		return nil, err
 	}
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
-		// Log an event when a user's Completions quota is updated
+	var newQuota *int
+	if args.Quota != nil {
+		i := int(*args.Quota)
+		newQuota = &i
+	}
+	if err := r.db.Users().SetChatCompletionsQuota(ctx, user.ID, newQuota); err != nil {
+		return nil, err
+	}
+
+	// Log that the user's completions quota was updated.
+	r.logger.Info("setting user completions quota",
+		log.Int("requestingUserID", int(requestingActor.UID)),
+		log.Int("targetUserID", int(user.ID)),
+		log.Intp("oldQuota", oldQuota),
+		log.Intp("newQuota", newQuota))
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", args); err != nil {
 			r.logger.Error("Error logging security event", log.Error(err))
 		}

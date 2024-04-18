@@ -32,17 +32,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newPingResponse("5.3.2")
+	latestReleaseDockerServerImageBuild = newPingResponse("5.3.3")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newPingResponse("5.3.2")
+	latestReleaseKubernetesBuild = newPingResponse("5.3.3")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.3.2")
+	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.3.3")
 )
 
 func getLatestRelease(deployType string) pingResponse {
@@ -241,6 +241,7 @@ type pingRequest struct {
 	CodyUsage2        json.RawMessage `json:"codyUsage2,omitempty"`
 	CodyProviders     json.RawMessage `json:"codyProviders,omitempty"`
 	RepoMetadataUsage json.RawMessage `json:"repoMetadataUsage,omitempty"`
+	LlmUsage          json.RawMessage `json:"llmUsage,omitempty"`
 }
 
 type dependencyVersions struct {
@@ -371,6 +372,7 @@ type pingPayload struct {
 	CodyUsage2                    json.RawMessage `json:"cody_usage_2"`
 	CodyProviders                 json.RawMessage `json:"cody_providers"`
 	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
+	LlmUsage                      json.RawMessage `json:"llm_usage"`
 }
 
 func logPing(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter, r *http.Request, pr *pingRequest, hasUpdate bool) {
@@ -473,6 +475,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		CodyUsage2:                    pr.CodyUsage2,
 		CodyProviders:                 pr.CodyProviders,
 		RepoMetadataUsage:             pr.RepoMetadataUsage,
+		LlmUsage:                      pr.LlmUsage,
 	})
 }
 

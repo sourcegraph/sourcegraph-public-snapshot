@@ -2,12 +2,16 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "platforms",
-    sha256 = "8150406605389ececb6da07cbcb509d5637a3ab9a24bc69b1101531367d89d74",
+    sha256 = "5eda539c841265031c2f82d8ae7a3a6490bd62176e0c038fc469eabf91f6149b",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
-        "https://github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.9/platforms-0.0.9.tar.gz",
+        "https://github.com/bazelbuild/platforms/releases/download/0.0.9/platforms-0.0.9.tar.gz",
     ],
 )
+
+load("@platforms//host:extension.bzl", "host_platform_repo")
+
+host_platform_repo(name = "host_platform")
 
 http_archive(
     name = "bazel_skylib",
@@ -46,9 +50,9 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_ts",
-    sha256 = "bd3e7b17e677d2b8ba1bac3862f0f238ab16edb3e43fb0f0b9308649ea58a2ad",
-    strip_prefix = "rules_ts-2.1.0",
-    url = "https://github.com/aspect-build/rules_ts/releases/download/v2.1.0/rules_ts-v2.1.0.tar.gz",
+    sha256 = "c77f0dfa78c407893806491223c1264c289074feefbf706721743a3556fa7cea",
+    strip_prefix = "rules_ts-2.2.0",
+    url = "https://github.com/aspect-build/rules_ts/releases/download/v2.2.0/rules_ts-v2.2.0.tar.gz",
 )
 
 http_archive(
@@ -98,10 +102,10 @@ http_archive(
 
 http_archive(
     name = "bazel_gazelle",
-    sha256 = "b7387f72efb59f876e4daae42f1d3912d0d45563eac7cb23d1de0b094ab588cf",
+    integrity = "sha256-MpOL2hbmcABjA1R5Bj2dJMYO2o15/Uc5Vj9Q0zHLMgk=",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.34.0/bazel-gazelle-v0.34.0.tar.gz",
-        "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.34.0/bazel-gazelle-v0.34.0.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.35.0/bazel-gazelle-v0.35.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.35.0/bazel-gazelle-v0.35.0.tar.gz",
     ],
 )
 
@@ -154,6 +158,28 @@ http_archive(
     sha256 = "045f0186edb25706dfe77d9c4916eec630a2b2736f9abb59e37eaac122d4b771",
     strip_prefix = "aspect-cli-5.8.20",
     url = "https://github.com/aspect-build/aspect-cli/archive/5.8.20.tar.gz",
+)
+
+load("@aspect_bazel_lib//lib:repositories.bzl", "register_expand_template_toolchains", "register_jq_toolchains")
+
+register_jq_toolchains()
+
+register_expand_template_toolchains()
+
+http_archive(
+    name = "rules_apko",
+    patch_args = ["-p1"],
+    patches = [
+        # required due to https://github.com/chainguard-dev/apko/issues/1052
+        "//third_party/rules_apko:repository_label_strip.patch",
+        # required until a release contains https://github.com/chainguard-dev/rules_apko/pull/53
+        "//third_party/rules_apko:apko_run_runfiles_path.patch",
+        # symlinking the lockfile appears to be problematic in CI https://github.com/sourcegraph/sourcegraph/pull/61877
+        "//third_party/rules_apko:copy_dont_symlink_lockfile.patch",
+    ],
+    sha256 = "f176171f95ee2b6eef1572c6da796d627940a1e898a32d476a2d7a9a99332960",
+    strip_prefix = "rules_apko-1.2.2",
+    url = "https://github.com/chainguard-dev/rules_apko/releases/download/v1.2.2/rules_apko-v1.2.2.tar.gz",
 )
 
 # hermetic_cc_toolchain setup ================================
@@ -481,3 +507,35 @@ load("//dev:schema_migrations.bzl", "schema_migrations")
 schema_migrations(
     name = "schemas_migrations",
 )
+
+# wolfi images setup ================================
+
+load("@rules_apko//apko:repositories.bzl", "apko_register_toolchains", "rules_apko_dependencies")
+
+rules_apko_dependencies()
+
+# We don't register the default toolchains, and regsiter our own from a patched go_repository sourced
+# go_binary target that contains some fixes that are not yet merged upstream.
+# https://github.com/chainguard-dev/go-apk/pull/216
+apko_register_toolchains(
+    name = "apko",
+    register = False,
+)
+
+register_toolchains("//:apko_linux_toolchain")
+
+register_toolchains("//:apko_darwin_arm64_toolchain")
+
+register_toolchains("//:apko_darwin_amd64_toolchain")
+
+load("//wolfi-images:repo.bzl", "wolfi_lockfiles")
+
+wolfi_lockfiles(name = "apko_lockfiles")
+
+load("@apko_lockfiles//:translates.bzl", "apko_translate_locks")
+
+apko_translate_locks()
+
+load("@apko_lockfiles//:repositories.bzl", "apko_repositories")
+
+apko_repositories()

@@ -66,6 +66,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         fetchSearchContexts,
         setSelectedSearchContextSpec,
     } = useLegacyContext_onlyInStormRoutes()
+    const { telemetryRecorder } = platformContext
 
     const selectedSearchContextSpec = hardCodedSearchContextSpec || dynamicSearchContextSpec
 
@@ -210,7 +211,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                             <div className="d-flex flex-grow-1 w-100">{input}</div>
                         </TraceSpanProvider>
                     </div>
-                    <Notices className="my-3 text-center" location="home" />
+                    <Notices className="my-3 text-center" location="home" telemetryRecorder={telemetryRecorder} />
                 </Form>
             </div>
             {simpleSearch && (
@@ -218,6 +219,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                     <hr className="mt-4 mb-4" />
                     <SimpleSearch
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         onSubmit={onSubmit}
                         onSimpleSearchUpdate={onSimpleSearchUpdate}
                     />

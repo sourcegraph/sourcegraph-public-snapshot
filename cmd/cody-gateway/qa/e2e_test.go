@@ -66,8 +66,8 @@ func Test_Embeddings_OpenAI(t *testing.T) {
 		// first float of a vector representing the input "Pls embed"
 		firstValue float32
 	}{
-		{"openai/text-embedding-ada-002", 1536, -0.03610423},
-		{"sourcegraph/triton", 768, -0.009880066},
+		{"openai/text-embedding-ada-002", 1536, -0.036106355},
+		{"sourcegraph/st-multi-qa-mpnet-base-dot-v1", 768, -0.009880066},
 	} {
 		req, err := http.NewRequest("POST", gatewayURL.String(), strings.NewReader(fmt.Sprintf(`{"input": ["Pls embed"],"model": "%s"}`, model.name)))
 		assert.NoError(t, err)

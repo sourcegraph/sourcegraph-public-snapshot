@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,6 +30,7 @@ const Llama213bCodeInstruct = "accounts/fireworks/models/llama-v2-13b-code-instr
 const Llama234bCodeInstruct = "accounts/fireworks/models/llama-v2-34b-code-instruct"
 const Mistral7bInstruct = "accounts/fireworks/models/mistral-7b-instruct-4k"
 const Mixtral8x7bInstruct = "accounts/fireworks/models/mixtral-8x7b-instruct"
+const Mixtral8x22InstructPreview = "accounts/fireworks/models/mixtral-8x22b-instruct-preview"
 
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
 	return &fireworksClient{
@@ -46,7 +49,9 @@ type fireworksClient struct {
 func (c *fireworksClient) Complete(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	_ types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
+	logger log.Logger,
 ) (*types.CompletionResponse, error) {
 	resp, err := c.makeRequest(ctx, feature, requestParams, false)
 	if err != nil {
@@ -83,8 +88,10 @@ func (c *fireworksClient) Complete(
 func (c *fireworksClient) Stream(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	_ types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
+	logger log.Logger,
 ) error {
 	logprobsInclude := uint8(0)
 	requestParams.Logprobs = &logprobsInclude
@@ -190,7 +197,7 @@ func (c *fireworksClient) makeRequest(ctx context.Context, feature types.Complet
 			switch m.Speaker {
 			case types.HUMAN_MESSAGE_SPEAKER:
 				role = "user"
-			case types.ASISSTANT_MESSAGE_SPEAKER:
+			case types.ASSISTANT_MESSAGE_SPEAKER:
 				role = "assistant"
 			default:
 				role = strings.ToLower(role)

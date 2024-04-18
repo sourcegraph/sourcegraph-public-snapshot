@@ -41,7 +41,7 @@ go_library(
         "//internal/search/backend",
         "//internal/search/casetransform",
         "//internal/search/query",
-        "//internal/search/zoekt",
+        "//internal/search/zoektquery",
         "//internal/searcher/v1:searcher",
         "//internal/trace",
         "//lib/codeintel/languages",

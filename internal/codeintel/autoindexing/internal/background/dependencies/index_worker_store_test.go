@@ -30,7 +30,7 @@ func Test_AutoIndexingManualEnqueuedDequeueOrder(t *testing.T) {
 	db := database.NewDB(logtest.Scoped(t), raw)
 
 	opts := IndexWorkerStoreOptions
-	workerstore := store.New(&observation.TestContext, db.Handle(), opts)
+	workerstore := store.New(observation.TestContextTB(t), db.Handle(), opts)
 
 	for i, test := range []struct {
 		indexes []shared.Index

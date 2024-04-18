@@ -1,14 +1,12 @@
 <script lang="ts">
-    import { mdiFileDocumentOutline } from '@mdi/js'
-
-    import Icon from '$lib/Icon.svelte'
+    // @sg RepoRoot
+    import Readme from '$lib/repo/Readme.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
     import { createPromiseStore } from '$lib/utils'
-    import Readme from '$lib/repo/Readme.svelte'
-    import type { RepoPage_Readme } from './page.gql'
 
     import type { PageData } from './$types'
+    import type { RepoPage_Readme } from './page.gql'
 
     export let data: PageData
 
@@ -21,8 +19,6 @@
         <SidebarToggleButton />
     </div>
     {#if $readme.value}
-        <Icon svgPath={mdiFileDocumentOutline} />
-        &nbsp;
         {$readme.value.name}
     {:else if !$readme.pending}
         Description

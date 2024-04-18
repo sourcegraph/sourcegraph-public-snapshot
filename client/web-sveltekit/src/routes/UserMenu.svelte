@@ -1,12 +1,14 @@
 <script lang="ts">
-    import Icon from '$lib/Icon.svelte'
-    import Avatar from '$lib/Avatar.svelte'
-    import type { UserMenu_User } from './UserMenu.gql'
-    import { humanTheme } from '$lib/theme'
-    import { DropdownMenu, MenuLink, MenuRadioGroup, MenuSeparator, Submenu } from '$lib/wildcard'
-    import { getButtonClassName } from '$lib/wildcard/Button'
     import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
     import { writable } from 'svelte/store'
+
+    import Avatar from '$lib/Avatar.svelte'
+    import Icon from '$lib/Icon.svelte'
+    import { ThemeSetting, themeSetting } from '$lib/theme'
+    import { DropdownMenu, MenuLink, MenuRadioGroup, MenuSeparator, Submenu } from '$lib/wildcard'
+    import { getButtonClassName } from '$lib/wildcard/Button'
+
+    import type { UserMenu_User } from './UserMenu.gql'
 
     const MAX_VISIBLE_ORGS = 5
 
@@ -22,7 +24,7 @@
     aria-label="{$open ? 'Close' : 'Open'} user menu"
 >
     <svelte:fragment slot="trigger">
-        <Avatar avatar={user} />
+        <Avatar avatar={user} --avatar-size="1.5rem" />
         <Icon svgPath={$open ? mdiChevronUp : mdiChevronDown} aria-hidden={true} inline />
     </svelte:fragment>
     <h6>Signed in as <strong>@{user.username}</strong></h6>
@@ -33,7 +35,7 @@
     <MenuSeparator />
     <Submenu>
         <svelte:fragment slot="trigger">Theme</svelte:fragment>
-        <MenuRadioGroup values={['Light', 'Dark', 'System']} value={humanTheme} />
+        <MenuRadioGroup values={[ThemeSetting.Light, ThemeSetting.Dark, ThemeSetting.System]} value={themeSetting} />
     </Submenu>
     {#if organizations.length > 0}
         <MenuSeparator />

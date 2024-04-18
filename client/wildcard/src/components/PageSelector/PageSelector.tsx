@@ -5,9 +5,8 @@ import classNames from 'classnames'
 import { omit } from 'lodash'
 import useResizeObserver from 'use-resize-observer'
 
-import { createAggregateError } from '@sourcegraph/common'
-
 import { useOffsetPagination, useDebounce } from '../../hooks'
+import { createAggregateError } from '../../utils'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
 

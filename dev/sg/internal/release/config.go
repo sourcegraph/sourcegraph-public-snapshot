@@ -300,6 +300,12 @@ func (r *releaseRunner) CreateRelease(ctx context.Context) error {
 		steps = r.m.Internal.Create.Steps.Major
 	}
 
+	// We don't want to accidentally think the release creation worked if there are no steps defined.
+	if len(steps) == 0 {
+		sayFail("create", "No steps defined for %s release", r.typ)
+		return errors.Newf("no steps defined for %s release", r.typ)
+	}
+
 	announce2("create", "Will create a %s release %q", r.typ, r.version)
 	return r.runSteps(ctx, steps)
 }

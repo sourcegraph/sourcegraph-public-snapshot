@@ -39,17 +39,17 @@ func CreateSetup(config rockskipConfig) SetupFunc {
 	repoToSize := map[string]int64{}
 
 	if useRockskip {
-		return func(observationCtx *observation.Context, db database.DB, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
-			rockskipSearchFunc, rockskipHandleStatus, rockskipCtagsCommand, err := setupRockskip(observationCtx, config, gitserverClient, repositoryFetcher)
+		return func(observationCtx *observation.Context, db database.DB, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, error) {
+			rockskipSearchFunc, rockskipHandleStatus, err := setupRockskip(observationCtx, config, gitserverClient, repositoryFetcher)
 			if err != nil {
-				return nil, nil, nil, "", err
+				return nil, nil, nil, err
 			}
 
 			// The blanks are the SQLite status endpoint (it's always nil) and the ctags command (same as
 			// Rockskip's).
-			sqliteSearchFunc, _, sqliteBackgroundRoutines, _, err := SetupSqlite(observationCtx, db, gitserverClient, repositoryFetcher)
+			sqliteSearchFunc, _, sqliteBackgroundRoutines, err := SetupSqlite(observationCtx, db, gitserverClient, repositoryFetcher)
 			if err != nil {
-				return nil, nil, nil, "", err
+				return nil, nil, nil, err
 			}
 
 			searchFunc := func(ctx context.Context, args search.SymbolsParameters) (results result.Symbols, err error) {
@@ -84,7 +84,7 @@ func CreateSetup(config rockskipConfig) SetupFunc {
 				return sqliteSearchFunc(ctx, args)
 			}
 
-			return searchFunc, rockskipHandleStatus, sqliteBackgroundRoutines, rockskipCtagsCommand, nil
+			return searchFunc, rockskipHandleStatus, sqliteBackgroundRoutines, nil
 		}
 	} else {
 		return SetupSqlite
@@ -122,7 +122,7 @@ func loadRockskipConfig(baseConfig env.BaseConfig, ctags types.CtagsConfig, repo
 	}
 }
 
-func setupRockskip(observationCtx *observation.Context, config rockskipConfig, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), string, error) {
+func setupRockskip(observationCtx *observation.Context, config rockskipConfig, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), error) {
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("rockskip"), observationCtx)
 
 	codeintelDB := mustInitializeCodeIntelDB(observationCtx)
@@ -131,10 +131,10 @@ func setupRockskip(observationCtx *observation.Context, config rockskipConfig, g
 	}
 	server, err := rockskip.NewService(codeintelDB, gitserverClient, repositoryFetcher, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize, config.SearchLastIndexedCommit)
 	if err != nil {
-		return nil, nil, config.Ctags.UniversalCommand, err
+		return nil, nil, err
 	}
 
-	return server.Search, server.HandleStatus, config.Ctags.UniversalCommand, nil
+	return server.Search, server.HandleStatus, nil
 }
 
 func mustInitializeCodeIntelDB(observationCtx *observation.Context) *sql.DB {

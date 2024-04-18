@@ -144,13 +144,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		securityOps.Append(semgrepScan())
 		ops.Merge(securityOps)
 
-		// Wolfi package and base images
-		packageOps, baseImageOps := addWolfiOps(c)
+		// Wolfi package and apko lock check
+		packageOps, apkoOps := addWolfiOps(c)
+		if apkoOps != nil {
+			ops.Merge(apkoOps)
+		}
 		if packageOps != nil {
 			ops.Merge(packageOps)
-		}
-		if baseImageOps != nil {
-			ops.Merge(baseImageOps)
 		}
 
 		if c.Diff.Has(changed.ClientBrowserExtensions) {
@@ -170,6 +170,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			addBrowserExtensionReleaseSteps)
 
+	case runtype.VsceReleaseBranch:
+		// If this is a vs code extension release branch, run the vscode-extension tests and release
+		ops = BazelOpsSet(buildOptions,
+			CoreTestOperationsOptions{
+				IsMainBranch: buildOptions.Branch == "main",
+			},
+			addVsceTests,
+			wait,
+			addVsceReleaseSteps)
+
 	case runtype.BextNightly, runtype.BextManualNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
@@ -181,14 +191,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			addBrowserExtensionE2ESteps)
 
+	case runtype.VsceNightly:
+		ops = BazelOpsSet(buildOptions,
+			CoreTestOperationsOptions{
+				IsMainBranch: buildOptions.Branch == "main",
+			},
+			addVsceTests)
+
 	case runtype.WolfiBaseRebuild:
-		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images
-		// and push to registry, then open a PR
-		baseImageOps := wolfiRebuildAllBaseImages(c)
-		if baseImageOps != nil {
-			ops.Merge(baseImageOps)
-			ops.Merge(wolfiGenerateBaseImagePR())
-		}
+		// If this is a Wolfi base image rebuild, run script to re-lock packages
+		// for all Wolfi base images and open a PR
+		ops.Merge(wolfiBaseImageLockAndCreatePR())
 
 	// Use CandidateNoTest if you want to build legacy Docker Images
 	case runtype.CandidatesNoTest:
@@ -311,12 +324,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		))
 
 		// Wolfi package and base images
-		packageOps, baseImageOps := addWolfiOps(c)
+		packageOps, apkoOps := addWolfiOps(c)
+		if apkoOps != nil {
+			ops.Merge(apkoOps)
+		}
 		if packageOps != nil {
 			ops.Merge(packageOps)
-		}
-		if baseImageOps != nil {
-			ops.Merge(baseImageOps)
 		}
 
 		// All operations before this point are required

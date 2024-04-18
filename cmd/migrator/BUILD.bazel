@@ -22,10 +22,6 @@ go_binary(
     name = "migrator",
     embed = [":migrator_lib"],
     visibility = ["//visibility:public"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )
 
 # This rule builds a tarball of the database schema descriptions that only contains the current database schema
@@ -76,7 +72,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_base",
+    base = "//wolfi-images/sourcegraph:base_image",
     entrypoint = [
         "/sbin/tini",
         "--",
@@ -94,6 +90,7 @@ oci_tarball(
     name = "image_tarball",
     image = ":image",
     repo_tags = ["migrator:candidate"],
+    visibility = ["//testing/tools/upgradetest:__pkg__"],
 )
 
 container_structure_test(

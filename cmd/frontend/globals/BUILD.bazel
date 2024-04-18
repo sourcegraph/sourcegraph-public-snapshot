@@ -7,7 +7,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//internal/conf",
-        "//schema",
         "@com_github_inconshreveable_log15//:log15",
     ],
 )

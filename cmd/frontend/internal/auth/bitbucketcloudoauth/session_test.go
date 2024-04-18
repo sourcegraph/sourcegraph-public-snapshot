@@ -10,9 +10,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	bitbucketlogin "github.com/dghubble/gologin/v2/bitbucket"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -197,6 +201,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					t.Fatal(err)
 				}
 				s := &sessionIssuerHelper{
+					logger:      logtest.Scoped(t),
 					baseURL:     extsvc.NormalizeBaseURL(bbURL),
 					clientKey:   clientID,
 					allowSignup: ci.allowSignup,
@@ -278,6 +283,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := &sessionIssuerHelper{
+		logger:      logtest.Scoped(t),
 		baseURL:     extsvc.NormalizeBaseURL(bbURL),
 		clientKey:   clientID,
 		allowSignup: true,
@@ -305,4 +311,76 @@ func acct(serviceType, serviceID, clientID, accountID string) extsvc.AccountSpec
 		ClientID:    clientID,
 		AccountID:   accountID,
 	}
+}
+
+func TestGetOrCreateUser_NoPanicOnEmailSlice(t *testing.T) {
+	fakeVerifiedEmails := []bitbucketcloud.UserEmail{
+		{
+			Email:       "foo@test.com",
+			IsConfirmed: true,
+		},
+		{
+			Email:       "bar@test.com",
+			IsConfirmed: true,
+		},
+	}
+
+	oldReturnEmails := returnEmails
+	returnEmails.Values = fakeVerifiedEmails
+	t.Cleanup(func() {
+		returnEmails = oldReturnEmails
+	})
+
+	server := createTestServer()
+	t.Cleanup(server.Close)
+
+	expectedError := errors.New("GetAndSaveUser failed for an arbitrary reason")
+
+	// Mock GetAndSaveUser to return an error
+	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (bool, int32, string, error) {
+		return false, 0, "", expectedError
+	}
+
+	t.Cleanup(func() {
+		auth.MockGetAndSaveUser = nil
+	})
+
+	ctx := bitbucketlogin.WithUser(context.Background(), nil)
+	conf := &schema.BitbucketCloudConnection{
+		Url:    server.URL,
+		ApiURL: server.URL,
+	}
+	bbClient, err := bitbucketcloud.NewClient(server.URL, conf, httpcli.TestExternalDoer)
+	if err != nil {
+		t.Fatalf("Failed to create Bitbucket Cloud client: %v", err)
+	}
+
+	u, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatalf("Failed to parse URL: %v", err)
+	}
+
+	// Create issuer helper
+	issuer := &sessionIssuerHelper{
+		logger:  logtest.Scoped(t),
+		baseURL: u,
+		client:  bbClient,
+	}
+
+	// Assert no panic and that the returned error is the expected one
+	assert.NotPanics(t, func() {
+		tok := &oauth2.Token{AccessToken: "fake-token"}
+
+		_, _, safeErrString, err := issuer.GetOrCreateUser(ctx, tok, nil)
+
+		// Assert that the error is the expected one
+		assert.EqualError(t, err, expectedError.Error())
+
+		// Assert that the error message contains all the verified emails
+		// e.x. "...foo@test.com,...,bar@test.com,..."
+		for _, email := range fakeVerifiedEmails {
+			assert.Contains(t, safeErrString, email.Email)
+		}
+	})
+
 }

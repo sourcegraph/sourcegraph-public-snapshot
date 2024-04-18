@@ -32,19 +32,29 @@
 
     const defaultTheme = EditorView.theme({
         '&': {
-            width: '100%',
-            'min-height': 0,
+            height: '100%',
             color: 'var(--color-code)',
-            flex: 1,
+        },
+        '&.cm-focused': {
+            outline: 'none',
         },
         '.cm-scroller': {
             lineHeight: '1rem',
             fontFamily: 'var(--code-font-family)',
             fontSize: 'var(--code-font-size)',
         },
-        '.cm-content:focus-visible': {
-            outline: 'none',
-            boxShadow: 'none',
+        '.cm-content': {
+            padding: 0,
+            '&:focus-visible': {
+                outline: 'none',
+                boxShadow: 'none',
+            },
+        },
+        '.cm-panels': {
+            '&-top': {
+                borderBottom: '1px solid var(--border-color)',
+            },
+            backgroundColor: 'transparent',
         },
         '.cm-gutters': {
             'background-color': 'var(--code-bg)',
@@ -114,6 +124,9 @@
     import { createEventDispatcher, onMount } from 'svelte'
 
     import { browser } from '$app/environment'
+    import { goto } from '$app/navigation'
+    import type { LineOrPositionOrRange } from '$lib/common'
+    import type { CodeIntelAPI } from '$lib/shared'
     import {
         selectableLineNumbers,
         syntaxHighlight,
@@ -124,17 +137,24 @@
         createCodeIntelExtension,
         syncSelection,
         temporaryTooltip,
+        showBlame as showBlameColumn,
+        blameData as blameDataFacet,
+        type BlameHunkData,
     } from '$lib/web'
-    import { goto } from '$app/navigation'
-    import type { CodeIntelAPI } from '$lib/shared'
+
+    import BlameDecoration from './blame/BlameDecoration.svelte'
+    import { type Range, staticHighlights } from './codemirror/static-highlights'
     import { goToDefinition, openImplementations, openReferences } from './repo/blob'
-    import type { LineOrPositionOrRange } from '$lib/common'
 
     export let blobInfo: BlobInfo
     export let highlights: string
     export let wrapLines: boolean = false
     export let selectedLines: LineOrPositionOrRange | null = null
     export let codeIntelAPI: CodeIntelAPI
+    export let staticHighlightRanges: Range[] = []
+
+    export let showBlame: boolean = false
+    export let blameData: BlameHunkData | undefined = undefined
 
     const dispatch = createEventDispatcher<{ selectline: SelectedLineRange }>()
 
@@ -180,8 +200,33 @@
     })
     $: settings = configureMiscSettings({ wrapLines })
     $: sh = configureSyntaxHighlighting(blobInfo.content, highlights)
+    $: staticHighlightExtension = staticHighlights(staticHighlightRanges)
 
-    $: extensions = [sh, settings, lineNumbers, temporaryTooltip, codeIntelExtension, staticExtensions]
+    $: blameColumnExtension = showBlame
+        ? showBlameColumn({
+              createBlameDecoration(target, props) {
+                  const decoration = new BlameDecoration({ target, props })
+                  return {
+                      destroy() {
+                          decoration.$destroy()
+                      },
+                  }
+              },
+          })
+        : []
+    $: blameDataExtension = blameDataFacet(blameData)
+
+    $: extensions = [
+        sh,
+        settings,
+        lineNumbers,
+        temporaryTooltip,
+        codeIntelExtension,
+        staticExtensions,
+        staticHighlightExtension,
+        blameColumnExtension,
+        blameDataExtension,
+    ]
 
     function update(blobInfo: BlobInfo, extensions: Extension, range: LineOrPositionOrRange | null) {
         if (editor) {
@@ -229,7 +274,8 @@
 <style lang="scss">
     .root {
         display: contents;
-        overflow: hidden;
+        --blame-decoration-width: 400px;
+        --blame-recency-width: 4px;
     }
     pre {
         margin: 0;

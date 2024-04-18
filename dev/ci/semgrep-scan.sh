@@ -26,15 +26,21 @@ echo -e "--- :rocket: reporting scan results to GitHub\n"
 # upload SARIF results to code scanning API
 encoded_sarif=$(gzip -c results.sarif | base64 -w0)
 
+
 # upload SARIF results to code scanning API
 if [ "$BUILDKITE_PULL_REQUEST" = "false" ]; then
+  ref="refs/heads/${BUILDKITE_BRANCH}"
+  if [[ -n "${BUILDKITE_TAG}" ]]; then
+    ref="refs/tags/${BUILDKITE_TAG}"
+  fi
+
   gh api \
     --method POST \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
     /repos/sourcegraph/sourcegraph/code-scanning/sarifs \
     -f commit_sha="$BUILDKITE_COMMIT" \
-    -f ref="refs/heads/$BUILDKITE_BRANCH" \
+    -f ref="${ref}" \
     -f sarif="$encoded_sarif" \
     -f tool_name="ci semgrep"
 else

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
@@ -37,7 +38,7 @@ import (
 
 // maxRequestDuration is the maximum amount of time a request can take before
 // being cancelled as DeadlineExceeded.
-const maxRequestDuration = 2 * time.Minute
+const maxRequestDuration = 8 * time.Minute
 
 var timeToFirstEventMetrics = metrics.NewREDMetrics(
 	prometheus.DefaultRegisterer,
@@ -77,6 +78,17 @@ func newCompletionsHandler(
 		completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 		if completionsConfig == nil {
 			http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
+			return
+		}
+
+		var version types.CompletionsVersion
+		versionParam := r.URL.Query().Get("api-version")
+		if versionParam == "" {
+			version = types.CompletionsVersionLegacy
+		} else if versionParam == "1" {
+			version = types.CompletionsV1
+		} else {
+			http.Error(w, "Unsupported API Version (Please update your client)", http.StatusNotAcceptable)
 			return
 		}
 
@@ -179,7 +191,7 @@ func newCompletionsHandler(
 			}
 		}
 
-		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w, userStore, test)
+		responseHandler(ctx, requestParams.CompletionRequestParameters, version, completionClient, w, userStore, test)
 	})
 }
 
@@ -200,23 +212,23 @@ func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError, isDot
 
 // newSwitchingResponseHandler handles requests to an LLM provider, and wraps the correct
 // handler based on the requestParams.Stream flag.
-func newSwitchingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
+func newSwitchingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
 	nonStreamer := newNonStreamingResponseHandler(logger, db, feature)
 	streamer := newStreamingResponseHandler(logger, db, feature)
-	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
+	return func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
 		if requestParams.IsStream(feature) {
-			streamer(ctx, requestParams, cc, w, userStore, test)
+			streamer(ctx, requestParams, version, cc, w, userStore, test)
 		} else {
 			// TODO(#59832): Add attribution to non-streaming endpoint.
-			nonStreamer(ctx, requestParams, cc, w, userStore)
+			nonStreamer(ctx, requestParams, version, cc, w, userStore)
 		}
 	}
 }
 
 // newStreamingResponseHandler handles streaming requests to an LLM provider,
 // It writes events to an SSE stream as they come in.
-func newStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
-	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
+func newStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
+	return func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
 		var eventWriter = sync.OnceValue[*streamhttp.Writer](func() *streamhttp.Writer {
 			eventWriter, err := streamhttp.NewWriter(w)
 			if err != nil {
@@ -228,7 +240,19 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 
 		// Isolate writing events.
 		var mu sync.Mutex
-		writeEvent := func(name string, data any) error {
+		writeEvent := func(name string, data any) (err error) {
+			// Attribution search is currently panicing. The main hypothesis
+			// is calling writeEvent on a finished request in the case of an
+			// error. Rather than panicing the whole process we convert it
+			// into an error which will get logged.
+			//
+			// https://github.com/sourcegraph/sourcegraph/issues/60439
+			defer func() {
+				if rec := recover(); rec != nil {
+					err = errors.WithStack(errors.Errorf("recovered panic in completions writeEvent: %v", rec))
+				}
+			}()
+
 			mu.Lock()
 			defer mu.Unlock()
 			if ev := eventWriter(); ev != nil {
@@ -271,14 +295,14 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 				f = ff
 			}
 		}
-		err := cc.Stream(ctx, feature, requestParams,
+		err := cc.Stream(ctx, feature, version, requestParams,
 			func(event types.CompletionResponse) error {
 				if !firstEventObserved {
 					firstEventObserved = true
 					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
 				}
 				return f.Send(ctx, event)
-			})
+			}, logger)
 		if err != nil {
 			l := trace.Logger(ctx, logger)
 
@@ -347,9 +371,9 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 // newNonStreamingResponseHandler handles non-streaming requests to an LLM provider,
 // awaiting the complete response before writing it back in a structured JSON response
 // to the client.
-func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
-	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
-		completion, err := cc.Complete(ctx, feature, requestParams)
+func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
+	return func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
+		completion, err := cc.Complete(ctx, feature, version, requestParams, logger)
 		if err != nil {
 			logFields := []log.Field{log.Error(err)}
 

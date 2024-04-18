@@ -3,22 +3,25 @@
 
     import { afterNavigate, disableScrollHandling, goto } from '$app/navigation'
     import { page } from '$app/stores'
+    import { isErrorLike } from '$lib/common'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import { fetchSidebarFileTree } from '$lib/repo/api/tree'
     import HistoryPanel, { type Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
+    import LastCommit from '$lib/repo/LastCommit.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
     import { scrollAll } from '$lib/stores'
+    import TabPanel from '$lib/TabPanel.svelte'
+    import Tabs from '$lib/Tabs.svelte'
+    import { Alert } from '$lib/wildcard'
+    import type { LastCommitFragment } from '$testing/graphql-type-mocks'
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
-    import type { GitHistory_HistoryConnection } from './layout.gql'
-    import Tabs from '$lib/Tabs.svelte'
-    import TabPanel from '$lib/TabPanel.svelte'
+    import RepositoryRevPicker from './RepositoryRevPicker.svelte'
     import { createFileTreeStore } from './fileTreeStore'
-    import { isErrorLike } from '$lib/common'
-    import { Alert } from '$lib/wildcard'
-    import { fetchSidebarFileTree } from '$lib/repo/api/tree'
+    import { type GitHistory_HistoryConnection } from './layout.gql'
 
     interface Capture {
         selectedTab: number | null
@@ -66,17 +69,28 @@
     let historyPanel: HistoryPanel
     let rootElement: HTMLElement | null = null
     let commitHistory: GitHistory_HistoryConnection | null
+    let lastCommit: LastCommitFragment | null
 
     $: ({ revision = '', parentPath, repoName, resolvedRevision } = data)
     $: fileTreeStore.set({ repoName, revision: resolvedRevision.commitID, path: parentPath })
     $: commitHistoryQuery = data.commitHistory
+    $: lastCommitQuery = data.lastCommit
     $: if (!!commitHistoryQuery) {
         // Reset commit history when the query observable changes. Without
         // this we are showing the commit history of the previously selected
         // file/folder until the new commit history is loaded.
         commitHistory = null
     }
+
+    $: if (!!lastCommitQuery) {
+        // Reset commit history when the query observable changes. Without
+        // this we are showing the commit history of the previously selected
+        // file/folder until the new commit history is loaded.
+        lastCommit = null
+    }
+
     $: commitHistory = $commitHistoryQuery?.data?.repository?.commit?.ancestors ?? null
+    $: lastCommit = $lastCommitQuery?.data?.repository?.lastCommit?.ancestors?.nodes[0] ?? null
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
@@ -112,9 +126,19 @@
 
 <section bind:this={rootElement}>
     <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
-        <h3>
-            <SidebarToggleButton />&nbsp; Files
-        </h3>
+        <header>
+            <h3>
+                <SidebarToggleButton />&nbsp; Files
+            </h3>
+            <RepositoryRevPicker
+                repoURL={data.repoURL}
+                revision={data.revision}
+                resolvedRevision={data.resolvedRevision}
+                getRepositoryBranches={data.getRepoBranches}
+                getRepositoryCommits={data.getRepoCommits}
+                getRepositoryTags={data.getRepoTags}
+            />
+        </header>
         {#if $fileTreeStore}
             {#if isErrorLike($fileTreeStore)}
                 <Alert variant="danger">
@@ -147,6 +171,9 @@
                     {/key}
                 </TabPanel>
             </Tabs>
+            {#if lastCommit && selectedTab === null}
+                <LastCommit {lastCommit} />
+            {/if}
         </div>
     </div>
 </section>
@@ -160,6 +187,14 @@
         min-height: 100vh;
     }
 
+    header {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
     .sidebar {
         &.open {
             display: flex;
@@ -171,7 +206,7 @@
         padding: 0.5rem;
         padding-bottom: 0;
         position: sticky;
-        top: 0px;
+        top: 0;
         max-height: 100vh;
     }
 
@@ -185,7 +220,15 @@
     h3 {
         display: flex;
         align-items: center;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    // Revision picker trigger button
+    header > :global(button) {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
     }
 
     .bottom-panel {
@@ -196,11 +239,16 @@
         border-top: 1px solid var(--border-color);
         max-height: 50vh;
         overflow: hidden;
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: space-between;
+        padding-right: 0.5rem;
+        max-width: 100%;
 
         :global(.tabs) {
+            flex-grow: 1;
             height: 100%;
             max-height: 100%;
-            overflow: hidden;
         }
 
         :global(.tabs-header) {

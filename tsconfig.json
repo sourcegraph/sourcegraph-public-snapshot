@@ -19,12 +19,16 @@
     { "path": "client/extension-api-types" },
     { "path": "client/storybook" },
     { "path": "client/testing" },
-    { "path": "dev/release" },
     { "path": "schema" },
     { "path": "client/codeintellify" },
     { "path": "client/client-api" },
+    {
+      "path": "client/vscode"
+    },
     { "path": "client/jetbrains" },
     { "path": "client/observability-client" },
-    { "path": "client/observability-server" }
+    { "path": "client/observability-server" },
+    { "path": "client/cody-shared" },
+    { "path": "client/cody-ui" }
   ]
 }

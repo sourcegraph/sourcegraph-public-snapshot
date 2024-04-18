@@ -174,13 +174,20 @@ type GitserverAddresses struct {
 func (g *GitserverAddresses) AddrForRepo(ctx context.Context, repoName api.RepoName) string {
 	addrForRepoInvoked.Inc()
 
-	// Normalizing the name in case the caller didn't.
-	name := string(protocol.NormalizeRepo(repoName))
+	// We undelete the repo name for the addr function so that we can still reach the
+	// right gitserver after a repo has been deleted (and the name changed by that).
+	// Ideally we wouldn't need this, but as long as we use RepoName as the identifier
+	// in gitserver, we have to do this.
+	name := string(api.UndeletedRepoName(repoName))
 	if pinnedAddr, ok := g.PinnedServers[name]; ok {
 		return pinnedAddr
 	}
 
-	return addrForKey(name, g.Addresses)
+	// We use the normalize function here, because that's what we did previously.
+	// Ideally, this would not be required, but it would reshuffle GitHub.com repos
+	// with uppercase characters in the name. So until we have a better migration
+	// strategy, we keep this old behavior in.
+	return addrForKey(string(protocol.NormalizeRepo(api.RepoName(name))), g.Addresses)
 }
 
 // addrForKey returns the gitserver address to use for the given string key,

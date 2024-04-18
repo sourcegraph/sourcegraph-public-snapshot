@@ -16,6 +16,11 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"golang.org/x/net/http2"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
+
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -106,24 +111,28 @@ func getCredentialOptions() (*azidentity.DefaultAzureCredentialOptions, error) {
 
 type GetCompletionsAPIClientFunc func(accessToken, endpoint string) (CompletionsClient, error)
 
-func NewClient(getClient GetCompletionsAPIClientFunc, accessToken, endpoint string) (types.CompletionsClient, error) {
+func NewClient(getClient GetCompletionsAPIClientFunc, accessToken, endpoint string, tokenizer tokenusage.Manager) (types.CompletionsClient, error) {
 	client, err := getClient(accessToken, endpoint)
 	if err != nil {
 		return nil, err
 	}
 	return &azureCompletionClient{
-		client: client,
+		client:    client,
+		tokenizer: tokenizer,
 	}, nil
 }
 
 type azureCompletionClient struct {
-	client CompletionsClient
+	client    CompletionsClient
+	tokenizer tokenusage.Manager
 }
 
 func (c *azureCompletionClient) Complete(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	_ types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
+	log log.Logger,
 ) (*types.CompletionResponse, error) {
 
 	switch feature {
@@ -181,14 +190,16 @@ func completeChat(
 func (c *azureCompletionClient) Stream(
 	ctx context.Context,
 	feature types.CompletionsFeature,
+	_ types.CompletionsVersion,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
+	log log.Logger,
 ) error {
 	switch feature {
 	case types.CompletionsFeatureCode:
-		return streamAutocomplete(ctx, c.client, requestParams, sendEvent)
+		return streamAutocomplete(ctx, c.client, requestParams, sendEvent, log)
 	case types.CompletionsFeatureChat:
-		return streamChat(ctx, c.client, requestParams, sendEvent)
+		return streamChat(ctx, c.client, requestParams, sendEvent, log)
 	default:
 		return errors.New("invalid completions feature")
 	}
@@ -199,6 +210,7 @@ func streamAutocomplete(
 	client CompletionsClient,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
+	logger log.Logger,
 ) error {
 	options, err := getCompletionsOptions(requestParams)
 	if err != nil {
@@ -217,6 +229,11 @@ func streamAutocomplete(
 		entry, err := resp.CompletionsStream.Read()
 		// stream is done
 		if errors.Is(err, io.EOF) {
+			tokenManager := tokenusage.NewManager()
+			err = tokenManager.TokenizeAndCalculateUsage(requestParams.Messages, content, tokenizer.AzureModel+"/"+requestParams.Model, "code_completions", tokenusage.AzureOpenAI)
+			if err != nil {
+				logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
+			}
 			return nil
 		}
 		// some other error has occured
@@ -248,6 +265,7 @@ func streamChat(
 	client CompletionsClient,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
+	logger log.Logger,
 ) error {
 
 	resp, err := client.GetChatCompletionsStream(ctx, getChatOptions(requestParams), nil)
@@ -263,6 +281,11 @@ func streamChat(
 		entry, err := resp.ChatCompletionsStream.Read()
 		// stream is done
 		if errors.Is(err, io.EOF) {
+			tokenManager := tokenusage.NewManager()
+			err = tokenManager.TokenizeAndCalculateUsage(requestParams.Messages, content, tokenizer.AzureModel+"/"+requestParams.Model, "chat_completions", tokenusage.AzureOpenAI)
+			if err != nil {
+				logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
+			}
 			return nil
 		}
 		// some other error has occurred
@@ -312,7 +335,7 @@ func getChatMessages(messages []types.Message) []azopenai.ChatRequestMessageClas
 		switch m.Speaker {
 		case types.HUMAN_MESSAGE_SPEAKER:
 			azureMessages[i] = &azopenai.ChatRequestUserMessage{Content: azopenai.NewChatRequestUserMessageContent(message)}
-		case types.ASISSTANT_MESSAGE_SPEAKER:
+		case types.ASSISTANT_MESSAGE_SPEAKER:
 			azureMessages[i] = &azopenai.ChatRequestAssistantMessage{Content: &message}
 		}
 
