@@ -3,7 +3,6 @@ package ci
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -86,36 +85,28 @@ func NewConfig(now time.Time) Config {
 
 	// detect changed files
 	var changedFiles []string
-	diffCommand := []string{"diff", "--name-only"}
+	var err error
 	if commit != "" {
 		if runType.Is(runtype.MainBranch) {
 			// We run builds on every commit in main, so on main, just look at the diff of the current commit.
-			diffCommand = append(diffCommand, "@^")
+			changedFiles, err = gitops.GetHEADChangedFiles()
 		} else {
 			baseBranch := os.Getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
-			if diffArgs, err := gitops.DetermineDiffArgs(baseBranch, commit); err != nil {
-				panic(err)
-			} else {
-				// the base we want to diff against should exist locally now so we can diff!
-				diffCommand = append(diffCommand, diffArgs)
-			}
+			changedFiles, err = gitops.GetBranchChangedFiles(baseBranch, commit)
 		}
 	} else {
-		diffCommand = append(diffCommand, "origin/main...")
 		// for testing
 		commit = "1234567890123456789012345678901234567890"
+		changedFiles, err = gitops.GetBranchChangedFiles("main", commit)
 	}
-	fmt.Fprintf(os.Stderr, "running diff command: git %v\n", diffCommand)
-	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
+
+	if err != nil {
 		panic(err)
-	} else {
-		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
 	}
 
 	diff, changedFilesByDiffType := changed.ParseDiff(changedFiles)
 
-	fmt.Fprintf(os.Stderr, "Parsed diff:\n\tgit command: %v\n\tchanged files: %v\n\tdiff changes: %q\n",
-		append([]string{"git"}, diffCommand...),
+	fmt.Fprintf(os.Stderr, "Parsed diff:\n\tchanged files: %v\n\tdiff changes: %q\n",
 		changedFiles,
 		diff.String(),
 	)

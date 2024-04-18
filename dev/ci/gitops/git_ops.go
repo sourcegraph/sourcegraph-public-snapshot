@@ -11,7 +11,7 @@ import (
 
 var ErrNoTags = errors.New("no tags found")
 
-func DetermineDiffArgs(baseBranch, commit string) (string, error) {
+func determineDiffArgs(baseBranch, commit string) (string, error) {
 	// We have a different base branch (possibily) and on aspect agents we are in a detached state with only 100 commit depth
 	// so we might not know about this base branch ... so we first fetch the base and then diff
 	//
@@ -29,6 +29,29 @@ func DetermineDiffArgs(baseBranch, commit string) (string, error) {
 	} else {
 		return fmt.Sprintf("origin/%s...%s", baseBranch, commit), nil
 	}
+}
+
+func GetHEADChangedFiles() ([]string, error) {
+	output, err := exec.Command("git", "diff", "--name-only", "@^").CombinedOutput()
+	if err != nil {
+		return nil, err
+	}
+	changedFiles := strings.Split(strings.TrimSpace(string(output)), "\n")
+	return changedFiles, nil
+}
+
+func GetBranchChangedFiles(baseBranch, commit string) ([]string, error) {
+	diffArgs, err := determineDiffArgs(baseBranch, commit)
+	if err != nil {
+		return nil, err
+	}
+
+	output, err := exec.Command("git", "diff", "--name-only", diffArgs).CombinedOutput()
+	if err != nil {
+		return nil, err
+	}
+	changedFiles := strings.Split(strings.TrimSpace(string(output)), "\n")
+	return changedFiles, nil
 }
 
 func GetLatestTag() (string, error) {
@@ -57,10 +80,10 @@ func GetLatestTag() (string, error) {
 	return versions[len(versions)-1].String(), nil
 }
 
-func HasIncludedCommit(included ...string) (bool, error) {
+func HasIncludedCommit(commits ...string) (bool, error) {
 	found := false
 	var errs error
-	for _, mustIncludeCommit := range included {
+	for _, mustIncludeCommit := range commits {
 		output, err := exec.Command("git", "merge-base", "--is-ancestor", mustIncludeCommit, "HEAD").CombinedOutput()
 		if err == nil {
 			found = true
