@@ -110,6 +110,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             <GettingStartedTour
                                 className="mr-3"
                                 telemetryService={props.telemetryService}
+                                telemetryRecorder={props.telemetryRecorder}
                                 authenticatedUser={props.authenticatedUser}
                             />
                         )}

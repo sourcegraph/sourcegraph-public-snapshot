@@ -12,6 +12,7 @@ go_library(
         "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/app/assetsutil",
+        "//cmd/frontend/internal/app/ui/sveltekit",
         "//cmd/frontend/webhooks",
         "//internal/actor",
         "//internal/auth/providers",

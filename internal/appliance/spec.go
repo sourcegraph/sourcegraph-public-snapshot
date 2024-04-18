@@ -36,7 +36,7 @@ type BlobstoreSpec struct {
 	StorageSize string `json:"storageSize,omitempty"`
 
 	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Env defines environment variables for Blobstore.
 	Env map[string]string `json:"env,omitempty"`

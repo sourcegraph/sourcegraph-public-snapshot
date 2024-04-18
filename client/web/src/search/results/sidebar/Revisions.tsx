@@ -26,7 +26,7 @@ export const GIT_REVS_QUERY = gql`
             ... on Repository {
                 __typename
                 id
-                gitRefs(first: $first, query: $query, type: $type, orderBy: AUTHORED_OR_COMMITTED_AT) {
+                gitRefs(first: $first, query: $query, type: $type) {
                     __typename
                     nodes {
                         ...SearchSidebarGitRefFields

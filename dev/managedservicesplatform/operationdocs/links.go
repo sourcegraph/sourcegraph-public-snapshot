@@ -62,3 +62,9 @@ func ServiceLogsURL(serviceKind spec.ServiceKind, envProjectID string) string {
 		}).String()
 	}
 }
+
+// AlertPolicyDashboardURL creates a link to the GCP monitoring dashboards page
+// with a filter for `custom` type (user created) dashboards
+func AlertPolicyDashboardURL(envProjectID string) string {
+	return markdown.Linkf("Dashboard", "https://console.cloud.google.com/monitoring/dashboards?project=%s&pageState=(%%22dashboards%%22:(%%22t%%22:%%22All%%22),%%22dashboardList%%22:(%%22f%%22:%%22%%255B%%257B_22k_22_3A_22Type_22_2C_22t_22_3A10_2C_22v_22_3A_22_5C_22Custom_5C_22_22_2C_22s_22_3Atrue_2C_22i_22_3A_22category_22%%257D%%255D%%22))", envProjectID)
+}

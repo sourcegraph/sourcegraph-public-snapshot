@@ -9,6 +9,8 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -20,11 +22,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
+	logger      log.Logger
 	clientID    string
 	db          database.DB
 	allowSignup *bool
@@ -92,10 +96,12 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return false, nil, "", err
 	}
 
+	recorder := telemetryrecorder.New(s.db)
+
 	// Unlike with GitHub, we can *only* use the primary email to resolve the user's identity,
 	// because the GitLab API does not return whether an email has been verified. The user's primary
 	// email on GitLab is always verified, so we use that.
-	newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
+	newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.logger, s.db, recorder, auth.GetAndSaveUserOp{
 		UserProps: database.NewUser{
 			Username:        login,
 			Email:           gUser.Email,

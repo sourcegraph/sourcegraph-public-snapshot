@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/appliance"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 )
@@ -21,7 +22,15 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{})
 	if err != nil {
-		logger.Fatal("unable to start manager", log.Error(err))
+		logger.Error("unable to start manager", log.Error(err))
+		return err
+	}
+
+	if err = (&appliance.Reconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		logger.Error("unable to create the appliance controller", log.Error(err))
 		return err
 	}
 
@@ -30,7 +39,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	logger.Info("starting manager")
 	if err := mgr.Start(shutdownOnSignal(ctx)); err != nil {
-		logger.Fatal("problem running manager", log.Error(err))
+		logger.Error("problem running manager", log.Error(err))
 		return err
 	}
 

@@ -4,7 +4,7 @@
 package:
   name: ctags
   version: 6.0.0
-  epoch: 4
+  epoch: 6
   description: "A maintained ctags implementation"
   target-architecture:
     - x86_64
@@ -47,3 +47,9 @@ pipeline:
   - uses: autoconf/make
   - uses: autoconf/make-install
   - uses: strip
+
+update:
+  enabled: true
+  github:
+    identifier: universal-ctags/ctags
+    strip-prefix: "v"

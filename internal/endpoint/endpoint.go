@@ -234,11 +234,13 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 	}
 }
 
-type connsGetter func(conns conftypes.ServiceConnections) []string
+// ConfBasedGetter is called each time the configuration is updated and
+// returns the endpoints for the host.
+type ConfBasedGetter func(conns conftypes.ServiceConnections) []string
 
 // ConfBased returns a Map that watches the global conf and calls the provided
 // getter to extract endpoints.
-func ConfBased(getter connsGetter) *Map {
+func ConfBased(getter ConfBasedGetter) *Map {
 	return &Map{
 		urlspec: "conf-based",
 		discofunk: func(disco chan endpoints) {

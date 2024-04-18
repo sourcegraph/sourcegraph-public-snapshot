@@ -2,10 +2,44 @@ syntax = "proto3";
 
 package gitserver.v1;
 
-import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
+
+// GitserverRepositoryService exposes operations to be performed by repo-updater.
+// These methods are not meant to be used by other services, and should be considered
+// an implementation detail of gitserver.
+service GitserverRepositoryService {
+  // DeleteRepository deletes a repository on disk if it exists.
+  // If it doesn't, an error is returned.
+  rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse) {}
+  // FetchRepository fetches a repository from a remote. If the repository is not
+  // yet cloned, it will be cloned. Otherwise, it will be updated.
+  rpc FetchRepository(FetchRepositoryRequest) returns (FetchRepositoryResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+}
+
+message DeleteRepositoryRequest {
+  // repo_name is the name of the repo to delete.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+}
+
+message DeleteRepositoryResponse {}
+
+message FetchRepositoryRequest {
+  // repo_name is the name of the repo to fetch.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+}
+
+message FetchRepositoryResponse {
+  // last_fetched is the time the repository was last fetched.
+  google.protobuf.Timestamp last_fetched = 1;
+  // last_changed is the time the repository was last changed.
+  google.protobuf.Timestamp last_changed = 2;
+}
 
 service GitserverService {
   rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
@@ -33,8 +67,8 @@ service GitserverService {
   // currently not filter parts of the archive, so this would be considered
   // leaking information.
   //
-  // If the given treeish does not exist, an error with a
-  // RevisionNotFoundPayload is returned.
+  // If the given treeish does not exist, an error with a RevisionNotFoundPayload
+  // is returned.
   //
   // If the given repo is not cloned, it will be enqueued for cloning and a
   // NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -43,10 +77,6 @@ service GitserverService {
   }
   rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
-  rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {
-    option idempotency_level = IDEMPOTENT;
   }
   rpc IsPerforcePathCloneable(IsPerforcePathCloneableRequest) returns (IsPerforcePathCloneableResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -149,7 +179,21 @@ service GitserverService {
   rpc ResolveRevision(ResolveRevisionRequest) returns (ResolveRevisionResponse) {
     option idempotency_level = IDEMPOTENT;
   }
-
+  // ListRefs returns a list of all the refs known to the repository, this includes
+  // heads, tags, and other potential refs, but filters can be applied.
+  //
+  // The refs are ordered in the following order:
+  // HEAD first, if part of the result set.
+  // The rest will be ordered by creation date, in descending order, i.e., newest
+  // first.
+  // If two resources are created at the same timestamp, the records are ordered
+  // alphabetically.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
+  rpc ListRefs(ListRefsRequest) returns (stream ListRefsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // RevAtTime looks up the OID of the nearest ancestor of `spec` that has a
   // commit time before the given time. To simplify the logic, it only follows
   // the first parent of merge commits to linearize the commit history. The
@@ -163,6 +207,131 @@ service GitserverService {
   rpc RevAtTime(RevAtTimeRequest) returns (RevAtTimeResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // RawDiff returns the raw git diff for the given range.
+  // Diffs returned from this function will have the following settings applied:
+  // - 3 lines of context
+  // - No a/ b/ prefixes
+  // - Rename detection
+  //
+  // If either base or head are not found, an error with a RevisionNotFoundPayload
+  // is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc RawDiff(RawDiffRequest) returns (stream RawDiffResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // ContributorCounts returns the number of commits grouped by commit author.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc ContributorCounts(ContributorCountsRequest) returns (ContributorCountsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message ContributorCountsRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // Optional range to limit the commits inspected. If not given, all commits are considered.
+  // This can either be a revspec, which will be interpreted as "every commit since
+  // root until this commit", or a range, with either .. or ... separator.
+  bytes range = 3;
+  // After is an optional parameter to specify the earliest commit to consider in
+  // the aggregation. If not specified, all commits will be returned.
+  google.protobuf.Timestamp after = 4;
+  // path can optionally be specified to limit the commits to a single path.
+  // If not specified, the commits will be returned for all paths.
+  // Path can also be a path prefix, for example cmd/gitserver/.
+  bytes path = 5;
+}
+
+message ContributorCount {
+  GitSignature author = 1;
+  int32 count = 2;
+}
+
+message ContributorCountsResponse {
+  repeated ContributorCount counts = 1;
+}
+
+message RawDiffRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // The base spec to resolve. I.e., HEAD, deadbeefdeadbeefdeadbeefdeadbeef, or
+  // refs/heads/main.
+  bytes base_rev_spec = 3;
+  // The head spec to resolve. I.e., HEAD, deadbeefdeadbeefdeadbeefdeadbeef, or
+  // refs/heads/main.
+  bytes head_rev_spec = 4;
+  enum ComparisonType {
+    COMPARISON_TYPE_UNSPECIFIED = 0;
+    // Corresponds to the BASE..HEAD syntax that only returns any commits that are
+    // in HEAD but not in BASE.
+    COMPARISON_TYPE_ONLY_IN_HEAD = 1;
+    // Corresponds to the BASE...HEAD syntax that returns any commits that are not
+    // in both BASE and HEAD.
+    COMPARISON_TYPE_INTERSECTION = 2;
+  }
+  // comparison_type is the type of comparison to perform. If unspecified, will
+  // fall back to COMPARISON_TYPE_INTERSECTION.
+  ComparisonType comparison_type = 5;
+  // paths is a list of paths to filter the diff to. If empty, all paths are diffed.
+  repeated bytes paths = 6;
+}
+
+message RawDiffResponse {
+  // chunk is the raw diff chunk.
+  bytes chunk = 1;
+}
+
+message ListRefsRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // If true, only heads are returned. Can be combined with tags_only.
+  bool heads_only = 3;
+  // If true, only tags are returned. Can be combined with heads_only.
+  bool tags_only = 4;
+  // If set, only return refs that point at the given commit sha. Multiple values
+  // will be ORed together.
+  repeated string points_at_commit = 5;
+  // If set, only return refs that contain the given commit sha.
+  optional string contains_sha = 6;
+}
+
+message ListRefsResponse {
+  repeated GitRef refs = 1;
+}
+
+message GitRef {
+  // ref_name is the unabbreviated name of the reference, i.e., refs/heads/main, or refs/tags/1.0.
+  bytes ref_name = 1;
+  // short_ref_name is the abbreviated name of the reference, if unambiguous.
+  // I.e., main, or 1.0.
+  bytes short_ref_name = 2;
+  // target_commit is the hash of the commit the reference is currently pointing at.
+  // For a head reference, this is the commit the head is currently pointing at.
+  // For a tag, this is the commit that the tag is attached to.
+  string target_commit = 3;
+  // ref_oid is the full object ID of the reference. For a head reference and
+  // a lightweight tag, this value is the same as target_commit. For annotated tags,
+  // it is the object ID of the tag.
+  string ref_oid = 4;
+  // created_at is the timestamp when the ref was created or modified last.
+  google.protobuf.Timestamp created_at = 5;
+  enum RefType {
+    REF_TYPE_UNSPECIFIED = 0;
+    REF_TYPE_BRANCH = 1;
+    REF_TYPE_TAG = 2;
+  }
+  // ref_type is the type of the reference. Non-tag references will be of
+  // type branch. I.e., refs/pull/123/head will be a branch as well.
+  RefType ref_type = 6;
+  // is_head is true if the reference is the HEAD reference.
+  bool is_head = 7;
 }
 
 message ResolveRevisionRequest {
@@ -221,13 +390,13 @@ message GitCommit {
   string oid = 1;
   GitSignature author = 2;
   GitSignature committer = 3;
-  string message = 4;
+  bytes message = 4;
   repeated string parents = 5;
 }
 
 message GitSignature {
-  string name = 1;
-  string email = 2;
+  bytes name = 1;
+  bytes email = 2;
   google.protobuf.Timestamp date = 3;
 }
 
@@ -619,7 +788,7 @@ message ArchiveRequest {
   ArchiveFormat format = 3;
   // paths is the list of paths to include in the archive. If empty, all
   // paths are included.
-  repeated string paths = 4;
+  repeated bytes paths = 4;
 }
 
 // ArchiveResponse is the response from the Archive RPC that returns a chunk of
@@ -663,40 +832,6 @@ message RepoCloneProgressResponse {
   string clone_progress = 2;
   // cloned is whether the repository has been cloned successfully
   bool cloned = 3;
-}
-
-// RepoDeleteRequest is a request to delete a repository.
-message RepoDeleteRequest {
-  // repo is the name of the repo to delete.
-  string repo = 1;
-}
-
-// RepoDeleteResponse is the response from the RepoDelete RPC.
-message RepoDeleteResponse {}
-
-// RepoUpdateRequest is a request to update a repository.
-message RepoUpdateRequest {
-  // RepoUpdateRequest used to have an unused clone_from_shard field.
-  reserved 3;
-  // repo is the name of the repo to update.
-  string repo = 1;
-  // since is the debounce interval for queries, used only with
-  // request-repo-update.
-  // This field has now been deprecated and is no longer respected.
-  // The caller should make sure to not call this endpoint more often
-  // than needed, and gitserver may make it's own internal decisions
-  // on when to fast-pass a request.
-  google.protobuf.Duration since = 2 [deprecated = true];
-}
-
-// RepoUpdateResponse is the response from the RepoUpdate RPC.
-message RepoUpdateResponse {
-  // last_fetched is the time the repository was last fetched.
-  google.protobuf.Timestamp last_fetched = 1;
-  // last_changed is the time the repository was last changed.
-  google.protobuf.Timestamp last_changed = 2;
-  // error is the error that occurred during the update.
-  string error = 3;
 }
 
 // ListGitoliteRequest is a request to list all repositories in gitolite.

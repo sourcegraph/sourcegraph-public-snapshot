@@ -1,6 +1,7 @@
 package operationdocs
 
 import (
+	"bytes"
 	"fmt"
 	"path"
 	"slices"
@@ -8,9 +9,11 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/internal/markdown"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/terraform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"golang.org/x/exp/maps"
 )
 
 type Options struct {
@@ -22,6 +25,9 @@ type Options struct {
 	GenerateCommand string
 	// Handbook indicates we are generating output for sourcegraph/handbook.
 	Handbook bool
+	// AlertPolicies is a deduplicated map of alert policies defined for all
+	// environments of a service
+	AlertPolicies map[string]terraform.AlertPolicy
 }
 
 // AddDocumentComment adds a comment to the markdown document with details about
@@ -182,7 +188,10 @@ This service is operated on the %s.`,
 				return l
 			}), ", ")},
 			{"Slack notifications", markdown.Linkf("#"+slackChannelName, "https://sourcegraph.slack.com/archives/"+slackChannelName)},
-			{"Alerts", markdown.Linkf("GCP monitoring", "https://console.cloud.google.com/monitoring/alerting?project=%s", env.ProjectID)},
+			{"Alert policies",
+				fmt.Sprintf("%s, %s",
+					markdown.Linkf("GCP Monitoring alert policies list", "https://console.cloud.google.com/monitoring/alerting/policies?project=%s", env.ProjectID),
+					AlertPolicyDashboardURL(env.ProjectID))},
 			{"Errors", sentryLink},
 		}
 		if env.EnvironmentServiceSpec != nil {
@@ -329,6 +338,28 @@ If you make your Entitle request, then log in, you will be removed from any team
 			markdown.Linkf(fmt.Sprintf("grouped under the %s tag", markdown.Codef("msp-%s-%s", s.Service.ID, env.ID)),
 				"https://app.terraform.io/app/sourcegraph/workspaces?tag=msp-%s-%s", s.Service.ID, env.ID))
 		md.CodeBlockf("bash", `sg msp tfc view %s %s`, s.Service.ID, env.ID)
+	}
+
+	md.Headingf(3, "Alert Policies")
+
+	md.Paragraphf("The following alert policies are defined for each of this service's environments.")
+
+	// Render alerts
+	// Sort the map keys to make order deterministic
+	alertKeys := maps.Keys(opts.AlertPolicies)
+	slices.Sort(alertKeys)
+	for _, key := range alertKeys {
+		policy := opts.AlertPolicies[key]
+		md.Headingf(4, policy.DisplayName)
+		// We need to remove the footer text we add to each alert policy description
+		b := []byte(policy.Documentation.Content)
+		lastParagraphIndex := bytes.LastIndex(b, []byte("\n\n"))
+		if lastParagraphIndex != -1 {
+			b = b[:lastParagraphIndex]
+		}
+
+		md.CodeBlock("md", string(b))
+		md.Paragraphf("Severity: %s", policy.Severity)
 	}
 
 	return md.String(), nil

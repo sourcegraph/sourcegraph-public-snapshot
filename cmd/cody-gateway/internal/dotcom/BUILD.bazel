@@ -14,6 +14,7 @@ go_library(
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/dotcom/genhelper",
+        "//internal/version",
         "@com_github_khan_genqlient//graphql",
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//attribute",

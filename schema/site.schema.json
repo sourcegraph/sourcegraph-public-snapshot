@@ -2570,6 +2570,31 @@
       },
       "group": "Cody"
     },
+    "cody.contextFilters": {
+      "description": "Rules defining the repositories that will never be shared by Cody with third-party LLM providers.",
+      "type": "object",
+      "properties": {
+        "include": {
+          "description": "List of rules specifying repositories that Cody may include as context in requests to third-party LLMs. If defined, only repositories matching these rules will be considered for sharing. If not defined, all repositories may be shared.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CodyContextFilterItem"
+          },
+          "minItems": 1
+        },
+        "exclude": {
+          "description": "List of rules specifying repositories that Cody should excluded from context in requests to third-party LLMs. These rules are applied only to repositories matching the include rules.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CodyContextFilterItem"
+          },
+          "minItems": 1
+        }
+      },
+      "minProperties": 1,
+      "additionalProperties": false,
+      "group": "Cody"
+    },
     "cody.permissions": {
       "description": "Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://sourcegraph.com/docs/admin/access_control",
       "type": "boolean",
@@ -3894,6 +3919,17 @@
         "text": {
           "description": "Optional template for plain-text body. If not provided, a plain-text body will be automatically generated from the HTML template.",
           "type": "string"
+        }
+      }
+    },
+    "CodyContextFilterItem": {
+      "type": "object",
+      "required": ["repoNamePattern"],
+      "properties": {
+        "repoNamePattern": {
+          "description": "Regular expression which matches a set of repository names. The pattern is evaluated using Go regular expression syntax (https://golang.org/pkg/regexp/). By default, the pattern matches partially. Use \\\"^...$\\\" for whole-string matching.",
+          "type": "string",
+          "format": "regex"
         }
       }
     }

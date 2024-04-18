@@ -1,0 +1,66 @@
+name: 'wolfictl-update'
+
+on:
+  schedule:
+    # everyday at 0:00 UTC
+    - cron:  0 0 * * *
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  wolfictl-update:
+    name: Wolfictl Update
+    runs-on: ubuntu-latest
+
+    steps:
+      # Install wolfictl
+
+      # NOTE: The main wolfictl binary has a bug which prevents us from using it
+      # Once https://github.com/wolfi-dev/wolfictl/pull/763 is merged, we can remove the following which
+      # builds wolfictl from a patched fork.
+
+      # Build and install a fork of wolfictl
+      - name: Check out code from external repository
+        uses: actions/checkout@v4
+        with:
+          repository: 'willdollman/wolfictl'
+          ref: 'will/fix-update-pkgpath'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: 'wolfictl'
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+         go-version: '1.22'
+
+      - name: Build binary
+        run: |
+          TMP=$(mktemp -d)
+          export GOBIN=$TMP
+          cd $GITHUB_WORKSPACE/wolfictl
+          go install ./...
+          echo "$TMP" >> $GITHUB_PATH
+
+      # TODO(will): Once the bugfix PR is accepted:
+      #   * Replace above wolfictl build step with the following
+      #   * Pin commit hash
+      # - uses: wolfi-dev/actions/install-wolfictl@main
+
+      # Run wolfictl update
+      # Ideally we would use actions/checkout to clone sourcegraph/sourcegraph, but this isn't properly supported by wolfictl
+      - name: wolfictl update
+        run: |
+          wolfictl update \
+            --create-issues='false' \
+            --path='wolfi-packages/' \
+            --github-labels='SSDLC' --github-labels='security-auto-update' --github-labels='security-auto-update/packages' \
+            $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_AUTHOR_NAME: sourcegraph secbot
+          GIT_AUTHOR_EMAIL: security@sourcegraph.com
+

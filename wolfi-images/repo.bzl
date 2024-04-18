@@ -40,6 +40,9 @@ def apko_translate_locks():
 # See the following commit to see what is being removed from WORKSPACE by this repository rule:
 # https://github.com/sourcegraph/sourcegraph/pull/60785/commits/041fb7a177c8f9004a973306b2e045a25e64fc68
 def _wolfi_lockfiles(rctx):
+    # Used to invalidate this repository when any lockfiles change.
+    rctx.watch_tree(str(rctx.workspace_root) + "/wolfi-images")
+
     result = rctx.execute(["ls", str(rctx.workspace_root) + "/wolfi-images"])
     if result.return_code != 0:
         fail("failed to list wolfi-images:", result.stderr)
@@ -54,10 +57,6 @@ def _wolfi_lockfiles(rctx):
             continue
 
         lockfiles.append(file)
-
-        # In bazel 7.1.0, we can replace this with `rctx.watch(file)` (they behave identically though).
-        # Used to invalidate this repository when any of the lockfiles change.
-        rctx.path(Label(file))
 
         lockname = file.partition(".")[0].replace("-", "_")
 

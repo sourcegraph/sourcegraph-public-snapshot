@@ -110,6 +110,41 @@ test.describe('file header', () => {
         })
     })
 
+    test('default editor link', async ({ page }) => {
+        await page.goto(url)
+        const link = page.getByLabel('Editor')
+        await expect(link, 'links to help page').toHaveAttribute('href', '/help/integration/open_in_editor')
+
+        await link.focus()
+        const tooltip = page.getByRole('tooltip')
+        await expect(tooltip, 'inform user about settings').toHaveText(
+            'Add `openInEditor` to your user settings to open files in the editor. Click to learn more.'
+        )
+    })
+
+    test('editor link', async ({ sg, page }) => {
+        const projectsPath = '/Users/USERNAME/Documents'
+        sg.mockTypes({
+            SettingsCascade: () => ({
+                final: JSON.stringify({
+                    openInEditor: { editorIds: ['idea'], 'projectPaths.default': projectsPath },
+                }),
+            }),
+        })
+
+        sg.signIn({ username: 'test' })
+        await page.goto(url)
+        const link = page.getByLabel('Open in IntelliJ IDEA')
+        await expect(link, 'links to correct editor').toHaveAttribute(
+            'href',
+            `idea://open?file=${projectsPath}/sourcegraph/sourcegraph/src/readme.md&line=1&column=1`
+        )
+        await link.focus()
+
+        const tooltip = page.getByRole('tooltip')
+        await expect(tooltip, 'inform user about settings').toHaveText('Open in IntelliJ IDEA')
+    })
+
     test('code host link', async ({ page }) => {
         await page.goto(url)
         const link = page.getByLabel('Open in code host')

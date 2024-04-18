@@ -52,7 +52,7 @@ func TestServeConfiguration(t *testing.T) {
 	// Set up the GRPC server
 	grpcServer := searchIndexerGRPCServer{
 		server: &searchIndexerServer{
-			RepoStore:              repoStore,
+			repoStore:              repoStore,
 			gitserverClient:        gsClient,
 			Ranking:                rankingService,
 			SearchContextsRepoRevs: searchContextRepoRevsFunc,
@@ -156,7 +156,7 @@ func TestServeConfiguration(t *testing.T) {
 
 	// Setup: run a second request with the fingerprint from the first response
 	// Note: when fingerprint is set we only return a subset. We simulate this by setting RepoStore to only list repo number 5
-	grpcServer.server.RepoStore = &fakeRepoStore{Repos: repos[:1]}
+	grpcServer.server.repoStore = &fakeRepoStore{Repos: repos[:1]}
 
 	var fingerprintedRequest proto.SearchConfigurationRequest
 	fingerprintedRequest.RepoIds = requestedRepoIDs
@@ -255,10 +255,10 @@ func TestReposIndex(t *testing.T) {
 			grpcServer := &searchIndexerGRPCServer{
 				server: &searchIndexerServer{
 					ListIndexable: fakeListIndexable(tc.indexable),
-					RepoStore: &fakeRepoStore{
+					repoStore: &fakeRepoStore{
 						Repos: allRepos,
 					},
-					Indexers: suffixIndexers(true),
+					indexers: suffixIndexers(true),
 				},
 			}
 

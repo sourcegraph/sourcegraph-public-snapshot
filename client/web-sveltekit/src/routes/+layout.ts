@@ -1,6 +1,5 @@
 import { error, redirect } from '@sveltejs/kit'
 
-import { browser } from '$app/environment'
 import { isErrorLike, parseJSONCOrError } from '$lib/common'
 import { getGraphQLClient } from '$lib/graphql'
 import type { Settings } from '$lib/shared'
@@ -11,17 +10,6 @@ import { Init, EvaluatedFeatureFlagsQuery, GlobalAlertsSiteFlags, DisableSvelteP
 // Disable server side rendering for the whole app
 export const ssr = false
 export const prerender = false
-
-if (browser) {
-    // Necessary to make authenticated GrqphQL requests work
-    // No idea why TS picks up Mocha.SuiteFunction for this
-    // @ts-ignore
-    window.context = {
-        xhrHeaders: {
-            'X-Requested-With': 'Sourcegraph',
-        },
-    }
-}
 
 export const load: LayoutLoad = async ({ fetch }) => {
     const client = getGraphQLClient()
