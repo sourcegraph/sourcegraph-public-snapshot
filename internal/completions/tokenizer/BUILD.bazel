@@ -17,6 +17,7 @@ go_library(
         "//internal/completions/tokenusage:__pkg__",
     ],
     deps = [
+        "//internal/completions/types",
         "//lib/errors",
         "@com_github_pkoukk_tiktoken_go//:tiktoken-go",
     ],

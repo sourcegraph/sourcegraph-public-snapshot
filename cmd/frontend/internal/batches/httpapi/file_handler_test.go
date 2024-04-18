@@ -36,7 +36,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 	modifiedTime, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", modifiedTimeString)
 	require.NoError(t, err)
 
-	operations := httpapi.NewOperations(&observation.TestContext)
+	operations := httpapi.NewOperations(observation.TestContextTB(t))
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))

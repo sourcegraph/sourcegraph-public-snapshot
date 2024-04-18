@@ -10,7 +10,6 @@ go_library(
         "//internal/search",
         "//internal/search/job",
         "//internal/search/query",
-        "//internal/search/repos",
         "//internal/search/result",
         "//internal/search/searcher",
         "//internal/search/streaming",

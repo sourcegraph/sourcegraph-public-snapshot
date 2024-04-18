@@ -72,7 +72,7 @@ func (s *store) UpdateUploadsVisibleToCommits(
 	ctx context.Context,
 	repositoryID int,
 	commitGraph *gitdomain.CommitGraph,
-	refDescriptions map[string][]gitdomain.RefDescription,
+	refs map[string][]gitdomain.Ref,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 	dirtyToken int,
@@ -81,7 +81,7 @@ func (s *store) UpdateUploadsVisibleToCommits(
 	ctx, trace, endObservation := s.operations.updateUploadsVisibleToCommits.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 		attribute.Int("numCommitGraphKeys", len(commitGraph.Order())),
-		attribute.Int("numRefDescriptions", len(refDescriptions)),
+		attribute.Int("numRefs", len(refs)),
 		attribute.Int("dirtyToken", dirtyToken),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -117,7 +117,7 @@ func (s *store) UpdateUploadsVisibleToCommits(
 		// these channels in parallel. We need to make sure that once we return from this function that
 		// the producer routine shuts down. This prevents the producer from leaking if there is an
 		// error in one of the consumers before all values have been emitted.
-		sanitizedInput := sanitizeCommitInput(pctx, graph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
+		sanitizedInput := sanitizeCommitInput(pctx, graph, refs, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
 
 		// Write the graph into temporary tables in Postgres
 		if err := s.writeVisibleUploads(ctx, sanitizedInput, tx.db); err != nil {
@@ -276,6 +276,7 @@ LIMIT %s
 // FindClosestCompletedUploads returns the set of uploads that can most accurately answer queries for the given repository, commit, path, and
 // optional indexer. If rootMustEnclosePath is true, then only dumps with a root which is a prefix of path are returned. Otherwise,
 // any dump with a root intersecting the given path is returned.
+// Syntactic indexes are not returned unless the requested indexer is shared.SyntacticIndexer
 //
 // This method should be used when the commit is known to exist in the lsif_nearest_uploads table. If it doesn't, then this method
 // will return no dumps (as the input commit is not reachable from anything with an upload). The nearest uploads table must be
@@ -573,7 +574,7 @@ type sanitizedCommitInput struct {
 func sanitizeCommitInput(
 	ctx context.Context,
 	graph *commitgraph.Graph,
-	refDescriptions map[string][]gitdomain.RefDescription,
+	refs map[string][]gitdomain.Ref,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 ) *sanitizedCommitInput {
@@ -628,21 +629,21 @@ func sanitizeCommitInput(
 			}
 		}
 
-		for commit, refDescriptions := range refDescriptions {
+		for commit, refs := range refs {
 			isDefaultBranch := false
-			names := make([]string, 0, len(refDescriptions))
+			names := make([]string, 0, len(refs))
 
-			for _, refDescription := range refDescriptions {
-				if refDescription.IsDefaultBranch {
+			for _, ref := range refs {
+				if ref.IsHead {
 					isDefaultBranch = true
 				} else {
-					maxAge, ok := maxAges[refDescription.Type]
-					if !ok || refDescription.CreatedDate == nil || time.Since(*refDescription.CreatedDate) > maxAge {
+					maxAge, ok := maxAges[ref.Type]
+					if !ok || time.Since(ref.CreatedDate) > maxAge {
 						continue
 					}
 				}
 
-				names = append(names, refDescription.Name)
+				names = append(names, ref.ShortName)
 			}
 			sort.Strings(names)
 
@@ -1096,6 +1097,11 @@ func makeFindClosestProcessUploadsConditions(path string, rootMustEnclosePath bo
 	}
 	if indexer != "" {
 		conds = append(conds, sqlf.Sprintf("indexer = %s", indexer))
+	} else {
+		// NOTE(id: explicit-syntactic-index): Ignore syntactic indices unless they're
+		// explicitly requested to maintain backwards compatibility with older APIs
+		// where clients only expect precise results when an indexer is not specified.
+		conds = append(conds, sqlf.Sprintf("indexer <> %s", shared.SyntacticIndexer))
 	}
 
 	return conds

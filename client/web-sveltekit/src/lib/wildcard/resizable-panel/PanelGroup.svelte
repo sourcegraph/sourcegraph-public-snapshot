@@ -1,3 +1,17 @@
+<script context="module" lang="ts">
+    import { getId } from './utils/common'
+    import type { PanelInfo, PanelsLayout } from './types'
+
+    // Store save layout debounced callback globally
+    // to limit the frequency of localStorage updates.
+    const DEBOUNCE_MAP: Record<string, any> = {}
+    const LOCAL_STORAGE_DEBOUNCE_INTERVAL = 100
+
+    function getPanelGroupId(propId: string): string {
+        return `resizable-group-panel-${propId ?? getId()}`
+    }
+</script>
+
 <script lang="ts">
     // This is a forked ported to svelte version of react-resizable-panels package
     // It's licenced under MIT license, original source - https://github.com/bvaughn/react-resizable-panels/tree/main
@@ -7,7 +21,9 @@
 
     import { Exceed, PanelResizeHandleRegistry } from './PanelResizeHandleRegistry'
     import { assert } from './utils/assert'
-    import { findPanelDataIndex, getId, sortPanels } from './utils/common'
+    import { debounce } from './utils/debounce'
+    import { loadPanelGroupLayout, savePanelGroupLayout } from './utils/storage'
+    import { findPanelDataIndex, sortPanels } from './utils/common'
     import { calculateUnsafeDefaultLayout } from './utils/calculateUnsafeDefaultLayout'
     import { validatePanelGroupLayout } from './utils/validatePanelGroupLayout'
     import { computePanelFlexBoxStyle } from './utils/computePanelFlexBoxStyle'
@@ -18,18 +34,11 @@
     import { getResizeHandleElement } from './utils/dom'
     import { getResizeEventCursorPosition } from './event/getResizeEventCursorPosition'
     import { isKeyDown, isMouseEvent, isTouchEvent } from './event'
-    import type {
-        Direction,
-        DragState,
-        PanelGroupContext,
-        PanelId,
-        PanelInfo,
-        PanelsLayout,
-        ResizeEvent,
-    } from './types'
+    import type { Direction, DragState, PanelGroupContext, PanelId, ResizeEvent } from './types'
     import { PanelGroupDirection } from './types'
 
     // Props
+    export let id: string = ''
     export let direction: Direction = PanelGroupDirection.Horizontal
 
     // Local state
@@ -37,7 +46,7 @@
 
     // Used in resize handler to avoid cursor panel UI flickering
     let prevDelta: number | null = null
-    const groupId = `resizable-group-panel-${getId()}`
+    const groupId = getPanelGroupId(id)
 
     const layoutStore: Writable<PanelsLayout> = writable([])
     const panelsStore: Writable<PanelInfo[]> = writable([])
@@ -47,9 +56,19 @@
         // Connect registered panels store with layout store
         // set initial layout as we populate new panel elements
         panelsStore.subscribe(panels => {
-            const unsafeLayout = calculateUnsafeDefaultLayout(panels)
+            let unsafeLayout: PanelsLayout | null = null
 
-            // TODO [VK]: Add auto saved layout support here.
+            if (id && $layoutStore.length > 0) {
+                const savedLayout = loadPanelGroupLayout(id, panels)
+
+                if (savedLayout) {
+                    unsafeLayout = savedLayout
+                }
+            }
+
+            if (unsafeLayout === null) {
+                unsafeLayout = calculateUnsafeDefaultLayout(panels)
+            }
 
             // Validate even saved layouts in case something has changed since last render
             // e.g. for pixel groups, this could be the size of the window
@@ -57,6 +76,27 @@
                 unsafeLayout,
                 panels.map(panelData => panelData.constraints)
             )
+        })
+    )
+
+    onDestroy(
+        layoutStore.subscribe(layout => {
+            if (!id || layout.length === 0 || layout.length !== $panelsStore.length) {
+                return
+            }
+
+            let debouncedSave = DEBOUNCE_MAP[id]
+
+            if (debouncedSave == null) {
+                debouncedSave = debounce(savePanelGroupLayout, LOCAL_STORAGE_DEBOUNCE_INTERVAL)
+
+                DEBOUNCE_MAP[id] = debouncedSave
+            }
+
+            // Clone mutable data before passing to the debounced
+            // function, else we run the risk of saving an incorrect
+            // combination of mutable and immutable values to state.
+            debouncedSave(id, [...$panelsStore], layout)
         })
     )
 

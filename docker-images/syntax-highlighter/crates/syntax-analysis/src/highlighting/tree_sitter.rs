@@ -153,6 +153,7 @@ lazy_static::lazy_static! {
             (C, "c"),
             (Cpp, "cpp"),
             (C_Sharp, "c_sharp"),
+            (Dart, "dart"),
             (Go, "go"),
             (Java, "java"),
             (Javascript, "javascript"),

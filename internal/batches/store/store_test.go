@@ -30,7 +30,7 @@ func storeTest(db *sql.DB, key encryption.Key, f storeTestFunc) func(*testing.T)
 		// don't need to insert a lot of dependencies into the DB (users,
 		// repos, ...) to setup the tests.
 		tx := database.NewDBWith(logger, basestore.NewWithHandle(basestore.NewHandleWithTx(dbtest.NewTx(t, db), sql.TxOptions{})))
-		s := NewWithClock(tx, &observation.TestContext, key, c.Now)
+		s := NewWithClock(tx, observation.TestContextTB(t), key, c.Now)
 
 		f(t, context.Background(), s, c)
 	}

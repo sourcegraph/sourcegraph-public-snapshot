@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -229,62 +228,6 @@ func TestRepositoryMirrorInfoCloneProgressCallsGitserver(t *testing.T) {
 				"repository": {
 					"mirrorInfo": {
 						"cloneProgress": "cloning fake repo-name..."
-					}
-				}
-			}
-		`,
-	})
-}
-
-func TestRepositoryMirrorInfoCloneProgressFetchedFromDatabase(t *testing.T) {
-	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-
-	featureFlags := dbmocks.NewMockFeatureFlagStore()
-	featureFlags.GetGlobalFeatureFlagsFunc.SetDefaultReturn(map[string]bool{"clone-progress-logging": true}, nil)
-
-	gitserverRepos := dbmocks.NewMockGitserverRepoStore()
-	gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{
-		CloneStatus:     types.CloneStatusCloning,
-		CloningProgress: "cloning progress from the db",
-	}, nil)
-
-	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
-	db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)
-
-	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		return &types.Repo{
-			ID:        4752134,
-			Name:      "repo-name",
-			CreatedAt: time.Now(),
-			Sources:   map[string]*types.SourceInfo{"1": {}},
-		}, nil
-	}
-	t.Cleanup(func() {
-		backend.Mocks = backend.MockServices{}
-	})
-
-	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
-
-	RunTest(t, &Test{
-		Context: ctx,
-		Schema:  mustParseGraphQLSchemaWithClient(t, db, &fakeGitserverClient{}),
-		Query: `
-			{
-				repository(name: "my/repo") {
-					mirrorInfo {
-						cloneProgress
-					}
-				}
-			}
-		`,
-		ExpectedResult: `
-			{
-				"repository": {
-					"mirrorInfo": {
-						"cloneProgress": "cloning progress from the db"
 					}
 				}
 			}

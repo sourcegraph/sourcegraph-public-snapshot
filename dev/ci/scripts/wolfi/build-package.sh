@@ -9,6 +9,9 @@ MAIN_BRANCH="main"
 BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
 IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
 
+echo "~~~ :aspect: :stethoscope: Agent Health check"
+/etc/aspect/workflows/bin/agent_health_check
+
 tmpdir=$(mktemp -d -t melange-bin.XXXXXXXX)
 # shellcheck disable=SC2317
 # false positive by shellcheck https://github.com/koalaman/shellcheck/issues/2660

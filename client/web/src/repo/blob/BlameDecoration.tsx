@@ -19,7 +19,7 @@ import {
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { getURLToFileCommit } from '../../util/url'
-import type { BlameHunk, BlameHunkData } from '../blame/useBlameHunks'
+import type { BlameHunk, BlameHunkData } from '../blame/shared'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 
 import styles from './BlameDecoration.module.scss'

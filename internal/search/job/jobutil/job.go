@@ -138,8 +138,6 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 					})
 				}
 
-				// searcher to use full deadline if timeout: set or we are not batch.
-
 				searcherJob := NewTextSearchJob(b, inputs, resultTypes, repoOptions)
 				addJob(searcherJob)
 			}
@@ -408,12 +406,16 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 				Features:        *searchInputs.Features,
 			}
 
-			addJob(&structural.SearchJob{
-				SearcherArgs:     searcherArgs,
-				UseIndex:         f.Index(),
-				ContainsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
-				RepoOpts:         repoOptions,
-				BatchRetry:       searchInputs.Protocol == search.Batch,
+			structuralSearchJob := &structural.SearchJob{
+				SearcherArgs: searcherArgs,
+				UseIndex:     f.Index(),
+				BatchRetry:   searchInputs.Protocol == search.Batch,
+			}
+
+			addJob(&repoPagerJob{
+				child:            &reposPartialJob{structuralSearchJob},
+				repoOpts:         repoOptions,
+				containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 			})
 		}
 

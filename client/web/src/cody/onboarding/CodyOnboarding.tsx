@@ -9,6 +9,7 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, H2, H5, Modal, Text, useSearchParameters } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { HubSpotForm } from '../../marketing/components/HubSpotForm'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
@@ -124,16 +125,6 @@ export const editorGroups: IEditor[][] = [
     ],
 ]
 
-function formatUseCase(action: { work: boolean; personal: boolean }): string {
-    const useCases = []
-    for (const [key, value] of Object.entries(action)) {
-        if (value) {
-            useCases.push(key)
-        }
-    }
-    return useCases.length === 0 ? 'none' : useCases.join(',')
-}
-
 interface CodyOnboardingProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
 }
@@ -141,6 +132,7 @@ interface CodyOnboardingProps extends TelemetryV2Props {
 export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnboardingProps): JSX.Element | null {
     const [showEditorStep, setShowEditorStep] = useState(false)
     const [completed = false, setOnboardingCompleted] = useTemporarySetting('cody.onboarding.completed', false)
+    const [showPurposeStep, status] = useFeatureFlag('ab-hubspot-form-workpersonal-to-handraiser')
     // steps start from 0
     const [step = -1, setOnboardingStep] = useTemporarySetting('cody.onboarding.step', 0)
 
@@ -170,6 +162,26 @@ export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnb
         return null
     }
 
+    if (status !== 'loaded') {
+        return null
+    }
+
+    const handleShowLastStep = (): void => {
+        setOnboardingCompleted(true)
+        setShowEditorStep(true)
+    }
+
+    const handleWelcomeNext = (): void => {
+        if (showPurposeStep) {
+            onNext()
+            return
+        }
+        setOnboardingStep(currentsStep => (currentsStep || 0) + 2)
+        handleShowLastStep()
+        const metadata = { variant: 'control' }
+        eventLogger.log(EventName.CODY_HANDRAISER_TEST_ENROLLMENT, metadata, metadata)
+    }
+
     return (
         <Modal
             isOpen={true}
@@ -178,14 +190,15 @@ export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnb
             className={styles.modal}
             containerClassName={styles.root}
         >
-            {step === 0 && <WelcomeStep onNext={onNext} pro={enrollPro} telemetryRecorder={telemetryRecorder} />}
+            {step === 0 && (
+                <WelcomeStep onNext={handleWelcomeNext} pro={enrollPro} telemetryRecorder={telemetryRecorder} />
+            )}
             {step === 1 && (
                 <PurposeStep
                     authenticatedUser={authenticatedUser}
                     onNext={() => {
                         onNext()
-                        setOnboardingCompleted(true)
-                        setShowEditorStep(true)
+                        handleShowLastStep()
                     }}
                     pro={enrollPro}
                     telemetryRecorder={telemetryRecorder}
@@ -290,30 +303,29 @@ function PurposeStep({
     const primaryEmail = authenticatedUser.emails.find(email => email.isPrimary)?.email
 
     const handleFormSubmit = (form: HTMLFormElement): void => {
-        const workInput = form[0].querySelector('input[name="using_cody_for_work"]') as HTMLInputElement
-        const personalInput = form[0].querySelector('input[name="using_cody_for_personal"]') as HTMLInputElement
+        const choice = form[0].querySelector<HTMLInputElement>('input[name="cody_form_hand_raiser"]')
 
-        const useCase = formatUseCase({
-            work: workInput.checked,
-            personal: personalInput.checked,
-        })
-        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase }, { useCase })
-        telemetryRecorder.recordEvent('cody.onboarding.purpose', 'select', {
-            metadata: { workUseCase: workInput.checked ? 1 : 0, personalUseCase: personalInput.checked ? 1 : 0 },
-        })
+        if (choice) {
+            const metadata = { variant: 'treatment' }
+
+            eventLogger.log(EventName.CODY_HANDRAISER_TEST_ENROLLMENT, metadata, metadata)
+            telemetryRecorder.recordEvent('cody.onboarding.purpose', 'select', {
+                metadata: { onboardingCall: choice.checked ? 1 : 0 },
+            })
+        }
     }
 
     return (
         <>
             <div className="border-bottom pb-3 mb-3">
-                <H2 className="mb-1">What are you using Cody for?</H2>
+                <H2 className="mb-1">Would you like to learn more about Cody for enterprise?</H2>
                 <Text className="mb-0 text-muted" size="small">
-                    This will allow us to understand our audience better and guide your journey
+                    If you're not ready for a conversation, we'll stick to sharing Cody onboarding resources.
                 </Text>
             </div>
             <div className="d-flex align-items-center border-bottom mb-3 pb-3 justify-content-center">
                 <HubSpotForm
-                    formId="85548efc-a879-4553-9ef0-a8da8fdcf541"
+                    formId="19f34edd-1a98-4fc9-9b2b-c1edca727720"
                     onFormSubmitted={() => {
                         onNext()
                     }}

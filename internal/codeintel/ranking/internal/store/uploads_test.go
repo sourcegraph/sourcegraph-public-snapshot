@@ -24,7 +24,7 @@ func TestGetUploadsForRanking(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO repo (id, name, deleted_at) VALUES (50, 'foo', NULL);
@@ -74,7 +74,7 @@ func TestVacuumAbandonedExportedUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// Insert uploads
 	for i := 1; i <= 9; i++ {
@@ -127,7 +127,7 @@ func TestSoftDeleteStaleExportedUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// Insert uploads
 	for i := 1; i <= 9; i++ {
@@ -186,7 +186,7 @@ func TestVacuumDeletedExportedUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// Insert uploads
 	for i := 1; i <= 9; i++ {

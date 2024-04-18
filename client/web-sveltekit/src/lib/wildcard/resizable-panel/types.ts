@@ -16,6 +16,7 @@ export type ResizeEvent = KeyboardEvent | MouseEvent | TouchEvent
 
 export interface PanelInfo {
     id: PanelId
+    idFromProps: PanelId | null
     order: number | undefined
     constraints: PanelConstraints
     getPanelElement: () => HTMLElement

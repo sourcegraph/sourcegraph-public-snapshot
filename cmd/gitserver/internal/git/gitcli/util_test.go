@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
@@ -19,7 +20,7 @@ func BackendWithRepoCommands(t *testing.T, cmds ...string) git.GitBackend {
 
 	dir := RepoWithCommands(t, cmds...)
 
-	return NewBackend(logtest.Scoped(t), rcf, dir, "repo")
+	return NewBackend(logtest.Scoped(t), rcf, dir, api.RepoName(t.Name()))
 }
 
 func RepoWithCommands(t *testing.T, cmds ...string) common.GitDir {

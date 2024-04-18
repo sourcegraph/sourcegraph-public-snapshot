@@ -9,6 +9,5 @@ interface PageError {
 
 interface Window {
     pageError?: PageError
-    buildInfo: BuildInfo
     context: import('@sourcegraph/web/src/jscontext').SourcegraphContext
 }

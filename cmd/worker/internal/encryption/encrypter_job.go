@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -34,12 +34,12 @@ func (j *recordEncrypterJob) Routines(_ context.Context, observationCtx *observa
 	if err != nil {
 		return nil, err
 	}
-	store := database.NewRecordEncrypter(db)
+	store := newRecordEncrypter(basestore.NewWithHandle(db.Handle()))
 
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(
 			context.Background(),
-			&recordEncrypter{
+			&recordEncrypterRoutine{
 				store:   store,
 				decrypt: ConfigInst.Decrypt,
 				metrics: metrics,
