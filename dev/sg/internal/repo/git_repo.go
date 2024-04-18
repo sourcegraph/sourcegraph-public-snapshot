@@ -16,6 +16,10 @@ var ErrBranchNotFound = errors.New("branch not found")
 type pushOpt func(args []string) []string
 
 // GitRepo represents a branch at a commit of a git repository. No assumption is made on what repository is operated on.
+//
+// Various methods to operate on a branch locally and with its remote state in a git repository which may or may not be the sourcegraph repository.
+//
+// In contrast, the State struct just considers the state of the repository in reference to its merge base and how the current state of the repository differs with its merge base.
 type GitRepo struct {
 	// Branch is the branch of the repository
 	Branch string
