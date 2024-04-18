@@ -70,13 +70,6 @@ func (s *mockCreateCommitFromPatchBinaryServer) RecvMsg(m any) error {
 	}
 
 	panic("mockRecvMsg is not set")
-	//
-	//req, ok := m.(*proto.CreateCommitFromPatchBinaryRequest)
-	//if !ok {
-	//	return errors.New("failed to cast to CreateCommitFromPatchBinaryRequest")
-	//}
-	//*req = *s.recvResp
-	//return s.recvErr
 }
 
 func (s *mockCreateCommitFromPatchBinaryServer) Recv() (*proto.CreateCommitFromPatchBinaryRequest, error) {
