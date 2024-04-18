@@ -5,7 +5,7 @@
 set -eux
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-SRC_CLI_VERSION="$(go run ../../internal/cmd/src-cli-version/main.go)"
+SRC_CLI_VERSION="$(bazel run //internal/cmd/src-cli-version:src-cli-version)"
 
 echo "--- docker build"
 docker build -t "$IMAGE" . \
