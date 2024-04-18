@@ -582,22 +582,9 @@ func TestGRPCServer_Archive(t *testing.T) {
 			}
 		}
 
-		// Invalid file path.
-		b.ArchiveReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
-		cc, err := cli.Archive(context.Background(), &v1.ArchiveRequest{
-			Repo:    "therepo",
-			Treeish: "HEAD",
-			Format:  proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP,
-		})
-		require.NoError(t, err)
-		_, err = cc.Recv()
-		require.Error(t, err)
-		assertGRPCStatusCode(t, err, codes.NotFound)
-		assertHasGRPCErrorDetailOfType(t, err, &proto.FileNotFoundPayload{})
-
 		// TODO: Do we return this?
 		b.ArchiveReaderFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{})
-		cc, err = cli.Archive(context.Background(), &v1.ArchiveRequest{
+		cc, err := cli.Archive(context.Background(), &v1.ArchiveRequest{
 			Repo:    "therepo",
 			Treeish: "HEAD",
 			Format:  proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP,

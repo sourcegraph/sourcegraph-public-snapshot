@@ -1877,20 +1877,6 @@ func (c *clientImplementor) ArchiveReader(ctx context.Context, repo api.RepoName
 	// ie. revision not found errors or invalid git command.
 	firstMessage, firstErr := cli.Recv()
 	if firstErr != nil {
-		if s, ok := status.FromError(firstErr); ok {
-			if s.Code() == codes.NotFound {
-				for _, d := range s.Details() {
-					switch d.(type) {
-					case *proto.FileNotFoundPayload:
-						cancel()
-						err = firstErr
-						endObservation(1, observation.Args{})
-						// We don't have a specific path here, so we return ErrNotExist instead of PathError.
-						return nil, os.ErrNotExist
-					}
-				}
-			}
-		}
 		if errors.HasType(firstErr, &gitdomain.RevisionNotFoundError{}) {
 			cancel()
 			err = firstErr
