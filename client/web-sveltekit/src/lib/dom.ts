@@ -247,13 +247,15 @@ interface ComputeFitAttributes {
 export const computeFit: Action<HTMLElement, void, ComputeFitAttributes> = node => {
     // Holds the cumulative width of all elements up to element i.
     const widths: number[] = [0]
+    const parentRight = node.getBoundingClientRect().left
 
     for (let i = 0; i < node.children.length; i++) {
-        widths[i + 1] = node.children[i].getBoundingClientRect().right
+        widths[i + 1] = node.children[i].getBoundingClientRect().right - parentRight
     }
 
     function compute(): void {
-        const right = node.getBoundingClientRect().right
+        const rootRect = node.getBoundingClientRect()
+        const right = rootRect.right - rootRect.left
         for (let i = widths.length - 1; i >= 0; i--) {
             if (widths[i] < right) {
                 node.dispatchEvent(new CustomEvent('fit', { detail: { itemCount: i } }))
@@ -303,9 +305,19 @@ export const classNames: Action<HTMLElement, string | string[]> = (node, classes
 /**
  * An action to move the attached element to the end of the document body.
  */
-export const portal: Action<HTMLElement> = target => {
-    window.document.body.appendChild(target)
+export const portal: Action<HTMLElement, { container?: HTMLElement | null } | undefined> = (target, options) => {
+    const root = options?.container ?? window.document.body
+
+    root.appendChild(target)
+
+    console.log('INITIAL CALL', options)
+
     return {
+        update(options) {
+            console.log('UPDATE', options)
+            const root = options?.container ?? window.document.body
+            root.appendChild(target)
+        },
         destroy() {
             target.parentElement?.removeChild(target)
         },
