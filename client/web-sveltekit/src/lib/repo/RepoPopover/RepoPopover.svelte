@@ -4,7 +4,7 @@ This Component should be instantiated inside of a Popover component.
 For example:
 
 <Popover ...>
-    [trigger button ...]
+    [triggering element ...]
     <div slot="content">
         <RepoPopover ... />
     </div>
@@ -43,69 +43,72 @@ For example:
         return `${org} / ${repo}`
     }
 
-    $: subject = repo.commit?.subject
-    $: url = repo.commit?.canonicalURL
-    $: author = repo.commit?.author.person.name
-    $: commitDate = repo.commit?.author.date
-    $: avatar = repo.commit?.author.person
-    $: codeHostKind = repo.externalServices.nodes[0].kind
+    $: commit = repo.commit
+    $: author = commit?.author
+    $: avatar = author?.person
+    $: access = repo.isPrivate ? 'Private' : 'Public'
+    $: codeHostKind = capitalize(repo.externalServices.nodes[0].kind)
     $: codeHostIcon = getIconPathForCodeHost(codeHostKind)
-    $: abbreviatedCommitSHA = truncateCommitNumber(repo.commit?.oid, 6)
+    $: abbreviatedCommitSHA = truncateCommitNumber(commit?.oid, 6)
 </script>
 
 <div class="root">
     {#if withHeader}
         <div class="header">
-            <div class="icon-name-access">
+            <div class="left">
                 <Icon svgPath={orgSVGPath} --color="var(--primary)" />
-                <h4 class="repo-name">{formatRepoName(repo.name)}</h4>
-                <small>{repo.isPrivate ? 'Private' : 'Public'}</small>
+                <h4>{formatRepoName(repo.name)}</h4>
+                <small>{access}</small>
             </div>
-            <div class="code-host">
+            <div class="right">
                 <Icon svgPath={codeHostIcon} --color="var(--text-body)" --size={24} />
-                <small>{capitalize(codeHostKind)}</small>
+                <small>{codeHostKind}</small>
             </div>
         </div>
+
         <div class="divider" />
     {/if}
 
-    {#if repo.description}
-        <div class="description-and-tags">
-            <div class="description">
-                {repo.description}
-            </div>
-            {#if repo.topics.length > 0}
-                <div class="tags">
-                    {#each repo.topics as topic}
-                        <small>{topic}</small>
-                    {/each}
-                </div>
-            {/if}
+    <div class="description-and-tags">
+        <div class="description">
+            {repo.description}
         </div>
-    {/if}
+        {#if repo.topics.length}
+            <div class="tags">
+                {#each repo.topics as topic}
+                    <small>{topic}</small>
+                {/each}
+            </div>
+        {/if}
+    </div>
 
     <div class="divider" />
 
-    <div class="last-commit">
-        <small>Last Commit</small>
+    {#if commit}
+        <div class="last-commit">
+            <small>Last Commit</small>
 
-        <div class="commit-info">
-            <div class="commit">
-                <small class="subject">{subject}</small>
-                <small class="commit-number">&nbsp;<a href={url} target="_blank">{abbreviatedCommitSHA}</a></small>
-            </div>
-            <div class="author">
-                {#if avatar}
-                    <Avatar {avatar} --avatar-size="1.0rem" />
-                {/if}
-                <small>{author}</small>
-                {#if commitDate}
+            <div class="commit-info">
+                <div class="commit">
+                    <small class="subject">{commit.subject}</small>
                     <small>{CENTER_DOT}</small>
-                    <small><Timestamp date={commitDate} /></small>
+                    <small class="commit-number"
+                        ><a href={commit.canonicalURL} target="_blank">
+                            {abbreviatedCommitSHA}
+                        </a></small
+                    >
+                </div>
+                {#if author && avatar}
+                    <div class="author">
+                        <Avatar {avatar} --avatar-size="1.0rem" />
+                        <small>{avatar.name}</small>
+                        <small>{CENTER_DOT}</small>
+                        <small><Timestamp date={author?.date} /></small>
+                    </div>
                 {/if}
             </div>
         </div>
-    </div>
+    {/if}
 
     <div class="divider" />
 
@@ -118,8 +121,6 @@ For example:
 <style lang="scss">
     .root {
         width: 480px;
-        border: 1px solid var(--border-color);
-        border-radius: 0.5rem;
     }
 
     .header {
@@ -129,8 +130,10 @@ For example:
         align-items: center;
         padding: 0.5rem 0.75rem;
         background-color: var(--subtle-bg);
+        border-top-left-radius: 3px;
+        border-top-right-radius: 3px;
 
-        .icon-name-access {
+        .left {
             display: flex;
             flex-flow: row nowrap;
             justify-content: flex-start;
@@ -150,7 +153,7 @@ For example:
             }
         }
 
-        .code-host {
+        .right {
             display: flex;
             flex-flow: row nowrap;
             justify-content: flex-end;
@@ -224,7 +227,7 @@ For example:
                 flex-flow: row nowrap;
                 justify-content: flex-end;
                 align-items: center;
-                gap: 0.25rem 0rem;
+                gap: 0.25rem 0.25rem;
                 width: 250px;
 
                 .subject {
@@ -232,13 +235,12 @@ For example:
                     overflow: hidden;
                     white-space: nowrap;
                     color: var(--text-body);
-                    align-self: center;
                 }
 
                 .commit-number {
                     color: var(--text-muted);
-                    align-self: center;
                     font-family: var(--monospace-font-family);
+                    font-size: 10px;
                 }
             }
 

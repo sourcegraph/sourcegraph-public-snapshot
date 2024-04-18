@@ -49,9 +49,8 @@
                 {#if repo}
                     <RepoPopover repo={repo.repository} withHeader={true} />
                 {:else}
-                    <div class="loading">
-                        <LoadingSpinner />
-                    </div>
+                    <!-- This prevents anything from being shown until the data is loaded -->
+                    <div class="invisible" />
                 {/if}
             </div>
         </Popover>
@@ -72,15 +71,7 @@
             }
         }
     }
-
-    .loading {
-        display: flex;
-        flex-flow: column nowrap;
-        align-items: center;
-        justify-content: flex-start;
-        width: 480px;
-        height: 200px;
-        gap: 0.5rem;
-        padding: 1.5rem 1rem;
+    .invisible {
+        visibility: visible;
     }
 </style>
