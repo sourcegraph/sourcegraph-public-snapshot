@@ -63,7 +63,7 @@ func (wc *dockerBindWorkspaceCreator) unzipToWorkspace(ctx context.Context, repo
 	return &dockerBindWorkspace{tempDir: wc.Dir, dir: workspace}, nil
 }
 
-func (wc *dockerBindWorkspaceCreator) copyToWorkspace(ctx context.Context, w *dockerBindWorkspace, files map[string]string) error {
+func (wc *dockerBindWorkspaceCreator) copyToWorkspace(_ context.Context, w *dockerBindWorkspace, files map[string]string) error {
 	for name, src := range files {
 		srcStat, err := os.Stat(src)
 		if err != nil {

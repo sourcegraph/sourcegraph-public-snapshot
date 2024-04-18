@@ -25,6 +25,7 @@ import (
 
 	"github.com/gobwas/glob"
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/src-cli/internal/exec"
@@ -84,6 +85,10 @@ func Commands(t *testing.T, exp ...*Expectation) {
 		cmd := previous(ctx, "./"+name, arg...)
 		if cmd == nil {
 			t.Fatalf("unexpected nil *Cmd for %q with arguments %v", name, arg)
+		}
+
+		if len(os.Args) == 0 {
+			t.Fatalf("unexpected empty os.Args")
 		}
 
 		// Now we modify the command to re-invoke this executable instead. We'll
