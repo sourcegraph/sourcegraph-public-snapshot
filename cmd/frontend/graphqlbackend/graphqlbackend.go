@@ -770,6 +770,7 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		gitserverIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.gitserverByID(ctx, id)
 		},
+		indexedSearchInstanceIDKind: func(ctx context.Context, id graphql.ID) (Node, error) { return r.indexedSearchInstanceByID(ctx, id) },
 	}
 	return r
 }
