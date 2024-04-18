@@ -137,7 +137,6 @@ go_test(
         "@com_github_graph_gophers_graphql_go//errors",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_masterminds_semver//:semver",
-        "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1:configuration",

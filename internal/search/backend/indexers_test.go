@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
 	"github.com/stretchr/testify/require"
 
@@ -99,7 +98,7 @@ func TestReposSubset(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			indexed = tc.indexed
-			got, err := index.ReposSubset(ctx, logtest.NoOp(t), tc.hostname, index.Indexed(ctx, tc.hostname), tc.repos)
+			got, err := index.ReposSubset(ctx, tc.hostname, index.Indexed(ctx, tc.hostname), tc.repos)
 			if tc.errS != "" {
 				got := fmt.Sprintf("%v", err)
 				if !strings.Contains(got, tc.errS) {

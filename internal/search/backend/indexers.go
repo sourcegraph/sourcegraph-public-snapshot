@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -45,13 +44,12 @@ type Indexers struct {
 // indexed is the set of repositories currently indexed by hostname.
 //
 // An error is returned if hostname is not part of the Indexers endpoints.
-func (c *Indexers) ReposSubset(ctx context.Context, logger log.Logger, hostname string, indexed zoekt.ReposMap, repos []types.MinimalRepo) ([]types.MinimalRepo, error) {
+func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed zoekt.ReposMap, repos []types.MinimalRepo) ([]types.MinimalRepo, error) {
 	if !c.Enabled() {
 		return repos, nil
 	}
 
 	if _, ok := c.ToDrain[hostname]; ok {
-		logger.Warn("draining indexed search host", log.String("hostname", hostname))
 		return c.filterReposPendingIndexing(ctx, indexed, repos)
 	}
 
