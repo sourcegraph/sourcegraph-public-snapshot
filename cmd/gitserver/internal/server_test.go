@@ -382,7 +382,7 @@ func TestCloneRepo(t *testing.T) {
 	cmd("git", "tag", "HEAD")
 
 	// Enqueue repo clone.
-	_, _, err := s.RepoUpdate(ctx, repoName)
+	_, _, err := s.FetchRepository(ctx, repoName)
 	require.NoError(t, err)
 
 	wantRepoSize, err := s.fs.DirSize(string(s.fs.RepoDir(repoName)))
@@ -475,7 +475,7 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			s.getVCSSyncer = tc.getVCSSyncer
-			_, _, _ = s.RepoUpdate(ctx, repoName)
+			_, _, _ = s.FetchRepository(ctx, repoName)
 			assertRepoState(types.CloneStatusNotCloned, 0, tc.wantErr)
 		})
 	}
@@ -543,7 +543,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 		}), nil
 	}
 
-	_, _, err := s.RepoUpdate(ctx, repoName)
+	_, _, err := s.FetchRepository(ctx, repoName)
 	require.Error(t, err)
 
 	size, err := s.fs.DirSize(string(s.fs.RepoDir(repoName)))
@@ -575,7 +575,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	// This will perform an initial clone
 	s.getRemoteURLFunc = oldRemoveURLFunc
 	s.getVCSSyncer = oldVCSSyncer
-	_, _, err = s.RepoUpdate(ctx, repoName)
+	_, _, err = s.FetchRepository(ctx, repoName)
 	require.NoError(t, err)
 
 	size, err = s.fs.DirSize(string(s.fs.RepoDir(repoName)))
@@ -604,7 +604,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	t.Cleanup(func() { doBackgroundRepoUpdateMock = nil })
 
 	// This will trigger an update since the repo is already cloned
-	_, _, err = s.RepoUpdate(ctx, repoName)
+	_, _, err = s.FetchRepository(ctx, repoName)
 	require.Error(t, err)
 
 	want = &types.GitserverRepo{
@@ -628,7 +628,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	doBackgroundRepoUpdateMock = nil
 
 	// This will trigger an update since the repo is already cloned
-	_, _, err = s.RepoUpdate(ctx, repoName)
+	_, _, err = s.FetchRepository(ctx, repoName)
 	require.NoError(t, err)
 
 	// we compute the new size

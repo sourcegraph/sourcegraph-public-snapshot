@@ -35,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -277,12 +276,12 @@ func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 	return resp, nil
 }
 
-// RepoUpdate triggers an update for the given repo.
+// FetchRepository triggers an update for the given repo.
 // If the repo is not cloned, a blocking clone will be triggered instead.
 // This function will not return until the update is complete.
 // Canceling the context will not cancel the update, but it will let the caller
 // escape the function early.
-func (s *Server) RepoUpdate(ctx context.Context, repoName api.RepoName) (lastFetched, lastChanged time.Time, err error) {
+func (s *Server) FetchRepository(ctx context.Context, repoName api.RepoName) (lastFetched, lastChanged time.Time, err error) {
 	err = s.repoUpdateOrClone(ctx, repoName)
 	if err != nil {
 		return lastFetched, lastChanged, err
@@ -755,8 +754,4 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, lock Repos
 	}
 
 	return err
-}
-
-func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
-	return searchWithObservability(ctx, s.logger, s.fs.RepoDir(args.Repo), tr, args, onMatch)
 }

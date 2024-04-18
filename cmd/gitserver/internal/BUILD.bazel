@@ -129,7 +129,6 @@ go_test(
         "//internal/limiter",
         "//internal/observation",
         "//internal/ratelimit",
-        "//internal/trace",
         "//internal/types",
         "//internal/vcs",
         "//internal/wrexec",
