@@ -4,12 +4,8 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -29,38 +25,7 @@ func (s *syntacticIndexingJobStoreImpl) DBWorkerStore() dbworkerstore.Store[*Syn
 	return s.store
 }
 
-func initDB(observationCtx *observation.Context, name string) *sql.DB {
-	// This is an internal service, so we rely on the
-	// frontend to do authz checks for user requests.
-	// Authz checks are enforced by the DB layer
-	//
-	// This call to SetProviders is here so that calls to GetProviders don't block.
-	// Relevant PR: https://github.com/sourcegraph/sourcegraph/pull/15755
-	// Relevant issue: https://github.com/sourcegraph/sourcegraph/issues/15962
-
-	authz.SetProviders(true, []authz.Provider{})
-
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.PostgresDSN
-	})
-
-	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, name)
-
-	if err != nil {
-		log.Scoped("init db ("+name+")").Fatal("Failed to connect to frontend database", log.Error(err))
-	}
-
-	return sqlDB
-}
-
-func NewStore(observationCtx *observation.Context, name string) (SyntacticIndexingJobStore, error) {
-	db := initDB(observationCtx, name)
-
-	return NewStoreWithDB(observationCtx, db)
-}
-
 func NewStoreWithDB(observationCtx *observation.Context, db *sql.DB) (SyntacticIndexingJobStore, error) {
-
 	// Make sure this is in sync with the columns of the
 	// syntactic_scip_indexing_jobs_with_repository_name view
 	var columnExpressions = []*sqlf.Query{
