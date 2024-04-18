@@ -721,21 +721,6 @@ func scanCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
 }
 
 var (
-	searchRunning = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_search_running",
-		Help: "number of gitserver.Search running concurrently.",
-	})
-	searchDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_gitserver_search_duration_seconds",
-		Help:    "gitserver.Search duration in seconds.",
-		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-	}, []string{"error"})
-	searchLatency = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name:    "src_gitserver_search_latency_seconds",
-		Help:    "gitserver.Search latency (time until first result is sent) in seconds.",
-		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-	})
-
 	pendingClones = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_clone_queue",
 		Help: "number of repos waiting to be cloned.",
