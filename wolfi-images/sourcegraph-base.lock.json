@@ -1,5 +1,5 @@
 {
-  "configHash": "d4700bfc14d7fef83ce1438b5ea622e6a526e3164bc94ae31c87b1c2ac9aca6f",
+  "configHash": "9d7eed0a4cb2859be4a618d6d3361d84100e198fb3ac996c193c161d0b98313c",
   "contents": {
     "keyring": [
       {
@@ -733,6 +733,44 @@
         },
         "url": "https://packages.wolfi.dev/os/x86_64/curl-8.7.1-r0.apk",
         "version": "8.7.1-r0"
+      },
+      {
+        "architecture": "x86_64",
+        "checksum": "Q1Qw/3QqSUVfXMObQRB1Q/OR2E2Pk=",
+        "control": {
+          "checksum": "sha1-Qw/3QqSUVfXMObQRB1Q/OR2E2Pk=",
+          "range": "bytes=660-1019"
+        },
+        "data": {
+          "checksum": "sha256-Acu4swCJY4zVqLGpjN7PJzQ6juyZajEZ/xlJeahCk4k=",
+          "range": "bytes=1020-173298"
+        },
+        "name": "mailcap",
+        "signature": {
+          "checksum": "sha1-fFIHN05okWjQyXdVrXiU2HpqEC4=",
+          "range": "bytes=0-659"
+        },
+        "url": "https://packages.wolfi.dev/os/x86_64/mailcap-2.1.54-r0.apk",
+        "version": "2.1.54-r0"
+      },
+      {
+        "architecture": "x86_64",
+        "checksum": "Q1m7SsrH+XnrPIapzhnK0vkoxMen4=",
+        "control": {
+          "checksum": "sha1-m7SsrH+XnrPIapzhnK0vkoxMen4=",
+          "range": "bytes=698-1077"
+        },
+        "data": {
+          "checksum": "sha256-0WaULqZyE0zNNC6D7YeaXVN4shAVEouyqAEiRlB09C0=",
+          "range": "bytes=1078-54479"
+        },
+        "name": "tini",
+        "signature": {
+          "checksum": "sha1-eomfhWCyCB1OA/2DHboLUzXunvA=",
+          "range": "bytes=0-697"
+        },
+        "url": "https://packages.wolfi.dev/os/x86_64/tini-0.19.0-r3.apk",
+        "version": "0.19.0-r3"
       },
       {
         "architecture": "x86_64",

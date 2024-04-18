@@ -11,7 +11,7 @@ def wolfi_base(name = "wolfi", target = None):
         expression = ". as $item ireduce ({}; . *+ $item) | del(.include)",
         srcs = [
             "//wolfi-images:{}.yaml".format(target),
-            "//wolfi-images:sourcegraph-base.yaml",
+            "//wolfi-images:sourcegraph-template.yaml",
         ],
         visibility = ["//visibility:private"],
     )
