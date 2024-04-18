@@ -30,7 +30,6 @@
     "@graphql-tools/utils": "^10.0.11",
     "@graphql-typed-document-node/core": "^3.2.0",
     "@playwright/test": "1.40.1",
-    "@sourcegraph/extension-api-types": "workspace:*",
     "@storybook/addon-essentials": "^8.0.5",
     "@storybook/addon-svelte-csf": "^4.1.2",
     "@storybook/blocks": "^8.0.5",
