@@ -259,7 +259,8 @@ func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID ap
 	defer done()
 
 	// Cap GetInventory operation to some reasonable time.
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
+	// todo bahrmichael: make this configurable
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Minute)
 	defer cancel()
 
 	invCtx, err := InventoryContext(s.logger, repo, s.gitserverClient, commitID, forceEnhancedLanguageDetection)
