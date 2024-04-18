@@ -2,10 +2,10 @@ This file covers things that are good to know if you're developing or maintainin
 
 ## Contents
 
-* [Developing `src`](#development)
-* [Testing `src`](#testing)
-* [Releasing `src`](#releasing)
-* [How we use Docker](#docker)
+- [Developing `src`](#development)
+- [Testing `src`](#testing)
+- [Releasing `src`](#releasing)
+- [How we use Docker](#docker)
 
 ## Development
 
@@ -65,15 +65,15 @@ We adhere to the [general Sourcegraph principles for testing](https://docs.sourc
         brew info sourcegraph/src-cli/src-cli
        ```
     2. The npm library shows the correct version.
-        ```shell
-        npm show @sourcegraph/src version
+       ```shell
+       npm show @sourcegraph/src version
        ```
     3. The [releases section of the repo sidebar](https://github.com/sourcegraph/src-cli) shows the correct version.
 5.  Make the necessary updates to the main Sourcegraph repo:
     1. Update the `MinimumVersion` constant in the [src-cli package](https://github.com/sourcegraph/sourcegraph/tree/main/internal/src-cli/consts.go).
     2. Update the reference documentation by running `go generate ./doc/cli/references`.
     3. Commit the changes, and open a PR.
- 6. Once the version bump PR is merged and the commit is live on dotcom, check that the [curl commands in the README](README.md#installation) also fetch the new latest version.
+6.  Once the version bump PR is merged and the commit is live on dotcom, check that the [curl commands in the README](README.md#installation) also fetch the new latest version.
 
 ### Patch releases
 
@@ -87,8 +87,8 @@ To release a bug fix or a new feature that is backwards compatible with one of t
 
 We use Docker in a couple of different ways:
 
-* `src` is pushed to [`sourcegraph/src-cli`](https://hub.docker.com/r/sourcegraph/src-cli) each [release](#releasing). More information on this [can be found below](#src-cli-docker-image).
-* `src` uses [`sourcegraph/src-batch-change-volume-workspace`](https://hub.docker.com/r/sourcegraph/src-batch-change-volume-workspace) when executing batch changes on the `volume` workspace, which is the default on macOS. This image is also updated  on [release](#releasing). More information on this [can also be found below](#dependent-docker-images).
+- `src` is pushed to [`sourcegraph/src-cli`](https://hub.docker.com/r/sourcegraph/src-cli) each [release](#releasing). More information on this [can be found below](#src-cli-docker-image).
+- `src` uses [`sourcegraph/src-batch-change-volume-workspace`](https://hub.docker.com/r/sourcegraph/src-batch-change-volume-workspace) when executing batch changes on the `volume` workspace, which is the default on macOS. This image is also updated on [release](#releasing). More information on this [can also be found below](#dependent-docker-images).
 
 ### `src-cli` Docker image
 

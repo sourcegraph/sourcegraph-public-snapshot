@@ -120,7 +120,7 @@ Run <code><strong>src login <i>SOURCEGRAPH-URL</i></strong></code> to authentica
 - `SRC_ENDPOINT`: the URL to your Sourcegraph instance (such as `https://sourcegraph.example.com`)
 - `SRC_ACCESS_TOKEN`: your Sourcegraph access token (on your Sourcegraph instance, click your user menu in the top right, then select **Settings > Access tokens** to create one)
 
-For convenience, you can add these environment variables persistently. 
+For convenience, you can add these environment variables persistently.
 
 ### Configuration: Mac OS / Linux
 
@@ -128,7 +128,7 @@ Add the following to your terminal profile file, typically accessible at `~/.bas
 
 ```
 export SRC_ACCESS_TOKEN=my-token
-export SRC_ENDPOINT=https://sourcegraph.example.com 
+export SRC_ENDPOINT=https://sourcegraph.example.com
 ```
 
 Replace `my-token` and `https://sourcegraph.example.com` with the appropriate values for your account and instance.
@@ -150,7 +150,7 @@ $env:SRC_ACCESS_TOKEN = 'my-token'
 
 Replace `my-token` and `https://sourcegraph.example.com` with the appropriate values for your account and instance.
 
-You can also manually add them via the *System Properties* windows. Check [this post](https://www.computerhope.com/issues/ch000549.htm) for details.
+You can also manually add them via the _System Properties_ windows. Check [this post](https://www.computerhope.com/issues/ch000549.htm) for details.
 
 Is your Sourcegraph instance behind a custom auth proxy? See [auth proxy configuration](./AUTH_PROXY.md) docs.
 
@@ -158,19 +158,19 @@ Is your Sourcegraph instance behind a custom auth proxy? See [auth proxy configu
 
 `src` provides different subcommands to interact with different parts of Sourcegraph:
 
- - `src login` - authenticate to a Sourcegraph instance with your user credentials
- - `src search` - perform searches and get results in your terminal or as JSON
- - `src api` - run Sourcegraph GraphQL API requests
- - `src batch` - execute and manage [batch changes](https://docs.sourcegraph.com/batch_changes)
- - `src repos` - manage repositories
- - `src users` - manage users
- - `src orgs` - manages organization
- - `src config` - manage global, org, and user settings
- - `src extsvc` - manage external services (repository configuration)
- - `src extensions` - manage extensions
- - `src code-intel` - manages Code Intelligence data (deprecated alias: `src lsif`)
- - `src serve-git` - serves your local git repositories over HTTP for Sourcegraph to pull
- - `src version` - check version and guaranteed-compatible version for your Sourcegraph instance
+- `src login` - authenticate to a Sourcegraph instance with your user credentials
+- `src search` - perform searches and get results in your terminal or as JSON
+- `src api` - run Sourcegraph GraphQL API requests
+- `src batch` - execute and manage [batch changes](https://docs.sourcegraph.com/batch_changes)
+- `src repos` - manage repositories
+- `src users` - manage users
+- `src orgs` - manages organization
+- `src config` - manage global, org, and user settings
+- `src extsvc` - manage external services (repository configuration)
+- `src extensions` - manage extensions
+- `src code-intel` - manages Code Intelligence data (deprecated alias: `src lsif`)
+- `src serve-git` - serves your local git repositories over HTTP for Sourcegraph to pull
+- `src version` - check version and guaranteed-compatible version for your Sourcegraph instance
 
 Run `src -h` and `src <subcommand> -h` for more detailed usage information.
 You can also read the [usage docs for the latest version of `src-cli`](https://docs.sourcegraph.com/cli/references) online.

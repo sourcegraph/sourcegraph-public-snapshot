@@ -63,11 +63,13 @@ All notable changes to `src-cli` are documented in this file.
 ## 5.1.0
 
 ### Added
+
 - `src validate install` can check executor connections [#974](https://github.com/sourcegraph/src-cli/pull/974)
 - `src validate install` can send test SMTP message [#973](https://github.com/sourcegraph/src-cli/pull/973)
 - `src repos {add|update|delete}-metadata -repo-name` flag support [#977](https://github.com/sourcegraph/src-cli/pull/977)
 
 ### Changed
+
 - Renamed `src repo {add|update|delete}-kvp` to `repo {add|update|delete}-metadata` [#972](https://github.com/sourcegraph/src-cli/pull/972)
 
 ## 5.0.3
@@ -85,7 +87,7 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
-- Fixed `src validate install` requiring `SRC_GITHUB_TOKEN` in all cases. [958](https://github.com/sourcegraph/src-cli/pull/958) 
+- Fixed `src validate install` requiring `SRC_GITHUB_TOKEN` in all cases. [958](https://github.com/sourcegraph/src-cli/pull/958)
 
 ## 5.0.1
 
@@ -108,7 +110,7 @@ No noteworthy changes, mechanical release to match Sourcegraph release.
 
 ### Fixed
 
--  `src codeintel upload` will no longer overwrite the entire route supplied via `-upload-route` if SCIP data is detected. [#934](https://github.com/sourcegraph/src-cli/pull/934)
+- `src codeintel upload` will no longer overwrite the entire route supplied via `-upload-route` if SCIP data is detected. [#934](https://github.com/sourcegraph/src-cli/pull/934)
 
 ## 4.4.1
 
@@ -141,7 +143,7 @@ No noteworthy changes, mechanical release to match Sourcegraph release.
 
 ### Removed
 
-- Removed __create first admin__ feature from `src validate` [#921](https://github.com/sourcegraph/src-cli/pull/921)
+- Removed **create first admin** feature from `src validate` [#921](https://github.com/sourcegraph/src-cli/pull/921)
 
 ## 4.3.0
 
