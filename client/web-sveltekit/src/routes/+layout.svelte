@@ -1,7 +1,7 @@
 <script lang="ts">
     import { writable } from 'svelte/store'
 
-    import { browser, dev } from '$app/environment'
+    import { browser } from '$app/environment'
     import { isErrorLike } from '$lib/common'
     import { classNames } from '$lib/dom'
     import { TemporarySettingsStorage } from '$lib/shared'
@@ -67,7 +67,7 @@
             return
         }
 
-        if (dev || isRouteEnabled(navigation.to.url.pathname)) {
+        if (isRouteEnabled(navigation.to.url.pathname)) {
             // Routes are handled by SvelteKit
             return
         }
