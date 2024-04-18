@@ -31,7 +31,6 @@ fragment BlobPage_ResolvedRevision on Repository {
     externalRepository {
         serviceType
     }
-    // todo bahrmichael: check for duplicate
     externalURLs {
         url
         serviceKind

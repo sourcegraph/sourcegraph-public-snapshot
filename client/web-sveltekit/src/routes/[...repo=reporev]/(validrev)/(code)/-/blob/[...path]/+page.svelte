@@ -26,7 +26,6 @@
     import type { PageData } from './$types'
     import FileViewModeSwitcher from './FileViewModeSwitcher.svelte'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
-    import { writable } from 'svelte/store'
     import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
     import { toViewMode, ViewMode } from './util'
 
@@ -103,14 +102,10 @@
     <FileHeader>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
-            {#await data.externalServiceType}
-                <OpenInEditor />
-            {:then externalServiceType}
-                <OpenInEditor {externalServiceType} />
-            {:catch error}
-                <Alert variant="danger">
-                    Unable to fetch external service type: {error.message}
-                </Alert>
+            {#await data.externalServiceType then externalServiceType}
+                {#if externalServiceType}
+                    <OpenInEditor {externalServiceType} />
+                {/if}
             {/await}
             {#if blob}
                 <OpenInCodeHostAction data={blob} />
