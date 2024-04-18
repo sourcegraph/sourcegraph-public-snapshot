@@ -60,9 +60,11 @@ func NewGRPCServer(server *Server) proto.GitserverServiceServer {
 	}
 
 	if envGitserverExhaustiveLoggingEnabled {
+		logger := server.logger.Scoped("gRPCRequestLogger")
+
 		srv = &loggingGRPCServer{
 			GitserverServiceServer: srv,
-			logger:                 server.logger,
+			logger:                 logger,
 		}
 	}
 
