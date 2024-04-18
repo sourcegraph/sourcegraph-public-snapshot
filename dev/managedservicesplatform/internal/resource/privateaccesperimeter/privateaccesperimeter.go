@@ -1,4 +1,4 @@
-package privateaccesserver
+package privateaccesperimeter
 
 import (
 	"fmt"
@@ -35,7 +35,7 @@ const orgAccessPolicy = "267168805930"
 // This should only be created once, hence why it does not have accept
 // a resourceid.ID
 func New(scope constructs.Construct, config Config) (*Output, error) {
-	id := resourceid.New("privateaccessserver") // top-level because this resource is a singleton
+	id := resourceid.New("privateaccessperimeter") // top-level because this resource is a singleton
 
 	// For each ingress policy, we allow ingress to everything in the perimeter.
 	ingressToSpec := accesscontextmanagerserviceperimeter.AccessContextManagerServicePerimeterSpecIngressPoliciesIngressTo{
@@ -46,32 +46,23 @@ func New(scope constructs.Construct, config Config) (*Output, error) {
 	}
 
 	// Set up policy allowing allowlisted project IDs
-	var allowedIngressProjects []accesscontextmanagerserviceperimeter.AccessContextManagerServicePerimeterSpecIngressPoliciesIngressFromSources
-	allowlistedProjectsIdGroup := id.Group("allowlisted_projects")
-	for idx, allowedProject := range config.Spec.AllowlistedProjects {
-		id := allowlistedProjectsIdGroup.Group("%d", idx)
-
-		project := datagoogleproject.NewDataGoogleProject(scope, id.TerraformID("project"), &datagoogleproject.DataGoogleProjectConfig{
-			ProjectId: &allowedProject,
-		})
-		allowedIngressProjects = append(allowedIngressProjects,
-			accesscontextmanagerserviceperimeter.AccessContextManagerServicePerimeterSpecIngressPoliciesIngressFromSources{
-				Resource: pointers.Stringf("projects/%v", project.Number()),
-			})
-	}
 	allowedProjectsIngressPolicy := accesscontextmanagerserviceperimeter.AccessContextManagerServicePerimeterSpecIngressPolicies{
 		IngressFrom: &accesscontextmanagerserviceperimeter.AccessContextManagerServicePerimeterSpecIngressPoliciesIngressFrom{
-			Sources:      allowedIngressProjects,
+			Sources: newAllowlistedIngressProjectSources(
+				scope,
+				id.Group("allowlisted_projects"),
+				config.Spec.AllowlistedProjects),
 			IdentityType: pointers.Ptr("ANY_IDENTITY"),
 		},
 		IngressTo: &ingressToSpec,
 	}
 
-	// Set up policy allowing allowlisted identities - TODO
+	// Set up policy allowing allowlisted identities.
 	allowedIdentities := append([]string{
 		"serviceAccount:terraform-cloud@sourcegraph-ci.iam.gserviceaccount.com",
 		"TODO",
 	}, config.Spec.AllowlistedIdentities...)
+	// TODO
 	allowedIdentitiesIngressPolicy := accesscontextmanagerserviceperimeter.AccessContextManagerServicePerimeterSpecIngressPolicies{
 		IngressFrom: &accesscontextmanagerserviceperimeter.AccessContextManagerServicePerimeterSpecIngressPoliciesIngressFrom{
 			Identities: pointers.Ptr(pointers.Slice(allowedIdentities)),
@@ -118,4 +109,22 @@ func New(scope constructs.Construct, config Config) (*Output, error) {
 		})
 
 	return &Output{}, nil
+}
+
+func newAllowlistedIngressProjectSources(scope constructs.Construct, id resourceid.ID, allowlistedProjects []string) []accesscontextmanagerserviceperimeter.AccessContextManagerServicePerimeterSpecIngressPoliciesIngressFromSources {
+	var allowedIngressProjects []accesscontextmanagerserviceperimeter.AccessContextManagerServicePerimeterSpecIngressPoliciesIngressFromSources
+	for idx, allowedProject := range allowlistedProjects {
+		id := id.Group("%d", idx)
+
+		// Allowlist only accepts 'projects/{numeric_id}' format - we need to
+		// fetch this from a data source.
+		project := datagoogleproject.NewDataGoogleProject(scope, id.TerraformID("project"), &datagoogleproject.DataGoogleProjectConfig{
+			ProjectId: &allowedProject,
+		})
+		allowedIngressProjects = append(allowedIngressProjects,
+			accesscontextmanagerserviceperimeter.AccessContextManagerServicePerimeterSpecIngressPoliciesIngressFromSources{
+				Resource: pointers.Stringf("projects/%v", project.Number()),
+			})
+	}
+	return allowedIngressProjects
 }
