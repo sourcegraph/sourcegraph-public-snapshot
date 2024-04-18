@@ -17,6 +17,7 @@ go_library(
     deps = [
         "//cmd/searcher/protocol",
         "//internal/api",
+        "//internal/collections",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/endpoint",
@@ -40,6 +41,7 @@ go_library(
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_sourcegraph_zoekt//query",
         "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_x_exp//slices",
     ],
 )
 

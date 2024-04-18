@@ -33,3 +33,13 @@ export { blobPropsFacet } from '@sourcegraph/web/src/repo/blob/codemirror'
 export { defaultSearchModeFromSettings, defaultPatternTypeFromSettings } from '@sourcegraph/web/src/util/settings'
 
 export type { FeatureFlagName } from '@sourcegraph/web/src/featureFlags/featureFlags'
+
+export { parseBrowserRepoURL } from '@sourcegraph/web/src/util/url'
+export type { EditorSettings, EditorReplacements } from '@sourcegraph/web/src/open-in-editor/editor-settings'
+export { type Editor, getEditor, supportedEditors } from '@sourcegraph/web/src/open-in-editor/editors'
+export {
+    buildRepoBaseNameAndPath,
+    isProjectPathValid,
+    getProjectPath,
+    buildEditorUrl,
+} from '@sourcegraph/web/src/open-in-editor/build-url'

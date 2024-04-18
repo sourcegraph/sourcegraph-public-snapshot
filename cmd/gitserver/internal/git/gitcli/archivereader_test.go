@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -163,18 +162,6 @@ func TestGitCLIBackend_ArchiveReader(t *testing.T) {
 		_, err := backend.ArchiveReader(ctx, "tar", "head-2", nil)
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
-	})
-
-	t.Run("non existent file", func(t *testing.T) {
-		_, err := backend.ArchiveReader(ctx, "tar", string(commitID), []string{"no-file"})
-		require.Error(t, err)
-		require.True(t, os.IsNotExist(err))
-	})
-
-	t.Run("invalid path pattern", func(t *testing.T) {
-		_, err := backend.ArchiveReader(ctx, "tar", string(commitID), []string{"dir1/*"})
-		require.Error(t, err)
-		require.True(t, os.IsNotExist(err))
 	})
 
 	// Verify that if the context is canceled, the reader returns an error.

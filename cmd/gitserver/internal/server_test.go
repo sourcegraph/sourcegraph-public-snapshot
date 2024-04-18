@@ -37,7 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/connection"
 	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -559,9 +559,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 		}), nil
 	}
 
-	s.RepoUpdate(ctx, &protocol.RepoUpdateRequest{
-		Repo: repoName,
-	})
+	s.RepoUpdate(ctx, repoName)
 
 	size, err := s.fs.DirSize(string(s.fs.RepoDir(repoName)))
 	require.NoError(t, err)
@@ -592,9 +590,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	// This will perform an initial clone
 	s.getRemoteURLFunc = oldRemoveURLFunc
 	s.getVCSSyncer = oldVCSSyncer
-	s.RepoUpdate(ctx, &protocol.RepoUpdateRequest{
-		Repo: repoName,
-	})
+	s.RepoUpdate(ctx, repoName)
 
 	size, err = s.fs.DirSize(string(s.fs.RepoDir(repoName)))
 	require.NoError(t, err)
@@ -622,9 +618,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	t.Cleanup(func() { doBackgroundRepoUpdateMock = nil })
 
 	// This will trigger an update since the repo is already cloned
-	s.RepoUpdate(ctx, &protocol.RepoUpdateRequest{
-		Repo: repoName,
-	})
+	s.RepoUpdate(ctx, repoName)
 
 	want = &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
@@ -647,9 +641,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	doBackgroundRepoUpdateMock = nil
 
 	// This will trigger an update since the repo is already cloned
-	s.RepoUpdate(ctx, &protocol.RepoUpdateRequest{
-		Repo: repoName,
-	})
+	s.RepoUpdate(ctx, repoName)
 
 	// we compute the new size
 	wantSize, err := s.fs.DirSize(string(s.fs.RepoDir(repoName)))
@@ -889,7 +881,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = syncRepoState(ctx, logger, db, s.locker, hostname, s.fs, gitserver.GitserverAddresses{Addresses: []string{hostname}}, 10, 10, true)
+	err = syncRepoState(ctx, logger, db, s.locker, hostname, s.fs, connection.GitserverAddresses{Addresses: []string{hostname}}, 10, 10, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -914,7 +906,7 @@ func TestSyncRepoState(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = syncRepoState(ctx, logger, db, s.locker, hostname, s.fs, gitserver.GitserverAddresses{Addresses: []string{hostname}}, 10, 10, true)
+		err = syncRepoState(ctx, logger, db, s.locker, hostname, s.fs, connection.GitserverAddresses{Addresses: []string{hostname}}, 10, 10, true)
 		if err != nil {
 			t.Fatal(err)
 		}

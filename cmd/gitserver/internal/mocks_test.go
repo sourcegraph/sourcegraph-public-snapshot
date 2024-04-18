@@ -10,6 +10,7 @@ import (
 	"context"
 	"io"
 	"sync"
+	"time"
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -711,7 +712,7 @@ func NewMockService() *MockService {
 			},
 		},
 		RepoUpdateFunc: &ServiceRepoUpdateFunc{
-			defaultHook: func(context.Context, *protocol.RepoUpdateRequest) (r0 protocol.RepoUpdateResponse) {
+			defaultHook: func(context.Context, api.RepoName) (r0 time.Time, r1 time.Time, r2 error) {
 				return
 			},
 		},
@@ -748,7 +749,7 @@ func NewStrictMockService() *MockService {
 			},
 		},
 		RepoUpdateFunc: &ServiceRepoUpdateFunc{
-			defaultHook: func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
+			defaultHook: func(context.Context, api.RepoName) (time.Time, time.Time, error) {
 				panic("unexpected invocation of MockService.RepoUpdate")
 			},
 		},
@@ -768,7 +769,7 @@ type surrogateMockService interface {
 	EnsureRevision(context.Context, api.RepoName, string) bool
 	IsRepoCloneable(context.Context, api.RepoName) (protocol.IsRepoCloneableResponse, error)
 	LogIfCorrupt(context.Context, api.RepoName, error)
-	RepoUpdate(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
+	RepoUpdate(context.Context, api.RepoName) (time.Time, time.Time, error)
 	SearchWithObservability(context.Context, trace.Trace, *protocol.SearchRequest, func(*protocol.CommitMatch) error) (bool, error)
 }
 
@@ -1230,23 +1231,23 @@ func (c ServiceLogIfCorruptFuncCall) Results() []interface{} {
 // ServiceRepoUpdateFunc describes the behavior when the RepoUpdate method
 // of the parent MockService instance is invoked.
 type ServiceRepoUpdateFunc struct {
-	defaultHook func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
-	hooks       []func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
+	defaultHook func(context.Context, api.RepoName) (time.Time, time.Time, error)
+	hooks       []func(context.Context, api.RepoName) (time.Time, time.Time, error)
 	history     []ServiceRepoUpdateFuncCall
 	mutex       sync.Mutex
 }
 
 // RepoUpdate delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockService) RepoUpdate(v0 context.Context, v1 *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
-	r0 := m.RepoUpdateFunc.nextHook()(v0, v1)
-	m.RepoUpdateFunc.appendCall(ServiceRepoUpdateFuncCall{v0, v1, r0})
-	return r0
+func (m *MockService) RepoUpdate(v0 context.Context, v1 api.RepoName) (time.Time, time.Time, error) {
+	r0, r1, r2 := m.RepoUpdateFunc.nextHook()(v0, v1)
+	m.RepoUpdateFunc.appendCall(ServiceRepoUpdateFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the RepoUpdate method of
 // the parent MockService instance is invoked and the hook queue is empty.
-func (f *ServiceRepoUpdateFunc) SetDefaultHook(hook func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse) {
+func (f *ServiceRepoUpdateFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (time.Time, time.Time, error)) {
 	f.defaultHook = hook
 }
 
@@ -1254,7 +1255,7 @@ func (f *ServiceRepoUpdateFunc) SetDefaultHook(hook func(context.Context, *proto
 // RepoUpdate method of the parent MockService instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ServiceRepoUpdateFunc) PushHook(hook func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse) {
+func (f *ServiceRepoUpdateFunc) PushHook(hook func(context.Context, api.RepoName) (time.Time, time.Time, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1262,20 +1263,20 @@ func (f *ServiceRepoUpdateFunc) PushHook(hook func(context.Context, *protocol.Re
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ServiceRepoUpdateFunc) SetDefaultReturn(r0 protocol.RepoUpdateResponse) {
-	f.SetDefaultHook(func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
-		return r0
+func (f *ServiceRepoUpdateFunc) SetDefaultReturn(r0 time.Time, r1 time.Time, r2 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (time.Time, time.Time, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ServiceRepoUpdateFunc) PushReturn(r0 protocol.RepoUpdateResponse) {
-	f.PushHook(func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
-		return r0
+func (f *ServiceRepoUpdateFunc) PushReturn(r0 time.Time, r1 time.Time, r2 error) {
+	f.PushHook(func(context.Context, api.RepoName) (time.Time, time.Time, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *ServiceRepoUpdateFunc) nextHook() func(context.Context, *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
+func (f *ServiceRepoUpdateFunc) nextHook() func(context.Context, api.RepoName) (time.Time, time.Time, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1313,10 +1314,16 @@ type ServiceRepoUpdateFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *protocol.RepoUpdateRequest
+	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 protocol.RepoUpdateResponse
+	Result0 time.Time
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 time.Time
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1328,7 +1335,7 @@ func (c ServiceRepoUpdateFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ServiceRepoUpdateFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // ServiceSearchWithObservabilityFunc describes the behavior when the

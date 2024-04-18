@@ -1,6 +1,6 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
-load("//dev:go_defs.bzl", "go_test")
 load("//dev:go_mockgen.bzl", "go_mockgen")
+load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "internal",
@@ -13,6 +13,7 @@ go_library(
         "lock.go",
         "patch.go",
         "repo_info.go",
+        "repositoryservice.go",
         "search.go",
         "server.go",
         "server_grpc.go",
@@ -23,8 +24,7 @@ go_library(
     ],
     embedsrcs = ["sg_maintenance.sh"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal",
-    # visibility = ["//cmd/gitserver:__subpackages__"],
-    visibility = ["//visibility:public"],
+    visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//cmd/gitserver/internal/accesslog",
         "//cmd/gitserver/internal/common",
@@ -48,7 +48,7 @@ go_library(
         "//internal/errcode",
         "//internal/extsvc/gitolite",
         "//internal/fileutil",
-        "//internal/gitserver",
+        "//internal/gitserver/connection",
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
         "//internal/gitserver/v1:gitserver",
@@ -79,6 +79,7 @@ go_library(
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
         "@org_golang_google_protobuf//encoding/protojson",
+        "@org_golang_google_protobuf//types/known/timestamppb",
         "@org_golang_x_sync//errgroup",
         "@org_golang_x_time//rate",
     ],
@@ -86,7 +87,6 @@ go_library(
 
 go_test(
     name = "internal_test",
-    timeout = "moderate",
     srcs = [
         "cleanup_test.go",
         "grpc_server_wrappers_test.go",
@@ -98,13 +98,6 @@ go_test(
         "server_test.go",
     ],
     embed = [":internal"],
-    # This test loads coursier as a side effect, so we ensure the
-    # path is sandboxed properly.
-    env = {"COURSIER_CACHE_DIR": "/tmp"},
-    tags = [
-        # Test requires localhost database
-        "requires-network",
-    ],
     deps = [
         "//cmd/gitserver/internal/common",
         "//cmd/gitserver/internal/git",
@@ -121,6 +114,7 @@ go_test(
         "//internal/database/dbtest",
         "//internal/extsvc/gitolite",
         "//internal/gitserver",
+        "//internal/gitserver/connection",
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
         "//internal/gitserver/v1:gitserver",

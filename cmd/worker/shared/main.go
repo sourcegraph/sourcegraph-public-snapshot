@@ -389,7 +389,7 @@ func setAuthzProviders(ctx context.Context, observationCtx *observation.Context)
 		return
 	}
 
-	for range time.NewTicker(providers.RefreshInterval()).C {
+	for range time.NewTicker(providers.RefreshInterval(conf.Get())).C {
 		allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
