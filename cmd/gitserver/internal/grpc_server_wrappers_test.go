@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"testing"
+
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/testing/protocmp"
-	"testing"
 
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"google.golang.org/grpc/metadata"
