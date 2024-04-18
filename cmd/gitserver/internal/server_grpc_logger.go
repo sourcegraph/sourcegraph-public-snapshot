@@ -198,25 +198,6 @@ func (l *loggingGRPCServer) Archive(request *proto.ArchiveRequest, server proto.
 	return l.GitserverServiceServer.Archive(request, server)
 }
 
-//func (l *loggingGRPCServer) RepoClone(ctx context.Context, request *proto.repocl) (response *proto.RepoCloneResponse, err error) {
-//	start := time.Now()
-//
-//	defer func() {
-//		elapsed := time.Since(start)
-//		fields := []log.Field{
-//			log.String("traceID", trace.Context(ctx).TraceID),
-//			log.String("method", "RepoClone"),
-//			log.String("status", status.Code(err).String()),
-//			log.String("request", protojson.Format(request)),
-//			log.Duration("duration", elapsed),
-//		}
-//
-//		l.doLog("Received RepoClone request", fields...)
-//	}()
-//
-//	return l.GitserverServiceServer.RepoClone(ctx, request)
-//}
-
 func (l *loggingGRPCServer) RepoCloneProgress(ctx context.Context, request *proto.RepoCloneProgressRequest) (response *proto.RepoCloneProgressResponse, err error) {
 	start := time.Now()
 
@@ -234,44 +215,6 @@ func (l *loggingGRPCServer) RepoCloneProgress(ctx context.Context, request *prot
 	}()
 
 	return l.GitserverServiceServer.RepoCloneProgress(ctx, request)
-}
-
-func (l *loggingGRPCServer) RepoDelete(ctx context.Context, request *proto.RepoDeleteRequest) (response *proto.RepoDeleteResponse, err error) {
-	start := time.Now()
-
-	defer func() {
-		elapsed := time.Since(start)
-		fields := []log.Field{
-			log.String("traceID", trace.Context(ctx).TraceID),
-			log.String("method", "RepoDelete"),
-			log.String("status", status.Code(err).String()),
-			log.String("request", protojson.Format(request)),
-			log.Duration("duration", elapsed),
-		}
-
-		l.doLog("Received RepoDelete request", fields...)
-	}()
-
-	return l.GitserverServiceServer.RepoDelete(ctx, request)
-}
-
-func (l *loggingGRPCServer) RepoUpdate(ctx context.Context, request *proto.RepoUpdateRequest) (response *proto.RepoUpdateResponse, err error) {
-	start := time.Now()
-
-	defer func() {
-		elapsed := time.Since(start)
-		fields := []log.Field{
-			log.String("traceID", trace.Context(ctx).TraceID),
-			log.String("method", "RepoUpdate"),
-			log.String("status", status.Code(err).String()),
-			log.String("request", protojson.Format(request)),
-			log.Duration("duration", elapsed),
-		}
-
-		l.doLog("Received RepoUpdate request", fields...)
-	}()
-
-	return l.GitserverServiceServer.RepoUpdate(ctx, request)
 }
 
 func (l *loggingGRPCServer) IsPerforcePathCloneable(ctx context.Context, request *proto.IsPerforcePathCloneableRequest) (response *proto.IsPerforcePathCloneableResponse, err error) {
