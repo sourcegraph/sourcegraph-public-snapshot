@@ -1147,26 +1147,6 @@ func tooManyPackfiles(dir common.GitDir, limit int) (bool, error) {
 	return count > limit, nil
 }
 
-// gitSetAutoGC will set the value of gc.auto. If GC is managed by Sourcegraph
-// the value will be 0 (disabled), otherwise if managed by git we will unset
-// it to rely on default (on) or global config.
-//
-// The purpose is to avoid repository corruption which can happen if several
-// git-gc operations are running at the same time.
-func gitSetAutoGC(ctx context.Context, c git.GitConfigBackend) error {
-	switch gitGCMode {
-	case gitGCModeGitAutoGC, gitGCModeJanitorAutoGC:
-		return c.Unset(ctx, "gc.auto")
-
-	case gitGCModeMaintenance:
-		return c.Set(ctx, "gc.auto", "0")
-
-	default:
-		// should not happen
-		panic(fmt.Sprintf("non exhaustive switch for gitGCMode: %d", gitGCMode))
-	}
-}
-
 // jitterDuration returns a duration between [0, d) based on key. This is like
 // a random duration, but instead of a random source it is computed via a hash
 // on key.

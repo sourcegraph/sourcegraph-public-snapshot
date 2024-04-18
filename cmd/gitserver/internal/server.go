@@ -348,24 +348,6 @@ func (s *Server) repoUpdateOrClone(ctx context.Context, repoName api.RepoName) e
 	return nil
 }
 
-func setLastFetched(ctx context.Context, db database.DB, shardID string, dir common.GitDir, name api.RepoName) error {
-	lastFetched, err := repoLastFetched(dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get last fetched for %s", name)
-	}
-
-	lastChanged, err := repoLastChanged(dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get last changed for %s", name)
-	}
-
-	return db.GitserverRepos().SetLastFetched(ctx, name, database.GitserverFetchData{
-		LastFetched: lastFetched,
-		LastChanged: lastChanged,
-		ShardID:     shardID,
-	})
-}
-
 // setLastErrorNonFatal will set the last_error column for the repo in the gitserver table.
 func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, err error) {
 	var errString string
@@ -670,58 +652,6 @@ func (w *linebasedBufferedWriter) Bytes() []byte {
 	return w.buf
 }
 
-func postRepoFetchActions(
-	ctx context.Context,
-	logger log.Logger,
-	fs gitserverfs.FS,
-	db database.DB,
-	backend git.GitBackend,
-	shardID string,
-	repo api.RepoName,
-	dir common.GitDir,
-	syncer vcssyncer.VCSSyncer,
-) (errs error) {
-	// Note: We use a multi error in this function to try to make as many of the
-	// post repo fetch actions succeed.
-
-	if err := git.RemoveBadRefs(ctx, dir); err != nil {
-		errs = errors.Append(errs, errors.Wrapf(err, "failed to remove bad refs for repo %q", repo))
-	}
-
-	if err := git.SetRepositoryType(ctx, backend.Config(), syncer.Type()); err != nil {
-		errs = errors.Append(errs, errors.Wrapf(err, "failed to set repository type for repo %q", repo))
-	}
-
-	if err := git.SetGitAttributes(dir); err != nil {
-		errs = errors.Append(errs, errors.Wrap(err, "setting git attributes"))
-	}
-
-	if err := gitSetAutoGC(ctx, backend.Config()); err != nil {
-		errs = errors.Append(errs, errors.Wrap(err, "setting git gc mode"))
-	}
-
-	// Update the last-changed stamp on disk.
-	if err := setLastChanged(logger, dir); err != nil {
-		errs = errors.Append(errs, errors.Wrap(err, "failed to update last changed time"))
-	}
-
-	// Successfully updated, best-effort updating of db fetch state based on
-	// disk state.
-	if err := setLastFetched(ctx, db, shardID, dir, repo); err != nil {
-		errs = errors.Append(errs, errors.Wrap(err, "failed setting last fetch in DB"))
-	}
-
-	// Successfully updated, best-effort calculation of the repo size.
-	repoSizeBytes, err := fs.DirSize(dir.Path())
-	if err != nil {
-		errs = errors.Append(errs, errors.Wrap(err, "failed to calculate repo size"))
-	} else if err := db.GitserverRepos().SetRepoSize(ctx, repo, repoSizeBytes, shardID); err != nil {
-		errs = errors.Append(errs, errors.Wrap(err, "failed to set repo size"))
-	}
-
-	return errs
-}
-
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status, and optionally writes to a log file if siteConfig.cloneProgressLog
 // is enabled.
@@ -961,60 +891,6 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	}
 
 	return err
-}
-
-// setLastChanged discerns an approximate last-changed timestamp for a
-// repository. This can be approximate; it's used to determine how often we
-// should run `git fetch`, but is not relied on strongly. The basic plan
-// is as follows: If a repository has never had a timestamp before, we
-// guess that the right stamp is *probably* the timestamp of the most
-// chronologically-recent commit. If there are no commits, we just use the
-// current time because that's probably usually a temporary state.
-//
-// If a timestamp already exists, we want to update it if and only if
-// the set of references (as determined by `git show-ref`) has changed.
-//
-// To accomplish this, we assert that the file `sg_refhash` in the git
-// directory should, if it exists, contain a hash of the output of
-// `git show-ref`, and have a timestamp of "the last time this changed",
-// except that if we're creating that file for the first time, we set
-// it to the timestamp of the top commit. We then compute the hash of
-// the show-ref output, and store it in the file if and only if it's
-// different from the current contents.
-//
-// If show-ref fails, we use rev-list to determine whether that's just
-// an empty repository (not an error) or some kind of actual error
-// that is possibly causing our data to be incorrect, which should
-// be reported.
-func setLastChanged(logger log.Logger, dir common.GitDir) error {
-	hashFile := dir.Path("sg_refhash")
-
-	hash, err := git.ComputeRefHash(dir)
-	if err != nil {
-		return errors.Wrapf(err, "computeRefHash failed for %s", dir)
-	}
-
-	var stamp time.Time
-	if _, err := os.Stat(hashFile); os.IsNotExist(err) {
-		// This is the first time we are calculating the hash. Give a more
-		// approriate timestamp for sg_refhash than the current time.
-		stamp = git.LatestCommitTimestamp(logger, dir)
-	}
-
-	_, err = fileutil.UpdateFileIfDifferent(hashFile, hash)
-	if err != nil {
-		return errors.Wrapf(err, "failed to update %s", hashFile)
-	}
-
-	// If stamp is non-zero we have a more approriate mtime.
-	if !stamp.IsZero() {
-		err = os.Chtimes(hashFile, stamp, stamp)
-		if err != nil {
-			return errors.Wrapf(err, "failed to set mtime to the lastest commit timestamp for %s", dir)
-		}
-	}
-
-	return nil
 }
 
 func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {

@@ -11,6 +11,7 @@ go_library(
         "list_gitolite.go",
         "lock.go",
         "patch.go",
+        "postfetch.go",
         "repo_info.go",
         "repositoryservice.go",
         "search.go",
