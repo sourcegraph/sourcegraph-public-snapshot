@@ -200,8 +200,8 @@ func TestClone_Fail(t *testing.T) {
 	require.Contains(t, err.Error(), "error cloning repo: repo github.com/test/repo not cloneable:")
 	require.Contains(t, err.Error(), "exit status 128")
 
-	// No lock should have been acquired.
-	mockassert.NotCalled(t, locker.TryAcquireFunc)
+	mockassert.CalledOnce(t, locker.TryAcquireFunc)
+	mockassert.CalledOnce(t, lock.ReleaseFunc)
 
 	// Check we reported an error.
 	// Check that it was called exactly once total.
@@ -237,13 +237,13 @@ func TestClone_Fail(t *testing.T) {
 	require.Contains(t, err.Error(), "failed to clone github.com/test/repo: clone failed. Output: Creating bare repo\nCreated bare repo at")
 
 	// Should have acquired a lock.
-	mockassert.CalledOnce(t, locker.TryAcquireFunc)
+	mockassert.CalledN(t, locker.TryAcquireFunc, 2)
 	// Should have reported status. 7 lines is the output git currently produces.
 	// This number might need to be adjusted over time, but before doing so please
 	// check that the calls actually use the args you would expect them to use.
 	mockassert.CalledN(t, lock.SetStatusFunc, 7)
 	// Should have released the lock.
-	mockassert.CalledOnce(t, lock.ReleaseFunc)
+	mockassert.CalledN(t, lock.ReleaseFunc, 2)
 
 	// Check it was set to cloning first, then uncloned again (since clone failed).
 	mockassert.CalledN(t, gsStore.SetCloneStatusFunc, 2)
