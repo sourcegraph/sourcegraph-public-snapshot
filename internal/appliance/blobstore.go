@@ -3,6 +3,12 @@ package appliance
 import (
 	"context"
 
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/container"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/deployment"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pod"
@@ -10,11 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/service"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (r *Reconciler) reconcileBlobstore(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
@@ -108,7 +109,7 @@ func (r *Reconciler) reconcileBlobstoreServices(ctx context.Context, sg *Sourceg
 func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
 	name := "blobstore"
 
-	containerImage := ""
+	containerImage := "TODO"
 
 	containerPorts := corev1.ContainerPort{
 		Name:          name,
@@ -186,7 +187,7 @@ func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
 		},
 	}
 
-	podTemplate, err := pod.NewPodTemplate(name, sg.Namespace,
+	podTemplate, err := pod.NewPodTemplate(name,
 		pod.WithContainers(defaultContainer),
 		pod.WithVolumes(podVolumes),
 	)
