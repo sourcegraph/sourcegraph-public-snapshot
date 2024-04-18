@@ -7,4 +7,4 @@ oci_push(
     repository = image_repository("sourcegraph-base"),
 )
 
-wolfi_base(target = "sourcegraph")
+wolfi_base(target = "sourcegraph-base")
