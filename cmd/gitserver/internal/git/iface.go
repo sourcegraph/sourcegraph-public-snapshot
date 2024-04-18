@@ -184,6 +184,9 @@ type RefIterator interface {
 // ContributorCountsOpts are options for the ContributorCounts method.
 type ContributorCountsOpts struct {
 	// If set, only count commits that are in the given range.
+	// Range can contain:
+	// - A commit hash or ref name, which includes that commit/ref and all of the parents
+	// - A range of two commits/hashes, separated by either .. or ... notation: A..B, A...B
 	Range string
 	// If set, only count commits that are after the given time.
 	After time.Time
