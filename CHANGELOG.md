@@ -43,6 +43,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed a bug where the `src batch preview` command could fail due to an incorrect file-not-found error. [#61984](https://github.com/sourcegraph/sourcegraph/pull/61984)
+
 ## 5.3.9104
 
 ### Added
