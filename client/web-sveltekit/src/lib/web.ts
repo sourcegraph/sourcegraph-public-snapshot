@@ -10,6 +10,7 @@ export { linkify } from '@sourcegraph/web/src/repo/blob/codemirror/links'
 export { createCodeIntelExtension } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/extension'
 export type { TooltipViewOptions } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/api'
 export { positionToOffset, locationToURL } from '@sourcegraph/web/src/repo/blob/codemirror/utils'
+export { lockFirstVisibleLine } from '@sourcegraph/web/src/repo/blob/codemirror/lock-line'
 export { syncSelection } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/token-selection'
 export {
     showTemporaryTooltip,
@@ -33,3 +34,13 @@ export { blobPropsFacet } from '@sourcegraph/web/src/repo/blob/codemirror'
 export { defaultSearchModeFromSettings, defaultPatternTypeFromSettings } from '@sourcegraph/web/src/util/settings'
 
 export type { FeatureFlagName } from '@sourcegraph/web/src/featureFlags/featureFlags'
+
+export { parseBrowserRepoURL } from '@sourcegraph/web/src/util/url'
+export type { EditorSettings, EditorReplacements } from '@sourcegraph/web/src/open-in-editor/editor-settings'
+export { type Editor, getEditor, supportedEditors } from '@sourcegraph/web/src/open-in-editor/editors'
+export {
+    buildRepoBaseNameAndPath,
+    isProjectPathValid,
+    getProjectPath,
+    buildEditorUrl,
+} from '@sourcegraph/web/src/open-in-editor/build-url'

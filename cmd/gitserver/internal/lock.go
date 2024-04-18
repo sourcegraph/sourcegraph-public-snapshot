@@ -20,8 +20,7 @@ type RepositoryLock interface {
 // When a repository is locked, only the owner of the lock is allowed to perform
 // writing operations against it.
 //
-// The main use of RepositoryLocker is to prevent concurrent clones. However,
-// it is also used during maintenance tasks such as recloning/migrating/etc.
+// The main use of RepositoryLocker is to prevent concurrent fetches.
 type RepositoryLocker interface {
 	// TryAcquire acquires the lock for repo. If it is already held, ok is false
 	// and lock is nil. Otherwise a non-nil lock is returned and true. When

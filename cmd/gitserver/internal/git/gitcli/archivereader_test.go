@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -151,31 +152,17 @@ func TestGitCLIBackend_ArchiveReader(t *testing.T) {
 		require.Equal(t, "qrst\n", contents)
 	})
 
-	// TODO(pjlast): temporary removal of path verification because it has edge
-	// cases that we're not handling correctly.
-	// t.Run("non existent commit", func(t *testing.T) {
-	// 	_, err := backend.ArchiveReader(ctx, "tar", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", nil)
-	// 	require.Error(t, err)
-	// 	require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
-	// })
+	t.Run("non existent commit", func(t *testing.T) {
+		_, err := backend.ArchiveReader(ctx, "tar", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", nil)
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
 
-	// t.Run("non existent ref", func(t *testing.T) {
-	// 	_, err := backend.ArchiveReader(ctx, "tar", "head-2", nil)
-	// 	require.Error(t, err)
-	// 	require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
-	// })
-
-	// t.Run("non existent file", func(t *testing.T) {
-	// 	_, err := backend.ArchiveReader(ctx, "tar", string(commitID), []string{"no-file"})
-	// 	require.Error(t, err)
-	// 	require.True(t, os.IsNotExist(err))
-	// })
-
-	// t.Run("invalid path pattern", func(t *testing.T) {
-	// 	_, err := backend.ArchiveReader(ctx, "tar", string(commitID), []string{"dir1/*"})
-	// 	require.Error(t, err)
-	// 	require.True(t, os.IsNotExist(err))
-	// })
+	t.Run("non existent ref", func(t *testing.T) {
+		_, err := backend.ArchiveReader(ctx, "tar", "head-2", nil)
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
 
 	// Verify that if the context is canceled, the reader returns an error.
 	t.Run("context cancelation", func(t *testing.T) {

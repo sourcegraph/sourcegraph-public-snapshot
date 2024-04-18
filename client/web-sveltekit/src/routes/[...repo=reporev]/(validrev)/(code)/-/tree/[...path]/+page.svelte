@@ -82,12 +82,13 @@
 <style lang="scss">
     .content {
         flex: 1;
+        overflow: auto;
     }
 
     .header {
         background-color: var(--body-bg);
         position: sticky;
-        top: 2.8rem;
+        top: 0;
         padding: 0.5rem;
         border-bottom: 1px solid var(--border-color);
         margin: 0;
