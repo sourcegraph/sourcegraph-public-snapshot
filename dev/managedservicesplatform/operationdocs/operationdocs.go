@@ -185,7 +185,10 @@ This service is operated on the %s.`,
 				return l
 			}), ", ")},
 			{"Slack notifications", markdown.Linkf("#"+slackChannelName, "https://sourcegraph.slack.com/archives/"+slackChannelName)},
-			{"Alerts", markdown.Linkf("GCP monitoring", "https://console.cloud.google.com/monitoring/alerting?project=%s", env.ProjectID)},
+			{"Alert policies",
+				fmt.Sprintf("%s, %s",
+					markdown.Linkf("Listing", "https://console.cloud.google.com/monitoring/alerting/policies?project=%s", env.ProjectID),
+					AlertPolicyDashboardURL(env.ProjectID))},
 			{"Errors", sentryLink},
 		}
 		if env.EnvironmentServiceSpec != nil {
