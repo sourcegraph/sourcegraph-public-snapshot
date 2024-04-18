@@ -17,7 +17,7 @@ type loggingGRPCServer struct {
 }
 
 func (l *loggingGRPCServer) doLog(message string, fields ...log.Field) {
-	l.logger.Info(message, fields...)
+	l.logger.Debug(message, fields...)
 }
 
 func (l *loggingGRPCServer) CreateCommitFromPatchBinary(server proto.GitserverService_CreateCommitFromPatchBinaryServer) error {
