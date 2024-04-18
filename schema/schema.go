@@ -617,6 +617,18 @@ type Codeintel struct {
 	// Weight description: The relative weight of this queue. Higher weights mean a higher chance of being picked at random.
 	Weight int `json:"weight"`
 }
+type CodyContextFilterItem struct {
+	// RepoNamePattern description: Regular expression which matches a set of repository names. The pattern is evaluated using Go regular expression syntax (https://golang.org/pkg/regexp/). By default, the pattern matches partially. Use \"^...$\" for whole-string matching.
+	RepoNamePattern string `json:"repoNamePattern"`
+}
+
+// CodyContextFilters description: Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
+type CodyContextFilters struct {
+	// Exclude description: List of rules specifying repositories that Cody should excluded from context in requests to third-party LLMs. These rules are applied only to repositories matching the include rules.
+	Exclude []*CodyContextFilterItem `json:"exclude,omitempty"`
+	// Include description: List of rules specifying repositories that Cody may include as context in requests to third-party LLMs. If defined, only repositories matching these rules will be considered for sharing. If not defined, all repositories may be shared.
+	Include []*CodyContextFilterItem `json:"include,omitempty"`
+}
 
 // CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
 type CodyGateway struct {
@@ -2781,6 +2793,8 @@ type SiteConfiguration struct {
 	CodeIntelRankingDocumentReferenceCountsGraphKey string `json:"codeIntelRanking.documentReferenceCountsGraphKey,omitempty"`
 	// CodeIntelRankingStaleResultsAge description: The interval at which to run the reduce job that computes document reference counts. Default is 24hrs.
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
+	// CodyContextFilters description: Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
+	CodyContextFilters *CodyContextFilters `json:"cody.contextFilters,omitempty"`
 	// CodyEnabled description: Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.
 	CodyEnabled *bool `json:"cody.enabled,omitempty"`
 	// CodyPermissions description: Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://sourcegraph.com/docs/admin/access_control
@@ -3051,6 +3065,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelRanking.documentReferenceCountsEnabled")
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")
 	delete(m, "codeIntelRanking.staleResultsAge")
+	delete(m, "cody.contextFilters")
 	delete(m, "cody.enabled")
 	delete(m, "cody.permissions")
 	delete(m, "cody.restrictUsersFeatureFlag")

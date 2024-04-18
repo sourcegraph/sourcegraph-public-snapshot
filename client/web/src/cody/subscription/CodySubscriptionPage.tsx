@@ -1,4 +1,4 @@
-import React, { type ReactElement, useMemo, useEffect } from 'react'
+import React, { type ReactElement, useEffect } from 'react'
 
 import { mdiArrowLeft, mdiInformationOutline, mdiTrendingUp, mdiCreditCardOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -18,7 +18,6 @@ import {
     Text,
     Tooltip,
     useSearchParameters,
-    Alert,
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -60,9 +59,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     const utm_source = parameters.get('utm_source')
 
-    // Used when redirected from the SSC site for not having a subscription.
-    const showNoSubscriptionMessage = useMemo(() => parameters.get('noSubscription') === '1', [parameters])
-
     const codyPaymentsUrl = useCodyPaymentsUrl()
     const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
 
@@ -95,11 +91,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         <>
             <Page className={classNames('d-flex flex-column')}>
                 <PageTitle title="Cody Subscription" />
-                {showNoSubscriptionMessage && (
-                    <Alert variant="primary" className={styles.overflowVisible}>
-                        No subscription exists.
-                    </Alert>
-                )}
                 <PageHeader
                     className="mb-4"
                     actions={

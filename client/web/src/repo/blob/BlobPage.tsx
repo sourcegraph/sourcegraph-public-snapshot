@@ -65,8 +65,7 @@ import type { SearchStreamingProps } from '../../search'
 import { parseBrowserRepoURL, toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'
-import { useBlameHunks } from '../blame/useBlameHunks'
-import { useBlameVisibility } from '../blame/useBlameVisibility'
+import { useBlameHunks, useBlameVisibility } from '../blame/hooks'
 import { TryCodyWidget } from '../components/TryCodyWidget/TryCodyWidget'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
@@ -304,7 +303,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     }
 
     const [isBlameVisible] = useBlameVisibility(isPackage)
-    const blameHunks = useBlameHunks({ isPackage, repoName, revision, filePath }, props.platformContext.sourcegraphURL)
+    const blameHunks = useBlameHunks({ isPackage, repoName, revision, filePath })
 
     // OpenCodeGraph
     const [enableOpenCodeGraph] = useFeatureFlag('opencodegraph', false)

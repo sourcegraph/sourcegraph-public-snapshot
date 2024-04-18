@@ -17,7 +17,6 @@ go_library(
         "//internal/codeintel/policies/transport/graphql",
         "//internal/codeintel/ranking/transport/graphql",
         "//internal/codeintel/resolvers",
-        "//internal/codeintel/sentinel/transport/graphql",
         "//internal/codeintel/shared/lsifuploadstore",
         "//internal/codeintel/shared/resolvers",
         "//internal/codeintel/shared/resolvers/gitresolvers",

@@ -30,4 +30,5 @@ fragment ResolvedRepository on Repository {
     }
 
     ...RepoPage_ResolvedRevision
+    ...BlobPage_ResolvedRevision
 }

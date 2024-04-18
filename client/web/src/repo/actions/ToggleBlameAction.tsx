@@ -7,7 +7,7 @@ import type { RenderMode } from '@sourcegraph/shared/src/util/url'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
-import { useBlameVisibility } from '../blame/useBlameVisibility'
+import { useBlameVisibility } from '../blame/hooks'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import { RepoActionInfo } from '../RepoActionInfo'
 
