@@ -1,12 +1,10 @@
 package gitserver
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -19,7 +17,6 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -144,36 +141,6 @@ func NewMockClientWithExecReader(checker authz.SubRepoPermissionChecker, execRea
 		}, nil
 	})
 
-	// NOTE: This hook is the same as DiffPath, but with `execReader` used above
-	client.DiffPathFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
-		a := actor.FromContext(ctx)
-		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil {
-			return nil, err
-		} else if !hasAccess {
-			return nil, os.ErrNotExist
-		}
-		// Here is where all the mocking happens!
-		reader, err := execReader(ctx, repo, []string{"diff", sourceCommit, targetCommit, "--", path})
-		if err != nil {
-			return nil, err
-		}
-		defer reader.Close()
-
-		output, err := io.ReadAll(reader)
-		if err != nil {
-			return nil, err
-		}
-		if len(output) == 0 {
-			return nil, nil
-		}
-
-		d, err := diff.NewFileDiffReader(bytes.NewReader(output)).Read()
-		if err != nil {
-			return nil, err
-		}
-		return d.Hunks, nil
-	})
-
 	return client
 }
 
@@ -255,11 +222,32 @@ type CommitLog struct {
 	ChangedFiles []string
 }
 
+// ListRefsOpts are additional options passed to ListRefs.
+type ListRefsOpts struct {
+	// If true, only heads are returned. Can be combined with TagsOnly.
+	HeadsOnly bool
+	// If true, only tags are returned. Can be combined with HeadsOnly.
+	TagsOnly bool
+	// If set, only return refs that point at the given commit sha. Multiple
+	// values are ORed together.
+	PointsAtCommit []api.CommitID
+	// If set, only return refs that contain the given commit sha in their history.
+	Contains api.CommitID
+}
+
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
-	Treeish string        // the tree or commit to produce an archive for
-	Format  ArchiveFormat // format of the resulting archive (usually "tar" or "zip")
-	Paths   []string      // if nonempty, only include these paths.
+	// Treeish is the tree or commit to produce an archive for
+	Treeish string
+	// Format is the format of the resulting archive (usually "tar" or "zip")
+	Format ArchiveFormat
+	// Paths is a list of paths to include in the archive. If empty, the entire
+	// repository is included.
+	//
+	// Note: The Path strings are not guaranteed to be UTF-8 encoded, as file paths
+	// on Linux can be arbitrary byte sequences. Users should take care to validate / sanitize
+	// paths if necessary.
+	Paths []string
 }
 
 func (a *ArchiveOptions) Attrs() []attribute.KeyValue {
@@ -275,19 +263,31 @@ func (a *ArchiveOptions) Attrs() []attribute.KeyValue {
 }
 
 func (o *ArchiveOptions) FromProto(x *proto.ArchiveRequest) {
+	protoPaths := x.GetPaths()
+
+	paths := make([]string, len(protoPaths))
+	for i, p := range protoPaths {
+		paths[i] = string(p)
+	}
+
 	*o = ArchiveOptions{
 		Treeish: x.GetTreeish(),
 		Format:  ArchiveFormatFromProto(x.GetFormat()),
-		Paths:   x.GetPaths(),
+		Paths:   paths,
 	}
 }
 
 func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
+	paths := make([][]byte, len(o.Paths))
+	for i, p := range o.Paths {
+		paths[i] = []byte(p)
+	}
+
 	return &proto.ArchiveRequest{
 		Repo:    repo,
 		Treeish: o.Treeish,
 		Format:  o.Format.ToProto(),
-		Paths:   o.Paths,
+		Paths:   paths,
 	}
 }
 
@@ -336,10 +336,7 @@ type Client interface {
 	IsRepoCloneable(context.Context, api.RepoName) error
 
 	// ListRefs returns a list of all refs in the repository.
-	ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error)
-
-	// ListBranches returns a list of all branches in the repository.
-	ListBranches(ctx context.Context, repo api.RepoName) ([]*gitdomain.Branch, error)
+	ListRefs(ctx context.Context, repo api.RepoName, opt ListRefsOpts) ([]gitdomain.Ref, error)
 
 	// MergeBase returns the merge base commit sha for the specified revspecs.
 	MergeBase(ctx context.Context, repo api.RepoName, base, head string) (api.CommitID, error)
@@ -384,10 +381,6 @@ type Client interface {
 	// Stat returns a FileInfo describing the named file at commit.
 	Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error)
 
-	// DiffPath returns a position-ordered slice of changes (additions or deletions)
-	// of the given path between the given source and target commits.
-	DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error)
-
 	// ReadDir reads the contents of the named directory at commit.
 	ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
 
@@ -415,9 +408,6 @@ type Client interface {
 	// FirstEverCommit returns the first commit ever made to the repository.
 	FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit, error)
 
-	// ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
-	ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error)
-
 	// ListDirectoryChildren fetches the list of children under the given directory
 	// names. The result is a map keyed by the directory names with the list of files
 	// under each.
@@ -427,16 +417,6 @@ type Client interface {
 	// commits on a per-file basis. The iterator must be closed with Close when no
 	// longer required.
 	Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error)
-
-	// BranchesContaining returns a map from branch names to branch tip hashes for
-	// each branch containing the given commit.
-	// The returned branches will be in short form (e.g. "master" instead of
-	// "refs/heads/master").
-	BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error)
-
-	// RefDescriptions returns a map from commits to descriptions of the tip of each
-	// branch and tag of the given repository.
-	RefDescriptions(ctx context.Context, repo api.RepoName, gitObjs ...string) (map[string][]gitdomain.RefDescription, error)
 
 	// CommitGraph returns the commit graph for the given repository as a mapping
 	// from a commit to its parents. If a commit is supplied, the returned graph will

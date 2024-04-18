@@ -368,7 +368,7 @@ func writeSCIPDocuments(
 		var scipWriter lsifstore.SCIPWriter
 
 		if upload.Indexer == shared.SyntacticIndexer {
-			scipWriter, err = tx.NewSyntacticSCIPWriter(ctx, upload.ID)
+			scipWriter, err = tx.NewSyntacticSCIPWriter(upload.ID)
 		} else {
 			scipWriter, err = tx.NewPreciseSCIPWriter(ctx, upload.ID)
 		}

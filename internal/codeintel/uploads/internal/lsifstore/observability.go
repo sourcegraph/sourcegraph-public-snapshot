@@ -13,6 +13,17 @@ type operations struct {
 	reconcileCandidates         *observation.Operation
 	deleteLsifDataByUploadIds   *observation.Operation
 	deleteUnreferencedDocuments *observation.Operation
+	writerOperations            writerOperations
+}
+
+type writerOperations struct {
+	insertDocuments       *observation.Operation
+	insertDocumentLookups *observation.Operation
+	constructTrie         *observation.Operation
+	insertSymbolNames     *observation.Operation
+	insertSymbols         *observation.Operation
+	flushSymbolNames      *observation.Operation
+	flushSymbols          *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -41,5 +52,14 @@ func newOperations(observationCtx *observation.Context) *operations {
 		reconcileCandidates:         op("ReconcileCandidates"),
 		deleteLsifDataByUploadIds:   op("DeleteLsifDataByUploadIds"),
 		deleteUnreferencedDocuments: op("DeleteUnreferencedDocuments"),
+		writerOperations: writerOperations{
+			insertDocuments:       op("InsertDocuments"),
+			insertDocumentLookups: op("InsertDocumentLookups"),
+			constructTrie:         op("ConstructTrie"),
+			insertSymbols:         op("InsertSymbols"),
+			insertSymbolNames:     op("InsertSymbolNames"),
+			flushSymbolNames:      op("flushSymbolNames"),
+			flushSymbols:          op("flushSymbols"),
+		},
 	}
 }

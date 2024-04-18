@@ -106,6 +106,7 @@ var DeploySourcegraphDockerImages = []string{
 	"alpine-3.14",
 	"postgres-12-alpine",
 	"blobstore",
+	"caddy",
 	"cadvisor",
 	"codeinsights-db",
 	"codeintel-db",

@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringalertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -16,9 +17,12 @@ func createJobAlerts(
 	id resourceid.ID,
 	vars Variables,
 	channels alertpolicy.NotificationChannels,
-) error {
+) ([]monitoringalertpolicy.MonitoringAlertPolicy, error) {
+	// Collect all alerts to aggregate in a dashboard
+	var alerts []monitoringalertpolicy.MonitoringAlertPolicy
+
 	// Alert whenever a Cloud Run Job fails
-	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+	alert, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 		Service:       vars.Service,
 		EnvironmentID: vars.EnvironmentID,
 
@@ -43,20 +47,22 @@ func createJobAlerts(
 			Comparison: alertpolicy.ComparisonGT,
 		},
 		NotificationChannels: channels,
-	}); err != nil {
-		return errors.Wrap(err, "job_failures")
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "job_failures")
 	}
+	alerts = append(alerts, alert.AlertPolicy)
 
 	interval, err := vars.JobSchedule.FindMaxCronInterval()
 	if err != nil {
-		return errors.Wrap(err, "JobSchedule.FindMaxCronInterval")
+		return nil, errors.Wrap(err, "JobSchedule.FindMaxCronInterval")
 	}
 	if interval != nil {
 		// Use the duration calculated from the cron, with some leeway. Use
 		// math.Ceil just in case, as Minutes() may give us floats
 		absentMinutes := int(math.Ceil(interval.Minutes())) + 10
 
-		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+		alert, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			Service:       vars.Service,
 			EnvironmentID: vars.EnvironmentID,
 
@@ -79,10 +85,12 @@ func createJobAlerts(
 				Duration: fmt.Sprintf("%ds", absentMinutes*60),
 			},
 			NotificationChannels: channels,
-		}); err != nil {
-			return errors.Wrap(err, "job_execution_absence")
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "job_execution_absence")
 		}
+		alerts = append(alerts, alert.AlertPolicy)
 	}
 
-	return nil
+	return alerts, nil
 }

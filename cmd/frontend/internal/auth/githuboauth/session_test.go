@@ -13,6 +13,8 @@ import (
 	"github.com/google/go-github/v55/github"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -290,6 +292,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				ctx := githublogin.WithUser(context.Background(), githubconvert.ConvertUserV55ToV48(ci.ghUser))
 				s := &sessionIssuerHelper{
 					CodeHost:     codeHost,
+					logger:       logtest.Scoped(t),
 					clientID:     clientID,
 					allowSignup:  ci.allowSignup,
 					allowOrgs:    ci.allowOrgs,
@@ -359,6 +362,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 	ctx := githublogin.WithUser(context.Background(), githubconvert.ConvertUserV55ToV48(ghUser))
 	s := &sessionIssuerHelper{
 		CodeHost:    codeHost,
+		logger:      logtest.Scoped(t),
 		clientID:    clientID,
 		allowSignup: true,
 		allowOrgs:   nil,
@@ -411,6 +415,7 @@ func TestSessionIssuerHelper_SignupFailsWithLastError(t *testing.T) {
 
 	ctx := githublogin.WithUser(context.Background(), githubconvert.ConvertUserV55ToV48(ghUser))
 	s := &sessionIssuerHelper{
+		logger:      logtest.Scoped(t),
 		CodeHost:    codeHost,
 		clientID:    clientID,
 		allowSignup: true,
@@ -437,6 +442,7 @@ func TestVerifyUserOrgs_UserHasMoreThan100Orgs(t *testing.T) {
 	}()
 
 	s := &sessionIssuerHelper{
+		logger:       logtest.Scoped(t),
 		CodeHost:     nil,
 		clientID:     "clientID",
 		allowSignup:  true,

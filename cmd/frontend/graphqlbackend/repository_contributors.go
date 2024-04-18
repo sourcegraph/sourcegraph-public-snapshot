@@ -5,11 +5,13 @@ import (
 	"math"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -23,10 +25,20 @@ func (r *RepositoryResolver) Contributors(args *struct {
 	repositoryContributorsArgs
 	graphqlutil.ConnectionResolverArgs
 }) (*graphqlutil.ConnectionResolver[*repositoryContributorResolver], error) {
+	var after time.Time
+	if args.AfterDate != nil && *args.AfterDate != "" {
+		var err error
+		after, err = query.ParseGitDate(*args.AfterDate, time.Now)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse after date")
+		}
+	}
+
 	connectionStore := &repositoryContributorConnectionStore{
-		db:   r.db,
-		args: &args.repositoryContributorsArgs,
-		repo: r,
+		db:    r.db,
+		args:  &args.repositoryContributorsArgs,
+		after: after,
+		repo:  r,
 	}
 	reverse := false
 	connectionOptions := graphqlutil.ConnectionResolverOptions{
@@ -36,8 +48,9 @@ func (r *RepositoryResolver) Contributors(args *struct {
 }
 
 type repositoryContributorConnectionStore struct {
-	db   database.DB
-	args *repositoryContributorsArgs
+	db    database.DB
+	args  *repositoryContributorsArgs
+	after time.Time
 
 	repo *RepositoryResolver
 
@@ -103,9 +116,7 @@ func (s *repositoryContributorConnectionStore) compute(ctx context.Context) ([]*
 		if s.args.Path != nil {
 			opt.Path = *s.args.Path
 		}
-		if s.args.AfterDate != nil {
-			opt.After = *s.args.AfterDate
-		}
+		opt.After = s.after
 		s.results, s.err = client.ContributorCount(ctx, s.repo.RepoName(), opt)
 	})
 	return s.results, s.err

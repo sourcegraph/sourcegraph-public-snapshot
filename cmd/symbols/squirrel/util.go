@@ -49,19 +49,6 @@ func getRoot(node *sitter.Node) *sitter.Node {
 	return top
 }
 
-// isLessRange compares ranges.
-func isLessRange(a, b types.Range) bool {
-	if a.Row == b.Row {
-		return a.Column < b.Column
-	}
-	return a.Row < b.Row
-}
-
-// tabsToSpaces converts tabs to spaces.
-func tabsToSpaces(s string) string {
-	return strings.ReplaceAll(s, "\t", "    ")
-}
-
 const tabSize = 4
 
 // lengthInSpaces returns the length of the string in spaces (using tabSize).
@@ -93,9 +80,6 @@ func spacesToColumn(s string, column int) int {
 	}
 	return total
 }
-
-// colorSprintfFunc is a color printing function.
-type colorSprintfFunc func(a ...any) string
 
 // bracket prefixes all the lines of the given string with pretty brackets.
 func bracket(text string) string {

@@ -863,6 +863,72 @@ func TestGRPCServer_RevAtTime(t *testing.T) {
 	})
 }
 
+func TestGRPCServer_ListRefs(t *testing.T) {
+	ctx := context.Background()
+	mockSS := gitserver.NewMockGitserverService_ListRefsServer()
+	mockSS.ContextFunc.SetDefaultReturn(ctx)
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &grpcServer{}
+		err := gs.ListRefs(&v1.ListRefsRequest{RepoName: ""}, mockSS)
+		require.ErrorContains(t, err, "repo must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+	})
+	t.Run("checks for uncloned repo", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
+		err := gs.ListRefs(&v1.ListRefsRequest{RepoName: "therepo"}, mockSS)
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		require.Contains(t, err.Error(), "repo not found")
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
+	})
+	t.Run("e2e", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		// Repo is cloned, proceed!
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
+		b := git.NewMockGitBackend()
+		it := git.NewMockRefIterator()
+		it.NextFunc.PushReturn(&gitdomain.Ref{Name: "refs/heads/master"}, nil)
+		it.NextFunc.PushReturn(nil, io.EOF)
+		b.ListRefsFunc.SetDefaultReturn(it, nil)
+		gs := &grpcServer{
+			svc: NewMockService(),
+			fs:  fs,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				return b
+			},
+		}
+
+		cli := spawnServer(t, gs)
+		cc, err := cli.ListRefs(ctx, &v1.ListRefsRequest{
+			RepoName: "therepo",
+		})
+		require.NoError(t, err)
+		refs := []*v1.GitRef{}
+		for {
+			resp, err := cc.Recv()
+			if err == io.EOF {
+				break
+			}
+			require.NoError(t, err)
+			refs = append(refs, resp.GetRefs()...)
+		}
+		if diff := cmp.Diff([]*v1.GitRef{
+			{
+				RefName:   "refs/heads/master",
+				CreatedAt: timestamppb.New(time.Time{}),
+			},
+		}, refs, cmpopts.IgnoreUnexported(v1.GitRef{}, timestamppb.Timestamp{})); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+	})
+}
+
 func assertGRPCStatusCode(t *testing.T, err error, want codes.Code) {
 	t.Helper()
 	s, ok := status.FromError(err)
