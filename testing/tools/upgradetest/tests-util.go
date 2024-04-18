@@ -54,6 +54,11 @@ func (t *Test) DisplayLog() {
 	}
 }
 
+// Display if a test has failed
+func (t *Test) Failed() bool {
+	return 0 < len(t.Errors)
+}
+
 // TestResults is a collection of tests, organized by type. Its methods are generally used to control its logging behavior.
 type TestResults struct {
 	StandardUpgradeTests []Test
@@ -81,6 +86,32 @@ func (r *TestResults) AddAutoTest(test Test) {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 	r.AutoupgradeTests = append(r.AutoupgradeTests, test)
+}
+
+// Failed returns true if any given test has errors registered.
+func (r *TestResults) Failed() bool {
+	if 0 < len(r.StandardUpgradeTests) {
+		for _, test := range r.StandardUpgradeTests {
+			if test.Failed() {
+				return true
+			}
+		}
+	}
+	if 0 < len(r.MVUUpgradeTests) {
+		for _, test := range r.MVUUpgradeTests {
+			if test.Failed() {
+				return true
+			}
+		}
+	}
+	if 0 < len(r.AutoupgradeTests) {
+		for _, test := range r.AutoupgradeTests {
+			if test.Failed() {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // Used in all-type test
@@ -118,7 +149,7 @@ func (r *TestResults) PrintSimpleResults() {
 	if len(r.StandardUpgradeTests) != 0 {
 		stdRes := []string{}
 		for _, test := range r.StandardUpgradeTests {
-			if 0 < len(test.Errors) {
+			if test.Failed() {
 				stdRes = append(stdRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[len(test.Errors)-1]))
 			} else {
 				stdRes = append(stdRes, fmt.Sprintf("✅ %s Passed -- %s ", test.Version.String(), test.Runtime))
@@ -130,7 +161,7 @@ func (r *TestResults) PrintSimpleResults() {
 	if len(r.MVUUpgradeTests) != 0 {
 		mvuRes := []string{}
 		for _, test := range r.MVUUpgradeTests {
-			if 0 < len(test.Errors) {
+			if test.Failed() {
 				mvuRes = append(mvuRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[len(test.Errors)-1]))
 			} else {
 				mvuRes = append(mvuRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version.String(), test.Runtime))
@@ -142,7 +173,7 @@ func (r *TestResults) PrintSimpleResults() {
 	if len(r.AutoupgradeTests) != 0 {
 		autoRes := []string{}
 		for _, test := range r.AutoupgradeTests {
-			if 0 < len(test.Errors) {
+			if test.Failed() {
 				autoRes = append(autoRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[len(test.Errors)-1]))
 			} else {
 				autoRes = append(autoRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version.String(), test.Runtime))
@@ -158,21 +189,21 @@ func (r *TestResults) DisplayErrors() {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 	for _, test := range r.StandardUpgradeTests {
-		if 0 < len(test.Errors) {
+		if test.Failed() {
 			fmt.Printf("--- 🚨 Standard Upgrade Test %s Failed:\n", test.Version.String())
-			test.DisplayErrors()
+			test.DisplayLog()
 		}
 	}
 	for _, test := range r.MVUUpgradeTests {
-		if 0 < len(test.Errors) {
+		if test.Failed() {
 			fmt.Printf("--- 🚨 Multiversion Upgrade Test %s Failed:\n", test.Version.String())
-			test.DisplayErrors()
+			test.DisplayLog()
 		}
 	}
 	for _, test := range r.AutoupgradeTests {
-		if 0 < len(test.Errors) {
+		if test.Failed() {
 			fmt.Printf("--- 🚨 Auto Upgrade Test %s Failed:\n", test.Version.String())
-			test.DisplayErrors()
+			test.DisplayLog()
 		}
 	}
 }
