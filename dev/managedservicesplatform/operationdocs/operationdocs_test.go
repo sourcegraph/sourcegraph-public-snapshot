@@ -24,10 +24,9 @@ const (
 
 func TestRender(t *testing.T) {
 	for _, tc := range []struct {
-		name            string
-		spec            spec.Spec
-		collectedAlerts map[string]terraform.AlertPolicy
-		opts            Options
+		name string
+		spec spec.Spec
+		opts Options
 	}{{
 		name: "basic",
 		spec: spec.Spec{
@@ -55,20 +54,22 @@ func TestRender(t *testing.T) {
 				Stages: []spec.RolloutStageSpec{{EnvironmentID: testServiceEnvironment}},
 			},
 		},
-		collectedAlerts: map[string]terraform.AlertPolicy{
-			"monitoring-common-cpu": {
-				DisplayName: "High Container CPU Utilization",
-				Documentation: terraform.Documentation{
-					Content: "High CPU Usage - it may be neccessary to reduce load or increase CPU allocation",
+		opts: Options{
+			AlertPolicies: map[string]terraform.AlertPolicy{
+				"monitoring-common-cpu": {
+					DisplayName: "High Container CPU Utilization",
+					Documentation: terraform.Documentation{
+						Content: "High CPU Usage - it may be neccessary to reduce load or increase CPU allocation",
+					},
+					Severity: "WARNING",
 				},
-				Severity: "WARNING",
-			},
-			"monitoring-common-memory": {
-				DisplayName: "High Container Memory Utilization",
-				Documentation: terraform.Documentation{
-					Content: "High Memory Usage - it may be neccessary to reduce load or increase memory allocation",
+				"monitoring-common-memory": {
+					DisplayName: "High Container Memory Utilization",
+					Documentation: terraform.Documentation{
+						Content: "High Memory Usage - it may be neccessary to reduce load or increase memory allocation",
+					},
+					Severity: "WARNING",
 				},
-				Severity: "WARNING",
 			},
 		},
 	}, {
@@ -104,20 +105,22 @@ func TestRender(t *testing.T) {
 				},
 			}},
 		},
-		collectedAlerts: map[string]terraform.AlertPolicy{
-			"monitoring-common-cpu": {
-				DisplayName: "High Container CPU Utilization",
-				Documentation: terraform.Documentation{
-					Content: "High CPU Usage - it may be neccessary to reduce load or increase CPU allocation",
+		opts: Options{
+			AlertPolicies: map[string]terraform.AlertPolicy{
+				"monitoring-common-cpu": {
+					DisplayName: "High Container CPU Utilization",
+					Documentation: terraform.Documentation{
+						Content: "High CPU Usage - it may be neccessary to reduce load or increase CPU allocation",
+					},
+					Severity: "WARNING",
 				},
-				Severity: "WARNING",
-			},
-			"monitoring-common-memory": {
-				DisplayName: "High Container Memory Utilization",
-				Documentation: terraform.Documentation{
-					Content: "High Memory Usage - it may be neccessary to reduce load or increase memory allocation",
+				"monitoring-common-memory": {
+					DisplayName: "High Container Memory Utilization",
+					Documentation: terraform.Documentation{
+						Content: "High Memory Usage - it may be neccessary to reduce load or increase memory allocation",
+					},
+					Severity: "WARNING",
 				},
-				Severity: "WARNING",
 			},
 		},
 	}, {
@@ -149,20 +152,22 @@ func TestRender(t *testing.T) {
 
 Some additional operations!`),
 		},
-		collectedAlerts: map[string]terraform.AlertPolicy{
-			"monitoring-common-cpu": {
-				DisplayName: "High Container CPU Utilization",
-				Documentation: terraform.Documentation{
-					Content: "High CPU Usage - it may be neccessary to reduce load or increase CPU allocation",
+		opts: Options{
+			AlertPolicies: map[string]terraform.AlertPolicy{
+				"monitoring-common-cpu": {
+					DisplayName: "High Container CPU Utilization",
+					Documentation: terraform.Documentation{
+						Content: "High CPU Usage - it may be neccessary to reduce load or increase CPU allocation",
+					},
+					Severity: "WARNING",
 				},
-				Severity: "WARNING",
-			},
-			"monitoring-common-memory": {
-				DisplayName: "High Container Memory Utilization",
-				Documentation: terraform.Documentation{
-					Content: "High Memory Usage - it may be neccessary to reduce load or increase memory allocation",
+				"monitoring-common-memory": {
+					DisplayName: "High Container Memory Utilization",
+					Documentation: terraform.Documentation{
+						Content: "High Memory Usage - it may be neccessary to reduce load or increase memory allocation",
+					},
+					Severity: "WARNING",
 				},
-				Severity: "WARNING",
 			},
 		},
 	}, {
@@ -199,25 +204,27 @@ Some additional operations!`),
 				Stages: []spec.RolloutStageSpec{{EnvironmentID: testServiceEnvironment}, {EnvironmentID: robertServiceEnvironment}},
 			},
 		},
-		collectedAlerts: map[string]terraform.AlertPolicy{
-			"monitoring-common-cpu": {
-				DisplayName: "High Container CPU Utilization",
-				Documentation: terraform.Documentation{
-					Content: "High CPU Usage - it may be neccessary to reduce load or increase CPU allocation",
+		opts: Options{
+			AlertPolicies: map[string]terraform.AlertPolicy{
+				"monitoring-common-cpu": {
+					DisplayName: "High Container CPU Utilization",
+					Documentation: terraform.Documentation{
+						Content: "High CPU Usage - it may be neccessary to reduce load or increase CPU allocation",
+					},
+					Severity: "WARNING",
 				},
-				Severity: "WARNING",
-			},
-			"monitoring-common-memory": {
-				DisplayName: "High Container Memory Utilization",
-				Documentation: terraform.Documentation{
-					Content: "High Memory Usage - it may be neccessary to reduce load or increase memory allocation",
+				"monitoring-common-memory": {
+					DisplayName: "High Container Memory Utilization",
+					Documentation: terraform.Documentation{
+						Content: "High Memory Usage - it may be neccessary to reduce load or increase memory allocation",
+					},
+					Severity: "WARNING",
 				},
-				Severity: "WARNING",
 			},
 		},
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
-			doc, err := Render(tc.spec, tc.collectedAlerts, tc.opts)
+			doc, err := Render(tc.spec, tc.opts)
 			require.NoError(t, err)
 			autogold.ExpectFile(t, autogold.Raw(doc))
 		})
