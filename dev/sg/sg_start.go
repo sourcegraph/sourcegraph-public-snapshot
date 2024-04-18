@@ -253,14 +253,14 @@ func start(ctx context.Context, args StartArgs) error {
 	var (
 		childCtx context.Context
 		cancel   func()
-		errors   = make(chan error)
+		errs     = make(chan error)
 		hash     uint64
 	)
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case err := <-errors:
+		case err := <-errs:
 			if err != nil {
 				return err
 			}
@@ -269,7 +269,7 @@ func start(ctx context.Context, args StartArgs) error {
 			// to the config file are relevant to the commands we're running
 			cmds, err := args.toCommands(conf)
 			if err != nil {
-				return nil
+				return err
 			}
 
 			newHash, err := hashstructure.Hash(cmds, hashstructure.FormatV2, nil)
@@ -286,10 +286,15 @@ func start(ctx context.Context, args StartArgs) error {
 			if cancel != nil {
 				cancel()
 
-				err := <-errors
-
-				if err != context.Canceled {
-					return err
+				// Wait for the context to close and make sure it's a context cancellation error.
+				// In the case where all watched commands have already exited with 0 status,
+				// there won't be an error so we can just continue
+				select {
+				case err := <-errs:
+					if !errors.Is(err, context.Canceled) {
+						return err
+					}
+				case <-time.After(500 * time.Millisecond):
 				}
 			}
 
@@ -301,9 +306,9 @@ func start(ctx context.Context, args StartArgs) error {
 
 			go func() {
 				if args.Describe {
-					errors <- cmds.describe(conf)
+					errs <- cmds.describe(conf)
 				} else {
-					errors <- cmds.start(childCtx)
+					errs <- cmds.start(childCtx)
 				}
 			}()
 		}
@@ -585,15 +590,4 @@ func createLogLevelAdder(overrides map[string]string) func(*run.SGConfigCommandO
 			config.Env[logLevelVariable] = level
 		}
 	}
-}
-
-func pathExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
 }
