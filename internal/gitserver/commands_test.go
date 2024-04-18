@@ -40,65 +40,6 @@ func (f ArchiveFormat) Generate(rand *rand.Rand, _ int) reflect.Value {
 	return reflect.ValueOf(choices[index])
 }
 
-func TestParseShortLog(t *testing.T) {
-	tests := []struct {
-		name    string
-		input   string // in the format of `git shortlog -sne`
-		want    []*gitdomain.ContributorCount
-		wantErr error
-	}{
-		{
-			name: "basic",
-			input: `
-  1125	Jane Doe <jane@sourcegraph.com>
-   390	Bot Of Doom <bot@doombot.com>
-`,
-			want: []*gitdomain.ContributorCount{
-				{
-					Name:  "Jane Doe",
-					Email: "jane@sourcegraph.com",
-					Count: 1125,
-				},
-				{
-					Name:  "Bot Of Doom",
-					Email: "bot@doombot.com",
-					Count: 390,
-				},
-			},
-		},
-		{
-			name: "commonly malformed (email address as name)",
-			input: `  1125	jane@sourcegraph.com <jane@sourcegraph.com>
-   390	Bot Of Doom <bot@doombot.com>
-`,
-			want: []*gitdomain.ContributorCount{
-				{
-					Name:  "jane@sourcegraph.com",
-					Email: "jane@sourcegraph.com",
-					Count: 1125,
-				},
-				{
-					Name:  "Bot Of Doom",
-					Email: "bot@doombot.com",
-					Count: 390,
-				},
-			},
-		},
-	}
-	for _, tst := range tests {
-		t.Run(tst.name, func(t *testing.T) {
-			got, gotErr := parseShortLog([]byte(tst.input))
-			if (gotErr == nil) != (tst.wantErr == nil) {
-				t.Fatalf("gotErr %+v wantErr %+v", gotErr, tst.wantErr)
-			}
-			if !reflect.DeepEqual(got, tst.want) {
-				t.Logf("got %q", got)
-				t.Fatalf("want %q", tst.want)
-			}
-		})
-	}
-}
-
 func TestDiffWithSubRepoFiltering(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{
@@ -1348,10 +1289,6 @@ func getGitCommandsWithFileLists(filenamesPerCommit ...[]string) []string {
 	return cmds
 }
 
-func makeGitCommit(commitMessage string, seconds int) string {
-	return fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05=%dZ git commit -m %s --author='a <a@a.com>' --date 2006-01-02T15:04:0%dZ", seconds, commitMessage, seconds)
-}
-
 func getGitCommandsWithFiles(fileName1, fileName2 string) []string {
 	return []string{
 		fmt.Sprintf("touch %s", fileName1),
@@ -2188,5 +2125,54 @@ func TestClient_ListRefs(t *testing.T) {
 		_, err := c.ListRefs(context.Background(), "repo", ListRefsOpts{})
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
+	})
+}
+
+func TestClient_ContributorCounts(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.ContributorCountsFunc.SetDefaultReturn(&proto.ContributorCountsResponse{
+					Counts: []*proto.ContributorCount{
+						{
+							Author: &proto.GitSignature{
+								Name:  []byte("Foo"),
+								Email: []byte("foo@sourcegraph.com"),
+							},
+							Count: 1,
+						},
+					},
+				}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		res, err := c.ContributorCount(context.Background(), "repo", ContributorOptions{Range: "asd", After: time.Now(), Path: "path"})
+		require.NoError(t, err)
+		require.Equal(t, []*gitdomain.ContributorCount{{Name: "Foo", Email: "foo@sourcegraph.com", Count: 1}}, res)
+	})
+
+	t.Run("returns common errors correctly", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+					Repo: "repo",
+					Spec: "HEAD",
+				})
+				require.NoError(t, err)
+				c.ContributorCountsFunc.PushReturn(nil, s.Err())
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.ContributorCount(context.Background(), "repo", ContributorOptions{})
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 	})
 }

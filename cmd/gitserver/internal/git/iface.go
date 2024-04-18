@@ -86,6 +86,11 @@ type GitBackend interface {
 	// - Rename detection
 	// If either base or head don't exist, a RevisionNotFoundError is returned.
 	RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, paths ...string) (io.ReadCloser, error)
+	// ContributorCounts returns the number of commits per contributor in the
+	// set of commits specified by the options.
+	// Aggregations are done by email address.
+	// If range does not exist, a RevisionNotFoundError is returned.
+	ContributorCounts(ctx context.Context, opt ContributorCountsOpts) ([]*gitdomain.ContributorCount, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
@@ -174,4 +179,18 @@ type RefIterator interface {
 	Next() (*gitdomain.Ref, error)
 	// Close releases resources associated with the iterator.
 	Close() error
+}
+
+// ContributorCountsOpts are options for the ContributorCounts method.
+type ContributorCountsOpts struct {
+	// If set, only count commits that are in the given range.
+	// Range can contain:
+	// - A commit hash or ref name, which includes that commit/ref and all of the parents
+	// - A range of two commits/hashes, separated by either .. or ... notation: A..B, A...B
+	Range string
+	// If set, only count commits that are after the given time.
+	After time.Time
+	// If set, only count commits that are in the given path. Can be a pathspec
+	// (e.g., "foo/bar/").
+	Path string
 }

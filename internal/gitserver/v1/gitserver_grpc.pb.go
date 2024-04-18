@@ -47,6 +47,7 @@ const (
 	GitserverService_ListRefs_FullMethodName                    = "/gitserver.v1.GitserverService/ListRefs"
 	GitserverService_RevAtTime_FullMethodName                   = "/gitserver.v1.GitserverService/RevAtTime"
 	GitserverService_RawDiff_FullMethodName                     = "/gitserver.v1.GitserverService/RawDiff"
+	GitserverService_ContributorCounts_FullMethodName           = "/gitserver.v1.GitserverService/ContributorCounts"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -186,6 +187,11 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	RawDiff(ctx context.Context, in *RawDiffRequest, opts ...grpc.CallOption) (GitserverService_RawDiffClient, error)
+	// ContributorCounts returns the number of commits grouped by commit author.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
+	ContributorCounts(ctx context.Context, in *ContributorCountsRequest, opts ...grpc.CallOption) (*ContributorCountsResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -634,6 +640,15 @@ func (x *gitserverServiceRawDiffClient) Recv() (*RawDiffResponse, error) {
 	return m, nil
 }
 
+func (c *gitserverServiceClient) ContributorCounts(ctx context.Context, in *ContributorCountsRequest, opts ...grpc.CallOption) (*ContributorCountsResponse, error) {
+	out := new(ContributorCountsResponse)
+	err := c.cc.Invoke(ctx, GitserverService_ContributorCounts_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -771,6 +786,11 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	RawDiff(*RawDiffRequest, GitserverService_RawDiffServer) error
+	// ContributorCounts returns the number of commits grouped by commit author.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
+	ContributorCounts(context.Context, *ContributorCountsRequest) (*ContributorCountsResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -861,6 +881,9 @@ func (UnimplementedGitserverServiceServer) RevAtTime(context.Context, *RevAtTime
 }
 func (UnimplementedGitserverServiceServer) RawDiff(*RawDiffRequest, GitserverService_RawDiffServer) error {
 	return status.Errorf(codes.Unimplemented, "method RawDiff not implemented")
+}
+func (UnimplementedGitserverServiceServer) ContributorCounts(context.Context, *ContributorCountsRequest) (*ContributorCountsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ContributorCounts not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1408,6 +1431,24 @@ func (x *gitserverServiceRawDiffServer) Send(m *RawDiffResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GitserverService_ContributorCounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ContributorCountsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).ContributorCounts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_ContributorCounts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).ContributorCounts(ctx, req.(*ContributorCountsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1494,6 +1535,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RevAtTime",
 			Handler:    _GitserverService_RevAtTime_Handler,
+		},
+		{
+			MethodName: "ContributorCounts",
+			Handler:    _GitserverService_ContributorCounts_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
