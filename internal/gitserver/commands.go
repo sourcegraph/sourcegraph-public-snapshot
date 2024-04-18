@@ -62,6 +62,8 @@ func (c *clientImplementor) Diff(ctx context.Context, repo api.RepoName, opts Di
 		req.ComparisonType = proto.RawDiffRequest_COMPARISON_TYPE_ONLY_IN_HEAD
 	} else if opts.RangeType != ".." {
 		req.ComparisonType = proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION
+	} else {
+		req.ComparisonType = proto.RawDiffRequest_COMPARISON_TYPE_ONLY_IN_HEAD
 	}
 
 	client, err := c.clientSource.ClientForRepo(ctx, repo)
