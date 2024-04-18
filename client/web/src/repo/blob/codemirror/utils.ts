@@ -1,4 +1,4 @@
-import type { Line, SelectionRange, Text } from '@codemirror/state'
+import { type Line, type SelectionRange, type Text } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 
 import type { LineOrPositionOrRange } from '@sourcegraph/common'

@@ -21,6 +21,8 @@ export type {
     GoToDefinitionOptions,
     DocumentInfo,
 } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/api'
+export { type BlameHunk, type BlameHunkData, fetchBlameHunksMemoized } from '@sourcegraph/web/src/repo/blame/shared'
+export { blameData, showBlame } from '@sourcegraph/web/src/repo/blob/codemirror/blame-decorations'
 export {
     selectableLineNumbers,
     type SelectedLineRange,

@@ -74,5 +74,8 @@ Otherwise, you can create a new base image configuration file:
   - See the other images under [`wolfi-images/`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/) and [`chainguard-images/images`](https://github.com/chainguard-images/images/tree/main/images) for examples and best practices.
 - Build the base image locally using `sg wolfi image <image-name>`
   - Test your changes by exec-ing into the image
-- Review an existing `BUILD.bazel` file like `cmd/gitserver/BUILD.bazel` for examples on how to declare an oci_image build target that uses your new base image.
+- Review existing `BUILD.bazel` files like `cmd/gitserver/BUILD.bazel` for examples of how to declare an `oci_image()` build target that uses your new base image.
   - The key parts are to ensure the directory matches the YAML filename, calling `wolfi_base()`, and referencing `:wolfi_base_image`.
+  - Test the build using the relevant Bazel targets e.g. `bazel run //cmd/gitserver:image_tarball`
+
+This [pull request](https://github.com/sourcegraph/sourcegraph/pull/61881) provides a worked example of the above.

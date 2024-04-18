@@ -17,7 +17,7 @@ export const SearchPage: FC = () => {
 
     return (
         <SearchPageContent
-            shouldShowAddCodeHostWidget={shouldShowAddCodeHostWidget}
+            shouldShowAddCodeHostWidget={shouldShowAddCodeHostWidget || true}
             isSourcegraphDotCom={isSourcegraphDotCom}
         />
     )

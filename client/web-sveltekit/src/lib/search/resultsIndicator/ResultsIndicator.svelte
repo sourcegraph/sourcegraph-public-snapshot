@@ -14,6 +14,7 @@
     export let severity: string
 
     const SEARCH_JOB_THRESHOLD = 10000
+
     const icons: Record<string, string> = {
         info: mdiInformationOutline,
         warning: mdiAlert,
@@ -26,6 +27,7 @@
     $: severity = progress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
         ? 'error'
         : 'info'
+    $: isError = severity === 'error' || state === 'error'
     /*
      * NOTE: progress.done and state === 'complete' will sometimes be different values.
      * Only one of them needs to evaluate to true in order for the ResultIndicator to
@@ -35,72 +37,51 @@
 </script>
 
 <div class="indicator">
-    <div class="icon">
+    <div>
         {#if loading}
             <LoadingSpinner inline />
         {:else}
-            <Icon svgPath={icons[severity]} size={18} />
+            <Icon svgPath={icons[severity]} size={18} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
         {/if}
     </div>
 
     <div class="messages">
         <ProgressMessage {state} {progress} {severity} />
-
-        <div class="action-container">
-            {#if !done && takingTooLong}
-                <TimeoutMessage />
-            {:else if done}
-                <SuggestedAction {progress} {suggestedItems} {severity} {state} />
-            {:else}
-                <div class="suggested-action">
-                    {#if elapsedDuration <= SEARCH_JOB_THRESHOLD}
-                        <div class="running-search">
-                            <small> Running Search </small>
-                        </div>
-                    {/if}
-                </div>
-            {/if}
-        </div>
+        {#if !done && takingTooLong}
+            <TimeoutMessage />
+        {:else if done}
+            <SuggestedAction {progress} {suggestedItems} {severity} {state} />
+        {:else}
+            <small>Running Search</small>
+        {/if}
     </div>
-
-    <div class="dropdown-icon">
-        <Icon svgPath={mdiChevronDown} size={18} />
-    </div>
+    <Icon svgPath={mdiChevronDown} size={18} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
 </div>
 
 <style lang="scss">
-    .action-container {
-        margin-top: 0.3rem;
-    }
-
-    .icon {
-        margin-right: 0.5rem;
-    }
-
-    .dropdown-icon {
-        margin-left: 1.2rem;
-    }
-
     .indicator {
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: space-evenly;
         align-items: center;
-        display: flex;
-        flex-flow: row nowrap;
-        justify-content: space-between;
-    }
+        gap: 0.5rem;
+        min-width: 200px;
+        max-width: fit-content;
 
-    .messages {
-        align-content: center;
-        align-items: flex-start;
-        display: flex;
-        flex-flow: column nowrap;
-    }
+        padding: 0.25rem;
 
-    .running-search {
-        color: var(--text-muted);
-    }
+        .messages {
+            display: flex;
+            flex-flow: column nowrap;
+            justify-content: center;
+            align-items: flex-start;
+            margin-right: 0.75rem;
+            margin-left: 0.5rem;
+            row-gap: 0.25rem;
+        }
 
-    .suggested-action {
-        display: flex;
-        flex-flow: row nowrap;
+        small {
+            color: var(--text-muted);
+        }
     }
 </style>

@@ -15,9 +15,11 @@ import (
 )
 
 func (g *gitCLIBackend) ArchiveReader(ctx context.Context, format git.ArchiveFormat, treeish string, paths []string) (io.ReadCloser, error) {
-	if err := g.verifyPaths(ctx, treeish, paths); err != nil {
-		return nil, err
-	}
+	// TODO(pjlast): temporary removal of path verification because it has edge
+	// cases that we're not handling correctly.
+	// if err := g.verifyPaths(ctx, treeish, paths); err != nil {
+	// 	return nil, err
+	// }
 
 	archiveArgs := buildArchiveArgs(format, treeish, paths)
 

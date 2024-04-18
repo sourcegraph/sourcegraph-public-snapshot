@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	codycontext "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/context/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	codycontext "github.com/sourcegraph/sourcegraph/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
@@ -24,6 +24,9 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
+	observationCtx = observationCtx.Clone()
+	observationCtx.Logger = observationCtx.Logger.Scoped("codycontext")
+
 	embeddingsClient := embeddings.NewDefaultClient()
 	searchClient := client.New(observationCtx.Logger, db, gitserver.NewClient("graphql.context.search"))
 	getQdrantDB := vdb.NewDBFromConfFunc(observationCtx.Logger, vdb.NewDisabledDB())
@@ -34,8 +37,8 @@ func Init(
 		db,
 		embeddingsClient,
 		searchClient,
+		services.GitserverClient.Scoped("codycontext.client"),
 		getQdrantSearcher,
-		codycontext.NewCodyIgnoreFilter(services.GitserverClient.Scoped("codycontext.ignore")),
 	)
 	enterpriseServices.CodyContextResolver = resolvers.NewResolver(
 		db,

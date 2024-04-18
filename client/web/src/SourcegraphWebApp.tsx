@@ -282,7 +282,6 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
                         ...dynamicContext,
                         ...props,
                     }}
-                    telemetryRecorder={props.telemetryRecorder}
                 />,
                 /* eslint-enable react/no-children-prop, react/jsx-key */
             ]}
