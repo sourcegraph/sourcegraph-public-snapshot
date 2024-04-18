@@ -58,17 +58,11 @@ type VCSSyncer interface {
 	// with both LF and CR being valid line terminators.
 	Clone(ctx context.Context, repo api.RepoName, targetDir common.GitDir, tmpPath string, progressWriter io.Writer) error
 	// Fetch tries to fetch updates from the remote to given directory.
-	// The revspec parameter is optional and specifies that the client is specifically
-	// interested in fetching the provided revspec (example "v2.3.4^0").
-	// For package hosts (vcsPackagesSyncer, npm/pypi/crates.io), the revspec is used
-	// to lazily fetch package versions. More details at
-	// https://github.com/sourcegraph/sourcegraph/issues/37921#issuecomment-1184301885
-	// Beware that the revspec parameter can be any random user-provided string.
 	// 🚨 SECURITY:
 	// Output returned from this function should NEVER contain sensitive information.
 	// The VCSSyncer implementation is responsible of redacting potentially
 	// sensitive data like secrets.
-	Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir, revspec string) ([]byte, error)
+	Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir) ([]byte, error)
 }
 
 type NewVCSSyncerOpts struct {

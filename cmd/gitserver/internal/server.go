@@ -371,7 +371,7 @@ func (s *Server) repoUpdateOrClone(ctx context.Context, repoName api.RepoName) e
 				repoClonedCounter.Inc()
 				logger.Info("cloned repo", log.String("repo", string(repoName)))
 			} else {
-				if err := s.doRepoUpdate(ctx, repoName, ""); err != nil {
+				if err := s.doRepoUpdate(ctx, repoName); err != nil {
 					// The repo update might have failed due to the repo being corrupt
 					s.LogIfCorrupt(ctx, repoName, err)
 
@@ -691,7 +691,7 @@ var (
 
 var doBackgroundRepoUpdateMock func(api.RepoName) error
 
-func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) (err error) {
+func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) (err error) {
 	logger := s.logger.Scoped("repoUpdate").With(log.String("repo", string(repo)))
 
 	if doBackgroundRepoUpdateMock != nil {
@@ -722,7 +722,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 		// ensure the background update doesn't hang forever
 		fetchCtx, cancelTimeout := context.WithTimeout(ctx, fetchTimeout)
 		defer cancelTimeout()
-		output, err := syncer.Fetch(fetchCtx, repo, dir, revspec)
+		output, err := syncer.Fetch(fetchCtx, repo, dir)
 		// best-effort update the output of the fetch
 		if err := s.db.GitserverRepos().SetLastOutput(ctx, repo, string(output)); err != nil {
 			s.logger.Warn("Setting last output in DB", log.Error(err))

@@ -162,7 +162,7 @@ func (s *gitRepoSyncer) Clone(ctx context.Context, repo api.RepoName, _ common.G
 }
 
 // Fetch tries to fetch updates of a Git repository.
-func (s *gitRepoSyncer) Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir, _ string) ([]byte, error) {
+func (s *gitRepoSyncer) Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir) ([]byte, error) {
 	source, err := s.getRemoteURLSource(ctx, repoName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get remote URL source for %s", repoName)

@@ -2,14 +2,16 @@ package vcssyncer
 
 import (
 	"context"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"io"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // fetchBuckets are the buckets used for the fetch and clone duration histograms.
@@ -94,9 +96,9 @@ func (i *instrumentedSyncer) Clone(ctx context.Context, repo api.RepoName, targe
 	return i.base.Clone(ctx, repo, targetDir, tmpPath, progressWriter)
 }
 
-func (i *instrumentedSyncer) Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir, revspec string) (output []byte, err error) {
+func (i *instrumentedSyncer) Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir) (output []byte, err error) {
 	if !i.shouldObserve() {
-		return i.base.Fetch(ctx, repoName, dir, revspec)
+		return i.base.Fetch(ctx, repoName, dir)
 	}
 
 	start := time.Now()
@@ -107,7 +109,7 @@ func (i *instrumentedSyncer) Fetch(ctx context.Context, repoName api.RepoName, d
 		metricFetchDuration.WithLabelValues(i.formattedTypeLabel, strconv.FormatBool(succeeded)).Observe(duration)
 	}()
 
-	return i.base.Fetch(ctx, repoName, dir, revspec)
+	return i.base.Fetch(ctx, repoName, dir)
 }
 
 func (i *instrumentedSyncer) shouldObserve() bool {
