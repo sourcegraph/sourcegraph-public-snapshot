@@ -1,4 +1,5 @@
 load("//wolfi-images:defs.bzl", "wolfi_base")
+load("//dev:oci_defs.bzl", "image_repository", "oci_push")
 
 oci_push(
     name = "candidate_push",
