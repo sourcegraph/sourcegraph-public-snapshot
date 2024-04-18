@@ -5,7 +5,6 @@ on:
     # everyday at 0:00 UTC
     - cron:  0 0 * * *
   workflow_dispatch:
-  push: # TODO: remove
 
 permissions:
   contents: write
@@ -52,6 +51,7 @@ jobs:
       # - uses: wolfi-dev/actions/install-wolfictl@main
 
       # Run wolfictl update
+      # Ideally we would use actions/checkout to clone sourcegraph/sourcegraph, but this isn't properly supported by wolfictl
       - name: wolfictl update
         run: |
           wolfictl update \
