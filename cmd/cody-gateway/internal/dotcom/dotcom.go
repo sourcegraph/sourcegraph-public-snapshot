@@ -28,8 +28,9 @@ import (
 func NewClient(endpoint, token, clientID string) graphql.Client {
 	return &tracedClient{graphql.NewClient(endpoint, &http.Client{
 		Transport: &tokenAuthTransport{
-			token:   token,
-			wrapped: http.DefaultTransport,
+			token:    token,
+			wrapped:  http.DefaultTransport,
+			clientID: clientID,
 		},
 	})}
 }
