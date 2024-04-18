@@ -836,24 +836,18 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	Repo graphql.ID
 },
 ) (*EmptyResponse, error) {
-	repoID, err := UnmarshalRepositoryID(args.Repo)
-	if err != nil {
-		return nil, err
-	}
-
 	// 🚨 SECURITY: Only site admins can reclone repositories.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	if _, err := r.DeleteRepositoryFromDisk(ctx, args); err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("could not delete repository with ID %d", repoID))
+	repo, err := r.repositoryByID(ctx, args.Repo)
+	if err != nil {
+		return nil, err
 	}
 
-	// We call RequestRepositoryUpdate here which will trigger a clone of the repo doesn't exist
-	// on disk.
-	if err := backend.NewRepos(r.logger, r.db, r.gitserverClient).RequestRepositoryUpdate(ctx, repoID); err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while requesting fetch for repository with ID %d", repoID))
+	if _, err := r.DeleteRepositoryFromDisk(ctx, args); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("could not delete repository with ID %d", repo.repo.ID))
 	}
 
 	return &EmptyResponse{}, nil
@@ -883,7 +877,7 @@ func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *str
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("cannot delete repository %d: busy cloning", repo.RepoID))
 	}
 
-	if err := backend.NewRepos(r.logger, r.db, r.gitserverClient).DeleteRepositoryFromDisk(ctx, repoID); err != nil {
+	if err := backend.NewRepos(r.logger, r.db, r.gitserverClient).RecloneRepository(ctx, repoID); err != nil {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository with ID %d", repoID))
 	}
 

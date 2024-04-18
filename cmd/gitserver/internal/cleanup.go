@@ -33,7 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/connection"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -86,7 +86,7 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, fs gitse
 				}()
 			}
 
-			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
+			gitserverAddrs := connection.NewGitserverAddresses(conf.Get())
 			// TODO: Should this return an error?
 			cleanupRepos(ctx, logger, db, fs, rcf, cfg.ShardID, gitserverAddrs, cfg.DisableDeleteReposOnWrongShard)
 
@@ -246,7 +246,7 @@ func cleanupRepos(
 	fs gitserverfs.FS,
 	rcf *wrexec.RecordingCommandFactory,
 	shardID string,
-	gitServerAddrs gitserver.GitserverAddresses,
+	gitServerAddrs connection.GitserverAddresses,
 	disableDeleteReposOnWrongShard bool,
 ) {
 	logger = logger.Scoped("cleanup")

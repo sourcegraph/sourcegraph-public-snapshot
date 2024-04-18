@@ -294,88 +294,58 @@ func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 	return resp, nil
 }
 
-// RepoUpdate triggers an update for the given repo in the background, if it hasn't
-// been updated recently.
+// RepoUpdate triggers an update for the given repo.
 // If the repo is not cloned, a blocking clone will be triggered instead.
 // This function will not return until the update is complete.
 // Canceling the context will not cancel the update, but it will let the caller
 // escape the function early.
-func (s *Server) RepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
-	logger := s.logger.Scoped("handleRepoUpdate")
-
-	var resp protocol.RepoUpdateResponse
-	dir := s.fs.RepoDir(req.Repo)
-
-	cloned, err := s.fs.RepoCloned(req.Repo)
+func (s *Server) RepoUpdate(ctx context.Context, repoName api.RepoName) (lastFetched, lastChanged time.Time, err error) {
+	err = s.repoUpdateOrClone(ctx, repoName)
 	if err != nil {
-		resp.Error = errors.Wrap(err, "determining cloned status").Error()
-		return resp
+		return lastFetched, lastChanged, err
+	}
+
+	dir := s.fs.RepoDir(repoName)
+
+	lastFetched, err = repoLastFetched(dir)
+	if err != nil {
+		return lastFetched, lastChanged, errors.Wrap(err, "failed to get last fetched time")
+	}
+
+	lastChanged, err = repoLastChanged(dir)
+	if err != nil {
+		return lastFetched, lastChanged, errors.Wrap(err, "failed to get last changed time")
+	}
+
+	return lastFetched, lastChanged, nil
+}
+
+func (s *Server) repoUpdateOrClone(ctx context.Context, repoName api.RepoName) error {
+	logger := s.logger.Scoped("repoUpdateOrClone")
+
+	dir := s.fs.RepoDir(repoName)
+
+	cloned, err := s.fs.RepoCloned(repoName)
+	if err != nil {
+		return errors.Wrap(err, "determining cloned status")
 	}
 
 	if !cloned {
-		cloneErr := s.cloneRepo(ctx, req.Repo)
-		if cloneErr != nil {
-			if !errors.Is(cloneErr, ErrCloneInProgress) {
-				logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(cloneErr))
+		if err := s.cloneRepo(ctx, repoName); err != nil {
+			if !errors.Is(err, ErrCloneInProgress) {
+				logger.Error("error cloning repo", log.String("repo", string(repoName)), log.Error(err))
 			}
-			resp.Error = cloneErr.Error()
-		} else {
-			// attempts to acquire these values are not contingent on the success of
-			// the update.
-			var statusErr error
-			lastFetched, err := repoLastFetched(dir)
-			if err != nil {
-				statusErr = err
-			} else {
-				resp.LastFetched = &lastFetched
-			}
-			lastChanged, err := repoLastChanged(dir)
-			if err != nil {
-				statusErr = err
-			} else {
-				resp.LastChanged = &lastChanged
-			}
-			if statusErr != nil {
-				logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
-				// We don't forward a statusErr to the caller.
-			}
+			return err
 		}
-		return resp
+	} else {
+		if err := s.doRepoUpdate(ctx, repoName, ""); err != nil {
+			return err
+		}
 	}
 
-	updateErr := s.doRepoUpdate(ctx, req.Repo, "")
+	s.perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(repoName, dir))
 
-	// attempts to acquire these values are not contingent on the success of
-	// the update.
-	var statusErr error
-	lastFetched, err := repoLastFetched(dir)
-	if err != nil {
-		statusErr = err
-	} else {
-		resp.LastFetched = &lastFetched
-	}
-	lastChanged, err := repoLastChanged(dir)
-	if err != nil {
-		statusErr = err
-	} else {
-		resp.LastChanged = &lastChanged
-	}
-	if statusErr != nil {
-		logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
-		// report this error in-band, but still produce a valid response with the
-		// other information.
-		resp.Error = statusErr.Error()
-	}
-	// If an error occurred during update, report it but don't actually make
-	// it into an http error; we want the client to get the information cleanly.
-	// An update error "wins" over a status error.
-	if updateErr != nil {
-		resp.Error = updateErr.Error()
-	} else {
-		s.perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(req.Repo, dir))
-	}
-
-	return resp
+	return nil
 }
 
 func setLastFetched(ctx context.Context, db database.DB, shardID string, dir common.GitDir, name api.RepoName) error {

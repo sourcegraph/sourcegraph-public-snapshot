@@ -83,11 +83,6 @@ type errorTranslatingClient struct {
 	base proto.GitserverServiceClient
 }
 
-func (r *errorTranslatingClient) RepoDelete(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error) {
-	res, err := r.base.RepoDelete(ctx, in, opts...)
-	return res, convertGRPCErrorToGitDomainError(err)
-}
-
 func (r *errorTranslatingClient) CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (proto.GitserverService_CreateCommitFromPatchBinaryClient, error) {
 	cc, err := r.base.CreateCommitFromPatchBinary(ctx, opts...)
 	if err != nil {
@@ -183,11 +178,6 @@ func (r *errorTranslatingArchiveClient) Recv() (*proto.ArchiveResponse, error) {
 
 func (r *errorTranslatingClient) RepoCloneProgress(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error) {
 	res, err := r.base.RepoCloneProgress(ctx, in, opts...)
-	return res, convertGRPCErrorToGitDomainError(err)
-}
-
-func (r *errorTranslatingClient) RepoUpdate(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error) {
-	res, err := r.base.RepoUpdate(ctx, in, opts...)
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 

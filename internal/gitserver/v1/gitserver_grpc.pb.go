@@ -19,6 +19,142 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
+	GitserverRepositoryService_DeleteRepository_FullMethodName = "/gitserver.v1.GitserverRepositoryService/DeleteRepository"
+	GitserverRepositoryService_FetchRepository_FullMethodName  = "/gitserver.v1.GitserverRepositoryService/FetchRepository"
+)
+
+// GitserverRepositoryServiceClient is the client API for GitserverRepositoryService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type GitserverRepositoryServiceClient interface {
+	// DeleteRepository deletes a repository on disk if it exists.
+	// If it doesn't, an error is returned.
+	DeleteRepository(ctx context.Context, in *DeleteRepositoryRequest, opts ...grpc.CallOption) (*DeleteRepositoryResponse, error)
+	// FetchRepository fetches a repository from a remote. If the repository is not
+	// yet cloned, it will be cloned. Otherwise, it will be updated.
+	FetchRepository(ctx context.Context, in *FetchRepositoryRequest, opts ...grpc.CallOption) (*FetchRepositoryResponse, error)
+}
+
+type gitserverRepositoryServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewGitserverRepositoryServiceClient(cc grpc.ClientConnInterface) GitserverRepositoryServiceClient {
+	return &gitserverRepositoryServiceClient{cc}
+}
+
+func (c *gitserverRepositoryServiceClient) DeleteRepository(ctx context.Context, in *DeleteRepositoryRequest, opts ...grpc.CallOption) (*DeleteRepositoryResponse, error) {
+	out := new(DeleteRepositoryResponse)
+	err := c.cc.Invoke(ctx, GitserverRepositoryService_DeleteRepository_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gitserverRepositoryServiceClient) FetchRepository(ctx context.Context, in *FetchRepositoryRequest, opts ...grpc.CallOption) (*FetchRepositoryResponse, error) {
+	out := new(FetchRepositoryResponse)
+	err := c.cc.Invoke(ctx, GitserverRepositoryService_FetchRepository_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// GitserverRepositoryServiceServer is the server API for GitserverRepositoryService service.
+// All implementations must embed UnimplementedGitserverRepositoryServiceServer
+// for forward compatibility
+type GitserverRepositoryServiceServer interface {
+	// DeleteRepository deletes a repository on disk if it exists.
+	// If it doesn't, an error is returned.
+	DeleteRepository(context.Context, *DeleteRepositoryRequest) (*DeleteRepositoryResponse, error)
+	// FetchRepository fetches a repository from a remote. If the repository is not
+	// yet cloned, it will be cloned. Otherwise, it will be updated.
+	FetchRepository(context.Context, *FetchRepositoryRequest) (*FetchRepositoryResponse, error)
+	mustEmbedUnimplementedGitserverRepositoryServiceServer()
+}
+
+// UnimplementedGitserverRepositoryServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedGitserverRepositoryServiceServer struct {
+}
+
+func (UnimplementedGitserverRepositoryServiceServer) DeleteRepository(context.Context, *DeleteRepositoryRequest) (*DeleteRepositoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRepository not implemented")
+}
+func (UnimplementedGitserverRepositoryServiceServer) FetchRepository(context.Context, *FetchRepositoryRequest) (*FetchRepositoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchRepository not implemented")
+}
+func (UnimplementedGitserverRepositoryServiceServer) mustEmbedUnimplementedGitserverRepositoryServiceServer() {
+}
+
+// UnsafeGitserverRepositoryServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to GitserverRepositoryServiceServer will
+// result in compilation errors.
+type UnsafeGitserverRepositoryServiceServer interface {
+	mustEmbedUnimplementedGitserverRepositoryServiceServer()
+}
+
+func RegisterGitserverRepositoryServiceServer(s grpc.ServiceRegistrar, srv GitserverRepositoryServiceServer) {
+	s.RegisterService(&GitserverRepositoryService_ServiceDesc, srv)
+}
+
+func _GitserverRepositoryService_DeleteRepository_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRepositoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverRepositoryServiceServer).DeleteRepository(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverRepositoryService_DeleteRepository_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverRepositoryServiceServer).DeleteRepository(ctx, req.(*DeleteRepositoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GitserverRepositoryService_FetchRepository_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FetchRepositoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverRepositoryServiceServer).FetchRepository(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverRepositoryService_FetchRepository_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverRepositoryServiceServer).FetchRepository(ctx, req.(*FetchRepositoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// GitserverRepositoryService_ServiceDesc is the grpc.ServiceDesc for GitserverRepositoryService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var GitserverRepositoryService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "gitserver.v1.GitserverRepositoryService",
+	HandlerType: (*GitserverRepositoryServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "DeleteRepository",
+			Handler:    _GitserverRepositoryService_DeleteRepository_Handler,
+		},
+		{
+			MethodName: "FetchRepository",
+			Handler:    _GitserverRepositoryService_FetchRepository_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "gitserver.proto",
+}
+
+const (
 	GitserverService_CreateCommitFromPatchBinary_FullMethodName = "/gitserver.v1.GitserverService/CreateCommitFromPatchBinary"
 	GitserverService_DiskInfo_FullMethodName                    = "/gitserver.v1.GitserverService/DiskInfo"
 	GitserverService_Exec_FullMethodName                        = "/gitserver.v1.GitserverService/Exec"
@@ -28,8 +164,6 @@ const (
 	GitserverService_Search_FullMethodName                      = "/gitserver.v1.GitserverService/Search"
 	GitserverService_Archive_FullMethodName                     = "/gitserver.v1.GitserverService/Archive"
 	GitserverService_RepoCloneProgress_FullMethodName           = "/gitserver.v1.GitserverService/RepoCloneProgress"
-	GitserverService_RepoDelete_FullMethodName                  = "/gitserver.v1.GitserverService/RepoDelete"
-	GitserverService_RepoUpdate_FullMethodName                  = "/gitserver.v1.GitserverService/RepoUpdate"
 	GitserverService_IsPerforcePathCloneable_FullMethodName     = "/gitserver.v1.GitserverService/IsPerforcePathCloneable"
 	GitserverService_CheckPerforceCredentials_FullMethodName    = "/gitserver.v1.GitserverService/CheckPerforceCredentials"
 	GitserverService_PerforceUsers_FullMethodName               = "/gitserver.v1.GitserverService/PerforceUsers"
@@ -76,8 +210,6 @@ type GitserverServiceClient interface {
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
 	RepoCloneProgress(ctx context.Context, in *RepoCloneProgressRequest, opts ...grpc.CallOption) (*RepoCloneProgressResponse, error)
-	RepoDelete(ctx context.Context, in *RepoDeleteRequest, opts ...grpc.CallOption) (*RepoDeleteResponse, error)
-	RepoUpdate(ctx context.Context, in *RepoUpdateRequest, opts ...grpc.CallOption) (*RepoUpdateResponse, error)
 	IsPerforcePathCloneable(ctx context.Context, in *IsPerforcePathCloneableRequest, opts ...grpc.CallOption) (*IsPerforcePathCloneableResponse, error)
 	CheckPerforceCredentials(ctx context.Context, in *CheckPerforceCredentialsRequest, opts ...grpc.CallOption) (*CheckPerforceCredentialsResponse, error)
 	PerforceUsers(ctx context.Context, in *PerforceUsersRequest, opts ...grpc.CallOption) (*PerforceUsersResponse, error)
@@ -377,24 +509,6 @@ func (c *gitserverServiceClient) RepoCloneProgress(ctx context.Context, in *Repo
 	return out, nil
 }
 
-func (c *gitserverServiceClient) RepoDelete(ctx context.Context, in *RepoDeleteRequest, opts ...grpc.CallOption) (*RepoDeleteResponse, error) {
-	out := new(RepoDeleteResponse)
-	err := c.cc.Invoke(ctx, GitserverService_RepoDelete_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gitserverServiceClient) RepoUpdate(ctx context.Context, in *RepoUpdateRequest, opts ...grpc.CallOption) (*RepoUpdateResponse, error) {
-	out := new(RepoUpdateResponse)
-	err := c.cc.Invoke(ctx, GitserverService_RepoUpdate_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *gitserverServiceClient) IsPerforcePathCloneable(ctx context.Context, in *IsPerforcePathCloneableRequest, opts ...grpc.CallOption) (*IsPerforcePathCloneableResponse, error) {
 	out := new(IsPerforcePathCloneableResponse)
 	err := c.cc.Invoke(ctx, GitserverService_IsPerforcePathCloneable_FullMethodName, in, out, opts...)
@@ -675,8 +789,6 @@ type GitserverServiceServer interface {
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
 	RepoCloneProgress(context.Context, *RepoCloneProgressRequest) (*RepoCloneProgressResponse, error)
-	RepoDelete(context.Context, *RepoDeleteRequest) (*RepoDeleteResponse, error)
-	RepoUpdate(context.Context, *RepoUpdateRequest) (*RepoUpdateResponse, error)
 	IsPerforcePathCloneable(context.Context, *IsPerforcePathCloneableRequest) (*IsPerforcePathCloneableResponse, error)
 	CheckPerforceCredentials(context.Context, *CheckPerforceCredentialsRequest) (*CheckPerforceCredentialsResponse, error)
 	PerforceUsers(context.Context, *PerforceUsersRequest) (*PerforceUsersResponse, error)
@@ -824,12 +936,6 @@ func (UnimplementedGitserverServiceServer) Archive(*ArchiveRequest, GitserverSer
 }
 func (UnimplementedGitserverServiceServer) RepoCloneProgress(context.Context, *RepoCloneProgressRequest) (*RepoCloneProgressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RepoCloneProgress not implemented")
-}
-func (UnimplementedGitserverServiceServer) RepoDelete(context.Context, *RepoDeleteRequest) (*RepoDeleteResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RepoDelete not implemented")
-}
-func (UnimplementedGitserverServiceServer) RepoUpdate(context.Context, *RepoUpdateRequest) (*RepoUpdateResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RepoUpdate not implemented")
 }
 func (UnimplementedGitserverServiceServer) IsPerforcePathCloneable(context.Context, *IsPerforcePathCloneableRequest) (*IsPerforcePathCloneableResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsPerforcePathCloneable not implemented")
@@ -1073,42 +1179,6 @@ func _GitserverService_RepoCloneProgress_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GitserverServiceServer).RepoCloneProgress(ctx, req.(*RepoCloneProgressRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _GitserverService_RepoDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RepoDeleteRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GitserverServiceServer).RepoDelete(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: GitserverService_RepoDelete_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GitserverServiceServer).RepoDelete(ctx, req.(*RepoDeleteRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _GitserverService_RepoUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RepoUpdateRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GitserverServiceServer).RepoUpdate(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: GitserverService_RepoUpdate_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GitserverServiceServer).RepoUpdate(ctx, req.(*RepoUpdateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1475,14 +1545,6 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RepoCloneProgress",
 			Handler:    _GitserverService_RepoCloneProgress_Handler,
-		},
-		{
-			MethodName: "RepoDelete",
-			Handler:    _GitserverService_RepoDelete_Handler,
-		},
-		{
-			MethodName: "RepoUpdate",
-			Handler:    _GitserverService_RepoUpdate_Handler,
 		},
 		{
 			MethodName: "IsPerforcePathCloneable",

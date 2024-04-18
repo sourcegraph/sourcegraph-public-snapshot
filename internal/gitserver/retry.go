@@ -22,11 +22,6 @@ type automaticRetryClient struct {
 
 // Non-idempotent methods.
 
-func (r *automaticRetryClient) RepoDelete(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error) {
-	// RepoDelete isn't idempotent.
-	return r.base.RepoDelete(ctx, in, opts...)
-}
-
 func (r *automaticRetryClient) CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (proto.GitserverService_CreateCommitFromPatchBinaryClient, error) {
 	// CreateCommitFromPatchBinary isn't idempotent. It also is a client-streaming method, which is currently unsupported by our automatic retry logic.
 	// The caller is responsible for implementing their own retry semantics for this method.
@@ -78,11 +73,6 @@ func (r *automaticRetryClient) Archive(ctx context.Context, in *proto.ArchiveReq
 func (r *automaticRetryClient) RepoCloneProgress(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.RepoCloneProgress(ctx, in, opts...)
-}
-
-func (r *automaticRetryClient) RepoUpdate(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error) {
-	opts = append(defaults.RetryPolicy, opts...)
-	return r.base.RepoUpdate(ctx, in, opts...)
 }
 
 func (r *automaticRetryClient) IsPerforcePathCloneable(ctx context.Context, in *proto.IsPerforcePathCloneableRequest, opts ...grpc.CallOption) (*proto.IsPerforcePathCloneableResponse, error) {

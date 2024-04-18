@@ -39,7 +39,7 @@ type service interface {
 	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchReader io.Reader) protocol.CreateCommitFromPatchResponse
 	LogIfCorrupt(context.Context, api.RepoName, error)
 	IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error)
-	RepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
+	RepoUpdate(ctx context.Context, repo api.RepoName) (lastFetched, lastChanged time.Time, err error)
 	SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error)
 	EnsureRevision(ctx context.Context, repo api.RepoName, rev string) (didUpdate bool)
 }
@@ -410,30 +410,6 @@ func (gs *grpcServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneP
 	}
 
 	return progress.ToProto(), nil
-}
-
-func (gs *grpcServer) RepoDelete(ctx context.Context, req *proto.RepoDeleteRequest) (*proto.RepoDeleteResponse, error) {
-	if req.GetRepo() == "" {
-		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
-	}
-
-	repoName := api.RepoName(req.GetRepo())
-
-	if err := deleteRepo(ctx, gs.db, gs.hostname, gs.fs, repoName); err != nil {
-		gs.logger.Error("failed to delete repository", log.String("repo", string(repoName)), log.Error(err))
-		return &proto.RepoDeleteResponse{}, status.Errorf(codes.Internal, "failed to delete repository %s: %s", repoName, err)
-	}
-	gs.logger.Info("deleted repository", log.String("repo", string(repoName)))
-	return &proto.RepoDeleteResponse{}, nil
-}
-
-func (gs *grpcServer) RepoUpdate(ctx context.Context, req *proto.RepoUpdateRequest) (*proto.RepoUpdateResponse, error) {
-	var in protocol.RepoUpdateRequest
-	in.FromProto(req)
-
-	resp := gs.svc.RepoUpdate(ctx, &in)
-
-	return resp.ToProto(), nil
 }
 
 func (gs *grpcServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoCloneableRequest) (*proto.IsRepoCloneableResponse, error) {
