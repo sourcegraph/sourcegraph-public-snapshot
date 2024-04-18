@@ -10,7 +10,7 @@
 
     export let externalServiceType: ExternalRepository['serviceType'] = ''
 
-    let openInEditor = $settings?.openInEditor
+    $: openInEditor = $settings?.openInEditor
 
     $: editorSettingsErrorMessage = getEditorSettingsErrorMessage(openInEditor)
     $: editorIds = openInEditor?.editorIds ?? []
