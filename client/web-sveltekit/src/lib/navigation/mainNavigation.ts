@@ -1,13 +1,13 @@
+import { mdiChartBar, mdiMagnify } from '@mdi/js'
 import type { Page } from '@sveltejs/kit'
 import type { ComponentType } from 'svelte'
-import { mdiChartBar, mdiMagnify } from '@mdi/js'
 
+import BatchChangesIcon from '$lib/icons/BatchChanges.svelte'
 import CodyIcon from '$lib/icons/Cody.svelte'
 import { isRepoRoute } from '$lib/navigation'
-import BatchChangesIcon from '$lib/icons/BatchChanges.svelte'
 
 /**
- * Indiciates to the UI to show a status badge next to the navigation entry.
+ * Indicates to the UI to show a status badge next to the navigation entry.
  */
 export enum Status {
     BETA = 1,
@@ -38,7 +38,7 @@ export interface NavigationEntry {
 
 /**
  * A navigation menu is a collection of navigation entries.
- * Currently it will be rendered as a dropdown in the navigation bar.
+ * Currently, it will be rendered as a dropdown in the navigation bar.
  */
 export interface NavigationMenu {
     /**
@@ -68,7 +68,7 @@ export interface NavigationMenu {
 }
 
 /**
- * A function to determine if a navigation entry is asoociated with the current page,
+ * A function to determine if a navigation entry is associated with the current page,
  * by means of comparing the entry's href with the current page's URL.
  */
 export function isCurrent(entry: NavigationEntry, page: Page): boolean {
