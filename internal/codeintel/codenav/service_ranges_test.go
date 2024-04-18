@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -38,7 +39,7 @@ func TestRanges(t *testing.T) {
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
-	mockGitserverClient.DiffFunc.SetDefaultHook(func(ctx context.Context, opt gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
+	mockGitserverClient.DiffFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, opt gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
 		if len(opt.Paths) > 0 && opt.Paths[0] == "sub3/changed.go" {
 			return gitserver.NewDiffFileIterator(io.NopCloser(strings.NewReader(rangesDiff))), nil
 		}

@@ -46,6 +46,7 @@ const (
 	GitserverService_ResolveRevision_FullMethodName             = "/gitserver.v1.GitserverService/ResolveRevision"
 	GitserverService_ListRefs_FullMethodName                    = "/gitserver.v1.GitserverService/ListRefs"
 	GitserverService_RevAtTime_FullMethodName                   = "/gitserver.v1.GitserverService/RevAtTime"
+	GitserverService_RawDiff_FullMethodName                     = "/gitserver.v1.GitserverService/RawDiff"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -173,6 +174,18 @@ type GitserverServiceClient interface {
 	// If the revision exists, but there is no commit in its ancestry before
 	// the requested time, an empty string is returned for the commit SHA.
 	RevAtTime(ctx context.Context, in *RevAtTimeRequest, opts ...grpc.CallOption) (*RevAtTimeResponse, error)
+	// RawDiff returns the raw git diff for the given range.
+	// Diffs returned from this function will have the following settings applied:
+	// - 3 lines of context
+	// - No a/ b/ prefixes
+	// - Rename detection
+	//
+	// If either base or head are not found, an error with a RevisionNotFoundPayload
+	// is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
+	RawDiff(ctx context.Context, in *RawDiffRequest, opts ...grpc.CallOption) (GitserverService_RawDiffClient, error)
 }
 
 type gitserverServiceClient struct {
@@ -589,6 +602,38 @@ func (c *gitserverServiceClient) RevAtTime(ctx context.Context, in *RevAtTimeReq
 	return out, nil
 }
 
+func (c *gitserverServiceClient) RawDiff(ctx context.Context, in *RawDiffRequest, opts ...grpc.CallOption) (GitserverService_RawDiffClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[7], GitserverService_RawDiff_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gitserverServiceRawDiffClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GitserverService_RawDiffClient interface {
+	Recv() (*RawDiffResponse, error)
+	grpc.ClientStream
+}
+
+type gitserverServiceRawDiffClient struct {
+	grpc.ClientStream
+}
+
+func (x *gitserverServiceRawDiffClient) Recv() (*RawDiffResponse, error) {
+	m := new(RawDiffResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -714,6 +759,18 @@ type GitserverServiceServer interface {
 	// If the revision exists, but there is no commit in its ancestry before
 	// the requested time, an empty string is returned for the commit SHA.
 	RevAtTime(context.Context, *RevAtTimeRequest) (*RevAtTimeResponse, error)
+	// RawDiff returns the raw git diff for the given range.
+	// Diffs returned from this function will have the following settings applied:
+	// - 3 lines of context
+	// - No a/ b/ prefixes
+	// - Rename detection
+	//
+	// If either base or head are not found, an error with a RevisionNotFoundPayload
+	// is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
+	RawDiff(*RawDiffRequest, GitserverService_RawDiffServer) error
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -801,6 +858,9 @@ func (UnimplementedGitserverServiceServer) ListRefs(*ListRefsRequest, GitserverS
 }
 func (UnimplementedGitserverServiceServer) RevAtTime(context.Context, *RevAtTimeRequest) (*RevAtTimeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RevAtTime not implemented")
+}
+func (UnimplementedGitserverServiceServer) RawDiff(*RawDiffRequest, GitserverService_RawDiffServer) error {
+	return status.Errorf(codes.Unimplemented, "method RawDiff not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1327,6 +1387,27 @@ func _GitserverService_RevAtTime_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GitserverService_RawDiff_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(RawDiffRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GitserverServiceServer).RawDiff(m, &gitserverServiceRawDiffServer{stream})
+}
+
+type GitserverService_RawDiffServer interface {
+	Send(*RawDiffResponse) error
+	grpc.ServerStream
+}
+
+type gitserverServiceRawDiffServer struct {
+	grpc.ServerStream
+}
+
+func (x *gitserverServiceRawDiffServer) Send(m *RawDiffResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1449,6 +1530,11 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ListRefs",
 			Handler:       _GitserverService_ListRefs_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "RawDiff",
+			Handler:       _GitserverService_RawDiff_Handler,
 			ServerStreams: true,
 		},
 	},

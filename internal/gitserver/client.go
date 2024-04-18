@@ -108,7 +108,7 @@ func (c *clientImplementor) WithClientSource(cs ClientSource) TestClient {
 func NewMockClientWithExecReader(checker authz.SubRepoPermissionChecker, execReader func(context.Context, api.RepoName, []string) (io.ReadCloser, error)) *MockClient {
 	client := NewMockClient()
 	// NOTE: This hook is the same as DiffFunc, but with `execReader` used above
-	client.DiffFunc.SetDefaultHook(func(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
+	client.DiffFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, opts DiffOptions) (*DiffFileIterator, error) {
 		if opts.Base == DevNullSHA {
 			opts.RangeType = ".."
 		} else if opts.RangeType != ".." {
@@ -121,7 +121,7 @@ func NewMockClientWithExecReader(checker authz.SubRepoPermissionChecker, execRea
 		}
 
 		// Here is where all the mocking happens!
-		rdr, err := execReader(ctx, opts.Repo, append([]string{
+		rdr, err := execReader(ctx, repo, append([]string{
 			"diff",
 			"--find-renames",
 			"--full-index",
@@ -135,9 +135,9 @@ func NewMockClientWithExecReader(checker authz.SubRepoPermissionChecker, execRea
 		}
 
 		return &DiffFileIterator{
-			rdr:            rdr,
+			onClose:        func() { rdr.Close() },
 			mfdr:           diff.NewMultiFileDiffReader(rdr),
-			fileFilterFunc: getFilterFunc(ctx, checker, opts.Repo),
+			fileFilterFunc: getFilterFunc(ctx, checker, repo),
 		}, nil
 	})
 
@@ -291,6 +291,18 @@ func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
 	}
 }
 
+type DiffOptions struct {
+	// These fields must be valid <commit> inputs as defined by gitrevisions(7).
+	Base string
+	Head string
+
+	// RangeType to be used for computing the diff: one of ".." or "..." (or unset: "").
+	// For a nice visual explanation of ".." vs "...", see https://stackoverflow.com/a/46345364/2682729
+	RangeType string
+
+	Paths []string
+}
+
 type Client interface {
 	// Scoped adds a usage scope to the client and returns a new client with that scope.
 	// Usage scopes should be descriptive and be lowercase plaintext, eg. batches.reconciler.
@@ -416,7 +428,7 @@ type Client interface {
 	// Diff returns an iterator that can be used to access the diff between two
 	// commits on a per-file basis. The iterator must be closed with Close when no
 	// longer required.
-	Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error)
+	Diff(ctx context.Context, repo api.RepoName, opts DiffOptions) (*DiffFileIterator, error)
 
 	// CommitGraph returns the commit graph for the given repository as a mapping
 	// from a commit to its parents. If a commit is supplied, the returned graph will

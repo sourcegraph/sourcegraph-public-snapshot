@@ -929,6 +929,96 @@ func TestGRPCServer_ListRefs(t *testing.T) {
 	})
 }
 
+func TestGRPCServer_RawDiff(t *testing.T) {
+	mockSS := gitserver.NewMockGitserverService_RawDiffServer()
+	// Add an actor to the context.
+	a := actor.FromUser(1)
+	mockSS.ContextFunc.SetDefaultReturn(actor.WithActor(context.Background(), a))
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &grpcServer{}
+		err := gs.RawDiff(&v1.RawDiffRequest{RepoName: ""}, mockSS)
+		require.ErrorContains(t, err, "repo must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+		err = gs.RawDiff(&v1.RawDiffRequest{RepoName: "therepo"}, mockSS)
+		require.ErrorContains(t, err, "base_rev_spec must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+		err = gs.RawDiff(&v1.RawDiffRequest{RepoName: "therepo", BaseRevSpec: []byte("base")}, mockSS)
+		require.ErrorContains(t, err, "head_rev_spec must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+		err = gs.RawDiff(&v1.RawDiffRequest{RepoName: "therepo", BaseRevSpec: []byte("base"), HeadRevSpec: []byte("head")}, mockSS)
+		require.ErrorContains(t, err, "comparison_type must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+	})
+	t.Run("checks for uncloned repo", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
+		err := gs.RawDiff(&v1.RawDiffRequest{RepoName: "therepo", BaseRevSpec: []byte("base"), HeadRevSpec: []byte("head"), ComparisonType: proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION}, mockSS)
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		require.Contains(t, err.Error(), "repo not found")
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
+	})
+	t.Run("e2e", func(t *testing.T) {
+		srp := authz.NewMockSubRepoPermissionChecker()
+		// Skip subrepo perms checks.
+		srp.EnabledFunc.SetDefaultReturn(false)
+		fs := gitserverfs.NewMockFS()
+		// Repo is cloned, proceed!
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
+		b := git.NewMockGitBackend()
+		b.RawDiffFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("diffcontent"))), nil)
+		gs := &grpcServer{
+			subRepoChecker: srp,
+			svc:            NewMockService(),
+			fs:             fs,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				return b
+			},
+		}
+
+		cli := spawnServer(t, gs)
+		r, err := cli.RawDiff(context.Background(), &v1.RawDiffRequest{
+			RepoName:       "therepo",
+			BaseRevSpec:    []byte("base"),
+			HeadRevSpec:    []byte("head"),
+			ComparisonType: proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION,
+		})
+		require.NoError(t, err)
+		for {
+			msg, err := r.Recv()
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				require.NoError(t, err)
+			}
+			if diff := cmp.Diff(&proto.RawDiffResponse{
+				Chunk: []byte("diffcontent"),
+			}, msg, cmpopts.IgnoreUnexported(proto.RawDiffResponse{})); diff != "" {
+				t.Fatalf("unexpected response (-want +got):\n%s", diff)
+			}
+		}
+
+		b.RawDiffFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{})
+		r, err = cli.RawDiff(context.Background(), &v1.RawDiffRequest{
+			RepoName:       "therepo",
+			BaseRevSpec:    []byte("base"),
+			HeadRevSpec:    []byte("head"),
+			ComparisonType: proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION,
+		})
+		require.NoError(t, err)
+		_, err = r.Recv()
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RevisionNotFoundPayload{})
+	})
+}
+
 func assertGRPCStatusCode(t *testing.T, err error, want codes.Code) {
 	t.Helper()
 	s, ok := status.FromError(err)

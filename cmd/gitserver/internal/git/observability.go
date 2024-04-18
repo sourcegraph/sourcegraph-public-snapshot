@@ -329,6 +329,30 @@ func (hr *observableRefIterator) Close() error {
 	return err
 }
 
+func (b *observableBackend) RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, paths ...string) (_ io.ReadCloser, err error) {
+	ctx, errCollector, endObservation := b.operations.rawDiff.WithErrors(ctx, &err, observation.Args{})
+	ctx, cancel := context.WithCancel(ctx)
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	concurrentOps.WithLabelValues("RawDiff").Inc()
+
+	r, err := b.backend.RawDiff(ctx, base, head, typ, paths...)
+	if err != nil {
+		concurrentOps.WithLabelValues("RawDiff").Dec()
+		cancel()
+		return nil, err
+	}
+
+	return &observableReadCloser{
+		inner: r,
+		endObservation: func(err error) {
+			concurrentOps.WithLabelValues("RawDiff").Dec()
+			errCollector.Collect(&err)
+			cancel()
+		},
+	}, nil
+}
+
 type operations struct {
 	configGet       *observation.Operation
 	configSet       *observation.Operation
@@ -345,6 +369,7 @@ type operations struct {
 	resolveRevision *observation.Operation
 	listRefs        *observation.Operation
 	revAtTime       *observation.Operation
+	rawDiff         *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -388,6 +413,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		resolveRevision: op("resolve-revision"),
 		listRefs:        op("list-refs"),
 		revAtTime:       op("rev-at-time"),
+		rawDiff:         op("raw-diff"),
 	}
 }
 

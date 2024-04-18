@@ -40,81 +40,94 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-type DiffOptions struct {
-	Repo api.RepoName
-
-	// These fields must be valid <commit> inputs as defined by gitrevisions(7).
-	Base string
-	Head string
-
-	// RangeType to be used for computing the diff: one of ".." or "..." (or unset: "").
-	// For a nice visual explanation of ".." vs "...", see https://stackoverflow.com/a/46345364/2682729
-	RangeType string
-
-	Paths []string
-}
-
 // Diff returns an iterator that can be used to access the diff between two
 // commits on a per-file basis. The iterator must be closed with Close when no
 // longer required.
-func (c *clientImplementor) Diff(ctx context.Context, opts DiffOptions) (_ *DiffFileIterator, err error) {
+func (c *clientImplementor) Diff(ctx context.Context, repo api.RepoName, opts DiffOptions) (_ *DiffFileIterator, err error) {
 	ctx, _, endObservation := c.operations.diff.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
-			opts.Repo.Attr(),
+			repo.Attr(),
 		},
 	})
-	defer endObservation(1, observation.Args{})
+
+	req := &proto.RawDiffRequest{
+		RepoName:    string(repo),
+		BaseRevSpec: []byte(opts.Base),
+		HeadRevSpec: []byte(opts.Head),
+		Paths:       stringsToByteSlices(opts.Paths),
+	}
 
 	// Rare case: the base is the empty tree, in which case we must use ..
 	// instead of ... as the latter only works for commits.
 	if opts.Base == DevNullSHA {
-		opts.RangeType = ".."
+		req.ComparisonType = proto.RawDiffRequest_COMPARISON_TYPE_ONLY_IN_HEAD
 	} else if opts.RangeType != ".." {
-		opts.RangeType = "..."
+		req.ComparisonType = proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION
 	}
 
-	rangeSpec := opts.Base + opts.RangeType + opts.Head
-	if strings.HasPrefix(rangeSpec, "-") || strings.HasPrefix(rangeSpec, ".") {
-		// We don't want to allow user input to add `git diff` command line
-		// flags or refer to a file.
-		return nil, errors.Errorf("invalid diff range argument: %q", rangeSpec)
-	}
-	args := append([]string{
-		"diff",
-		"--find-renames",
-		// TODO(eseliger): Enable once we have support for copy detection in go-diff
-		// and actually expose a `isCopy` field in the api, otherwise this
-		// information is thrown away anyways.
-		// "--find-copies",
-		"--full-index",
-		"--inter-hunk-context=3",
-		"--no-prefix",
-		rangeSpec,
-		"--",
-	}, opts.Paths...)
-
-	rdr, err := c.gitCommand(opts.Repo, args...).StdoutReader(ctx)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "executing git diff")
+		endObservation(1, observation.Args{})
+		return nil, err
 	}
+
+	ctx, cancel := context.WithCancel(ctx)
+
+	cc, err := client.RawDiff(ctx, req)
+	if err != nil {
+		cancel()
+		endObservation(1, observation.Args{})
+		return nil, err
+	}
+
+	// We start by reading the first message to early-exit on potential errors.
+	firstResp, firstRespErr := cc.Recv()
+	if firstRespErr != nil {
+		if errors.HasType(firstRespErr, &gitdomain.RevisionNotFoundError{}) {
+			cancel()
+			err = firstRespErr
+			endObservation(1, observation.Args{})
+			return nil, err
+		}
+	}
+
+	firstRespRead := false
+	r := streamio.NewReader(func() ([]byte, error) {
+		if !firstRespRead {
+			firstRespRead = true
+			if firstRespErr != nil {
+				return nil, firstRespErr
+			}
+			return firstResp.GetChunk(), nil
+		}
+
+		m, err := cc.Recv()
+		if err != nil {
+			return nil, err
+		}
+		return m.GetChunk(), nil
+	})
 
 	return &DiffFileIterator{
-		rdr:            rdr,
-		mfdr:           diff.NewMultiFileDiffReader(rdr),
-		fileFilterFunc: getFilterFunc(ctx, c.subRepoPermsChecker, opts.Repo),
+		onClose: func() {
+			cancel()
+			endObservation(1, observation.Args{})
+
+		},
+		mfdr:           diff.NewMultiFileDiffReader(r),
+		fileFilterFunc: getFilterFunc(ctx, c.subRepoPermsChecker, repo),
 	}, nil
 }
 
 type DiffFileIterator struct {
-	rdr            io.ReadCloser
+	onClose        func()
 	mfdr           *diff.MultiFileDiffReader
 	fileFilterFunc diffFileIteratorFilter
 }
 
 func NewDiffFileIterator(rdr io.ReadCloser) *DiffFileIterator {
 	return &DiffFileIterator{
-		rdr:  rdr,
 		mfdr: diff.NewMultiFileDiffReader(rdr),
 	}
 }
@@ -135,7 +148,10 @@ func getFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker, 
 }
 
 func (i *DiffFileIterator) Close() error {
-	return i.rdr.Close()
+	if i.onClose != nil {
+		i.onClose()
+	}
+	return nil
 }
 
 // Next returns the next file diff. If no more diffs are available, the diff
@@ -1280,8 +1296,8 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 
 	return &blobReader{
 		Reader: r,
-		cancel: cancel,
 		onClose: func() {
+			cancel()
 			endObservation(1, observation.Args{})
 		},
 	}, nil
@@ -1289,12 +1305,10 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 
 type blobReader struct {
 	io.Reader
-	cancel  context.CancelFunc
 	onClose func()
 }
 
 func (br *blobReader) Close() error {
-	br.cancel()
 	br.onClose()
 	return nil
 }

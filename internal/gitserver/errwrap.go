@@ -307,4 +307,21 @@ func (r *errorTranslatingClient) RevAtTime(ctx context.Context, in *proto.RevAtT
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
+func (r *errorTranslatingClient) RawDiff(ctx context.Context, in *proto.RawDiffRequest, opts ...grpc.CallOption) (proto.GitserverService_RawDiffClient, error) {
+	cc, err := r.base.RawDiff(ctx, in, opts...)
+	if err != nil {
+		return nil, convertGRPCErrorToGitDomainError(err)
+	}
+	return &errorTranslatingRawDiffClient{cc}, nil
+}
+
+type errorTranslatingRawDiffClient struct {
+	proto.GitserverService_RawDiffClient
+}
+
+func (r *errorTranslatingRawDiffClient) Recv() (*proto.RawDiffResponse, error) {
+	res, err := r.GitserverService_RawDiffClient.Recv()
+	return res, convertGRPCErrorToGitDomainError(err)
+}
+
 var _ proto.GitserverServiceClient = &errorTranslatingClient{}

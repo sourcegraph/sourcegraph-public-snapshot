@@ -70,7 +70,6 @@ type GitBackend interface {
 	// If two resources are created at the same timestamp, the records are ordered
 	// alphabetically.
 	ListRefs(ctx context.Context, opt ListRefsOpts) (RefIterator, error)
-
 	// RevAtTime returns the OID of the nearest ancestor of `spec` that has a
 	// commit time before the given time. To simplify the logic, it only
 	// follows the first parent of merge commits to linearize the commit
@@ -80,12 +79,30 @@ type GitBackend interface {
 	// If no commit exists in the history of revspec before time, an empty
 	// commitID is returned.
 	RevAtTime(ctx context.Context, revspec string, time time.Time) (api.CommitID, error)
+	// RawDiff returns the raw git diff for the given range.
+	// Diffs returned from this function will have the following settings applied:
+	// - 3 lines of context
+	// - No a/ b/ prefixes
+	// - Rename detection
+	// If either base or head don't exist, a RevisionNotFoundError is returned.
+	RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, paths ...string) (io.ReadCloser, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
 	// remove this method.
 	Exec(ctx context.Context, args ...string) (io.ReadCloser, error)
 }
+
+type GitDiffComparisonType int
+
+const (
+	// Corresponds to the BASE...HEAD syntax that returns any commits that are not
+	// in both BASE and HEAD.
+	GitDiffComparisonTypeIntersection GitDiffComparisonType = iota
+	// Corresponds to the BASE..HEAD syntax that only returns any commits that are
+	// in HEAD but not in BASE.
+	GitDiffComparisonTypeOnlyInHead
+)
 
 // GitConfigBackend provides methods for interacting with git configuration.
 type GitConfigBackend interface {

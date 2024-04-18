@@ -1310,6 +1310,81 @@ func (gs *grpcServer) ListRefs(req *proto.ListRefsRequest, ss proto.GitserverSer
 	return nil
 }
 
+func (gs *grpcServer) RawDiff(req *proto.RawDiffRequest, ss proto.GitserverService_RawDiffServer) error {
+	ctx := ss.Context()
+
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("base", string(req.GetBaseRevSpec())),
+		log.String("head", string(req.GetHeadRevSpec())),
+	)
+
+	if req.GetRepoName() == "" {
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	if len(req.GetBaseRevSpec()) == 0 {
+		return status.New(codes.InvalidArgument, "base_rev_spec must be specified").Err()
+	}
+
+	if len(req.GetHeadRevSpec()) == 0 {
+		return status.New(codes.InvalidArgument, "head_rev_spec must be specified").Err()
+	}
+
+	if req.GetComparisonType() == proto.RawDiffRequest_COMPARISON_TYPE_UNSPECIFIED {
+		return status.New(codes.InvalidArgument, "comparison_type must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
+		return err
+	}
+
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	paths := make([]string, len(req.GetPaths()))
+	for i, p := range req.GetPaths() {
+		paths[i] = string(p)
+	}
+
+	var typ git.GitDiffComparisonType
+	switch req.GetComparisonType() {
+	case proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION:
+		typ = git.GitDiffComparisonTypeIntersection
+	case proto.RawDiffRequest_COMPARISON_TYPE_ONLY_IN_HEAD:
+		typ = git.GitDiffComparisonTypeOnlyInHead
+	}
+
+	r, err := backend.RawDiff(ctx, string(req.GetBaseRevSpec()), string(req.GetHeadRevSpec()), typ, paths...)
+	if err != nil {
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return err
+			}
+			return s.Err()
+		}
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		// TODO: Better error checking.
+		return err
+	}
+	defer r.Close()
+
+	w := streamio.NewWriter(func(p []byte) error {
+		return ss.Send(&proto.RawDiffResponse{Chunk: p})
+	})
+
+	_, err = io.Copy(w, r)
+	return err
+}
+
 // checkRepoExists checks if a given repository is cloned on disk, and returns an
 // error otherwise.
 // On Sourcegraph.com, not all repos are managed by the scheduler. We thus

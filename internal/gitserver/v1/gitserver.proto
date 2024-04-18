@@ -177,6 +177,51 @@ service GitserverService {
   rpc RevAtTime(RevAtTimeRequest) returns (RevAtTimeResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // RawDiff returns the raw git diff for the given range.
+  // Diffs returned from this function will have the following settings applied:
+  // - 3 lines of context
+  // - No a/ b/ prefixes
+  // - Rename detection
+  //
+  // If either base or head are not found, an error with a RevisionNotFoundPayload
+  // is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc RawDiff(RawDiffRequest) returns (stream RawDiffResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message RawDiffRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // The base spec to resolve. I.e., HEAD, deadbeefdeadbeefdeadbeefdeadbeef, or
+  // refs/heads/main.
+  bytes base_rev_spec = 3;
+  // The head spec to resolve. I.e., HEAD, deadbeefdeadbeefdeadbeefdeadbeef, or
+  // refs/heads/main.
+  bytes head_rev_spec = 4;
+  enum ComparisonType {
+    COMPARISON_TYPE_UNSPECIFIED = 0;
+    // Corresponds to the BASE..HEAD syntax that only returns any commits that are
+    // in HEAD but not in BASE.
+    COMPARISON_TYPE_ONLY_IN_HEAD = 1;
+    // Corresponds to the BASE...HEAD syntax that returns any commits that are not
+    // in both BASE and HEAD.
+    COMPARISON_TYPE_INTERSECTION = 2;
+  }
+  // comparison_type is the type of comparison to perform. If unspecified, will
+  // fall back to COMPARISON_TYPE_INTERSECTION.
+  ComparisonType comparison_type = 5;
+  // paths is a list of paths to filter the diff to. If empty, all paths are diffed.
+  repeated bytes paths = 6;
+}
+
+message RawDiffResponse {
+  // chunk is the raw diff chunk.
+  bytes chunk = 1;
 }
 
 message ListRefsRequest {
