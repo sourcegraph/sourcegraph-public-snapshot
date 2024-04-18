@@ -3,9 +3,8 @@
 
     import { browser } from '$app/environment'
     import { isErrorLike } from '$lib/common'
-    import { classNames } from '$lib/dom'
     import { TemporarySettingsStorage } from '$lib/shared'
-    import { isLightTheme, setAppContext, scrollAll } from '$lib/stores'
+    import { isLightTheme, setAppContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
 
     import Header from './Header.svelte'
@@ -93,8 +92,6 @@
     <meta name="description" content="Code search" />
 </svelte:head>
 
-<svelte:body use:classNames={$scrollAll ? '' : 'overflowHidden'} />
-
 {#await data.globalSiteAlerts then globalSiteAlerts}
     {#if globalSiteAlerts}
         <GlobalNotification globalAlerts={globalSiteAlerts} />
@@ -108,15 +105,11 @@
 </main>
 
 <style lang="scss">
-    :global(body.overflowHidden) {
-        display: flex;
-        flex-direction: column;
+    :global(body) {
         height: 100vh;
         overflow: hidden;
-
-        main {
-            overflow-y: auto;
-        }
+        display: flex;
+        flex-direction: column;
     }
 
     main {
@@ -125,5 +118,6 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+        overflow-y: auto;
     }
 </style>
