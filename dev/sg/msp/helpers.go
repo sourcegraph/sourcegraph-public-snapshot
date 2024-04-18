@@ -9,9 +9,11 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/clouddeploy"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/terraform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
@@ -298,4 +300,19 @@ func generateCloudDeployDocstring(projectID, serviceID, gcpRegion, cloudDeployFi
 # that can be used to provision workload auth, for example https://sourcegraph.sourcegraph.com/github.com/sourcegraph/infrastructure/-/blob/managed-services/continuous-deployment-pipeline/main.tf?L5-20
 `, // TODO improve the releases DX
 		projectID, serviceID, gcpRegion, cloudDeployFilename)
+}
+
+func CollectAlertPolicies(svc *spec.Spec) (map[string]terraform.AlertPolicy, error) {
+	// Deduplicate alerts across environments into a single map
+	collectedAlerts := make(map[string]terraform.AlertPolicy)
+	for _, env := range svc.ListEnvironmentIDs() {
+		// Parse the generated alert policies to create alerting docs
+		monitoringPath := msprepo.ServiceStackCDKTFPath(svc.Service.ID, env, "monitoring")
+		monitoring, err := terraform.ParseMonitoringCDKTF(monitoringPath)
+		if err != nil {
+			return nil, err
+		}
+		maps.Copy(collectedAlerts, monitoring.ResourceType.GoogleMonitoringAlertPolicy)
+	}
+	return collectedAlerts, nil
 }

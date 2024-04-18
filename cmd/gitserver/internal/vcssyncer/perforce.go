@@ -208,7 +208,7 @@ func (s *perforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, usern
 }
 
 // Fetch tries to fetch updates of a Perforce depot as a Git repository.
-func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir, _ string) ([]byte, error) {
+func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir) ([]byte, error) {
 	source, err := s.getRemoteURLSource(ctx, repoName)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting remote URL source")

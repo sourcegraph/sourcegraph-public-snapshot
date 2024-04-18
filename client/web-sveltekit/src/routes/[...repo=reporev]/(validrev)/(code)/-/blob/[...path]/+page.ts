@@ -73,6 +73,12 @@ export const load: PageLoad = ({ parent, params, url }) => {
                       .then(mapOrThrow(result => result.data?.repository?.commit?.diff.fileDiffs.nodes[0] ?? null)),
               }
             : null,
+        externalServiceType: parent()
+            .then(({ resolvedRevision }) => resolvedRevision.repo?.externalRepository?.serviceType)
+            .catch(error => {
+                console.error('Failed to fetch repository data:', error)
+                return null
+            }),
         blameData,
     }
 }
