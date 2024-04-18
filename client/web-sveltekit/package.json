@@ -6,6 +6,7 @@
     "dev:dotcom": "vite dev --mode=dotcom",
     "dev:enterprise": "DEPLOY_TYPE=dev vite build --watch",
     "build": "vite build",
+    "build:preview": "vite build --mode=preview",
     "build:watch": "vite build --watch",
     "preview": "vite preview",
     "test": "playwright test",

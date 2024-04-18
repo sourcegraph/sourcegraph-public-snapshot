@@ -201,14 +201,14 @@ func syncRepoState(
 				// Failed to determine cloned state, we have to skip this record for now.
 				continue
 			}
-			_, cloning := locker.Status(repo.Name)
+			_, locked := locker.Status(repo.Name)
 
 			var shouldUpdate bool
 			if repo.ShardID != shardID {
 				repo.ShardID = shardID
 				shouldUpdate = true
 			}
-			cloneStatus := cloneStatus(cloned, cloning)
+			cloneStatus := cloneStatus(cloned, locked)
 			if repo.CloneStatus != cloneStatus {
 				repo.CloneStatus = cloneStatus
 				// Since the repo has been recloned or is being cloned

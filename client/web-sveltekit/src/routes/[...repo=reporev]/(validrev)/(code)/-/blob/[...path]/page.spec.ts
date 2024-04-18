@@ -27,6 +27,12 @@ test.beforeEach(({ sg }) => {
                 {
                     canonicalURL: `/${repoName}/-/blob/src/index.js`,
                 },
+                {
+                    canonicalURL: `/${repoName}/-/blob/src/large-file-1.js`,
+                },
+                {
+                    canonicalURL: `/${repoName}/-/blob/src/large-file-2.js`,
+                },
             ],
         },
         {
@@ -39,6 +45,28 @@ test.beforeEach(({ sg }) => {
             richHTML: '',
             content: '"file content"',
         },
+        {
+            __typename: 'GitBlob',
+            name: 'large-file-1.js',
+            path: 'src/large-file-1.js',
+            canonicalURL: `/${repoName}/-/blob/src/large-file-1.js`,
+            isDirectory: false,
+            languages: ['JavaScript'],
+            richHTML: '',
+            content: Array.from({ length: 500 }, (_, i) => `// line ${i + 1};`).join('\n'),
+            totalLines: 500,
+        },
+        {
+            __typename: 'GitBlob',
+            name: 'large-file-2.js',
+            path: 'src/large-file-2.js',
+            canonicalURL: `/${repoName}/-/blob/src/large-file-2.js`,
+            isDirectory: false,
+            languages: ['JavaScript'],
+            richHTML: '',
+            content: Array.from({ length: 300 }, (_, i) => `// line ${i + 1};`).join('\n'),
+            totalLines: 300,
+        },
     ])
 
     sg.mockOperations({
@@ -50,7 +78,7 @@ test.beforeEach(({ sg }) => {
                 },
             },
         }),
-        TreeEntries: ({}) => ({
+        TreeEntries: ({ repoName }) => ({
             repository: {
                 commit: {
                     tree: {
@@ -59,11 +87,11 @@ test.beforeEach(({ sg }) => {
                 },
             },
         }),
-        BlobPageQuery: ({}) => ({
+        BlobPageQuery: ({ path, repoName }) => ({
             repository: {
                 commit: {
                     blob: {
-                        canonicalURL: `/${repoName}/-/blob/src/index.js`,
+                        canonicalURL: `/${repoName}/-/blob/${path}`,
                     },
                 },
             },
@@ -212,6 +240,108 @@ test.describe('file header', () => {
         await page.goto(url)
         await expect(page.getByText('12.35 KB')).toBeVisible()
         await expect(page.getByText('42 lines')).toBeVisible()
+    })
+})
+
+test.describe('scroll behavior', () => {
+    const url = `/${repoName}/-/blob/src/large-file-1.js`
+
+    test('initial page load', async ({ page }) => {
+        await page.goto(url)
+        await expect(page.getByText('line 1;'), 'file is scrolled to the top').toBeVisible()
+    })
+
+    test('initial page load with selected line', async ({ page }) => {
+        await page.goto(url + '?L100')
+        const selectedLine = page.getByTestId('selected-line')
+        await expect(selectedLine, 'selected line is scrolled into view').toBeVisible()
+        await expect(selectedLine).toHaveText(/line 100;/)
+    })
+
+    test('go to another file', async ({ page, utils }) => {
+        await page.goto(url)
+        // Scroll to some arbitrary position
+        await utils.scrollYAt(page.getByText('line 1;'), 1000)
+
+        await page.getByRole('link', { name: 'large-file-2.js' }).click()
+        await expect(page.getByText('line 1;')).toBeVisible()
+    })
+
+    test('select a line', async ({ page, utils }) => {
+        await page.goto(url)
+
+        // Scrolls to line 64 at the top (found out by inspecting the test)
+        await utils.scrollYAt(page.getByText('line 1;'), 1000)
+        const line64 = page.getByText('line 64;')
+        await expect(line64).toBeVisible()
+        const position = await line64.boundingBox()
+
+        // Select line
+        await page.getByText('80', { exact: true }).click()
+        await expect(page.getByTestId('selected-line')).toHaveText(/line 80;/)
+
+        // Compare positions
+        expect((await line64.boundingBox())?.y, 'selecting a line preserves scroll position').toBe(position?.y)
+    })
+
+    test('[back] preserve scroll position', async ({ page, utils }) => {
+        await page.goto(url)
+        const line1 = page.getByText('line 1;')
+        await expect(line1).toBeVisible()
+
+        // Scrolls to line 64 at the top (found out by inspecting the test)
+        await utils.scrollYAt(line1, 1000)
+        const line64 = page.getByText('line 64;')
+        await expect(line64).toBeVisible()
+        const position = await line64.boundingBox()
+
+        await page.getByRole('link', { name: 'large-file-2.js' }).click()
+        await expect(line1).toBeVisible()
+
+        await page.goBack()
+        expect((await page.getByText('line 64;').boundingBox())?.y, 'restores scroll position on back navigation').toBe(
+            position?.y
+        )
+    })
+
+    test('[forward] preserve scroll position', async ({ page, utils }) => {
+        await page.goto(url)
+        await page.getByRole('link', { name: 'large-file-2.js' }).click()
+
+        const firstLine = page.getByText('line 1;')
+        await expect(firstLine).toBeVisible()
+
+        // Scrolls to line 64 at the top (found out by inspecting the test)
+        await utils.scrollYAt(firstLine, 1000)
+        const line64 = page.getByText('line 64;')
+        await expect(line64).toBeVisible()
+        const position = await line64.boundingBox()
+
+        await page.goBack()
+        await expect(page.getByText('/ large-file-1.js')).toBeVisible()
+        await page.goForward()
+        await expect(page.getByText('/ large-file-2.js')).toBeVisible()
+
+        expect((await line64.boundingBox())?.y, 'restores scroll navigation on forward navigation').toBe(position?.y)
+    })
+
+    test('[back] preserve scroll position with selected line', async ({ page, utils }) => {
+        await page.goto(url + '?L100')
+        const line100 = page.getByText('line 100;')
+        await expect(line100).toBeVisible()
+
+        // Scrolls to line 210 at the top (found out by inspecting the test)
+        await utils.scrollYAt(line100, 2000)
+        const line210 = page.getByText('line 210;')
+        await expect(line210).toBeVisible()
+        const position = await line210.boundingBox()
+
+        await page.getByRole('link', { name: 'large-file-2.js' }).click()
+        await expect(page.getByText('line 1;')).toBeVisible()
+
+        // This should restore the previous scroll position, not go to the selected line
+        await page.goBack()
+        expect((await line210.boundingBox())?.y, 'restores scroll position on back navigation').toBe(position?.y)
     })
 })
 

@@ -42,8 +42,7 @@ type service interface {
 	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchReader io.Reader) protocol.CreateCommitFromPatchResponse
 	LogIfCorrupt(context.Context, api.RepoName, error)
 	IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error)
-	RepoUpdate(ctx context.Context, repo api.RepoName) (lastFetched, lastChanged time.Time, err error)
-	SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error)
+	FetchRepository(ctx context.Context, repo api.RepoName) (lastFetched, lastChanged time.Time, err error)
 	EnsureRevision(ctx context.Context, repo api.RepoName, rev string) (didUpdate bool)
 }
 
@@ -399,7 +398,7 @@ func (gs *grpcServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 	tr, ctx := trace.New(ss.Context(), "search")
 	defer tr.End()
 
-	limitHit, err := gs.svc.SearchWithObservability(ctx, tr, args, onMatch)
+	limitHit, err := searchWithObservability(ctx, gs.logger, gs.fs.RepoDir(args.Repo), tr, args, onMatch)
 	if err != nil {
 		return err
 	}
@@ -1436,7 +1435,11 @@ func (gs *grpcServer) checkRepoExists(ctx context.Context, repo api.RepoName) er
 		}
 	}
 
-	cloneProgress, cloneInProgress := gs.locker.Status(repo)
+	cloneProgress, locked := gs.locker.Status(repo)
+
+	// We checked above that the repo is not cloned. So if the repo is currently
+	// locked, it must be a clone in progress.
+	cloneInProgress := locked
 
 	return newRepoNotFoundError(repo, cloneInProgress, cloneProgress)
 }

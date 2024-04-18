@@ -14,7 +14,6 @@ import (
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	trace "github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // MockRepositoryLock is a mock implementation of the RepositoryLock
@@ -673,18 +672,15 @@ type MockService struct {
 	// EnsureRevisionFunc is an instance of a mock function object
 	// controlling the behavior of the method EnsureRevision.
 	EnsureRevisionFunc *ServiceEnsureRevisionFunc
+	// FetchRepositoryFunc is an instance of a mock function object
+	// controlling the behavior of the method FetchRepository.
+	FetchRepositoryFunc *ServiceFetchRepositoryFunc
 	// IsRepoCloneableFunc is an instance of a mock function object
 	// controlling the behavior of the method IsRepoCloneable.
 	IsRepoCloneableFunc *ServiceIsRepoCloneableFunc
 	// LogIfCorruptFunc is an instance of a mock function object controlling
 	// the behavior of the method LogIfCorrupt.
 	LogIfCorruptFunc *ServiceLogIfCorruptFunc
-	// RepoUpdateFunc is an instance of a mock function object controlling
-	// the behavior of the method RepoUpdate.
-	RepoUpdateFunc *ServiceRepoUpdateFunc
-	// SearchWithObservabilityFunc is an instance of a mock function object
-	// controlling the behavior of the method SearchWithObservability.
-	SearchWithObservabilityFunc *ServiceSearchWithObservabilityFunc
 }
 
 // NewMockService creates a new mock of the service interface. All methods
@@ -701,6 +697,11 @@ func NewMockService() *MockService {
 				return
 			},
 		},
+		FetchRepositoryFunc: &ServiceFetchRepositoryFunc{
+			defaultHook: func(context.Context, api.RepoName) (r0 time.Time, r1 time.Time, r2 error) {
+				return
+			},
+		},
 		IsRepoCloneableFunc: &ServiceIsRepoCloneableFunc{
 			defaultHook: func(context.Context, api.RepoName) (r0 protocol.IsRepoCloneableResponse, r1 error) {
 				return
@@ -708,16 +709,6 @@ func NewMockService() *MockService {
 		},
 		LogIfCorruptFunc: &ServiceLogIfCorruptFunc{
 			defaultHook: func(context.Context, api.RepoName, error) {
-				return
-			},
-		},
-		RepoUpdateFunc: &ServiceRepoUpdateFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 time.Time, r1 time.Time, r2 error) {
-				return
-			},
-		},
-		SearchWithObservabilityFunc: &ServiceSearchWithObservabilityFunc{
-			defaultHook: func(context.Context, trace.Trace, *protocol.SearchRequest, func(*protocol.CommitMatch) error) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -738,6 +729,11 @@ func NewStrictMockService() *MockService {
 				panic("unexpected invocation of MockService.EnsureRevision")
 			},
 		},
+		FetchRepositoryFunc: &ServiceFetchRepositoryFunc{
+			defaultHook: func(context.Context, api.RepoName) (time.Time, time.Time, error) {
+				panic("unexpected invocation of MockService.FetchRepository")
+			},
+		},
 		IsRepoCloneableFunc: &ServiceIsRepoCloneableFunc{
 			defaultHook: func(context.Context, api.RepoName) (protocol.IsRepoCloneableResponse, error) {
 				panic("unexpected invocation of MockService.IsRepoCloneable")
@@ -746,16 +742,6 @@ func NewStrictMockService() *MockService {
 		LogIfCorruptFunc: &ServiceLogIfCorruptFunc{
 			defaultHook: func(context.Context, api.RepoName, error) {
 				panic("unexpected invocation of MockService.LogIfCorrupt")
-			},
-		},
-		RepoUpdateFunc: &ServiceRepoUpdateFunc{
-			defaultHook: func(context.Context, api.RepoName) (time.Time, time.Time, error) {
-				panic("unexpected invocation of MockService.RepoUpdate")
-			},
-		},
-		SearchWithObservabilityFunc: &ServiceSearchWithObservabilityFunc{
-			defaultHook: func(context.Context, trace.Trace, *protocol.SearchRequest, func(*protocol.CommitMatch) error) (bool, error) {
-				panic("unexpected invocation of MockService.SearchWithObservability")
 			},
 		},
 	}
@@ -767,10 +753,9 @@ func NewStrictMockService() *MockService {
 type surrogateMockService interface {
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse
 	EnsureRevision(context.Context, api.RepoName, string) bool
+	FetchRepository(context.Context, api.RepoName) (time.Time, time.Time, error)
 	IsRepoCloneable(context.Context, api.RepoName) (protocol.IsRepoCloneableResponse, error)
 	LogIfCorrupt(context.Context, api.RepoName, error)
-	RepoUpdate(context.Context, api.RepoName) (time.Time, time.Time, error)
-	SearchWithObservability(context.Context, trace.Trace, *protocol.SearchRequest, func(*protocol.CommitMatch) error) (bool, error)
 }
 
 // NewMockServiceFrom creates a new mock of the MockService interface. All
@@ -783,17 +768,14 @@ func NewMockServiceFrom(i surrogateMockService) *MockService {
 		EnsureRevisionFunc: &ServiceEnsureRevisionFunc{
 			defaultHook: i.EnsureRevision,
 		},
+		FetchRepositoryFunc: &ServiceFetchRepositoryFunc{
+			defaultHook: i.FetchRepository,
+		},
 		IsRepoCloneableFunc: &ServiceIsRepoCloneableFunc{
 			defaultHook: i.IsRepoCloneable,
 		},
 		LogIfCorruptFunc: &ServiceLogIfCorruptFunc{
 			defaultHook: i.LogIfCorrupt,
-		},
-		RepoUpdateFunc: &ServiceRepoUpdateFunc{
-			defaultHook: i.RepoUpdate,
-		},
-		SearchWithObservabilityFunc: &ServiceSearchWithObservabilityFunc{
-			defaultHook: i.SearchWithObservability,
 		},
 	}
 }
@@ -1015,6 +997,117 @@ func (c ServiceEnsureRevisionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// ServiceFetchRepositoryFunc describes the behavior when the
+// FetchRepository method of the parent MockService instance is invoked.
+type ServiceFetchRepositoryFunc struct {
+	defaultHook func(context.Context, api.RepoName) (time.Time, time.Time, error)
+	hooks       []func(context.Context, api.RepoName) (time.Time, time.Time, error)
+	history     []ServiceFetchRepositoryFuncCall
+	mutex       sync.Mutex
+}
+
+// FetchRepository delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockService) FetchRepository(v0 context.Context, v1 api.RepoName) (time.Time, time.Time, error) {
+	r0, r1, r2 := m.FetchRepositoryFunc.nextHook()(v0, v1)
+	m.FetchRepositoryFunc.appendCall(ServiceFetchRepositoryFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the FetchRepository
+// method of the parent MockService instance is invoked and the hook queue
+// is empty.
+func (f *ServiceFetchRepositoryFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (time.Time, time.Time, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FetchRepository method of the parent MockService instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ServiceFetchRepositoryFunc) PushHook(hook func(context.Context, api.RepoName) (time.Time, time.Time, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ServiceFetchRepositoryFunc) SetDefaultReturn(r0 time.Time, r1 time.Time, r2 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (time.Time, time.Time, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ServiceFetchRepositoryFunc) PushReturn(r0 time.Time, r1 time.Time, r2 error) {
+	f.PushHook(func(context.Context, api.RepoName) (time.Time, time.Time, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *ServiceFetchRepositoryFunc) nextHook() func(context.Context, api.RepoName) (time.Time, time.Time, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ServiceFetchRepositoryFunc) appendCall(r0 ServiceFetchRepositoryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ServiceFetchRepositoryFuncCall objects
+// describing the invocations of this function.
+func (f *ServiceFetchRepositoryFunc) History() []ServiceFetchRepositoryFuncCall {
+	f.mutex.Lock()
+	history := make([]ServiceFetchRepositoryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ServiceFetchRepositoryFuncCall is an object that describes an invocation
+// of method FetchRepository on an instance of MockService.
+type ServiceFetchRepositoryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 time.Time
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 time.Time
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ServiceFetchRepositoryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ServiceFetchRepositoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
 // ServiceIsRepoCloneableFunc describes the behavior when the
 // IsRepoCloneable method of the parent MockService instance is invoked.
 type ServiceIsRepoCloneableFunc struct {
@@ -1226,230 +1319,4 @@ func (c ServiceLogIfCorruptFuncCall) Args() []interface{} {
 // invocation.
 func (c ServiceLogIfCorruptFuncCall) Results() []interface{} {
 	return []interface{}{}
-}
-
-// ServiceRepoUpdateFunc describes the behavior when the RepoUpdate method
-// of the parent MockService instance is invoked.
-type ServiceRepoUpdateFunc struct {
-	defaultHook func(context.Context, api.RepoName) (time.Time, time.Time, error)
-	hooks       []func(context.Context, api.RepoName) (time.Time, time.Time, error)
-	history     []ServiceRepoUpdateFuncCall
-	mutex       sync.Mutex
-}
-
-// RepoUpdate delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockService) RepoUpdate(v0 context.Context, v1 api.RepoName) (time.Time, time.Time, error) {
-	r0, r1, r2 := m.RepoUpdateFunc.nextHook()(v0, v1)
-	m.RepoUpdateFunc.appendCall(ServiceRepoUpdateFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the RepoUpdate method of
-// the parent MockService instance is invoked and the hook queue is empty.
-func (f *ServiceRepoUpdateFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (time.Time, time.Time, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoUpdate method of the parent MockService instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ServiceRepoUpdateFunc) PushHook(hook func(context.Context, api.RepoName) (time.Time, time.Time, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ServiceRepoUpdateFunc) SetDefaultReturn(r0 time.Time, r1 time.Time, r2 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (time.Time, time.Time, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ServiceRepoUpdateFunc) PushReturn(r0 time.Time, r1 time.Time, r2 error) {
-	f.PushHook(func(context.Context, api.RepoName) (time.Time, time.Time, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *ServiceRepoUpdateFunc) nextHook() func(context.Context, api.RepoName) (time.Time, time.Time, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ServiceRepoUpdateFunc) appendCall(r0 ServiceRepoUpdateFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ServiceRepoUpdateFuncCall objects
-// describing the invocations of this function.
-func (f *ServiceRepoUpdateFunc) History() []ServiceRepoUpdateFuncCall {
-	f.mutex.Lock()
-	history := make([]ServiceRepoUpdateFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ServiceRepoUpdateFuncCall is an object that describes an invocation of
-// method RepoUpdate on an instance of MockService.
-type ServiceRepoUpdateFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 time.Time
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 time.Time
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ServiceRepoUpdateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ServiceRepoUpdateFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// ServiceSearchWithObservabilityFunc describes the behavior when the
-// SearchWithObservability method of the parent MockService instance is
-// invoked.
-type ServiceSearchWithObservabilityFunc struct {
-	defaultHook func(context.Context, trace.Trace, *protocol.SearchRequest, func(*protocol.CommitMatch) error) (bool, error)
-	hooks       []func(context.Context, trace.Trace, *protocol.SearchRequest, func(*protocol.CommitMatch) error) (bool, error)
-	history     []ServiceSearchWithObservabilityFuncCall
-	mutex       sync.Mutex
-}
-
-// SearchWithObservability delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockService) SearchWithObservability(v0 context.Context, v1 trace.Trace, v2 *protocol.SearchRequest, v3 func(*protocol.CommitMatch) error) (bool, error) {
-	r0, r1 := m.SearchWithObservabilityFunc.nextHook()(v0, v1, v2, v3)
-	m.SearchWithObservabilityFunc.appendCall(ServiceSearchWithObservabilityFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// SearchWithObservability method of the parent MockService instance is
-// invoked and the hook queue is empty.
-func (f *ServiceSearchWithObservabilityFunc) SetDefaultHook(hook func(context.Context, trace.Trace, *protocol.SearchRequest, func(*protocol.CommitMatch) error) (bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SearchWithObservability method of the parent MockService instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *ServiceSearchWithObservabilityFunc) PushHook(hook func(context.Context, trace.Trace, *protocol.SearchRequest, func(*protocol.CommitMatch) error) (bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ServiceSearchWithObservabilityFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, trace.Trace, *protocol.SearchRequest, func(*protocol.CommitMatch) error) (bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ServiceSearchWithObservabilityFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, trace.Trace, *protocol.SearchRequest, func(*protocol.CommitMatch) error) (bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *ServiceSearchWithObservabilityFunc) nextHook() func(context.Context, trace.Trace, *protocol.SearchRequest, func(*protocol.CommitMatch) error) (bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ServiceSearchWithObservabilityFunc) appendCall(r0 ServiceSearchWithObservabilityFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ServiceSearchWithObservabilityFuncCall
-// objects describing the invocations of this function.
-func (f *ServiceSearchWithObservabilityFunc) History() []ServiceSearchWithObservabilityFuncCall {
-	f.mutex.Lock()
-	history := make([]ServiceSearchWithObservabilityFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ServiceSearchWithObservabilityFuncCall is an object that describes an
-// invocation of method SearchWithObservability on an instance of
-// MockService.
-type ServiceSearchWithObservabilityFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 trace.Trace
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 *protocol.SearchRequest
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 func(*protocol.CommitMatch) error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ServiceSearchWithObservabilityFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ServiceSearchWithObservabilityFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }

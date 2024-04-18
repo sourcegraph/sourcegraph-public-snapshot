@@ -72,7 +72,7 @@ test('fills search query from URL', async ({ page }) => {
 })
 
 test('main navbar menus are visible above search input', async ({ page, sg }) => {
-    const stream = sg.mockSearchStream()
+    const stream = await sg.mockSearchStream()
     await page.goto('/search?q=test')
     await stream.publish(createProgressEvent(), createDoneEvent())
     await stream.close()
@@ -85,7 +85,7 @@ test.use({
     permissions: ['clipboard-write', 'clipboard-read'],
 })
 test('copy path button appears and copies path', async ({ page, sg }) => {
-    const stream = sg.mockSearchStream()
+    const stream = await sg.mockSearchStream()
     await page.goto('/search?q=test')
     await page.getByRole('heading', { name: 'Filter results' }).waitFor()
 
@@ -140,7 +140,7 @@ test.describe('preview panel', async () => {
         language: 'text',
     }
     test('can be opened and closed', async ({ page, sg }) => {
-        const stream = sg.mockSearchStream()
+        const stream = await sg.mockSearchStream()
         await page.goto('/search?q=test')
         await page.getByRole('heading', { name: 'Filter results' }).waitFor()
         sg.mockOperations({
@@ -173,7 +173,7 @@ test.describe('preview panel', async () => {
     })
 
     test('can iterate over matches', async ({ page, sg }) => {
-        const stream = sg.mockSearchStream()
+        const stream = await sg.mockSearchStream()
         await page.goto('/search?q=test')
         await page.getByRole('heading', { name: 'Filter results' }).waitFor()
         await stream.publish(

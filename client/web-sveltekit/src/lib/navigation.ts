@@ -1,3 +1,5 @@
+import { dev } from '$app/environment'
+
 import { svelteKitRoutes, type SvelteKitRoute } from './routes'
 
 let knownRoutesRegex: RegExp | undefined
@@ -16,8 +18,19 @@ function getKnownRoutesRegex(): RegExp {
  *
  * Callers should pass an actual route ID retrived from SvelteKit not an
  * arbitrary path.
+ *
+ * NOTE: When in dev or preview mode, all routes are always enabled.
+ *
+ * @param pathname The pathname of the route to check.
+ * @returns Whether the SvelteKit app is enabled for the given route.
  */
 export function isRouteEnabled(pathname: string): boolean {
+    // Preview mode is like production mode but with all routes enabled.
+    // This necessary for running `pnpm run preview` or playwright tests.
+    if (dev || import.meta.env.MODE === 'preview') {
+        return true
+    }
+
     if (!pathname) {
         return false
     }
