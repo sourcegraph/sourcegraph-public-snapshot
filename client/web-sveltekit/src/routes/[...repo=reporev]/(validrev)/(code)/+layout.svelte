@@ -66,7 +66,6 @@
     const fileTreeStore = createFileTreeStore({ fetchFileTreeData: fetchSidebarFileTree })
     let selectedTab: number | null = null
     let historyPanel: HistoryPanel
-    let rootElement: HTMLElement | null = null
     let commitHistory: GitHistory_HistoryConnection | null
     let lastCommit: LastCommitFragment | null
 
@@ -95,7 +94,7 @@
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
 </script>
 
-<section bind:this={rootElement}>
+<section>
     <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
         <header>
             <h3>
