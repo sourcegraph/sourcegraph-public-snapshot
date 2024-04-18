@@ -2,7 +2,6 @@ package appliance
 
 import (
 	"context"
-	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -45,21 +44,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	applianceSpec.Labels = hash.SetTemplateHashLabel(applianceSpec.Labels, applianceSpec.Data)
-
-	if applianceSpec.GetDeletionTimestamp() != nil {
-		r.Recorder.Event(&applianceSpec, "Warning", "Deleting", fmt.Sprintf("ConfigMap %s is being deleted from the namespace %s", req.Name, req.Namespace))
-		err = r.Delete(ctx, &applianceSpec, client.Preconditions{
-			UID:             &applianceSpec.UID,
-			ResourceVersion: &applianceSpec.ResourceVersion,
-		})
-
-		if err != nil && client.IgnoreNotFound(err) != nil {
-			reqLog.Error(err, "failed to delete sourcegraph appliance spec")
-			return ctrl.Result{}, err
-		}
-
-		return ctrl.Result{}, nil
-	}
 
 	// TODO place holder code until we get the configmap spec'd out and working'
 	data, ok := applianceSpec.Data["spec"]
