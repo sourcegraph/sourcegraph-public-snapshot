@@ -14,7 +14,7 @@ import (
 // EndpointMap is the subset of endpoint.Map (consistent hashmap) methods we
 // use. Declared as an interface for testing.
 type EndpointMap interface {
-	// Endpoints returns a list of all addresses. Do not modify the returned value.
+	// Endpoints returns a list of all addresses which can be searched. Do not modify the returned value.
 	Endpoints() ([]string, error)
 	// Get returns the endpoint for the key. (consistent hashing).
 	Get(string) (string, error)
@@ -29,12 +29,6 @@ type Indexers struct {
 	// Indexed returns a set of repository names currently indexed on
 	// endpoint. If indexed fails, it is expected to return an empty set.
 	Indexed func(ctx context.Context, endpoint string) zoekt.ReposMap
-
-	// ToDrain is a set of endpoints which should be drained. Indexes hosted by
-	// these endpoints will be recreated by other endpoints. Search is still served
-	// by all endpoints. Use this to remove an endpoint from the cluster with
-	// minimal disruption.
-	ToDrain map[string]struct{}
 }
 
 // ReposSubset returns the subset of repoNames that hostname should index.
@@ -47,10 +41,6 @@ type Indexers struct {
 func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed zoekt.ReposMap, repos []types.MinimalRepo) ([]types.MinimalRepo, error) {
 	if !c.Enabled() {
 		return repos, nil
-	}
-
-	if _, ok := c.ToDrain[hostname]; ok {
-		return c.filterReposPendingIndexing(ctx, indexed, repos)
 	}
 
 	eps, err := c.Map.Endpoints()
@@ -90,36 +80,6 @@ func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed zoe
 		for _, r := range otherRepos {
 			if _, ok := drop[uint32(r.ID)]; !ok {
 				subset = append(subset, r)
-			}
-		}
-	}
-
-	return subset, nil
-}
-
-// filterReposPendingIndexing returns the subset of repos that are not yet
-// indexed by another host.
-func (c *Indexers) filterReposPendingIndexing(ctx context.Context, indexed zoekt.ReposMap, repos []types.MinimalRepo) ([]types.MinimalRepo, error) {
-	// Group indexed repos by their assigned host.
-	newHostRepos := map[string][]types.MinimalRepo{}
-	for _, r := range repos {
-		assigned, err := c.Map.Get(string(r.Name))
-		if err != nil {
-			return nil, err
-		}
-
-		if _, ok := indexed[uint32(r.ID)]; ok {
-			newHostRepos[assigned] = append(newHostRepos[assigned], r)
-		}
-	}
-
-	// Filter repos that have already been indexed by another host
-	subset := repos[:0]
-	for newHost, r := range newHostRepos {
-		drop := c.Indexed(ctx, newHost)
-		for _, repo := range r {
-			if _, ok := drop[uint32(repo.ID)]; !ok {
-				subset = append(subset, repo)
 			}
 		}
 	}

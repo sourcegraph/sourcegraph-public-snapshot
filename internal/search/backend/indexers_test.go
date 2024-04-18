@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/zoekt"
-	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -199,96 +198,6 @@ func TestFindEndpoint(t *testing.T) {
 				t.Errorf("findEndpoint got %q, want %q", got, tc.want)
 			}
 		})
-	}
-}
-
-func TestFilterReposPendingIndexing(t *testing.T) {
-	cases := []struct {
-		name  string
-		state map[string][]string
-		want  []string
-	}{
-		{
-			name: "draining, with duplicates",
-			// map of host -> indexed repos. All repos are assigned to host "target".
-			state: map[string][]string{
-				"target": {"target_repo1", "target_repo2"},
-				"drain":  {"target_repo1", "target_repo2", "target_repo3"},
-			},
-			want: []string{"target_repo3"},
-		},
-		{
-			name: "draining, no duplicates",
-			state: map[string][]string{
-				"target": {"target_repo1", "target_repo2"},
-				"drain":  {"target_repo3"},
-			},
-			want: []string{"target_repo3"},
-		},
-		{
-			name: "not drained",
-			state: map[string][]string{
-				"target": {},
-				"drain":  {"target_repo1", "target_repo2", "target_repo3", "target_repo4"},
-			},
-			want: []string{"target_repo1", "target_repo2", "target_repo3", "target_repo4"},
-		},
-		{
-			name: "fully drained",
-			state: map[string][]string{
-				"target": {"target_repo1", "target_repo2", "target_repo3", "target_repo4"},
-				"drain":  {},
-			},
-			want: []string{},
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-
-			m := make(map[string]types.MinimalRepo)
-
-			c := &Indexers{
-				Map: prefixMap([]string{"target", "drain"}),
-				Indexed: func(ctx context.Context, host string) zoekt.ReposMap {
-					set := zoekt.ReposMap{}
-					for _, s := range tc.state[host] {
-						set[uint32(m[s].ID)] = zoekt.MinimalRepoListEntry{}
-					}
-					return set
-				},
-			}
-
-			var repos []types.MinimalRepo
-			for _, v := range tc.state {
-				for _, repo := range v {
-					r := types.MinimalRepo{
-						ID:   api.RepoID(rand.Int31()),
-						Name: api.RepoName(repo),
-					}
-					m[repo] = r
-					repos = append(repos, r)
-				}
-			}
-
-			indexed := make(zoekt.ReposMap)
-			for _, v := range tc.state["drain"] {
-				indexed[uint32(m[v].ID)] = zoekt.MinimalRepoListEntry{}
-			}
-
-			got, err := c.filterReposPendingIndexing(ctx, indexed, repos)
-			require.NoError(t, err)
-
-			gotRepos := []string{}
-			for _, r := range got {
-				gotRepos = append(gotRepos, string(r.Name))
-			}
-			if diff := cmp.Diff(tc.want, gotRepos); diff != "" {
-				t.Fatalf("filterReposPendingIndexing mismatch (-want +got):\n%s", diff)
-			}
-		})
-
 	}
 }
 
