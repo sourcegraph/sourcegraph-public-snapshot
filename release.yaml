@@ -8,7 +8,9 @@ requirements:
   - name: "curl"
     cmd: "curl --help"
   - name: "Buidkite access token"
-    env: BUILDKITE_ACCESS_TOKEN # `write_builds` permission is needed here
+    # `write_builds` permission is all that's needed here
+    # You also need to ensure you add access to the Sourcegraph organization on Buildkite.
+    env: BUILDKITE_ACCESS_TOKEN
 
   # #announce-engineering slack webhook url:
   # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=pldpna5vivapxe4phewnqd42ji&h=team-sourcegraph.1password.com
