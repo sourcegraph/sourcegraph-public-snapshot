@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/gitops"
 	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -93,7 +93,7 @@ func NewConfig(now time.Time) Config {
 			diffCommand = append(diffCommand, "@^")
 		} else {
 			baseBranch := os.Getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
-			if diffArgs, err := determineDiffArgs(baseBranch, commit); err != nil {
+			if diffArgs, err := gitops.DetermineDiffArgs(baseBranch, commit); err != nil {
 				panic(err)
 			} else {
 				// the base we want to diff against should exist locally now so we can diff!
@@ -143,27 +143,6 @@ func NewConfig(now time.Time) Config {
 	}
 }
 
-func determineDiffArgs(baseBranch, commit string) (string, error) {
-	// We have a different base branch (possibily) and on aspect agents we are in a detached state with only 100 commit depth
-	// so we might not know about this base branch ... so we first fetch the base and then diff
-	//
-	// Determine the base branch
-	if baseBranch == "" {
-		// When the base branch is not set, then this is probably a build where a commit got merged
-		// onto the current branch. So we just diff with the current commit
-		return "@^", nil
-	}
-
-	// fetch the branch to make sure it exists
-	refspec := fmt.Sprintf("+refs/heads/%s:refs/remotes/origin/%s", baseBranch, baseBranch)
-	if _, err := exec.Command("git", "fetch", "origin", refspec).Output(); err != nil {
-		return "", errors.Newf("failed to fetch %s: %s", baseBranch, err)
-	} else {
-		fmt.Fprintf(os.Stderr, "fetched %s\n", baseBranch)
-		return fmt.Sprintf("origin/%s...%s", baseBranch, commit), nil
-	}
-}
-
 // inferVersion constructs the Sourcegraph version from the given build state.
 func inferVersion(runType runtype.RunType, tag string, commit string, buildNumber int, branch string, now time.Time) string {
 	// If we're building a release, use the version that is being released regardless of
@@ -179,8 +158,19 @@ func inferVersion(runType runtype.RunType, tag string, commit string, buildNumbe
 		return strings.TrimPrefix(tag, "v")
 	}
 
+	// need to determine the tag
+	latestTag, err := gitops.GetLatestTag()
+	if err != nil {
+		if errors.Is(err, gitops.ErrNoTags) {
+			// use empty string if no tags are present
+			fmt.Fprintf(os.Stderr, "no tags found, using empty string\n")
+		} else {
+			fmt.Fprintf(os.Stderr, "error determining latest tag: %v\n", err)
+		}
+		latestTag = ""
+	}
 	// "main" branch is used for continuous deployment and has a special-case format
-	version := images.BranchImageTag(now, commit, buildNumber, sanitizeBranchForDockerTag(branch), tryGetLatestTag())
+	version := images.BranchImageTag(now, commit, buildNumber, sanitizeBranchForDockerTag(branch), latestTag)
 
 	// Add additional patch suffix
 	if runType.Is(runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.ExecutorPatchNoTest) {
@@ -188,32 +178,6 @@ func inferVersion(runType runtype.RunType, tag string, commit string, buildNumbe
 	}
 
 	return version
-}
-
-func tryGetLatestTag() string {
-	output, err := exec.Command("git", "tag", "--list", "v*").CombinedOutput()
-	if err != nil {
-		return ""
-	}
-
-	tagMap := map[string]struct{}{}
-	for _, tag := range strings.Split(string(output), "\n") {
-		if version, ok := oobmigration.NewVersionFromString(tag); ok {
-			tagMap[version.String()] = struct{}{}
-		}
-	}
-	if len(tagMap) == 0 {
-		return ""
-	}
-
-	versions := make([]oobmigration.Version, 0, len(tagMap))
-	for tag := range tagMap {
-		version, _ := oobmigration.NewVersionFromString(tag)
-		versions = append(versions, version)
-	}
-	oobmigration.SortVersions(versions)
-
-	return versions[len(versions)-1].String()
 }
 
 func (c Config) shortCommit() string {
@@ -230,16 +194,8 @@ func (c Config) ensureCommit() error {
 		return nil
 	}
 
-	found := false
-	var errs error
-	for _, mustIncludeCommit := range c.MustIncludeCommit {
-		output, err := exec.Command("git", "merge-base", "--is-ancestor", mustIncludeCommit, "HEAD").CombinedOutput()
-		if err == nil {
-			found = true
-			break
-		}
-		errs = errors.Append(errs, errors.Errorf("%v | Output: %q", err, string(output)))
-	}
+	found, errs := gitops.HasIncludedCommit(c.MustIncludeCommit...)
+
 	if !found {
 		fmt.Printf("This branch %q at commit %s does not include any of these commits: %s.\n", c.Branch, c.Commit, strings.Join(c.MustIncludeCommit, ", "))
 		fmt.Println("Rebase onto the latest main to get the latest CI fixes.")
