@@ -234,7 +234,7 @@ func (c *Config) Load() {
 			"accounts/fireworks/models/llama-v2-34b-code-instruct",
 			"accounts/fireworks/models/mistral-7b-instruct-4k",
 			"accounts/fireworks/models/mixtral-8x7b-instruct",
-			"accounts/fireworks/models/mixtral-8x22b-instruct-preview",
+			"accounts/fireworks/models/mixtral-8x22b-instruct",
 			// Deprecated model strings
 			"accounts/fireworks/models/starcoder-3b-w8a16",
 			"accounts/fireworks/models/starcoder-1b-w8a16",

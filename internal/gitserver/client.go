@@ -237,9 +237,17 @@ type ListRefsOpts struct {
 
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
-	Treeish string        // the tree or commit to produce an archive for
-	Format  ArchiveFormat // format of the resulting archive (usually "tar" or "zip")
-	Paths   []string      // if nonempty, only include these paths.
+	// Treeish is the tree or commit to produce an archive for
+	Treeish string
+	// Format is the format of the resulting archive (usually "tar" or "zip")
+	Format ArchiveFormat
+	// Paths is a list of paths to include in the archive. If empty, the entire
+	// repository is included.
+	//
+	// Note: The Path strings are not guaranteed to be UTF-8 encoded, as file paths
+	// on Linux can be arbitrary byte sequences. Users should take care to validate / sanitize
+	// paths if necessary.
+	Paths []string
 }
 
 func (a *ArchiveOptions) Attrs() []attribute.KeyValue {
@@ -255,19 +263,31 @@ func (a *ArchiveOptions) Attrs() []attribute.KeyValue {
 }
 
 func (o *ArchiveOptions) FromProto(x *proto.ArchiveRequest) {
+	protoPaths := x.GetPaths()
+
+	paths := make([]string, len(protoPaths))
+	for i, p := range protoPaths {
+		paths[i] = string(p)
+	}
+
 	*o = ArchiveOptions{
 		Treeish: x.GetTreeish(),
 		Format:  ArchiveFormatFromProto(x.GetFormat()),
-		Paths:   x.GetPaths(),
+		Paths:   paths,
 	}
 }
 
 func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
+	paths := make([][]byte, len(o.Paths))
+	for i, p := range o.Paths {
+		paths[i] = []byte(p)
+	}
+
 	return &proto.ArchiveRequest{
 		Repo:    repo,
 		Treeish: o.Treeish,
 		Format:  o.Format.ToProto(),
-		Paths:   o.Paths,
+		Paths:   paths,
 	}
 }
 

@@ -26,6 +26,7 @@
     import type { PageData } from './$types'
     import FileViewModeSwitcher from './FileViewModeSwitcher.svelte'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
+    import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
     import { toViewMode, ViewMode } from './util'
 
     export let data: PageData
@@ -101,6 +102,11 @@
     <FileHeader>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
+            {#await data.externalServiceType then externalServiceType}
+                {#if externalServiceType}
+                    <OpenInEditor {externalServiceType} />
+                {/if}
+            {/await}
             {#if blob}
                 <OpenInCodeHostAction data={blob} />
             {/if}
