@@ -105,7 +105,7 @@ export function getScrollSnapshot(view: EditorView): ScrollSnapshot {
  * @param snapshot The scroll snapshot
  */
 export function restoreScrollSnapshot(view: EditorView, snapshot: ScrollSnapshot): void {
-    const {scrollTop} = snapshot
+    const { scrollTop } = snapshot
 
     if (scrollTop !== undefined) {
         // We are using request measure here to ensure that the DOM has been updated
