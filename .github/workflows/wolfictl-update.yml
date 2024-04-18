@@ -5,6 +5,7 @@ on:
     # everyday at 0:00 UTC
     - cron:  0 0 * * *
   workflow_dispatch:
+  push: # TODO: remove
 
 permissions:
   contents: write
