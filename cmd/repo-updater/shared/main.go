@@ -540,23 +540,4 @@ where last_fetched < now() - interval '8 hours'
 		}
 		return count
 	})
-
-	// Count the number of repos that are deleted but still cloned on disk. These
-	// repos are eligible to be purged.
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_purgeable_repos",
-		Help: "The number of deleted repos that are still cloned on disk",
-	}, func() float64 {
-		count, err := scanCount(`
-SELECT
-	COALESCE(SUM(cloned), 0)
-FROM
-	repo_statistics
-`)
-		if err != nil {
-			logger.Error("Failed to count purgeable repos", log.Error(err))
-			return 0
-		}
-		return count
-	})
 }
