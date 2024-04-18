@@ -1,10 +1,10 @@
-import { mdiChartBar, mdiMagnify } from '@mdi/js'
 import type { Page } from '@sveltejs/kit'
 import type { ComponentType } from 'svelte'
+import { mdiChartBar, mdiMagnify } from '@mdi/js'
 
-import BatchChangesIcon from '$lib/icons/BatchChanges.svelte'
 import CodyIcon from '$lib/icons/Cody.svelte'
 import { isRepoRoute } from '$lib/navigation'
+import BatchChangesIcon from '$lib/icons/BatchChanges.svelte'
 
 /**
  * Indiciates to the UI to show a status badge next to the navigation entry.
@@ -49,6 +49,13 @@ export interface NavigationMenu {
      * The navigation entries that are part of the menu.
      */
     children: NavigationEntry[]
+
+    /**
+     * NavigationMenu item can be rendered as plain link in side navigation mode
+     * This fallbackURL will be used to set URL to this link
+     */
+    href: string
+
     /**
      * An optional icon to display next to the label.
      */
@@ -75,6 +82,7 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
     {
         label: 'Code Search',
         icon: mdiMagnify,
+        href: '/search',
         children: [
             {
                 label: 'Search Home',
@@ -111,6 +119,7 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
     {
         label: 'Cody AI',
         icon: CodyIcon,
+        href: '/cody',
         isCurrent(this: NavigationMenu, page) {
             return this.children.some(entry => isCurrent(entry, page))
         },
