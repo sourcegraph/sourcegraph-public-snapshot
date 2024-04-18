@@ -73,6 +73,8 @@ type Config struct {
 
 	// SAMSClientConfig for verifying and generating SAMS access tokens.
 	SAMSClientConfig SAMSClientConfig
+	// one of "production", "staging" or "dev" (all 3 can connect to sourcegraph.com)
+	Environment string
 }
 
 type OpenTelemetryConfig struct {
@@ -289,6 +291,8 @@ func (c *Config) Load() {
 	c.SAMSClientConfig.URL = c.GetOptional("SAMS_URL", "SAMS service endpoint")
 	c.SAMSClientConfig.ClientID = c.GetOptional("SAMS_CLIENT_ID", "SAMS OAuth client ID")
 	c.SAMSClientConfig.ClientSecret = c.GetOptional("SAMS_CLIENT_SECRET", "SAMS OAuth client secret")
+
+	c.Environment = c.Get("CODY_GATEWAY_ENVIRONMENT", "dev", "Environment name.")
 }
 
 // loadFlaggingConfig loads the common set of flagging-related environment variables for
