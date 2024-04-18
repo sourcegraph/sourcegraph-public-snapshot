@@ -168,6 +168,7 @@ func (l *loggingGRPCServer) Exec(request *proto.ExecRequest, server proto.Gitser
 func execRequestToLogFields(req *proto.ExecRequest) []log.Field {
 	return []log.Field{
 		log.String("repo", req.GetRepo()),
+		//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 		log.String("ensureRevision", string(req.GetEnsureRevision())),
 		log.Strings("args", byteSlicesToStrings(req.GetArgs())),
 		log.Bool("noTimeout", req.GetNoTimeout()),
