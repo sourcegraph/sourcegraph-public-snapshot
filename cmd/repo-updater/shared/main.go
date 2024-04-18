@@ -16,8 +16,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/phabricator"
@@ -206,9 +204,8 @@ func makeGRPCServer(logger log.Logger, server *repoupdater.Server) goroutine.Bac
 	addr := net.JoinHostPort(host, port)
 	logger.Info("listening", log.String("addr", addr))
 
-	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
+	grpcServer := defaults.NewServer(logger)
 	proto.RegisterRepoUpdaterServiceServer(grpcServer, server)
-	reflection.Register(grpcServer)
 
 	return grpcserver.NewFromAddr(logger.Scoped("repo-updater.grpcserver"), addr, grpcServer)
 }
