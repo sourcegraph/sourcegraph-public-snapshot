@@ -6,8 +6,8 @@ import classNames from 'classnames'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { H2, Text, Link, Icon, H5, Modal } from '@sourcegraph/wildcard'
 
-import type { IEditor } from '../onboarding/CodyOnboarding'
 import { editorGroups } from '../editorGroups'
+import type { IEditor } from '../onboarding/CodyOnboarding'
 
 import { EditorStep } from './CodyManagementPage'
 

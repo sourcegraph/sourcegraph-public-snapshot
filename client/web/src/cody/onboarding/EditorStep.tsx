@@ -5,8 +5,9 @@ import classNames from 'classnames'
 import type { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { H2, Text, H5 } from '@sourcegraph/wildcard'
 
-import type { IEditor } from './CodyOnboarding'
 import { editorGroups } from '../editorGroups'
+
+import type { IEditor } from './CodyOnboarding'
 
 import styles from './CodyOnboarding.module.scss'
 

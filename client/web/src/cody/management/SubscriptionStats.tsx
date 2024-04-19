@@ -24,7 +24,10 @@ interface SubscriptionStatsProps {
     usageData: UserCodyUsageResult | undefined
 }
 
-export const SubscriptionStats: React.FunctionComponent<SubscriptionStatsProps> = ({ subscription, usageData }: SubscriptionStatsProps) => {
+export const SubscriptionStats: React.FunctionComponent<SubscriptionStatsProps> = ({
+    subscription,
+    usageData,
+}: SubscriptionStatsProps) => {
     const stats = usageData?.currentUser
     const codyCurrentPeriodChatLimit = stats?.codyCurrentPeriodChatLimit || 0
     const codyCurrentPeriodChatUsage = stats?.codyCurrentPeriodChatUsage || 0
@@ -58,11 +61,7 @@ export const SubscriptionStats: React.FunctionComponent<SubscriptionStatsProps> 
     return (
         <div className={classNames('d-flex align-items-center mt-3', styles.responsiveContainer)}>
             <div className="d-flex flex-column align-items-center flex-grow-1 p-3">
-                {isUserOnProTier ? (
-                    <ProTierIcon />
-                ) : (
-                    <Text className={classNames(styles.planName, 'mb-0')}>Free</Text>
-                )}
+                {isUserOnProTier ? <ProTierIcon /> : <Text className={classNames(styles.planName, 'mb-0')}>Free</Text>}
                 <Text className="text-muted mb-0" size="small">
                     tier
                 </Text>
@@ -92,10 +91,7 @@ export const SubscriptionStats: React.FunctionComponent<SubscriptionStatsProps> 
                                 {Math.min(codyCurrentPeriodCodeUsage, codyCurrentPeriodCodeLimit)} /
                             </Text>{' '}
                             <Text
-                                className={classNames(
-                                    'd-inline b-0',
-                                    codeLimitReached ? 'text-danger' : 'text-muted'
-                                )}
+                                className={classNames('d-inline b-0', codeLimitReached ? 'text-danger' : 'text-muted')}
                                 size="small"
                             >
                                 {codyCurrentPeriodCodeLimit}
@@ -139,10 +135,7 @@ export const SubscriptionStats: React.FunctionComponent<SubscriptionStatsProps> 
                                 {Math.min(codyCurrentPeriodChatUsage, codyCurrentPeriodChatLimit)} /
                             </Text>{' '}
                             <Text
-                                className={classNames(
-                                    'd-inline b-0',
-                                    chatLimitReached ? 'text-danger' : 'text-muted'
-                                )}
+                                className={classNames('d-inline b-0', chatLimitReached ? 'text-danger' : 'text-muted')}
                                 size="small"
                             >
                                 {codyCurrentPeriodChatLimit}

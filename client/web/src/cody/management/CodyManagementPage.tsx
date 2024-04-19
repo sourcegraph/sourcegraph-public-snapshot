@@ -136,7 +136,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             </div>
                         )}
                     </div>
-                    <SubscriptionStats{...{ subscription, usageData}} />
+                    <SubscriptionStats {...{ subscription, usageData }} />
                 </div>
 
                 <UseCodyInEditorSection
