@@ -5,7 +5,14 @@
 set -eux
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-SRC_CLI_VERSION="$(go run ../../internal/cmd/src-cli-version/main.go)"
+# If we're running in CI, generate aspect bazelrc
+if [[ ${CI:-} == "true" ]]; then
+  aspectRC="/tmp/aspect-generated.bazelrc"
+  rosetta bazelrc >"${aspectRC}"
+  bazelrcs=(--bazelrc="${aspectRC}")
+fi
+
+SRC_CLI_VERSION="$(bazel "${bazelrcs[@]}" run //internal/cmd/src-cli-version:src-cli-version)"
 
 echo "--- docker build"
 docker build -t "$IMAGE" . \

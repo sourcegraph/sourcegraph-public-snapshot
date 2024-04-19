@@ -1137,6 +1137,52 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
+	t.Run("Cody context search", func(t *testing.T) {
+		tests := []struct {
+			name       string
+			query      string
+			zeroResult bool
+		}{
+			{
+				name:       "Cody context, simple query, results",
+				query:      `repo:^github\.com/sgtest/go-diff$ patterntype:codycontext PrintMultiFileDiff unified `,
+				zeroResult: false,
+			},
+			{
+				name:       "Cody context, simple query, no results",
+				query:      `repo:^github\.com/sgtest/go-diff$ patterntype:codycontext DOES_NOT_EXIST ALSO_DOES_NOT_EXIST `,
+				zeroResult: true,
+			},
+			{
+				name:       "Cody context, all stopwords in query",
+				query:      `repo:^github\.com/sgtest/go-diff$ patterntype:codycontext tell me again!`,
+				zeroResult: true,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchFiles(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if results.Alert != nil {
+					t.Fatalf("Unexpected alert %v", results.Alert)
+				}
+
+				if test.zeroResult {
+					if len(results.Results) > 0 {
+						t.Fatalf("Want zero result but got %d", len(results.Results))
+					}
+				} else {
+					if len(results.Results) == 0 {
+						t.Fatal("Want non-zero results but got 0")
+					}
+				}
+			})
+		}
+	})
+
 	type counts struct {
 		Repo    int
 		Commit  int

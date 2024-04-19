@@ -99,6 +99,7 @@ func buildRepoIndex(packageKeys []string) func(*bk.Pipeline) {
 			// Depend on all previous package building steps
 			bk.DependsOn(packageKeys...),
 			bk.Key("buildRepoIndex"),
+			bk.SoftFail(222),
 		)
 	}
 }
