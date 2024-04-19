@@ -13,8 +13,8 @@ type EnvironmentPrivateNetworkingSpec struct {
 	// If no value is provided, the default is currently to not provision any
 	// routing.
 	PrivateGoogleAccess *EnvironmentPrivateGoogleAccessSpec `yaml:"privateGoogleAccess,omitempty"`
-	// PrivateAccessServer, if configured to a non-nil value, will provision a
-	// VPC Service Controls perimeter around this environment's GCP project's
+	// PrivateAccessPerimeter, if configured to a non-nil value, will provision
+	// a VPC Service Controls perimeter around this environment's GCP project's
 	// Cloud Run APIs (including the Cloud Run service's internal direct-access
 	// URL).
 	//
@@ -24,7 +24,7 @@ type EnvironmentPrivateNetworkingSpec struct {
 	// enforced.
 	//
 	// Only supported for services of 'kind: service'.
-	PrivateAccessServer *EnvironmentPrivateAccessServerSpec `yaml:"privateAccessServer,omitempty"`
+	PrivateAccessPerimeter *EnvironmentPrivateAccessPerimeterSpec `yaml:"privateAccessPerimeter,omitempty"`
 }
 
 func (s *EnvironmentPrivateNetworkingSpec) Validate() []error {
@@ -32,7 +32,7 @@ func (s *EnvironmentPrivateNetworkingSpec) Validate() []error {
 		return nil
 	}
 	var errs []error
-	errs = append(errs, s.PrivateAccessServer.Validate()...)
+	errs = append(errs, s.PrivateAccessPerimeter.Validate()...)
 	return errs
 }
 
@@ -42,24 +42,27 @@ type EnvironmentPrivateGoogleAccessSpec struct {
 	CloudRunApps *bool `yaml:"cloudRunApps,omitempty"`
 }
 
-type EnvironmentPrivateAccessServerSpec struct {
+type EnvironmentPrivateAccessPerimeterSpec struct {
 	// AllowlistedProjects is a list of GCP projects whose internal traffic
 	// (e.g. egress from a VPC network within the listed projects) is allowed
 	// direct ingress to the Cloud Run service in the perimeter, typically via
 	// the service's internal Cloud Run URL (i.e. '*.run.app' URLs).
+	//
+	// If you want to allow private ingress to this service from another MSP
+	// service's project, include the desired environment's project ID here.
 	AllowlistedProjects []string `yaml:"allowlistedProjects"`
 	// AllowlistedIdentities is a list of Google identities that are allowed
 	// ingress to the Cloud Run service in the perimeter. Values are expected to
 	// use the https://cloud.google.com/iam/docs/principal-identifiers.md#v1
 	// format.
 	//
-	// Currently, only 'serviceAccount:' and 'user:' are supported.
+	// Currently, only 'serviceAccount:' and 'user:' identities are supported.
 	AllowlistedIdentities []string `yaml:"allowlistedIdentities,omitempty"`
 }
 
 var allowedPrivateAccessServerAllowlistedIdentityTypes = []string{"serviceAccount:", "user:"}
 
-func (e *EnvironmentPrivateAccessServerSpec) Validate() []error {
+func (e *EnvironmentPrivateAccessPerimeterSpec) Validate() []error {
 	if e == nil {
 		return nil
 	}

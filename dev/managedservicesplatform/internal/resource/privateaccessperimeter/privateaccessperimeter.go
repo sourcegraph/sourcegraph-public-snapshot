@@ -1,4 +1,4 @@
-package privateaccesperimeter
+package privateaccessperimeter
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ type Config struct {
 	Service       spec.ServiceSpec
 	EnvironmentID string
 
-	Spec spec.EnvironmentPrivateAccessServerSpec
+	Spec spec.EnvironmentPrivateAccessPerimeterSpec
 }
 
 type Output struct{}
@@ -30,7 +30,8 @@ type Output struct{}
 // https://github.com/hashicorp/terraform-provider-google/issues/8999
 const orgAccessPolicy = "267168805930"
 
-// New sets up ...
+// New sets up GCP VPC Service Controls Perimeter around this project's Cloud
+// Run APIs, allowlisting ingress based on the provided spec.
 //
 // This should only be created once, hence why it does not have accept
 // a resourceid.ID

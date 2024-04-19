@@ -6,10 +6,10 @@ import (
 
 	"github.com/aws/constructs-go/constructs/v10"
 
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computenetwork"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/dnsmanagedzone"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/dnsrecordset"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privatenetwork"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -17,9 +17,9 @@ import (
 )
 
 type Config struct {
-	ProjectID      string
-	PrivateNetwork privatenetwork.Output
-	Spec           spec.EnvironmentPrivateGoogleAccessSpec
+	ProjectID string
+	Network   computenetwork.ComputeNetwork
+	Spec      spec.EnvironmentPrivateGoogleAccessSpec
 }
 
 type Output struct{}
@@ -75,7 +75,7 @@ func New(scope constructs.Construct, config Config) (*Output, error) {
 			Visibility:  pointers.Ptr("private"),
 			PrivateVisibilityConfig: &dnsmanagedzone.DnsManagedZonePrivateVisibilityConfig{
 				Networks: &dnsmanagedzone.DnsManagedZonePrivateVisibilityConfigNetworks{
-					NetworkUrl: config.PrivateNetwork.Network.Id(),
+					NetworkUrl: config.Network.Id(),
 				},
 			},
 		})

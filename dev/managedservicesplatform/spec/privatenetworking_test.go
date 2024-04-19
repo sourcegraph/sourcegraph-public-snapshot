@@ -10,7 +10,7 @@ import (
 func TestEnvironmentPrivateAccessServerSpecValidate(t *testing.T) {
 	for _, tc := range []struct {
 		name           string
-		spec           *EnvironmentPrivateAccessServerSpec
+		spec           *EnvironmentPrivateAccessPerimeterSpec
 		expectedErrors autogold.Value
 	}{
 		{
@@ -19,11 +19,11 @@ func TestEnvironmentPrivateAccessServerSpecValidate(t *testing.T) {
 		},
 		{
 			name: "empty spec",
-			spec: &EnvironmentPrivateAccessServerSpec{},
+			spec: &EnvironmentPrivateAccessPerimeterSpec{},
 		},
 		{
 			name: "valid identities",
-			spec: &EnvironmentPrivateAccessServerSpec{
+			spec: &EnvironmentPrivateAccessPerimeterSpec{
 				AllowlistedIdentities: []string{
 					"serviceAccount:project-id@service-account.com",
 					"user:user@example.com",
@@ -32,7 +32,7 @@ func TestEnvironmentPrivateAccessServerSpecValidate(t *testing.T) {
 		},
 		{
 			name: "invalid identity",
-			spec: &EnvironmentPrivateAccessServerSpec{
+			spec: &EnvironmentPrivateAccessPerimeterSpec{
 				AllowlistedIdentities: []string{
 					"invalid:identity",
 				},
@@ -41,7 +41,7 @@ func TestEnvironmentPrivateAccessServerSpecValidate(t *testing.T) {
 		},
 		{
 			name: "mixed identities",
-			spec: &EnvironmentPrivateAccessServerSpec{
+			spec: &EnvironmentPrivateAccessPerimeterSpec{
 				AllowlistedIdentities: []string{
 					"serviceAccount:project-id@service-account.com",
 					"invalid:identity",
