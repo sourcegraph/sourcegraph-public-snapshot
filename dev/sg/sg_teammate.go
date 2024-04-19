@@ -95,12 +95,12 @@ sg teammate handbook asdine
 					if len(args) == 0 {
 						return errors.New("no nickname provided")
 					}
-					handle := strings.Join(args, "")
+					handle := strings.Join(args, " ")
 					resolver, err := getTeamResolver(ctx.Context)
 					if err != nil {
 						return err
 					}
-					teammate, err := resolver.ResolveByGitHubHandle(ctx.Context, handle)
+					teammate, err := resolver.ResolveByName(ctx.Context, handle)
 					if err != nil {
 						return err
 					}
@@ -116,9 +116,9 @@ sg teammate handbook asdine
 						teammate.SlackName,
 						teammate.Email,
 						fmt.Sprintf("[%s](https://github.com/%s)", teammate.GitHub, teammate.GitHub),
-						teammate.Description,
 						teammate.Location,
-						teammate.Role)
+						teammate.Role,
+						teammate.Description)
 					return std.Out.WriteMarkdown(markdown)
 				},
 			},

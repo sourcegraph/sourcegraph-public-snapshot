@@ -3,15 +3,16 @@ package team
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
+	// "io"
+	// "net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/google/go-github/v55/github"
 	"github.com/slack-go/slack"
-	"golang.org/x/net/context/ctxhttp"
+	//"golang.org/x/net/context/ctxhttp"
 	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -197,15 +198,19 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 }
 
 func fetchTeamData(ctx context.Context) (map[string]*Teammate, error) {
-	resp, err := ctxhttp.Get(ctx, http.DefaultClient, teamDataURL)
+	// resp, err := ctxhttp.Get(ctx, http.DefaultClient, teamDataURL)
+	// if err != nil {
+	// 	return nil, errors.Newf("Get: %w", err)
+	// }
+	// defer resp.Body.Close()
+	//
+	// body, err := io.ReadAll(resp.Body)
+	// if err != nil {
+	// 	return nil, errors.Newf("ReadAll: %w", err)
+	// }
+	body, err := os.ReadFile("/Users/william/code/handbook/data/team.yml")
 	if err != nil {
-		return nil, errors.Newf("Get: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Newf("ReadAll: %w", err)
+		return nil, err
 	}
 
 	team := map[string]*Teammate{}
