@@ -62,19 +62,12 @@ func WithPushRefSpec(ref, branch string) pushOpt {
 // * Does the commit exist remotely?
 func (g *GitRepo) IsOutOfSync(ctx context.Context) (bool, error) {
 	if ok, err := g.HasRemoteBranch(ctx); err != nil {
-		return false, nil
+		return false, err
 	} else if !ok {
 		return false, nil
 	}
 
 	return !g.HasRemoteCommit(ctx), nil
-}
-
-// PushToRemote pushes the current branch to origin using the refspec of the current ref and branch.
-// The respec is pushed using `--force-with-lease` to make it safer to push with force
-func (g *GitRepo) PushToRemote(ctx context.Context) (string, error) {
-	// we do not have the branch locally so push with a refspec
-	return g.Push(ctx, WithPushRefSpec(g.Ref, g.Branch), WithForceLease)
 }
 
 // ListChangedFiles lists the files that have changed since the last commit

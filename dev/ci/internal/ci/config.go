@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const EnvCloudEphemeral = "CLOUD_EPHEMERAL"
+
 // Config is the set of configuration parameters that determine the structure of the CI build. These
 // parameters are extracted from the build environment (branch name, commit hash, timestamp, etc.)
 type Config struct {
@@ -70,7 +72,7 @@ func NewConfig(now time.Time) Config {
 			"WOLFI_BASE_REBUILD": os.Getenv("WOLFI_BASE_REBUILD"),
 			"RELEASE_INTERNAL":   os.Getenv("RELEASE_INTERNAL"),
 			"RELEASE_PUBLIC":     os.Getenv("RELEASE_PUBLIC"),
-			"CLOUD_EPHEMERAL":    os.Getenv("CLOUD_EPHEMERAL"),
+			EnvCloudEphemeral:    os.Getenv(EnvCloudEphemeral),
 		})
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
