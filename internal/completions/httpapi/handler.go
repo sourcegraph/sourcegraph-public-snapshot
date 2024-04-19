@@ -69,7 +69,7 @@ func newCompletionsHandler(
 	responseHandler := newSwitchingResponseHandler(logger, db, feature)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("!!!!! newCompletionsHandler request: %+v\n", r.URL)
+		fmt.Printf("!!!!! newCompletionsHandler request: %+v\n", r)
 		if r.Method != "POST" {
 			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusMethodNotAllowed)
 			return
@@ -103,12 +103,11 @@ func newCompletionsHandler(
 		isDotcom := dotcom.SourcegraphDotComMode()
 		if !isDotcom && conf.SiteConfig().CodyContextFilters != nil {
 			clientName := r.URL.Query().Get("client-name")
-			clientVersion := r.URL.Query().Get("client-version")
-			if clientName == "" || clientVersion == "" {
-				http.Error(w, codyClientNotSupportedError.Error(), http.StatusNotAcceptable)
+			if clientName == "" {
+				http.Error(w, fmt.Sprintf("%s: \"client-name\" query param is required.", versionConstraintErrorPrefix), http.StatusNotAcceptable)
 				return
 			}
-			vc, err := newVersionConstraint(types.CodyClientName(clientName))
+			cvc, err := newClientVersionConstraint(types.CodyClientName(clientName))
 			if err != nil {
 				if errors.Is(err, codyClientNotSupportedError) {
 					http.Error(w, err.Error(), http.StatusNotAcceptable)
@@ -118,20 +117,25 @@ func newCompletionsHandler(
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			if vc != nil {
-				c, err := semver.NewConstraint(string(vc.version))
+			if cvc != nil {
+				clientVersion := r.URL.Query().Get("client-version")
+				if clientVersion == "" {
+					http.Error(w, fmt.Sprintf("%s: \"client-version\" query param is required.", versionConstraintErrorPrefix), http.StatusNotAcceptable)
+					return
+				}
+				c, err := semver.NewConstraint(string(cvc.version))
 				if err != nil {
-					http.Error(w, fmt.Sprintf("%s: Cody for %s version constraint \"%s\" doesn't match semver spec.", versionConstraintErrorPrefix, vc.client, vc.version), http.StatusInternalServerError)
+					http.Error(w, fmt.Sprintf("%s: Cody for %s version constraint \"%s\" doesn't match semver spec.", versionConstraintErrorPrefix, cvc.client, cvc.version), http.StatusInternalServerError)
 					return
 				}
 				v, err := semver.NewVersion(clientVersion)
 				if err != nil {
-					http.Error(w, fmt.Sprintf("%s: Cody for %s version \"%s\" doesn't match semver spec.", versionConstraintErrorPrefix, vc.client, clientVersion), http.StatusBadRequest)
+					http.Error(w, fmt.Sprintf("%s: Cody for %s version \"%s\" doesn't match semver spec.", versionConstraintErrorPrefix, cvc.client, clientVersion), http.StatusBadRequest)
 					return
 				}
 				ok := c.Check(v)
 				if !ok {
-					http.Error(w, fmt.Sprintf("%s: Cody for %s version \"%s\" doesn't match version constraint \"%s\"", versionConstraintErrorPrefix, vc.client, clientVersion, vc.version), http.StatusNotAcceptable)
+					http.Error(w, fmt.Sprintf("%s: Cody for %s version \"%s\" doesn't match version constraint \"%s\"", versionConstraintErrorPrefix, cvc.client, clientVersion, cvc.version), http.StatusNotAcceptable)
 					return
 				}
 			}
@@ -478,19 +482,19 @@ func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature t
 	}
 }
 
-type versionConstraint struct {
+type clientVersionConstraint struct {
 	client  types.CodyClientName
 	version types.CodyClientVersionConstraint
 }
 
-func newVersionConstraint(client types.CodyClientName) (*versionConstraint, error) {
+func newClientVersionConstraint(client types.CodyClientName) (*clientVersionConstraint, error) {
 	switch client {
 	case types.CodyClientWeb:
 		return nil, nil
 	case types.CodyClientVscode:
-		return &versionConstraint{client: client, version: types.VscodeVersionConstraint}, nil
+		return &clientVersionConstraint{client: client, version: types.VscodeVersionConstraint}, nil
 	case types.CodyClientJetbrains:
-		return &versionConstraint{client: client, version: types.JetbrainsVersionConstraint}, nil
+		return &clientVersionConstraint{client: client, version: types.JetbrainsVersionConstraint}, nil
 	default:
 		return nil, codyClientNotSupportedError
 	}
