@@ -37,7 +37,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-## CHanged
+## Changed
 
 ## Fixed
 
