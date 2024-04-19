@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
@@ -40,6 +41,12 @@ import (
 // being cancelled as DeadlineExceeded.
 const maxRequestDuration = 8 * time.Minute
 
+// versionConstraintErrorPrefix value is used to identify specific errors in the Cody clients codebases.
+// When changing its value be sure to update the clients code.
+const versionConstraintErrorPrefix = "UnsupportedClient"
+
+var codyClientNotSupportedError = errors.New(fmt.Sprintf("%s: please use one of the supported clients: %s, %s.", versionConstraintErrorPrefix, types.CodyClientVscode, types.CodyClientJetbrains))
+
 var timeToFirstEventMetrics = metrics.NewREDMetrics(
 	prometheus.DefaultRegisterer,
 	"completions_stream_first_event",
@@ -62,6 +69,7 @@ func newCompletionsHandler(
 	responseHandler := newSwitchingResponseHandler(logger, db, feature)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("!!!!! newCompletionsHandler request: %+v\n", r.URL)
 		if r.Method != "POST" {
 			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusMethodNotAllowed)
 			return
@@ -92,6 +100,43 @@ func newCompletionsHandler(
 			return
 		}
 
+		isDotcom := dotcom.SourcegraphDotComMode()
+		if !isDotcom && conf.SiteConfig().CodyContextFilters != nil {
+			clientName := r.URL.Query().Get("client-name")
+			clientVersion := r.URL.Query().Get("client-version")
+			if clientName == "" || clientVersion == "" {
+				http.Error(w, codyClientNotSupportedError.Error(), http.StatusNotAcceptable)
+				return
+			}
+			vc, err := newVersionConstraint(types.CodyClientName(clientName))
+			if err != nil {
+				if errors.Is(err, codyClientNotSupportedError) {
+					http.Error(w, err.Error(), http.StatusNotAcceptable)
+					return
+				}
+
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if vc != nil {
+				c, err := semver.NewConstraint(string(vc.version))
+				if err != nil {
+					http.Error(w, fmt.Sprintf("%s: Cody for %s version constraint \"%s\" doesn't match semver spec.", versionConstraintErrorPrefix, vc.client, vc.version), http.StatusInternalServerError)
+					return
+				}
+				v, err := semver.NewVersion(clientVersion)
+				if err != nil {
+					http.Error(w, fmt.Sprintf("%s: Cody for %s version \"%s\" doesn't match semver spec.", versionConstraintErrorPrefix, vc.client, clientVersion), http.StatusBadRequest)
+					return
+				}
+				ok := c.Check(v)
+				if !ok {
+					http.Error(w, fmt.Sprintf("%s: Cody for %s version \"%s\" doesn't match version constraint \"%s\"", versionConstraintErrorPrefix, vc.client, clientVersion, vc.version), http.StatusNotAcceptable)
+					return
+				}
+			}
+		}
+
 		var requestParams types.CodyCompletionRequestParameters
 		if err := json.NewDecoder(r.Body).Decode(&requestParams); err != nil {
 			http.Error(w, "could not decode request body", http.StatusBadRequest)
@@ -114,7 +159,6 @@ func newCompletionsHandler(
 
 		// Use the user's access token for Cody Gateway on dotcom if PLG is enabled.
 		accessToken := completionsConfig.AccessToken
-		isDotcom := dotcom.SourcegraphDotComMode()
 		isProviderCodyGateway := completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
 		if isDotcom && isProviderCodyGateway {
 			// Note: if we have no Authorization header, that's fine too, this will return an error
@@ -431,5 +475,23 @@ func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature t
 			return
 		}
 		_, _ = w.Write(completionBytes)
+	}
+}
+
+type versionConstraint struct {
+	client  types.CodyClientName
+	version types.CodyClientVersionConstraint
+}
+
+func newVersionConstraint(client types.CodyClientName) (*versionConstraint, error) {
+	switch client {
+	case types.CodyClientWeb:
+		return nil, nil
+	case types.CodyClientVscode:
+		return &versionConstraint{client: client, version: types.VscodeVersionConstraint}, nil
+	case types.CodyClientJetbrains:
+		return &versionConstraint{client: client, version: types.JetbrainsVersionConstraint}, nil
+	default:
+		return nil, codyClientNotSupportedError
 	}
 }
