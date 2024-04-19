@@ -21,6 +21,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/appliance/hash"
 )
 
+const (
+	annotationKeyCurrentVersion = "appliance.sourcegraph.com/currentVersion"
+	annotationKeyConfigHash     = "appliance.sourcegraph.com/configHash"
+)
+
 var _ reconcile.Reconciler = &Reconciler{}
 
 type Reconciler struct {
@@ -54,6 +59,28 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var sourcegraph Sourcegraph
 	if err := yaml.Unmarshal([]byte(data), &sourcegraph); err != nil {
 		return reconcile.Result{}, err
+	}
+
+	// Sourcegraph is a kubebuilder-scaffolded custom type, but we do not
+	// actually ask operators to install CRDs. Therefore we set its namespace
+	// based on the actual object being reconciled, so that more deeply-nested
+	// code can treat it like a CRD.
+	sourcegraph.Namespace = applianceSpec.GetNamespace()
+
+	// Similarly, we simulate a CRD status using an annotation. ConfigMaps don't
+	// have Statuses, so we must use annotations to drive this.
+	// This can be empty string.
+	sourcegraph.Status.CurrentVersion = applianceSpec.GetAnnotations()[annotationKeyCurrentVersion]
+
+	// Reconcile services here
+	if err := r.reconcileBlobstore(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile blobstore: %w", err)
+	}
+
+	// Set the current version annotation in case migration logic depends on it.
+	applianceSpec.Annotations[annotationKeyCurrentVersion] = sourcegraph.Spec.RequestedVersion
+	if err := r.Client.Update(ctx, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to update current version annotation: %w", err)
 	}
 
 	return ctrl.Result{}, nil
