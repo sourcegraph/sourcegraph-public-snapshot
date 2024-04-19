@@ -5,7 +5,15 @@
 set -eux
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-SRC_CLI_VERSION="$(bazel run //internal/cmd/src-cli-version:src-cli-version)"
+# If we're running in CI, generate aspectRC
+if [[ ${CI:-} == "true" ]]; then
+  aspectRC="/tmp/aspect-generated.bazelrc"
+  rosetta bazelrc >"${aspectRC}"
+  echo -e "\ntry-import %workspace%/.aspect/bazelrc/ci.sourcegraph.bazelrc\n" >>"$aspectRC"
+  bazelrcs=(--bazelrc="${aspectRC}")
+fi
+
+SRC_CLI_VERSION="$(bazel "${bazelrcs[@]}" run //internal/cmd/src-cli-version:src-cli-version)"
 
 echo "--- docker build"
 docker build -t "$IMAGE" . \
