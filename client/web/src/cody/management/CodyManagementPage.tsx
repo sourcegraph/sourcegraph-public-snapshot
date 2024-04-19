@@ -57,14 +57,22 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     authenticatedUser,
     telemetryRecorder,
 }) => {
+    const navigate = useNavigate()
     const parameters = useSearchParameters()
 
     const utm_source = parameters.get('utm_source')
-
     useEffect(() => {
         eventLogger.log(EventName.CODY_MANAGEMENT_PAGE_VIEWED, { utm_source })
         telemetryRecorder.recordEvent('cody.management', 'view')
     }, [utm_source, telemetryRecorder])
+
+    const codyClientUser = parameters.get('cody_client_user')
+    const accountSwitchRequired = !!codyClientUser && authenticatedUser && authenticatedUser.username !== codyClientUser
+    useEffect(() => {
+        if (accountSwitchRequired) {
+            navigate(`/cody/switch-account/${codyClientUser}`)
+        }
+    }, [accountSwitchRequired, codyClientUser, navigate])
 
     const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
@@ -87,8 +95,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     const codyPaymentsUrl = useCodyPaymentsUrl()
     const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
 
-    const navigate = useNavigate()
-
     useEffect(() => {
         if (!!data && !data?.currentUser) {
             navigate('/sign-in?returnTo=/cody/manage')
@@ -98,6 +104,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     const onClickUpgradeToProCTA = useCallback(() => {
         telemetryRecorder.recordEvent('cody.management.upgradeToProCTA', 'click')
     }, [telemetryRecorder])
+
+    if (accountSwitchRequired) {
+        return null
+    }
 
     if (dataError || usageDateError) {
         throw dataError || usageDateError
