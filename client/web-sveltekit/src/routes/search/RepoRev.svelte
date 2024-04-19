@@ -1,11 +1,7 @@
 <script lang="ts">
-    import { onMount } from 'svelte'
-
+    import { page } from '$app/stores'
     import { highlightRanges } from '$lib/dom'
-    import { getGraphQLClient } from '$lib/graphql'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Popover from '$lib/Popover.svelte'
-    import { RepoPopover as RepoPopoverQuery, type RepoPopoverResult } from '$lib/repo/RepoPopover/RepoPopover.gql.ts'
     import RepoPopover from '$lib/repo/RepoPopover/RepoPopover.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { displayRepoName } from '$lib/shared'
@@ -14,16 +10,7 @@
     export let rev: string | undefined
     export let highlights: [number, number][] = []
 
-    let repo: RepoPopoverResult
-
-    onMount(async () => {
-        const client = getGraphQLClient()
-        const response = await client.query(RepoPopoverQuery, { repoName })
-        if (response.data) {
-            repo = response.data
-        }
-    })
-
+    $: repoPopoverData = $page.data.fetchRepoPopoverInfo(repoName)
     $: href = `/${repoName}${rev ? `@${rev}` : ''}`
     $: displayName = displayRepoName(repoName)
     $: if (displayName !== repoName) {
@@ -38,7 +25,7 @@
     <CodeHostIcon repository={repoName} />
     <!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
     {#key highlights}
-        <Popover showOnHover let:registerTrigger placement="bottom-start">
+        <Popover showOnHover let:registerTrigger placement="bottom-start" useDefaultBorder={false}>
             <a class="repo-link" {href} use:highlightRanges={{ ranges: highlights }} use:registerTrigger>
                 {displayRepoName(repoName)}
                 {#if rev}
@@ -46,12 +33,9 @@
                 {/if}
             </a>
             <div slot="content">
-                {#if repo}
-                    <RepoPopover repo={repo.repository} withHeader={true} />
-                {:else}
-                    <!-- This prevents anything from being shown until the data is loaded -->
-                    <div class="invisible" />
-                {/if}
+                {#await repoPopoverData then repoPopoverData}
+                    <RepoPopover repo={repoPopoverData} withHeader={true} />
+                {/await}
             </div>
         </Popover>
     {/key}
@@ -70,8 +54,5 @@
                 color: var(--text-muted);
             }
         }
-    }
-    .invisible {
-        visibility: visible;
     }
 </style>

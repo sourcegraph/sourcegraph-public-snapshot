@@ -80,6 +80,7 @@
 <slot {toggle} {registerTrigger} {registerTarget} />
 {#if trigger && isOpen}
     <div
+        use:registerPopoverContainer
         use:portal
         use:onClickOutside
         use:registerPopoverContainer
@@ -108,7 +109,7 @@
         background-color: var(--dropdown-bg);
         color: var(--body-color);
         box-shadow: var(--dropdown-shadow);
-        border: 1px solid var(--dropdown-border-color);
+        border: 0;
         border-radius: var(--popover-border-radius);
     }
 </style>

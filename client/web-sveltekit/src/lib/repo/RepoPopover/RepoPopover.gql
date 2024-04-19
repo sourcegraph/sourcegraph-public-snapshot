@@ -1,9 +1,3 @@
-query RepoPopover($repoName: String!) {
-    repository(name: $repoName) {
-        ...RepoPopoverFragment
-    }
-}
-
 fragment RepoPopoverFragment on Repository {
     name
     description

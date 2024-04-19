@@ -120,6 +120,8 @@ For example:
 
 <style lang="scss">
     .root {
+        border: 1px solid var(--dropdown-border-color);
+        border-radius: var(--popover-border-radius);
         width: 480px;
     }
 
