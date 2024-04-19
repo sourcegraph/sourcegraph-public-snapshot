@@ -5,11 +5,10 @@
 set -eux
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-# If we're running in CI, generate aspectRC
+# If we're running in CI, generate aspect bazelrc
 if [[ ${CI:-} == "true" ]]; then
   aspectRC="/tmp/aspect-generated.bazelrc"
   rosetta bazelrc >"${aspectRC}"
-  echo -e "\ntry-import %workspace%/.aspect/bazelrc/ci.sourcegraph.bazelrc\n" >>"$aspectRC"
   bazelrcs=(--bazelrc="${aspectRC}")
 fi
 
