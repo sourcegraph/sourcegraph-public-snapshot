@@ -91,6 +91,10 @@ export interface TemporarySettingsSchema {
 
     /** OpenCodeGraph */
     'openCodeGraph.annotations.visible': boolean
+
+    /** PLG */
+    'sourcegraph.debug.show-subscription-details': boolean
+    'sourcegraph.debug.always-show-new-signup': boolean
 }
 
 /**

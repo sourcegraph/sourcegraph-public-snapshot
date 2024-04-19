@@ -1,153 +1,202 @@
-import React, { useCallback, useEffect } from 'react'
+'use client'
 
-import { mdiCreditCardOutline } from '@mdi/js'
-import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom'
+import { InvoiceHistoryCard } from './InvoiceHistoryCard.tsx' // TODO: Move it
+import { NewSignupCard } from './NewSignupCard.tsx' // TODO: Move it
+import { SubscriptionDetailsCard } from './SubscriptionDetailsCard.tsx' // TODO: Move it
 
-import { useQuery } from '@sourcegraph/http-client'
-import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { ButtonLink, H1, H2, Icon, Link, PageHeader, Text, useSearchParameters } from '@sourcegraph/wildcard'
+import * as stripeJs from '@stripe/stripe-js' // TODO: Export these from @sourcegraph/cody-plg, and import that here
+import { Elements } from '@stripe/react-stripe-js' // TODO: Export from @sourcegraph/cody-plg, and import it here
+import { type FunctionComponent, useState, useEffect } from 'react'
+import { LoadingPage } from './LoadingPage'
+import { BackIcon } from './BackIcon'
+import { H1, Link, Text } from '@sourcegraph/wildcard'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 
-import type { AuthenticatedUser } from '../../auth'
-import { Page } from '../../components/Page'
-import { PageTitle } from '../../components/PageTitle'
-import {
-    type UserCodyPlanResult,
-    type UserCodyPlanVariables,
-    CodySubscriptionPlan,
-} from '../../graphql-operations'
-import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
-import { isCodyEnabled } from '../isCodyEnabled'
-import { CodyOnboarding } from '../onboarding/CodyOnboarding'
-import { useCodyPaymentsUrl } from '../subscription/CodySubscriptionPage'
-import { USER_CODY_PLAN } from '../subscription/queries'
-
-import styles from './CodyPlanPage.module.scss'
-
-interface CodyPlanPageProps extends TelemetryV2Props {
-    isSourcegraphDotCom: boolean
-    authenticatedUser: AuthenticatedUser | null
+// Stripe publishable keys for the test and live environments. These are OK to share externally.
+const publishableKeys = {
+    test: 'pk_test_0b1ei45h7ypIEeAkXYKBU059',
+    live: 'pk_live_1LPIDxv3bZH5wTv9NRcu9Sik',
 }
 
-export enum EditorStep {
-    SetupInstructions = 0,
-    CodyFeatures = 1,
-}
+const publishableKey = publishableKeys[location.href.includes('sourcegraph.com') ? 'live' : 'test']
+// NOTE: Call loadStripe outside a component’s render to avoid recreating the object.
+const stripePromise = stripeJs.loadStripe(publishableKey)
 
-export const CodyPlanPage: React.FunctionComponent<CodyPlanPageProps> = ({
-    isSourcegraphDotCom,
-    authenticatedUser,
-    telemetryRecorder,
-}) => {
-    const parameters = useSearchParameters()
+/**
+ * Subscription page.
+ *
+ * Figma Design:
+ * https://www.figma.com/file/FMSdn1oKccJRHQPgf7053o/Cody-GA?type=design&node-id=3496-3651&mode=design&t=uuQfSmhMZEoVRBIG-0
+ */
+export const CodyPlanPage: FunctionComponent = () => {
+    // Show the raw GraphQL response for debugging if the local storage key is set.
+    const showRawData = useTemporarySetting('sourcegraph.debug.show-subscription-details', false)
+    // Show the "new signup" form, even if the user already has a Cody Pro subscription.
+    // ☠️ If you complete the flow, the backend will most certainly be in a world of pain. ☠️
+    const alwaysShowNewSignup = useTemporarySetting('sourcegraph.debug.always-show-new-signup', false)
 
-    const utm_source = parameters.get('utm_source')
-
+    // Load the current user's subscription information.
+    // TODO: Replace this with the real back-end communication.
+    const data = {currentUser: {
+            id: '1',
+            name: 'Test User',
+            email: 'test@test.com',
+            avatarUrl: 'https://avatars.githubusercontent.com/u/1',
+            team : {
+                id: '1',
+                name: 'Test Team',
+                subscriptionDetails: {
+                    teamId: 'test',
+                    primaryEmail: 'test@test.com',
+                    name: 'Test subscription',
+                    status: 'active',
+                },
+            }
+        }}
+    const [loading, setLoading] = useState(true)
+    const [error] = useState<Error | null>(null)
+    // Set loading to false after two seconds
     useEffect(() => {
-        telemetryRecorder.recordEvent('cody.management', 'view')
-    }, [utm_source, telemetryRecorder])
+        setTimeout(() => {
+            setLoading(false)
+        }, 2000)
+    }, [])
 
-    const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
-
-    const subscription = data?.currentUser?.codySubscription
-
-    const codyPaymentsUrl = useCodyPaymentsUrl()
-    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
-
-    const navigate = useNavigate()
-
-    useEffect(() => {
-        if (!!data && !data?.currentUser) {
-            navigate('/sign-in?returnTo=/cody/manage')
-        }
-    }, [data, navigate])
-
-    const onClickUpgradeToProCTA = useCallback(() => {
-        telemetryRecorder.recordEvent('cody.management.upgradeToProCTA', 'click')
-    }, [telemetryRecorder])
-
-    if (dataError) {
-        throw dataError
+    // Loading indicator.
+    if (loading) {
+        return <LoadingPage />
     }
 
-    if (!isCodyEnabled() || !isSourcegraphDotCom || !subscription) {
-        return null
+    // Error page. We probably should route to a generic 5xx page instead.
+    if (error) {
+        return (
+            <main>
+                <H1>Awe snap!</H1>
+                <Text>
+                    There was an error fetching your subscription information. If this persists, please contact{' '}
+                    <Link to="mailto:support@sourcegraph.com">support@sourcegraph.com</Link>
+                </Text>
+            </main>
+        )
     }
 
-    const isUserOnProTier = subscription.plan === CodySubscriptionPlan.PRO
+    // If the team field is defined, but the subscriptionDetails are not, then we infer the
+    // user is a member of a team but does not have the necessary permissions to view the
+    // subscription details.
+    //
+    // BUG: This isn't quite right, as we want to surface some subscription information,
+    //      such as if the subscription status is `past_due` or `canceled`. As that would
+    //      impact what we display to the user. Until May, 2024 however, we only expect
+    //      Sourcegraph team members to see this page. (And that we are adding members to
+    //      the official Sourcegraph team manually.)
+    const team = data?.currentUser?.team
+    const subscriptionDetails = team?.subscriptionDetails
+    if (team && !subscriptionDetails) {
+        return (
+            <main>
+                <H1 className="mb-8 mt-20 text-3xl tracking-normal text-slate-900">
+                    <img
+                        src="/cody/white-box-arrow-bouncing-right.png"
+                        className="inline-block mr-2 ssc-icon"
+                        alt="Right arrow"
+                    />
+                    Forbidden
+                </H1>
 
-    return (
-        <>
-            <Page className={classNames('d-flex flex-column')}>
-                <PageTitle title="Your Cody plan" />
-                <PageHeader className="mb-4 mt-4">
-                    <PageHeader.Heading as="h2" styleAs="h1">
-                        <div className="d-inline-flex align-items-center">
-                            <DashboardIcon className="mr-2" /> Your Cody plan
-                        </div>
-                    </PageHeader.Heading>
-                </PageHeader>
+                <p>
+                    <a href="/cody/manage" className="flex items-center gap-2 mb-6">
+                        <BackIcon />
+                        Back to Cody Dashboard
+                    </a>
+                </p>
 
-                {!isUserOnProTier && <UpgradeToProBanner onClick={onClickUpgradeToProCTA} />}
-
-                <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
-                    <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
-                        <div>
-                            <H2>My subscription</H2>
-                            <Text className="text-muted mb-0">
-                                {isUserOnProTier ? (
-                                    'You are on the Pro tier.'
-                                ) : (
-                                    <span>
-                                        You are on the Free tier.{' '}
-                                        <Link to="/cody/subscription">Upgrade to the Pro tier.</Link>
-                                    </span>
-                                )}
-                            </Text>
-                        </div>
-                        {isUserOnProTier && (
-                            <div>
-                                <ButtonLink
-                                    variant="primary"
-                                    size="sm"
-                                    href={manageSubscriptionRedirectURL}
-                                    onClick={event => {
-                                        event.preventDefault()
-                                        telemetryRecorder.recordEvent('cody.manageSubscription', 'click')
-                                        window.location.href = manageSubscriptionRedirectURL
-                                    }}
-                                >
-                                    <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />
-                                    Manage subscription
-                                </ButtonLink>
-                            </div>
-                        )}
-                    </div>
+                <div className="block container p-6 bg-white border border-separator-gray rounded-lg shadow mb-8">
+                    <Text>You do not have permissions to view your Cody Pro subscription information.</Text>
+                    <Text>
+                        If you believe you are seeing this in error, please contact{' '}
+                        <Link to="mailto:support@sourcegraph.com">support@sourcegraph.com</Link>
+                    </Text>
                 </div>
-            </Page>
-            <CodyOnboarding authenticatedUser={authenticatedUser} telemetryRecorder={telemetryRecorder} />
-        </>
+            </main>
+        )
+    }
+
+    // If the team field is undefined, the user is not a member of any Cody Pro team and so we prompt them to sign up.
+    // (The check for !subscriptionDetails is technically unnecessary, but informs the TS Compiler that after this
+    // if-statement that the value is truthy.)
+    if (!team || !subscriptionDetails || alwaysShowNewSignup) {
+        return (
+            <main>
+                <H1 className="mb-8 mt-20 text-3xl tracking-normal text-slate-900">
+                    <img
+                        src="/cody/white-box-arrow-bouncing-right.png"
+                        className="inline-block mr-2 ssc-icon"
+                        alt="Right arrow"
+                    />
+                    Upgrade to Cody Pro
+                </H1>
+
+                <Text>
+                    <Link to="/cody/manage" className="flex items-center gap-2 mb-6">
+                        <BackIcon />
+                        Back to Cody Dashboard
+                    </Link>
+                </Text>
+
+                <NewSignupCard stripeHandle={stripePromise} customerEmail={data?.currentUser?.email} />
+            </main>
+        )
+    }
+
+    // If both the team and subscription details are defined, then the user is a team admin
+    // and has full access to modify subscription data as needed.
+    const appearance: stripeJs.Appearance = {
+        theme: 'stripe',
+        variables: {
+            colorPrimary: '#00b4d9',
+        },
+    }
+    return (
+        <Elements stripe={stripePromise} options={{ appearance }}>
+            <main>
+                {/*
+            TODO: Add a top utility bar that matches that of dotcom, to not disorient the user when
+            switching to accounts.sourcegraph.com/cody to manage their subscription.
+            */}
+
+                <H1 className="mb-8 mt-20 text-3xl tracking-normal text-slate-900">
+                    <img
+                        src="/cody/white-box-arrow-bouncing-right.png"
+                        className="inline-block mr-2 ssc-icon"
+                        alt="Right arrow"
+                    />
+                    Manage Subscription
+                </H1>
+
+                <Text>
+                    <Link to="/cody/manage" className="flex items-center gap-2 mb-6">
+                        <BackIcon />
+                        Back to Cody Dashboard
+                    </Link>
+                </Text>
+
+                <div className="mb-6">
+                    <SubscriptionDetailsCard
+                        details={subscriptionDetails}
+                        refetchSubscription={refetch}
+                    />
+                </div>
+                <InvoiceHistoryCard invoices={subscriptionDetails.invoiceHistory.invoices}/>
+
+                {showRawData && (
+                    <div className="container">
+                        <h1>Raw Data</h1>
+                        <pre className="block whitespace-pre overflow-x-scroll">
+                            {JSON.stringify(subscriptionDetails, null, 4)}
+                        </pre>
+                    </div>
+                )}
+            </main>
+        </Elements>
     )
 }
-
-const UpgradeToProBanner: React.FunctionComponent<{
-    onClick: () => void
-}> = ({ onClick }) => (
-    <div className={classNames('d-flex justify-content-between align-items-center p-4', styles.upgradeToProBanner)}>
-        <div>
-            <H1>
-                Become limitless with
-                <CodyProIcon className="ml-1" />
-            </H1>
-            <ul className="pl-4 mb-0">
-                <li>Unlimited autocompletions</li>
-                <li>Unlimited chat messages</li>
-            </ul>
-        </div>
-        <div>
-            <ButtonLink to="/cody/subscription" variant="primary" size="sm" onClick={onClick}>
-                Upgrade
-            </ButtonLink>
-        </div>
-    </div>
-)

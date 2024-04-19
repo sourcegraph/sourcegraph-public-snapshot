@@ -1220,6 +1220,15 @@ importers:
         specifier: workspace:*
         version: link:../testing
 
+  client/cody-plg:
+    dependencies:
+      '@stripe/react-stripe-js':
+        specifier: ^2.4.0
+        version: 2.7.0(@stripe/stripe-js@2.4.0)(react-dom@18.1.0)(react@18.1.0)
+      '@stripe/stripe-js':
+        specifier: ^2.3.0
+        version: 2.4.0
+
   client/cody-shared:
     dependencies:
       '@microsoft/fetch-event-source':
@@ -1469,6 +1478,9 @@ importers:
       '@sourcegraph/codeintellify':
         specifier: workspace:*
         version: link:../codeintellify
+      '@sourcegraph/cody-plg':
+        specifier: workspace:*
+        version: link:../cody-plg
       '@sourcegraph/cody-shared':
         specifier: workspace:*
         version: link:../cody-shared
@@ -10393,6 +10405,23 @@ packages:
       '@storybook/channels': 8.0.5
       '@types/express': 4.17.11
       file-system-cache: 2.3.0
+
+  /@stripe/react-stripe-js@2.7.0(@stripe/stripe-js@2.4.0)(react-dom@18.1.0)(react@18.1.0):
+    resolution: {integrity: sha512-kTkIZl2ZleBuDR9c6fDy/s4m33llII8a5al6BDAMSTrfVq/4gSZv3RBO5KS/xvnxS+fDapJ3bKvjD8Lqj+AKdQ==}
+    peerDependencies:
+      '@stripe/stripe-js': ^1.44.1 || ^2.0.0 || ^3.0.0
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      '@stripe/stripe-js': 2.4.0
+      prop-types: 15.8.1
+      react: 18.1.0
+      react-dom: 18.1.0(react@18.1.0)
+    dev: false
+
+  /@stripe/stripe-js@2.4.0:
+    resolution: {integrity: sha512-WFkQx1mbs2b5+7looI9IV1BLa3bIApuN3ehp9FP58xGg7KL9hCHDECgW3BwO9l9L+xBPVAD7Yjn1EhGe6EDTeA==}
+    dev: false
 
   /@sveltejs/adapter-auto@3.1.1(@sveltejs/kit@2.4.2):
     resolution: {integrity: sha512-6LeZft2Fo/4HfmLBi5CucMYmgRxgcETweQl/yQoZo/895K3S9YWYN4Sfm/IhwlIpbJp3QNvhKmwCHbsqQNYQpw==}

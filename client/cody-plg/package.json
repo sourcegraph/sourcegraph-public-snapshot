@@ -1,0 +1,19 @@
+{
+  "private": true,
+  "name": "@sourcegraph/cody-plg",
+  "version": "0.0.7",
+  "description": "Cody PLG library",
+  "license": "Apache-2.0",
+  "main": "src/index.ts",
+  "sideEffects": false,
+  "dependencies": {
+    "@stripe/react-stripe-js": "^2.4.0",
+    "@stripe/stripe-js": "^2.3.0"
+  },
+  "scripts": {
+    "build": "tsc --build && cp -R src/* dist/",
+    "lint": "pnpm run lint:js",
+    "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
+    "test": "vitest"
+  }
+}
