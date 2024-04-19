@@ -173,7 +173,7 @@ lazy_static::lazy_static! {
             (Java, "java"),
             (Javascript, "javascript"),
             (Jsonnet, "jsonnet"),
-            // Skipping JSX here as they're handled
+            // Skipping JSX here as it is handled
             // specially inside the macro implementation.
             (Kotlin, "kotlin"),
             (Matlab, "matlab"),
@@ -186,7 +186,7 @@ lazy_static::lazy_static! {
             (Rust, "rust"),
             (Scala, "scala"),
             (Sql, "sql"),
-            // Skipping TypeScript TSX here as they're handled
+            // Skipping TypeScript and TSX here as they're handled
             // specially inside the macro implementation.
             (Xlsg, "xlsg"),
             (Zig, "zig")
