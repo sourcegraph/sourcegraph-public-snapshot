@@ -366,6 +366,33 @@ func (p *ContributorCount) String() string {
 	return fmt.Sprintf("%d %s <%s>", p.Count, p.Name, p.Email)
 }
 
+func ContributorCountFromProto(p *proto.ContributorCount) *ContributorCount {
+	if p == nil {
+		return nil
+	}
+	c := &ContributorCount{
+		Count: p.GetCount(),
+	}
+	if p.GetAuthor() != nil {
+		c.Name = string(p.GetAuthor().GetName())
+		c.Email = string(p.GetAuthor().GetEmail())
+	}
+	return c
+}
+
+func (c *ContributorCount) ToProto() *proto.ContributorCount {
+	if c == nil {
+		return nil
+	}
+	return &proto.ContributorCount{
+		Count: c.Count,
+		Author: &proto.GitSignature{
+			Name:  []byte(c.Name),
+			Email: []byte(c.Email),
+		},
+	}
+}
+
 // Ref describes a Git ref.
 type Ref struct {
 	// Name the full name of the ref (e.g., "refs/heads/mybranch").
@@ -390,8 +417,8 @@ type Ref struct {
 
 func RefFromProto(r *proto.GitRef) Ref {
 	return Ref{
-		Name:        r.GetRefName(),
-		ShortName:   r.GetShortRefName(),
+		Name:        string(r.GetRefName()),
+		ShortName:   string(r.GetShortRefName()),
 		Type:        RefTypeFromProto(r.GetRefType()),
 		CommitID:    api.CommitID(r.GetTargetCommit()),
 		RefOID:      api.CommitID(r.GetRefOid()),
@@ -402,8 +429,8 @@ func RefFromProto(r *proto.GitRef) Ref {
 
 func (r *Ref) ToProto() *proto.GitRef {
 	return &proto.GitRef{
-		RefName:      r.Name,
-		ShortRefName: r.ShortName,
+		RefName:      []byte(r.Name),
+		ShortRefName: []byte(r.ShortName),
 		TargetCommit: string(r.CommitID),
 		RefOid:       string(r.RefOID),
 		CreatedAt:    timestamppb.New(r.CreatedDate),

@@ -283,6 +283,7 @@ var sg = &cli.App{
 		setupCommand,
 		srcCommand,
 		srcInstanceCommand,
+		imagesCommand,
 
 		// Company
 		teammateCommand,

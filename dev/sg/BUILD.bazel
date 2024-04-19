@@ -21,6 +21,7 @@ go_library(
         "sg_embeddings_qa.go",
         "sg_generate.go",
         "sg_help.go",
+        "sg_images.go",
         "sg_insights.go",
         "sg_install.go",
         "sg_lint.go",
@@ -141,6 +142,7 @@ go_test(
     timeout = "short",
     srcs = [
         "main_test.go",
+        "sg_images_test.go",
         "sg_start_test.go",
     ],
     # Required by func findRoot() to check if sg is running in sourcegraph/sourcegraph

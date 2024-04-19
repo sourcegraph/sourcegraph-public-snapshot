@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Masterminds/semver"
 
@@ -14,7 +15,7 @@ import (
 // standardUpgradeTest initializes Sourcegraph's dbs and runs a standard upgrade
 // i.e. an upgrade test between some last minor version and the current release candidate
 func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStableVersion *semver.Version) Test {
-	postRelease := ctx.Value(postReleaseKey{}).(string)
+	postRelease := strings.TrimPrefix(ctx.Value(postReleaseKey{}).(string), "v") // Post release version string
 
 	//start test env
 	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "standard", initVersion)
@@ -28,9 +29,9 @@ func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latest
 	// Use the latest stable migrator for a pre release test, and the target version migrator if testing a released version
 	var migratorImage string
 	if postRelease != "" {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", postRelease)
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), postRelease)
 	} else {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", latestStableVersion.String())
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(fromRegistryKey{}), latestStableVersion.String())
 	}
 
 	// ensure env correctly initialized
@@ -42,7 +43,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latest
 	test.AddLog("-- ⚙️  performing standard upgrade")
 
 	if postRelease != "" {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", postRelease)
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), postRelease)
 	} else {
 		migratorImage = "migrator:candidate"
 	}
@@ -58,7 +59,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latest
 	// Start frontend with candidate
 	var cleanFrontend func()
 	if postRelease != "" {
-		cleanFrontend, err = startFrontend(ctx, test, "sourcegraph/frontend", postRelease, networkName, false, dbs)
+		cleanFrontend, err = startFrontend(ctx, test, fmt.Sprintf("%sfrontend", ctx.Value(targetRegistryKey{})), postRelease, networkName, false, dbs)
 	} else {
 		cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, false, dbs)
 	}
@@ -72,7 +73,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latest
 	test.AddLog("-- ⚙️  post upgrade validation")
 	// Validate the upgrade
 	if postRelease != "" {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", postRelease)
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), postRelease)
 	} else {
 		migratorImage = "migrator:candidate"
 	}
@@ -87,7 +88,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latest
 // multiversionUpgradeTest tests the migrator upgrade command,
 // initializing the three main dbs and conducting an upgrade to the release candidate version
 func multiversionUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStableVersion *semver.Version) Test {
-	postRelease := ctx.Value(postReleaseKey{}).(string) // Post release version string
+	postRelease := strings.TrimPrefix(ctx.Value(postReleaseKey{}).(string), "v") // Post release version string
 
 	//start test env
 	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "multiversion", initVersion)
@@ -101,9 +102,9 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, targetVersion, la
 	// Use the latest stable migrator for a pre release test, and the target version migrator if testing a released version
 	var migratorImage string
 	if postRelease != "" {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", postRelease)
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), postRelease)
 	} else {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", latestStableVersion.String())
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(fromRegistryKey{}), latestStableVersion.String())
 	}
 
 	// ensure env correctly initialized
@@ -124,7 +125,7 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, targetVersion, la
 	}
 	test.AddLog(fmt.Sprintf("-- ⚙️  performing multiversion upgrade (--from %s --to %s)", initVersion.String(), toVersion))
 	if postRelease != "" {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", postRelease)
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), postRelease)
 	} else {
 		migratorImage = "migrator:candidate"
 	}
@@ -152,7 +153,7 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, targetVersion, la
 	// Start frontend with candidate unless a post release version is specified
 	var cleanFrontend func()
 	if postRelease != "" {
-		cleanFrontend, err = startFrontend(ctx, test, "sourcegraph/frontend", postRelease, networkName, false, dbs)
+		cleanFrontend, err = startFrontend(ctx, test, fmt.Sprintf("%sfrontend", ctx.Value(targetRegistryKey{})), postRelease, networkName, false, dbs)
 	} else {
 		cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, false, dbs)
 	}
@@ -178,7 +179,7 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, targetVersion, la
 // Without this in place autoupgrade fails and exits while trying to make an oobmigration comparison here: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/cli/autoupgrade.go?L67-76
 // {"SeverityText":"WARN","Timestamp":1706721478276103721,"InstrumentationScope":"frontend","Caller":"cli/autoupgrade.go:73","Function":"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli.tryAutoUpgrade","Body":"unexpected string for desired instance schema version, skipping auto-upgrade","Resource":{"service.name":"frontend","service.version":"devVersion","service.instance.id":"487754e1c54a"},"Attributes":{"version":"devVersion"}}
 func autoUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStableVersion *semver.Version) Test {
-	postRelease := ctx.Value(postReleaseKey{}).(string) // Post release version string
+	postRelease := strings.TrimPrefix(ctx.Value(postReleaseKey{}).(string), "v") // Post release version string
 
 	//start test env
 	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "auto", initVersion)
@@ -192,9 +193,9 @@ func autoUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStab
 	// Use the latest stable migrator for a pre release test, and the target version migrator if testing a released version
 	var migratorImage string
 	if postRelease != "" {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", postRelease)
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), postRelease)
 	} else {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", latestStableVersion.String())
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(fromRegistryKey{}), latestStableVersion.String())
 	}
 
 	// ensure env correctly initialized
@@ -210,7 +211,7 @@ func autoUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStab
 	// Start frontend with candidate
 	var cleanFrontend func()
 	if postRelease != "" {
-		cleanFrontend, err = startFrontend(ctx, test, "sourcegraph/frontend", postRelease, networkName, true, dbs)
+		cleanFrontend, err = startFrontend(ctx, test, fmt.Sprintf("%sfrontend", ctx.Value(targetRegistryKey{})), postRelease, networkName, true, dbs)
 	} else {
 		cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, true, dbs)
 	}
@@ -224,7 +225,7 @@ func autoUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStab
 	test.AddLog("-- ⚙️  post upgrade validation")
 	// Validate the upgrade
 	if postRelease != "" {
-		migratorImage = fmt.Sprintf("sourcegraph/migrator:%s", postRelease)
+		migratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), postRelease)
 	} else {
 		migratorImage = "migrator:candidate"
 	}

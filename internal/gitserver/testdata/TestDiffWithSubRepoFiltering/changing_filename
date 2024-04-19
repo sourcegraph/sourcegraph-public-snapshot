@@ -1,0 +1,7 @@
+diff --git file_can_access file_can_access
+new file mode 100644
+index 0000000000000000000000000000000000000000..05ff17d33e02a60d8344f762e584f8391675dce6
+--- /dev/null
++++ file_can_access
+@@ -0,0 +1 @@
++my_content_1

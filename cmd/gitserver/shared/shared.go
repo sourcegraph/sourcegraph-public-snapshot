@@ -246,6 +246,7 @@ func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 		grpc.ChainUnaryInterceptor(accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)),
 	)
 	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
+	proto.RegisterGitserverRepositoryServiceServer(grpcServer, server.NewRepositoryServiceServer(s))
 
 	return grpcServer
 }

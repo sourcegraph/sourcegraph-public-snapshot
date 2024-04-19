@@ -21,7 +21,7 @@ importers:
         version: 3.8.0-alpha.7(graphql-ws@5.15.0)(graphql@15.4.0)(react-dom@18.1.0)(react@18.1.0)
       '@codemirror/autocomplete':
         specifier: ^6.1.0
-        version: 6.1.0(@codemirror/language@6.2.0)(@codemirror/state@6.4.0)(@codemirror/view@6.23.1)(@lezer/common@1.0.0)
+        version: 6.1.0(@codemirror/language@6.2.0)(@codemirror/state@6.4.0)(@codemirror/view@6.26.3)(@lezer/common@1.0.0)
       '@codemirror/commands':
         specifier: ^6.0.1
         version: 6.0.1
@@ -47,8 +47,8 @@ importers:
         specifier: ^6.4.0
         version: 6.4.0
       '@codemirror/view':
-        specifier: ^6.23.1
-        version: 6.23.1
+        specifier: ^6.26.3
+        version: 6.26.3
       '@date-fns/utc':
         specifier: ^1.1.1
         version: 1.1.1
@@ -75,7 +75,7 @@ importers:
         version: 0.0.1
       '@opencodegraph/codemirror-extension':
         specifier: ^0.0.1
-        version: 0.0.1(@codemirror/state@6.4.0)(@codemirror/view@6.23.1)(react-dom@18.1.0)(react@18.1.0)
+        version: 0.0.1(@codemirror/state@6.4.0)(@codemirror/view@6.26.3)(react-dom@18.1.0)(react@18.1.0)
       '@opentelemetry/api':
         specifier: ^1.4.0
         version: 1.4.0
@@ -3241,7 +3241,7 @@ packages:
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
     dev: true
 
-  /@codemirror/autocomplete@6.1.0(@codemirror/language@6.2.0)(@codemirror/state@6.4.0)(@codemirror/view@6.23.1)(@lezer/common@1.0.0):
+  /@codemirror/autocomplete@6.1.0(@codemirror/language@6.2.0)(@codemirror/state@6.4.0)(@codemirror/view@6.26.3)(@lezer/common@1.0.0):
     resolution: {integrity: sha512-wtO4O5WDyXhhCd4q4utDIDZxnQfmJ++3dGBCG9LMtI79+92OcA1DVk/n7BEupKmjIr8AzvptDz7YQ9ud6OkU+A==}
     peerDependencies:
       '@codemirror/language': ^6.0.0
@@ -3251,7 +3251,7 @@ packages:
     dependencies:
       '@codemirror/language': 6.2.0
       '@codemirror/state': 6.4.0
-      '@codemirror/view': 6.23.1
+      '@codemirror/view': 6.26.3
       '@lezer/common': 1.0.0
     dev: false
 
@@ -3260,14 +3260,14 @@ packages:
     dependencies:
       '@codemirror/language': 6.2.0
       '@codemirror/state': 6.4.0
-      '@codemirror/view': 6.23.1
+      '@codemirror/view': 6.26.3
       '@lezer/common': 1.0.0
     dev: false
 
-  /@codemirror/lang-css@6.0.0(@codemirror/view@6.23.1)(@lezer/common@1.0.0):
+  /@codemirror/lang-css@6.0.0(@codemirror/view@6.26.3)(@lezer/common@1.0.0):
     resolution: {integrity: sha512-jBqc+BTuwhNOTlrimFghLlSrN6iFuE44HULKWoR4qKYObhOIl9Lci1iYj6zMIte1XTQmZguNvjXMyr43LUKwSw==}
     dependencies:
-      '@codemirror/autocomplete': 6.1.0(@codemirror/language@6.2.0)(@codemirror/state@6.4.0)(@codemirror/view@6.23.1)(@lezer/common@1.0.0)
+      '@codemirror/autocomplete': 6.1.0(@codemirror/language@6.2.0)(@codemirror/state@6.4.0)(@codemirror/view@6.26.3)(@lezer/common@1.0.0)
       '@codemirror/language': 6.2.0
       '@codemirror/state': 6.4.0
       '@lezer/css': 1.0.0
@@ -3276,11 +3276,11 @@ packages:
       - '@lezer/common'
     dev: false
 
-  /@codemirror/lang-html@6.1.0(@codemirror/view@6.23.1):
+  /@codemirror/lang-html@6.1.0(@codemirror/view@6.26.3):
     resolution: {integrity: sha512-gA7NmJxqvnhwza05CvR7W/39Ap9r/4Vs9uiC0IeFYo1hSlJzc/8N6Evviz6vTW1x8SpHcRYyqKOf6rpl6LfWtg==}
     dependencies:
-      '@codemirror/autocomplete': 6.1.0(@codemirror/language@6.2.0)(@codemirror/state@6.4.0)(@codemirror/view@6.23.1)(@lezer/common@1.0.0)
-      '@codemirror/lang-css': 6.0.0(@codemirror/view@6.23.1)(@lezer/common@1.0.0)
+      '@codemirror/autocomplete': 6.1.0(@codemirror/language@6.2.0)(@codemirror/state@6.4.0)(@codemirror/view@6.26.3)(@lezer/common@1.0.0)
+      '@codemirror/lang-css': 6.0.0(@codemirror/view@6.26.3)(@lezer/common@1.0.0)
       '@codemirror/lang-javascript': 6.0.1
       '@codemirror/language': 6.2.0
       '@codemirror/state': 6.4.0
@@ -3293,11 +3293,11 @@ packages:
   /@codemirror/lang-javascript@6.0.1:
     resolution: {integrity: sha512-kjGbBEosl+ozDU5ruDV48w4v3H6KECTFiDjqMLT0KhVwESPfv3wOvnDrTT0uaMOg3YRGnBWsyiIoKHl/tNWWDg==}
     dependencies:
-      '@codemirror/autocomplete': 6.1.0(@codemirror/language@6.2.0)(@codemirror/state@6.4.0)(@codemirror/view@6.23.1)(@lezer/common@1.0.0)
+      '@codemirror/autocomplete': 6.1.0(@codemirror/language@6.2.0)(@codemirror/state@6.4.0)(@codemirror/view@6.26.3)(@lezer/common@1.0.0)
       '@codemirror/language': 6.2.0
       '@codemirror/lint': 6.0.0
       '@codemirror/state': 6.4.0
-      '@codemirror/view': 6.23.1
+      '@codemirror/view': 6.26.3
       '@lezer/common': 1.0.0
       '@lezer/javascript': 1.0.1
     dev: false
@@ -3312,10 +3312,10 @@ packages:
   /@codemirror/lang-markdown@6.0.0:
     resolution: {integrity: sha512-ozJaO1W4WgGlwWOoYCSYzbVhhM0YM/4lAWLrNsBbmhh5Ztpl0qm4CgEQRl3t8/YcylTZYBIXiskui8sHNGd4dg==}
     dependencies:
-      '@codemirror/lang-html': 6.1.0(@codemirror/view@6.23.1)
+      '@codemirror/lang-html': 6.1.0(@codemirror/view@6.26.3)
       '@codemirror/language': 6.2.0
       '@codemirror/state': 6.4.0
-      '@codemirror/view': 6.23.1
+      '@codemirror/view': 6.26.3
       '@lezer/common': 1.0.0
       '@lezer/markdown': 1.0.1
     dev: false
@@ -3324,7 +3324,7 @@ packages:
     resolution: {integrity: sha512-tabB0Ef/BflwoEmTB4a//WZ9P90UQyne9qWB9YFsmeS4bnEqSys7UpGk/da1URMXhyfuzWCwp+AQNMhvu8SfnA==}
     dependencies:
       '@codemirror/state': 6.4.0
-      '@codemirror/view': 6.23.1
+      '@codemirror/view': 6.26.3
       '@lezer/common': 1.0.0
       '@lezer/highlight': 1.0.0
       '@lezer/lr': 1.2.0
@@ -3341,7 +3341,7 @@ packages:
     resolution: {integrity: sha512-nUUXcJW1Xp54kNs+a1ToPLK8MadO0rMTnJB8Zk4Z8gBdrN0kqV7uvUraU/T2yqg+grDNR38Vmy/MrhQN/RgwiA==}
     dependencies:
       '@codemirror/state': 6.4.0
-      '@codemirror/view': 6.23.1
+      '@codemirror/view': 6.26.3
       crelt: 1.0.5
     dev: false
 
@@ -3349,7 +3349,7 @@ packages:
     resolution: {integrity: sha512-uOinkOrM+daMduCgMPomDfKLr7drGHB4jHl3Vq6xY2WRlL7MkNsBE0b+XHYa/Mee2npsJOgwvkW4n1lMFeBW2Q==}
     dependencies:
       '@codemirror/state': 6.4.0
-      '@codemirror/view': 6.23.1
+      '@codemirror/view': 6.26.3
       crelt: 1.0.5
     dev: false
 
@@ -3357,8 +3357,8 @@ packages:
     resolution: {integrity: sha512-hm8XshYj5Fo30Bb922QX9hXB/bxOAVH+qaqHBzw5TKa72vOeslyGwd4X8M0c1dJ9JqxlaMceOQ8RsL9tC7gU0A==}
     dev: false
 
-  /@codemirror/view@6.23.1:
-    resolution: {integrity: sha512-J2Xnn5lFYT1ZN/5ewEoMBCmLlL71lZ3mBdb7cUEuHhX2ESoSrNEucpsDXpX22EuTGm9LOgC9v4Z0wx+Ez8QmGA==}
+  /@codemirror/view@6.26.3:
+    resolution: {integrity: sha512-gmqxkPALZjkgSxIeeweY/wGQXBfwTUaLs8h7OKtSwfbj9Ct3L11lD+u1sS7XHppxFQoMDiMDp07P9f3I2jWOHw==}
     dependencies:
       '@codemirror/state': 6.4.0
       style-mod: 4.1.0
@@ -6159,14 +6159,14 @@ packages:
       rxjs: 7.8.1
     dev: false
 
-  /@opencodegraph/codemirror-extension@0.0.1(@codemirror/state@6.4.0)(@codemirror/view@6.23.1)(react-dom@18.1.0)(react@18.1.0):
+  /@opencodegraph/codemirror-extension@0.0.1(@codemirror/state@6.4.0)(@codemirror/view@6.26.3)(react-dom@18.1.0)(react@18.1.0):
     resolution: {integrity: sha512-n3WP/88qcgeJboqGI7HOfPujkhnTAJ5TGV9IIs03MAyY/V4/+/J8TclhUzjCX5Pu27eoG4RuZlY7379ejUvYkw==}
     peerDependencies:
       '@codemirror/state': ^6.2.0
       '@codemirror/view': ^6.7.2
     dependencies:
       '@codemirror/state': 6.4.0
-      '@codemirror/view': 6.23.1
+      '@codemirror/view': 6.26.3
       '@opencodegraph/client': 0.0.1
       '@opencodegraph/ui-react': 0.0.1(react-dom@18.1.0)(react@18.1.0)
       deep-equal: 2.2.3

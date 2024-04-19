@@ -9,10 +9,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	protobuf "google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	protobuf "google.golang.org/protobuf/proto"
 )
 
 func TestMessage(t *testing.T) {
@@ -328,6 +328,27 @@ func TestRoundTripRef(t *testing.T) {
 		}
 		converted := RefFromProto(original.ToProto())
 		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}, nil)
+	if err != nil {
+		t.Fatalf("unexpected diff (-want +got):\n%s", diff)
+	}
+}
+
+func TestRoundTripContributorCount(t *testing.T) {
+	diff := ""
+
+	err := quick.Check(func(name, email string, count int32) bool {
+		original := ContributorCount{
+			Name:  name,
+			Email: email,
+			Count: count,
+		}
+		converted := ContributorCountFromProto(original.ToProto())
+		if diff = cmp.Diff(&original, converted); diff != "" {
 			return false
 		}
 

@@ -11,7 +11,7 @@ tasks:
   # Checks that BUILD files are formatted
   - buildifier:
       queue: aspect-small
-      timeout_in_minutes: 2
+      timeout_in_minutes: 3
   # Checks that BUILD file content is up-to-date with sources
   - gazelle:
       queue: aspect-small

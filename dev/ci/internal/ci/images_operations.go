@@ -79,7 +79,7 @@ func bazelPushImagesFinal(c Config) func(*bk.Pipeline) {
 
 // Used in CandidateNoTest run type
 func bazelPushImagesNoTest(c Config) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(c, false)
+	return bazelPushImagesCmd(c, true)
 }
 
 func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk.Pipeline) {
