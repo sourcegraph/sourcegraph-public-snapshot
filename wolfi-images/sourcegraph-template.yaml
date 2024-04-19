@@ -1,0 +1,43 @@
+# Base template used by all Sourcegraph images
+
+# Add Wolfi + Sourcegraph repositories; install base set of packages
+contents:
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://packages.sgdev.org/sourcegraph-melange-prod.rsa.pub
+  repositories:
+    - https://packages.wolfi.dev/os
+    - '@sourcegraph https://packages.sgdev.org/main'
+  packages:
+    ## Base set of packages
+    - wolfi-baselayout
+    - ca-certificates-bundle
+    - tzdata
+
+    # TODO: Dev tools - remove in future release
+    - busybox
+    - curl
+    - wget
+    - bind-tools
+
+# Add sourcegraph user and group
+# NOTE: Adding other accounts in files where sourcegraph-template.yaml is included will overwrite these users
+accounts:
+  groups:
+    - groupname: sourcegraph
+      gid: 101
+  users:
+    - username: sourcegraph
+      uid: 100
+      gid: 101
+
+# NOTE: This is ignored (see build output)
+# To force amd64, first run `docker pull --platform linux/arm64 cgr.dev/chainguard/apko`
+archs:
+ - amd64
+
+# NOTE: These don't seem to be applied to the image
+annotations:
+  org.opencontainers.image.url: https://sourcegraph.com/
+  org.opencontainers.image.source: https://github.com/sourcegraph/sourcegraph/
+  org.opencontainers.image.documentation: https://sourcegraph.com/docs/

@@ -114,7 +114,7 @@ func mustInitializeDB(observationCtx *observation.Context) *sql.DB {
 	ctx := context.Background()
 	db := database.NewDB(observationCtx.Logger, sqlDB)
 	go func() {
-		for range time.NewTicker(providers.RefreshInterval()).C {
+		for range time.NewTicker(providers.RefreshInterval(conf.Get())).C {
 			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}

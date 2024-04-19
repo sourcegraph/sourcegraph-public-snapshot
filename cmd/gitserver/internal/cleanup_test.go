@@ -29,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/connection"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -83,7 +83,7 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 		fs,
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
-		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
+		connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 		false,
 	)
 
@@ -144,7 +144,7 @@ func TestCleanupInactive(t *testing.T) {
 		fs,
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
-		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
+		connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 		false,
 	)
 
@@ -183,7 +183,7 @@ func TestCleanupWrongShard(t *testing.T) {
 			fs,
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"does-not-exist",
-			gitserver.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}},
+			connection.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}},
 			false,
 		)
 
@@ -220,7 +220,7 @@ func TestCleanupWrongShard(t *testing.T) {
 			fs,
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"gitserver-0",
-			gitserver.GitserverAddresses{Addresses: []string{"gitserver-0.cluster.local:3178", "gitserver-1.cluster.local:3178"}},
+			connection.GitserverAddresses{Addresses: []string{"gitserver-0.cluster.local:3178", "gitserver-1.cluster.local:3178"}},
 			false,
 		)
 
@@ -257,7 +257,7 @@ func TestCleanupWrongShard(t *testing.T) {
 			fs,
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"gitserver-0",
-			gitserver.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}},
+			connection.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}},
 			true,
 		)
 
@@ -329,7 +329,7 @@ func TestGitGCAuto(t *testing.T) {
 		fs,
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
-		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
+		connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 		false,
 	)
 
@@ -422,7 +422,7 @@ func TestCleanupBroken(t *testing.T) {
 		fs,
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
-		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
+		connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 		false,
 	)
 
@@ -473,7 +473,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			fs,
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"test-gitserver",
-			gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
+			connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 			false,
 		)
 
@@ -502,7 +502,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			fs,
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"test-gitserver",
-			gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
+			connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 			false,
 		)
 
@@ -654,7 +654,7 @@ func TestCleanupOldLocks(t *testing.T) {
 		fs,
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
-		gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}},
+		connection.GitserverAddresses{Addresses: []string{"gitserver-0"}},
 		false,
 	)
 

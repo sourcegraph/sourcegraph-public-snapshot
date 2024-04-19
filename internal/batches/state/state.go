@@ -793,8 +793,7 @@ func computeDiffStat(ctx context.Context, client gitserver.Client, c *btypes.Cha
 	if c.SyncState.BaseRefOid == c.SyncState.HeadRefOid {
 		return c.DiffStat(), nil
 	}
-	iter, err := client.Diff(ctx, gitserver.DiffOptions{
-		Repo: repo,
+	iter, err := client.Diff(ctx, repo, gitserver.DiffOptions{
 		Base: c.SyncState.BaseRefOid,
 		Head: c.SyncState.HeadRefOid,
 	})
