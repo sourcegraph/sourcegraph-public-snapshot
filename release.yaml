@@ -157,6 +157,24 @@ promoteToPublic:
           cat << EOF | buildkite-agent annotate --style info
           Promoted release is **publicly available** through a git tag at [\`{{version}}\`](https://github.com/sourcegraph/sourcegraph/tree/{{version}}).
           EOF
+
+      - name: "git:release:create"
+        cmd: |
+          tag="{{tag}}"
+          version="{{version}}"
+
+          read -d '\n' releasepost << EndOfText
+            Sourcegraph $tag is now available!
+
+            _Note: we've updated our versioning conventions. Please see our [releases](https://handbook.sourcegraph.com/departments/engineering/dev/process/releases/#sourcegraph-releases) page for more information or reach out at [help.sourcegraph.com](https://help.sourcegraph.com)._
+
+            - [Changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#5-3-9104)
+            - [Update](https://sourcegraph.com/docs/admin/updates)
+            - [Release post](https://sourcegraph.com/blog/release/April-2024)
+          EndOfText
+
+          gh release create ${version} --latest --verify-tag -t "Sourcegraph ${tag}" --generate-notes --notes "${releasepost}"
+
       # tag is usually in the format `5.3.2`
       # while version is usually the tag prepended with a v, `v5.3.2`
       - name: "Slack notification (#announce-engineering)"
