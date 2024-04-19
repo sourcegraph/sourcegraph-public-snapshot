@@ -40,6 +40,7 @@ export enum PageRoutes {
     Cody = '/cody',
     CodyChat = '/cody/chat',
     CodyManagement = '/cody/manage',
+    CodyPlan = '/cody/plan',
     CodySubscription = '/cody/subscription',
     Own = '/own',
 }
