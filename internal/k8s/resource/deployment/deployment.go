@@ -20,13 +20,16 @@ import (
 //   - DeploymentStrategy: RecreateDeploymentStrategy
 //
 // Additional options can be passed to modify the default values.
-func NewDeployment(name, namespace string, options ...Option) (appsv1.Deployment, error) {
+func NewDeployment(name, namespace, version string, options ...Option) (appsv1.Deployment, error) {
 	deployment := appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"deploy": "sourcegraph",
+				"app.kubernetes.io/component": name,
+				"app.kubernetes.io/name":      "sourcegraph",
+				"app.kubernetes.io/version":   version,
+				"deploy":                      "sourcegraph",
 			},
 		},
 		Spec: appsv1.DeploymentSpec{

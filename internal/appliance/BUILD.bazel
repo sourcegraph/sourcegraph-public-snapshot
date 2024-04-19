@@ -5,6 +5,7 @@ go_library(
     name = "appliance",
     srcs = [
         "blobstore.go",
+        "kubernetes.go",
         "reconcile.go",
         "spec.go",
     ],
@@ -17,7 +18,6 @@ go_library(
         "//internal/k8s/resource/pod",
         "//internal/k8s/resource/pvc",
         "//internal/k8s/resource/service",
-        "//internal/maps",
         "//lib/errors",
         "//lib/pointers",
         "@io_k8s_api//apps/v1:apps",
