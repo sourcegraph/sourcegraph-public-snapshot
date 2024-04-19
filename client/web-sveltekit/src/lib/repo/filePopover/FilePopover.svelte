@@ -4,10 +4,13 @@
 
 <script lang="ts">
     import { mdiLanguageGo } from '@mdi/js'
+    import { onMount } from 'svelte'
 
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
     import type { Avatar_Person } from '$testing/graphql-type-mocks'
+
+    import NodeLine from './NodeLine.svelte'
 
     faker.seed(1)
     const CENTER_DOT = '\u00B7' // interpunct
@@ -86,7 +89,7 @@
     <div class="last-commit">
         <div class="title">Last Changed @</div>
         <div class="commit">
-            <div class="line" />
+            <NodeLine />
             <div class="commit-info">
                 <a href="https://github.com/sourcegraph/sourcegraph/commit/{commitSHA}" target="_blank">
                     <small class="sha">{commitSHA}</small>
@@ -194,11 +197,6 @@
                 width: 100%;
                 height: 90px;
                 gap: 0.5rem 1.5rem;
-
-                .line {
-                    border-left: 1px solid var(--border-color);
-                    height: 100%;
-                }
 
                 .commit-info {
                     display: flex;
