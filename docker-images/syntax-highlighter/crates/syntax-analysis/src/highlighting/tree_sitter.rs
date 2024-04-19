@@ -143,6 +143,21 @@ macro_rules! create_configurations {
             m.insert(ParserId::Tsx, lang);
         }
 
+        {
+            let highlights = vec![
+                include_scip_query!("jsx", "highlights"),
+                include_scip_query!("javascript", "highlights"),
+            ];
+            let mut lang = HighlightConfiguration::new(
+                ParserId::Jsx.language(),
+                &highlights.join("\n"),
+                include_scip_query!("jsx", "injections"),
+                include_scip_query!("jsx", "locals"),
+            ).expect("parser for 'jsx' must be compiled");
+            lang.configure(&highlight_names);
+            m.insert(ParserId::Jsx, lang);
+        }
+
         m
     }}
 }
@@ -158,6 +173,8 @@ lazy_static::lazy_static! {
             (Java, "java"),
             (Javascript, "javascript"),
             (Jsonnet, "jsonnet"),
+            // Skipping JSX here as they're handled
+            // specially inside the macro implementation.
             (Kotlin, "kotlin"),
             (Matlab, "matlab"),
             (Nickel, "nickel"),
@@ -169,7 +186,7 @@ lazy_static::lazy_static! {
             (Rust, "rust"),
             (Scala, "scala"),
             (Sql, "sql"),
-            // Skipping TypeScript and TSX here as they're handled
+            // Skipping TypeScript TSX here as they're handled
             // specially inside the macro implementation.
             (Xlsg, "xlsg"),
             (Zig, "zig")
