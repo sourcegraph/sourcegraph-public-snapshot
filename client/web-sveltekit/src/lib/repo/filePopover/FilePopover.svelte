@@ -21,6 +21,33 @@
     }
     let author = 'Quinn Slack'
     let date = '2 days ago'
+    let team = '@team-code-search'
+    let members: Avatar_Person[] = [
+        {
+            __typename: 'Person',
+            displayName: 'Peter Slack',
+            name: 'sqs',
+            avatarURL: null,
+        },
+        {
+            __typename: 'Person',
+            displayName: 'Jason Slack',
+            name: 'sqs',
+            avatarURL: null,
+        },
+        {
+            __typename: 'Person',
+            displayName: 'Michael Slack',
+            name: 'sqs',
+            avatarURL: null,
+        },
+        {
+            __typename: 'Person',
+            displayName: 'Camden Slack',
+            name: 'sqs',
+            avatarURL: null,
+        },
+    ]
 </script>
 
 <div class="root">
@@ -70,9 +97,39 @@
             </div>
         </div>
     </div>
+    <div class="own">
+        <div class="own-info">
+            <div class="team">Owned by {team}</div>
+            <small>{members.length} team members</small>
+        </div>
+        <div class="members">
+            {#each members as member}
+                <Avatar avatar={member} --avatar-size="1.0rem" />
+            {/each}
+        </div>
+    </div>
 </div>
 
 <style lang="scss">
+    .own {
+        padding: 0.5rem 1rem;
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid var(--border-color);
+        color: var(--text-muted);
+        .own-info {
+            display: flex;
+            flex-flow: column nowrap;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+        .members {
+            padding-left: -0.5rem;
+        }
+    }
     .root {
         width: fit-content;
         background: var(--body-bg);
