@@ -7,4 +7,4 @@ oci_push(
     repository = image_repository("cloud-mi2-base"),
 )
 
-wolfi_base(target = "cloud-mi2-base")
+wolfi_base(target = "cloud-mi2")
