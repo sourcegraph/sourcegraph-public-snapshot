@@ -1,3 +1,7 @@
+<script lang="ts" context="module">
+    import { faker } from '@faker-js/faker'
+</script>
+
 <script lang="ts">
     import { mdiLanguageGo } from '@mdi/js'
 
@@ -5,6 +9,7 @@
     import Icon from '$lib/Icon.svelte'
     import type { Avatar_Person } from '$testing/graphql-type-mocks'
 
+    faker.seed(1)
     const CENTER_DOT = '\u00B7' // interpunct
 
     let org = 'sourcegraph'
@@ -17,35 +22,35 @@
         __typename: 'Person',
         displayName: 'Quinn Slack',
         name: 'sqs',
-        avatarURL: null,
+        avatarURL: faker.internet.avatar(),
     }
     let author = 'Quinn Slack'
-    let date = '2 days ago'
+    let date = '2d ago'
     let team = '@team-code-search'
     let members: Avatar_Person[] = [
         {
             __typename: 'Person',
             displayName: 'Peter Slack',
             name: 'sqs',
-            avatarURL: null,
+            avatarURL: faker.internet.avatar(),
         },
         {
             __typename: 'Person',
             displayName: 'Jason Slack',
             name: 'sqs',
-            avatarURL: null,
+            avatarURL: faker.internet.avatar(),
         },
         {
             __typename: 'Person',
             displayName: 'Michael Slack',
             name: 'sqs',
-            avatarURL: null,
+            avatarURL: faker.internet.avatar(),
         },
         {
             __typename: 'Person',
             displayName: 'Camden Slack',
             name: 'sqs',
-            avatarURL: null,
+            avatarURL: faker.internet.avatar(),
         },
     ]
 </script>
@@ -103,9 +108,9 @@
             <small>{members.length} team members</small>
         </div>
         <div class="members">
-            {#each members as member}
+            {#each members.slice(0, 5) as member}
                 <div class="member">
-                    <Avatar avatar={member} --avatar-size="1.5rem" />
+                    <Avatar avatar={member} --avatar-size="1.0rem" />
                 </div>
             {/each}
         </div>
@@ -113,30 +118,6 @@
 </div>
 
 <style lang="scss">
-    .own {
-        padding: 0.5rem 1rem;
-        display: flex;
-        flex-flow: row nowrap;
-        align-items: center;
-        justify-content: space-between;
-        border-top: 1px solid var(--border-color);
-        color: var(--text-muted);
-        .own-info {
-            display: flex;
-            flex-flow: column nowrap;
-            align-items: flex-start;
-            justify-content: center;
-            gap: 0.25rem;
-        }
-        .members {
-            display: flex;
-            flex-flow: row-reverse nowrap;
-
-            .member {
-                margin-left: -0.5rem;
-            }
-        }
-    }
     .root {
         width: fit-content;
         background: var(--body-bg);
@@ -148,6 +129,7 @@
             flex-flow: column nowrap;
             align-items: center;
             justify-content: center;
+
             .repo-and-path {
                 width: 100%;
                 display: flex;
@@ -157,7 +139,8 @@
                 gap: 0.25rem;
                 padding: 0.5rem 1rem;
                 font-family: var(--monospace-font-family);
-                font-weight: lighter;
+                font-weight: 100 !important;
+                letter-spacing: 0.25px;
                 color: var(--text-muted);
                 border-bottom: 1px solid var(--border-color);
             }
@@ -170,7 +153,6 @@
                 justify-content: flex-start;
                 padding: 0.5rem 1rem;
                 gap: 0.5rem 1rem;
-                border-bottom: 1px solid var(--border-color);
 
                 .file {
                     display: flex;
@@ -249,10 +231,35 @@
                             flex-flow: row nowrap;
                             justify-content: flex-start;
                             align-items: center;
-                            gap: 0.25rem 0.25rem;
+                            gap: 0.25rem 0.5rem;
                         }
                     }
                 }
+            }
+        }
+    }
+
+    .own {
+        padding: 0.5rem 1rem 0.75rem;
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid var(--border-color);
+        color: var(--text-muted);
+        .own-info {
+            display: flex;
+            flex-flow: column nowrap;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+        .members {
+            display: flex;
+            flex-flow: row-reverse nowrap;
+
+            .member {
+                margin-left: -0.25rem;
             }
         }
     }

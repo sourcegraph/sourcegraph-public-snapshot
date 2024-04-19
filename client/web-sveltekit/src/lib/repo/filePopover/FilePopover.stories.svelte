@@ -11,5 +11,5 @@
 </script>
 
 <Story name="Default">
-    <FilePopover hello="world" />
+    <FilePopover />
 </Story>

@@ -4,7 +4,6 @@
     type Avatar = Avatar_User | Avatar_Team | Avatar_Person
 
     export let avatar: Avatar
-    export let border: boolean = false
 
     function getInitials(name: string): string {
         const names = name.split(' ')
