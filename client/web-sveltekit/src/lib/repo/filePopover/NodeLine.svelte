@@ -1,3 +1,6 @@
+<!--
+TODO: Make this component reuseable. It can only be used in the FilePopover at the moment.
+-->
 <script lang="ts">
 </script>
 
@@ -13,9 +16,6 @@
         flex-flow: column nowrap;
         align-items: center;
         justify-content: center;
-        border: 0;
-        padding: 0;
-        margin: 0;
 
         .connector {
             border-left: 1px solid var(--border-color);

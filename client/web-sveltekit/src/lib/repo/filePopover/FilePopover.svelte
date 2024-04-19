@@ -4,7 +4,6 @@
 
 <script lang="ts">
     import { mdiLanguageGo } from '@mdi/js'
-    import { onMount } from 'svelte'
 
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
@@ -155,7 +154,7 @@
                 align-items: flex-start;
                 justify-content: flex-start;
                 padding: 0.5rem 1rem;
-                gap: 0.5rem 1rem;
+                gap: 0.25rem 0.75rem;
 
                 .file {
                     display: flex;
@@ -189,14 +188,14 @@
             }
 
             .commit {
-                padding-left: 2rem;
+                padding-left: 1rem;
                 display: flex;
                 flex-flow: row nowrap;
                 align-items: center;
                 justify-content: flex-start;
                 width: 100%;
                 height: 90px;
-                gap: 0.5rem 1.5rem;
+                gap: 0.5rem 1.75rem;
 
                 .commit-info {
                     display: flex;
