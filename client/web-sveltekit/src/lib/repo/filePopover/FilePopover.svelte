@@ -104,7 +104,9 @@
         </div>
         <div class="members">
             {#each members as member}
-                <Avatar avatar={member} --avatar-size="1.0rem" />
+                <div class="member">
+                    <Avatar avatar={member} --avatar-size="1.5rem" />
+                </div>
             {/each}
         </div>
     </div>
@@ -127,7 +129,12 @@
             gap: 0.25rem;
         }
         .members {
-            padding-left: -0.5rem;
+            display: flex;
+            flex-flow: row-reverse nowrap;
+
+            .member {
+                margin-left: -0.5rem;
+            }
         }
     }
     .root {
