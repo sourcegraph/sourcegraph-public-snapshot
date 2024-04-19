@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { onMount, tick } from 'svelte'
+    import { tick } from 'svelte'
 
-    import { afterNavigate, disableScrollHandling, goto } from '$app/navigation'
+    import { goto } from '$app/navigation'
     import { page } from '$app/stores'
     import { isErrorLike } from '$lib/common'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
@@ -11,7 +11,6 @@
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
-    import { scrollAll } from '$lib/stores'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import { Alert } from '$lib/wildcard'
@@ -67,7 +66,6 @@
     const fileTreeStore = createFileTreeStore({ fetchFileTreeData: fetchSidebarFileTree })
     let selectedTab: number | null = null
     let historyPanel: HistoryPanel
-    let rootElement: HTMLElement | null = null
     let commitHistory: GitHistory_HistoryConnection | null
     let lastCommit: LastCommitFragment | null
 
@@ -94,37 +92,9 @@
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
-
-    onMount(() => {
-        // We want the whole page to be scrollable and hide page and repo navigation
-        scrollAll.set(true)
-        return () => scrollAll.set(false)
-    })
-
-    afterNavigate(() => {
-        // When navigating to a new page we want to ensure two things:
-        // - The file sidebar doesn't move. It feels bad when you clicked on a file entry
-        //   and the click target moves away because the page is scrolled all the way to the top.
-        // - The beginning of the content should be visible (e.g. the top of the file or the
-        //   top of the file table).
-        // In other words, we want to scroll to the top but not all the way
-
-        // Prevents SvelteKit from resetting the scroll position to the very top of the page
-        disableScrollHandling()
-
-        if (rootElement) {
-            // Because the whole page is scrollable we can get the current scroll position from
-            // the window object
-            const top = rootElement.offsetTop
-            if (window.scrollY > top) {
-                // Reset scroll to top of the content
-                window.scrollTo(0, top)
-            }
-        }
-    })
 </script>
 
-<section bind:this={rootElement}>
+<section>
     <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
         <header>
             <h3>
@@ -182,9 +152,8 @@
     section {
         display: flex;
         flex: 1;
-        flex-shrink: 0;
         background-color: var(--code-bg);
-        min-height: 100vh;
+        overflow: hidden;
     }
 
     header {
@@ -205,9 +174,6 @@
         background-color: var(--body-bg);
         padding: 0.5rem;
         padding-bottom: 0;
-        position: sticky;
-        top: 0;
-        max-height: 100vh;
     }
 
     .main {
@@ -215,6 +181,7 @@
         display: flex;
         flex-direction: column;
         min-width: 0;
+        overflow: hidden;
     }
 
     h3 {
@@ -232,8 +199,6 @@
     }
 
     .bottom-panel {
-        position: sticky;
-        bottom: 0px;
         background-color: var(--code-bg);
         --align-tabs: flex-start;
         border-top: 1px solid var(--border-color);

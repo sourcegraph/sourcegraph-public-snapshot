@@ -4,7 +4,7 @@
 package:
   name: ctags
   version: 6.0.0
-  epoch: 5
+  epoch: 6
   description: "A maintained ctags implementation"
   target-architecture:
     - x86_64
@@ -52,4 +52,4 @@ update:
   enabled: true
   github:
     identifier: universal-ctags/ctags
-    strip-prefix: "Universal Ctags "
+    strip-prefix: "v"

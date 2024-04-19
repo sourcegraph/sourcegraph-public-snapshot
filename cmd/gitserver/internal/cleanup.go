@@ -33,7 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/connection"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -86,7 +86,7 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, fs gitse
 				}()
 			}
 
-			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
+			gitserverAddrs := connection.NewGitserverAddresses(conf.Get())
 			// TODO: Should this return an error?
 			cleanupRepos(ctx, logger, db, fs, rcf, cfg.ShardID, gitserverAddrs, cfg.DisableDeleteReposOnWrongShard)
 
@@ -246,7 +246,7 @@ func cleanupRepos(
 	fs gitserverfs.FS,
 	rcf *wrexec.RecordingCommandFactory,
 	shardID string,
-	gitServerAddrs gitserver.GitserverAddresses,
+	gitServerAddrs connection.GitserverAddresses,
 	disableDeleteReposOnWrongShard bool,
 ) {
 	logger = logger.Scoped("cleanup")
@@ -1145,26 +1145,6 @@ func tooManyPackfiles(dir common.GitDir, limit int) (bool, error) {
 		count++
 	}
 	return count > limit, nil
-}
-
-// gitSetAutoGC will set the value of gc.auto. If GC is managed by Sourcegraph
-// the value will be 0 (disabled), otherwise if managed by git we will unset
-// it to rely on default (on) or global config.
-//
-// The purpose is to avoid repository corruption which can happen if several
-// git-gc operations are running at the same time.
-func gitSetAutoGC(ctx context.Context, c git.GitConfigBackend) error {
-	switch gitGCMode {
-	case gitGCModeGitAutoGC, gitGCModeJanitorAutoGC:
-		return c.Unset(ctx, "gc.auto")
-
-	case gitGCModeMaintenance:
-		return c.Set(ctx, "gc.auto", "0")
-
-	default:
-		// should not happen
-		panic(fmt.Sprintf("non exhaustive switch for gitGCMode: %d", gitGCMode))
-	}
 }
 
 // jitterDuration returns a duration between [0, d) based on key. This is like

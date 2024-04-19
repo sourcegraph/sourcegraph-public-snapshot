@@ -36,7 +36,7 @@ type BlobstoreSpec struct {
 	StorageSize string `json:"storageSize,omitempty"`
 
 	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Env defines environment variables for Blobstore.
 	Env map[string]string `json:"env,omitempty"`
@@ -349,6 +349,9 @@ type StorageClassSpec struct {
 
 // SourcegraphSpec defines the desired state of Sourcegraph
 type SourcegraphSpec struct {
+	// RequestedVersion is the user-requested version of Sourcegraph to deploy.
+	RequestedVersion string `json:"requestedVersion"`
+
 	// ManagementState defines if Sourcegraph should be managed by the operator or not.
 	// Default is managed.
 	ManagementState ManagementStateType `json:"managementState,omitempty"`
