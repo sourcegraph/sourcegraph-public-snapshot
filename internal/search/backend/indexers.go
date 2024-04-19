@@ -14,7 +14,7 @@ import (
 // EndpointMap is the subset of endpoint.Map (consistent hashmap) methods we
 // use. Declared as an interface for testing.
 type EndpointMap interface {
-	// Endpoints returns a list of all addresses. Do not modify the returned value.
+	// Endpoints returns a list of all addresses which can be searched. Do not modify the returned value.
 	Endpoints() ([]string, error)
 	// Get returns the endpoint for the key. (consistent hashing).
 	Get(string) (string, error)
