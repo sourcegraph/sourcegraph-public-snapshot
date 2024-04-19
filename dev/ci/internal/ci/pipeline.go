@@ -278,23 +278,23 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 	default:
 		// Executor VM image
-		// alwaysRebuild := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) || c.Diff.Has(changed.ExecutorVMImage)
+		alwaysRebuild := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
 
-		// if c.RunType.Is(
-		// 	runtype.MainDryRun,
-		// 	runtype.MainBranch,
-		// 	runtype.ReleaseBranch,
-		// 	runtype.TaggedRelease,
-		// 	runtype.InternalRelease,
-		// 	runtype.CloudEphemeral,
-		// ) {
-		// 	// imageBuildOps.Append(bazelBuildExecutorVM(c, alwaysRebuild))
-		// 	// if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-		// 	// 	imageBuildOps.Append(bazelBuildExecutorDockerMirror(c))
-		// 	// }
-		// }
+		if c.RunType.Is(
+			runtype.MainDryRun,
+			runtype.MainBranch,
+			runtype.ReleaseBranch,
+			runtype.TaggedRelease,
+			runtype.InternalRelease,
+			runtype.CloudEphemeral,
+		) {
+			// imageBuildOps.Append(bazelBuildExecutorVM(c, alwaysRebuild))
+			// if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+			// 	imageBuildOps.Append(bazelBuildExecutorDockerMirror(c))
+			// }
+		}
 		ops.Merge(imageBuildOps)
 
 		// Core tests
@@ -316,12 +316,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		publishOpsDev.Append(bazelPushImagesCandidates(c))
 		ops.Merge(publishOpsDev)
 
-		// TODO faster QA
 		// End-to-end tests
-		// ops.Merge(operations.NewNamedSet("End-to-end tests",
-		// 	executorsE2E(c),
-		// 	// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
-		// ))
+		ops.Merge(operations.NewNamedSet("End-to-end tests",
+			executorsE2E(c),
+			// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
+		))
 
 		// Wolfi package and base images
 		packageOps, apkoOps := addWolfiOps(c)
@@ -338,14 +337,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
 		// Executor VM image
-		// TODO Faster QA
-		// if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease, runtype.InternalRelease) {
-		// 	publishOps.Append(bazelPublishExecutorVM(c, alwaysRebuild))
-		// 	publishOps.Append(bazelPublishExecutorBinary(c))
-		// 	if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-		// 		publishOps.Append(bazelPublishExecutorDockerMirror(c))
-		// 	}
-		// }
+		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease, runtype.InternalRelease) {
+			publishOps.Append(bazelPublishExecutorVM(c, alwaysRebuild))
+			publishOps.Append(bazelPublishExecutorBinary(c))
+			if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+				publishOps.Append(bazelPublishExecutorDockerMirror(c))
+			}
+		}
 
 		// Final Bazel images
 		publishOps.Append(bazelPushImagesFinal(c))
