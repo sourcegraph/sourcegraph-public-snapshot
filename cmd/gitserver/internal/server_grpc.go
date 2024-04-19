@@ -46,7 +46,11 @@ type service interface {
 	EnsureRevision(ctx context.Context, repo api.RepoName, rev string) (didUpdate bool)
 }
 
-func NewGRPCServer(server *Server) proto.GitserverServiceServer {
+type GRPCServerConfig struct {
+	ExhaustiveRequestLoggingEnabled bool
+}
+
+func NewGRPCServer(server *Server, config *GRPCServerConfig) proto.GitserverServiceServer {
 	var srv proto.GitserverServiceServer = &grpcServer{
 		logger:         server.logger,
 		db:             server.db,
@@ -58,7 +62,7 @@ func NewGRPCServer(server *Server) proto.GitserverServiceServer {
 		fs:             server.fs,
 	}
 
-	if envGitserverExhaustiveLoggingEnabled {
+	if config.ExhaustiveRequestLoggingEnabled {
 		logger := server.logger.Scoped("gRPCRequestLogger")
 
 		srv = &loggingGRPCServer{
