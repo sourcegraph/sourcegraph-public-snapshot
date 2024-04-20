@@ -447,12 +447,21 @@ type clientCodyIgnoreCompatibilityError struct {
 	statusCode int
 }
 
+// clientCodyIgnoreCompatibilityErrorPrefix value is used to identify specific errors in the Cody clients codebases.
+// When changing its value be sure to update the clients code.
+const clientCodyIgnoreCompatibilityErrorPrefix = "ClientCodyIgnoreCompatibilityError"
+
 func (e *clientCodyIgnoreCompatibilityError) Error() string {
-	// prefix value is used to identify specific errors in the Cody clients codebases.
-	// When changing its value be sure to update the clients code.
-	const prefix = "ClientCodyIgnoreCompatibilityError"
-	return fmt.Sprintf("%s: %s", prefix, e.reason)
+	return fmt.Sprintf("%s: %s", clientCodyIgnoreCompatibilityErrorPrefix, e.reason)
 }
+
+// clientCodyIgnoreVersionConstraint represents client version constraint following the semver spec.
+type clientCodyIgnoreVersionConstraint string
+
+const (
+	vscodeCodyIgnoreVersionConstraint    clientCodyIgnoreVersionConstraint = "> 1.14.0"
+	jetbrainsCodyIgnoreVersionConstraint clientCodyIgnoreVersionConstraint = "> 5.5.5"
+)
 
 func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompatibilityError {
 	clientName := types.CodyClientName(r.URL.Query().Get("client-name"))
@@ -463,18 +472,19 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 		}
 	}
 
+	// clientVersionConstraint defines the minimum client version required to support Cody Ignore.
 	type clientVersionConstraint struct {
 		client     types.CodyClientName
-		constraint string
+		constraint clientCodyIgnoreVersionConstraint
 	}
 	var cvc clientVersionConstraint
 	switch clientName {
 	case types.CodyClientWeb:
 		return nil
 	case types.CodyClientVscode:
-		cvc = clientVersionConstraint{client: clientName, constraint: "> 1.14.0"}
+		cvc = clientVersionConstraint{client: clientName, constraint: vscodeCodyIgnoreVersionConstraint}
 	case types.CodyClientJetbrains:
-		cvc = clientVersionConstraint{client: clientName, constraint: "> 5.5.5"}
+		cvc = clientVersionConstraint{client: clientName, constraint: jetbrainsCodyIgnoreVersionConstraint}
 	default:
 		return &clientCodyIgnoreCompatibilityError{
 			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains),
@@ -490,10 +500,10 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 		}
 	}
 
-	c, err := semver.NewConstraint(cvc.constraint)
+	c, err := semver.NewConstraint(string(cvc.constraint))
 	if err != nil {
 		return &clientCodyIgnoreCompatibilityError{
-			reason:     fmt.Sprintf("Cody for %s version constraint \"%s\" doesn't match semver spec.", cvc.client, cvc.constraint),
+			reason:     fmt.Sprintf("Cody for %s version constraint \"%s\" doesn't follow semver spec.", cvc.client, cvc.constraint),
 			statusCode: http.StatusInternalServerError,
 		}
 	}
@@ -501,7 +511,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 	v, err := semver.NewVersion(clientVersion)
 	if err != nil {
 		return &clientCodyIgnoreCompatibilityError{
-			reason:     fmt.Sprintf("Cody for %s version \"%s\" doesn't match semver spec.", cvc.client, clientVersion),
+			reason:     fmt.Sprintf("Cody for %s version \"%s\" doesn't follow semver spec.", cvc.client, clientVersion),
 			statusCode: http.StatusBadRequest,
 		}
 	}
