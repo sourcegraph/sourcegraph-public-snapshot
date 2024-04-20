@@ -1,0 +1,40 @@
+query FilePopoverQuery($repoName: String!, $commitRev: String!, $pathName: String!) {
+    repository(name: $repoName) {
+        commit(rev: $commitRev) {
+            path(path: $pathName) {
+                ...FilePopoverFields
+            }
+        }
+    }
+}
+
+fragment FilePopoverFields on GitBlob {
+    path
+    isDirectory
+    languages
+    totalLines
+    byteSize
+    commit {
+        oid
+        subject
+        canonicalURL
+        author {
+            date
+            person {
+                __typename
+                displayName
+                avatarURL
+                name
+            }
+        }
+    }
+    ownership(first: 4, reasons: [CODEOWNERS_FILE_ENTRY]) {
+        totalCount
+        totalOwners
+        nodes {
+            owner {
+                __typename
+            }
+        }
+    }
+}
