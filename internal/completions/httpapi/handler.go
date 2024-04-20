@@ -41,12 +41,6 @@ import (
 // being cancelled as DeadlineExceeded.
 const maxRequestDuration = 8 * time.Minute
 
-// versionConstraintErrorPrefix value is used to identify specific errors in the Cody clients codebases.
-// When changing its value be sure to update the clients code.
-const versionConstraintErrorPrefix = "UnsupportedClient"
-
-var codyClientNotSupportedError = errors.New(fmt.Sprintf("%s: please use one of the supported clients: %s, %s.", versionConstraintErrorPrefix, types.CodyClientVscode, types.CodyClientJetbrains))
-
 var timeToFirstEventMetrics = metrics.NewREDMetrics(
 	prometheus.DefaultRegisterer,
 	"completions_stream_first_event",
@@ -69,7 +63,6 @@ func newCompletionsHandler(
 	responseHandler := newSwitchingResponseHandler(logger, db, feature)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("!!!!! newCompletionsHandler request: %+v\n", r)
 		if r.Method != "POST" {
 			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusMethodNotAllowed)
 			return
@@ -102,42 +95,9 @@ func newCompletionsHandler(
 
 		isDotcom := dotcom.SourcegraphDotComMode()
 		if !isDotcom && conf.SiteConfig().CodyContextFilters != nil {
-			clientName := r.URL.Query().Get("client-name")
-			if clientName == "" {
-				http.Error(w, fmt.Sprintf("%s: \"client-name\" query param is required.", versionConstraintErrorPrefix), http.StatusNotAcceptable)
-				return
-			}
-			cvc, err := newClientVersionConstraint(types.CodyClientName(clientName))
+			err := checkClientCodyIgnoreCompatibility(r)
 			if err != nil {
-				if errors.Is(err, codyClientNotSupportedError) {
-					http.Error(w, err.Error(), http.StatusNotAcceptable)
-					return
-				}
-
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			if cvc != nil {
-				clientVersion := r.URL.Query().Get("client-version")
-				if clientVersion == "" {
-					http.Error(w, fmt.Sprintf("%s: \"client-version\" query param is required.", versionConstraintErrorPrefix), http.StatusNotAcceptable)
-					return
-				}
-				c, err := semver.NewConstraint(string(cvc.version))
-				if err != nil {
-					http.Error(w, fmt.Sprintf("%s: Cody for %s version constraint \"%s\" doesn't match semver spec.", versionConstraintErrorPrefix, cvc.client, cvc.version), http.StatusInternalServerError)
-					return
-				}
-				v, err := semver.NewVersion(clientVersion)
-				if err != nil {
-					http.Error(w, fmt.Sprintf("%s: Cody for %s version \"%s\" doesn't match semver spec.", versionConstraintErrorPrefix, cvc.client, clientVersion), http.StatusBadRequest)
-					return
-				}
-				ok := c.Check(v)
-				if !ok {
-					http.Error(w, fmt.Sprintf("%s: Cody for %s version \"%s\" doesn't match version constraint \"%s\"", versionConstraintErrorPrefix, cvc.client, clientVersion, cvc.version), http.StatusNotAcceptable)
-					return
-				}
+				http.Error(w, err.Error(), err.statusCode)
 			}
 		}
 
@@ -482,20 +442,77 @@ func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature t
 	}
 }
 
-type clientVersionConstraint struct {
-	client  types.CodyClientName
-	version types.CodyClientVersionConstraint
+type clientCodyIgnoreCompatibilityError struct {
+	reason     string
+	statusCode int
 }
 
-func newClientVersionConstraint(client types.CodyClientName) (*clientVersionConstraint, error) {
-	switch client {
-	case types.CodyClientWeb:
-		return nil, nil
-	case types.CodyClientVscode:
-		return &clientVersionConstraint{client: client, version: types.VscodeVersionConstraint}, nil
-	case types.CodyClientJetbrains:
-		return &clientVersionConstraint{client: client, version: types.JetbrainsVersionConstraint}, nil
-	default:
-		return nil, codyClientNotSupportedError
+func (e *clientCodyIgnoreCompatibilityError) Error() string {
+	// prefix value is used to identify specific errors in the Cody clients codebases.
+	// When changing its value be sure to update the clients code.
+	const prefix = "ClientCodyIgnoreCompatibilityError"
+	return fmt.Sprintf("%s: %s", prefix, e.reason)
+}
+
+func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompatibilityError {
+	clientName := types.CodyClientName(r.URL.Query().Get("client-name"))
+	if clientName == "" {
+		return &clientCodyIgnoreCompatibilityError{
+			reason:     "\"client-name\" query param is required.",
+			statusCode: http.StatusNotAcceptable,
+		}
 	}
+
+	type clientVersionConstraint struct {
+		client  types.CodyClientName
+		version types.CodyClientVersionConstraint
+	}
+	var cvc clientVersionConstraint
+	switch clientName {
+	case types.CodyClientWeb:
+		return nil
+	case types.CodyClientVscode:
+		cvc = clientVersionConstraint{client: clientName, version: types.VscodeVersionConstraint}
+	case types.CodyClientJetbrains:
+		cvc = clientVersionConstraint{client: clientName, version: types.JetbrainsVersionConstraint}
+	default:
+		return &clientCodyIgnoreCompatibilityError{
+			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains),
+			statusCode: http.StatusNotAcceptable,
+		}
+	}
+
+	clientVersion := r.URL.Query().Get("client-version")
+	if clientVersion == "" {
+		return &clientCodyIgnoreCompatibilityError{
+			reason:     "\"client-version\" query param is required.",
+			statusCode: http.StatusNotAcceptable,
+		}
+	}
+
+	c, err := semver.NewConstraint(string(cvc.version))
+	if err != nil {
+		return &clientCodyIgnoreCompatibilityError{
+			reason:     fmt.Sprintf("Cody for %s version constraint \"%s\" doesn't match semver spec.", cvc.client, cvc.version),
+			statusCode: http.StatusInternalServerError,
+		}
+	}
+
+	v, err := semver.NewVersion(clientVersion)
+	if err != nil {
+		return &clientCodyIgnoreCompatibilityError{
+			reason:     fmt.Sprintf("Cody for %s version \"%s\" doesn't match semver spec.", cvc.client, clientVersion),
+			statusCode: http.StatusBadRequest,
+		}
+	}
+
+	ok := c.Check(v)
+	if !ok {
+		return &clientCodyIgnoreCompatibilityError{
+			reason:     fmt.Sprintf("Cody for %s version \"%s\" doesn't match version constraint \"%s\"", cvc.client, clientVersion, cvc.version),
+			statusCode: http.StatusNotAcceptable,
+		}
+	}
+
+	return nil
 }
