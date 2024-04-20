@@ -94,7 +94,7 @@ func newCompletionsHandler(
 		}
 
 		isDotcom := dotcom.SourcegraphDotComMode()
-		if !isDotcom && conf.SiteConfig().CodyContextFilters != nil {
+		if !isDotcom {
 			err := checkClientCodyIgnoreCompatibility(r)
 			if err != nil {
 				http.Error(w, err.Error(), err.statusCode)
@@ -464,6 +464,11 @@ const (
 )
 
 func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompatibilityError {
+	// If Cody context filters are not defined on the instance, we do not restrict client version
+	if conf.SiteConfig().CodyContextFilters == nil {
+		return nil
+	}
+
 	clientName := types.CodyClientName(r.URL.Query().Get("client-name"))
 	if clientName == "" {
 		return &clientCodyIgnoreCompatibilityError{

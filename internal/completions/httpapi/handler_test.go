@@ -2,28 +2,45 @@ package httpapi
 
 import (
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
+	t.Cleanup(func() { conf.Mock(nil) })
+
 	mockRequest := func(q url.Values) *http.Request {
 		target := "/.api/completions/code" + "?" + q.Encode()
 		req := httptest.NewRequest("GET", target, nil)
 		return req
 	}
 
+	ccf := &schema.CodyContextFilters{
+		Exclude: []*schema.CodyContextFilterItem{{RepoNamePattern: ".*sensitive.*"}},
+	}
+
 	tests := []struct {
 		name string
+		ccf  *schema.CodyContextFilters
 		q    url.Values
 		want *clientCodyIgnoreCompatibilityError
 	}{
 		{
+			name: "Cody context filters not defined in the site config",
+			q:    url.Values{},
+			want: nil,
+		},
+		{
 			name: "missing client name and version",
+			ccf:  ccf,
 			q:    url.Values{},
 			want: &clientCodyIgnoreCompatibilityError{
 				reason:     "\"client-name\" query param is required.",
@@ -32,6 +49,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 		},
 		{
 			name: "missing client name",
+			ccf:  ccf,
 			q: url.Values{
 				"client-version": []string{"1.1.1"},
 			},
@@ -42,6 +60,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 		},
 		{
 			name: "missing client version",
+			ccf:  ccf,
 			q: url.Values{
 				"client-name": []string{string(types.CodyClientVscode)},
 			},
@@ -52,6 +71,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 		},
 		{
 			name: "not supported client",
+			ccf:  ccf,
 			q: url.Values{
 				"client-name": []string{"sublime"},
 			},
@@ -62,6 +82,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 		},
 		{
 			name: "version doesn't follow semver spec",
+			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientVscode)},
 				"client-version": []string{"dev"},
@@ -73,6 +94,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 		},
 		{
 			name: "vscode: version doesn't match constraint",
+			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientVscode)},
 				"client-version": []string{"1.14.0"},
@@ -84,6 +106,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 		},
 		{
 			name: "vscode: version matches constraint",
+			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientVscode)},
 				"client-version": []string{"1.14.1"},
@@ -92,6 +115,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 		},
 		{
 			name: "jetbrains: version doesn't match constraint",
+			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientJetbrains)},
 				"client-version": []string{"1.14.0"},
@@ -103,6 +127,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 		},
 		{
 			name: "jetbrains: version matches constraint",
+			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientJetbrains)},
 				"client-version": []string{"6.0.0"},
@@ -111,6 +136,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 		},
 		{
 			name: "web: version param not required",
+			ccf:  ccf,
 			q: url.Values{
 				"client-name": []string{string(types.CodyClientWeb)},
 			},
@@ -120,6 +146,13 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.ccf != nil {
+				conf.Mock(&conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						CodyContextFilters: tt.ccf,
+					},
+				})
+			}
 			req := mockRequest(tt.q)
 			got := checkClientCodyIgnoreCompatibility(req)
 			require.Equal(t, tt.want, got)
