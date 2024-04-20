@@ -498,19 +498,27 @@ commands:
   syntax-highlighter:
     ignoreStdout: true
     ignoreStderr: true
+    install: |
+      bazel build //docker-images/syntax-highlighter:image_tarball
+      docker load --input $(bazel cquery //docker-images/syntax-highlighter:image_tarball --output=files)
     cmd: |
-      docker run --name=syntax-highlighter --rm -p9238:9238 \
-      -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \
-      sourcegraph/syntax-highlighter:insiders
+      docker run \
+        --name=syntax-highlighter \
+        --rm -p9238:9238 \
+        -e WORKERS=1 \
+        -e ROCKET_ADDRESS=0.0.0.0 \
+        syntect-server:candidate
     install: |
       # Remove containers by the old name, too.
       docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
       docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
-      # Pull syntax-highlighter latest insider image, only during install, but
-      # skip if OFFLINE=true is set.
-      if [[ "$OFFLINE" != "true" ]]; then
-          docker pull -q sourcegraph/syntax-highlighter:insiders
-      fi
+      docker inspect sourcegraph/syntax-highlighter:insiders >/dev/null 2>&1 docker rm -f sourcegraph/syntax-highlighter:insiders || true
+    env:
+      IMAGE: syntect-server:candidate
+      # TODO: This is required but should only be set on M1 Macs.
+      PLATFORM: linux/arm64
+    watch:
+      - docker-images/syntax-highlighter
 
   zoekt-indexserver-template: &zoekt_indexserver_template
     cmd: |
@@ -1306,6 +1314,8 @@ commandsets:
       - redis
       - postgres
       - git
+      - bazelisk
+      - ibazel
     commands:
       - frontend
       - worker
@@ -1344,6 +1354,8 @@ commandsets:
       - redis
       - postgres
       - git
+      - bazelisk
+      - ibazel
     commands:
       - frontend
       - worker
@@ -1424,6 +1436,8 @@ commandsets:
       - redis
       - postgres
       - git
+      - bazelisk
+      - ibazel
     commands:
       - frontend
       - worker
@@ -1455,6 +1469,8 @@ commandsets:
       - redis
       - postgres
       - git
+      - bazelisk
+      - ibazel
     commands:
       - frontend
       - worker
@@ -1486,6 +1502,8 @@ commandsets:
       - redis
       - postgres
       - git
+      - bazelisk
+      - ibazel
     commands:
       - frontend
       - worker
@@ -1516,6 +1534,8 @@ commandsets:
       - redis
       - postgres
       - git
+      - bazelisk
+      - ibazel
     commands:
       - frontend
       - worker
@@ -1550,6 +1570,8 @@ commandsets:
       - redis
       - postgres
       - git
+      - bazelisk
+      - ibazel
     commands:
       - frontend
       - worker
@@ -1599,6 +1621,8 @@ commandsets:
       - redis
       - postgres
       - git
+      - bazelisk
+      - ibazel
     commands:
       - frontend
       - worker
@@ -1626,6 +1650,8 @@ commandsets:
       - redis
       - postgres
       - git
+      - bazelisk
+      - ibazel
     commands:
       - frontend
       - worker
