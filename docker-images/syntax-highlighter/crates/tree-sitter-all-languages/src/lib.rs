@@ -29,7 +29,6 @@ pub enum ParserId {
 
     // These three are special cases since we process them
     // in a way where they can inherit tree-sitter queries from others languages
-    Jsx,
     Typescript,
     Tsx,
 }
@@ -45,7 +44,6 @@ impl ParserId {
             ParserId::Java => tree_sitter_java::language(),
             ParserId::Javascript => tree_sitter_javascript::language(),
             ParserId::Jsonnet => tree_sitter_jsonnet::language(),
-            ParserId::Jsx => tree_sitter_javascript::language(),
             ParserId::Kotlin => tree_sitter_kotlin::language(),
             ParserId::Matlab => tree_sitter_matlab::language(),
             ParserId::Nickel => tree_sitter_nickel::language(),
@@ -74,7 +72,6 @@ impl ParserId {
             "java" => Some(ParserId::Java),
             "javascript" => Some(ParserId::Javascript),
             "jsonnet" => Some(ParserId::Jsonnet),
-            "jsx" => Some(ParserId::Jsx),
             "kotlin" => Some(ParserId::Kotlin),
             "matlab" => Some(ParserId::Matlab),
             "nickel" => Some(ParserId::Nickel),
@@ -104,7 +101,6 @@ impl ParserId {
             ParserId::Java => "java",
             ParserId::Javascript => "javascript",
             ParserId::Jsonnet => "jsonnet",
-            ParserId::Jsx => "jsx",
             ParserId::Kotlin => "kotlin",
             ParserId::Matlab => "matlab",
             ParserId::Nickel => "nickel",
@@ -149,7 +145,6 @@ impl ParserId {
             "java" => Some(ParserId::Java),
             "js" => Some(ParserId::Javascript),
             "jsonnet" => Some(ParserId::Jsonnet),
-            "jsx" => Some(ParserId::Jsx),
             "m" => Some(ParserId::Matlab),
             "kt" => Some(ParserId::Kotlin),
             "ncl" => Some(ParserId::Nickel),

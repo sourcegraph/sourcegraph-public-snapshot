@@ -145,17 +145,20 @@ macro_rules! create_configurations {
 
         {
             let highlights = vec![
-                include_scip_query!("jsx", "highlights"),
+                // We have a separate file for jsx since TypeScript inherits the base javascript highlights
+                // and if we include the query for jsx attributes it would fail since it is not in the tree-sitter
+                // grammar for TypeScript.
+                include_scip_query!("javascript", "highlights-jsx"),
                 include_scip_query!("javascript", "highlights"),
             ];
             let mut lang = HighlightConfiguration::new(
-                ParserId::Jsx.language(),
+                ParserId::Javascript.language(),
                 &highlights.join("\n"),
-                include_scip_query!("jsx", "injections"),
-                include_scip_query!("jsx", "locals"),
-            ).expect("parser for 'jsx' must be compiled");
+                include_scip_query!("javascript", "injections"),
+                include_scip_query!("javascript", "locals"),
+            ).expect("parser for 'javascript' must be compiled");
             lang.configure(&highlight_names);
-            m.insert(ParserId::Jsx, lang);
+            m.insert(ParserId::Javascript, lang);
         }
 
         m
@@ -171,10 +174,10 @@ lazy_static::lazy_static! {
             (Dart, "dart"),
             (Go, "go"),
             (Java, "java"),
-            (Javascript, "javascript"),
+            // Skipping Javascript here as it is handled
+            // specially inside the macro implementation
+            // in order to include the jsx highlights.
             (Jsonnet, "jsonnet"),
-            // Skipping JSX here as it is handled
-            // specially inside the macro implementation.
             (Kotlin, "kotlin"),
             (Matlab, "matlab"),
             (Nickel, "nickel"),

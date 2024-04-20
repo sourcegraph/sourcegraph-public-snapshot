@@ -95,7 +95,6 @@ var highlightConfig = syntaxHighlightConfig{
 
 var baseHighlightConfig = syntaxHighlightConfig{
 	Extensions: map[string]string{
-		"jsx":  "jsx", // default `getLanguage()` helper doesn't handle JSX
 		"tsx":  "tsx", // default `getLanguage()` helper doesn't handle TSX
 		"ncl":  "nickel",
 		"sbt":  "scala",

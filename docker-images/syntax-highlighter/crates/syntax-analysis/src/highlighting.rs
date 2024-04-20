@@ -181,13 +181,7 @@ impl SublimeLanguageName {
         let normalized_name = self.raw.as_str().to_lowercase();
         let normalized_name = match normalized_name {
             x if x == "Rust Enhanced".to_lowercase() => "rust",
-            x if x == "JS Custom - React".to_lowercase() => {
-                if file_info.path.ends_with(".jsx") {
-                    "jsx"
-                } else {
-                    "javascript"
-                }
-            }
+            x if x == "JS Custom - React".to_lowercase() => "javascript",
             x if x == "TypeScriptReact".to_lowercase() => {
                 if file_info.path.ends_with(".tsx") {
                     "tsx"
