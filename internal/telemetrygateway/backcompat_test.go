@@ -1,4 +1,4 @@
-package v1_test
+package telemetrygateway_test
 
 import (
 	"context"
@@ -18,8 +18,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace/tracetest"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 var (

@@ -1,0 +1,1 @@
+# THIS SERVICE SPECIFICATION HAS MOVED TO `lib/telemetrygateway/v1`

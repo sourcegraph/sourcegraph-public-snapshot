@@ -1,9 +1,7 @@
-// Package v1 publishes telemetrygateway V1 bindings for external consumption
-// from standalone Sourcegraph managed services, and also includes some basic
-// helpers.
-//
-// The source for the API specification lives in
-// 'internal/telemetrygateway/v1/telemetrygateway.proto'.
+// Package v1 publishes telemetrygateway V1 bindings for both internal
+// (single-tenant Sourcegraph) and external (standalone Sourcegraph-managed
+// services) consumption. This package also includes standard defaults and
+// helpers for Telemetry Gateway integrations.
 package v1
 
 import "github.com/google/uuid"

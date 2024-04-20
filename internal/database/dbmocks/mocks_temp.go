@@ -27,7 +27,7 @@ import (
 	store "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	types1 "github.com/sourcegraph/sourcegraph/internal/own/types"
 	result "github.com/sourcegraph/sourcegraph/internal/search/result"
-	v1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	v1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 	temporarysettings "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 	schema "github.com/sourcegraph/sourcegraph/schema"
