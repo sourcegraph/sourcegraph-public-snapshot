@@ -7,7 +7,7 @@ load("@rules_proto_grpc//doc:defs.bzl", "doc_template_compile")
 proto_library(
     name = "v1_proto",
     srcs = ["telemetrygateway.proto"],
-    strip_import_prefix = "/internal",  # keep
+    strip_import_prefix = "/lib",  # keep
     visibility = ["//visibility:private"],
     deps = [
         "@com_google_protobuf//:struct_proto",
