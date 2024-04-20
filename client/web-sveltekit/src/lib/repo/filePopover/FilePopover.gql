@@ -1,13 +1,3 @@
-query FilePopoverQuery($repoName: String!, $commitRev: String!, $pathName: String!) {
-    repository(name: $repoName) {
-        commit(rev: $commitRev) {
-            path(path: $pathName) {
-                ...FilePopoverFields
-            }
-        }
-    }
-}
-
 fragment FilePopoverFields on GitBlob {
     path
     isDirectory
@@ -28,13 +18,13 @@ fragment FilePopoverFields on GitBlob {
             }
         }
     }
-    ownership(first: 4, reasons: [CODEOWNERS_FILE_ENTRY]) {
-        totalCount
-        totalOwners
-        nodes {
-            owner {
-                __typename
-            }
-        }
-    }
+    # ownership(first: 4, reasons: [CODEOWNERS_FILE_ENTRY]) {
+    #     totalCount
+    #     totalOwners
+    #     nodes {
+    #         owner {
+    #             __typename
+    #         }
+    #     }
+    # }
 }

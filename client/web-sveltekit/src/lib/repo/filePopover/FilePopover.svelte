@@ -3,31 +3,55 @@
 </script>
 
 <script lang="ts">
-    import { mdiLanguageGo } from '@mdi/js'
+    import { mdiFolder, mdiLanguageGo } from '@mdi/js'
 
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
+    import Timestamp from '$lib/Timestamp.svelte'
+    import { formatBytes } from '$lib/utils'
     import type { Avatar_Person } from '$testing/graphql-type-mocks'
 
+    import type { FilePopoverFields } from './FilePopover.gql'
     import NodeLine from './NodeLine.svelte'
 
     faker.seed(1)
+    export let repoName: string = 'github.com/sourcegraph/sourcegraph'
+    export let f: FilePopoverFields
+
+    interface RepoInfo {
+        org: string
+        repo: string
+    }
+
     const CENTER_DOT = '\u00B7' // interpunct
 
-    let org = 'sourcegraph'
-    let repo = 'sourcegraph'
-    let filePath = 'cmd/frontend/auth'.split('/')
-    let fileInfo = `Go ${CENTER_DOT} 58 lines ${CENTER_DOT} 1.43 KB`
-    let commitSHA = 'def123'
-    let commitMsg = 'Adding changes to redis caching to be...'
-    let avatar: Avatar_Person = {
-        __typename: 'Person',
-        displayName: 'Quinn Slack',
-        name: 'sqs',
-        avatarURL: faker.internet.avatar(),
+    function formatRepoName(repoName: string): RepoInfo {
+        const slashes = repoName.split('/')
+        let repo = slashes[slashes.length - 1]
+        let org = slashes[slashes.length - 2]
+        return { org, repo }
     }
-    let author = 'Quinn Slack'
-    let date = '2d ago'
+    function truncateCommitNumber(numStr: string | undefined, length: number): string | null {
+        if (!numStr) {
+            return null
+        }
+        return numStr.substring(numStr.length - length)
+    }
+
+    $: ({ repo, org } = formatRepoName(repoName))
+    $: filePath = f.path.split('/')
+    $: fileOrDirName = filePath.pop()
+    $: commit = f.commit
+    // TODO: @jasonhawkharris Don't hard code this.
+    $: fileInfo = `${f.languages[0]} ${CENTER_DOT} ${f.totalLines} Lines ${CENTER_DOT} ${formatBytes(f.byteSize)}`
+    $: dirInfo = `${f.languages[0]} ${CENTER_DOT} 92 Files ${CENTER_DOT} ${formatBytes(f.byteSize)} total size`
+    $: commitSHA = truncateCommitNumber(commit.oid, 6)
+    $: commitMsg = commit.subject
+    $: isDir = f.isDirectory
+    $: avatar = commit.author.person
+    $: date = commit.author.date
+    $: url = commit.canonicalURL
+
     let team = '@team-code-search'
     let members: Avatar_Person[] = [
         {
@@ -60,50 +84,45 @@
 <div class="root">
     <div class="desc">
         <div class="repo-and-path">
-            <small>{org}</small>
-            <small>/</small>
-            <small>{repo}</small>
-            <small>{CENTER_DOT}</small>
+            <div>{org}</div>
+            <div>/</div>
+            <div>{repo}</div>
+            <div>{CENTER_DOT}</div>
             {#each filePath as part}
+                <div>{part}</div>
                 {#if filePath.indexOf(part) < filePath.length - 1}
-                    <small>{part}</small>
-                    <small>/</small>
-                {:else}
-                    <small>{part}</small>
+                    <div>/</div>
                 {/if}
             {/each}
         </div>
+
         <div class="lang-and-file">
-            <div>
-                <Icon svgPath={mdiLanguageGo} --color="var(--primary)" />
-            </div>
+            <Icon svgPath={isDir ? mdiFolder : mdiLanguageGo} --color="var(--primary)" />
             <div class="file">
-                <div class="file-name">auth.go</div>
-                <div class="file-info">
-                    <small>{fileInfo}</small>
-                </div>
+                <div>{fileOrDirName}</div>
+                <small>{isDir ? dirInfo : fileInfo}</small>
             </div>
         </div>
     </div>
+
     <div class="last-commit">
-        <div class="title">Last Changed @</div>
+        <small class="title">Last Changed @</small>
         <div class="commit">
             <NodeLine />
-            <div class="commit-info">
-                <a href="https://github.com/sourcegraph/sourcegraph/commit/{commitSHA}" target="_blank">
-                    <small class="sha">{commitSHA}</small>
+            <div>
+                <a href={url} target="_blank">
+                    {commitSHA}
                 </a>
                 <div class="msg">{commitMsg}</div>
                 <div class="author">
-                    <div class="author-info">
-                        <Avatar {avatar} --avatar-size="1.0rem" />
-                        <small>{author}</small>
-                    </div>
-                    <small>{date}</small>
+                    <Avatar {avatar} --avatar-size="1.0rem" />
+                    <small class="name">{avatar.displayName}</small>
+                    <small><Timestamp {date} /></small>
                 </div>
             </div>
         </div>
     </div>
+
     <div class="own">
         <div class="own-info">
             <div class="team">Owned by {team}</div>
@@ -122,6 +141,8 @@
 <style lang="scss">
     .root {
         width: fit-content;
+        min-width: 380px;
+        max-width: 380px;
         background: var(--body-bg);
         border: 1px solid var(--border-color);
         border-radius: 8px;
@@ -133,18 +154,21 @@
             justify-content: center;
 
             .repo-and-path {
-                width: 100%;
+                align-items: center;
+                border-bottom: 1px solid var(--border-color);
                 display: flex;
                 flex-flow: row nowrap;
-                align-items: center;
-                justify-content: center;
                 gap: 0.25rem;
+                justify-content: center;
                 padding: 0.5rem 1rem;
-                font-family: var(--monospace-font-family);
-                font-weight: 100 !important;
-                letter-spacing: 0.25px;
-                color: var(--text-muted);
-                border-bottom: 1px solid var(--border-color);
+                width: 100%;
+
+                div {
+                    font-family: var(--monospace-font-family);
+                    font-weight: 100;
+                    font-size: 0.75rem;
+                    color: var(--text-muted);
+                }
             }
 
             .lang-and-file {
@@ -162,10 +186,13 @@
                     align-items: flex-start;
                     justify-content: flex-start;
                     font-family: var(--monospace-font-family);
-                    .file-name {
+                    gap: 0.25rem;
+
+                    div {
                         color: var(--text-body);
                     }
-                    .file-info {
+
+                    small {
                         color: var(--text-muted);
                     }
                 }
@@ -188,31 +215,36 @@
             }
 
             .commit {
-                padding-left: 1rem;
+                padding-left: 1.5rem;
                 display: flex;
                 flex-flow: row nowrap;
                 align-items: center;
                 justify-content: flex-start;
                 width: 100%;
                 height: 90px;
-                gap: 0.5rem 1.75rem;
+                gap: 0.5rem 1.25rem;
 
-                .commit-info {
+                div {
                     display: flex;
                     flex-flow: column nowrap;
                     align-items: flex-start;
                     justify-content: center;
                     gap: 0.25rem;
+                    width: 275px;
 
-                    .sha {
+                    a {
                         font-family: var(--monospace-font-family);
                         background-color: var(--color-bg-2);
-                        padding: 0.25rem 0.25rem;
+                        padding: 0.15rem 0.25rem;
                         border-radius: 3px;
+                        font-size: 0.65rem;
                     }
 
                     .msg {
                         color: var(--text-body);
+                        text-overflow: ellipsis;
+                        overflow: hidden;
+                        white-space: nowrap;
                     }
 
                     .author {
@@ -220,15 +252,11 @@
                         flex-flow: row nowrap;
                         justify-content: flex-start;
                         align-items: center;
-                        gap: 0.25rem 1rem;
+                        gap: 0.25rem 0.5rem;
                         color: var(--text-muted);
 
-                        .author-info {
-                            display: flex;
-                            flex-flow: row nowrap;
-                            justify-content: flex-start;
-                            align-items: center;
-                            gap: 0.25rem 0.5rem;
+                        .name {
+                            margin-right: 0.5rem;
                         }
                     }
                 }

@@ -19,14 +19,14 @@ TODO: Make this component reuseable. It can only be used in the FilePopover at t
 
         .connector {
             border-left: 1px solid var(--border-color);
-            height: 43px;
+            height: 41.5px;
         }
 
         .circle {
-            height: 6px;
-            width: 6px;
+            height: 8px;
+            width: 8px;
             border-radius: 50%;
-            border: 1.5px solid var(--border-color);
+            border: 2px solid var(--border-color);
         }
     }
 </style>
