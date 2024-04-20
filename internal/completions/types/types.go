@@ -178,19 +178,13 @@ const (
 	CompletionsV1            CompletionsVersion = 1
 )
 
+// CodyClientName represents the name of a client in URL query parameters.
 type CodyClientName string
 
 const (
 	CodyClientWeb       CodyClientName = "web"
 	CodyClientVscode    CodyClientName = "vscode"
 	CodyClientJetbrains CodyClientName = "jetbrains"
-)
-
-type CodyClientVersionConstraint string
-
-const (
-	VscodeVersionConstraint    CodyClientVersionConstraint = "> 1.14.0"
-	JetbrainsVersionConstraint CodyClientVersionConstraint = "> 5.5.5"
 )
 
 type CompletionsClient interface {

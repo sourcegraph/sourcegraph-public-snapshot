@@ -464,17 +464,17 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 	}
 
 	type clientVersionConstraint struct {
-		client  types.CodyClientName
-		version types.CodyClientVersionConstraint
+		client     types.CodyClientName
+		constraint string
 	}
 	var cvc clientVersionConstraint
 	switch clientName {
 	case types.CodyClientWeb:
 		return nil
 	case types.CodyClientVscode:
-		cvc = clientVersionConstraint{client: clientName, version: types.VscodeVersionConstraint}
+		cvc = clientVersionConstraint{client: clientName, constraint: "> 1.14.0"}
 	case types.CodyClientJetbrains:
-		cvc = clientVersionConstraint{client: clientName, version: types.JetbrainsVersionConstraint}
+		cvc = clientVersionConstraint{client: clientName, constraint: "> 5.5.5"}
 	default:
 		return &clientCodyIgnoreCompatibilityError{
 			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains),
@@ -490,10 +490,10 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 		}
 	}
 
-	c, err := semver.NewConstraint(string(cvc.version))
+	c, err := semver.NewConstraint(cvc.constraint)
 	if err != nil {
 		return &clientCodyIgnoreCompatibilityError{
-			reason:     fmt.Sprintf("Cody for %s version constraint \"%s\" doesn't match semver spec.", cvc.client, cvc.version),
+			reason:     fmt.Sprintf("Cody for %s version constraint \"%s\" doesn't match semver spec.", cvc.client, cvc.constraint),
 			statusCode: http.StatusInternalServerError,
 		}
 	}
@@ -509,7 +509,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 	ok := c.Check(v)
 	if !ok {
 		return &clientCodyIgnoreCompatibilityError{
-			reason:     fmt.Sprintf("Cody for %s version \"%s\" doesn't match version constraint \"%s\"", cvc.client, clientVersion, cvc.version),
+			reason:     fmt.Sprintf("Cody for %s version \"%s\" doesn't match version constraint \"%s\"", cvc.client, clientVersion, cvc.constraint),
 			statusCode: http.StatusNotAcceptable,
 		}
 	}
