@@ -61,12 +61,14 @@ export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOr
  * configured by the user.
  */
 export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeOrError): SearchPatternType | undefined {
-    // When the 'keyword search' language update is enabled, default to the 'keyword' patterntype
-    if (isKeywordSearchEnabled(settingsCascade)) {
-        return SearchPatternType.keyword
-    }
-
-    return getFromSettings(settingsCascade, 'search.defaultPatternType')
+    const defaultPatternType: SearchPatternType | undefined = getFromSettings(
+        settingsCascade,
+        'search.defaultPatternType'
+    )
+    // When the 'keyword search' language update is enabled, default to the 'keyword' patterntype if none set
+    return isKeywordSearchEnabled(settingsCascade)
+        ? defaultPatternType ?? SearchPatternType.keyword
+        : defaultPatternType
 }
 
 /**
