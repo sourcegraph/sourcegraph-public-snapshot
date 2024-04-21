@@ -37,6 +37,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+## Changed
+
+## Fixed
+
+## 5.3.11625
+
 ### Changed
 
 - Notices configured in the site config now allow for specifying a style or color. [#61338](https://github.com/sourcegraph/sourcegraph/pull/61338)
@@ -44,6 +50,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed a bug where the `src batch preview` command could fail due to an incorrect file-not-found error. [#61984](https://github.com/sourcegraph/sourcegraph/pull/61984)
+- Fixed a bug where the Roles page in the Site Admin view was inaccessible. [#61738](https://github.com/sourcegraph/sourcegraph/pull/61738)
 
 ## 5.3.9104
 
