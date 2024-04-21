@@ -52,6 +52,8 @@ go_test(
     embed = [":httpapi"],
     deps = [
         "//internal/completions/types",
+        "//internal/conf",
+        "//schema",
         "@com_github_stretchr_testify//require",
     ],
 )
