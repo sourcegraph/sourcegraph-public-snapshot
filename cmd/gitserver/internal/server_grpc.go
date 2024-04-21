@@ -262,10 +262,6 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("unknown archive format %q", req.GetFormat()))
 	}
 
-	if err := git.CheckSpecArgSafety(req.GetTreeish()); err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
-	}
-
 	accesslog.Record(ctx, req.GetRepo(),
 		log.String("treeish", req.GetTreeish()),
 		log.String("format", string(format)),

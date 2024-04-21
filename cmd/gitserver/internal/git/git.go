@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -179,16 +178,6 @@ func ComputeRefHash(dir common.GitDir) ([]byte, error) {
 	hash := make([]byte, hex.EncodedLen(hasher.Size()))
 	hex.Encode(hash, hasher.Sum(nil))
 	return hash, nil
-}
-
-// CheckSpecArgSafety returns a non-nil err if spec begins with a "-", which could
-// cause it to be interpreted as a git command line argument.
-// TODO: Should be removed once the exec endpoint is gone.
-func CheckSpecArgSafety(spec string) error {
-	if strings.HasPrefix(spec, "-") {
-		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)
-	}
-	return nil
 }
 
 // MakeBareRepo initializes a new bare repo at the given dir.
