@@ -94,3 +94,22 @@ export function splitPath(path: string): [string, string] {
     const components = path.split('/')
     return [components.slice(0, -1).join('/'), components.at(-1) ?? '']
 }
+
+interface RepoInfo {
+    org: string
+    repo: string
+}
+
+export function formatRepoName(repoName: string): RepoInfo {
+    const slashes = repoName.split('/')
+    let repo = slashes[slashes.length - 1]
+    let org = slashes[slashes.length - 2]
+    return { org, repo }
+}
+
+export function truncateCommitNumber(numStr: string | undefined, length: number): string | null {
+    if (!numStr) {
+        return null
+    }
+    return numStr.substring(numStr.length - length)
+}

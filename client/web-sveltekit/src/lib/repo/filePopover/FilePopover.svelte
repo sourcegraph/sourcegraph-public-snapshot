@@ -7,6 +7,7 @@
 
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
+    import { formatRepoName, truncateCommitNumber } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
     import { formatBytes } from '$lib/utils'
     import type { Avatar_Person } from '$testing/graphql-type-mocks'
@@ -18,40 +19,17 @@
     export let repoName: string = 'github.com/sourcegraph/sourcegraph'
     export let f: FilePopoverFields
 
-    interface RepoInfo {
-        org: string
-        repo: string
-    }
-
     const CENTER_DOT = '\u00B7' // interpunct
-
-    function formatRepoName(repoName: string): RepoInfo {
-        const slashes = repoName.split('/')
-        let repo = slashes[slashes.length - 1]
-        let org = slashes[slashes.length - 2]
-        return { org, repo }
-    }
-    function truncateCommitNumber(numStr: string | undefined, length: number): string | null {
-        if (!numStr) {
-            return null
-        }
-        return numStr.substring(numStr.length - length)
-    }
 
     $: ({ org, repo } = formatRepoName(repoName))
     $: filePath = f.path.split('/')
     $: fileOrDirName = filePath.pop()
-    $: commit = f.commit
-    // TODO: @jasonhawkharris Don't hard code this.
     $: fileInfo = `${f.languages[0]} ${CENTER_DOT} ${f.totalLines} Lines ${CENTER_DOT} ${formatBytes(f.byteSize)}`
+    // TODO: @jasonhawkharris Don't hard code this.
     $: dirInfo = `${f.languages[0]} ${CENTER_DOT} 92 Files ${CENTER_DOT} ${formatBytes(f.byteSize)} total size`
-    $: commitSHA = truncateCommitNumber(commit.oid, 6)
-    $: commitMsg = commit.subject
-    $: isDir = f.isDirectory
-    $: avatar = commit.author.person
-    $: date = commit.author.date
-    $: url = commit.canonicalURL
+    $: avatar = f.commit.author.person
 
+    // TODO: @jasonhawkharris Don't hard code this.
     let team = '@team-code-search'
     let members: Avatar_Person[] = [
         {
@@ -99,10 +77,14 @@
         </div>
 
         <div class="lang-and-file">
-            <Icon svgPath={isDir ? mdiFolder : mdiLanguageGo} --color="var(--primary)" />
+            <Icon
+                svgPath={f.isDirectory ? mdiFolder : mdiLanguageGo}
+                --icon-fill-color="var(--primary)"
+                --icon-size="1.5rem"
+            />
             <div class="file">
                 <div>{fileOrDirName}</div>
-                <small>{isDir ? dirInfo : fileInfo}</small>
+                <small>{f.isDirectory ? dirInfo : fileInfo}</small>
             </div>
         </div>
     </div>
@@ -112,14 +94,14 @@
         <div class="commit">
             <NodeLine />
             <div>
-                <a href={url} target="_blank">
-                    {commitSHA}
+                <a href={f.commit.canonicalURL} target="_blank">
+                    {truncateCommitNumber(f.commit.oid, 5)}
                 </a>
-                <div class="msg">{commitMsg}</div>
+                <div class="msg">{f.commit.subject}</div>
                 <div class="author">
                     <Avatar {avatar} --avatar-size="1.0rem" />
                     <small class="name">{avatar.displayName}</small>
-                    <small><Timestamp {date} /></small>
+                    <small><Timestamp date={f.commit.author.date} /></small>
                 </div>
             </div>
         </div>
