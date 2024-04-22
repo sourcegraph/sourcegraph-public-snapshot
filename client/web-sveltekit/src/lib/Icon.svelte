@@ -27,7 +27,7 @@
 
 <style lang="scss">
     :root {
-        --icon-size: 24px;
+        --icon-size: 1rem;
         --icon-fill-color: inherit;
     }
 
