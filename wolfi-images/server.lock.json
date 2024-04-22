@@ -1,5 +1,5 @@
 {
-  "configHash": "d1cd03d19330eb62faf4743d680b61458f72e9d11cf525a95422e2dbbfa1bf4c",
+  "configHash": "10234e8518d28bca515593d790452c1aa44d4ea8a31fbd850b05c0369a5af6ea",
   "contents": {
     "keyring": [
       {
@@ -75,60 +75,60 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1DyZ5L88J9MmDMYgbsywXdJdnw04=",
+        "checksum": "Q1uuAznXPkDNBMP/eILVO7UDGj1pU=",
         "control": {
-          "checksum": "sha1-DyZ5L88J9MmDMYgbsywXdJdnw04=",
-          "range": "bytes=699-1107"
+          "checksum": "sha1-uuAznXPkDNBMP/eILVO7UDGj1pU=",
+          "range": "bytes=702-1112"
         },
         "data": {
-          "checksum": "sha256-3xIIHf7osttdb7FoJTbfURbo4YuaB3knm5Kd3B5p+dI=",
-          "range": "bytes=1108-267814"
+          "checksum": "sha256-Ath31YTTsiakoEktGl5txvNQpnr/grvFQHlmXa5E7fI=",
+          "range": "bytes=1113-267815"
         },
         "name": "ld-linux",
         "signature": {
-          "checksum": "sha1-lxFSv68mPMJwO+PthEdXfKHuLWk=",
-          "range": "bytes=0-698"
+          "checksum": "sha1-oh4vr00LXL4ArbAOR9LS1VzzfYc=",
+          "range": "bytes=0-701"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/ld-linux-2.39-r1.apk",
-        "version": "2.39-r1"
+        "url": "https://packages.wolfi.dev/os/x86_64/ld-linux-2.39-r2.apk",
+        "version": "2.39-r2"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1UvgNLBt9CKIOp7pN3EI0pgBlzXo=",
+        "checksum": "Q1TXuyiDJBsTNDwvPq7HFxaeBQ33w=",
         "control": {
-          "checksum": "sha1-UvgNLBt9CKIOp7pN3EI0pgBlzXo=",
-          "range": "bytes=696-1051"
+          "checksum": "sha1-TXuyiDJBsTNDwvPq7HFxaeBQ33w=",
+          "range": "bytes=703-1059"
         },
         "data": {
-          "checksum": "sha256-NaRRsIIgVTbofef14Qsnf+rysYDJXOXPKgfj6bAhP94=",
-          "range": "bytes=1052-408274"
+          "checksum": "sha256-3s2Fygt+ZuHj/StxP7YffswmhHE7EJ4TxZ7EWlRQ4NA=",
+          "range": "bytes=1060-408275"
         },
         "name": "glibc-locale-posix",
         "signature": {
-          "checksum": "sha1-Iug0EjR+0K/k6fl0wi0prJHKBBo=",
-          "range": "bytes=0-695"
+          "checksum": "sha1-FbeSNtuEgFmzNamDx5Dj1LGVgsQ=",
+          "range": "bytes=0-702"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/glibc-locale-posix-2.39-r1.apk",
-        "version": "2.39-r1"
+        "url": "https://packages.wolfi.dev/os/x86_64/glibc-locale-posix-2.39-r2.apk",
+        "version": "2.39-r2"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1PnEJFSqU/wFNmbOLGHbgqFwS/yU=",
+        "checksum": "Q1SD8az8RMNr5tnb8/mPZdR+A6V5k=",
         "control": {
-          "checksum": "sha1-PnEJFSqU/wFNmbOLGHbgqFwS/yU=",
-          "range": "bytes=695-1321"
+          "checksum": "sha1-SD8az8RMNr5tnb8/mPZdR+A6V5k=",
+          "range": "bytes=701-1330"
         },
         "data": {
-          "checksum": "sha256-D6XvEcPrHmlsiI6HbbE51xmiTM1c5y6DV4MrHrCVuNo=",
-          "range": "bytes=1322-5861480"
+          "checksum": "sha256-QvhWs/fGBaX5calu0uES9fcTMx6+R1xKZHdxkxxSxsg=",
+          "range": "bytes=1331-5861481"
         },
         "name": "glibc",
         "signature": {
-          "checksum": "sha1-ypPC9SJASGEATsvLoDuEEUobhAs=",
-          "range": "bytes=0-694"
+          "checksum": "sha1-v4LRB2eP5VLe623v8sJ3f4wDNFM=",
+          "range": "bytes=0-700"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/glibc-2.39-r1.apk",
-        "version": "2.39-r1"
+        "url": "https://packages.wolfi.dev/os/x86_64/glibc-2.39-r2.apk",
+        "version": "2.39-r2"
       },
       {
         "architecture": "x86_64",
@@ -626,22 +626,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1szp02tM1WkRUzhOGBkFjl6dA5pQ=",
+        "checksum": "Q1drCieAMJpJBP1KWvJk6Vhq7Zj20=",
         "control": {
-          "checksum": "sha1-szp02tM1WkRUzhOGBkFjl6dA5pQ=",
-          "range": "bytes=698-1101"
+          "checksum": "sha1-drCieAMJpJBP1KWvJk6Vhq7Zj20=",
+          "range": "bytes=701-1108"
         },
         "data": {
-          "checksum": "sha256-hrc/6rvJR5nb97Gu5Hep8419+WyFmd7maV78ni7zQAc=",
-          "range": "bytes=1102-21604"
+          "checksum": "sha256-LcGaT+nLHN7YtUab5sY0EoXErbOj/S58FXtf1JVxWbM=",
+          "range": "bytes=1109-21605"
         },
         "name": "libcrypt1",
         "signature": {
-          "checksum": "sha1-Jk/8hSLRyZ7scdep1XfbpKABePY=",
-          "range": "bytes=0-697"
+          "checksum": "sha1-wwLYQc1joetP6IOipSVSCQsZHsM=",
+          "range": "bytes=0-700"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libcrypt1-2.39-r1.apk",
-        "version": "2.39-r1"
+        "url": "https://packages.wolfi.dev/os/x86_64/libcrypt1-2.39-r2.apk",
+        "version": "2.39-r2"
       },
       {
         "architecture": "x86_64",
@@ -1044,22 +1044,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1qLbMbmgFOXNEspWQUcjRuuekaAE=",
+        "checksum": "Q1cB2DKwrO+Pwb0nk1xtR8eOCPWDE=",
         "control": {
-          "checksum": "sha1-qLbMbmgFOXNEspWQUcjRuuekaAE=",
-          "range": "bytes=708-1033"
+          "checksum": "sha1-cB2DKwrO+Pwb0nk1xtR8eOCPWDE=",
+          "range": "bytes=699-1027"
         },
         "data": {
-          "checksum": "sha256-UnfXdmp5QzhslWzz6ghNwqDnCLKHE/4963TnjO2/7hU=",
-          "range": "bytes=1034-61049958"
+          "checksum": "sha256-gPHRw2Z2/3gjIt6O0AdmSs00lbUyMmge+e0Gg+tU0Gw=",
+          "range": "bytes=1028-61049959"
         },
         "name": "glibc-locale-en",
         "signature": {
-          "checksum": "sha1-YyzlLTZZkVz2l55qSEMSqrF5wZQ=",
-          "range": "bytes=0-707"
+          "checksum": "sha1-Iwu06mppUw/+LJRsr8byQnuSlv8=",
+          "range": "bytes=0-698"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/glibc-locale-en-2.39-r1.apk",
-        "version": "2.39-r1"
+        "url": "https://packages.wolfi.dev/os/x86_64/glibc-locale-en-2.39-r2.apk",
+        "version": "2.39-r2"
       },
       {
         "architecture": "x86_64",
@@ -1481,22 +1481,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1wrxprQGeD5dn/VGkPP46hGPEChw=",
+        "checksum": "Q1ueo4UWPln3T3+XsY1t4rr5k77uc=",
         "control": {
-          "checksum": "sha1-wrxprQGeD5dn/VGkPP46hGPEChw=",
-          "range": "bytes=702-1168"
+          "checksum": "sha1-ueo4UWPln3T3+XsY1t4rr5k77uc=",
+          "range": "bytes=705-1170"
         },
         "data": {
-          "checksum": "sha256-spqeE2+7COXu1WG8x4d9FmdIbE8RIUhbmguf5hqeKrc=",
-          "range": "bytes=1169-373950"
+          "checksum": "sha256-rXBoHBmHqzaLSdLi2nk0lnDGLbhjJ1JXwMkEi73DQW0=",
+          "range": "bytes=1171-373951"
         },
         "name": "posix-libc-utils",
         "signature": {
-          "checksum": "sha1-YxNF3yqWELLDOGK+TjEz01Pt1yI=",
-          "range": "bytes=0-701"
+          "checksum": "sha1-hdlD8UIp3IX9ED5IOOvsVs4Zb0M=",
+          "range": "bytes=0-704"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/posix-libc-utils-2.39-r1.apk",
-        "version": "2.39-r1"
+        "url": "https://packages.wolfi.dev/os/x86_64/posix-libc-utils-2.39-r2.apk",
+        "version": "2.39-r2"
       },
       {
         "architecture": "x86_64",
@@ -1595,60 +1595,60 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q11rWEg82oHyjUZI+8zzUmTJ1D/74=",
+        "checksum": "Q1UmcDqeuODUV8+OpvLzUyx0yI8xc=",
         "control": {
-          "checksum": "sha1-1rWEg82oHyjUZI+8zzUmTJ1D/74=",
-          "range": "bytes=703-1150"
+          "checksum": "sha1-UmcDqeuODUV8+OpvLzUyx0yI8xc=",
+          "range": "bytes=698-1144"
         },
         "data": {
-          "checksum": "sha256-ZPmuc49YzWCEyVdde2xydAUGVTJWbQ/x4bE0y3KvUi8=",
-          "range": "bytes=1151-186189747"
+          "checksum": "sha256-b4esuCNDnZjnPFuKsFFEVf4YtzS4090D1TxWga/nvWs=",
+          "range": "bytes=1145-186251251"
         },
         "name": "prometheus-2.51",
         "signature": {
-          "checksum": "sha1-id0YIveOCeBApldSkhNpoF5uUZQ=",
-          "range": "bytes=0-702"
+          "checksum": "sha1-Dd6iX7TS/jcSD3fMqnagSEvize0=",
+          "range": "bytes=0-697"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/prometheus-2.51-2.51.2-r0.apk",
-        "version": "2.51.2-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/prometheus-2.51-2.51.2-r1.apk",
+        "version": "2.51.2-r1"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1Cvy3ADS3PdGaFFwROjHVPlWH/gk=",
+        "checksum": "Q1d50lhC89U1NMDfOR59tXcSxwhoI=",
         "control": {
-          "checksum": "sha1-Cvy3ADS3PdGaFFwROjHVPlWH/gk=",
-          "range": "bytes=697-1062"
+          "checksum": "sha1-d50lhC89U1NMDfOR59tXcSxwhoI=",
+          "range": "bytes=703-1074"
         },
         "data": {
-          "checksum": "sha256-3a5i42ZWgxXyV/+UFB7Ns6sdHRwMX8R7yz/hGBHTKpc=",
-          "range": "bytes=1063-57256559"
+          "checksum": "sha256-1hO2vJ48CDakvu2qdsvRm+VFmtEaxx7ECLIhmzn1U+A=",
+          "range": "bytes=1075-57320339"
         },
         "name": "prometheus-alertmanager",
         "signature": {
-          "checksum": "sha1-k1KFRC9YGc/kuXxVooWR37YuhZ4=",
-          "range": "bytes=0-696"
+          "checksum": "sha1-cSE9DHjKcHhrVZ202d3cVA6lnnA=",
+          "range": "bytes=0-702"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/prometheus-alertmanager-0.27.0-r3.apk",
-        "version": "0.27.0-r3"
+        "url": "https://packages.wolfi.dev/os/x86_64/prometheus-alertmanager-0.27.0-r4.apk",
+        "version": "0.27.0-r4"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1gvtJ8wLt/qj2KMwI37796EiCOws=",
+        "checksum": "Q1v9j36aKj/QDucW2TWthgb0lFN5c=",
         "control": {
-          "checksum": "sha1-gvtJ8wLt/qj2KMwI37796EiCOws=",
-          "range": "bytes=703-1080"
+          "checksum": "sha1-v9j36aKj/QDucW2TWthgb0lFN5c=",
+          "range": "bytes=703-1088"
         },
         "data": {
-          "checksum": "sha256-+ah0KYZAyas3blgs4qTtdc9KgZkmI1GADOkbxfr8aok=",
-          "range": "bytes=1081-13096940"
+          "checksum": "sha256-x/hkY8PBEFsAYRDrU7hhTRaL1lVe5dlPK5I7y8ayw7w=",
+          "range": "bytes=1089-13096952"
         },
         "name": "prometheus-postgres-exporter",
         "signature": {
-          "checksum": "sha1-46uaLZr9cEfwB5TzhvZwIPM+ej8=",
+          "checksum": "sha1-nMuUyXCQD2YI4Wm6TeBRrsiT7ds=",
           "range": "bytes=0-702"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/prometheus-postgres-exporter-0.15.0-r6.apk",
-        "version": "0.15.0-r6"
+        "url": "https://packages.wolfi.dev/os/x86_64/prometheus-postgres-exporter-0.15.0-r7.apk",
+        "version": "0.15.0-r7"
       },
       {
         "architecture": "x86_64",
