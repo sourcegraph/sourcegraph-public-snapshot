@@ -16,7 +16,6 @@ go_library(
         "//internal/grpc/defaults",
         "//internal/httpserver",
         "//internal/pubsub",
-        "//internal/sams",
         "//internal/telemetrygateway/v1:telemetrygateway",
         "//internal/trace/policy",
         "//internal/version",
@@ -25,8 +24,9 @@ go_library(
         "//lib/managedservicesplatform/runtime",
         "//lib/managedservicesplatform/runtime/contract",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//:sourcegraph-accounts-sdk-go",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel_metric//:metric",
-        "@org_golang_x_oauth2//clientcredentials",
     ],
 )
