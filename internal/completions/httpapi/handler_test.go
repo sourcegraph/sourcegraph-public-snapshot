@@ -100,7 +100,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-version": []string{"1.14.0"},
 			},
 			want: &clientCodyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint %q", types.CodyClientVscode, vscodeCodyIgnoreVersionConstraint),
+				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint \"1.14.1\"", types.CodyClientVscode),
 				statusCode: http.StatusNotAcceptable,
 			},
 		},
@@ -121,7 +121,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-version": []string{"1.14.0"},
 			},
 			want: &clientCodyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint %q", types.CodyClientJetbrains, jetbrainsCodyIgnoreVersionConstraint),
+				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint \"5.5.5\"", types.CodyClientJetbrains),
 				statusCode: http.StatusNotAcceptable,
 			},
 		},

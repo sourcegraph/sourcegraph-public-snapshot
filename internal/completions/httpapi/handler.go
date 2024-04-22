@@ -455,17 +455,9 @@ func (e *clientCodyIgnoreCompatibilityError) Error() string {
 	return fmt.Sprintf("%s: %s", clientCodyIgnoreCompatibilityErrorPrefix, e.reason)
 }
 
-// clientCodyIgnoreVersionConstraint represents client version constraint following the semver spec.
-type clientCodyIgnoreVersionConstraint string
-
-const (
-	vscodeCodyIgnoreVersionConstraint    clientCodyIgnoreVersionConstraint = "> 1.14.0"
-	jetbrainsCodyIgnoreVersionConstraint clientCodyIgnoreVersionConstraint = "> 5.5.5"
-)
-
 func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompatibilityError {
 	// If Cody context filters are not defined on the instance, we do not restrict client version.
-	// Because the site hasn't configured Cody Ignore, no need to enforce it.	
+	// Because the site hasn't configured Cody Ignore, no need to enforce it.
 	if conf.SiteConfig().CodyContextFilters == nil {
 		return nil
 	}
@@ -481,16 +473,16 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 	// clientVersionConstraint defines the minimum client version required to support Cody Ignore.
 	type clientVersionConstraint struct {
 		client     types.CodyClientName
-		constraint clientCodyIgnoreVersionConstraint
+		constraint string // represents client version constraint following the semver spec
 	}
 	var cvc clientVersionConstraint
 	switch clientName {
 	case types.CodyClientWeb:
 		return nil
 	case types.CodyClientVscode:
-		cvc = clientVersionConstraint{client: clientName, constraint: vscodeCodyIgnoreVersionConstraint}
+		cvc = clientVersionConstraint{client: clientName, constraint: "> 1.14.0"}
 	case types.CodyClientJetbrains:
-		cvc = clientVersionConstraint{client: clientName, constraint: jetbrainsCodyIgnoreVersionConstraint}
+		cvc = clientVersionConstraint{client: clientName, constraint: "> 5.5.5"}
 	default:
 		return &clientCodyIgnoreCompatibilityError{
 			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s. %s", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
