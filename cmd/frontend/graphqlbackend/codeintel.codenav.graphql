@@ -303,12 +303,24 @@ input UsagesFilter {
     or: [UsagesFilter!]
     not: UsagesFilter
     # TODO: Can we be flexible here and allow patterns while still maintaining fast queries.
-    repository: String
-    path: String
+    repository: RepositoryFilter
+    path: PathFilter
     kind: SymbolUsageKind
     # TODO: Provide a way of controlling fallback behavior for indexes?
     # Not super sure how that would work, given that for different repositories,
     # the hashes will all be different?
+}
+
+input RepositoryFilter {
+    name: StringComparator!
+}
+
+input PathFilter {
+    name: StringComparator!
+}
+
+input StringComparator {
+    eq: String
 }
 
 enum SymbolUsageKind {
