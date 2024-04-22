@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -35,8 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
-
-var envGitserverExhaustiveLoggingEnabled = env.MustGetBool("SRC_GITSERVER_EXHAUSTIVE_LOGGING_ENABLED", false, "enable exhaustive request logging in gitserver")
 
 type service interface {
 	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchReader io.Reader) protocol.CreateCommitFromPatchResponse
