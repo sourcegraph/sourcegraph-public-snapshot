@@ -628,9 +628,7 @@
               "items": {
                 "type": "string"
               },
-              "default": [
-                "*.lock"
-              ]
+              "default": ["*.lock"]
             }
           }
         }

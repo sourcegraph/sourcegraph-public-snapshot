@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"io"
 	"io/fs"
-	"regexp"
 
 	"github.com/sourcegraph/log"
 
