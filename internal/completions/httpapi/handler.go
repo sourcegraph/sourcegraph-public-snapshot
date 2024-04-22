@@ -95,8 +95,7 @@ func newCompletionsHandler(
 
 		isDotcom := dotcom.SourcegraphDotComMode()
 		if !isDotcom {
-			err := checkClientCodyIgnoreCompatibility(r)
-			if err != nil {
+			if err := checkClientCodyIgnoreCompatibility(r); err != nil {
 				http.Error(w, err.Error(), err.statusCode)
 				return
 			}
