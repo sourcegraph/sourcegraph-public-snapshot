@@ -162,7 +162,7 @@ describe('navbar query state', () => {
             setQueryStateFromSettings({
                 subjects: [],
                 final: {
-                    'search.defaultPatternType': SearchPatternType.standard,
+                    'search.defaultPatternType': SearchPatternType.regexp,
                     experimentalFeatures: {
                         keywordSearch: true,
                     },
@@ -170,7 +170,7 @@ describe('navbar query state', () => {
             })
 
             expect(useNavbarQueryState.getState()).toHaveProperty('searchMode', SearchMode.Precise)
-            expect(useNavbarQueryState.getState()).toHaveProperty('searchPatternType', SearchPatternType.keyword)
+            expect(useNavbarQueryState.getState()).toHaveProperty('searchPatternType', SearchPatternType.regexp)
         })
 
         it('chooses correct defaults when keyword search is enabled', () => {
