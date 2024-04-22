@@ -40,7 +40,7 @@ http_archive(
 
 # Go toolchain setup
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
-load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies","go_repository")
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
 load("//:deps.bzl", "go_dependencies")
 
 # gazelle:repository_macro deps.bzl%go_dependencies
@@ -57,6 +57,6 @@ gazelle_dependencies()
 go_repository(
     name = "com_github_aws_aws_sdk_go_v2_service_eks",
     importpath = "github.com/aws/aws-sdk-go-v2/service/eks",
-    version = "v1.27.3",
     sum = "h1:jlh0AJVhauqSGaiwRJx4j0LNBGEAaGn46sA1XJyTj0E=",
+    version = "v1.27.3",
 )
