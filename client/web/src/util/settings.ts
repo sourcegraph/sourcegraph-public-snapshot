@@ -66,9 +66,10 @@ export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeO
         'search.defaultPatternType'
     )
     // When the 'keyword search' language update is enabled, default to the 'keyword' patterntype if none set
-    return isKeywordSearchEnabled(settingsCascade)
-        ? defaultPatternType ?? SearchPatternType.keyword
-        : defaultPatternType
+    if (isKeywordSearchEnabled(settingsCascade)) {
+        return defaultPatternType ?? SearchPatternType.keyword
+    }
+    return defaultPatternType
 }
 
 /**
