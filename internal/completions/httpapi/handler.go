@@ -480,12 +480,12 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 	case types.CodyClientWeb:
 		return nil
 	case types.CodyClientVscode:
-		cvc = clientVersionConstraint{client: clientName, constraint: "> 1.14.0"}
+		cvc = clientVersionConstraint{client: clientName, constraint: "> 1.14.1"}
 	case types.CodyClientJetbrains:
 		cvc = clientVersionConstraint{client: clientName, constraint: "> 5.5.5"}
 	default:
 		return &clientCodyIgnoreCompatibilityError{
-			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s. %s", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
+			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
 			statusCode: http.StatusNotAcceptable,
 		}
 	}
@@ -498,7 +498,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 		}
 	}
 
-	c, err := semver.NewConstraint(string(cvc.constraint))
+	c, err := semver.NewConstraint(cvc.constraint)
 	if err != nil {
 		return &clientCodyIgnoreCompatibilityError{
 			reason:     fmt.Sprintf("Cody for %s version constraint %q doesn't follow semver spec.", cvc.client, cvc.constraint),

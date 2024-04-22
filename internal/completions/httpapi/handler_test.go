@@ -81,7 +81,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			},
 		},
 		{
-			name: "version doesn't follow semver spec",
+			name: "version doesn't follow semver spec (missing major, minor and patch versions)",
 			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientVscode)},
@@ -93,25 +93,150 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			},
 		},
 		{
-			name: "vscode: version doesn't match constraint",
+			name: "version doesn't follow semver spec (random string)",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"."},
+			},
+			want: &clientCodyIgnoreCompatibilityError{
+				reason:     "Cody for vscode version \".\" doesn't follow semver spec.",
+				statusCode: http.StatusBadRequest,
+			},
+		},
+		{
+			name: "version doesn't follow semver spec (empty pre-release identifier)",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"1.2.3-"},
+			},
+			want: &clientCodyIgnoreCompatibilityError{
+				reason:     "Cody for vscode version \"1.2.3-\" doesn't follow semver spec.",
+				statusCode: http.StatusBadRequest,
+			},
+		},
+		{
+			name: "version doesn't follow semver spec (not allowed symbols in pre-release identifier)",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"1.2.3-a^1"},
+			},
+			want: &clientCodyIgnoreCompatibilityError{
+				reason:     "Cody for vscode version \"1.2.3-a^1\" doesn't follow semver spec.",
+				statusCode: http.StatusBadRequest,
+			},
+		},
+		{
+			name: "version doesn't follow semver spec (empty build identifier)",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"1.2.3-alpha+"},
+			},
+			want: &clientCodyIgnoreCompatibilityError{
+				reason:     "Cody for vscode version \"1.2.3-alpha+\" doesn't follow semver spec.",
+				statusCode: http.StatusBadRequest,
+			},
+		},
+		{
+			name: "vscode: major version doesn't match constraint (shorthand semver version)",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"0.1"},
+			},
+			want: &clientCodyIgnoreCompatibilityError{
+				reason:     fmt.Sprintf("Cody for %s version \"0.1\" doesn't match version constraint \"> 1.14.1\"", types.CodyClientVscode),
+				statusCode: http.StatusNotAcceptable,
+			},
+		},
+		{
+			name: "vscode: minor version doesn't match constraint (shorthand semver version)",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"1.2"},
+			},
+			want: &clientCodyIgnoreCompatibilityError{
+				reason:     fmt.Sprintf("Cody for %s version \"1.2\" doesn't match version constraint \"> 1.14.1\"", types.CodyClientVscode),
+				statusCode: http.StatusNotAcceptable,
+			},
+		},
+		{
+			name: "vscode: patch version doesn't match constraint",
 			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientVscode)},
 				"client-version": []string{"1.14.0"},
 			},
 			want: &clientCodyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint \"1.14.1\"", types.CodyClientVscode),
+				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint \"> 1.14.1\"", types.CodyClientVscode),
 				statusCode: http.StatusNotAcceptable,
 			},
 		},
 		{
-			name: "vscode: version matches constraint",
+			name: "vscode: version matches constraint (standard semver version)",
 			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientVscode)},
-				"client-version": []string{"1.14.1"},
+				"client-version": []string{"1.14.2"},
 			},
 			want: nil,
+		},
+		{
+			name: "vscode: version matches constraint (major-only shorthand version)",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"2"},
+			},
+			want: nil,
+		},
+		{
+			name: "vscode: version matches constraint (major-only shorthand version with leading \"v\")",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"v2"},
+			},
+			want: nil,
+		},
+		{
+			name: "vscode: version matches constraint (version with build metadata)",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"2.0.0+20130313144700"},
+			},
+			want: nil,
+		},
+		{
+			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
+			name: "vscode: pre-release version doesn't match constraint if the constraint is defined without a pre-release comparator",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"2.3.11-alpha"},
+			},
+			want: &clientCodyIgnoreCompatibilityError{
+				reason:     fmt.Sprintf("Cody for %s version \"2.3.11-alpha\" doesn't match version constraint \"> 1.14.1\"", types.CodyClientVscode),
+				statusCode: http.StatusNotAcceptable,
+			},
+		},
+		{
+			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
+			name: "vscode: version matches constraint (pre-release version with build metadata)",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"2.3.11-beta+exp.sha.5114f85a"},
+			},
+			want: &clientCodyIgnoreCompatibilityError{
+				reason:     fmt.Sprintf("Cody for %s version \"2.3.11-beta+exp.sha.5114f85a\" doesn't match version constraint \"> 1.14.1\"", types.CodyClientVscode),
+				statusCode: http.StatusNotAcceptable,
+			},
 		},
 		{
 			name: "jetbrains: version doesn't match constraint",
@@ -121,7 +246,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-version": []string{"1.14.0"},
 			},
 			want: &clientCodyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint \"5.5.5\"", types.CodyClientJetbrains),
+				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint \"> 5.5.5\"", types.CodyClientJetbrains),
 				statusCode: http.StatusNotAcceptable,
 			},
 		},
