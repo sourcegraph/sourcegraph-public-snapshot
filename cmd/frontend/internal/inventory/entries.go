@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"io/fs"
-	"os"
 	"sort"
 	"sync"
 )
@@ -77,7 +76,7 @@ func (c *Context) tree(ctx context.Context, tree fs.FileInfo, buf []byte) (inv I
 
 	for i, e := range entries {
 		wg.Add(1)
-		go func(i int, e os.FileInfo) {
+		go func() {
 			defer wg.Done()
 
 			switch {
@@ -86,19 +85,14 @@ func (c *Context) tree(ctx context.Context, tree fs.FileInfo, buf []byte) (inv I
 				// those cache entries is likely to be much lower than cache entries for files whose
 				// inventory was directly requested.
 				lang, err := getLang(ctx, e, buf, c.NewFileReader)
-				if err != nil {
-					results <- treeIteratorResult{i, Inventory{Languages: []Lang{lang}}, err}
-				}
-				results <- treeIteratorResult{i, Inventory{Languages: []Lang{lang}}, nil}
-
+				results <- treeIteratorResult{i, Inventory{Languages: []Lang{lang}}, err}
 			case e.Mode().IsDir(): // subtree
 				subtreeInv, err := c.tree(ctx, e, buf)
 				results <- treeIteratorResult{i, subtreeInv, err}
-
 			default:
 				// Skip symlinks, submodules, etc.
 			}
-		}(i, e)
+		}()
 	}
 
 	// Wait for all goroutines to finish
