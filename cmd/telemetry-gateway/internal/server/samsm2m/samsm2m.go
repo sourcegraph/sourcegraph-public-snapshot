@@ -76,7 +76,7 @@ func CheckWriteEventsScope(ctx context.Context, logger log.Logger, tokens TokenI
 	}
 
 	// Check for our required scope.
-	if result.Scopes.Match(requiredSamsScope) {
+	if !result.Scopes.Match(requiredSamsScope) {
 		// Record detailed error in span and logs, and return an opaque one
 		err = errors.Newf("got scopes %+v, required: %+v", result.Scopes, requiredSamsScope)
 		span.RecordError(err)
