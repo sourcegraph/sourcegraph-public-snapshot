@@ -109,7 +109,8 @@ func (r *Reconciler) reconcileBlobstoreServices(ctx context.Context, sg *Sourceg
 func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
 	name := "blobstore"
 
-	containerImage := "TODO"
+	// TODO: https://github.com/sourcegraph/sourcegraph/issues/62076
+	containerImage := "index.docker.io/sourcegraph/blobstore:5.3.2@sha256:d625be1eefe61cc42f94498e3c588bf212c4159c8b20c519db84eae4ff715efa"
 
 	containerPorts := corev1.ContainerPort{
 		Name:          name,
