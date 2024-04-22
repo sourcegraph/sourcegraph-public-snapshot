@@ -52,7 +52,24 @@ internal:
     steps:
       - name: 'Register on release registry'
         cmd: |
-          echo "pretending to call release registry api"
+          echo "Registering internal sourcegraph/sourcegraph {{version}} release on release registry"
+            body=$(curl -s --fail-with-body -X POST "https://releaseregistry.sourcegraph.com/v1/releases" -H "Content-Type: application/json" -H "Authorization: ${RELEASE_REGISTRY_TOKEN}" -d '{
+                "name": "sourcegraph",
+                "version": "{{version}}",
+                "git_sha": "${COMMIT_SHA}"
+              }')
+            exit_code=$?
+
+            if [ $exit_code != 0 ]; then
+              echo "❌ Failed to create release in release registry, got:"
+              echo "--- raw body ---"
+              echo $body
+              echo "--- raw body ---"
+              exit $exit_code
+            else
+              echo "Build created, see:"
+              echo $body | jq .web_url
+            fi
       - name: 'notifications'
         cmd: |
           set -eu
@@ -166,7 +183,20 @@ promoteToPublic:
     steps:
       - name: 'Promote on release registry'
         cmd: |
-          echo "pretending to call release registry api"
+          echo "Promoting sourcegraph/sourcegraph {{version}} release on release registry"
+            body=$(curl -s --fail-with-body -X POST "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}/promote" -H "Content-Type: application/json" -H "Authorization: ${RELEASE_REGISTRY_TOKEN}")
+            exit_code=$?
+
+            if [ $exit_code != 0 ]; then
+              echo "❌ Failed to promote release on release registry, got:"
+              echo "--- raw body ---"
+              echo $body
+              echo "--- raw body ---"
+              exit $exit_code
+            else
+              echo "Build created, see:"
+              echo $body | jq .web_url
+            fi
       - name: 'git:tag'
         cmd: |
           set -eu
