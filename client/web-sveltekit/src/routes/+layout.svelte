@@ -1,19 +1,17 @@
 <script lang="ts">
+    import { onDestroy } from 'svelte'
     import { writable } from 'svelte/store'
-
     import { browser } from '$app/environment'
+    import { beforeNavigate } from '$app/navigation'
+
     import { isErrorLike } from '$lib/common'
     import { TemporarySettingsStorage } from '$lib/shared'
     import { isLightTheme, setAppContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
-
-    import Header from './Header.svelte'
+    import GlobalHeader from '$lib/navigation/GlobalHeader.svelte'
 
     import './styles.scss'
 
-    import { onDestroy } from 'svelte'
-
-    import { beforeNavigate } from '$app/navigation'
     import { createFeatureFlagStore } from '$lib/featureflags'
     import GlobalNotification from '$lib/global-notifications/GlobalNotifications.svelte'
     import { getGraphQLClient } from '$lib/graphql/apollo'
@@ -98,7 +96,7 @@
     {/if}
 {/await}
 
-<Header authenticatedUser={$user} {handleOptOut} />
+<GlobalHeader authenticatedUser={$user} {handleOptOut} />
 
 <main>
     <slot />

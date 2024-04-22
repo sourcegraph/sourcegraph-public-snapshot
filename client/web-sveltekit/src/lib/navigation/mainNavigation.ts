@@ -7,7 +7,7 @@ import CodyIcon from '$lib/icons/Cody.svelte'
 import { isRepoRoute } from '$lib/navigation'
 
 /**
- * Indiciates to the UI to show a status badge next to the navigation entry.
+ * Indicates to the UI to show a status badge next to the navigation entry.
  */
 export enum Status {
     BETA = 1,
@@ -38,7 +38,7 @@ export interface NavigationEntry {
 
 /**
  * A navigation menu is a collection of navigation entries.
- * Currently it will be rendered as a dropdown in the navigation bar.
+ * Currently, it will be rendered as a dropdown in the navigation bar.
  */
 export interface NavigationMenu {
     /**
@@ -49,6 +49,13 @@ export interface NavigationMenu {
      * The navigation entries that are part of the menu.
      */
     children: NavigationEntry[]
+
+    /**
+     * NavigationMenu item can be rendered as plain link in side navigation mode
+     * This fallbackURL will be used to set URL to this link
+     */
+    href: string
+
     /**
      * An optional icon to display next to the label.
      */
@@ -61,7 +68,7 @@ export interface NavigationMenu {
 }
 
 /**
- * A function to determine if a navigation entry is asoociated with the current page,
+ * A function to determine if a navigation entry is associated with the current page,
  * by means of comparing the entry's href with the current page's URL.
  */
 export function isCurrent(entry: NavigationEntry, page: Page): boolean {
@@ -75,6 +82,7 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
     {
         label: 'Code Search',
         icon: mdiMagnify,
+        href: '/search',
         children: [
             {
                 label: 'Search Home',
@@ -111,6 +119,7 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
     {
         label: 'Cody AI',
         icon: CodyIcon,
+        href: '/cody',
         isCurrent(this: NavigationMenu, page) {
             return this.children.some(entry => isCurrent(entry, page))
         },

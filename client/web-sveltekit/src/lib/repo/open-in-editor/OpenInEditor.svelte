@@ -1,12 +1,12 @@
 <script lang="ts">
-    import {getEditor, parseBrowserRepoURL, buildRepoBaseNameAndPath, buildEditorUrl} from '$lib/web'
-    import {getEditorSettingsErrorMessage} from './build-url'
+    import { getEditor, parseBrowserRepoURL, buildRepoBaseNameAndPath, buildEditorUrl } from '$lib/web'
+    import { getEditorSettingsErrorMessage } from './build-url'
     import Tooltip from '$lib/Tooltip.svelte'
     import EditorIcon from '$lib/repo/open-in-editor/EditorIcon.svelte'
-    import {settings} from '$lib/stores'
-    import {page} from '$app/stores';
-    import type {ExternalRepository} from '$lib/graphql-types';
-    import DefaultEditorIcon from '$lib/repo/open-in-editor/DefaultEditorIcon.svelte';
+    import { settings } from '$lib/stores'
+    import { page } from '$app/stores'
+    import type { ExternalRepository } from '$lib/graphql-types'
+    import DefaultEditorIcon from '$lib/repo/open-in-editor/DefaultEditorIcon.svelte'
 
     export let externalServiceType: ExternalRepository['serviceType'] = ''
 
@@ -16,9 +16,9 @@
     $: editorIds = openInEditor?.editorIds ?? []
     $: editors = !editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined
 
-    $: sourcegraphBaseURL = new URL($page.url).origin;
+    $: sourcegraphBaseURL = new URL($page.url).origin
 
-    $: ({repoName, filePath, position, range} = parseBrowserRepoURL($page.url.toString()))
+    $: ({ repoName, filePath, position, range } = parseBrowserRepoURL($page.url.toString()))
     $: start = position ?? range?.start
 </script>
 
@@ -37,7 +37,7 @@
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                    <EditorIcon editorId={editor.id}/>
+                    <EditorIcon editorId={editor.id} />
                     <span data-action-label> Editor </span>
                 </a>
             </Tooltip>
