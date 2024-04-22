@@ -145,41 +145,42 @@ func makeDefaultPingRequest(t *testing.T) *pingRequest {
 	t.Helper()
 
 	return &pingRequest{
-		ClientSiteID:             "0101-0101",
-		LicenseKey:               "mylicense",
-		ExternalURL:              "https://sourcegraph.test",
-		DeployType:               "server",
-		ClientVersionString:      "3.12.6",
-		AuthProviders:            []string{"foo", "bar"},
-		ExternalServices:         []string{extsvc.KindGitHub, extsvc.KindGitLab},
-		CodeHostVersions:         nil,
-		BuiltinSignupAllowed:     true,
-		AccessRequestEnabled:     true,
-		HasExtURL:                false,
-		UniqueUsers:              123,
-		Activity:                 json.RawMessage(`{"foo":"bar"}`),
-		BatchChangesUsage:        nil,
-		CodeIntelUsage:           nil,
-		CodeMonitoringUsage:      nil,
-		NotebooksUsage:           nil,
-		CodeHostIntegrationUsage: nil,
-		IDEExtensionsUsage:       nil,
-		MigratedExtensionsUsage:  nil,
-		OwnUsage:                 nil,
-		SearchUsage:              nil,
-		GrowthStatistics:         nil,
-		SavedSearches:            nil,
-		HomepagePanels:           nil,
-		SearchOnboarding:         nil,
-		InitialAdminEmail:        "test@sourcegraph.com",
-		TotalUsers:               234,
-		HasRepos:                 true,
-		EverSearched:             false,
-		EverFindRefs:             true,
-		RetentionStatistics:      nil,
-		HasCodyEnabled:           false,
-		CodyUsage:                nil,
-		CodyProviders:            nil,
+		ClientSiteID:                 "0101-0101",
+		LicenseKey:                   "mylicense",
+		ExternalURL:                  "https://sourcegraph.test",
+		DeployType:                   "server",
+		ClientVersionString:          "3.12.6",
+		AuthProviders:                []string{"foo", "bar"},
+		ExternalServices:             []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		CodeHostVersions:             nil,
+		BuiltinSignupAllowed:         true,
+		AccessRequestEnabled:         true,
+		HasExtURL:                    false,
+		UniqueUsers:                  123,
+		Activity:                     json.RawMessage(`{"foo":"bar"}`),
+		BatchChangesUsage:            nil,
+		CodeIntelUsage:               nil,
+		CodeMonitoringUsage:          nil,
+		NotebooksUsage:               nil,
+		CodeHostIntegrationUsage:     nil,
+		IDEExtensionsUsage:           nil,
+		MigratedExtensionsUsage:      nil,
+		OwnUsage:                     nil,
+		SearchUsage:                  nil,
+		GrowthStatistics:             nil,
+		SavedSearches:                nil,
+		HomepagePanels:               nil,
+		SearchOnboarding:             nil,
+		InitialAdminEmail:            "test@sourcegraph.com",
+		TotalUsers:                   234,
+		HasRepos:                     true,
+		EverSearched:                 false,
+		EverFindRefs:                 true,
+		RetentionStatistics:          nil,
+		HasCodyEnabled:               false,
+		CodyUsage:                    nil,
+		CodyProviders:                nil,
+		CodyContextFiltersConfigured: false,
 	}
 }
 
@@ -253,6 +254,7 @@ func TestSerializeBasic(t *testing.T) {
 		"ever_find_refs": "true",
 		"total_repos": "0",
 		"active_today": "false",
+		"cody_context_filters_configured": "false",
 		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
@@ -333,6 +335,7 @@ func TestSerializeLimited(t *testing.T) {
 		"ever_find_refs": "false",
 		"total_repos": "345",
 		"active_today": "true",
+		"cody_context_filters_configured": "false",
 		"os": "mac",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
@@ -415,6 +418,7 @@ func TestSerializeFromQuery(t *testing.T) {
 		"ever_find_refs": "true",
 		"total_repos": "0",
 		"active_today": "false",
+		"cody_context_filters_configured": "false",
 		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
@@ -480,6 +484,7 @@ func TestSerializeBatchChangesUsage(t *testing.T) {
 		"ever_find_refs": "true",
 		"total_repos": "0",
 		"active_today": "false",
+		"cody_context_filters_configured": "false",
 		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
@@ -545,6 +550,7 @@ func TestSerializeGrowthStatistics(t *testing.T) {
 		"ever_find_refs": "true",
 		"total_repos": "0",
 		"active_today": "false",
+		"cody_context_filters_configured": "false",
 		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
@@ -811,6 +817,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"ever_find_refs": "true",
 		"total_repos": "0",
 		"active_today": "false",
+		"cody_context_filters_configured": "false",
 		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
@@ -968,6 +975,7 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		"ever_find_refs": "true",
 		"total_repos": "0",
 		"active_today": "false",
+		"cody_context_filters_configured": "false",
 		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
@@ -1033,6 +1041,7 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 		"ever_find_refs": "true",
 		"total_repos": "0",
 		"active_today": "false",
+		"cody_context_filters_configured": "false",
 		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
@@ -1156,6 +1165,7 @@ func TestSerializeOwn(t *testing.T) {
 		"ever_find_refs": "true",
 		"total_repos": "0",
 		"active_today": "false",
+		"cody_context_filters_configured": "false",
 		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
@@ -1263,6 +1273,7 @@ func TestSerializeRepoMetadataUsage(t *testing.T) {
 		"ever_find_refs": "true",
 		"total_repos": "0",
 		"active_today": "false",
+		"cody_context_filters_configured": "false",
 		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
@@ -1328,6 +1339,73 @@ func TestSerializeCodyProviders(t *testing.T) {
 		"ever_find_refs": "true",
 		"total_repos": "0",
 		"active_today": "false",
+		"cody_context_filters_configured": "false",
+		"os": "",
+		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+	}`)
+}
+
+func TestCodyContextFiltersConfigured(t *testing.T) {
+	pr := makeDefaultPingRequest(t)
+	pr.CodyContextFiltersConfigured = true
+
+	now := time.Now()
+	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+
+	compareJSON(t, payload, `{
+		"remote_ip": "127.0.0.1",
+		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
+		"remote_site_id": "0101-0101",
+		"license_key": "mylicense",
+		"external_url": "https://sourcegraph.test",
+		"has_update": "true",
+		"unique_users_today": "123",
+		"site_activity": {"foo":"bar"},
+		"batch_changes_usage": null,
+		"code_intel_usage": null,
+		"new_code_intel_usage": null,
+		"dependency_versions": null,
+		"extensions_usage": null,
+		"code_insights_usage": null,
+		"code_insights_critical_telemetry": null,
+		"code_monitoring_usage": null,
+		"cody_usage_2": null,
+		"cody_providers": null,
+		"notebooks_usage": null,
+		"code_host_integration_usage": null,
+		"ide_extensions_usage": null,
+		"llm_usage":                 null,
+		"migrated_extensions_usage": null,
+		"own_usage": null,
+		"search_usage": null,
+		"growth_statistics": null,
+		"has_cody_enabled": "false",
+		"saved_searches": null,
+		"search_jobs_usage": null,
+		"search_onboarding": null,
+		"homepage_panels": null,
+		"repositories": null,
+		"repository_size_histogram": null,
+		"retention_statistics": null,
+		"installer_email": "test@sourcegraph.com",
+		"auth_providers": "foo,bar",
+		"ext_services": "GITHUB,GITLAB",
+		"code_host_versions": null,
+		"builtin_signup_allowed": "true",
+		"access_request_enabled": "true",
+		"deploy_type": "server",
+		"total_user_accounts": "234",
+		"has_external_url": "false",
+		"has_repos": "true",
+		"ever_searched": "false",
+		"ever_find_refs": "true",
+		"total_repos": "0",
+		"active_today": "false",
+		"cody_context_filters_configured": "true",
 		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
