@@ -33,7 +33,7 @@ type ApplianceTestSuite struct {
 	cancelCtx context.CancelFunc
 
 	testEnv     *envtest.Environment
-	ctrlMgrDone chan (struct{})
+	ctrlMgrDone chan struct{}
 
 	k8sClient *kubernetes.Clientset
 }
