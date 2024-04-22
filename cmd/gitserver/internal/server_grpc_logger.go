@@ -20,8 +20,10 @@ import (
 // loggingGRPCServer is a wrapper around the provided GitserverServiceServer
 // that logs requests, durations, and status codes.
 type loggingGRPCServer struct {
-	proto.GitserverServiceServer
+	base   proto.GitserverServiceServer
 	logger log.Logger
+
+	proto.UnsafeGitserverServiceServer // Consciously opt out of forward compatibility checks to ensure that the go-compiler will catch any breaking changes.
 }
 
 func (l *loggingGRPCServer) doLog(fullMethod string, statusCode codes.Code, traceID string, duration time.Duration, requestFields ...log.Field) {
@@ -85,7 +87,7 @@ func (l *loggingGRPCServer) CreateCommitFromPatchBinary(server proto.GitserverSe
 	}
 
 	s := newCreateCommitFromPatchBinaryCallbackServer(server, recvCallback)
-	return l.GitserverServiceServer.CreateCommitFromPatchBinary(s)
+	return l.base.CreateCommitFromPatchBinary(s)
 }
 
 func createCommitFromPatchBinaryRequestMetadataToLogFields(req *proto.CreateCommitFromPatchBinaryRequest_Metadata) []log.Field {
@@ -144,7 +146,7 @@ func (l *loggingGRPCServer) DiskInfo(ctx context.Context, request *proto.DiskInf
 		)
 	}()
 
-	return l.GitserverServiceServer.DiskInfo(ctx, request)
+	return l.base.DiskInfo(ctx, request)
 }
 
 func (l *loggingGRPCServer) Exec(request *proto.ExecRequest, server proto.GitserverService_ExecServer) (err error) {
@@ -162,7 +164,7 @@ func (l *loggingGRPCServer) Exec(request *proto.ExecRequest, server proto.Gitser
 			execRequestToLogFields(request)...)
 	}()
 
-	return l.GitserverServiceServer.Exec(request, server)
+	return l.base.Exec(request, server)
 }
 
 func execRequestToLogFields(req *proto.ExecRequest) []log.Field {
@@ -193,7 +195,7 @@ func (l *loggingGRPCServer) GetObject(ctx context.Context, request *proto.GetObj
 		)
 	}()
 
-	return l.GitserverServiceServer.GetObject(ctx, request)
+	return l.base.GetObject(ctx, request)
 }
 
 func getObjectRequestToLogFields(req *proto.GetObjectRequest) []log.Field {
@@ -220,7 +222,7 @@ func (l *loggingGRPCServer) IsRepoCloneable(ctx context.Context, request *proto.
 
 	}()
 
-	return l.GitserverServiceServer.IsRepoCloneable(ctx, request)
+	return l.base.IsRepoCloneable(ctx, request)
 }
 
 func isRepoCloneableRequestToLogFields(req *proto.IsRepoCloneableRequest) []log.Field {
@@ -244,7 +246,7 @@ func (l *loggingGRPCServer) ListGitolite(ctx context.Context, request *proto.Lis
 		)
 	}()
 
-	return l.GitserverServiceServer.ListGitolite(ctx, request)
+	return l.base.ListGitolite(ctx, request)
 }
 
 func listGitoliteRequestToLogFields(req *proto.ListGitoliteRequest) []log.Field {
@@ -270,7 +272,7 @@ func (l *loggingGRPCServer) Search(request *proto.SearchRequest, server proto.Gi
 
 	}()
 
-	return l.GitserverServiceServer.Search(request, server)
+	return l.base.Search(request, server)
 }
 
 func searchRequestToLogFields(req *proto.SearchRequest) []log.Field {
@@ -384,7 +386,7 @@ func (l *loggingGRPCServer) Archive(request *proto.ArchiveRequest, server proto.
 		)
 	}()
 
-	return l.GitserverServiceServer.Archive(request, server)
+	return l.base.Archive(request, server)
 }
 
 func archiveRequestToLogFields(req *proto.ArchiveRequest) []log.Field {
@@ -413,7 +415,7 @@ func (l *loggingGRPCServer) RepoCloneProgress(ctx context.Context, request *prot
 
 	}()
 
-	return l.GitserverServiceServer.RepoCloneProgress(ctx, request)
+	return l.base.RepoCloneProgress(ctx, request)
 }
 
 func repoCloneProgressRequest(req *proto.RepoCloneProgressRequest) []log.Field {
@@ -437,7 +439,7 @@ func (l *loggingGRPCServer) IsPerforcePathCloneable(ctx context.Context, request
 		)
 	}()
 
-	return l.GitserverServiceServer.IsPerforcePathCloneable(ctx, request)
+	return l.base.IsPerforcePathCloneable(ctx, request)
 }
 
 func isPerforcePathCloneableRequestToLogFields(req *proto.IsPerforcePathCloneableRequest) []log.Field {
@@ -472,7 +474,7 @@ func (l *loggingGRPCServer) CheckPerforceCredentials(ctx context.Context, reques
 
 	}()
 
-	return l.GitserverServiceServer.CheckPerforceCredentials(ctx, request)
+	return l.base.CheckPerforceCredentials(ctx, request)
 }
 
 func checkPerforceCredentialsRequestToLogFields(req *proto.CheckPerforceCredentialsRequest) []log.Field {
@@ -497,7 +499,7 @@ func (l *loggingGRPCServer) PerforceUsers(ctx context.Context, request *proto.Pe
 		)
 	}()
 
-	return l.GitserverServiceServer.PerforceUsers(ctx, request)
+	return l.base.PerforceUsers(ctx, request)
 }
 
 func perforceUsersRequestToLogFields(req *proto.PerforceUsersRequest) []log.Field {
@@ -522,7 +524,7 @@ func (l *loggingGRPCServer) PerforceProtectsForUser(ctx context.Context, request
 		)
 	}()
 
-	return l.GitserverServiceServer.PerforceProtectsForUser(ctx, request)
+	return l.base.PerforceProtectsForUser(ctx, request)
 }
 
 func perforceProtectsForUserRequestToLogFields(req *proto.PerforceProtectsForUserRequest) []log.Field {
@@ -548,7 +550,7 @@ func (l *loggingGRPCServer) PerforceProtectsForDepot(ctx context.Context, reques
 		)
 	}()
 
-	return l.GitserverServiceServer.PerforceProtectsForDepot(ctx, request)
+	return l.base.PerforceProtectsForDepot(ctx, request)
 }
 
 func perforceProtectsForDepotRequestToLogFields(req *proto.PerforceProtectsForDepotRequest) []log.Field {
@@ -574,7 +576,7 @@ func (l *loggingGRPCServer) PerforceGroupMembers(ctx context.Context, request *p
 		)
 	}()
 
-	return l.GitserverServiceServer.PerforceGroupMembers(ctx, request)
+	return l.base.PerforceGroupMembers(ctx, request)
 }
 
 func perforceGroupMembersRequestToLogFields(req *proto.PerforceGroupMembersRequest) []log.Field {
@@ -600,7 +602,7 @@ func (l *loggingGRPCServer) IsPerforceSuperUser(ctx context.Context, request *pr
 		)
 	}()
 
-	return l.GitserverServiceServer.IsPerforceSuperUser(ctx, request)
+	return l.base.IsPerforceSuperUser(ctx, request)
 }
 
 func isPerforceSuperUserRequestToLogFields(req *proto.IsPerforceSuperUserRequest) []log.Field {
@@ -625,7 +627,7 @@ func (l *loggingGRPCServer) PerforceGetChangelist(ctx context.Context, request *
 		)
 	}()
 
-	return l.GitserverServiceServer.PerforceGetChangelist(ctx, request)
+	return l.base.PerforceGetChangelist(ctx, request)
 }
 
 func perforceGetChangelistRequestToLogFields(req *proto.PerforceGetChangelistRequest) []log.Field {
@@ -651,7 +653,7 @@ func (l *loggingGRPCServer) MergeBase(ctx context.Context, request *proto.MergeB
 		)
 	}()
 
-	return l.GitserverServiceServer.MergeBase(ctx, request)
+	return l.base.MergeBase(ctx, request)
 }
 
 func mergeBaseRequestToLogFields(req *proto.MergeBaseRequest) []log.Field {
@@ -678,7 +680,7 @@ func (l *loggingGRPCServer) Blame(request *proto.BlameRequest, server proto.Gits
 		)
 	}()
 
-	return l.GitserverServiceServer.Blame(request, server)
+	return l.base.Blame(request, server)
 }
 
 func blameRequestToLogFields(req *proto.BlameRequest) []log.Field {
@@ -714,7 +716,7 @@ func (l *loggingGRPCServer) DefaultBranch(ctx context.Context, request *proto.De
 		)
 	}()
 
-	return l.GitserverServiceServer.DefaultBranch(ctx, request)
+	return l.base.DefaultBranch(ctx, request)
 }
 
 func defaultBranchRequestToLogFields(req *proto.DefaultBranchRequest) []log.Field {
@@ -741,7 +743,7 @@ func (l *loggingGRPCServer) ReadFile(request *proto.ReadFileRequest, server prot
 
 	}()
 
-	return l.GitserverServiceServer.ReadFile(request, server)
+	return l.base.ReadFile(request, server)
 }
 
 func readFileRequestToLogFields(req *proto.ReadFileRequest) []log.Field {
@@ -767,7 +769,7 @@ func (l *loggingGRPCServer) GetCommit(ctx context.Context, request *proto.GetCom
 		)
 	}()
 
-	return l.GitserverServiceServer.GetCommit(ctx, request)
+	return l.base.GetCommit(ctx, request)
 }
 
 func getCommitRequestToLogFields(req *proto.GetCommitRequest) []log.Field {
@@ -794,7 +796,7 @@ func (l *loggingGRPCServer) ResolveRevision(ctx context.Context, request *proto.
 
 	}()
 
-	return l.GitserverServiceServer.ResolveRevision(ctx, request)
+	return l.base.ResolveRevision(ctx, request)
 }
 
 func resolveRevisionRequestToLogFields(req *proto.ResolveRevisionRequest) []log.Field {
@@ -802,6 +804,117 @@ func resolveRevisionRequestToLogFields(req *proto.ResolveRevisionRequest) []log.
 		log.String("repoName", req.GetRepoName()),
 		log.String("revSpec", string(req.GetRevSpec())),
 		log.Bool("ensureRevision", req.GetEnsureRevision()),
+	}
+}
+
+func (l *loggingGRPCServer) ListRefs(request *proto.ListRefsRequest, server proto.GitserverService_ListRefsServer) (err error) {
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start)
+
+		l.doLog(
+			proto.GitserverService_ListRefs_FullMethodName,
+			status.Code(err),
+			trace.Context(server.Context()).TraceID,
+			elapsed,
+
+			listRefsRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.ListRefs(request, server)
+}
+
+func listRefsRequestToLogFields(req *proto.ListRefsRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.Bool("headsOnly", req.GetHeadsOnly()),
+		log.Bool("tagsOnly", req.GetTagsOnly()),
+		log.Strings("pointsAtCommit", req.GetPointsAtCommit()),
+		log.String("containsSha", req.GetContainsSha()),
+	}
+}
+
+func (l *loggingGRPCServer) RevAtTime(ctx context.Context, request *proto.RevAtTimeRequest) (resp *proto.RevAtTimeResponse, err error) {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		l.doLog(
+			proto.GitserverService_RevAtTime_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			revAtTimeRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.RevAtTime(ctx, request)
+}
+
+func revAtTimeRequestToLogFields(req *proto.RevAtTimeRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.String("revSpec", string(req.GetRevSpec())),
+		log.Time("time", req.GetTime().AsTime()),
+	}
+}
+
+func (l *loggingGRPCServer) RawDiff(request *proto.RawDiffRequest, server proto.GitserverService_RawDiffServer) error {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		l.doLog(
+			proto.GitserverService_RawDiff_FullMethodName,
+			status.Code(server.Context().Err()),
+			trace.Context(server.Context()).TraceID,
+			elapsed,
+
+			rawDiffRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.RawDiff(request, server)
+}
+
+func rawDiffRequestToLogFields(req *proto.RawDiffRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.String("baseRevSpec", string(req.GetBaseRevSpec())),
+		log.String("headRevSpec", string(req.GetHeadRevSpec())),
+		log.String("comparisonType", req.GetComparisonType().String()),
+		log.Strings("paths", byteSlicesToStrings(req.GetPaths())),
+	}
+}
+
+func (l *loggingGRPCServer) ContributorCounts(ctx context.Context, request *proto.ContributorCountsRequest) (resp *proto.ContributorCountsResponse, err error) {
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start)
+
+		l.doLog(
+			proto.GitserverService_ContributorCounts_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			contributorCountsToLogFields(request)...,
+		)
+	}()
+
+	return l.base.ContributorCounts(ctx, request)
+}
+
+func contributorCountsToLogFields(req *proto.ContributorCountsRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.String("range", string(req.GetRange())),
+		log.Time("after", req.GetAfter().AsTime()),
+		log.String("path", string(req.GetPath())),
 	}
 }
 
