@@ -1,7 +1,8 @@
 <script lang="ts">
     import Icon from '$lib/Icon.svelte'
-    import { type NavigationEntry, Status } from './mainNavigation'
     import { Badge } from '$lib/wildcard'
+
+    import { type NavigationEntry, Status } from './mainNavigation'
 
     export let entry: NavigationEntry
 </script>

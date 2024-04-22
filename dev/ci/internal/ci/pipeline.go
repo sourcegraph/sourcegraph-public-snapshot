@@ -21,7 +21,6 @@ import (
 
 // If you want to build these images use CandidateNoTest / CandidatesNoTest
 var legacyDockerImages = []string{
-	"dind",
 	"executor-vm",
 
 	// See RFC 793, those images will be dropped in 5.1.x.
@@ -145,12 +144,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(securityOps)
 
 		// Wolfi package and apko lock check
-		packageOps, apkoOps := addWolfiOps(c)
+		packageOps, baseImageOps, apkoOps := addWolfiOps(c)
 		if apkoOps != nil {
 			ops.Merge(apkoOps)
 		}
 		if packageOps != nil {
 			ops.Merge(packageOps)
+		}
+		if baseImageOps != nil {
+			ops.Merge(baseImageOps)
 		}
 
 		if c.Diff.Has(changed.ClientBrowserExtensions) {
@@ -324,12 +326,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		))
 
 		// Wolfi package and base images
-		packageOps, apkoOps := addWolfiOps(c)
+		packageOps, baseImageOps, apkoOps := addWolfiOps(c)
 		if apkoOps != nil {
 			ops.Merge(apkoOps)
 		}
 		if packageOps != nil {
 			ops.Merge(packageOps)
+		}
+		if baseImageOps != nil {
+			ops.Merge(baseImageOps)
 		}
 
 		// All operations before this point are required
