@@ -1,7 +1,7 @@
 package sensitivemetadataallowlist
 
 import (
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 // redactMode dictates how much to redact. The lowest value indicates our

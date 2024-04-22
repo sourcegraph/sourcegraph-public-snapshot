@@ -13,6 +13,7 @@ go_library(
         "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//:sourcegraph-accounts-sdk-go",
         "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",
         "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel//codes",
         "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_google_grpc//codes",
