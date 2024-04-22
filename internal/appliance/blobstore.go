@@ -3,35 +3,30 @@ package appliance
 import (
 	"context"
 
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-
-	"github.com/sourcegraph/sourcegraph/internal/appliance/hash"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/container"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/deployment"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pod"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pvc"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/service"
-	"github.com/sourcegraph/sourcegraph/internal/maps"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *Reconciler) reconcileBlobstore(ctx context.Context, sg *Sourcegraph) error {
-	if err := r.reconcileBlobstorePersistentVolumeClaims(ctx, sg); err != nil {
+func (r *Reconciler) reconcileBlobstore(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+	if err := r.reconcileBlobstorePersistentVolumeClaims(ctx, sg, owner); err != nil {
 		return err
 	}
 
-	if err := r.reconcileBlobstoreServices(ctx, sg); err != nil {
+	if err := r.reconcileBlobstoreServices(ctx, sg, owner); err != nil {
 		return err
 	}
 
-	if err := r.reconcileBlobstoreDeployments(ctx, sg); err != nil {
+	if err := r.reconcileBlobstoreDeployments(ctx, sg, owner); err != nil {
 		return err
 	}
 
@@ -72,42 +67,13 @@ func buildBlobstorePersistentVolumeClaim(sg *Sourcegraph) (corev1.PersistentVolu
 	return p, nil
 }
 
-func (r *Reconciler) reconcileBlobstorePersistentVolumeClaims(ctx context.Context, sg *Sourcegraph) error {
+func (r *Reconciler) reconcileBlobstorePersistentVolumeClaims(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
 	p, err := buildBlobstorePersistentVolumeClaim(sg)
 	if err != nil {
 		return err
 	}
 
-	p.Labels = hash.SetTemplateHashLabel(p.Labels, p.Spec)
-
-	var existing corev1.PersistentVolumeClaim
-	if r.IsObjectFound(ctx, p.Name, p.Namespace, &existing) {
-		if sg.Spec.Blobstore.Disabled {
-			return nil
-		}
-
-		// Object exists update if needed
-		if hash.GetTemplateHashLabel(existing.Labels) == hash.GetTemplateHashLabel(p.Labels) {
-			// no updates needed
-			return nil
-		}
-
-		// need to update
-		existing.Labels = maps.Merge(existing.Labels, p.Labels)
-		existing.Annotations = maps.Merge(existing.Annotations, p.Annotations)
-		existing.Spec = p.Spec
-
-		return r.Update(ctx, &existing)
-	}
-
-	if sg.Spec.Blobstore.Disabled {
-		return nil
-	}
-
-	// Note: we don't set a controller reference here as we want PVCs to persist if blobstore is deleted.
-	// This helps to protect against accidental data deletions.
-
-	return r.Create(ctx, &p)
+	return reconcileBlobStoreObject(ctx, r, &p, &corev1.PersistentVolumeClaim{}, sg, owner)
 }
 
 func buildBlobstoreService(sg *Sourcegraph) (corev1.Service, error) {
@@ -131,53 +97,12 @@ func buildBlobstoreService(sg *Sourcegraph) (corev1.Service, error) {
 	return s, nil
 }
 
-func (r *Reconciler) reconcileBlobstoreServices(ctx context.Context, sg *Sourcegraph) error {
+func (r *Reconciler) reconcileBlobstoreServices(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
 	s, err := buildBlobstoreService(sg)
 	if err != nil {
 		return err
 	}
-
-	s.Labels = hash.SetTemplateHashLabel(s.Labels, s.Spec)
-
-	var existing corev1.Service
-	if r.IsObjectFound(ctx, s.Name, sg.Namespace, &existing) {
-		if sg.Spec.Blobstore.Disabled {
-			// blobstore service exists, but has been disabled. Delete the service.
-			//
-			// Using a precondition to make sure the version of the resource that is deleted
-			// is the version we intend, and not a resource that was already resgeated.
-			err = r.Delete(ctx, &existing, client.Preconditions{
-				UID:             &existing.UID,
-				ResourceVersion: &existing.ResourceVersion,
-			})
-
-			if err != nil && !apierrors.IsNotFound(err) {
-				return err
-			}
-
-			return nil
-		}
-		// Object exists update if needed
-		if hash.GetTemplateHashLabel(existing.Labels) == hash.GetTemplateHashLabel(s.Labels) {
-			// no updates needed
-			return nil
-		}
-
-		// need to update
-		existing.Labels = maps.Merge(existing.Labels, s.Labels)
-		existing.Annotations = maps.Merge(existing.Annotations, s.Annotations)
-		existing.Spec = s.Spec
-
-		return r.Update(ctx, &existing)
-	}
-
-	if sg.Spec.Blobstore.Disabled {
-		return nil
-	}
-
-	// TODO set owner ref
-
-	return r.Create(ctx, &s)
+	return reconcileBlobStoreObject(ctx, r, &s, &corev1.Service{}, sg, owner)
 }
 
 func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
@@ -272,6 +197,7 @@ func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
 	defaultDeployment, err := deployment.NewDeployment(
 		name,
 		sg.Namespace,
+		sg.Spec.RequestedVersion,
 		deployment.WithPodTemplateSpec(podTemplate.Template),
 	)
 
@@ -282,51 +208,29 @@ func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
 	return defaultDeployment, nil
 }
 
-func (r *Reconciler) reconcileBlobstoreDeployments(ctx context.Context, sg *Sourcegraph) error {
+func (r *Reconciler) reconcileBlobstoreDeployments(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
 	d, err := buildBlobstoreDeployment(sg)
 	if err != nil {
 		return err
 	}
+	return reconcileBlobStoreObject(ctx, r, &d, &appsv1.Deployment{}, sg, owner)
+}
 
-	d.Labels = hash.SetTemplateHashLabel(d.Labels, d.Spec)
-
-	var existing appsv1.Deployment
-	if r.IsObjectFound(ctx, d.Name, sg.Namespace, &existing) {
-		if sg.Spec.Blobstore.Disabled {
-			// blobstore deployment exists, but has been disabled. Delete the deployment.
-			//
-			// Using a precondition to make sure the version of the resource that is deleted
-			// is the version we intend, and not a resource that was already recreated.
-			err = r.Delete(ctx, &existing, client.Preconditions{
-				UID:             &existing.UID,
-				ResourceVersion: &existing.ResourceVersion,
-			})
-
-			if err != nil && !apierrors.IsNotFound(err) {
-				return err
-			}
-
-			return nil
-		}
-		// Object exists update if needed
-		if hash.GetTemplateHashLabel(existing.Labels) == hash.GetTemplateHashLabel(d.Labels) {
-			// no updates needed
-			return nil
-		}
-
-		// need to update
-		existing.Labels = maps.Merge(existing.Labels, d.Labels)
-		existing.Annotations = maps.Merge(existing.Annotations, d.Annotations)
-		existing.Spec = d.Spec
-
-		return r.Update(ctx, &existing)
-	}
-
+func reconcileBlobStoreObject[T client.Object](ctx context.Context, r *Reconciler, obj, objKind T, sg *Sourcegraph, owner client.Object) error {
 	if sg.Spec.Blobstore.Disabled {
-		return nil
+		return r.ensureObjectDeleted(ctx, obj)
 	}
 
-	// TODO set owner ref
+	// Any secrets (or other configmaps) referenced in BlobStoreSpec can be
+	// added to this struct so that they are hashed, and cause an update to the
+	// Deployment if changed.
+	updateIfChanged := struct {
+		BlobstoreSpec
+		Version string
+	}{
+		BlobstoreSpec: sg.Spec.Blobstore,
+		Version:       sg.Spec.RequestedVersion,
+	}
 
-	return r.Create(ctx, &d)
+	return createOrUpdateObject(ctx, r, updateIfChanged, owner, obj, objKind)
 }

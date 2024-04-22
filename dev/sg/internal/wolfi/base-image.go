@@ -79,7 +79,7 @@ func SetupBaseImageBuild(name string, pc PackageRepoConfig, opts BaseImageOpts) 
 func resolveImagePath(name string) (string, error) {
 	// Handle special case mappings
 	specialCase := map[string]string{
-		"sourcegraph":       "wolfi-images/sourcegraph",
+		"sourcegraph-base":  "wolfi-images/sourcegraph-base",
 		"sourcegraph-dev":   "wolfi-images/sourcegraph-dev",
 		"postgres-exporter": "docker-images/postgres_exporter",
 		"redis-exporter":    "docker-images/redis_exporter",
