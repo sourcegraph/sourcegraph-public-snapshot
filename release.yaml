@@ -211,6 +211,37 @@ promoteToPublic:
           cat << EOF | buildkite-agent annotate --style info
           Promoted release is **publicly available** through a git tag at [\`{{version}}\`](https://github.com/sourcegraph/sourcegraph/tree/{{version}}).
           EOF
+
+      - name: "git:release:create"
+        cmd: |
+          tag="{{tag}}"
+          version="{{version}}"
+          changelog_version="${tag//./}"
+
+          current_month=$(date +"%m")
+          current_year=$(date +"%Y")
+
+          # Define an array of month names
+          months=("January" "February" "March" "April" "May" "June" "July" "August" "September" "October" "November" "December")
+
+          # Get the month name from the array
+          month_name="${months[$(($current_month))]}"
+
+          # Capitalize the first letter of the month name
+          month_name="$(tr '[:lower:]' '[:upper:]' <<< ${month_name:0:1})${month_name:1}"
+
+          read -d '\n' releasepost << EndOfText
+            Sourcegraph $tag is now available!
+
+            _Note: we've updated our versioning conventions. Please see our [releases](https://handbook.sourcegraph.com/departments/engineering/dev/process/releases/#sourcegraph-releases) page for more information or reach out at [help.sourcegraph.com](https://help.sourcegraph.com)._
+
+            - [Changelog](https://sourcegraph.com/docs/CHANGELOG#${changelog_version})
+            - [Update](https://sourcegraph.com/docs/admin/updates)
+            - [Release post](https://sourcegraph.com/blog/release/${month_name}-${current_year})
+          EndOfText
+
+          gh release create ${version} --latest --verify-tag -t "Sourcegraph ${tag}" --generate-notes --notes "${releasepost}"
+
       # tag is usually in the format `5.3.2`
       # while version is usually the tag prepended with a v, `v5.3.2`
       - name: 'Slack notification (#announce-engineering)'
