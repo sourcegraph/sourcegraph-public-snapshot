@@ -93,10 +93,7 @@ func (c *Context) tree(ctx context.Context, tree fs.FileInfo, buf []byte) (inv I
 
 			case e.Mode().IsDir(): // subtree
 				subtreeInv, err := c.tree(ctx, e, buf)
-				if err != nil {
-					results <- treeIteratorResult{i, subtreeInv, err}
-				}
-				results <- treeIteratorResult{i, subtreeInv, nil}
+				results <- treeIteratorResult{i, subtreeInv, err}
 
 			default:
 				// Skip symlinks, submodules, etc.
