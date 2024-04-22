@@ -8,11 +8,10 @@ package repo
 
 import (
 	"context"
-	"sync"
-
 	sqlf "github.com/keegancsmith/sqlf"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"sync"
 )
 
 // MockRepoEmbeddingJobsStore is a mock implementation of the

@@ -120,6 +120,9 @@ enum CancelPermissionsSyncJobResultMessage {
     ERROR
 }
 
+"""
+An active authorization provider used for permissions syncing.
+"""
 type AuthzProvider {
     """
     The unique identifier of the authz provider.
@@ -177,6 +180,9 @@ extend type Query {
     """
     authzProviderTypes: [String!]!
 
+    """
+    INTERNAL ONLY: Returns a list of all active authz providers.
+    """
     authzProviders: [AuthzProvider!]!
 
     """
