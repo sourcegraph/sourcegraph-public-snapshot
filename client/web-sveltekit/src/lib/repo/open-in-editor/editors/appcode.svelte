@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="64" height="64"
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16"
      viewBox="0 0 64 64">
     <defs>
         <linearGradient id="appcode-b" x1="82.769%" x2="32.181%" y1="31.413%" y2="34.939%">

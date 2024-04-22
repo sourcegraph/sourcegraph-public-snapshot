@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="64" height="64"
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16"
      viewBox="0 0 64 64">
     <defs>
         <linearGradient id="clion-b" x1="50%" x2="103.297%" y1="28.391%" y2="69.421%">
