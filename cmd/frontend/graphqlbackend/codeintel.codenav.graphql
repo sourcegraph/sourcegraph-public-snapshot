@@ -247,19 +247,6 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     ): Hover
 
     """
-    Either one of 'symbol' or 'range' must be provided, but this isn't enforced at the GraphQL
-    layer due to the lack of support for input unions.
-    https://github.com/graphql/graphql-wg/blob/main/rfcs/InputUnion.md
-    """
-    usages(
-        symbol: LookupSCIPSymbol,
-        range: LookupRange,
-        filter: UsagesFilter,
-        first: Int,
-        after: String,
-    ): UsageConnection!
-
-    """
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
@@ -273,6 +260,19 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     SCIP snapshot data (similar to the additional information from the `scip snapshot` command) for each SCIP Occurrence.
     """
     snapshot(indexID: ID!): [SnapshotData!]
+}
+
+extend type Query {
+    usagesForSymbol(
+        symbol: LookupSCIPSymbol,
+        """
+        Non-optional due to implementation limitations
+        """
+        range: LookupRange!,
+        filter: UsagesFilter,
+        first: Int,
+        after: String,
+    ): UsageConnection!
 }
 
 input LookupSCIPSymbol {
@@ -297,8 +297,24 @@ type SCIPSymbol {
 }
 
 input LookupRange {
-    start: LookupPosition!
-    end: LookupPosition!
+    """
+    Defaults to instance-wide search if the repo is not specified.
+
+    This field is non-optional due to implementation limitations.
+    """
+    repo: String!
+    """
+    Defaults to HEAD of the default branch if not specified.
+    """
+    revision: String
+    """
+    Defaults to repo-wide search if the path is not specified.
+
+    This field is non-optional due to implementation limitations.
+    """
+    path: String!
+    start: LookupPosition
+    end: LookupPosition
 }
 
 input LookupPosition {
@@ -310,7 +326,6 @@ input UsagesFilter {
     and: [UsagesFilter!]
     or: [UsagesFilter!]
     not: UsagesFilter
-    # TODO: Can we be flexible here and allow patterns while still maintaining fast queries.
     repository: RepositoryFilter
     path: PathFilter
     kind: SymbolUsageKind
