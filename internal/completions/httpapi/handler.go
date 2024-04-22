@@ -98,6 +98,7 @@ func newCompletionsHandler(
 			err := checkClientCodyIgnoreCompatibility(r)
 			if err != nil {
 				http.Error(w, err.Error(), err.statusCode)
+				return
 			}
 		}
 
