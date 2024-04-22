@@ -28,7 +28,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/server"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 var meter = otel.GetMeterProvider().Meter("cmd/telemetry-gateway/service")
