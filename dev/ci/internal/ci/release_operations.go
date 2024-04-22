@@ -45,7 +45,7 @@ func releaseTestOperation(c Config) operations.Operation {
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep("Release tests",
+		stepOpts := []bk.StepOpt{
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
 			bk.Env("DEV_REGISTRY", devRegistry),
 			bk.Env("PROD_REGISTRY", prodRegistry),
@@ -58,7 +58,19 @@ func releaseTestOperation(c Config) operations.Operation {
 						IncludeNames: true,
 					},
 				},
-			))
+			),
+		}
+
+		// If we're on a internal release, the release tests cannot run without
+		// having pushed the images, but if we're on a promote release, we don't need
+		// to wait for the push images job.
+		if c.RunType.Is(runtype.InternalRelease) {
+			stepOpts = append(stepOpts,
+				bk.DependsOn("bazel-push-images"),
+			)
+		}
+
+		pipeline.AddStep("Release tests", stepOpts...)
 	}
 }
 
