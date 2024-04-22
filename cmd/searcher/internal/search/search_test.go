@@ -81,12 +81,12 @@ func main() {
 		want: autogold.Expect(""),
 	}, {
 		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "World"}, IsCaseSensitive: true},
-		want: autogold.Expect("README.md:1:2:\n# Hello World\n"),
+		want: autogold.Expect("README.md:1:1:\n# Hello World\n"),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IsCaseSensitive: true},
 		want: autogold.Expect(`README.md:3:3:
 Hello world example in go
-main.go:6:7:
+main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
@@ -95,7 +95,7 @@ fmt.Println("Hello world")
 		want: autogold.Expect(`README.md:2:3:
 
 Hello world example in go
-main.go:5:8:
+main.go:5:7:
 func main() {
 fmt.Println("Hello world")
 }
@@ -107,7 +107,7 @@ fmt.Println("Hello world")
 # Hello World
 
 Hello world example in go
-main.go:4:8:
+main.go:4:7:
 
 func main() {
 fmt.Println("Hello world")
@@ -120,7 +120,7 @@ fmt.Println("Hello world")
 # Hello World
 
 Hello world example in go
-main.go:1:8:
+main.go:1:7:
 package main
 
 import "fmt"
@@ -131,11 +131,11 @@ fmt.Println("Hello world")
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}},
-		want: autogold.Expect(`README.md:1:2:
+		want: autogold.Expect(`README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
-main.go:6:7:
+main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
@@ -143,29 +143,29 @@ fmt.Println("Hello world")
 		want: autogold.Expect(""),
 	}, {
 		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "func.*main", IsRegExp: true}},
-		want: autogold.Expect("main.go:5:6:\nfunc main() {\n"),
+		want: autogold.Expect("main.go:5:5:\nfunc main() {\n"),
 	}, {
 		// https://github.com/sourcegraph/sourcegraph/issues/8155
 		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "^func", IsRegExp: true}},
-		want: autogold.Expect("main.go:5:6:\nfunc main() {\n"),
+		want: autogold.Expect("main.go:5:5:\nfunc main() {\n"),
 	}, {
 		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "^FuNc", IsRegExp: true}},
-		want: autogold.Expect("main.go:5:6:\nfunc main() {\n"),
+		want: autogold.Expect("main.go:5:5:\nfunc main() {\n"),
 	}, {
 		// Ensure we handle CaseInsensitive regexp searches with
 		// special uppercase chars in pattern.
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: `printL\B`, IsRegExp: true}},
-		want: autogold.Expect(`main.go:6:7:
+		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, ExcludePaths: "README.md"},
-		want: autogold.Expect(`main.go:6:7:
+		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludeLangs: []string{"Markdown"}},
-		want: autogold.Expect(`README.md:1:2:
+		want: autogold.Expect(`README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
@@ -181,7 +181,7 @@ symlink
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePaths: []string{`\.md$`}},
-		want: autogold.Expect(`README.md:1:2:
+		want: autogold.Expect(`README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
@@ -191,32 +191,32 @@ Hello world example in go
 		want: autogold.Expect("abc.txt:1:1:\nw\n"),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, ExcludePaths: "README\\.md"},
-		want: autogold.Expect(`main.go:6:7:
+		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePaths: []string{"\\.md"}},
-		want: autogold.Expect(`README.md:1:2:
+		want: autogold.Expect(`README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "w"}, IncludePaths: []string{"\\.(md|txt)", "README"}},
-		want: autogold.Expect(`README.md:1:2:
+		want: autogold.Expect(`README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePaths: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
-		want: autogold.Expect(`main.go:6:7:
+		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
 		arg:          protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePaths: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
 		contextLines: 1,
-		want: autogold.Expect(`main.go:5:8:
+		want: autogold.Expect(`main.go:5:7:
 func main() {
 fmt.Println("Hello world")
 }
@@ -224,7 +224,7 @@ fmt.Println("Hello world")
 	}, {
 		arg:          protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePaths: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
 		contextLines: 2,
-		want: autogold.Expect(`main.go:4:8:
+		want: autogold.Expect(`main.go:4:7:
 
 func main() {
 fmt.Println("Hello world")
@@ -232,7 +232,7 @@ fmt.Println("Hello world")
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePaths: []string{`\.(MD|go)`}, PathPatternsAreCaseSensitive: true},
-		want: autogold.Expect(`main.go:6:7:
+		want: autogold.Expect(`main.go:6:6:
 fmt.Println("Hello world")
 `),
 	}, {
@@ -243,41 +243,41 @@ fmt.Println("Hello world")
 		want: autogold.Expect("milton.png\n"),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "package main\n\nimport \"fmt\"", IsRegExp: true}, IsCaseSensitive: false, PatternMatchesPath: true, PatternMatchesContent: true},
-		want: autogold.Expect(`main.go:1:4:
+		want: autogold.Expect(`main.go:1:3:
 package main
 
 import "fmt"
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "package main\n\\s*import \"fmt\"", IsRegExp: true}, IsCaseSensitive: false, PatternMatchesPath: true, PatternMatchesContent: true},
-		want: autogold.Expect(`main.go:1:4:
+		want: autogold.Expect(`main.go:1:3:
 package main
 
 import "fmt"
 `),
 	}, {
 		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "package main\n", IsRegExp: true}, IsCaseSensitive: false, PatternMatchesPath: true, PatternMatchesContent: true},
-		want: autogold.Expect("main.go:1:3:\npackage main\n\n"),
+		want: autogold.Expect("main.go:1:2:\npackage main\n\n"),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "package main\n\\s*", IsRegExp: true}, IsCaseSensitive: false, PatternMatchesPath: true, PatternMatchesContent: true},
-		want: autogold.Expect(`main.go:1:4:
+		want: autogold.Expect(`main.go:1:3:
 package main
 
 import "fmt"
 `),
 	}, {
 		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "\nfunc", IsRegExp: true}, IsCaseSensitive: false, PatternMatchesPath: true, PatternMatchesContent: true},
-		want: autogold.Expect("main.go:4:6:\n\nfunc main() {\n"),
+		want: autogold.Expect("main.go:4:5:\n\nfunc main() {\n"),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "\n\\s*func", IsRegExp: true}, IsCaseSensitive: false, PatternMatchesPath: true, PatternMatchesContent: true},
-		want: autogold.Expect(`main.go:3:6:
+		want: autogold.Expect(`main.go:3:5:
 import "fmt"
 
 func main() {
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "package main\n\nimport \"fmt\"\n\nfunc main\\(\\) {", IsRegExp: true}, IsCaseSensitive: false, PatternMatchesPath: true, PatternMatchesContent: true},
-		want: autogold.Expect(`main.go:1:6:
+		want: autogold.Expect(`main.go:1:5:
 package main
 
 import "fmt"
@@ -298,14 +298,15 @@ import "fmt"
 func main() {
 fmt.Println("Hello world")
 }
+
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "^$", IsRegExp: true}},
-		want: autogold.Expect(`README.md:2:3:
+		want: autogold.Expect(`README.md:2:2:
 
-main.go:2:3:
+main.go:2:2:
 
-main.go:4:5:
+main.go:4:4:
 
 main.go:8:8:
 
@@ -744,7 +745,7 @@ func toString(m []protocol.FileMatch) string {
 			buf.WriteString(strconv.Itoa(int(cm.ContentStart.Line) + strings.Count(cm.Content, "\n") + 1))
 			buf.WriteByte(':')
 			buf.WriteByte('\n')
-			buf.WriteString(strings.TrimSuffix(cm.Content, "\n"))
+			buf.WriteString(cm.Content)
 			buf.WriteByte('\n')
 		}
 	}

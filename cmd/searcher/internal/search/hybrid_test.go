@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
 	zoektgrpc "github.com/sourcegraph/zoekt/cmd/zoekt-webserver/grpc/server"
@@ -148,32 +148,39 @@ Hello world example in go`, typeFile},
 	cases := []struct {
 		Name    string
 		Pattern protocol.PatternInfo
-		Want    autogold.Value
+		Want    string
 	}{{
 		Name:    "all",
 		Pattern: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}},
-		Want: autogold.Expect(`added.md:1:1:
+		Want: `
+added.md:1:1:
 hello world I am added
-changed.go:6:7:
-fmt.Println("Hello world")
-unchanged.md:1:2:
+changed.go:6:6:
+	fmt.Println("Hello world")
+unchanged.md:1:1:
 # Hello World
 unchanged.md:3:3:
-Hello world example in go`),
+Hello world example in go
+`,
 	}, {
 		Name: "added",
 		Pattern: protocol.PatternInfo{
 			Query:        &protocol.PatternNode{Value: "world"},
 			IncludePaths: []string{"added"},
 		},
-		Want: autogold.Expect("added.md:1:1:\nhello world I am added"),
+		Want: `
+added.md:1:1:
+hello world I am added
+`,
 	}, {
 		Name: "example",
 		Pattern: protocol.PatternInfo{
 			Query: &protocol.PatternNode{Value: "example"},
 		},
-		Want: autogold.Expect(`unchanged.md:3:3:
-Hello world example in go`),
+		Want: `
+unchanged.md:3:3:
+Hello world example in go
+`,
 	}, {
 		Name: "boolean query",
 		Pattern: protocol.PatternInfo{
@@ -189,50 +196,67 @@ Hello world example in go`),
 				},
 			},
 		},
-		Want: autogold.Expect(`added.md:1:1:
+		Want: `
+added.md:1:1:
 hello world I am added
-changed.go:1:2:
+changed.go:1:1:
 package main
-changed.go:6:7:
-fmt.Println("Hello world")
-unchanged.md:1:2:
+changed.go:6:6:
+	fmt.Println("Hello world")
+unchanged.md:1:1:
 # Hello World
 unchanged.md:3:3:
-Hello world example in go`),
+Hello world example in go
+`,
 	}, {
 		Name: "negated-pattern-example",
 		Pattern: protocol.PatternInfo{
 			Query: &protocol.PatternNode{Value: "example", IsNegated: true},
 		},
-		Want: autogold.Expect("added.md\nchanged.go"),
+		Want: `
+added.md
+changed.go
+`,
 	}, {
 		Name: "path-include",
 		Pattern: protocol.PatternInfo{
 			Query:        &protocol.PatternNode{Value: ""},
 			IncludePaths: []string{"^added"},
 		},
-		Want: autogold.Expect("added.md"),
+		Want: `
+added.md
+`,
 	}, {
 		Name: "path-exclude-added",
 		Pattern: protocol.PatternInfo{
 			Query:        &protocol.PatternNode{Value: ""},
 			ExcludePaths: "added",
 		},
-		Want: autogold.Expect("changed.go\nunchanged.md"),
+		Want: `
+changed.go
+unchanged.md
+`,
 	}, {
 		Name: "path-exclude-unchanged",
 		Pattern: protocol.PatternInfo{
 			Query:        &protocol.PatternNode{Value: ""},
 			ExcludePaths: "unchanged",
 		},
-		Want: autogold.Expect("added.md\nchanged.go"),
+		Want: `
+added.md
+changed.go
+`,
 	}, {
 		Name: "path-all",
 		Pattern: protocol.PatternInfo{
 			Query:        &protocol.PatternNode{Value: ""},
 			IncludePaths: []string{"."},
 		},
-		Want: autogold.Expect("added.md\nchanged.go\nunchanged.md"),
+		Want: `
+added.md
+changed.go
+unchanged.md
+`,
 	}, {
 		Name: "pattern-path",
 		Pattern: protocol.PatternInfo{
@@ -240,30 +264,40 @@ Hello world example in go`),
 			PatternMatchesContent: true,
 			PatternMatchesPath:    true,
 		},
-		Want: autogold.Expect(`changed.go
+		Want: `
+changed.go
 unchanged.md:3:3:
-Hello world example in go`),
+Hello world example in go
+`,
 	}, {
 		Name: "negated-pattern-path",
 		Pattern: protocol.PatternInfo{
 			Query:              &protocol.PatternNode{Value: "go", IsNegated: true},
 			PatternMatchesPath: true,
 		},
-		Want: autogold.Expect("added.md\nunchanged.md"),
+		Want: `
+added.md
+unchanged.md
+`,
 	}, {
 		Name: "lang-filters-include",
 		Pattern: protocol.PatternInfo{
 			Query:        &protocol.PatternNode{Value: ""},
 			IncludeLangs: []string{"Markdown"},
 		},
-		Want: autogold.Expect("added.md\nunchanged.md"),
+		Want: `
+added.md
+unchanged.md
+`,
 	}, {
 		Name: "lang-filters-exclude",
 		Pattern: protocol.PatternInfo{
 			Query:        &protocol.PatternNode{Value: ""},
 			ExcludeLangs: []string{"Markdown"},
 		},
-		Want: autogold.Expect("changed.go"),
+		Want: `
+changed.go
+`,
 	}, {
 		Name: "lang-filters-with-paths",
 		Pattern: protocol.PatternInfo{
@@ -271,7 +305,9 @@ Hello world example in go`),
 			IncludePaths: []string{"change"},
 			ExcludeLangs: []string{"Markdown"},
 		},
-		Want: autogold.Expect("changed.go"),
+		Want: `
+changed.go
+`,
 	},
 	}
 
@@ -293,7 +329,10 @@ Hello world example in go`),
 
 			sort.Sort(sortByPath(m))
 			got := strings.TrimSpace(toString(m))
-			tc.Want.Equal(t, got)
+			want := strings.TrimSpace(tc.Want)
+			if d := cmp.Diff(want, got); d != "" {
+				t.Fatalf("mismatch (-want, +got):\n%s", d)
+			}
 		})
 	}
 }
