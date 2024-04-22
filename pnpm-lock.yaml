@@ -367,6 +367,9 @@ importers:
       prop-types:
         specifier: ^15.7.2
         version: 15.8.1
+      re2-wasm:
+        specifier: ^1.0.2
+        version: 1.0.2
       react:
         specifier: 18.1.0
         version: 18.1.0
@@ -21819,6 +21822,11 @@ packages:
       minimist: 1.2.8
       strip-json-comments: 2.0.1
     dev: true
+
+  /re2-wasm@1.0.2:
+    resolution: {integrity: sha512-VXUdgSiUrE/WZXn6gUIVVIsg0+Hp6VPZPOaHCay+OuFKy6u/8ktmeNEf+U5qSA8jzGGFsg8jrDNu1BeHpz2pJA==}
+    engines: {node: '>=10'}
+    dev: false
 
   /react-calendar@3.7.0(react-dom@18.1.0)(react@18.1.0):
     resolution: {integrity: sha512-zkK95zWLWLC6w3O7p3SHx/FJXEyyD2UMd4jr3CrKD+G73N+G5vEwrXxYQCNivIPoFNBjqoyYYGlkHA+TBDPLCw==}
