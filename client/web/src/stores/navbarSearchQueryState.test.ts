@@ -157,7 +157,7 @@ describe('navbar query state', () => {
             expect(useNavbarQueryState.getState()).toHaveProperty('searchPatternType', SearchPatternType.regexp)
         })
 
-        it('prefers keyword search over user settings if keyword search is enabled', () => {
+        it('honors default user settings even if keyword search is enabled', () => {
             setQueryStateFromURL(parseSearchURL(''))
             setQueryStateFromSettings({
                 subjects: [],
