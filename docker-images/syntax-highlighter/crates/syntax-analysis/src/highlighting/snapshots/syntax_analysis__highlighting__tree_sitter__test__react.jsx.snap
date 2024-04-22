@@ -2,11 +2,9 @@
 source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
 expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
-  const Component: React.FunctionComponent<{}> = () => {
+  const ComponentJsx = () => {
 //^^^^^ Keyword
-//      ^^^^^^^^^ IdentifierFunction
-//                 ^^^^^ Identifier
-//                       ^^^^^^^^^^^^^^^^^ IdentifierType
+//      ^^^^^^^^^^^^ IdentifierFunction
       let name = 'id'
 //    ^^^ Keyword
 //        ^^^^ Identifier
