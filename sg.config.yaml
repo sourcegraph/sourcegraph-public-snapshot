@@ -1244,13 +1244,13 @@ dockerCommands:
 defaultCommandset: enterprise
 commandsets:
   enterprise-bazel: &enterprise_bazel_set
-    requiresDevPrivate: true
     checks:
       - redis
       - postgres
       - git
       - bazelisk
       - ibazel
+      - dev-private
     bazelCommands:
       - blobstore
       - docsite
@@ -1272,12 +1272,12 @@ commandsets:
 
   # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1310,12 +1310,12 @@ commandsets:
 
   dotcom:
     # This is 95% the enterprise runset, with the addition of Cody Gateway.
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1339,7 +1339,6 @@ commandsets:
       SOURCEGRAPHDOTCOM_MODE: true
 
   codeintel-bazel: &codeintel_bazel_set
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -1347,6 +1346,7 @@ commandsets:
       - git
       - bazelisk
       - ibazel
+      - dev-private
     bazelCommands:
       - blobstore
       - frontend
@@ -1372,12 +1372,12 @@ commandsets:
       - prometheus
 
   codeintel-syntactic:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - web
@@ -1390,12 +1390,12 @@ commandsets:
       - syntactic-code-intel-worker-1
 
   codeintel:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1421,12 +1421,12 @@ commandsets:
       - prometheus
 
   codeintel-kubernetes:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1452,12 +1452,12 @@ commandsets:
       - prometheus
 
   enterprise-codeintel:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1482,12 +1482,12 @@ commandsets:
       - grafana
       - prometheus
   enterprise-codeintel-multi-queue-executor:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1516,12 +1516,12 @@ commandsets:
     <<: *codeintel_bazel_set
 
   enterprise-codeinsights:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1544,12 +1544,12 @@ commandsets:
       DISABLE_CODE_INSIGHTS: false
 
   api-only:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1565,12 +1565,12 @@ commandsets:
       - blobstore
 
   batches:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1592,12 +1592,12 @@ commandsets:
       - batcheshelper-builder
 
   batches-kubernetes:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1619,12 +1619,12 @@ commandsets:
       - batcheshelper-builder
 
   iam:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - repo-updater
@@ -1695,9 +1695,9 @@ commandsets:
       - jaeger
 
   single-program:
-    requiresDevPrivate: true
     checks:
       - git
+      - dev-private
     commands:
       - sourcegraph
       - web

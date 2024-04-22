@@ -110,6 +110,7 @@ go_library(
         "@com_github_jackc_pgx_v4//:pgx",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_masterminds_semver//:semver",
+        "@com_github_mitchellh_hashstructure_v2//:hashstructure",
         "@com_github_opsgenie_opsgenie_go_sdk_v2//alert",
         "@com_github_opsgenie_opsgenie_go_sdk_v2//client",
         "@com_github_slack_go_slack//:slack",

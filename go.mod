@@ -268,6 +268,7 @@ require (
 	github.com/hashicorp/terraform-cdk-go/cdktf v0.17.3
 	github.com/invopop/jsonschema v0.12.0
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
+	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/mroth/weightedrand/v2 v2.0.1
 	github.com/nxadm/tail v1.4.11
 	github.com/oschwald/maxminddb-golang v1.12.0
