@@ -34,7 +34,7 @@ export interface ScopeSelectorProps {
     // rather than collapsing or flipping position.
     encourageOverlap?: boolean
     authenticatedUser: AuthenticatedUser | null
-    isFileIgnored: (path: string) => boolean
+    isFileIgnored: (repoName: string, path: string) => boolean
 }
 
 export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function ScopeSelectorComponent({
@@ -59,7 +59,10 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
     const activeEditor = useMemo(() => scope.editor.getActiveTextEditor(), [scope.editor])
 
-    const isCurrentFileIgnored = activeEditor?.filePath ? isFileIgnored(activeEditor.filePath) : false
+    const isCurrentFileIgnored =
+        activeEditor?.repoName && activeEditor?.filePath
+            ? isFileIgnored(activeEditor.repoName, activeEditor.filePath)
+            : false
     const inferredFilePath = (!isCurrentFileIgnored && activeEditor?.filePath) || null
     useEffect(() => {
         if (isCurrentFileIgnored && scope.includeInferredFile) {

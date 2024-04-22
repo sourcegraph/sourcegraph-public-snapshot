@@ -35,7 +35,7 @@ import { GettingStarted } from '../GettingStarted'
 import { ScopeSelector } from '../ScopeSelector'
 import type { ScopeSelectorProps } from '../ScopeSelector/ScopeSelector'
 
-import { useIsFileIgnored } from './useIsFileIgnored'
+import { getCodyContextFilterHook } from './useIsFileIgnored'
 
 import styles from './ChatUi.module.scss'
 
@@ -45,6 +45,7 @@ interface IChatUIProps extends TelemetryV2Props {
     codyChatStore: CodyChatStore
     isCodyChatPage?: boolean
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
 }
 
 export const ChatUI: React.FC<IChatUIProps> = ({
@@ -52,6 +53,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({
     isCodyChatPage,
     authenticatedUser,
     telemetryRecorder,
+    isSourcegraphDotCom,
 }): JSX.Element => {
     const onFeedbackSubmit = (feedback: string): void => {
         eventLogger.log(`web:cody:feedbackSubmit:${feedback}`)
@@ -99,7 +101,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({
     const onSubmit = useCallback((text: string) => submitMessage(text), [submitMessage])
     const onEdit = useCallback((text: string) => editMessage(text), [editMessage])
 
-    const isFileIgnored = useIsFileIgnored()
+    const isFileIgnored = getCodyContextFilterHook(isSourcegraphDotCom)()
 
     const scopeSelectorProps: ScopeSelectorProps = useMemo(
         () => ({
