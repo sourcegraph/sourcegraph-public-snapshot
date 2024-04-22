@@ -11,6 +11,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
+        "//internal/conf",
         "//lib/errors",
         "@com_github_go_enry_go_enry_v2//:go-enry",
         "@com_github_go_enry_go_enry_v2//data",
@@ -26,8 +27,10 @@ go_test(
     ],
     embed = [":inventory"],
     deps = [
+        "//internal/conf",
         "//internal/fileutil",
         "//lib/errors",
+        "//schema",
         "@com_github_go_enry_go_enry_v2//:go-enry",
         "@com_github_google_go_cmp//cmp",
     ],
