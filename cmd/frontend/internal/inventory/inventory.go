@@ -41,7 +41,7 @@ type Lang struct {
 var newLine = []byte{'\n'}
 
 func isExcluded(name string) (bool, error) {
-	excludedFileNamePatterns := conf.ExperimentalFeatures().GetInventory.ExcludedFileNamePatterns
+	excludedFileNamePatterns := conf.GetInventory().ExcludedFileNamePatterns
 	for _, pattern := range excludedFileNamePatterns {
 		matched, err := regexp.MatchString(pattern, name)
 		if err != nil {

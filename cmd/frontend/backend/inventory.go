@@ -35,7 +35,7 @@ type semaphoredReadCloser struct {
 }
 
 func (s *semaphoredReadCloser) Read(p []byte) (int, error) {
-	trc, ctx := trace.New(s.ctx, "Wait for semaphore")
+	trc, ctx := trace.New(s.ctx, "Read waits for semaphore")
 	err := s.semaphore.Acquire(ctx, 1)
 	trc.End()
 	if err != nil {
@@ -64,15 +64,17 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 		return info.OID().String()
 	}
 
-	e := conf.Get().ExperimentalFeatures
-	gitServerSemaphore := semaphore.NewWeighted(int64(e.GetInventory.GitserverParallelization))
-	cacheSemaphore := semaphore.NewWeighted(int64(e.GetInventory.CacheParallelization))
+	gitServerSemaphore := semaphore.NewWeighted(int64(conf.GetInventory().GitserverParallelization))
+	cacheSemaphore := semaphore.NewWeighted(int64(conf.GetInventory().CacheParallelization))
 
 	logger = logger.Scoped("InventoryContext").
 		With(log.String("repo", string(repo)), log.String("commitID", string(commitID)))
 	invCtx := inventory.Context{
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
-			if err := gitServerSemaphore.Acquire(ctx, 1); err != nil {
+			trc, ctx := trace.New(ctx, "ReadTree waits for semaphore")
+			err := gitServerSemaphore.Acquire(ctx, 1)
+			trc.End()
+			if err != nil {
 				return nil, err
 			}
 			defer gitServerSemaphore.Release(1)

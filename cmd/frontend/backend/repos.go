@@ -258,8 +258,7 @@ func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID ap
 	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo, "commitID": commitID}, &err)
 	defer done()
 
-	e := conf.Get().ExperimentalFeatures
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(e.GetInventory.Timeout)*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(conf.GetInventory().Timeout)*time.Minute)
 	defer cancel()
 
 	invCtx, err := InventoryContext(s.logger, repo, s.gitserverClient, commitID, forceEnhancedLanguageDetection)

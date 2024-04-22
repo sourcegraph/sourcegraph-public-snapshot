@@ -623,12 +623,12 @@
               "default": 2
             },
             "excludedFileNamePatterns": {
-              "description": "A list of glob patterns that match file names you want to exclude. This is useful to exclude large files that would take long to transfer.",
+              "description": "A list of regex patterns that match file names you want to exclude. This is useful to exclude large files that would take long to transfer.",
               "type": "array",
               "items": {
                 "type": "string"
               },
-              "default": ["*.lock"]
+              "default": [".*\\.lock"]
             }
           }
         }

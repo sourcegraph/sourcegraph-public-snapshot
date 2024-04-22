@@ -2,10 +2,10 @@ package inventory
 
 import (
 	"context"
+	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"io/fs"
 	"sort"
-	"sync"
 )
 
 // fileReadBufferSize is the size of the buffer we'll use while reading file contents
@@ -45,12 +45,6 @@ func (c *Context) entries(ctx context.Context, entries []fs.FileInfo, buf []byte
 	return Sum(invs), nil
 }
 
-type treeIteratorResult struct {
-	index     int
-	inventory Inventory
-	err       error
-}
-
 func (c *Context) tree(ctx context.Context, tree fs.FileInfo, buf []byte) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
@@ -70,43 +64,30 @@ func (c *Context) tree(ctx context.Context, tree fs.FileInfo, buf []byte) (inv I
 	if err != nil {
 		return Inventory{}, err
 	}
-	invs := make([]Inventory, len(entries))
-	results := make(chan treeIteratorResult, len(entries)) // Buffer the channel to the number of entries
-	var wg sync.WaitGroup
 
-	for i, e := range entries {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			switch {
-			case e.Mode().IsRegular(): // file
-				// Don't individually cache files that we found during tree traversal. The hit rate for
-				// those cache entries is likely to be much lower than cache entries for files whose
-				// inventory was directly requested.
-				lang, err := getLang(ctx, e, buf, c.NewFileReader)
-				results <- treeIteratorResult{i, Inventory{Languages: []Lang{lang}}, err}
-			case e.Mode().IsDir(): // subtree
-				subtreeInv, err := c.tree(ctx, e, buf)
-				results <- treeIteratorResult{i, subtreeInv, err}
-			default:
-				// Skip symlinks, submodules, etc.
-			}
-		}()
-	}
-
-	// Wait for all goroutines to finish
-	wg.Wait()
-	close(results)
-
-	for res := range results {
-		if res.err != nil {
-			return Inventory{}, res.err
+	inventories, err := iter.MapErr(entries, func(entry *fs.FileInfo) (Inventory, error) {
+		e := *entry
+		switch {
+		case e.Mode().IsRegular(): // file
+			// Don't individually cache files that we found during tree traversal. The hit rate for
+			// those cache entries is likely to be much lower than cache entries for files whose
+			// inventory was directly requested.
+			lang, err := getLang(ctx, e, buf, c.NewFileReader)
+			return Inventory{Languages: []Lang{lang}}, err
+		case e.Mode().IsDir(): // subtree
+			subtreeInv, err := c.tree(ctx, e, buf)
+			return subtreeInv, err
+		default:
+			// Skip symlinks, submodules, etc.
+			return Inventory{}, nil
 		}
-		invs[res.index] = res.inventory
+	})
+
+	if err != nil {
+		return Inventory{}, err
 	}
 
-	return Sum(invs), nil
+	return Sum(inventories), nil
 }
 
 // file computes the inventory of a single file. It caches the result.

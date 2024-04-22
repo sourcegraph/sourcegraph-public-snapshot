@@ -1196,7 +1196,7 @@ type GerritConnection struct {
 type GetInventory struct {
 	// CacheParallelization description: Maximum number of concurrent calls per query to the redis cache.
 	CacheParallelization int `json:"cacheParallelization,omitempty"`
-	// ExcludedFileNamePatterns description: A list of glob patterns that match file names you want to exclude. This is useful to exclude large files that would take long to transfer.
+	// ExcludedFileNamePatterns description: A list of regex patterns that match file names you want to exclude. This is useful to exclude large files that would take long to transfer.
 	ExcludedFileNamePatterns []string `json:"excludedFileNamePatterns,omitempty"`
 	// GitserverParallelization description: Maximum number of concurrent calls per query to the gitserver.
 	GitserverParallelization int `json:"gitserverParallelization,omitempty"`
