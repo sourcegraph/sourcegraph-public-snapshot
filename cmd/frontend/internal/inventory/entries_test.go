@@ -51,11 +51,11 @@ func TestContext_Entries(t *testing.T) {
 			}
 			return io.NopCloser(bytes.NewReader(data)), nil
 		},
-		CacheGet: func(e fs.FileInfo) (Inventory, bool) {
+		CacheGet: func(ctx context.Context, e fs.FileInfo) (Inventory, bool) {
 			cacheGetCalls = append(cacheGetCalls, e.Name())
 			return Inventory{}, false
 		},
-		CacheSet: func(e fs.FileInfo, inv Inventory) {
+		CacheSet: func(ctx context.Context, e fs.FileInfo, inv Inventory) {
 			if _, ok := cacheSetCalls[e.Name()]; ok {
 				t.Fatalf("already stored %q in cache", e.Name())
 			}
