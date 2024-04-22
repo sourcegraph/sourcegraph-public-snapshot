@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const HeaderUserToken = "X-USER-TOKEN"
-const APIEndpoint = "CHANGE ME"
+const HeaderUserToken = "X-GCP-User-Token"
+const APIEndpoint = "https://cloud-ops-dev.sgdev.org/api"
 
 type Client struct {
 	client cloudapiv1connect.InstanceServiceClient
@@ -26,7 +26,7 @@ func NewClient(ctx context.Context, endpoint string) (*Client, error) {
 		endpoint,
 	)
 
-	token, err := run.Cmd(ctx, "gcloud auth print-access-token").Run().String()
+	token, err := run.Cmd(ctx, "gcloud auth print-identity-token").Run().String()
 	if err != nil {
 		return nil, errors.Newf("failed to get gcloud auth token: %v", err)
 	}

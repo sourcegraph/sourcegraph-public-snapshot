@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -59,22 +60,26 @@ func getGcloudAccount(ctx context.Context) (string, error) {
 }
 
 func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
+	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch is up to date with remote", currRepo.Branch, currRepo.Ref))
 	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "branch is out of date with remote"))
 		return nil, err
 	} else if isOutOfSync {
 		return nil, ErrBranchOutOfSync
 	}
 
-	std.Out.WriteNoticef("Starting build for %q on commit %q\n", currRepo.Branch, currRepo.Ref)
 	client, err := bk.NewClient(ctx, std.Out)
 	if err != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to create client to trigger build"))
 		return nil, err
 	}
+	pending.Updatef("Starting cloud ephemeral build for %q on commit %q", currRepo.Branch, currRepo.Ref)
 	build, err := client.TriggerBuild(ctx, "sourcegraph", currRepo.Branch, currRepo.Ref, bk.WithEnvVar("CLOUD_EPHEMERAL", "true"))
 	if err != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to trigger build"))
 		return nil, err
 	}
-	std.Out.WriteSuccessf("Started build %d. Build progress can be viewed at %s\n", pointers.DerefZero(build.Number), pointers.DerefZero(build.WebURL))
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %d created. Build progress can be viewed at %s", pointers.DerefZero(build.Number), pointers.DerefZero(build.WebURL)))
 
 	return build, nil
 }
@@ -97,20 +102,23 @@ func printWIPNotice(ctx *cli.Context) error {
 	return ErrUserCancelled
 }
 
-func createDeploymentForVersion(ctx context.Context, version string) error {
+func listDeployedInstances(ctx context.Context) error {
 	cloudClient, err := NewClient(ctx, APIEndpoint)
 	if err != nil {
 		return err
 	}
 
-	std.Out.Writef("Starting cloud ephemeral deployment for version %q\n", version)
+	// assigning it to a variable since it causes some font rendering issues in my editor on a line with more text
+	cloudEmoji := "☁️"
+	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Listing deployed instances"))
 	// Lets just list as a temporary sanity check that this works
 	inst, err := cloudClient.ListInstances(ctx)
 	if err != nil {
+		pending.Complete(output.Linef(output.EmojiWarning, output.StyleWarning, "failed to list deployed cloud ephemeral instances"))
 		return err
 	}
 
-	std.Out.Writef("Found %d instances\n", len(inst))
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Found %d instances\n", len(inst)))
 	return nil
 }
 
@@ -145,10 +153,11 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 			}
 			return err
 		}
-		_ = determineVersion(build, "")
+		version = determineVersion(build, "")
 	}
+	err = listDeployedInstances(ctx.Context)
 	// we could check if the version exists?
 
-	return nil
+	return err
 	// trigger cloud depoyment here
 }
