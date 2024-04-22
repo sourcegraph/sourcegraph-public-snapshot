@@ -12,7 +12,7 @@ dummy_temp_file="DUMMYDOCKER-TEMP-FILE"
 workdir_prefix="/work/"
 
 if [[ "${1}" == "run" ]]; then
-  last_arg="${@: -1}"
+  last_arg="${!#}"
 
   case "$last_arg" in
     "mktemp")
@@ -41,7 +41,7 @@ if [[ "${1}" == "run" ]]; then
       workdir=""
       host_temp_file=""
       for i in "$@"; do
-        if [[ ! -z "${workdirUpcoming}" ]]; then
+        if [[ -n "${workdirUpcoming}" ]]; then
           workdir="${i}"
           workdirUpcoming=""
         fi
@@ -64,7 +64,7 @@ if [[ "${1}" == "run" ]]; then
         relative_workdir=""
       fi
       # If the non-prefixed version is not blank, then we need to `cd` into it
-      if [[ ! -z "${relative_workdir}" ]]; then
+      if [[ -n "${relative_workdir}" ]]; then
         cd "${relative_workdir}" || exit 1
       fi
 
