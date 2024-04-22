@@ -38,7 +38,7 @@
         return numStr.substring(numStr.length - length)
     }
 
-    $: ({ repo, org } = formatRepoName(repoName))
+    $: ({ org, repo } = formatRepoName(repoName))
     $: filePath = f.path.split('/')
     $: fileOrDirName = filePath.pop()
     $: commit = f.commit
@@ -88,12 +88,14 @@
             <div>/</div>
             <div>{repo}</div>
             <div>{CENTER_DOT}</div>
-            {#each filePath as part}
-                <div>{part}</div>
-                {#if filePath.indexOf(part) < filePath.length - 1}
-                    <div>/</div>
-                {/if}
-            {/each}
+            <div class="file-path">
+                {#each filePath as part}
+                    <div>{part}</div>
+                    {#if filePath.indexOf(part) < filePath.length - 1}
+                        <div>/</div>
+                    {/if}
+                {/each}
+            </div>
         </div>
 
         <div class="lang-and-file">
@@ -140,9 +142,7 @@
 
 <style lang="scss">
     .root {
-        width: fit-content;
-        min-width: 380px;
-        max-width: 380px;
+        width: 400px;
         background: var(--body-bg);
         border: 1px solid var(--border-color);
         border-radius: 8px;
@@ -159,7 +159,7 @@
                 display: flex;
                 flex-flow: row nowrap;
                 gap: 0.25rem;
-                justify-content: center;
+                justify-content: flex-start;
                 padding: 0.5rem 1rem;
                 width: 100%;
 
@@ -168,6 +168,14 @@
                     font-weight: 100;
                     font-size: 0.75rem;
                     color: var(--text-muted);
+                }
+
+                .file-path {
+                    display: flex;
+                    flex-flow: row wrap;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.25rem;
                 }
             }
 
@@ -230,7 +238,7 @@
                     align-items: flex-start;
                     justify-content: center;
                     gap: 0.25rem;
-                    width: 275px;
+                    width: 325px;
 
                     a {
                         font-family: var(--monospace-font-family);
@@ -242,7 +250,7 @@
 
                     .msg {
                         color: var(--text-body);
-                        text-overflow: ellipsis;
+                        text-overflow: ellipsis ellipsis;
                         overflow: hidden;
                         white-space: nowrap;
                     }
