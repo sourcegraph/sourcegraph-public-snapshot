@@ -1759,8 +1759,8 @@ def go_dependencies():
         name = "com_github_fullstorydev_grpcurl",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/fullstorydev/grpcurl",
-        sum = "h1:WylAwnPauJIofYSHqqMTC1eEfUIzqzevXyogBxnQquo=",
-        version = "v1.8.6",
+        sum = "h1:xJWosq3BQovQ4QrdPO72OrPiWuGgEsxY8ldYsJbPrqI=",
+        version = "v1.8.7",
     )
     go_repository(
         name = "com_github_garyburd_redigo",
@@ -2299,8 +2299,8 @@ def go_dependencies():
         name = "com_github_gofrs_uuid",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/gofrs/uuid",
-        sum = "h1:yyYWMnhkhrKwwr8gAOcOCYxOOscHgDS9yZgBrnJfGa0=",
-        version = "v4.2.0+incompatible",
+        sum = "h1:0/KbAdpx3UXAx1kEOWHJeOkpbgRFGHVgv+CFIY7dBJI=",
+        version = "v4.3.1+incompatible",
     )
     go_repository(
         name = "com_github_gofrs_uuid_v5",
@@ -5247,6 +5247,13 @@ def go_dependencies():
         importpath = "github.com/soheilhy/cmux",
         sum = "h1:jjzc5WVemNEDTLwv9tlmemhC73tI08BNOIGwBOo10Js=",
         version = "v0.1.5",
+    )
+    go_repository(
+        name = "com_github_sourcegraph_cloud_api",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/cloud-api",
+        sum = "h1:RItox0Y6fEbxqdCeGGFLfXZ6yDo13K5nxjUFeg9UkZg=",
+        version = "v0.0.0-20231205211631-907f2d5f11b7",
     )
     go_repository(
         name = "com_github_sourcegraph_conc",

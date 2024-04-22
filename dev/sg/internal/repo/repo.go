@@ -13,6 +13,8 @@ import (
 )
 
 // State represents the state of the repository.
+//
+// State is intended for use with the sourcegraph/sourcegraph repository
 type State struct {
 	// Dirty indicates if the current working directory has uncommitted changes.
 	Dirty bool
@@ -25,7 +27,7 @@ type State struct {
 	mockDiff Diff
 }
 
-// GetState parses the git state of the root repository.
+// GetState parses the git state of the root repository. Which is assumed to be sourcegraph/sourcegraph
 func GetState(ctx context.Context) (*State, error) {
 	dirty, err := root.Run(run.Cmd(ctx, "git diff --name-only")).Lines()
 	if err != nil {
@@ -125,4 +127,52 @@ func parseDiff(diffOutput string) (map[string][]DiffHunk, error) {
 		}
 	}
 	return diffs, nil
+}
+
+// GetCurrentBranch gets the current branch. It is assumed that the current working directory is a valid git repository
+func GetCurrentBranch(ctx context.Context) (string, error) {
+	branch, err := run.Cmd(ctx, "git branch --show-current").Run().String()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(branch), nil
+}
+
+// GetHeadCommit gets the current head commit. It is assumed that the current working directory is a valid git repository
+func GetHeadCommit(ctx context.Context) (string, error) {
+	commit, err := run.Cmd(ctx, "git rev-parse HEAD").Run().String()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(commit), nil
+}
+
+// GetBranchHeadCommit gets the head commit of the given branch. The branch is first checked whether it exists remotely before retrieving it's head commit.
+// It is assumed that the current working directory is a valid git repository
+func GetBranchHeadCommit(ctx context.Context, branch string) (string, error) {
+	if exists, err := HasRemoteBranch(ctx, branch); err == nil && !exists {
+		return "", ErrBranchNotFound
+	} else if err != nil {
+		return "", err
+	}
+	commit, err := run.Cmd(ctx, "git rev-parse "+branch).Run().String()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(commit), nil
+}
+
+// HasRemoteBranch checks whether the given branch exists remotely. It is assumed that the current working directory is a valid git repository
+func HasRemoteBranch(ctx context.Context, branch string) (bool, error) {
+	remoteBranchName := "origin/" + branch
+	result, err := run.Cmd(ctx, "git", "branch", "--remotes", "--list", remoteBranchName).Run().String()
+	if err != nil {
+		return false, err
+	}
+
+	result = strings.TrimSpace(result)
+	return len(result) > 0, nil
 }

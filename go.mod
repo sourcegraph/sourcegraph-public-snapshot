@@ -107,7 +107,7 @@ require (
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/go-openapi/strfmt v0.21.7
 	github.com/gobwas/glob v0.2.3
-	github.com/gofrs/uuid v4.2.0+incompatible
+	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f
@@ -245,6 +245,7 @@ require (
 
 require (
 	chainguard.dev/apko v0.14.0
+	connectrpc.com/connect v1.16.0
 	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.5.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.2
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
@@ -273,6 +274,7 @@ require (
 	github.com/pkoukk/tiktoken-go v0.1.6
 	github.com/prometheus/statsd_exporter v0.22.7
 	github.com/qdrant/go-client v1.4.1
+	github.com/sourcegraph/cloud-api v0.0.0-20231205211631-907f2d5f11b7
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20230822024612-edb48c530722
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20240325114905-87053fe51a82
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20240325114905-87053fe51a82
@@ -303,7 +305,6 @@ require (
 	cloud.google.com/go/cloudsqlconn v1.5.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.4-0.20230617002413-005d2dfb6b68 // indirect
 	cloud.google.com/go/trace v1.10.4 // indirect
-	connectrpc.com/connect v1.16.0 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1 // indirect
@@ -341,7 +342,7 @@ require (
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.8.0 // indirect
-	github.com/fullstorydev/grpcurl v1.8.6 // indirect
+	github.com/fullstorydev/grpcurl v1.8.7 // indirect
 	github.com/go-chi/chi/v5 v5.0.10 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
