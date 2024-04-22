@@ -3,6 +3,7 @@ package inttests
 import (
 	"container/list"
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
@@ -112,7 +113,7 @@ func TestClient_ResolveRevision(t *testing.T) {
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
 	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 
-	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+	handler := internalgrpc.MultiplexHandlers(grpcServer, http.NotFoundHandler())
 	srv := httptest.NewServer(handler)
 
 	defer srv.Close()
@@ -125,10 +126,10 @@ func TestClient_ResolveRevision(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
-			_, err := cli.RequestRepoUpdate(ctx, api.RepoName(remote))
+			_, _, err := s.FetchRepository(ctx, api.RepoName(remote))
 			require.NoError(t, err)
 
-			got, err := cli.ResolveRevision(ctx, api.RepoName(remote), test.input, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+			got, err := cli.ResolveRevision(ctx, api.RepoName(remote), test.input, gitserver.ResolveRevisionOptions{EnsureRevision: false})
 			if test.err != nil {
 				require.Equal(t, test.err, err)
 				return

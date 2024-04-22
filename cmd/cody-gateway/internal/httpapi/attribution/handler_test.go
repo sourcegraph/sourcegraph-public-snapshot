@@ -116,7 +116,7 @@ func TestSuccess(t *testing.T) {
 			},
 		},
 	}
-	dotcomClient := dotcom.NewClient(fakeDotcom.url, "fake auth token")
+	dotcomClient := dotcom.NewClient(fakeDotcom.url, "fake auth token", "random", "dev")
 	handler, err := httpapi.NewHandler(logger, nil, nil, nil, authr, nil, config, dotcomClient)
 	require.NoError(t, err)
 	r := request(t)

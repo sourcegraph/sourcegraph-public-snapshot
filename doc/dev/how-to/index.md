@@ -62,6 +62,10 @@
 
 - [Adding permissions](add_permissions.md)
 
+## Repository Permissions
+
+- [Debugging Repository permissions](debug_permissions.md)
+
 ## Wolfi
 
 - [How to add and update Wolfi packages](wolfi/add_update_packages.md)

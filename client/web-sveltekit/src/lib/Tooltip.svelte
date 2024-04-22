@@ -54,7 +54,15 @@
     itself is not interactable.
     svelte-ignore a11y-no-static-element-interactions
 -->
-<div class="wrapper" bind:this={wrapper} on:mouseenter={show} on:mouseleave={hide} on:focusin={show} on:focusout={hide}>
+<div
+    class="wrapper"
+    bind:this={wrapper}
+    on:mouseenter={show}
+    on:mouseleave={hide}
+    on:focusin={show}
+    on:focusout={hide}
+    data-tooltip-root
+>
     <slot />
 </div>
 {#if (alwaysVisible || visible) && target && tooltip}

@@ -145,7 +145,7 @@ func TestS3GetTransientErrors(t *testing.T) {
 
 func TestS3GetReadNothingLoop(t *testing.T) {
 	// read nothing then return a connection reset error
-	ioCopyHook = func(w io.Writer, r io.Reader) (int64, error) {
+	ioCopyHook = func(_ io.Writer, _ io.Reader) (int64, error) {
 		return 0, errors.New("read: connection reset by peer")
 	}
 

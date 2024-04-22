@@ -18,6 +18,7 @@ func TestNewDeployment(t *testing.T) {
 	type args struct {
 		name      string
 		namespace string
+		version   string
 		options   []Option
 	}
 
@@ -31,13 +32,17 @@ func TestNewDeployment(t *testing.T) {
 			args: args{
 				name:      "foo",
 				namespace: "sourcegraph",
+				version:   "1.2.3",
 			},
 			want: appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "foo",
 					Namespace: "sourcegraph",
 					Labels: map[string]string{
-						"deploy": "sourcegraph",
+						"app.kubernetes.io/component": "foo",
+						"app.kubernetes.io/name":      "sourcegraph",
+						"app.kubernetes.io/version":   "1.2.3",
+						"deploy":                      "sourcegraph",
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
@@ -61,6 +66,7 @@ func TestNewDeployment(t *testing.T) {
 			args: args{
 				name:      "foo",
 				namespace: "sourcegraph",
+				version:   "1.2.3",
 				options: []Option{
 					WithLabels(map[string]string{
 						"deploy": "horsegraph",
@@ -73,8 +79,11 @@ func TestNewDeployment(t *testing.T) {
 					Name:      "foo",
 					Namespace: "sourcegraph",
 					Labels: map[string]string{
-						"app":    "horsegraph",
-						"deploy": "sourcegraph",
+						"app.kubernetes.io/component": "foo",
+						"app.kubernetes.io/name":      "sourcegraph",
+						"app.kubernetes.io/version":   "1.2.3",
+						"app":                         "horsegraph",
+						"deploy":                      "sourcegraph",
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
@@ -98,6 +107,7 @@ func TestNewDeployment(t *testing.T) {
 			args: args{
 				name:      "foo",
 				namespace: "sourcegraph",
+				version:   "1.2.3",
 				options: []Option{
 					WithAnnotations(map[string]string{
 						"app": "horsegraph",
@@ -110,7 +120,10 @@ func TestNewDeployment(t *testing.T) {
 					Name:      "foo",
 					Namespace: "sourcegraph",
 					Labels: map[string]string{
-						"deploy": "sourcegraph",
+						"app.kubernetes.io/component": "foo",
+						"app.kubernetes.io/name":      "sourcegraph",
+						"app.kubernetes.io/version":   "1.2.3",
+						"deploy":                      "sourcegraph",
 					},
 					Annotations: map[string]string{
 						"app": "horsegraph",
@@ -138,6 +151,7 @@ func TestNewDeployment(t *testing.T) {
 			args: args{
 				name:      "foo",
 				namespace: "sourcegraph",
+				version:   "1.2.3",
 				options: []Option{
 					WithMinReadySeconds(int32(20)),
 				},
@@ -147,7 +161,10 @@ func TestNewDeployment(t *testing.T) {
 					Name:      "foo",
 					Namespace: "sourcegraph",
 					Labels: map[string]string{
-						"deploy": "sourcegraph",
+						"app.kubernetes.io/component": "foo",
+						"app.kubernetes.io/name":      "sourcegraph",
+						"app.kubernetes.io/version":   "1.2.3",
+						"deploy":                      "sourcegraph",
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
@@ -171,6 +188,7 @@ func TestNewDeployment(t *testing.T) {
 			args: args{
 				name:      "foo",
 				namespace: "sourcegraph",
+				version:   "1.2.3",
 				options: []Option{
 					WithReplicas(int32(10)),
 				},
@@ -180,7 +198,10 @@ func TestNewDeployment(t *testing.T) {
 					Name:      "foo",
 					Namespace: "sourcegraph",
 					Labels: map[string]string{
-						"deploy": "sourcegraph",
+						"app.kubernetes.io/component": "foo",
+						"app.kubernetes.io/name":      "sourcegraph",
+						"app.kubernetes.io/version":   "1.2.3",
+						"deploy":                      "sourcegraph",
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
@@ -204,6 +225,7 @@ func TestNewDeployment(t *testing.T) {
 			args: args{
 				name:      "foo",
 				namespace: "sourcegraph",
+				version:   "1.2.3",
 				options: []Option{
 					WithRevisionHistoryLimit(int32(100)),
 				},
@@ -213,7 +235,10 @@ func TestNewDeployment(t *testing.T) {
 					Name:      "foo",
 					Namespace: "sourcegraph",
 					Labels: map[string]string{
-						"deploy": "sourcegraph",
+						"app.kubernetes.io/component": "foo",
+						"app.kubernetes.io/name":      "sourcegraph",
+						"app.kubernetes.io/version":   "1.2.3",
+						"deploy":                      "sourcegraph",
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
@@ -237,6 +262,7 @@ func TestNewDeployment(t *testing.T) {
 			args: args{
 				name:      "foo",
 				namespace: "sourcegraph",
+				version:   "1.2.3",
 				options: []Option{
 					WithSelector(metav1.LabelSelector{
 						MatchLabels: map[string]string{
@@ -250,7 +276,10 @@ func TestNewDeployment(t *testing.T) {
 					Name:      "foo",
 					Namespace: "sourcegraph",
 					Labels: map[string]string{
-						"deploy": "sourcegraph",
+						"app.kubernetes.io/component": "foo",
+						"app.kubernetes.io/name":      "sourcegraph",
+						"app.kubernetes.io/version":   "1.2.3",
+						"deploy":                      "sourcegraph",
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
@@ -274,6 +303,7 @@ func TestNewDeployment(t *testing.T) {
 			args: args{
 				name:      "foo",
 				namespace: "sourcegraph",
+				version:   "1.2.3",
 				options: []Option{
 					WithDeploymentStrategy(appsv1.DeploymentStrategy{
 						Type: appsv1.RollingUpdateDeploymentStrategyType,
@@ -285,7 +315,10 @@ func TestNewDeployment(t *testing.T) {
 					Name:      "foo",
 					Namespace: "sourcegraph",
 					Labels: map[string]string{
-						"deploy": "sourcegraph",
+						"app.kubernetes.io/component": "foo",
+						"app.kubernetes.io/name":      "sourcegraph",
+						"app.kubernetes.io/version":   "1.2.3",
+						"deploy":                      "sourcegraph",
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
@@ -309,6 +342,7 @@ func TestNewDeployment(t *testing.T) {
 			args: args{
 				name:      "foo",
 				namespace: "sourcegraph",
+				version:   "1.2.3",
 				options: []Option{
 					WithPodTemplateSpec(func() corev1.PodTemplateSpec {
 						ts, _ := pod.NewPodTemplate("foo", "sourcegraph")
@@ -321,7 +355,10 @@ func TestNewDeployment(t *testing.T) {
 					Name:      "foo",
 					Namespace: "sourcegraph",
 					Labels: map[string]string{
-						"deploy": "sourcegraph",
+						"app.kubernetes.io/component": "foo",
+						"app.kubernetes.io/name":      "sourcegraph",
+						"app.kubernetes.io/version":   "1.2.3",
+						"deploy":                      "sourcegraph",
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
@@ -366,7 +403,7 @@ func TestNewDeployment(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, err := NewDeployment(tt.args.name, tt.args.namespace, tt.args.options...)
+			got, err := NewDeployment(tt.args.name, tt.args.namespace, tt.args.version, tt.args.options...)
 			if err != nil {
 				t.Errorf("NewDeployment() error: %v", err)
 			}

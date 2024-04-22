@@ -22,10 +22,10 @@ import (
 	oteltracer "go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -770,6 +770,7 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		gitserverIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.gitserverByID(ctx, id)
 		},
+		indexedSearchInstanceIDKind: func(ctx context.Context, id graphql.ID) (Node, error) { return r.indexedSearchInstanceByID(ctx, id) },
 	}
 	return r
 }
@@ -835,22 +836,18 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	Repo graphql.ID
 },
 ) (*EmptyResponse, error) {
-	repoID, err := UnmarshalRepositoryID(args.Repo)
-	if err != nil {
-		return nil, err
-	}
-
 	// 🚨 SECURITY: Only site admins can reclone repositories.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	if _, err := r.DeleteRepositoryFromDisk(ctx, args); err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("could not delete repository with ID %d", repoID))
+	repo, err := r.repositoryByID(ctx, args.Repo)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := backend.NewRepos(r.logger, r.db, r.gitserverClient).RequestRepositoryClone(ctx, repoID); err != nil {
-		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while requesting clone for repository with ID %d", repoID))
+	if _, err := r.DeleteRepositoryFromDisk(ctx, args); err != nil {
+		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("could not delete repository with ID %d", repo.repo.ID))
 	}
 
 	return &EmptyResponse{}, nil
@@ -880,7 +877,7 @@ func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *str
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("cannot delete repository %d: busy cloning", repo.RepoID))
 	}
 
-	if err := backend.NewRepos(r.logger, r.db, r.gitserverClient).DeleteRepositoryFromDisk(ctx, repoID); err != nil {
+	if err := backend.NewRepos(r.logger, r.db, r.gitserverClient).RecloneRepository(ctx, repoID); err != nil {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository with ID %d", repoID))
 	}
 

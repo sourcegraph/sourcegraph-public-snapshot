@@ -57,25 +57,28 @@ func TestGRPCServer_Blame(t *testing.T) {
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 	})
 	t.Run("checks for uncloned repo", func(t *testing.T) {
-		svc := NewMockService()
-		svc.MaybeStartCloneFunc.SetDefaultReturn(false, CloneStatus{CloneInProgress: true, CloneProgress: "cloning"}, nil)
-		gs := &grpcServer{svc: svc, fs: gitserverfs.NewMockFS()}
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
 		err := gs.Blame(&v1.BlameRequest{RepoName: "therepo", Commit: "deadbeef", Path: "thepath"}, mockSS)
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
 		require.Contains(t, err.Error(), "repo not found")
-		mockassert.Called(t, svc.MaybeStartCloneFunc)
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
 	})
 	t.Run("checks for subrepo perms access to given path", func(t *testing.T) {
 		srp := authz.NewMockSubRepoPermissionChecker()
-		svc := NewMockService()
+		fs := gitserverfs.NewMockFS()
 		// Repo is cloned, proceed!
-		svc.MaybeStartCloneFunc.SetDefaultReturn(true, CloneStatus{}, nil)
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
 		gs := &grpcServer{
 			subRepoChecker: srp,
-			svc:            svc,
-			fs:             gitserverfs.NewMockFS(),
+			svc:            NewMockService(),
+			fs:             fs,
 			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
 				b := git.NewMockGitBackend()
 				hr := git.NewMockBlameHunkReader()
@@ -115,9 +118,9 @@ func TestGRPCServer_Blame(t *testing.T) {
 		srp := authz.NewMockSubRepoPermissionChecker()
 		// Skip subrepo perms checks.
 		srp.EnabledFunc.SetDefaultReturn(false)
-		svc := NewMockService()
+		fs := gitserverfs.NewMockFS()
 		// Repo is cloned, proceed!
-		svc.MaybeStartCloneFunc.SetDefaultReturn(true, CloneStatus{}, nil)
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
 		b := git.NewMockGitBackend()
 		hr := git.NewMockBlameHunkReader()
 		hr.ReadFunc.PushReturn(&gitdomain.Hunk{CommitID: "deadbeef"}, nil)
@@ -125,8 +128,8 @@ func TestGRPCServer_Blame(t *testing.T) {
 		b.BlameFunc.PushReturn(hr, nil)
 		gs := &grpcServer{
 			subRepoChecker: srp,
-			svc:            svc,
-			fs:             gitserverfs.NewMockFS(),
+			svc:            NewMockService(),
+			fs:             fs,
 			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
@@ -198,26 +201,29 @@ func TestGRPCServer_DefaultBranch(t *testing.T) {
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 	})
 	t.Run("checks for uncloned repo", func(t *testing.T) {
-		svc := NewMockService()
-		svc.MaybeStartCloneFunc.SetDefaultReturn(false, CloneStatus{CloneInProgress: true, CloneProgress: "cloning"}, nil)
-		gs := &grpcServer{svc: svc, fs: gitserverfs.NewMockFS()}
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
 		_, err := gs.DefaultBranch(ctx, &v1.DefaultBranchRequest{RepoName: "therepo"})
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
 		require.Contains(t, err.Error(), "repo not found")
-		mockassert.Called(t, svc.MaybeStartCloneFunc)
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
 	})
 	t.Run("e2e", func(t *testing.T) {
-		svc := NewMockService()
+		fs := gitserverfs.NewMockFS()
 		// Repo is cloned, proceed!
-		svc.MaybeStartCloneFunc.SetDefaultReturn(true, CloneStatus{}, nil)
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
 		b := git.NewMockGitBackend()
 		b.SymbolicRefHeadFunc.SetDefaultReturn("refs/heads/main", nil)
 		b.RevParseHeadFunc.SetDefaultReturn("deadbeef", nil)
 		gs := &grpcServer{
-			svc: svc,
-			fs:  gitserverfs.NewMockFS(),
+			svc: NewMockService(),
+			fs:  fs,
 			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
@@ -261,22 +267,26 @@ func TestGRPCServer_MergeBase(t *testing.T) {
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 	})
 	t.Run("checks for uncloned repo", func(t *testing.T) {
-		svc := NewMockService()
-		svc.MaybeStartCloneFunc.SetDefaultReturn(false, CloneStatus{CloneInProgress: true, CloneProgress: "cloning"}, nil)
-		gs := &grpcServer{svc: svc, fs: gitserverfs.NewMockFS()}
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
 		_, err := gs.MergeBase(ctx, &v1.MergeBaseRequest{RepoName: "therepo", Base: []byte("master"), Head: []byte("b2")})
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
 		require.Contains(t, err.Error(), "repo not found")
-		mockassert.Called(t, svc.MaybeStartCloneFunc)
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
 	})
 	t.Run("revision not found", func(t *testing.T) {
-		svc := NewMockService()
-		svc.MaybeStartCloneFunc.SetDefaultReturn(true, CloneStatus{}, nil)
+		fs := gitserverfs.NewMockFS()
+		// Repo is cloned, proceed!
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
 		gs := &grpcServer{
-			svc: svc,
-			fs:  gitserverfs.NewMockFS(),
+			svc: NewMockService(),
+			fs:  fs,
 			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
 				b := git.NewMockGitBackend()
 				b.MergeBaseFunc.SetDefaultReturn("", &gitdomain.RevisionNotFoundError{Repo: "therepo", Spec: "b2"})
@@ -290,14 +300,14 @@ func TestGRPCServer_MergeBase(t *testing.T) {
 		require.Contains(t, err.Error(), "revision not found")
 	})
 	t.Run("e2e", func(t *testing.T) {
-		svc := NewMockService()
+		fs := gitserverfs.NewMockFS()
 		// Repo is cloned, proceed!
-		svc.MaybeStartCloneFunc.SetDefaultReturn(true, CloneStatus{}, nil)
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
 		b := git.NewMockGitBackend()
 		b.MergeBaseFunc.SetDefaultReturn("deadbeef", nil)
 		gs := &grpcServer{
-			svc: svc,
-			fs:  gitserverfs.NewMockFS(),
+			svc: NewMockService(),
+			fs:  fs,
 			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
@@ -336,25 +346,28 @@ func TestGRPCServer_ReadFile(t *testing.T) {
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 	})
 	t.Run("checks for uncloned repo", func(t *testing.T) {
-		svc := NewMockService()
-		svc.MaybeStartCloneFunc.SetDefaultReturn(false, CloneStatus{CloneInProgress: true, CloneProgress: "cloning"}, nil)
-		gs := &grpcServer{svc: svc, fs: gitserverfs.NewMockFS()}
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
 		err := gs.ReadFile(&v1.ReadFileRequest{RepoName: "therepo", Commit: "deadbeef", Path: "thepath"}, mockSS)
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
 		require.Contains(t, err.Error(), "repo not found")
-		mockassert.Called(t, svc.MaybeStartCloneFunc)
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
 	})
 	t.Run("checks for subrepo perms access to given path", func(t *testing.T) {
 		srp := authz.NewMockSubRepoPermissionChecker()
-		svc := NewMockService()
+		fs := gitserverfs.NewMockFS()
 		// Repo is cloned, proceed!
-		svc.MaybeStartCloneFunc.SetDefaultReturn(true, CloneStatus{}, nil)
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
 		gs := &grpcServer{
 			subRepoChecker: srp,
-			svc:            svc,
-			fs:             gitserverfs.NewMockFS(),
+			svc:            NewMockService(),
+			fs:             fs,
 			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
 				b := git.NewMockGitBackend()
 				b.ReadFileFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("filecontent"))), nil)
@@ -392,15 +405,15 @@ func TestGRPCServer_ReadFile(t *testing.T) {
 		srp := authz.NewMockSubRepoPermissionChecker()
 		// Skip subrepo perms checks.
 		srp.EnabledFunc.SetDefaultReturn(false)
-		svc := NewMockService()
+		fs := gitserverfs.NewMockFS()
 		// Repo is cloned, proceed!
-		svc.MaybeStartCloneFunc.SetDefaultReturn(true, CloneStatus{}, nil)
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
 		b := git.NewMockGitBackend()
 		b.ReadFileFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("filecontent"))), nil)
 		gs := &grpcServer{
 			subRepoChecker: srp,
-			svc:            svc,
-			fs:             gitserverfs.NewMockFS(),
+			svc:            NewMockService(),
+			fs:             fs,
 			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
@@ -474,25 +487,28 @@ func TestGRPCServer_Archive(t *testing.T) {
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 	})
 	t.Run("checks for uncloned repo", func(t *testing.T) {
-		svc := NewMockService()
-		svc.MaybeStartCloneFunc.SetDefaultReturn(false, CloneStatus{CloneInProgress: true, CloneProgress: "cloning"}, nil)
-		gs := &grpcServer{svc: svc, fs: gitserverfs.NewMockFS()}
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
 		err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Treeish: "HEAD", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP}, mockSS)
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
 		require.Contains(t, err.Error(), "repo not found")
-		mockassert.Called(t, svc.MaybeStartCloneFunc)
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
 	})
 	t.Run("checks if sub-repo perms are enabled for repo", func(t *testing.T) {
 		srp := authz.NewMockSubRepoPermissionChecker()
-		svc := NewMockService()
+		fs := gitserverfs.NewMockFS()
 		// Repo is cloned, proceed!
-		svc.MaybeStartCloneFunc.SetDefaultReturn(true, CloneStatus{}, nil)
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
 		gs := &grpcServer{
 			subRepoChecker: srp,
-			svc:            svc,
-			fs:             gitserverfs.NewMockFS(),
+			svc:            NewMockService(),
+			fs:             fs,
 			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
 				b := git.NewMockGitBackend()
 				b.ArchiveReaderFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("filecontent"))), nil)
@@ -530,15 +546,15 @@ func TestGRPCServer_Archive(t *testing.T) {
 		srp := authz.NewMockSubRepoPermissionChecker()
 		// Skip subrepo perms checks.
 		srp.EnabledForRepoFunc.SetDefaultReturn(false, nil)
-		svc := NewMockService()
+		fs := gitserverfs.NewMockFS()
 		// Repo is cloned, proceed!
-		svc.MaybeStartCloneFunc.SetDefaultReturn(true, CloneStatus{}, nil)
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
 		b := git.NewMockGitBackend()
 		b.ArchiveReaderFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("filecontent"))), nil)
 		gs := &grpcServer{
 			subRepoChecker: srp,
-			svc:            svc,
-			fs:             gitserverfs.NewMockFS(),
+			svc:            NewMockService(),
+			fs:             fs,
 			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
@@ -566,22 +582,9 @@ func TestGRPCServer_Archive(t *testing.T) {
 			}
 		}
 
-		// Invalid file path.
-		b.ArchiveReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
-		cc, err := cli.Archive(context.Background(), &v1.ArchiveRequest{
-			Repo:    "therepo",
-			Treeish: "HEAD",
-			Format:  proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP,
-		})
-		require.NoError(t, err)
-		_, err = cc.Recv()
-		require.Error(t, err)
-		assertGRPCStatusCode(t, err, codes.NotFound)
-		assertHasGRPCErrorDetailOfType(t, err, &proto.FileNotFoundPayload{})
-
 		// TODO: Do we return this?
 		b.ArchiveReaderFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{})
-		cc, err = cli.Archive(context.Background(), &v1.ArchiveRequest{
+		cc, err := cli.Archive(context.Background(), &v1.ArchiveRequest{
 			Repo:    "therepo",
 			Treeish: "HEAD",
 			Format:  proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP,
@@ -608,26 +611,29 @@ func TestGRPCServer_GetCommit(t *testing.T) {
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 	})
 	t.Run("checks for uncloned repo", func(t *testing.T) {
-		svc := NewMockService()
-		svc.MaybeStartCloneFunc.SetDefaultReturn(false, CloneStatus{CloneInProgress: true, CloneProgress: "cloning"}, nil)
-		gs := &grpcServer{svc: svc, fs: gitserverfs.NewMockFS()}
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
 		_, err := gs.GetCommit(ctx, &v1.GetCommitRequest{RepoName: "therepo", Commit: "deadbeef"})
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
 		require.Contains(t, err.Error(), "repo not found")
-		mockassert.Called(t, svc.MaybeStartCloneFunc)
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
 	})
 	t.Run("checks for subrepo perms access to commit", func(t *testing.T) {
 		srp := authz.NewMockSubRepoPermissionChecker()
-		svc := NewMockService()
+		fs := gitserverfs.NewMockFS()
 		// Repo is cloned, proceed!
-		svc.MaybeStartCloneFunc.SetDefaultReturn(true, CloneStatus{}, nil)
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
 		b := git.NewMockGitBackend()
 		gs := &grpcServer{
 			subRepoChecker: srp,
-			svc:            svc,
-			fs:             gitserverfs.NewMockFS(),
+			svc:            NewMockService(),
+			fs:             fs,
 			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
@@ -681,15 +687,15 @@ func TestGRPCServer_GetCommit(t *testing.T) {
 		// Skip subrepo perms checks.
 		srp.EnabledFunc.SetDefaultReturn(false)
 		srp.EnabledForRepoFunc.SetDefaultReturn(false, nil)
-		svc := NewMockService()
+		fs := gitserverfs.NewMockFS()
 		// Repo is cloned, proceed!
-		svc.MaybeStartCloneFunc.SetDefaultReturn(true, CloneStatus{}, nil)
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
 		b := git.NewMockGitBackend()
 		b.GetCommitFunc.PushReturn(&git.GitCommitWithFiles{Commit: &gitdomain.Commit{Committer: &gitdomain.Signature{}}}, nil)
 		gs := &grpcServer{
 			subRepoChecker: srp,
-			svc:            svc,
-			fs:             gitserverfs.NewMockFS(),
+			svc:            NewMockService(),
+			fs:             fs,
 			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
@@ -722,25 +728,29 @@ func TestGRPCServer_ResolveRevision(t *testing.T) {
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 	})
 	t.Run("checks for uncloned repo", func(t *testing.T) {
-		svc := NewMockService()
-		svc.MaybeStartCloneFunc.SetDefaultReturn(false, CloneStatus{CloneInProgress: true, CloneProgress: "cloning"}, nil)
-		gs := &grpcServer{svc: svc, fs: gitserverfs.NewMockFS()}
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
 		_, err := gs.ResolveRevision(ctx, &v1.ResolveRevisionRequest{RepoName: "therepo"})
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
 		require.Contains(t, err.Error(), "repo not found")
-		mockassert.Called(t, svc.MaybeStartCloneFunc)
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
 	})
 	t.Run("e2e", func(t *testing.T) {
-		svc := NewMockService()
+		fs := gitserverfs.NewMockFS()
 		// Repo is cloned, proceed!
-		svc.MaybeStartCloneFunc.SetDefaultReturn(true, CloneStatus{}, nil)
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
 		b := git.NewMockGitBackend()
 		b.ResolveRevisionFunc.SetDefaultReturn("deadbeef", nil)
+		svc := NewMockService()
 		gs := &grpcServer{
 			svc: svc,
-			fs:  gitserverfs.NewMockFS(),
+			fs:  fs,
 			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
@@ -785,6 +795,272 @@ func TestGRPCServer_ResolveRevision(t *testing.T) {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
 		}
 		mockrequire.Called(t, svc.EnsureRevisionFunc)
+	})
+}
+
+func TestGRPCServer_RevAtTime(t *testing.T) {
+	ctx := context.Background()
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &grpcServer{}
+		_, err := gs.RevAtTime(ctx, &v1.RevAtTimeRequest{RepoName: "", RevSpec: []byte("HEAD"), Time: timestamppb.Now()})
+		require.ErrorContains(t, err, "repo must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+	})
+	t.Run("checks for uncloned repo", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
+		_, err := gs.RevAtTime(ctx, &v1.RevAtTimeRequest{RepoName: "therepo", RevSpec: []byte("HEAD"), Time: timestamppb.Now()})
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		require.Contains(t, err.Error(), "repo not found")
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
+	})
+	t.Run("e2e", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		// Repo is cloned, proceed!
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
+		b := git.NewMockGitBackend()
+		b.RevAtTimeFunc.SetDefaultReturn("deadbeef", nil)
+		svc := NewMockService()
+		gs := &grpcServer{
+			svc: svc,
+			fs:  fs,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				return b
+			},
+		}
+
+		cli := spawnServer(t, gs)
+		res, err := cli.RevAtTime(ctx, &v1.RevAtTimeRequest{
+			RepoName: "therepo",
+			RevSpec:  []byte("HEAD"),
+			Time:     timestamppb.Now(),
+		})
+		require.NoError(t, err)
+		if diff := cmp.Diff(&proto.RevAtTimeResponse{
+			CommitSha: "deadbeef",
+		}, res, cmpopts.IgnoreUnexported(proto.RevAtTimeResponse{})); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+	})
+}
+
+func TestGRPCServer_ListRefs(t *testing.T) {
+	ctx := context.Background()
+	mockSS := gitserver.NewMockGitserverService_ListRefsServer()
+	mockSS.ContextFunc.SetDefaultReturn(ctx)
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &grpcServer{}
+		err := gs.ListRefs(&v1.ListRefsRequest{RepoName: ""}, mockSS)
+		require.ErrorContains(t, err, "repo must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+	})
+	t.Run("checks for uncloned repo", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
+		err := gs.ListRefs(&v1.ListRefsRequest{RepoName: "therepo"}, mockSS)
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		require.Contains(t, err.Error(), "repo not found")
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
+	})
+	t.Run("e2e", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		// Repo is cloned, proceed!
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
+		b := git.NewMockGitBackend()
+		it := git.NewMockRefIterator()
+		it.NextFunc.PushReturn(&gitdomain.Ref{Name: "refs/heads/master"}, nil)
+		it.NextFunc.PushReturn(nil, io.EOF)
+		b.ListRefsFunc.SetDefaultReturn(it, nil)
+		gs := &grpcServer{
+			svc: NewMockService(),
+			fs:  fs,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				return b
+			},
+		}
+
+		cli := spawnServer(t, gs)
+		cc, err := cli.ListRefs(ctx, &v1.ListRefsRequest{
+			RepoName: "therepo",
+		})
+		require.NoError(t, err)
+		refs := []*v1.GitRef{}
+		for {
+			resp, err := cc.Recv()
+			if err == io.EOF {
+				break
+			}
+			require.NoError(t, err)
+			refs = append(refs, resp.GetRefs()...)
+		}
+		if diff := cmp.Diff([]*v1.GitRef{
+			{
+				RefName:   []byte("refs/heads/master"),
+				CreatedAt: timestamppb.New(time.Time{}),
+			},
+		}, refs, cmpopts.IgnoreUnexported(v1.GitRef{}, timestamppb.Timestamp{})); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+	})
+}
+
+func TestGRPCServer_RawDiff(t *testing.T) {
+	mockSS := gitserver.NewMockGitserverService_RawDiffServer()
+	// Add an actor to the context.
+	a := actor.FromUser(1)
+	mockSS.ContextFunc.SetDefaultReturn(actor.WithActor(context.Background(), a))
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &grpcServer{}
+		err := gs.RawDiff(&v1.RawDiffRequest{RepoName: ""}, mockSS)
+		require.ErrorContains(t, err, "repo must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+		err = gs.RawDiff(&v1.RawDiffRequest{RepoName: "therepo"}, mockSS)
+		require.ErrorContains(t, err, "base_rev_spec must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+		err = gs.RawDiff(&v1.RawDiffRequest{RepoName: "therepo", BaseRevSpec: []byte("base")}, mockSS)
+		require.ErrorContains(t, err, "head_rev_spec must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+		err = gs.RawDiff(&v1.RawDiffRequest{RepoName: "therepo", BaseRevSpec: []byte("base"), HeadRevSpec: []byte("head")}, mockSS)
+		require.ErrorContains(t, err, "comparison_type must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+	})
+	t.Run("checks for uncloned repo", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
+		err := gs.RawDiff(&v1.RawDiffRequest{RepoName: "therepo", BaseRevSpec: []byte("base"), HeadRevSpec: []byte("head"), ComparisonType: proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION}, mockSS)
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		require.Contains(t, err.Error(), "repo not found")
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
+	})
+	t.Run("e2e", func(t *testing.T) {
+		srp := authz.NewMockSubRepoPermissionChecker()
+		// Skip subrepo perms checks.
+		srp.EnabledFunc.SetDefaultReturn(false)
+		fs := gitserverfs.NewMockFS()
+		// Repo is cloned, proceed!
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
+		b := git.NewMockGitBackend()
+		b.RawDiffFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("diffcontent"))), nil)
+		gs := &grpcServer{
+			subRepoChecker: srp,
+			svc:            NewMockService(),
+			fs:             fs,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				return b
+			},
+		}
+
+		cli := spawnServer(t, gs)
+		r, err := cli.RawDiff(context.Background(), &v1.RawDiffRequest{
+			RepoName:       "therepo",
+			BaseRevSpec:    []byte("base"),
+			HeadRevSpec:    []byte("head"),
+			ComparisonType: proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION,
+		})
+		require.NoError(t, err)
+		for {
+			msg, err := r.Recv()
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				require.NoError(t, err)
+			}
+			if diff := cmp.Diff(&proto.RawDiffResponse{
+				Chunk: []byte("diffcontent"),
+			}, msg, cmpopts.IgnoreUnexported(proto.RawDiffResponse{})); diff != "" {
+				t.Fatalf("unexpected response (-want +got):\n%s", diff)
+			}
+		}
+
+		b.RawDiffFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{})
+		r, err = cli.RawDiff(context.Background(), &v1.RawDiffRequest{
+			RepoName:       "therepo",
+			BaseRevSpec:    []byte("base"),
+			HeadRevSpec:    []byte("head"),
+			ComparisonType: proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION,
+		})
+		require.NoError(t, err)
+		_, err = r.Recv()
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RevisionNotFoundPayload{})
+	})
+}
+
+func TestGRPCServer_ContributorCounts(t *testing.T) {
+	ctx := context.Background()
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &grpcServer{}
+		_, err := gs.ContributorCounts(ctx, &v1.ContributorCountsRequest{RepoName: ""})
+		require.ErrorContains(t, err, "repo must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+	})
+	t.Run("checks for uncloned repo", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
+		_, err := gs.ContributorCounts(ctx, &v1.ContributorCountsRequest{RepoName: "therepo"})
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		require.Contains(t, err.Error(), "repo not found")
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
+	})
+	t.Run("e2e", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		// Repo is cloned, proceed!
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
+		b := git.NewMockGitBackend()
+		b.ContributorCountsFunc.SetDefaultReturn([]*gitdomain.ContributorCount{{Count: 1, Name: "Foo", Email: "foo@sourcegraph.com"}}, nil)
+		svc := NewMockService()
+		gs := &grpcServer{
+			svc: svc,
+			fs:  fs,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				return b
+			},
+		}
+
+		cli := spawnServer(t, gs)
+		res, err := cli.ContributorCounts(ctx, &v1.ContributorCountsRequest{
+			RepoName: "therepo",
+		})
+		require.NoError(t, err)
+		if diff := cmp.Diff(&v1.ContributorCountsResponse{
+			Counts: []*v1.ContributorCount{
+				{
+					Author: &v1.GitSignature{
+						Name:  []byte("Foo"),
+						Email: []byte("foo@sourcegraph.com"),
+					},
+					Count: int32(1),
+				},
+			},
+		}, res, cmpopts.IgnoreUnexported(v1.ContributorCountsResponse{}, v1.ContributorCount{}, v1.GitSignature{})); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
 	})
 }
 

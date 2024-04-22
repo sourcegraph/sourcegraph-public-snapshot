@@ -4,7 +4,6 @@ import (
 	"flag"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -20,16 +19,6 @@ func TestMain(m *testing.M) {
 		logtest.Init(m)
 	}
 	os.Exit(m.Run())
-}
-
-func mkFiles(t *testing.T, root string, paths ...string) {
-	t.Helper()
-	for _, p := range paths {
-		if err := os.MkdirAll(filepath.Join(root, filepath.Dir(p)), os.ModePerm); err != nil {
-			t.Fatal(err)
-		}
-		writeFile(t, filepath.Join(root, p), nil)
-	}
 }
 
 func writeFile(t *testing.T, path string, content []byte) {
@@ -50,7 +39,7 @@ func runCmd(t *testing.T, dir string, cmd string, arg ...string) string {
 		"GIT_AUTHOR_NAME=a",
 		"GIT_AUTHOR_EMAIL=a@a.com",
 	}
-	b, err := c.CombinedOutput()
+	b, err := c.Output()
 	if err != nil {
 		t.Fatalf("%s %s failed: %s\nOutput: %s", cmd, strings.Join(arg, " "), err, b)
 	}

@@ -4,8 +4,9 @@ import (
 	"reflect"
 	"time"
 
-	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"google.golang.org/protobuf/types/known/durationpb"
+
+	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 )
 
 // ServiceConnections represents configuration about how the deployment

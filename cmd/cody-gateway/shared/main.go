@@ -143,7 +143,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		// dotcom-based actor sources only if an access token is provided for
 		// us to talk with the client
 		obctx.Logger.Info("dotcom-based actor sources are enabled")
-		dotcomClient = dotcom.NewClient(cfg.Dotcom.URL, cfg.Dotcom.AccessToken)
+		dotcomClient = dotcom.NewClient(cfg.Dotcom.URL, cfg.Dotcom.AccessToken, cfg.Dotcom.ClientID, cfg.Environment)
 		sources.Add(
 			productsubscription.NewSource(
 				obctx.Logger,

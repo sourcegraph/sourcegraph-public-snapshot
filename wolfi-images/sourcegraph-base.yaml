@@ -1,28 +1,16 @@
-# Add Wolfi + Sourcegraph repositories; install base set of packages
+# Base image containing a basic set of packages used by Sourcegraph.
+# Designed to be used as a base image for other images with no specific dependencies.
+
+include: ./sourcegraph-template.yaml
+
 contents:
-  keyring:
-    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
-    - https://packages.sgdev.org/sourcegraph-melange-prod.rsa.pub
-    - https://packages.sgdev.org/chainguard/chainguard-enterprise.rsa.pub
-  repositories:
-    - https://packages.wolfi.dev/os
-    - '@sourcegraph https://packages.sgdev.org/main'
-    - '@chainguard https://packages.sgdev.org/chainguard'
   packages:
-    ## Base set of packages
-    - wolfi-baselayout
-    - ca-certificates-bundle
-    - tzdata
+    # Included by existing SG base image
+    - tini
+    - mailcap
 
-    # TODO: Dev tools - remove in future release
-    - busybox
-    - curl
-    - wget
-    - bind-tools
-
-# Add sourcegraph user and group
-# NOTE: Adding other accounts in files where sourcegraph-base.yaml is included will overwrite these users
 accounts:
+  run-as: sourcegraph
   groups:
     - groupname: sourcegraph
       gid: 101
@@ -31,15 +19,23 @@ accounts:
       uid: 100
       gid: 101
 
-# NOTE: This is ignored (see build output)
-# To force amd64, first run `docker pull --platform linux/arm64 cgr.dev/chainguard/apko`
-archs:
- - amd64
-
-# NOTE: These don't seem to be applied to the image
-annotations:
-  org.opencontainers.image.url: https://sourcegraph.com/
-  org.opencontainers.image.source: https://github.com/sourcegraph/sourcegraph/
-  org.opencontainers.image.documentation: https://sourcegraph.com/docs/
-
-# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023
+# Set up directories needed by base images
+paths:
+  # Used by frontend
+  - path: /mnt/cache/frontend
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+  # Used by indexed-searcher
+  - path: /data
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+  # Used by indexed-searcher
+  - path: /data/index
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755

@@ -102,6 +102,10 @@ func ServiceStackPath(serviceID, envID, stackID string) string {
 	return filepath.Join("services", serviceID, "terraform", envID, "stacks", stackID)
 }
 
+func ServiceStackCDKTFPath(serviceID, envID, stackID string) string {
+	return filepath.Join(ServiceStackPath(serviceID, envID, stackID), "cdk.tf.json")
+}
+
 // GitRevision gets the revision of the managed-services repository.
 // Requires UseManagedServicesRepo.
 func GitRevision(ctx context.Context) (string, error) {
