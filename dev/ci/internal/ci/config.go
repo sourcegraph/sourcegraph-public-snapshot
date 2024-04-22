@@ -14,8 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const EnvCloudEphemeral = "CLOUD_EPHEMERAL"
-
 // Config is the set of configuration parameters that determine the structure of the CI build. These
 // parameters are extracted from the build environment (branch name, commit hash, timestamp, etc.)
 type Config struct {

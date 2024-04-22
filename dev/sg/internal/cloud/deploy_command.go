@@ -153,7 +153,7 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 			}
 			return err
 		}
-		version = determineVersion(build, "")
+		_ = determineVersion(build, "")
 	}
 	err = listDeployedInstances(ctx.Context)
 	// we could check if the version exists?
