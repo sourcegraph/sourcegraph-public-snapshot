@@ -66,8 +66,8 @@ func NewGRPCServer(server *Server, config *GRPCServerConfig) proto.GitserverServ
 		logger := server.logger.Scoped("gRPCRequestLogger")
 
 		srv = &loggingGRPCServer{
-			GitserverServiceServer: srv,
-			logger:                 logger,
+			base:   srv,
+			logger: logger,
 		}
 	}
 
