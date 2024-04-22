@@ -27,7 +27,8 @@ pub enum ParserId {
     Xlsg,
     Zig,
 
-    // These two are special cases
+    // These two are special cases since we process them
+    // in a way where they can inherit tree-sitter queries from others languages
     Typescript,
     Tsx,
 }
