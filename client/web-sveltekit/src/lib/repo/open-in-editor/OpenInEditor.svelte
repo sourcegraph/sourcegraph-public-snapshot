@@ -54,6 +54,10 @@
 
 <style lang="scss">
     a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
         color: var(--body-color);
         text-decoration: none;
         white-space: nowrap;
