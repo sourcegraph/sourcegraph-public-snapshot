@@ -130,7 +130,7 @@ func (s *ApplianceTestSuite) updateConfigMap(namespace, fixtureFileName string) 
 	s.Require().NoError(err)
 }
 
-// Synchronize test and controller code by counting ReconcileFInished events.
+// Synchronize test and controller code by counting ReconcileFinished events.
 // Some tests might want to wait for more than 1 to appear.
 func (suite *ApplianceTestSuite) getConfigMapReconcileEventCount(namespace string) int32 {
 	t := suite.T()
