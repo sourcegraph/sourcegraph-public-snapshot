@@ -3,13 +3,6 @@
 set -e
 
 RUNNER="$1"
-MIGRATOR_TARBALL="$2"
-FRONTEND_TARBALL="$3"
-
-# Loads the tarball for the migrator in docker, will be migrator:candidate
-"$MIGRATOR_TARBALL"
-# Loads the tarball for the migrator in docker, will be frontend:candidate
-"$FRONTEND_TARBALL"
 
 # internal/database/. artifacts are being loaded as arguments, 13 is the beginning of passed arguments to the cli tool
 # Args:
@@ -26,4 +19,4 @@ FRONTEND_TARBALL="$3"
 # internal/database/_schema.codeintel.md
 # internal/database/_schema.json
 # internal/database/_schema.md
-"$RUNNER" "${@:13}"
+"$RUNNER" "${@:2}"

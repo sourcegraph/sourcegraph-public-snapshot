@@ -1,5 +1,5 @@
 {
-  "configHash": "5fed9a9ff05047132124e47112d127aa2b1df80b92242da7e43215ad4995c95a",
+  "configHash": "d6728ac5dafc7b8372e5d7874dae1e413e9299fdc78b52038bb739af7e0c3093",
   "contents": {
     "keyring": [
       {
@@ -698,41 +698,41 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1CC3jnItQWZ4ya5EB/TNDLOICnRc=",
+        "checksum": "Q1hgEBBo1tLreSINI2qiCUpUrIE9k=",
         "control": {
-          "checksum": "sha1-CC3jnItQWZ4ya5EB/TNDLOICnRc=",
-          "range": "bytes=701-1140"
+          "checksum": "sha1-hgEBBo1tLreSINI2qiCUpUrIE9k=",
+          "range": "bytes=700-1139"
         },
         "data": {
-          "checksum": "sha256-2EP9UQKOVph+9hElnh20s8ViX126cAnPyNI+IF2pQ4Y=",
-          "range": "bytes=1141-838149"
+          "checksum": "sha256-OFDWkK8l015fs0YvTCXVKLQmOxq+7W5RgJHIqKYZsTE=",
+          "range": "bytes=1140-808582"
         },
         "name": "libcurl-openssl4",
         "signature": {
-          "checksum": "sha1-IxMuIpRYevSLukva0eWmB5RkhMY=",
-          "range": "bytes=0-700"
+          "checksum": "sha1-sygIdNZXB/W8fyOrdelY5RXh3aA=",
+          "range": "bytes=0-699"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libcurl-openssl4-8.7.1-r0.apk",
-        "version": "8.7.1-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/libcurl-openssl4-8.6.0-r0.apk",
+        "version": "8.6.0-r0"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1DzKkXRny9JZJvzjFt3jIuvkDP8E=",
+        "checksum": "Q1eQzLI9XN4FM69fm9B4LWd9frcwM=",
         "control": {
-          "checksum": "sha1-DzKkXRny9JZJvzjFt3jIuvkDP8E=",
-          "range": "bytes=700-1101"
+          "checksum": "sha1-eQzLI9XN4FM69fm9B4LWd9frcwM=",
+          "range": "bytes=703-1098"
         },
         "data": {
-          "checksum": "sha256-l1iebyEPmteOEBcPDwPzstpqs9SMvCn8PqlvRU3O7jk=",
-          "range": "bytes=1102-351141"
+          "checksum": "sha256-zkew7+IbyyyENezhlStwO062zaWd+yP/lpbI+CCJVZQ=",
+          "range": "bytes=1099-281166"
         },
         "name": "curl",
         "signature": {
-          "checksum": "sha1-iVKgcLEjgrpj4c2TrRzHznPaWXA=",
-          "range": "bytes=0-699"
+          "checksum": "sha1-igXspQSxo3Eu3o8DeNrYt3YxSbY=",
+          "range": "bytes=0-702"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/curl-8.7.1-r0.apk",
-        "version": "8.7.1-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/curl-8.6.0-r0.apk",
+        "version": "8.6.0-r0"
       },
       {
         "architecture": "x86_64",

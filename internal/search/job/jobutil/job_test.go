@@ -1125,7 +1125,7 @@ func TestNewPlanJob(t *testing.T) {
     (query . )
     (originalQuery . )
     (patternType . codycontext)
-    ))
+    NOOP))
 `),
 		},
 		// The next query shows an unexpected way that a query is

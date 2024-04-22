@@ -1,8 +1,8 @@
 meta:
   productName: sourcegraph
-  repository: "github.com/sourcegraph/sourcegraph"
+  repository: 'github.com/sourcegraph/sourcegraph'
   owners:
-    - "@sourcegraph/release"
+    - '@sourcegraph/release'
 
 requirements:
   - name: "curl"
@@ -17,14 +17,14 @@ requirements:
 
   # #bolaji-release-testing
   # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=isv4abynddpox72wwbhaamo76e&i=7zjax5rm5hlilbgrzeb257i62i&h=team-sourcegraph.1password.com
-  - name: "Slack Webhook URL"
+  - name: 'Slack Webhook URL'
     env: SLACK_WEBHOOK_URL
 
 internal:
   create:
     steps:
       patch:
-        - name: "buildkite"
+        - name: 'buildkite'
           cmd: |
             echo "Triggering build on sourcegraph/sourcegraph with VERSION={{version}} on branch {{git.branch}}"
             body=$(curl -s --fail-with-body -X POST "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds" -H "Content-Type: application/json" -H "Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" -d '{
@@ -50,10 +50,10 @@ internal:
             fi
   finalize:
     steps:
-      - name: "Register on release registry"
+      - name: 'Register on release registry'
         cmd: |
           echo "pretending to call release registry api"
-      - name: "notifications"
+      - name: 'notifications'
         cmd: |
           set -eu
 
@@ -64,14 +64,14 @@ internal:
 
 test:
   steps:
-    - name: "check:git tag does not exist"
+    - name: 'check:git tag does not exist'
       cmd: |
         tags=$(git ls-remote --tags origin | sort -t '/' -k 3 | cut -f 2 | awk -F '/' '{gsub(/\^\{\}$/, "", $3); print $3}' | uniq)
         if echo "${tags}" | grep -q "^{{version}}$"; then
           echo "❌ Tag '{{version}}' already exists"
           exit 1
         fi
-    - name: "check:migrator-schemas"
+    - name: 'check:migrator-schemas'
       cmd: |
         set -eu
 
@@ -107,11 +107,35 @@ test:
           echo "migrator:{{tag}} does not contain the correct amount of schema description files for this release - expected more than 300 got ${count}"
           exit 1
         fi
+    - name: 'db:migration:coherence_test'
+      cmd: |
+        set -eu
+
+        aspectRC="/tmp/aspect-generated.bazelrc"
+        rosetta bazelrc > "$aspectRC"
+        bazelrc=(--bazelrc="$aspectRC" --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
+
+        # The upgradetest are inferring the stamp-version flag based on the version, so we need to unset it here.
+        _VERSION=$VERSION
+        unset VERSION
+
+        # We purposely limit the concurrency to 6, because if we use the default, there are
+        # scenarios where we can exhaust available ports to the docker daemon and end up
+        # with an infrastructure flake.
+        max_routines=6
+        # Hardcoding version, as for now I just want to make sure this works in CI.
+        bazel ${bazelrc[*]} run //testing/tools/upgradetest:release_test_run -- all \
+          --post-release-version={{tag}} \
+          --target-registry us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal/ \
+          --max-routines $max_routines
+
+        # Restoring it to avoid creating a footgun if we add more test steps later on.
+        VERSION=$_VERSION
 
 promoteToPublic:
   create:
     steps:
-      - name: "buildkite"
+      - name: 'buildkite'
         cmd: |
           # We set DISABLE_ASPECT_WORKFLOWS to true, because the promotion is purely about retagging images
           # and we don't rely on AW at all.
@@ -140,10 +164,10 @@ promoteToPublic:
           fi
   finalize:
     steps:
-      - name: "Promote on release registry"
+      - name: 'Promote on release registry'
         cmd: |
           echo "pretending to call release registry api"
-      - name: "git:tag"
+      - name: 'git:tag'
         cmd: |
           set -eu
 
@@ -159,7 +183,7 @@ promoteToPublic:
           EOF
       # tag is usually in the format `5.3.2`
       # while version is usually the tag prepended with a v, `v5.3.2`
-      - name: "Slack notification (#announce-engineering)"
+      - name: 'Slack notification (#announce-engineering)'
         cmd: |
           echo "Posting slack notification for release"
           tag="{{tag}}"
