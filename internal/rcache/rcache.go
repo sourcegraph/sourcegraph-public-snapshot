@@ -21,7 +21,7 @@ import (
 // effectively resetting the cache at the same time the new code
 // is deployed.
 const dataVersion = "v2"
-const dataVersionToDelete = "v2"
+const dataVersionToDelete = "v1"
 
 // StoreType for selecting Redis store types.
 type StoreType int
