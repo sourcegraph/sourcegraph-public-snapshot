@@ -375,7 +375,7 @@ func TestNewDeployment(t *testing.T) {
 					},
 					Template: corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      "foo",
+							Name: "foo",
 							Annotations: map[string]string{
 								"kubectl.kubernetes.io/default-container": "foo",
 							},
