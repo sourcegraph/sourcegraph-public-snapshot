@@ -492,7 +492,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 		cvc = clientVersionConstraint{client: clientName, constraint: jetbrainsCodyIgnoreVersionConstraint}
 	default:
 		return &clientCodyIgnoreCompatibilityError{
-			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains),
+			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s. %s", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
 			statusCode: http.StatusNotAcceptable,
 		}
 	}
@@ -508,7 +508,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 	c, err := semver.NewConstraint(string(cvc.constraint))
 	if err != nil {
 		return &clientCodyIgnoreCompatibilityError{
-			reason:     fmt.Sprintf("Cody for %s version constraint \"%s\" doesn't follow semver spec.", cvc.client, cvc.constraint),
+			reason:     fmt.Sprintf("Cody for %s version constraint %q doesn't follow semver spec.", cvc.client, cvc.constraint),
 			statusCode: http.StatusInternalServerError,
 		}
 	}
@@ -516,7 +516,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 	v, err := semver.NewVersion(clientVersion)
 	if err != nil {
 		return &clientCodyIgnoreCompatibilityError{
-			reason:     fmt.Sprintf("Cody for %s version \"%s\" doesn't follow semver spec.", cvc.client, clientVersion),
+			reason:     fmt.Sprintf("Cody for %s version %q doesn't follow semver spec.", cvc.client, clientVersion),
 			statusCode: http.StatusBadRequest,
 		}
 	}
@@ -524,7 +524,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 	ok := c.Check(v)
 	if !ok {
 		return &clientCodyIgnoreCompatibilityError{
-			reason:     fmt.Sprintf("Cody for %s version \"%s\" doesn't match version constraint \"%s\"", cvc.client, clientVersion, cvc.constraint),
+			reason:     fmt.Sprintf("Cody for %s version %q doesn't match version constraint %q", cvc.client, clientVersion, cvc.constraint),
 			statusCode: http.StatusNotAcceptable,
 		}
 	}

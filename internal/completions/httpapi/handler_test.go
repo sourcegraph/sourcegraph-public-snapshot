@@ -76,7 +76,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-name": []string{"sublime"},
 			},
 			want: &clientCodyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("please use one of the supported clients: %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains),
+				reason:     fmt.Sprintf("please use one of the supported clients: %s, %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
 				statusCode: http.StatusNotAcceptable,
 			},
 		},
@@ -100,7 +100,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-version": []string{"1.14.0"},
 			},
 			want: &clientCodyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint \"%s\"", types.CodyClientVscode, vscodeCodyIgnoreVersionConstraint),
+				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint %q", types.CodyClientVscode, vscodeCodyIgnoreVersionConstraint),
 				statusCode: http.StatusNotAcceptable,
 			},
 		},
@@ -121,7 +121,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-version": []string{"1.14.0"},
 			},
 			want: &clientCodyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint \"%s\"", types.CodyClientJetbrains, jetbrainsCodyIgnoreVersionConstraint),
+				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint %q", types.CodyClientJetbrains, jetbrainsCodyIgnoreVersionConstraint),
 				statusCode: http.StatusNotAcceptable,
 			},
 		},
