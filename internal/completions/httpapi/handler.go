@@ -447,12 +447,11 @@ type clientCodyIgnoreCompatibilityError struct {
 	statusCode int
 }
 
-// clientCodyIgnoreCompatibilityErrorPrefix value is used to identify specific errors in the Cody clients codebases.
-// When changing its value be sure to update the clients code.
-const clientCodyIgnoreCompatibilityErrorPrefix = "ClientCodyIgnoreCompatibilityError"
-
 func (e *clientCodyIgnoreCompatibilityError) Error() string {
-	return fmt.Sprintf("%s: %s", clientCodyIgnoreCompatibilityErrorPrefix, e.reason)
+	// prefix value is used to identify specific errors in the Cody clients codebases.
+	// When changing its value be sure to update the clients code.
+	const prefix = "ClientCodyIgnoreCompatibilityError"
+	return fmt.Sprintf("%s: %s", prefix, e.reason)
 }
 
 func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompatibilityError {
