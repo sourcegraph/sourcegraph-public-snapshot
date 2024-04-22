@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	otelcodes "go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
@@ -67,11 +68,12 @@ func CheckWriteEventsScope(ctx context.Context, logger log.Logger, tokens TokenI
 		logger.Error("samsClient.IntrospectToken failed", log.Error(err))
 		return status.Error(codes.Internal, "unable to validate token")
 	}
+	span.SetAttributes(attribute.String("client_id", result.ClientID))
 
 	// Active encapsulates whether the token is active, including expiration.
 	if !result.Active {
 		// Record detailed error in span, and return an opaque one
-		span.RecordError(errors.New("inactive scope"))
+		span.RecordError(errors.New("inactive token"))
 		return status.Error(codes.PermissionDenied, "permission denied")
 	}
 
@@ -81,6 +83,7 @@ func CheckWriteEventsScope(ctx context.Context, logger log.Logger, tokens TokenI
 		err = errors.Newf("got scopes %+v, required: %+v", result.Scopes, requiredSamsScope)
 		span.RecordError(err)
 		logger.Error("attempt to authenticate using SAMS token without required scope",
+			log.String("clientID", result.ClientID),
 			log.Error(err))
 		return status.Error(codes.PermissionDenied, "permission denied")
 	}
