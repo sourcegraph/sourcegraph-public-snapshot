@@ -6,14 +6,19 @@ import { Button, ErrorAlert, H2, LoadingSpinner, Modal, Text } from '@sourcegrap
 
 import type { AuthenticatedUser } from '../auth'
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { AuthzProvidersResult, AuthzProvidersVariables, type UserExternalAccountsWithAccountDataVariables } from '../graphql-operations'
+import {
+    AuthzProvidersResult,
+    AuthzProvidersVariables,
+    type UserExternalAccountsWithAccountDataVariables,
+} from '../graphql-operations'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ExternalAccountsSignIn } from '../user/settings/auth/ExternalAccountsSignIn'
 import type { UserExternalAccount, UserExternalAccountsResult } from '../user/settings/auth/UserSettingsSecurityPage'
 import { USER_EXTERNAL_ACCOUNTS } from '../user/settings/backend'
 
-import styles from './ExternalAccountsModal.module.scss'
 import { AUTHZ_PROVIDERS } from './backend'
+
+import styles from './ExternalAccountsModal.module.scss'
 
 export interface ExternalAccountsModalProps {
     authenticatedUser: AuthenticatedUser
@@ -72,11 +77,17 @@ export const shouldShowExternalAccountsModal = (
     return false
 }
 
-function filterAuthProviders(authProviders: AuthProvider[], authzProviders: AuthzProvidersResult['authzProviders']): AuthProvider[] {
+function filterAuthProviders(
+    authProviders: AuthProvider[],
+    authzProviders: AuthzProvidersResult['authzProviders']
+): AuthProvider[] {
     const filteredProviders = authProviders.filter(provider => {
-        if (authzProviders.find(authzProvider =>
-            authzProvider.serviceID === provider.serviceID && authzProvider.serviceType === provider.serviceType
-        )) {
+        if (
+            authzProviders.find(
+                authzProvider =>
+                    authzProvider.serviceID === provider.serviceID && authzProvider.serviceType === provider.serviceType
+            )
+        ) {
             return true
         }
 
@@ -94,10 +105,11 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
 
     const [authzProviders, setAuthzProviders] = useState<AuthProvider[]>([])
 
-    const { data: userAccountsData, loading: userAccountsLoading, refetch: userAccountsRefetch } = useQuery<
-        UserExternalAccountsResult,
-        UserExternalAccountsWithAccountDataVariables
-    >(USER_EXTERNAL_ACCOUNTS, {
+    const {
+        data: userAccountsData,
+        loading: userAccountsLoading,
+        refetch: userAccountsRefetch,
+    } = useQuery<UserExternalAccountsResult, UserExternalAccountsWithAccountDataVariables>(USER_EXTERNAL_ACCOUNTS, {
         variables: { username: props.authenticatedUser.username },
     })
 
@@ -118,7 +130,10 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
 
     useEffect(() => {
         if (authzProvidersData?.authzProviders) {
-            const filteredProviders = filterAuthProviders(props.context.authProviders, authzProvidersData!.authzProviders)
+            const filteredProviders = filterAuthProviders(
+                props.context.authProviders,
+                authzProvidersData!.authzProviders
+            )
             setAuthzProviders(filteredProviders)
             if (filteredProviders.length > 0) {
                 setIsModalOpen(true)
@@ -133,7 +148,7 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
 
     const onAccountAdd = (): void => {
         userAccountsRefetch({ username: props.authenticatedUser.username })
-            .then(() => { })
+            .then(() => {})
             .catch(handleError)
     }
 
