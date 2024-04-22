@@ -25,3 +25,5 @@ paths:
     type: directory
     uid: 10001
     permissions: 0o755
+
+# MANUAL REBUILD: 

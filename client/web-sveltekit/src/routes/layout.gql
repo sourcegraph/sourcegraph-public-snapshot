@@ -39,6 +39,6 @@ fragment FeatureFlag on EvaluatedFeatureFlag {
 }
 
 fragment AuthenticatedUser on User {
-    ...Header_User
+    ...GlobalNavigation_User
     ...SearchInput_AuthenticatedUser
 }
