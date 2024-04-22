@@ -14,6 +14,7 @@ go_library(
         "//dev/sg/internal/repo",
         "//dev/sg/internal/std",
         "//lib/errors",
+        "//lib/output",
         "//lib/pointers",
         "@com_connectrpc_connect//:connect",
         "@com_github_buildkite_go_buildkite_v3//buildkite",
