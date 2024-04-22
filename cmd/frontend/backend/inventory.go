@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"golang.org/x/sync/semaphore"
 	"io"
@@ -63,9 +64,9 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 		return info.OID().String()
 	}
 
-	// todo bahrmichael: explain reasoning for picked values, and make them configurable
-	gitServerSemaphore := semaphore.NewWeighted(5)
-	cacheSemaphore := semaphore.NewWeighted(10)
+	e := conf.Get().ExperimentalFeatures
+	gitServerSemaphore := semaphore.NewWeighted(int64(e.GetInventory.GitserverParallelization))
+	cacheSemaphore := semaphore.NewWeighted(int64(e.GetInventory.CacheParallelization))
 
 	logger = logger.Scoped("InventoryContext").
 		With(log.String("repo", string(repo)), log.String("commitID", string(commitID)))

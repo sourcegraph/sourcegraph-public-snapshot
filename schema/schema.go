@@ -970,6 +970,8 @@ type ExperimentalFeatures struct {
 	EnableStorm bool `json:"enableStorm,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
+	// GetInventory description: Parameters to tweak the performance of GetInventory for very large repositories.
+	GetInventory *GetInventory `json:"getInventory,omitempty"`
 	// GitServerPinnedRepos description: List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.
 	GitServerPinnedRepos map[string]string `json:"gitServerPinnedRepos,omitempty"`
 	// GoPackages description: Allow adding Go package host connections
@@ -1060,6 +1062,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "enablePermissionsWebhooks")
 	delete(m, "enableStorm")
 	delete(m, "eventLogging")
+	delete(m, "getInventory")
 	delete(m, "gitServerPinnedRepos")
 	delete(m, "goPackages")
 	delete(m, "insightsAlternateLoadingStrategy")
@@ -1187,6 +1190,18 @@ type GerritConnection struct {
 	Url string `json:"url"`
 	// Username description: A username for authentication with the Gerrit code host.
 	Username string `json:"username"`
+}
+
+// GetInventory description: Parameters to tweak the performance of GetInventory for very large repositories.
+type GetInventory struct {
+	// CacheParallelization description: Maximum number of concurrent calls per query to the redis cache.
+	CacheParallelization int `json:"cacheParallelization,omitempty"`
+	// ExcludedFileNamePatterns description: A list of glob patterns that match file names you want to exclude. This is useful to exclude large files that would take long to transfer.
+	ExcludedFileNamePatterns []string `json:"excludedFileNamePatterns,omitempty"`
+	// GitserverParallelization description: Maximum number of concurrent calls per query to the gitserver.
+	GitserverParallelization int `json:"gitserverParallelization,omitempty"`
+	// Timeout description: Duration in minutes after which the request will be aborted. Cache remains partially filled and subsequent runs may be faster.
+	Timeout int `json:"timeout,omitempty"`
 }
 
 // GitCommitAuthor description: The author of the Git commit.

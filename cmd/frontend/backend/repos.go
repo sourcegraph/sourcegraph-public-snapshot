@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"net/http"
 	"time"
 
@@ -257,9 +258,8 @@ func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID ap
 	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo, "commitID": commitID}, &err)
 	defer done()
 
-	// Cap GetInventory operation to some reasonable time.
-	// todo bahrmichael: make this configurable
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Minute)
+	e := conf.Get().ExperimentalFeatures
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(e.GetInventory.Timeout)*time.Minute)
 	defer cancel()
 
 	invCtx, err := InventoryContext(s.logger, repo, s.gitserverClient, commitID, forceEnhancedLanguageDetection)
