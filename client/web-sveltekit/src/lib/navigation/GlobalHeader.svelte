@@ -1,13 +1,15 @@
 <script context="module" lang="ts">
-    import { type Writable, writable } from 'svelte/store'
+    import { type Writable, writable, readonly } from 'svelte/store'
 
     export enum NavigationMode {
         PlainNavigation = 'global',
         WithCustomContent = 'with-custom-content',
     }
 
+    const extensionElement: Writable<HTMLElement | null> = writable(null)
+
+    export const navigationExtensionElement = readonly(extensionElement)
     export const navigationModeStore = writable<NavigationMode | `${NavigationMode}`>(NavigationMode.PlainNavigation)
-    export const navigationExtensionElement: Writable<HTMLElement | null> = writable(null)
 </script>
 
 <script lang="ts">
@@ -30,10 +32,6 @@
 
     let isSidebarNavigationOpen: boolean = false
 
-    function setSideNavigationState(open: boolean): void {
-        isSidebarNavigationOpen = open
-    }
-
     const isDevOrS2 =
         (browser && window.location.hostname === 'localhost') ||
         window.location.hostname === 'sourcegraph.sourcegraph.com'
@@ -43,20 +41,22 @@
 
 <header class="root">
     {#if isSidebarNavigationOpen}
-        <GlobalSidebarNavigation onClose={() => setSideNavigationState(false)} />
+        <GlobalSidebarNavigation onClose={() => (isSidebarNavigationOpen = false)} />
     {/if}
 
-    {#if withCustomContent}
-        <button class="menu-button" on:click={() => setSideNavigationState(true)}>
-            <Icon svgPath={mdiMenu} aria-label="Navigation menu" />
-        </button>
-    {/if}
+    <div class="logo" class:with-custom-content={withCustomContent}>
+        {#if withCustomContent}
+            <button class="menu-button" on:click={() => (isSidebarNavigationOpen = true)}>
+                <Icon svgPath={mdiMenu} aria-label="Navigation menu" />
+            </button>
+        {/if}
 
-    <a class="logo" class:with-custom-content={withCustomContent} href="/search">
-        <img src={mark} alt="Sourcegraph" width="25" height="25" />
-    </a>
+        <a href="/search">
+            <img src={mark} alt="Sourcegraph" width="25" height="25" />
+        </a>
+    </div>
 
-    <nav class="plain-navigation" bind:this={$navigationExtensionElement}>
+    <nav class="plain-navigation" bind:this={$extensionElement}>
         {#if !withCustomContent}
             <ul class="plain-navigation-list">
                 {#each mainNavigation as entry (entry.label)}
@@ -120,7 +120,10 @@
     }
 
     .logo {
+        display: flex;
+        align-items: center;
         margin-left: 0.5rem;
+        gap: 0.5rem;
 
         &.with-custom-content {
             margin-left: 0;
@@ -186,22 +189,18 @@
 
     // Custom menu with sidebar navigation controls styles
     .menu-button {
-        border: none;
-        padding: 0.35rem 0.35rem;
-        border-radius: var(--border-radius);
         display: flex;
+        padding: 0.35rem;
         align-items: center;
+        border: none;
         background-color: transparent;
-        margin-right: -0.5rem;
+        border-radius: var(--border-radius);
 
         &:hover {
             background-color: var(--secondary-2);
         }
 
-        :global([data-icon]) {
-            width: 1rem;
-            height: 1rem;
-            color: var(--icon-color);
-        }
+        --icon-size: 1rem;
+        --icon-fill-color: var(--icon-color);
     }
 </style>

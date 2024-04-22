@@ -247,17 +247,20 @@ interface ComputeFitAttributes {
 export const computeFit: Action<HTMLElement, void, ComputeFitAttributes> = node => {
     // Holds the cumulative width of all elements up to element i.
     const widths: number[] = [0]
-    const parentRight = node.getBoundingClientRect().left
+
+    // Used to compute the "end" of each child relative to the parent container.
+    // This ensures that the logic here still works when the parent node is moved
+    // or when it is scrolled inside a scroll container.
+    const offset = node.getBoundingClientRect().left
 
     for (let i = 0; i < node.children.length; i++) {
-        widths[i + 1] = node.children[i].getBoundingClientRect().right - parentRight
+        widths[i + 1] = node.children[i].getBoundingClientRect().right - offset
     }
 
     function compute(): void {
-        const rootRect = node.getBoundingClientRect()
-        const right = rootRect.right - rootRect.left
+        const nodeWidth = node.getBoundingClientRect().width
         for (let i = widths.length - 1; i >= 0; i--) {
-            if (widths[i] < right) {
+            if (widths[i] < nodeWidth) {
                 node.dispatchEvent(new CustomEvent('fit', { detail: { itemCount: i } }))
                 return
             }
@@ -303,18 +306,17 @@ export const classNames: Action<HTMLElement, string | string[]> = (node, classes
 }
 
 /**
- * An action to move the attached element to the end of the document body.
+ * An action by default to move the attached element to the end
+ * of the document body, optionally if container node is passed
+ * attach current node element to the container instead.
  */
 export const portal: Action<HTMLElement, { container?: HTMLElement | null } | undefined> = (target, options) => {
     const root = options?.container ?? window.document.body
 
     root.appendChild(target)
 
-    console.log('INITIAL CALL', options)
-
     return {
         update(options) {
-            console.log('UPDATE', options)
             const root = options?.container ?? window.document.body
             root.appendChild(target)
         },

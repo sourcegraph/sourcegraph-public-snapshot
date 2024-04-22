@@ -37,7 +37,7 @@
                     <li>
                         <MainNavigationLink {entry} />
                         {#if isNavigationMenu(entry) && entry.children.length > 0}
-                            <ul class="sub-list">
+                            <ul>
                                 {#each entry.children as subEntry (subEntry.label)}
                                     <li aria-current={isCurrent(subEntry, $page) ? 'page' : 'false'}>
                                         <MainNavigationLink entry={subEntry} />
@@ -86,18 +86,19 @@
                 background-color: var(--secondary-2);
             }
 
-            :global([data-icon]) {
-                width: 1rem;
-                height: 1rem;
-                color: var(--icon-color);
-            }
+            --icon-size: 1rem;
+            --icon-fill-color: var(--icon-color);
         }
 
         header {
             display: flex;
-            gap: 0.25rem;
+            gap: 0.5rem;
             align-items: center;
-            padding: 0.67rem 0.5rem 0.5rem 0.5rem;
+            padding: 0.5rem;
+            // Original menu navigation has 50px - 1px bottom border
+            // To ensure that there are no jumps between closed/open states
+            // we set height here to repeat menu and icon buttons positions.
+            min-height: 49px;
         }
 
         .logo-link {
@@ -122,7 +123,7 @@
             gap: 0.25rem;
             flex-grow: 1;
 
-            li[aria-current='page'] > :global(a) {
+            li[aria-current='page'] {
                 background-color: var(--secondary-2);
             }
 
@@ -134,18 +135,16 @@
                 padding: 0.375rem 0.75rem;
                 font-size: 1rem;
 
-                :global([data-icon]) {
-                    color: var(--icon-color);
-                }
+                --icon-fill-color: var(--icon-color);
 
                 &:hover {
                     background-color: var(--secondary-2);
                 }
             }
 
-            &.sub-list {
+            & ul {
                 :global(a) {
-                    padding-left: 2.7rem;
+                    padding-left: 3.7rem;
                 }
             }
         }

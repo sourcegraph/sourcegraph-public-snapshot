@@ -10,7 +10,7 @@
         mdiDotsHorizontal,
     } from '@mdi/js'
 
-    import { type Writable, writable } from 'svelte/store'
+    import { writable } from 'svelte/store'
     import { page } from '$app/stores'
     import { getButtonClassName } from '@sourcegraph/wildcard'
 
@@ -40,10 +40,9 @@
         { path: '/-/settings', icon: mdiCog, title: 'Settings' },
     ]
 
-    const visibleNavEntries: Writable<number> = writable(navEntries.length)
-    $: navEntriesToShow =
-        $visibleNavEntries === navEntries.length ? navEntries : navEntries.slice(0, $visibleNavEntries)
-    $: overflowMenu = $visibleNavEntries !== navEntries.length ? navEntries.slice($visibleNavEntries) : []
+    let visibleNavEntries = navEntries.length
+    $: navEntriesToShow = visibleNavEntries === navEntries.length ? navEntries : navEntries.slice(0, visibleNavEntries)
+    $: overflowMenu = visibleNavEntries !== navEntries.length ? navEntries.slice(visibleNavEntries) : []
     $: allMenuEntries = [...overflowMenu, ...menuEntries]
 
     function isCodePage(repoURL: string, pathname: string) {
@@ -67,7 +66,7 @@
     <nav aria-label="repository">
         <h1><a href="/{repoName}">{displayRepoName}</a></h1>
 
-        <ul use:computeFit on:fit={event => ($visibleNavEntries = event.detail.itemCount)}>
+        <ul use:computeFit on:fit={event => (visibleNavEntries = event.detail.itemCount)}>
             {#each navEntriesToShow as entry}
                 {@const href = data.repoURL + entry.path}
                 <li>
