@@ -42,20 +42,20 @@ func TestApplianceTestSuite(t *testing.T) {
 	suite.Run(t, new(ApplianceTestSuite))
 }
 
-func (s *ApplianceTestSuite) SetupSuite() {
-	s.ctx, s.cancelCtx = context.WithCancel(context.Background())
-	s.setupEnvtest()
+func (suite *ApplianceTestSuite) SetupSuite() {
+	suite.ctx, suite.cancelCtx = context.WithCancel(context.Background())
+	suite.setupEnvtest()
 }
 
-func (s *ApplianceTestSuite) TearDownSuite() {
-	t := s.T()
-	s.cancelCtx()
-	require.NoError(t, s.testEnv.Stop())
-	<-s.ctrlMgrDone
+func (suite *ApplianceTestSuite) TearDownSuite() {
+	t := suite.T()
+	suite.cancelCtx()
+	require.NoError(t, suite.testEnv.Stop())
+	<-suite.ctrlMgrDone
 }
 
-func (s *ApplianceTestSuite) setupEnvtest() {
-	t := s.T()
+func (suite *ApplianceTestSuite) setupEnvtest() {
+	t := suite.T()
 	logger := stdr.New(stdlog.New(os.Stderr, "", stdlog.LstdFlags))
 
 	// TODO figure out a way to make this work with bazel. Either download the
@@ -69,10 +69,10 @@ func (s *ApplianceTestSuite) setupEnvtest() {
 	err := setupEnvTestCmd.Run()
 	require.NoError(t, err)
 
-	s.testEnv = &envtest.Environment{
+	suite.testEnv = &envtest.Environment{
 		BinaryAssetsDirectory: strings.TrimSpace(envtestOut.String()),
 	}
-	cfg, err := s.testEnv.Start()
+	cfg, err := suite.testEnv.Start()
 	require.NoError(t, err)
 
 	// If we had CRDs, this is where we'd add them to the scheme
@@ -88,7 +88,7 @@ func (s *ApplianceTestSuite) setupEnvtest() {
 		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	require.NoError(t, err)
-	s.k8sClient, err = kubernetes.NewForConfig(cfg)
+	suite.k8sClient, err = kubernetes.NewForConfig(cfg)
 	require.NoError(t, err)
 
 	reconciler := &Reconciler{
@@ -100,34 +100,34 @@ func (s *ApplianceTestSuite) setupEnvtest() {
 
 	// Start controller manager async. We'll stop it with context cancellation
 	// later.
-	s.ctrlMgrDone = make(chan struct{})
+	suite.ctrlMgrDone = make(chan struct{})
 	go func() {
-		require.NoError(t, ctrlMgr.Start(s.ctx))
-		close(s.ctrlMgrDone)
+		require.NoError(t, ctrlMgr.Start(suite.ctx))
+		close(suite.ctrlMgrDone)
 	}()
 }
 
-func (s *ApplianceTestSuite) createConfigMap(fixtureFileName string) string {
+func (suite *ApplianceTestSuite) createConfigMap(fixtureFileName string) string {
 	// Create a random namespace for each test
-	namespace := "test-appliance-" + s.randomSlug()
+	namespace := "test-appliance-" + suite.randomSlug()
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespace,
 		},
 	}
-	_, err := s.k8sClient.CoreV1().Namespaces().Create(s.ctx, ns, metav1.CreateOptions{})
-	s.Require().NoError(err)
+	_, err := suite.k8sClient.CoreV1().Namespaces().Create(suite.ctx, ns, metav1.CreateOptions{})
+	suite.Require().NoError(err)
 
-	cfgMap := s.newConfigMap(namespace, fixtureFileName)
-	_, err = s.k8sClient.CoreV1().ConfigMaps(namespace).Create(s.ctx, cfgMap, metav1.CreateOptions{})
-	s.Require().NoError(err)
+	cfgMap := suite.newConfigMap(namespace, fixtureFileName)
+	_, err = suite.k8sClient.CoreV1().ConfigMaps(namespace).Create(suite.ctx, cfgMap, metav1.CreateOptions{})
+	suite.Require().NoError(err)
 	return namespace
 }
 
-func (s *ApplianceTestSuite) updateConfigMap(namespace, fixtureFileName string) {
-	cfgMap := s.newConfigMap(namespace, fixtureFileName)
-	_, err := s.k8sClient.CoreV1().ConfigMaps(namespace).Update(s.ctx, cfgMap, metav1.UpdateOptions{})
-	s.Require().NoError(err)
+func (suite *ApplianceTestSuite) updateConfigMap(namespace, fixtureFileName string) {
+	cfgMap := suite.newConfigMap(namespace, fixtureFileName)
+	_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).Update(suite.ctx, cfgMap, metav1.UpdateOptions{})
+	suite.Require().NoError(err)
 }
 
 // Synchronize test and controller code by counting ReconcileFinished events.
@@ -146,8 +146,8 @@ func (suite *ApplianceTestSuite) getConfigMapReconcileEventCount(namespace strin
 	return event.Count
 }
 
-func (s *ApplianceTestSuite) newConfigMap(namespace, fixtureFileName string) *corev1.ConfigMap {
-	t := s.T()
+func (suite *ApplianceTestSuite) newConfigMap(namespace, fixtureFileName string) *corev1.ConfigMap {
+	t := suite.T()
 	cfgBytes, err := os.ReadFile(filepath.Join("testdata", "sg", fixtureFileName+".yaml"))
 	require.NoError(t, err)
 
@@ -163,9 +163,9 @@ func (s *ApplianceTestSuite) newConfigMap(namespace, fixtureFileName string) *co
 	}
 }
 
-func (s *ApplianceTestSuite) randomSlug() string {
+func (suite *ApplianceTestSuite) randomSlug() string {
 	buf := make([]byte, 3)
 	_, err := rand.Read(buf)
-	s.Require().NoError(err)
+	suite.Require().NoError(err)
 	return hex.EncodeToString(buf)
 }
