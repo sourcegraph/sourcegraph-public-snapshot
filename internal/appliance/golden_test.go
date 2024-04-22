@@ -55,6 +55,7 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 	deps, err := suite.k8sClient.AppsV1().Deployments(namespace).List(suite.ctx, metav1.ListOptions{})
 	suite.Require().NoError(err)
 	for _, obj := range deps.Items {
+		obj := obj // see exportloopref
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
@@ -62,6 +63,7 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 	ssets, err := suite.k8sClient.AppsV1().StatefulSets(namespace).List(suite.ctx, metav1.ListOptions{})
 	suite.Require().NoError(err)
 	for _, obj := range ssets.Items {
+		obj := obj
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "StatefulSet"})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
@@ -69,6 +71,7 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 	cmaps, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).List(suite.ctx, metav1.ListOptions{})
 	suite.Require().NoError(err)
 	for _, obj := range cmaps.Items {
+		obj := obj
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "ConfigMap"})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
@@ -76,6 +79,7 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 	pvcs, err := suite.k8sClient.CoreV1().PersistentVolumeClaims(namespace).List(suite.ctx, metav1.ListOptions{})
 	suite.Require().NoError(err)
 	for _, obj := range pvcs.Items {
+		obj := obj
 		if obj.DeletionTimestamp != nil {
 			obj.DeletionTimestamp = &magicTime
 		}
@@ -86,6 +90,7 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 	pods, err := suite.k8sClient.CoreV1().Pods(namespace).List(suite.ctx, metav1.ListOptions{})
 	suite.Require().NoError(err)
 	for _, obj := range pods.Items {
+		obj := obj
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
@@ -96,6 +101,7 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 	secrets, err := suite.k8sClient.CoreV1().Secrets(namespace).List(suite.ctx, metav1.ListOptions{})
 	suite.Require().NoError(err)
 	for _, obj := range secrets.Items {
+		obj := obj
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Secret"})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
@@ -104,6 +110,7 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 	sas, err := suite.k8sClient.CoreV1().ServiceAccounts(namespace).List(suite.ctx, metav1.ListOptions{})
 	suite.Require().NoError(err)
 	for _, obj := range sas.Items {
+		obj := obj
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "ServiceAccount"})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
@@ -111,6 +118,7 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 	svcs, err := suite.k8sClient.CoreV1().Services(namespace).List(suite.ctx, metav1.ListOptions{})
 	suite.Require().NoError(err)
 	for _, obj := range svcs.Items {
+		obj := obj
 		obj.Spec.ClusterIP = "NORMALIZED_FOR_TESTING"
 		obj.Spec.ClusterIPs = []string{"NORMALIZED_FOR_TESTING"}
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Service"})
