@@ -275,12 +275,20 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     snapshot(indexID: ID!): [SnapshotData!]
 }
 
+input LookupSCIPSymbol {
+    name: SymbolNameComparator!
+    provenance: ProvenanceComparator!
+}
+
 """
 In the future, we may want to extend this to allow passing in a suffix or a "symbol pattern".
 """
-input LookupSCIPSymbol {
-    name: String!
-    provenance: Provenance!
+input SymbolNameComparator {
+    eq: String
+}
+
+input ProvenanceComparator {
+    eq: Provenance
 }
 
 type SCIPSymbol {
