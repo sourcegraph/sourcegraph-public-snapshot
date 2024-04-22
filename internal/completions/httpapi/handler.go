@@ -465,7 +465,8 @@ const (
 )
 
 func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompatibilityError {
-	// If Cody context filters are not defined on the instance, we do not restrict client version
+	// If Cody context filters are not defined on the instance, we do not restrict client version.
+	// Because the site hasn't configured Cody Ignore, no need to enforce it.	
 	if conf.SiteConfig().CodyContextFilters == nil {
 		return nil
 	}
