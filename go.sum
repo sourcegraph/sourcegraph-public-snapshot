@@ -1553,8 +1553,6 @@ github.com/pseudomuto/protoc-gen-doc v1.5.1 h1:Ah259kcrio7Ix1Rhb6u8FCaOkzf9qRBqX
 github.com/pseudomuto/protoc-gen-doc v1.5.1/go.mod h1:XpMKYg6zkcpgfpCfQ8GcWBDRtRxOmMR5w7pz4Xo+dYM=
 github.com/pseudomuto/protokit v0.2.1 h1:kCYpE3thoR6Esm0CUvd5xbrDTOZPvQPTDeyXpZfrJdk=
 github.com/pseudomuto/protokit v0.2.1/go.mod h1:gt7N5Rz2flBzYafvaxyIxMZC0TTF5jDZfRnw25hAAyo=
-github.com/qdrant/go-client v1.4.1 h1:kh5B4yWjrd5BcynJoA4014mZlI/j6++inCMMQoKUOtI=
-github.com/qdrant/go-client v1.4.1/go.mod h1:680gkxNAsVtre0Z8hAQmtPzJtz1xFAyCu2TUxULtnoE=
 github.com/qustavo/sqlhooks/v2 v2.1.0 h1:54yBemHnGHp/7xgT+pxwmIlMSDNYKx5JW5dfRAiCZi0=
 github.com/qustavo/sqlhooks/v2 v2.1.0/go.mod h1:aMREyKo7fOKTwiLuWPsaHRXEmtqG4yREztO0idF83AU=
 github.com/rafaeljusto/redigomock/v3 v3.1.2 h1:B4Y0XJQiPjpwYmkH55aratKX1VfR+JRqzmDKyZbC99o=

@@ -273,18 +273,6 @@ commands:
       - cmd/embeddings
       - internal/embeddings
 
-  qdrant:
-    cmd: |
-      docker run -p 6333:6333 -p 6334:6334 \
-        -v $HOME/.sourcegraph-dev/data/qdrant_data:/data \
-        -e QDRANT__SERVICE__GRPC_PORT="6334" \
-        -e QDRANT__LOG_LEVEL=INFO \
-        -e QDRANT__STORAGE__STORAGE_PATH=/data \
-        -e QDRANT__STORAGE__SNAPSHOTS_PATH=/data \
-        -e QDRANT_INIT_FILE_PATH=/data/.qdrant-initialized \
-        --entrypoint /usr/local/bin/qdrant \
-        sourcegraph/qdrant:insiders
-
   worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -1250,22 +1238,6 @@ dockerCommands:
         WORKERS: 1
         ROCKET_ADDRESS: 0.0.0.0
 
-  qdrant:
-    docker:
-      image: sourcegraph/qdrant:insiders
-      ports:
-        - 6333
-        - 6334
-      volumes:
-        - from: $HOME/.sourcegraph-dev/data/qdrant_data
-          to: /data
-      env:
-        QDRANT__SERVICE__GRPC_PORT: 6334
-        QDRANT__LOG_LEVEL: INFO
-        QDRANT__STORAGE__STORAGE_PATH: /data
-        QDRANT__STORAGE__SNAPSHOTS_PATH: /data
-        QDRANT_INIT_FILE_PATH: /data/.qdrant-initialized
-
 #
 # CommandSets ################################################################
 #
@@ -1747,29 +1719,6 @@ commandsets:
       - redis
     bazelCommands:
       - cody-gateway
-
-  qdrant:
-    commands:
-      - qdrant
-      - frontend
-      - worker
-      - repo-updater
-      - web
-      - gitserver-0
-      - gitserver-1
-      - searcher
-      - caddy
-      - symbols
-      - docsite
-      - syntax-highlighter
-      - zoekt-index-0
-      - zoekt-index-1
-      - zoekt-web-0
-      - zoekt-web-1
-      - blobstore
-      - embeddings
-    env:
-      QDRANT_ENDPOINT: 'localhost:6334'
 
   enterprise-bazel-sveltekit:
     <<: *enterprise_bazel_set
