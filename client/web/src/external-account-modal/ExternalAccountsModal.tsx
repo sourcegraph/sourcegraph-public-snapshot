@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import type { ErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
+import { SeenAuthProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { Button, ErrorAlert, H2, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -23,6 +24,7 @@ import styles from './ExternalAccountsModal.module.scss'
 export interface ExternalAccountsModalProps {
     authenticatedUser: AuthenticatedUser
     isLightTheme: boolean
+    setSeenAuthProvidersFunc: (seenAuthProviders: SeenAuthProvider[]) => void
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
@@ -55,12 +57,17 @@ export const setSeenAuthProviders = (authProviders: AuthProvider[]): void => {
 // been seen by the user, true is returned. Otherwise false is returned.
 export const shouldShowExternalAccountsModal = (
     activeAuthProviders: AuthProvider[],
-    seenAuthProviders: AuthProvider[]
+    seenAuthProviders: SeenAuthProvider[] | undefined
 ): boolean => {
     for (const activeProvider of activeAuthProviders) {
         // Skip the builtin provider
         if (activeProvider.isBuiltin) {
             continue
+        }
+
+        // Do this after checking for isBuiltin
+        if (!seenAuthProviders) {
+            return true
         }
 
         if (
@@ -154,7 +161,7 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
 
     const onDismiss = (): void => {
         if (confirm('You can always review your external account connections in your user settings.')) {
-            setSeenAuthProviders(props.context.authProviders)
+            props.setSeenAuthProvidersFunc(props.context.authProviders)
             setIsModalOpen(false)
         }
     }

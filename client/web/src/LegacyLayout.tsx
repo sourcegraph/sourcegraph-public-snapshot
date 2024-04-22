@@ -1,4 +1,4 @@
-import { type FC, Suspense, useCallback, useLayoutEffect, useState } from 'react'
+import { type FC, Suspense, useCallback, useEffect, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { matchPath, useLocation, Route, Routes, Navigate, type RouteObject } from 'react-router-dom'
@@ -6,6 +6,7 @@ import { matchPath, useLocation, Route, Routes, Navigate, type RouteObject } fro
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
@@ -124,6 +125,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const showKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(true), [])
     const hideKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(false), [])
     const showFeedbackModal = useCallback(() => setFeedbackModalOpen(true), [])
+    const [externalAccountsModalVisible, setExternalAccountsModalVisible] = useState(false)
 
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
         routeMatch,
@@ -138,6 +140,16 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     }, [theme])
 
     useScrollToLocationHash(location)
+
+    const [seenAuthzProviders, setSeenAuthzProviders] = useTemporarySetting('user.seenAuthProviders')
+
+    useEffect(() => {
+        const externalAccountsModalVisible = shouldShowExternalAccountsModal(
+            window.context.authProviders,
+            seenAuthzProviders
+        )
+        setExternalAccountsModalVisible(externalAccountsModalVisible)
+    }, [seenAuthzProviders])
 
     // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
     // const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
@@ -193,12 +205,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         !isSearchNotebooksPage &&
         !isCodySearchPage &&
         !isSearchJobsPage
-
-    const seenAuthProviders = getSeenAuthProviders()
-    const externalAccountsModalVisible = shouldShowExternalAccountsModal(
-        window.context.authProviders,
-        seenAuthProviders
-    )
 
     return (
         <div
@@ -288,6 +294,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     context={window.context}
                     authenticatedUser={props.authenticatedUser}
                     isLightTheme={theme === Theme.Light}
+                    setSeenAuthProvidersFunc={setSeenAuthzProviders}
                 />
             )}
             {showDeveloperDialog && <LazyDeveloperDialog />}

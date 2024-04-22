@@ -23,6 +23,22 @@ export interface UserOnboardingConfig {
         language: string
     }
 }
+export interface SeenAuthProvider {
+    serviceType:
+        | 'github'
+        | 'gitlab'
+        | 'bitbucketCloud'
+        | 'http-header'
+        | 'openidconnect'
+        | 'sourcegraph-operator'
+        | 'saml'
+        | 'builtin'
+        | 'gerrit'
+        | 'azuredevops'
+    serviceID: string
+    clientID: string
+    noSignIn: boolean
+}
 
 /**
  * Schema for temporary settings.
@@ -42,6 +58,7 @@ export interface TemporarySettingsSchema {
     'user.lastDayActive': string | null
     'user.daysActiveCount': number
     'user.themePreference': string
+    'user.seenAuthProviders': SeenAuthProvider[]
     'signup.finishedWelcomeFlow': boolean
     'homepage.userInvites.tab': number
     'batches.defaultListFilters': LegacyBatchChangesFilter[]
