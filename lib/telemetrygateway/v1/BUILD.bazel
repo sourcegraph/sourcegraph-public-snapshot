@@ -48,6 +48,7 @@ go_library(
         "//internal/telemetry/teestore:__pkg__",
         "//internal/telemetry/telemetrytest:__pkg__",
         "//internal/telemetrygateway:__pkg__",
+        "//internal/telemetrygateway/event:__pkg__",
         "//internal/telemetrygateway/gitdomain:__pkg__",
         "//internal/telemetrygateway/integration_tests:__pkg__",
         "//internal/telemetrygateway/protocol:__pkg__",
