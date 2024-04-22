@@ -58,3 +58,5 @@ paths:
     uid: 999
     gid: 999
     permissions: 0o755
+
+# MANUAL REBUILD: 
