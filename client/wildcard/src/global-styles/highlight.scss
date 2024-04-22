@@ -587,15 +587,14 @@
         color: var(--hl-purple);
     }
     .hl-typed-TagAttribute {
-        color: var(--hl-gray-2);
+        color: var(--hl-blue); // same as .hl-typed-IdentifierParameter
     }
-
-    // color: var(--hl-gray-3);
-    // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
-    // .hl-typed-Tag {
-    // }
-    // .hl-typed-TagDelimiter {
-    // }
+    .hl-typed-Tag {
+        color: var(--hl-green);
+    }
+    .hl-typed-TagDelimited {
+        color: var(--hl-gray-0); // same as .hl-typed-PunctuationBracket
+    }
 }
 
 .theme-dark {
@@ -1009,14 +1008,14 @@
         color: var(--hl-green-1);
     }
     .hl-typed-TagAttribute {
-        color: var(--hl-gray-3);
+        color: var(--hl-blue); // same as .hl-typed-IdentifierParameter
     }
-
-    // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
-    // .hl-typed-Tag {
-    // }
-    // .hl-typed-TagDelimiter {
-    // }
+    .hl-typed-Tag {
+        color: var(--hl-green-2);
+    }
+    .hl-typed-TagDelimited {
+        color: var(--hl-gray-2); // same as .hl-typed-PunctuationBracket
+    }
 }
 
 // Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)

@@ -65,7 +65,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("string",                  SyntaxKind::StringLiteral),
     ("string.special",          SyntaxKind::StringLiteral),
     ("string.escape",           SyntaxKind::StringLiteralEscape),
-    ("tag",                     SyntaxKind::UnspecifiedSyntaxKind),
+    ("tag",                     SyntaxKind::Tag),
     ("type",                    SyntaxKind::IdentifierType),
     ("identifier.type",         SyntaxKind::IdentifierType),
     ("type.builtin",            SyntaxKind::IdentifierBuiltinType),
