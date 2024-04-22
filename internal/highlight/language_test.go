@@ -162,6 +162,8 @@ func TestGetLanguageFromPath(t *testing.T) {
 		Expected string
 	}
 
+	// JSX is mapped to javascript but TSX is mapped to 'tsx' language
+	// because Linguist contains a separate language for TSX but not JSX
 	cases := []testCase{
 		{
 			Filename: "file.js",
