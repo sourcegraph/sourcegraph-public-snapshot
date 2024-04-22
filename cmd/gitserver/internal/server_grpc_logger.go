@@ -250,8 +250,16 @@ func (l *loggingGRPCServer) ListGitolite(ctx context.Context, request *proto.Lis
 }
 
 func listGitoliteRequestToLogFields(req *proto.ListGitoliteRequest) []log.Field {
+	u, err := vcs.ParseURL(req.GetGitoliteHost())
+	if err != nil {
+		return []log.Field{
+			log.String("gitoliteHost", "<unable-to-parse-and-redact>"),
+		}
+	}
+
+	redactor := urlredactor.New(u)
 	return []log.Field{
-		log.String("gitoliteHost", req.GetGitoliteHost()),
+		log.String("gitoliteHost", redactor.Redact(req.GetGitoliteHost())),
 	}
 }
 
