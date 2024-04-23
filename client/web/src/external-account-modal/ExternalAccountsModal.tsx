@@ -63,13 +63,19 @@ export const shouldShowExternalAccountsModal = (
 
 function filterAuthProviders(
     authProviders: AuthProvider[],
-    authzProviders: AuthzProvidersResult['authzProviders']
+    authzProviders: AuthzProvidersResult['authzProviders'],
+    userExternalAccounts: UserExternalAccount[]
 ): AuthProvider[] {
     const filteredProviders = authProviders.filter(provider => {
         if (
             authzProviders.find(
                 authzProvider =>
                     authzProvider.serviceID === provider.serviceID && authzProvider.serviceType === provider.serviceType
+            ) &&
+            !userExternalAccounts.find(
+                userExternalAccount =>
+                    userExternalAccount.serviceType === provider.serviceType &&
+                    userExternalAccount.serviceID === provider.serviceID
             )
         ) {
             return true
@@ -82,7 +88,10 @@ function filterAuthProviders(
 }
 
 export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModalProps> = props => {
-    const [accounts, setAccounts] = useState<{ fetched?: UserExternalAccount[]; lastRemoved?: string }>({
+    const [userExternalAccounts, setUserExternalAccounts] = useState<{
+        fetched?: UserExternalAccount[]
+        lastRemoved?: string
+    }>({
         fetched: [],
         lastRemoved: '',
     })
@@ -107,27 +116,31 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
     }
 
     useEffect(() => {
-        setAccounts({ fetched: userAccountsData?.user?.externalAccounts.nodes, lastRemoved: '' })
+        setUserExternalAccounts({ fetched: userAccountsData?.user?.externalAccounts.nodes, lastRemoved: '' })
     }, [userAccountsData])
 
     const [isModalOpen, setIsModalOpen] = useState(false)
 
     useEffect(() => {
-        if (authzProvidersData?.authzProviders) {
+        if (authzProvidersData?.authzProviders && userExternalAccounts.fetched) {
             const filteredProviders = filterAuthProviders(
                 props.context.authProviders,
-                authzProvidersData.authzProviders
+                authzProvidersData.authzProviders,
+                userExternalAccounts.fetched
             )
             setAuthzProviders(filteredProviders)
             if (filteredProviders.length > 0) {
                 setIsModalOpen(true)
             }
         }
-    }, [authzProvidersData, props.context.authProviders])
+    }, [authzProvidersData, props.context.authProviders, userExternalAccounts])
 
     const onAccountRemoval = (removeId: string, name: string): void => {
         // keep every account that doesn't match removeId
-        setAccounts({ fetched: accounts.fetched?.filter(({ id }) => id !== removeId), lastRemoved: name })
+        setUserExternalAccounts({
+            fetched: userExternalAccounts.fetched?.filter(({ id }) => id !== removeId),
+            lastRemoved: name,
+        })
     }
 
     const onAccountAdd = (): void => {
@@ -161,12 +174,12 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
             <hr />
             {userAccountsLoading && <LoadingSpinner />}
             {error && <ErrorAlert className="mb-3" error={error} />}
-            {accounts.fetched && (
+            {userExternalAccounts.fetched && (
                 <ExternalAccountsSignIn
                     onDidAdd={onAccountAdd}
                     onDidError={handleError}
                     onDidRemove={onAccountRemoval}
-                    accounts={accounts.fetched}
+                    accounts={userExternalAccounts.fetched}
                     authProviders={authzProviders}
                 />
             )}
