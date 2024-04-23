@@ -31,6 +31,7 @@ const Llama234bCodeInstruct = "accounts/fireworks/models/llama-v2-34b-code-instr
 const Mistral7bInstruct = "accounts/fireworks/models/mistral-7b-instruct-4k"
 const Mixtral8x7bInstruct = "accounts/fireworks/models/mixtral-8x7b-instruct"
 const Mixtral8x22Instruct = "accounts/fireworks/models/mixtral-8x22b-instruct"
+const Llama370bInstruct = "accounts/fireworks/models/llama-v3-70b-instruct"
 
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
 	return &fireworksClient{

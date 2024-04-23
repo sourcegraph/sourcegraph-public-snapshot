@@ -81,6 +81,7 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 			"anthropic/" + anthropic.Claude3Opus,
 			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 			"fireworks/" + fireworks.Mixtral8x22Instruct,
+			"fireworks/" + fireworks.Llama370bInstruct,
 			"openai/gpt-3.5-turbo",
 			"openai/gpt-4-turbo",
 			"openai/gpt-4-turbo-preview",
