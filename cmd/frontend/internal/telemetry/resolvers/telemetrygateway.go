@@ -8,9 +8,11 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	telemetrygatewayevent "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/event"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 // newTelemetryGatewayEvents converts GraphQL telemetry input to the Telemetry
@@ -30,7 +32,7 @@ func newTelemetryGatewayEvents(
 			return nil, errors.Newf("action is required for event %d", i)
 		}
 
-		event := telemetrygatewayv1.NewEventWithDefaults(ctx, now, newUUID)
+		event := telemetrygatewayevent.New(ctx, now, newUUID)
 
 		if gqlEvent.Timestamp != nil {
 			event.Timestamp = timestamppb.New(gqlEvent.Timestamp.Time)

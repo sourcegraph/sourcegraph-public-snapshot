@@ -1,4 +1,4 @@
-package v1_test
+package telemetrygatewayevent
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/tracetest"
 
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 func TestDefaultEventIDFunc(t *testing.T) {
@@ -25,13 +25,13 @@ func TestDefaultEventIDFunc(t *testing.T) {
 	assert.NotEmpty(t, id)
 }
 
-func TestNewEventWithDefaults(t *testing.T) {
+func TestNew(t *testing.T) {
 	staticTime, err := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
 	require.NoError(t, err)
 
 	t.Run("empty context", func(t *testing.T) {
 		ctx := context.Background()
-		got := telemetrygatewayv1.NewEventWithDefaults(ctx, staticTime, func() string { return "id" })
+		got := New(ctx, staticTime, func() string { return "id" })
 		assert.Nil(t, got.User)
 		assert.Nil(t, got.Interaction)
 		assert.Nil(t, got.FeatureFlags)
@@ -51,7 +51,7 @@ func TestNewEventWithDefaults(t *testing.T) {
 		// is not designed for it to easily be stubbed out for testing.
 		// Since it's used for existing telemetry, we trust it works.
 
-		got := telemetrygatewayv1.NewEventWithDefaults(ctx, staticTime, func() string { return "id" })
+		got := New(ctx, staticTime, func() string { return "id" })
 		assert.NotNil(t, got.User)
 
 		protodata, err := protojson.Marshal(got)
@@ -87,7 +87,7 @@ func TestNewEventWithDefaults(t *testing.T) {
 		// is not designed for it to easily be stubbed out for testing.
 		// Since it's used for existing telemetry, we trust it works.
 
-		got := telemetrygatewayv1.NewEventWithDefaults(ctx, staticTime, func() string { return "id" })
+		got := New(ctx, staticTime, func() string { return "id" })
 		assert.NotNil(t, got.Interaction)
 
 		protodata, err := protojson.Marshal(got)

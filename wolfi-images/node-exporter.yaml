@@ -4,3 +4,5 @@ contents:
   packages:
     ## node-exporter-specific packages
     - prometheus-node-exporter
+
+# MANUAL REBUILD: 

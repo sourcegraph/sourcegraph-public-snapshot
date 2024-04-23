@@ -62,13 +62,12 @@
     }
 
     button {
-        background-color: transparent;
         margin: 0;
-        padding: 0;
         border: 1px solid var(--input-border-color);
+        background-color: var(--input-bg);
         border-radius: 4px;
-        padding: 0 0.25rem;
-        min-height: 32px;
+        padding: 0 0.5rem;
+        height: 100%;
         width: 10rem;
         text-align: left;
         color: var(--text-muted);

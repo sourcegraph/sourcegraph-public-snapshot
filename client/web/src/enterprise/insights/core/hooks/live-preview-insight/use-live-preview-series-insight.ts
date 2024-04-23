@@ -25,7 +25,7 @@ export const GET_INSIGHT_PREVIEW_GQL = gql`
             points {
                 dateTime
                 value
-                diffQuery
+                pointInTimeQuery
             }
             label
         }
@@ -206,9 +206,7 @@ function createPreviewSeriesContent(props: PreviewProps): Series<Datum>[] {
         data: line.points.map(point => ({
             value: point.value,
             dateTime: new Date(point.dateTime),
-            link: generateLinkURL({
-                diffQuery: point.diffQuery,
-            }),
+            link: generateLinkURL(point.pointInTimeQuery),
         })),
         name: line.label,
         color: getColorForSeries(line.label, index),

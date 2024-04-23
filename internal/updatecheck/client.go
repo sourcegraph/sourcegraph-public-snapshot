@@ -710,6 +710,9 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("repoMetadataUsage failed", log.Error(err))
 	}
 	r.LlmUsage, err = getLLMUsageData(ctx, db)
+	if err != nil {
+		logFunc("getLLMUsageData failed", log.Error(err))
+	}
 	r.HasExtURL = conf.UsingExternalURL()
 	r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
 	r.AccessRequestEnabled = conf.IsAccessRequestEnabled()

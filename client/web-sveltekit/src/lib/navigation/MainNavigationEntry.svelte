@@ -1,10 +1,12 @@
 <script lang="ts">
-    import Icon from '$lib/Icon.svelte'
-    import { createDropdownMenu } from '@melt-ui/svelte'
-    import { isCurrent, type NavigationEntry, type NavigationMenu } from './mainNavigation'
-    import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
     import { page } from '$app/stores'
+    import { createDropdownMenu } from '@melt-ui/svelte'
+    import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
+
+    import Icon from '$lib/Icon.svelte'
+
     import MainNavigationLink from './MainNavigationLink.svelte'
+    import { isCurrent, type NavigationEntry, type NavigationMenu } from './mainNavigation'
 
     export let entry: NavigationEntry | NavigationMenu
 
@@ -54,7 +56,6 @@
         position: relative;
         display: flex;
         align-items: stretch;
-        margin: 0 0.5rem;
         white-space: nowrap;
         border-color: transparent;
 
