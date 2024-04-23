@@ -39,7 +39,7 @@
             {' '}
             <span class:last={index === breadcrumbs.length - 1}>
                 {#if index > 0}
-                    /
+                    <span class="slash">/</span>
                 {/if}
                 {#if path}
                     <a href={path}>{name}</a>
@@ -100,7 +100,11 @@
         margin: 0;
 
         a {
-            color: var(--body-color);
+            color: var(--text-body);
+        }
+
+        .slash {
+            color: var(--text-disabled);
         }
 
         span {
@@ -108,7 +112,7 @@
         }
 
         .last {
-            font-weight: bold;
+            color: var(--text-title);
         }
     }
 
