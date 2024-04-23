@@ -7,6 +7,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/execute"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -27,22 +28,55 @@ func cutReleaseBranch(cctx *cli.Context) error {
 		return errors.Newf("invalid version %q, must be semver", version)
 	}
 
-	// branchName := fmt.Sprintf("%s.%")
+	ctx := cctx.Context
 
-	fmt.Println("Cutting release branch", v.String())
+	branchName := v.String()
+	defaultBranch := "main"
 
-	// if branch == "" {
-	// 	// get current branch
-	// 	// git rev-parse --abbrev-ref HEAD
-	// 	err := execute.Git(ctx, "rev-parse", "--abbrev-ref", "HEAD")
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	return errors.New("branch is required")
-	// }
+	localCommitSHA, err := execute.Git(ctx, "rev-parse", defaultBranch)
+	if err != nil {
+		p.Destroy()
+		return errors.Wrap(err, "failed to get local commit SHA")
+	}
 
-	// if err := execute.Git(ctx, "checkout", "-b", v, fmt.Sprintf("origin/%s", branch)); err != nil {
-	// 	return err
-	// }
+	remoteCommitSHA, err := execute.Git(ctx, "rev-parse", fmt.Sprintf("origin/%s", defaultBranch))
+	if err != nil {
+		p.Destroy()
+		return errors.Wrap(err, "failed to get remote commit SHA")
+	}
+
+	if string(localCommitSHA) != string(remoteCommitSHA) {
+		p.Destroy()
+		return errors.New("local branch is not up to date with remote, please pull the latest changes")
+	}
+
+	if _, err := execute.Git(ctx, "checkout", "-b", branchName); err != nil {
+		p.Destroy()
+		return errors.Wrap(err, "failed to create release branch")
+	}
+
+	defer func() {
+		if _, err = execute.Git(ctx, "checkout", "-"); err != nil {
+			std.Out.WriteWarningf("Unable to checkout previous branch before branch cut. %s", err.Error())
+		}
+	}()
+
+	if _, err := execute.Git(ctx, "push", "origin", branchName); err != nil {
+		p.Destroy()
+		return errors.Wrap(err, "failed to push release branch")
+	}
+
+	if _, err := execute.GH(
+		ctx,
+		"label",
+		"create",
+		fmt.Sprintf("backport %s", branchName),
+		"-d",
+		fmt.Sprintf("label used to backport PRs to the %s release branch", branchName),
+	); err != nil {
+		return errors.Wrap(err, "failed to create backport label")
+	}
+
+	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Release branch %q created", branchName))
 	return nil
 }

@@ -58,7 +58,7 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	// prefixed with "sg/backport-" to avoid conflicts with other branches
 	backportBranch := fmt.Sprintf("sg/backport-%d-to-%s", prNumber, version)
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Creating backport branch %q...", backportBranch))
-	if err := execute.Git(cmd.Context, "checkout", "-b", backportBranch, fmt.Sprintf("origin/%s", version)); err != nil {
+	if _, err := execute.Git(cmd.Context, "checkout", "-b", backportBranch, fmt.Sprintf("origin/%s", version)); err != nil {
 		p.Destroy()
 		return errors.Wrapf(err, "Unable to create backport branch: %q", backportBranch)
 	}
@@ -66,29 +66,29 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 
 	// Fetch latest change from remote
 	p = std.Out.Pending(output.Styled(output.StylePending, "Fetching latest changes from remote..."))
-	if err := execute.Git(cmd.Context, "fetch", "-a"); err != nil {
+	if _, err := execute.Git(cmd.Context, "fetch", "-a"); err != nil {
 		p.Destroy()
 		return err
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Fetched latest changes from remote"))
 
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Cherry-picking merge commit for PR %d into backport branch...", prNumber))
-	if err := execute.Git(cmd.Context, "cherry-pick", mergeCommit); err != nil {
+	if _, err := execute.Git(cmd.Context, "cherry-pick", mergeCommit); err != nil {
 		p.Destroy()
 
 		// If this fails looool, nothing we much we can do here lol.
-		_ = execute.Git(cmd.Context, "cherry-pick", "--abort")
+		execute.Git(cmd.Context, "cherry-pick", "--abort")
 		// checkout the last branch you were on before we tried to cherry-pick
-		_ = execute.Git(cmd.Context, "checkout", "-")
+		execute.Git(cmd.Context, "checkout", "-")
 		// delete the branch we created
-		_ = execute.Git(cmd.Context, "branch", "-D", backportBranch)
+		execute.Git(cmd.Context, "branch", "-D", backportBranch)
 
 		return errors.Wrapf(err, "Unable to cherry-pick merge commit: %q. This might be the result of a merge conflict. Manually run `git cherry-pick %s` and fix on your machine.", mergeCommit, mergeCommit)
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Cherry-picked merge commit for PR %d into backport branch", prNumber))
 
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Pushing backport branch %q to remote...", backportBranch))
-	if err := execute.Git(cmd.Context, "push", "--set-upstream", "origin", backportBranch); err != nil {
+	if _, err := execute.Git(cmd.Context, "push", "--set-upstream", "origin", backportBranch); err != nil {
 		p.Destroy()
 		return errors.Wrapf(err, "Unable to push backport branch: %q", backportBranch)
 	}
@@ -118,8 +118,8 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Pull request for backport branch %q created.\n%s", backportBranch, string(out)))
 
 	// checkout the last branch you were on before we tried to cherry-pick
-	if err = execute.Git(cmd.Context, "checkout", "-"); err != nil {
-		std.Out.WriteWarningf("Unable to checkout last branch: %q", backportBranch)
+	if _, err = execute.Git(cmd.Context, "checkout", "-"); err != nil {
+		std.Out.WriteWarningf("Unable to checkout previous branch: %s", err.Error())
 	}
 
 	return nil

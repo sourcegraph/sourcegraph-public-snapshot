@@ -7,12 +7,22 @@ import (
 	"os/exec"
 )
 
-func Git(ctx context.Context, args ...string) error {
-	cmd := exec.CommandContext(ctx, "git", args...)
-	cmd.Stdout = os.Stdout
+func Git(ctx context.Context, args ...string) ([]byte, error) {
+	cmd := GitCmd(ctx, args...)
+
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
-	return cmd.Run()
+
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+	return stdout.Bytes(), nil
+}
+
+func GitCmd(ctx context.Context, args ...string) *exec.Cmd {
+	return exec.CommandContext(ctx, "git", args...)
 }
 
 func GHCmd(ctx context.Context, args ...string) *exec.Cmd {
