@@ -122,7 +122,7 @@ func doSearch(ctx context.Context, logger log.Logger, repoDir common.GitDir, arg
 		}
 	})
 
-	// Create a callback that detects whether we've hit a limit
+	// Create a recvCallback that detects whether we've hit a limit
 	// and stops sending when we have.
 	var sentCount atomic.Int64
 	var hitLimit atomic.Bool

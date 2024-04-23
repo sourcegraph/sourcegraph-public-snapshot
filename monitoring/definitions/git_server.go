@@ -2,10 +2,11 @@ package definitions
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/iancoleman/strcase"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
@@ -207,6 +208,29 @@ func GitServer() *monitoring.Dashboard {
 							NextSteps: `
 								- On a warning alert, you may want to provision more disk space: Disk pressure may result in decreased performance, users having to wait for repositories to clone, etc.
 								- On a critical alert, you need to provision more disk space. Running out of disk space will result in decreased performance, or complete service outage.
+							`,
+						},
+						{
+							Name:        "high_memory_git_commands",
+							Description: "number of git commands that exceeded the threshold for high memory usage",
+							Query:       "sort_desc(sum(sum_over_time(src_gitserver_exec_high_memory_usage_count{instance=~`${shard:regex}`}[2m])) by (cmd))",
+							// For now we use this to learn, not to alert.
+							NoAlert: true,
+							Owner:   monitoring.ObservableOwnerSource,
+							Panel: monitoring.
+								Panel().
+								LegendFormat("{{cmd}}").
+								Unit(monitoring.Number).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Interpretation: `
+								This graph tracks the number of git subcommands that gitserver ran that exceeded the threshold for high memory usage.
+								This graph in itself is not an alert, but it is used to learn about the memory usage of gitserver.
+
+								If gitserver frequently serves requests where the status code is KILLED, this graph might help to correlate that
+								with the high memory usage.
+
+								This graph spiking is not a problem necessarily. But when subcommands or the whole gitserver service are getting
+								OOM killed and this graph shows spikes, increasing the memory might be useful.
 							`,
 						},
 					},

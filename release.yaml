@@ -53,23 +53,23 @@ internal:
       - name: 'Register on release registry'
         cmd: |
           echo "Registering internal sourcegraph/sourcegraph {{version}} release on release registry"
-            body=$(curl -s --fail-with-body -X POST "https://releaseregistry.sourcegraph.com/v1/releases" -H "Content-Type: application/json" -H "Authorization: ${RELEASE_REGISTRY_TOKEN}" -d '{
-                "name": "sourcegraph",
-                "version": "{{version}}",
-                "git_sha": "${COMMIT_SHA}"
-              }')
-            exit_code=$?
+          body=$(curl -s --fail-with-body -X POST "https://releaseregistry.sourcegraph.com/v1/releases" -H "Content-Type: application/json" -H "Authorization: ${RELEASE_REGISTRY_TOKEN}" -d '{
+              "name": "sourcegraph",
+              "version": "{{version}}",
+              "git_sha": "${COMMIT_SHA}"
+            }')
+          exit_code=$?
 
-            if [ $exit_code != 0 ]; then
-              echo "❌ Failed to create release in release registry, got:"
-              echo "--- raw body ---"
-              echo $body
-              echo "--- raw body ---"
-              exit $exit_code
-            else
-              echo "Build created, see:"
-              echo $body | jq .web_url
-            fi
+          if [ $exit_code != 0 ]; then
+            echo "❌ Failed to create release in release registry, got:"
+            echo "--- raw body ---"
+            echo $body
+            echo "--- raw body ---"
+            exit $exit_code
+          else
+            echo "Build created, see:"
+            echo $body | jq .web_url
+          fi
       - name: 'notifications'
         cmd: |
           set -eu
