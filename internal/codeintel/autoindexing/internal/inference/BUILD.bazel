@@ -17,7 +17,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
-        "//internal/authz",
         "//internal/codeintel/autoindexing/internal/inference/libs",
         "//internal/codeintel/autoindexing/internal/inference/lua",
         "//internal/codeintel/autoindexing/internal/inference/luatypes",
@@ -65,11 +64,10 @@ go_test(
     deps = [
         "//internal/api",
         "//internal/codeintel/dependencies",
+        "//internal/fileutil",
         "//internal/gitserver",
-        "//internal/gitserver/gitdomain",
         "//internal/luasandbox",
         "//internal/observation",
-        "//internal/paths",
         "//internal/ratelimit",
         "//internal/unpack/unpacktest",
         "//lib/codeintel/autoindex/config",

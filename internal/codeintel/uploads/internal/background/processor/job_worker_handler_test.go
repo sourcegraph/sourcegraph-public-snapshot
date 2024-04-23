@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"sort"
 	"strings"
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -70,7 +72,17 @@ func TestHandle(t *testing.T) {
 	mockUploadStore.GetFunc.SetDefaultHook(copyTestDumpScip)
 
 	// Allowlist all files in dump
-	gitserverClient.ListDirectoryChildrenFunc.SetDefaultReturn(scipDirectoryChildren, nil)
+	gitserverClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, path string, _ bool) ([]fs.FileInfo, error) {
+		children, ok := scipDirectoryChildren[path]
+		if !ok {
+			return nil, nil
+		}
+		fis := make([]fs.FileInfo, 0, len(children))
+		for _, c := range children {
+			fis = append(fis, &fileutil.FileInfo{Name_: c})
+		}
+		return fis, nil
+	})
 
 	expectedCommitDate := time.Unix(1587396557, 0).UTC()
 	expectedCommitDateStr := expectedCommitDate.Format(time.RFC3339)
@@ -445,4 +457,91 @@ func defaultMockRepoStore() *dbmocks.MockRepoStore {
 		}, nil
 	})
 	return repoStore
+}
+
+func TestParseDirectoryChildrenRoot(t *testing.T) {
+	dirnames := []string{""}
+	file := func(name string) fs.FileInfo {
+		return &fileutil.FileInfo{
+			Name_: name,
+		}
+	}
+	paths := []fs.FileInfo{
+		file(".github"),
+		file(".gitignore"),
+		file("LICENSE"),
+		file("README.md"),
+		file("cmd"),
+		file("go.mod"),
+		file("go.sum"),
+		file("internal"),
+		file("protocol"),
+	}
+
+	expected := map[string][]string{
+		"": {
+			".github",
+			".gitignore",
+			"LICENSE",
+			"README.md",
+			"cmd",
+			"go.mod",
+			"go.sum",
+			"internal",
+			"protocol",
+		},
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseDirectoryChildrenNonRoot(t *testing.T) {
+	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	file := func(name string) fs.FileInfo {
+		return &fileutil.FileInfo{
+			Name_: name,
+		}
+	}
+	paths := []fs.FileInfo{
+		file("cmd/lsif-go"),
+		file("protocol/protocol.go"),
+		file("protocol/writer.go"),
+	}
+
+	expected := map[string][]string{
+		"cmd/":          {"cmd/lsif-go"},
+		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/protocol/": nil,
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseDirectoryChildrenDifferentDepths(t *testing.T) {
+	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	file := func(name string) fs.FileInfo {
+		return &fileutil.FileInfo{
+			Name_: name,
+		}
+	}
+	paths := []fs.FileInfo{
+		file("cmd/lsif-go"),
+		file("protocol/protocol.go"),
+		file("protocol/writer.go"),
+		file("cmd/protocol/main.go"),
+	}
+
+	expected := map[string][]string{
+		"cmd/":          {"cmd/lsif-go"},
+		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/protocol/": {"cmd/protocol/main.go"},
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
 }

@@ -454,11 +454,6 @@ type Client interface {
 	// FirstEverCommit returns the first commit ever made to the repository.
 	FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit, error)
 
-	// ListDirectoryChildren fetches the list of children under the given directory
-	// names. The result is a map keyed by the directory names with the list of files
-	// under each.
-	ListDirectoryChildren(ctx context.Context, repo api.RepoName, commit api.CommitID, dirnames []string) (map[string][]string, error)
-
 	// Diff returns an iterator that can be used to access the diff between two
 	// commits on a per-file basis. The iterator must be closed with Close when no
 	// longer required.
@@ -476,9 +471,6 @@ type Client interface {
 	// supplied branch name is the default branch, then this method instead returns
 	// all commits reachable from HEAD.
 	CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
-
-	// LsFiles returns the output of `git ls-files`.
-	LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
 
 	// GetCommit returns the commit with the given commit ID, or RevisionNotFoundError if no such commit
 	// exists.

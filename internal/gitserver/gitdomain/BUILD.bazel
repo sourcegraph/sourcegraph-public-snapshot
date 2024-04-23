@@ -12,6 +12,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/fileutil",
         "//internal/gitserver/v1:gitserver",
         "//internal/lazyregexp",
         "//lib/errors",
@@ -30,6 +31,7 @@ go_test(
     embed = [":gitdomain"],
     deps = [
         "//internal/api",
+        "//internal/fileutil",
         "//internal/gitserver/v1:gitserver",
         "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//assert",
