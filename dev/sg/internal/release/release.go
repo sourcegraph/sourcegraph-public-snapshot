@@ -2,8 +2,10 @@ package release
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
+	"io"
 
 	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
@@ -199,9 +201,20 @@ func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 
 	workdir := cctx.String("workdir")
 	pretend := cctx.Bool("pretend")
-	// Normalize the version string, to prevent issues where this was given with the wrong convention
-	// which requires a full rebuild.
-	version := fmt.Sprintf("v%s", strings.TrimPrefix(cctx.String("version"), "v"))
+	var version string
+	if cctx.String("version") == "auto" {
+		resp, err := http.Post("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/next/5.3", "", nil)
+		if err != nil {
+			return nil, errors.New("Could not automatically determine new version number")
+		}
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		version = string(bodyBytes)
+	} else {
+		// Normalize the version string, to prevent issues where this was given with the wrong convention
+		// which requires a full rebuild.
+		version = fmt.Sprintf("v%s", strings.TrimPrefix(cctx.String("version"), "v"))
+	}
 	typ := cctx.String("type")
 	inputs := cctx.String("inputs")
 	branch := cctx.String("branch")
