@@ -27,7 +27,8 @@ type Instance struct {
 }
 
 func (i *Instance) String() string {
-	return fmt.Sprintf(`ID: %s
+	// TODO(burmudar): use formatting spacing
+	return fmt.Sprintf(`ID           : %s
 Name         : %s
 InstanceType : %s
 Environment  : %s

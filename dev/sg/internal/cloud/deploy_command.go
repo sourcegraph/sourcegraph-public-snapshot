@@ -139,7 +139,8 @@ func createDeploymentForVersion(ctx context.Context, name, version string) error
 		return err
 	}
 
-	std.Out.Writef("Starting cloud ephemeral deployment with name %q for version %q\n", name, version)
+	cloudEmoji := "☁️"
+	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Creating deployment %q for version %q", name, version))
 
 	spec := NewDeploymentSpec(
 		name,
@@ -147,10 +148,12 @@ func createDeploymentForVersion(ctx context.Context, name, version string) error
 	)
 	inst, err := cloudClient.DeployVersion(ctx, spec)
 	if err != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "deployment failed: %v", err))
 		return errors.Wrapf(err, "failed to deploy version %v", version)
 	}
 
-	std.Out.Writef("Deploy instance details: %s\n", inst.String())
+	pending.Writef("Deploy instance details: \n%s", inst.String())
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Deployment %q created for version %q - access at: %s", name, version, inst.Hostname))
 	return nil
 }
 
