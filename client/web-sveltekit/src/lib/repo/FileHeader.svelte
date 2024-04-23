@@ -76,6 +76,7 @@
         padding: 0.25rem 0.5rem;
         border-bottom: 1px solid var(--border-color);
         background-color: var(--bg-panel);
+        box-shadow: var(--fileheader-shadow);
         z-index: 1;
         gap: 0.5rem;
     }

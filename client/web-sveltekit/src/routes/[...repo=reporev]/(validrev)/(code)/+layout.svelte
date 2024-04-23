@@ -203,7 +203,7 @@
     .bottom-panel {
         background-color: var(--code-bg);
         --align-tabs: flex-start;
-        border-top: 1px solid var(--border-color);
+        box-shadow: var(--bottom-panel-shadow);
         max-height: 50vh;
         overflow: hidden;
         display: flex;
