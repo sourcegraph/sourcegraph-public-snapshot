@@ -9,7 +9,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Masterminds/semver"
 	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
@@ -207,17 +206,8 @@ var Command = &cli.Command{
 				&cli.StringFlag{
 					Name:     "version",
 					Required: true,
-					Usage:    "The version to cut",
-					Action: func(ctx *cli.Context, s string) error {
-						if _, err := semver.NewVersion(s); err != nil {
-							return errors.Newf("invalid version %q, must be semver", s)
-						}
-						return nil
-					},
-				},
-				&cli.StringFlag{
-					Name:  "branch",
-					Usage: "The branch to cut the release from",
+					Usage:    "the version to cut",
+					Aliases:  []string{"v"},
 				},
 			},
 		},
