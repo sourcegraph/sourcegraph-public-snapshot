@@ -375,7 +375,7 @@ func watchConfig(ctx context.Context) (<-chan *sgconf.Config, error) {
 
 	// start file watcher on configuration files
 	paths := []string{configFile}
-	if !disableOverwrite {
+	if !disableOverwrite && exists(configOverwriteFile) {
 		paths = append(paths, configOverwriteFile)
 	}
 	updates, err := run.WatchPaths(ctx, paths)
@@ -412,4 +412,9 @@ func watchConfig(ctx context.Context) (<-chan *sgconf.Config, error) {
 	}()
 
 	return output, err
+}
+
+func exists(file string) bool {
+	_, err := os.Stat(file)
+	return !os.IsNotExist(err)
 }
