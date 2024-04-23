@@ -1514,8 +1514,8 @@ def go_dependencies():
         name = "com_github_docker_docker",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/docker/docker",
-        sum = "h1:/OaKeauroa10K4Nqavw4zlhcDq/WBcPMc5DbjOGgozY=",
-        version = "v25.0.2+incompatible",
+        sum = "h1:UmQydMduGkrD5nQde1mecF/YnSbTOaPeFIeP5C4W+DE=",
+        version = "v25.0.5+incompatible",
     )
     go_repository(
         name = "com_github_docker_docker_credential_helpers",
@@ -3352,8 +3352,8 @@ def go_dependencies():
         name = "com_github_jackc_pgx_v5",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/jackc/pgx/v5",
-        sum = "h1:NxstgwndsTRy7eq9/kqYc/BZh5w2hHJV86wjvO+1xPw=",
-        version = "v5.5.0",
+        sum = "h1:Xp2aQS8uXButQdnCMWNmvx6UysWQQC+u1EoizjguY+8=",
+        version = "v5.5.4",
     )
     go_repository(
         name = "com_github_jackc_puddle",
@@ -7843,8 +7843,8 @@ def go_dependencies():
         name = "org_golang_x_net",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/net",
-        sum = "h1:9sGLhx7iRIHEiX0oAJ3MRZMUCElJgy7Br1nO+AMN3Tc=",
-        version = "v0.22.0",
+        sum = "h1:7EYJ93RZ9vYSZAIb2x3lnuvqO5zneoD6IvWjuhfxjTs=",
+        version = "v0.23.0",
     )
     go_repository(
         name = "org_golang_x_oauth2",
