@@ -1,6 +1,6 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
-load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
+load("//dev:go_mockgen.bzl", "go_mockgen")
 
 go_library(
     name = "internal",
@@ -25,7 +25,8 @@ go_library(
     ],
     embedsrcs = ["sg_maintenance.sh"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal",
-    visibility = ["//cmd/gitserver:__subpackages__"],
+    # visibility = ["//cmd/gitserver:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         "//cmd/gitserver/internal/accesslog",
         "//cmd/gitserver/internal/common",
@@ -88,6 +89,7 @@ go_library(
 
 go_test(
     name = "internal_test",
+    timeout = "moderate",
     srcs = [
         "cleanup_test.go",
         "grpc_server_wrappers_test.go",
@@ -99,6 +101,13 @@ go_test(
         "server_test.go",
     ],
     embed = [":internal"],
+    # This test loads coursier as a side effect, so we ensure the
+    # path is sandboxed properly.
+    env = {"COURSIER_CACHE_DIR": "/tmp"},
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/gitserver/internal/common",
         "//cmd/gitserver/internal/git",
