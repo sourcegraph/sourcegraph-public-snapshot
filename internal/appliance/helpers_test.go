@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bazelbuild/rules_go/go/runfiles"
 	"github.com/go-logr/stdr"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -58,19 +59,8 @@ func (suite *ApplianceTestSuite) setupEnvtest() {
 	t := suite.T()
 	logger := stdr.New(stdlog.New(os.Stderr, "", stdlog.LstdFlags))
 
-	// TODO figure out a way to make this work with bazel. Either download the
-	// etcd/k8s executables that setup-envtest downloads and pass that directory
-	// into BinaryAssetsDirectory below, or download setup-envtest without
-	// assuming it's already on the PATH.
-	// Ideally these assets could be cached in buildkite too.
-	setupEnvTestCmd := exec.Command("setup-envtest", "use", "1.28.0", "--bin-dir", "/tmp/envtest", "-p", "path")
-	var envtestOut bytes.Buffer
-	setupEnvTestCmd.Stdout = &envtestOut
-	err := setupEnvTestCmd.Run()
-	require.NoError(t, err)
-
 	suite.testEnv = &envtest.Environment{
-		BinaryAssetsDirectory: strings.TrimSpace(envtestOut.String()),
+		BinaryAssetsDirectory: suite.kubebuilderAssetPath(),
 	}
 	cfg, err := suite.testEnv.Start()
 	require.NoError(t, err)
@@ -105,6 +95,31 @@ func (suite *ApplianceTestSuite) setupEnvtest() {
 		require.NoError(t, ctrlMgr.Start(suite.ctx))
 		close(suite.ctrlMgrDone)
 	}()
+}
+
+func (suite *ApplianceTestSuite) kubebuilderAssetPath() string {
+	if os.Getenv("BAZEL_TEST") == "" {
+		return suite.kubebuilderAssetPathLocalDev()
+	}
+
+	assetPaths := strings.Split(os.Getenv("KUBEBUILDER_ASSET_PATHS"), " ")
+	suite.Require().Greater(len(assetPaths), 0)
+	arbAssetPath, err := runfiles.Rlocation(assetPaths[0])
+	suite.Require().NoError(err)
+	return filepath.Dir(arbAssetPath)
+}
+
+// In the hermetic bazel environment, we skip setup-envtest, handling the assets
+// directly in a hermetic and cachable way.
+// If we're using `go test`, which can be convenient for local dev, we fall back
+// on expecting setup-envtest to be present on the developer machine.
+func (suite *ApplianceTestSuite) kubebuilderAssetPathLocalDev() string {
+	setupEnvTestCmd := exec.Command("setup-envtest", "use", "1.28.0", "--bin-dir", "/tmp/envtest", "-p", "path")
+	var envtestOut bytes.Buffer
+	setupEnvTestCmd.Stdout = &envtestOut
+	err := setupEnvTestCmd.Run()
+	suite.Require().NoError(err, "Did you remember to `go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest`?")
+	return strings.TrimSpace(envtestOut.String())
 }
 
 func (suite *ApplianceTestSuite) createConfigMap(fixtureFileName string) string {

@@ -37,20 +37,31 @@ go_library(
     ],
 )
 
+filegroup(
+    name = "testdata",
+    srcs = glob(["testdata/**"]),
+)
+
 go_test(
     name = "appliance_test",
     srcs = [
         "blobstore_test.go",
         "golden_test.go",
-        "kubernetes_test.go",
-        "reconcile_test.go",
+        "helpers_test.go",
     ],
-    data = glob(["testdata/**"]),
+    data = [
+        ":testdata",
+        "//dev/tools:kubebuilder-assets",
+    ],
     embed = [":appliance"],
+    env = {
+        "KUBEBUILDER_ASSET_PATHS": "$(rlocationpaths //dev/tools:kubebuilder-assets)",
+    },
     deps = [
         "@com_github_go_logr_stdr//:stdr",
         "@com_github_stretchr_testify//require",
         "@com_github_stretchr_testify//suite",
+        "@io_bazel_rules_go//go/runfiles:go_default_library",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
         "@io_k8s_apimachinery//pkg/runtime/schema",
