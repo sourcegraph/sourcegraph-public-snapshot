@@ -1,11 +1,12 @@
 package release
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
-	"io"
 
 	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
@@ -190,6 +191,45 @@ var Command = &cli.Command{
 	},
 }
 
+type ReleaseInfo struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	Public     bool   `json:"public"`
+	CreatedAt  string `json:"created_at"`
+	PromotedAt string `json:"promoted_at"`
+	Version    string `json:"version"`
+	GitSha     string `json:"git_sha"`
+}
+
+func DetermineMinorVersion() (string, error) {
+	latestVersion, err := http.Get("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph")
+	if err != nil {
+		fmt.Print(err)
+		return "", errors.New("Could not get latest release version")
+	}
+	latestVersionBody, _ := io.ReadAll(latestVersion.Body)
+	latestVersion.Body.Close()
+	var versions []ReleaseInfo
+	jsonErr := json.Unmarshal(latestVersionBody, &versions)
+	if jsonErr != nil {
+		return "", errors.New("Could not parse json")
+	}
+
+	newestVersion := versions[0].Version
+	patchIndex := strings.LastIndex(newestVersion, ".")
+	minorVersion := strings.TrimPrefix(newestVersion[:patchIndex], "v")
+	url := fmt.Sprintf("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/next/%s", minorVersion)
+
+	resp, err := http.Post(url, "", nil)
+	if err != nil {
+		return "", errors.New("Could not automatically determine new version number")
+	}
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	version := string(bodyBytes)
+	return version, nil
+}
+
 func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 	if cctx.Bool("config-from-commit") && cctx.String("version") != "" {
 		return nil, errors.New("You cannot use --config-from-commit and --version at the same time")
@@ -203,13 +243,11 @@ func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 	pretend := cctx.Bool("pretend")
 	var version string
 	if cctx.String("version") == "auto" {
-		resp, err := http.Post("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/next/5.3", "", nil)
+		var err error
+		version, err = DetermineMinorVersion()
 		if err != nil {
-			return nil, errors.New("Could not automatically determine new version number")
+			return nil, err
 		}
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		version = string(bodyBytes)
 	} else {
 		// Normalize the version string, to prevent issues where this was given with the wrong convention
 		// which requires a full rebuild.
