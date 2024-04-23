@@ -41,9 +41,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Indexed-search now supports draining a replica of indexes to support zero-downtime reduction in cluster size. [#62005](https://github.com/sourcegraph/sourcegraph/pull/62005)
 
-## Changed
-
-## Fixed
+### Fixed
 
 - Rust binaries are now built in release mode to avoid unnecessary debug checks. [#61740](https://github.com/sourcegraph/sourcegraph/pull/61740)
 - Fixed how scip-ctags reports errors to avoid failing search indexing on non-fatal errors. [#61712](https://github.com/sourcegraph/sourcegraph/pull/61712)
