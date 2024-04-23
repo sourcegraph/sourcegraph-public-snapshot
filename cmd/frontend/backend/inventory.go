@@ -79,6 +79,9 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
 			trc, ctx := trace.New(ctx, "NewFileReader waits for semaphore")
 			err := gitServerSemaphore.Acquire(ctx, 1)
+			if err != nil {
+				return nil, err
+			}
 			trc.End()
 			reader, err := gsClient.NewFileReader(ctx, repo, commitID, path)
 			if err != nil {
