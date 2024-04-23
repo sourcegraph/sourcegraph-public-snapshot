@@ -175,7 +175,7 @@
 
         display: flex;
         gap: 1rem;
-        align-items: baseline;
+        align-items: center;
 
         // With overflow:visible the actions won't shrink past their content size,
         // and this allows us to measure the space needed to show actions fully.

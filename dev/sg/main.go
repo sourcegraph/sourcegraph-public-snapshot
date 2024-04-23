@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/log"
@@ -15,7 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/ci"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/release"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -50,8 +53,6 @@ func main() {
 
 var (
 	BuildCommit = "dev"
-
-	NoDevPrivateCheck = false
 
 	// configFile is the path to use with sgconf.Get - it must not be used before flag
 	// initialization.
@@ -145,7 +146,7 @@ var sg = &cli.App{
 			Usage:       "disable checking for dev-private - only useful for automation or ci",
 			EnvVars:     []string{"SG_NO_DEV_PRIVATE"},
 			Value:       false,
-			Destination: &NoDevPrivateCheck,
+			Destination: &check.NoDevPrivateCheck,
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {
@@ -352,4 +353,63 @@ func getConfig() (*sgconf.Config, error) {
 		return sgconf.GetWithoutOverwrites(configFile)
 	}
 	return sgconf.Get(configFile, configOverwriteFile)
+}
+
+// watchConfig starts a file watcher for the sg configuration files. It returns a channel
+// that will receive the updated configuration whenever the file changes to a valid configuration,
+// distinct from the last parsed value (invalid or unparseable updates will be dropped). The
+// initial configuration is read and sent on the channel before the function returns so it
+// can be read immediately.
+func watchConfig(ctx context.Context) (<-chan *sgconf.Config, error) {
+	conf, err := sgconf.GetUnbuffered(configFile, configOverwriteFile, disableOverwrite)
+	if err != nil {
+		return nil, err
+	}
+	// Create a hash to compare future reads against
+	hash, err := hashstructure.Hash(conf, hashstructure.FormatV2, nil)
+	if err != nil {
+		return nil, err
+	}
+	output := make(chan *sgconf.Config, 1)
+	output <- conf
+
+	// start file watcher on configuration files
+	paths := []string{configFile}
+	if !disableOverwrite {
+		paths = append(paths, configOverwriteFile)
+	}
+	updates, err := run.WatchPaths(ctx, paths)
+	if err != nil {
+		return nil, err
+	}
+
+	// watch for configuration updates
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				close(output)
+				return
+			case <-updates:
+				conf, err = sgconf.GetUnbuffered(configFile, configOverwriteFile, disableOverwrite)
+				if err != nil {
+					std.Out.WriteWarningf("Failed to reload configuration: %s", err)
+					continue
+				}
+				newHash, err := hashstructure.Hash(conf, hashstructure.FormatV2, nil)
+				if err != nil {
+					std.Out.WriteWarningf("Failed to hash configuration: %s", err)
+					continue
+				}
+
+				// if this is a true update, send it on the channel and remember its hash
+				if newHash != hash {
+					hash = newHash
+					output <- conf
+				}
+			}
+		}
+	}()
+
+	return output, err
 }
