@@ -6173,9 +6173,11 @@ type HighlightedFile {
     html: String!
     """
     DEPRECATED: Base64 encoded JSON payload of SCIP with syntax highlighting data.
+    Use document instead.
     """
     lsif: String!
     """
+    The highlighted file with ranges represented using occurrences.
     """
     document: AssociatedSCIPDocument!
     """
@@ -6187,8 +6189,24 @@ type HighlightedFile {
 }
 
 enum Provenance {
+    """
+    Based on a compiler, a type-checker or a similar data source
+    which doesn't have false positives.
+
+    The results are specific to a specific build configuration,
+    such as for a specific OS or CPU, which can matter for
+    codebases having a large amount of platform-specific code.
+    """
     Precise,
+    """
+    Based on a data source that uses an abstract or concrete syntax
+    tree, but without access to reliable type information.
+    """
     Syntactic,
+    """
+    Based on a data source that only does textual analysis, say
+    using regular expressions.
+    """
     SearchBased,
 }
 
@@ -6204,7 +6222,7 @@ interface WithProvenance {
 
     This field should be ignored when checking structural equality.
     """
-    dataSource: String!
+    dataSource: String
 }
 
 type AssociatedSCIPDocument implements WithProvenance {
@@ -6217,8 +6235,18 @@ type AssociatedSCIPDocument implements WithProvenance {
     https://github.com/sourcegraph/scip/blob/main/scip.proto
     """
     data: String!
+    """
+    Coarse-grained information about the data source.
+    """
     provenance: Provenance!
-    dataSource: String!
+    """
+    Opaque fine-grained information describing the data source.
+
+    Provided only for debugging.
+
+    This field should be ignored when checking structural equality.
+    """
+    dataSource: String
 }
 
 """
