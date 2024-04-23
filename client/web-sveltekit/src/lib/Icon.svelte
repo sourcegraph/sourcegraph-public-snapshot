@@ -26,8 +26,14 @@
 </svg>
 
 <style lang="scss">
+    :root {
+        --icon-size: 1.5rem;
+    }
+
     svg {
-        color: var(--color, inherit);
+        width: var(--icon-size);
+        height: var(--icon-size);
+        color: var(--icon-fill-color, var(--color, inherit));
         fill: currentColor;
     }
 </style>

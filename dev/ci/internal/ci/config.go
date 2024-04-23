@@ -70,6 +70,7 @@ func NewConfig(now time.Time) Config {
 			"WOLFI_BASE_REBUILD": os.Getenv("WOLFI_BASE_REBUILD"),
 			"RELEASE_INTERNAL":   os.Getenv("RELEASE_INTERNAL"),
 			"RELEASE_PUBLIC":     os.Getenv("RELEASE_PUBLIC"),
+			"CLOUD_EPHEMERAL":    os.Getenv("CLOUD_EPHEMERAL"),
 		})
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
@@ -161,7 +162,7 @@ func inferVersion(runType runtype.RunType, tag string, commit string, buildNumbe
 		latestTag = ""
 	}
 	// "main" branch is used for continuous deployment and has a special-case format
-	version := images.BranchImageTag(now, commit, buildNumber, sanitizeBranchForDockerTag(branch), latestTag)
+	version := images.BranchImageTag(now, commit, buildNumber, branch, latestTag)
 
 	// Add additional patch suffix
 	if runType.Is(runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.ExecutorPatchNoTest) {
@@ -231,10 +232,4 @@ func parseMessageFlags(msg string) MessageFlags {
 		SkipHashCompare:     strings.Contains(msg, "[skip-hash-compare]"),
 		ForceReadyForReview: strings.Contains(msg, "[review-ready]"),
 	}
-}
-
-func sanitizeBranchForDockerTag(branch string) string {
-	branch = strings.ReplaceAll(branch, "/", "-")
-	branch = strings.ReplaceAll(branch, "+", "-")
-	return branch
 }

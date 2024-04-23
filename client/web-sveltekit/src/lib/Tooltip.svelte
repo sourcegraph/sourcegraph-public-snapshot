@@ -93,6 +93,7 @@
         all: initial;
         position: absolute;
         isolation: isolate;
+        z-index: 1;
         font-family: inherit;
         font-size: var(--tooltip-font-size);
         font-style: normal;

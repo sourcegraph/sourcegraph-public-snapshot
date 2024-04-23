@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	repoembeddingsbg "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
-	vdb "github.com/sourcegraph/sourcegraph/internal/embeddings/db"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -54,10 +53,6 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 		return nil, err
 	}
 
-	// qdrant is going to be removed. For now we only ever set the noop db.
-	qdrantDB := vdb.NewNoopDB()
-	getQdrantInserter := func() (vdb.VectorInserter, error) { return qdrantDB, nil }
-
 	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
 		newRepoEmbeddingJobWorker(
@@ -67,7 +62,6 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 			db,
 			uploadStore,
 			gitserver.NewClient("embeddings.worker"),
-			getQdrantInserter,
 			services.ContextService,
 			repoembeddingsbg.NewRepoEmbeddingJobsStore(db),
 			services.RankingService,
@@ -82,7 +76,6 @@ func newRepoEmbeddingJobWorker(
 	db database.DB,
 	uploadStore uploadstore.Store,
 	gitserverClient gitserver.Client,
-	getQdrantInserter func() (vdb.VectorInserter, error),
 	contextService embed.ContextService,
 	repoEmbeddingJobsStore repoembeddingsbg.RepoEmbeddingJobsStore,
 	rankingService *ranking.Service,
@@ -91,7 +84,6 @@ func newRepoEmbeddingJobWorker(
 		db:                     db,
 		uploadStore:            uploadStore,
 		gitserverClient:        gitserverClient,
-		getQdrantInserter:      getQdrantInserter,
 		contextService:         contextService,
 		repoEmbeddingJobsStore: repoEmbeddingJobsStore,
 		rankingService:         rankingService,
