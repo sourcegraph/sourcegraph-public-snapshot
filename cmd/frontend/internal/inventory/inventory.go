@@ -10,6 +10,7 @@ import (
 	"github.com/go-enry/go-enry/v2/data"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"io"
 	"io/fs"
 
@@ -69,6 +70,8 @@ func getLang(ctx context.Context, file fs.FileInfo, buf []byte, getFileReader fu
 		return Lang{}, nil
 	}
 
+	getLangTrc, ctx := trace.New(ctx, "getLang")
+	defer getLangTrc.End()
 	rc, err := getFileReader(ctx, file.Name())
 	if err != nil {
 		return Lang{}, errors.Wrap(err, "getting file reader")
@@ -91,7 +94,9 @@ func getLang(ctx context.Context, file fs.FileInfo, buf []byte, getFileReader fu
 
 	if !safe {
 		// Detect language from content
+		trc, _ := trace.New(ctx, "ReadFull")
 		n, err := io.ReadFull(rc, buf)
+		trc.End()
 		if err == io.EOF {
 			// No bytes read, indicating an empty file
 			return Lang{}, nil
@@ -114,7 +119,9 @@ func getLang(ctx context.Context, file fs.FileInfo, buf []byte, getFileReader fu
 	}
 	lang.Name = matchedLang
 
+	trc, _ := trace.New(ctx, "CountLines")
 	lineCount, byteCount, err := countLines(rc, buf)
+	trc.End()
 	if err != nil {
 		return lang, err
 	}

@@ -29,24 +29,13 @@ var useEnhancedLanguageDetection, _ = strconv.ParseBool(env.Get("USE_ENHANCED_LA
 var inventoryCache = rcache.New(fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLanguageDetection))
 
 type semaphoredReadCloser struct {
-	readCloser io.ReadCloser
-	semaphore  *semaphore.Weighted
-	ctx        context.Context
-}
-
-func (s *semaphoredReadCloser) Read(p []byte) (int, error) {
-	trc, ctx := trace.New(s.ctx, "Read waits for semaphore")
-	err := s.semaphore.Acquire(ctx, 1)
-	trc.End()
-	if err != nil {
-		return 0, err
-	}
-	defer s.semaphore.Release(1)
-	return s.readCloser.Read(p)
+	io.ReadCloser
+	releaseSemaphore func()
 }
 
 func (s *semaphoredReadCloser) Close() error {
-	return s.readCloser.Close()
+	defer s.releaseSemaphore()
+	return s.ReadCloser.Close()
 }
 
 // InventoryContext returns the inventory context for computing the inventory for the repository at
@@ -83,11 +72,16 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 			return gsClient.ReadDir(ctx, repo, commitID, path, false)
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
+			trc, ctx := trace.New(ctx, "NewFileReader waits for semaphore")
+			err := gitServerSemaphore.Acquire(ctx, 1)
+			trc.End()
 			reader, err := gsClient.NewFileReader(ctx, repo, commitID, path)
 			if err != nil {
 				return nil, err
 			}
-			return &semaphoredReadCloser{readCloser: reader, ctx: ctx, semaphore: gitServerSemaphore}, nil
+			return &semaphoredReadCloser{ReadCloser: reader, releaseSemaphore: func() {
+				gitServerSemaphore.Release(1)
+			}}, nil
 		},
 		CacheGet: func(ctx context.Context, e fs.FileInfo) (inventory.Inventory, bool) {
 			cacheKey := cacheKey(e)
