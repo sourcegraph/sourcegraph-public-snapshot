@@ -116,11 +116,6 @@
 <style lang="scss">
     .root {
         width: 100%;
-        border-top: 1px solid var(--border-color-2);
-
-        &:empty {
-            display: none;
-        }
     }
 
     .proxy-link {

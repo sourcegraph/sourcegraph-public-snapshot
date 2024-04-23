@@ -245,7 +245,6 @@ func TestContextResolver(t *testing.T) {
 				mockEmbeddingsClient,
 				mockSearchClient,
 				mockGitserver,
-				nil,
 			)
 
 			resolver := NewResolver(

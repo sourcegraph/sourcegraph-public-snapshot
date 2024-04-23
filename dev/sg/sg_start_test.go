@@ -34,11 +34,15 @@ func TestStartCommandSet(t *testing.T) {
 		Commandsets: map[string]*sgconf.Commandset{"test-set": commandSet},
 	}
 
-	if err := startCommandSet(ctx, commandSet, testConf); err != nil {
+	args := StartArgs{
+		CommandSet: "test-set",
+	}
+	cmds, _ := args.toCommands(testConf)
+
+	if err := cmds.start(ctx); err != nil {
 		t.Errorf("failed to start: %s", err)
 	}
 
-	println(strings.Join(buf.Lines(), "\n"))
 	expectOutput(t, buf, []string{
 		"",
 		"💡 Installing 1 commands...",
@@ -76,7 +80,15 @@ func TestStartCommandSet_InstallError(t *testing.T) {
 		Commandsets: map[string]*sgconf.Commandset{"test-set": commandSet},
 	}
 
-	err := startCommandSet(ctx, commandSet, testConf)
+	args := StartArgs{
+		CommandSet: "test-set",
+	}
+	cmds, err := args.toCommands(testConf)
+	if err != nil {
+		t.Errorf("unexected error constructing commands: %s", err)
+	}
+
+	err = cmds.start(ctx)
 	if err == nil {
 		t.Fatalf("err is nil unexpectedly")
 	}

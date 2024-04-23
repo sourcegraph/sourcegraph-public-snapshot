@@ -83,10 +83,6 @@ type Commandset struct {
 	DockerCommands []string          `yaml:"dockerCommands"`
 	Checks         []string          `yaml:"checks"`
 	Env            map[string]string `yaml:"env"`
-
-	// If this is set to true, then the commandset requires the dev-private
-	// repository to be cloned at the same level as the sourcegraph repository.
-	RequiresDevPrivate bool `yaml:"requiresDevPrivate"`
 }
 
 // UnmarshalYAML implements the Unmarshaler interface.
@@ -135,8 +131,6 @@ func (c *Commandset) Merge(other *Commandset) *Commandset {
 	for k, v := range other.Env {
 		merged.Env[k] = v
 	}
-
-	merged.RequiresDevPrivate = other.RequiresDevPrivate
 
 	return merged
 }
