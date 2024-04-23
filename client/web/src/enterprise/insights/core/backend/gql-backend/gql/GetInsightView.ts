@@ -26,7 +26,7 @@ export const GET_INSIGHT_VIEW_GQL = gql`
         points {
             dateTime
             value
-            diffQuery
+            pointInTimeQuery
         }
         status {
             isLoadingData
