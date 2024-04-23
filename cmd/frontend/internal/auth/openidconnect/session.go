@@ -77,9 +77,11 @@ func SignOut(w http.ResponseWriter, r *http.Request, sessionKey string, getProvi
 	// dotcom-specific operation, we can live with it, to avoid cascading
 	// refactorings that doesn't really do any useful in enterprise environment.
 	samsClient, err := sams.NewClientV1(
-		p.config.Issuer,
-		p.config.ClientID,
-		p.config.ClientSecret,
+		sams.ClientV1ConnConfig{
+			ExternalURL:  p.config.Issuer,
+			ClientID:     p.config.ClientID,
+			ClientSecret: p.config.ClientSecret,
+		},
 		[]scopes.Scope{
 			"sams::session::read",
 			"sams::session::write",
