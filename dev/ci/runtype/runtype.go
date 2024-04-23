@@ -95,6 +95,12 @@ func (t RunType) Matcher() *RunTypeMatcher {
 				"RELEASE_INTERNAL": "true",
 			},
 		}
+	case CloudEphemeral:
+		return &RunTypeMatcher{
+			EnvIncludes: map[string]string{
+				"CLOUD_EPHEMERAL": "true",
+			},
+		}
 	case BextNightly:
 		return &RunTypeMatcher{
 			EnvIncludes: map[string]string{
@@ -172,10 +178,6 @@ func (t RunType) Matcher() *RunTypeMatcher {
 	case BazelDo:
 		return &RunTypeMatcher{
 			Branch: "bazel-do/",
-		}
-	case CloudEphemeral:
-		return &RunTypeMatcher{
-			Branch: "cloud-ephemeral/",
 		}
 
 	}

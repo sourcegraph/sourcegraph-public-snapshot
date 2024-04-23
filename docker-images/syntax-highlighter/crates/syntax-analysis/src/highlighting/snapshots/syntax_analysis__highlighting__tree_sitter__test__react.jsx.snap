@@ -1,0 +1,40 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  const ComponentJsx = () => {
+//^^^^^ Keyword
+//      ^^^^^^^^^^^^ IdentifierFunction
+      let name = 'id'
+//    ^^^ Keyword
+//        ^^^^ Identifier
+//               ^ StringLiteral
+//                ^^ StringLiteral
+//                  ^ StringLiteral
+      return (
+//    ^^^^^^ Keyword
+          <div>
+//         ^^^ Tag
+              <h1 id={name}>My Component</h1>
+//             ^^ Tag
+//                ^^ TagAttribute
+//                    ^^^^ Identifier
+//                                        ^^ Tag
+              {[1, 2, 3].map(item => (
+//              ^ NumericLiteral
+//                 ^ NumericLiteral
+//                    ^ NumericLiteral
+//                       ^^^ IdentifierFunction
+//                           ^^^^ Identifier
+                  <p key={item}>{item}</p>
+//                 ^ Tag
+//                   ^^^ TagAttribute
+//                        ^^^^ Identifier
+//                               ^^^^ Identifier
+//                                      ^ Tag
+              ))}
+          </div>
+//          ^^^ Tag
+      )
+  }
+

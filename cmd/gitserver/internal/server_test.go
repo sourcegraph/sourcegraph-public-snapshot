@@ -175,7 +175,9 @@ func TestExecRequest(t *testing.T) {
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 	})
 
-	gs := NewGRPCServer(s)
+	gs := NewGRPCServer(s, &GRPCServerConfig{
+		ExhaustiveRequestLoggingEnabled: true,
+	})
 	fs.RepoClonedFunc.SetDefaultHook(func(repo api.RepoName) (bool, error) {
 		if repo == "github.com/gorilla/mux" || repo == "my-mux" {
 			return true, nil
