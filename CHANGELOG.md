@@ -35,7 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The ArchiveReader() RPC in the gitserver service now uses the correct protobuf type that allows for non-utf8 byte sequences in file paths. [#61970](https://github.com/sourcegraph/sourcegraph/pull/61970)
 - Pinned code intel popovers and popovers opened via the keyboard are properly shown again. [#61966](https://github.com/sourcegraph/sourcegraph/pull/61966)
 
-## Unreleased (April Patch Release - 22nd April, 2024)
+## 5.3.12303
 
 ### Added
 
