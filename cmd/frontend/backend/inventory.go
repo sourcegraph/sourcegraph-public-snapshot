@@ -31,7 +31,7 @@ var gitServerConcurrency, _ = strconv.Atoi(env.Get("GET_INVENTORY_GIT_SERVER_CON
 
 // Raising this value to 50 or higher lead to the following error on my dev machine
 // lvl=warn msg="failed to execute redis command" cmd=GET error="dial tcp *********:6379: connect: can't assign requested address"
-var redisConcurrency, _ = strconv.Atoi(env.Get("GET_INVENTORY_REDIS_CONCURRENCY", "1", "Changes the number of concurrent requests against the redis cache for getInventory requests."))
+var redisConcurrency, _ = strconv.Atoi(env.Get("GET_INVENTORY_REDIS_CONCURRENCY", "20", "Changes the number of concurrent requests against the redis cache for getInventory requests."))
 
 type semaphoredReadCloser struct {
 	io.ReadCloser
