@@ -78,6 +78,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 		"-d",
 		fmt.Sprintf("label used to backport PRs to the %s release branch", releaseBranch),
 	); err != nil {
+		p.Destroy()
 		return errors.Wrap(err, "failed to create backport label")
 	}
 
