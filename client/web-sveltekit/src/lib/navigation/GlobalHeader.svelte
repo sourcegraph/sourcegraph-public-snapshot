@@ -111,9 +111,6 @@
         border-bottom: 1px solid var(--border-color-2);
         background-color: var(--color-bg-1);
 
-        // This ensures that all arbitrary content is rendered above
-        // other elements on the page.
-        z-index: 1;
         position: relative;
         height: 50px;
         min-width: 0;
