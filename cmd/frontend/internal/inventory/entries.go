@@ -65,29 +65,43 @@ func (c *Context) tree(ctx context.Context, tree fs.FileInfo, buf []byte) (inv I
 		return Inventory{}, err
 	}
 
-	inventories, err := iter.MapErr(entries, func(entry *fs.FileInfo) (Inventory, error) {
-		e := *entry
+	// entries are sorted alphabetically. To get the most value out of the tree level caching, we force a depth-first
+	// search. This allows us to cache the largest number of directories before reaching a timeout.
+	var dirs []fs.FileInfo
+	var files []fs.FileInfo
+	for _, e := range entries {
 		switch {
-		case e.Mode().IsRegular(): // file
-			// Don't individually cache files that we found during tree traversal. The hit rate for
-			// those cache entries is likely to be much lower than cache entries for files whose
-			// inventory was directly requested.
-			lang, err := getLang(ctx, e, buf, c.NewFileReader)
-			return Inventory{Languages: []Lang{lang}}, err
-		case e.Mode().IsDir(): // subtree
-			subtreeInv, err := c.tree(ctx, e, buf)
-			return subtreeInv, err
+		case e.Mode().IsRegular():
+			files = append(files, e)
+		case e.Mode().IsDir():
+			dirs = append(dirs, e)
 		default:
 			// Skip symlinks, submodules, etc.
-			return Inventory{}, nil
 		}
-	})
+	}
 
+	dirInventories, err := iter.MapErr(dirs, func(entry *fs.FileInfo) (Inventory, error) {
+		e := *entry
+		subtreeInv, err := c.tree(ctx, e, buf)
+		return subtreeInv, err
+	})
 	if err != nil {
 		return Inventory{}, err
 	}
 
-	return Sum(inventories), nil
+	fileInventories, err := iter.MapErr(entries, func(entry *fs.FileInfo) (Inventory, error) {
+		e := *entry
+		// Don't individually cache files that we found during tree traversal. The hit rate for
+		// those cache entries is likely to be much lower than cache entries for files whose
+		// inventory was directly requested.
+		lang, err := getLang(ctx, e, buf, c.NewFileReader)
+		return Inventory{Languages: []Lang{lang}}, err
+	})
+	if err != nil {
+		return Inventory{}, err
+	}
+
+	return Sum(append(dirInventories, fileInventories...)), nil
 }
 
 // file computes the inventory of a single file. It caches the result.

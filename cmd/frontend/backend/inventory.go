@@ -28,7 +28,10 @@ var useEnhancedLanguageDetection, _ = strconv.ParseBool(env.Get("USE_ENHANCED_LA
 var inventoryCache = rcache.New(fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLanguageDetection))
 
 var gitServerConcurrency, _ = strconv.Atoi(env.Get("GET_INVENTORY_GIT_SERVER_CONCURRENCY", "4", "Changes the number of concurrent requests against the gitserver for getInventory requests."))
-var redisConcurrency, _ = strconv.Atoi(env.Get("GET_INVENTORY_REDIS_CONCURRENCY", "100", "Changes the number of conrrent requests against the redis cache for getInventory requests."))
+
+// Raising this value to 50 or higher lead to the following error on my dev machine
+// lvl=warn msg="failed to execute redis command" cmd=GET error="dial tcp *********:6379: connect: can't assign requested address"
+var redisConcurrency, _ = strconv.Atoi(env.Get("GET_INVENTORY_REDIS_CONCURRENCY", "1", "Changes the number of concurrent requests against the redis cache for getInventory requests."))
 
 type semaphoredReadCloser struct {
 	io.ReadCloser
@@ -69,8 +72,8 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 				return nil, err
 			}
 			defer gitServerSemaphore.Release(1)
-			// TODO: As a perf optimization, we could read multiple levels of the Git tree at once
-			// to avoid sequential tree traversal calls.
+			// Using recurse=true is not possible, because we're likely to run into the following error:
+			// "Maximum call stack size exceeded"
 			return gsClient.ReadDir(ctx, repo, commitID, path, false)
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
