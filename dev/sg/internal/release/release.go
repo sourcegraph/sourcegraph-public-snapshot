@@ -212,7 +212,7 @@ func DetermineMinorVersion() (string, error) {
 	var versions []ReleaseInfo
 	jsonErr := json.Unmarshal(latestVersionBody, &versions)
 	if jsonErr != nil {
-		return "", errors.New("Could not parse json")
+		return "", errors.New("Could not parse ReleaseInfo json")
 	}
 
 	newestVersion := versions[0].Version
