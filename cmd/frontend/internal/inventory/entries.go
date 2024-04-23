@@ -89,7 +89,7 @@ func (c *Context) tree(ctx context.Context, tree fs.FileInfo, buf []byte) (inv I
 		return Inventory{}, err
 	}
 
-	fileInventories, err := iter.MapErr(entries, func(entry *fs.FileInfo) (Inventory, error) {
+	fileInventories, err := iter.MapErr(files, func(entry *fs.FileInfo) (Inventory, error) {
 		e := *entry
 		// Don't individually cache files that we found during tree traversal. The hit rate for
 		// those cache entries is likely to be much lower than cache entries for files whose
