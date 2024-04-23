@@ -10,16 +10,18 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/sourcegraph/sourcegraph/internal/sams"
+	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
+
+	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type mockSAMSClient struct {
-	result *sams.TokenIntrospection
+	result *sams.IntrospectTokenResponse
 	error  error
 }
 
-func (m mockSAMSClient) IntrospectToken(context.Context, string) (*sams.TokenIntrospection, error) {
+func (m mockSAMSClient) IntrospectToken(context.Context, string) (*sams.IntrospectTokenResponse, error) {
 	return m.result, m.error
 }
 
@@ -27,7 +29,7 @@ func TestCheckWriteEventsScope(t *testing.T) {
 	for _, tc := range []struct {
 		name       string
 		metadata   map[string]string
-		samsClient sams.Client
+		samsClient TokenIntrospector
 		wantErr    autogold.Value
 	}{
 		{
@@ -57,22 +59,25 @@ func TestCheckWriteEventsScope(t *testing.T) {
 		{
 			name:       "token ok, but inactive",
 			metadata:   map[string]string{"authorization": "bearer foobar"},
-			samsClient: mockSAMSClient{result: &sams.TokenIntrospection{Active: false}},
+			samsClient: mockSAMSClient{result: &sams.IntrospectTokenResponse{Active: false}},
 			wantErr:    autogold.Expect("rpc error: code = PermissionDenied desc = permission denied"),
 		},
 		{
-			name:       "token ok and active, but invalid scope",
-			metadata:   map[string]string{"authorization": "bearer foobar"},
-			samsClient: mockSAMSClient{result: &sams.TokenIntrospection{Active: true, Scope: "foo bar"}},
-			wantErr:    autogold.Expect("rpc error: code = PermissionDenied desc = permission denied"),
+			name:     "token ok and active, but invalid scope",
+			metadata: map[string]string{"authorization": "bearer foobar"},
+			samsClient: mockSAMSClient{result: &sams.IntrospectTokenResponse{
+				Active: true,
+				Scopes: scopes.ToScopes([]string{"foo", "bar"}),
+			}},
+			wantErr: autogold.Expect("rpc error: code = PermissionDenied desc = permission denied"),
 		},
 		{
 			name:     "token ok and active and valid scope",
 			metadata: map[string]string{"authorization": "bearer foobar"},
 			samsClient: mockSAMSClient{
-				result: &sams.TokenIntrospection{
+				result: &sams.IntrospectTokenResponse{
 					Active: true,
-					Scope:  "foo bar " + requiredSamsScope,
+					Scopes: append(scopes.ToScopes([]string{"foo", "bar"}), requiredSamsScope),
 				},
 			},
 			wantErr: nil, // success
