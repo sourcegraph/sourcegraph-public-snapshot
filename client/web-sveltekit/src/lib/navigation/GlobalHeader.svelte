@@ -108,7 +108,7 @@
         align-items: center;
         gap: 0.75rem;
         padding: 0.5rem;
-        border-bottom: 1px solid var(--border-color-2);
+        border-bottom: 1px solid var(--border-color);
         background-color: var(--bg-panel);
 
         // This ensures that all arbitrary content is rendered above

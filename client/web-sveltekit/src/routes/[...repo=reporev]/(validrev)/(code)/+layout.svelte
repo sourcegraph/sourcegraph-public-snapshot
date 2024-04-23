@@ -18,9 +18,9 @@
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
-    import RepositoryRevPicker from './RepositoryRevPicker.svelte'
     import { createFileTreeStore } from './fileTreeStore'
     import { type GitHistory_HistoryConnection } from './layout.gql'
+    import RepositoryRevPicker from './RepositoryRevPicker.svelte'
 
     interface Capture {
         selectedTab: number | null
@@ -91,7 +91,7 @@
     $: lastCommit = $lastCommitQuery?.data?.repository?.lastCommit?.ancestors?.nodes[0] ?? null
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
-    $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
+    $: sidebarWidth = `max(320px, ${$sidebarSize * 100}%)`
 </script>
 
 <section>
@@ -171,9 +171,11 @@
         }
         display: none;
         overflow: hidden;
-        background-color: var(--body-bg);
+        background-color: var(--bg-panel);
         padding: 0.5rem;
         padding-bottom: 0;
+        box-shadow: var(--sidebar-shadow);
+        z-index: 1;
     }
 
     .main {
