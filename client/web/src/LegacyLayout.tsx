@@ -19,11 +19,7 @@ import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/Keyboa
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { useUserHistory } from './components/useUserHistory'
 import { GlobalContributions } from './contributions'
-import {
-    getSeenAuthProviders,
-    shouldShowExternalAccountsModal,
-    ExternalAccountsModal,
-} from './external-account-modal/ExternalAccountsModal'
+import { shouldShowExternalAccountsModal, ExternalAccountsModal } from './external-account-modal/ExternalAccountsModal'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
