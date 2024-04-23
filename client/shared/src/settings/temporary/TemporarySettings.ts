@@ -132,6 +132,7 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'npsSurvey.hasPermanentlyDismissed': null,
     'user.lastDayActive': null,
     'user.daysActiveCount': null,
+    'user.seenAuthProviders': null,
     'user.themePreference': null,
     'signup.finishedWelcomeFlow': null,
     'homepage.userInvites.tab': null,
