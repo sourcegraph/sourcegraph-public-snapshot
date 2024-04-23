@@ -8,7 +8,7 @@
     import { EditorView } from '@codemirror/view'
     import { mdiCodeBrackets, mdiFormatLetterCase, mdiRegex } from '@mdi/js'
 
-    import { goto, invalidate } from '$app/navigation'
+    import { goto } from '$app/navigation'
     import {
         type Option,
         type Action,
@@ -180,10 +180,7 @@
     }
 
     async function submitQuery(state: QueryState): Promise<void> {
-        // This ensures that the same query can be resubmitted from the search input. Without
-        // this, SvelteKit will not re-run the loader because the URL hasn't changed.
-        await invalidate(`query:${state.query}--${state.caseSensitive}`)
-        void goto(getQueryURL(state))
+        void goto(getQueryURL(state), { invalidateAll: true })
     }
 
     async function handleSubmit(event: Event) {
