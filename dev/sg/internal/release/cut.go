@@ -30,8 +30,12 @@ func cutReleaseBranch(cctx *cli.Context) error {
 
 	ctx := cctx.Context
 
-	branchName := v.String()
+	releaseBranch := v.String()
 	defaultBranch := "main"
+
+	if _, err := execute.Git(ctx, "rev-parse", "--verify", releaseBranch); err == nil {
+		return errors.Newf("release branch %q already exists", releaseBranch)
+	}
 
 	localCommitSHA, err := execute.Git(ctx, "rev-parse", defaultBranch)
 	if err != nil {
@@ -50,7 +54,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 		return errors.New("local branch is not up to date with remote, please pull the latest changes")
 	}
 
-	if _, err := execute.Git(ctx, "checkout", "-b", branchName); err != nil {
+	if _, err := execute.Git(ctx, "checkout", "-b", releaseBranch); err != nil {
 		p.Destroy()
 		return errors.Wrap(err, "failed to create release branch")
 	}
@@ -61,7 +65,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 		}
 	}()
 
-	if _, err := execute.Git(ctx, "push", "origin", branchName); err != nil {
+	if _, err := execute.Git(ctx, "push", "origin", releaseBranch); err != nil {
 		p.Destroy()
 		return errors.Wrap(err, "failed to push release branch")
 	}
@@ -70,13 +74,13 @@ func cutReleaseBranch(cctx *cli.Context) error {
 		ctx,
 		"label",
 		"create",
-		fmt.Sprintf("backport %s", branchName),
+		fmt.Sprintf("backport %s", releaseBranch),
 		"-d",
-		fmt.Sprintf("label used to backport PRs to the %s release branch", branchName),
+		fmt.Sprintf("label used to backport PRs to the %s release branch", releaseBranch),
 	); err != nil {
 		return errors.Wrap(err, "failed to create backport label")
 	}
 
-	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Release branch %q created", branchName))
+	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Release branch %q created", releaseBranch))
 	return nil
 }
