@@ -11,8 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
-	v1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
+	v1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 // NewRecorder is an simple alias that provides a *telemetry.EventRecorder and

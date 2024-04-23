@@ -163,6 +163,13 @@
                 border-top-left-radius: 0;
                 border-bottom-left-radius: 0;
             }
+
+            :global([data-icon]) {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                --icon-size: 16px;
+            }
         }
 
         .revision-trigger {
