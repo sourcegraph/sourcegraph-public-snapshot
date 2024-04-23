@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react'
 
 import type { ErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import { SeenAuthProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import type { SeenAuthProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { Button, ErrorAlert, H2, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import { BrandLogo } from '../components/branding/BrandLogo'
-import {
+import type {
     AuthzProvidersResult,
     AuthzProvidersVariables,
-    type UserExternalAccountsWithAccountDataVariables,
+    UserExternalAccountsWithAccountDataVariables,
 } from '../graphql-operations'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ExternalAccountsSignIn } from '../user/settings/auth/ExternalAccountsSignIn'
@@ -26,29 +26,6 @@ export interface ExternalAccountsModalProps {
     isLightTheme: boolean
     setSeenAuthProvidersFunc: (seenAuthProviders: SeenAuthProvider[]) => void
     context: Pick<SourcegraphContext, 'authProviders'>
-}
-
-const EXTERNAL_ACCOUNTS_DISMISSED_KEY = 'user.externalaccounts.seen'
-
-// getSeenAuthProviders returns a list of auth providers that have already
-// been seen by the user.
-export const getSeenAuthProviders = (): AuthProvider[] => {
-    const seenAuthProviders = localStorage.getItem(EXTERNAL_ACCOUNTS_DISMISSED_KEY)
-    if (seenAuthProviders) {
-        try {
-            return JSON.parse(seenAuthProviders)
-        } catch {
-            localStorage.removeItem(EXTERNAL_ACCOUNTS_DISMISSED_KEY)
-            return []
-        }
-    }
-    return []
-}
-
-// setSeenAuthProviders sets a list of auth providers that have already
-// been seen by the user in local storage.
-export const setSeenAuthProviders = (authProviders: AuthProvider[]): void => {
-    localStorage.setItem(EXTERNAL_ACCOUNTS_DISMISSED_KEY, JSON.stringify(authProviders))
 }
 
 // shouldShowExternalAccountsModal compares a list of active auth providers
@@ -139,7 +116,7 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
         if (authzProvidersData?.authzProviders) {
             const filteredProviders = filterAuthProviders(
                 props.context.authProviders,
-                authzProvidersData!.authzProviders
+                authzProvidersData.authzProviders
             )
             setAuthzProviders(filteredProviders)
             if (filteredProviders.length > 0) {

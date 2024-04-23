@@ -24,20 +24,9 @@ export interface UserOnboardingConfig {
     }
 }
 export interface SeenAuthProvider {
-    serviceType:
-        | 'github'
-        | 'gitlab'
-        | 'bitbucketCloud'
-        | 'http-header'
-        | 'openidconnect'
-        | 'sourcegraph-operator'
-        | 'saml'
-        | 'builtin'
-        | 'gerrit'
-        | 'azuredevops'
+    serviceType: string
     serviceID: string
     clientID: string
-    noSignIn: boolean
 }
 
 /**
