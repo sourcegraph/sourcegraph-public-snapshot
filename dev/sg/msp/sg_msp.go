@@ -272,10 +272,15 @@ Supports completions on services and environments.`,
 			UsageText: `
 # generate single env for a single service
 sg msp generate <service> <env>
+
 # generate all envs for a single service
 sg msp generate -all <service>
+
 # generate all envs across all services
 sg msp generate -all
+
+# generate all test envs across all services
+sg msp generate -all -category=test
 			`,
 			Before: msprepo.UseManagedServicesRepo,
 			Flags: []cli.Flag{
@@ -283,6 +288,10 @@ sg msp generate -all
 					Name:  "all",
 					Usage: "Generate infrastructure stacks for all services, or all envs for a service if service ID is provided",
 					Value: false,
+				},
+				&cli.StringFlag{
+					Name:  "category",
+					Usage: "Filter generated environments by category (one of 'test', 'internal', 'external') - must be used with '-all'",
 				},
 				&cli.BoolFlag{
 					Name:  "stable",
@@ -293,12 +302,22 @@ sg msp generate -all
 			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 			Action: func(c *cli.Context) error {
 				var (
-					generateAll    = c.Bool("all")
-					stableGenerate = c.Bool("stable")
+					generateAll      = c.Bool("all")
+					generateCategory = spec.EnvironmentCategory(c.String("category"))
+					stableGenerate   = c.Bool("stable")
 				)
 
 				if stableGenerate {
 					std.Out.WriteSuggestionf("Using stable generate - tfvars will not be updated.")
+				}
+
+				if generateCategory != "" {
+					if !generateAll {
+						return errors.New("'-category' must be used with '-all'")
+					}
+					if err := generateCategory.Validate(); err != nil {
+						return errors.Wrap(err, "invalid value for '-category'")
+					}
 				}
 
 				// Generate a specific service environment if '-all' is not provided
@@ -323,6 +342,7 @@ sg msp generate -all
 					}
 					return generateTerraform(svc, generateTerraformOptions{
 						stableGenerate: stableGenerate,
+						targetCategory: generateCategory,
 					})
 				}
 
@@ -341,6 +361,7 @@ sg msp generate -all
 					}
 					if err := generateTerraform(s, generateTerraformOptions{
 						stableGenerate: stableGenerate,
+						targetCategory: generateCategory,
 					}); err != nil {
 						return errors.Wrap(err, serviceID)
 					}
