@@ -9,7 +9,6 @@ import (
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
 	"github.com/grafana/regexp"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"io"
 	"io/fs"
@@ -42,7 +41,8 @@ type Lang struct {
 var newLine = []byte{'\n'}
 
 func isExcluded(name string) (bool, error) {
-	excludedFileNamePatterns := conf.GetInventory().ExcludedFileNamePatterns
+	// Exclude lock files by default. We can later make the patterns configurable.
+	excludedFileNamePatterns := []string{".*\\.lock"}
 	for _, pattern := range excludedFileNamePatterns {
 		matched, err := regexp.MatchString(pattern, name)
 		if err != nil {

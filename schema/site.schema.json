@@ -601,36 +601,6 @@
               "default": "useFileContents"
             }
           }
-        },
-        "getInventory": {
-          "description": "Parameters to tweak the performance of GetInventory for very large repositories.",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "timeout": {
-              "description": "Duration in minutes after which the request will be aborted. Cache remains partially filled and subsequent runs may be faster.",
-              "type": "integer",
-              "default": 3
-            },
-            "cacheParallelization": {
-              "description": "Maximum number of concurrent calls per query to the redis cache.",
-              "type": "integer",
-              "default": 5
-            },
-            "gitserverParallelization": {
-              "description": "Maximum number of concurrent calls per query to the gitserver.",
-              "type": "integer",
-              "default": 2
-            },
-            "excludedFileNamePatterns": {
-              "description": "A list of regex patterns that match file names you want to exclude. This is useful to exclude large files that would take long to transfer.",
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "default": [".*\\.lock"]
-            }
-          }
         }
       },
       "examples": [

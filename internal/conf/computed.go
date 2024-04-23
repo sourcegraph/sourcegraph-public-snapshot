@@ -412,31 +412,6 @@ func EventLoggingEnabled() bool {
 	return val == "enabled"
 }
 
-func GetInventory() *schema.GetInventory {
-	val := ExperimentalFeatures().GetInventory
-	if val == nil {
-		return &schema.GetInventory{
-			CacheParallelization:     10,
-			ExcludedFileNamePatterns: []string{".*\\.lock"},
-			GitserverParallelization: 2,
-			Timeout:                  3,
-		}
-	}
-	if val.ExcludedFileNamePatterns == nil {
-		val.ExcludedFileNamePatterns = []string{".*\\.lock"}
-	}
-	if val.CacheParallelization == 0 {
-		val.CacheParallelization = 10
-	}
-	if val.GitserverParallelization == 0 {
-		val.CacheParallelization = 2
-	}
-	if val.Timeout == 0 {
-		val.Timeout = 3
-	}
-	return val
-}
-
 // SearchDocumentRanksWeight controls the impact of document ranks on the final ranking when
 // SearchOptions.UseDocumentRanks is enabled. The default is 0.5 * 9000 (half the zoekt default),
 // to match existing behavior where ranks are given half the priority as existing scoring signals.

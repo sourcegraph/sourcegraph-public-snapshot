@@ -3,8 +3,9 @@ package backend
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -250,6 +251,8 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 	})
 }
 
+var getInventoryTimeout, _ = strconv.Atoi(env.Get("GET_INVENTORY_TIMEOUT", "5", "Time in minutes before cancelling getInventory requests. Raise this if your repositories are large and need a long time to process."))
+
 func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
@@ -258,7 +261,7 @@ func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID ap
 	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo, "commitID": commitID}, &err)
 	defer done()
 
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(conf.GetInventory().Timeout)*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(getInventoryTimeout)*time.Minute)
 	defer cancel()
 
 	invCtx, err := InventoryContext(s.logger, repo, s.gitserverClient, commitID, forceEnhancedLanguageDetection)

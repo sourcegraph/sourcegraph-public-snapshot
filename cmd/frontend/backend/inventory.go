@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"golang.org/x/sync/semaphore"
 	"io"
@@ -27,6 +26,9 @@ import (
 var useEnhancedLanguageDetection, _ = strconv.ParseBool(env.Get("USE_ENHANCED_LANGUAGE_DETECTION", "true", "Enable more accurate but slower language detection that uses file contents"))
 
 var inventoryCache = rcache.New(fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLanguageDetection))
+
+var gitServerConcurrency, _ = strconv.Atoi(env.Get("GET_INVENTORY_GIT_SERVER_CONCURRENCY", "4", "Changes the number of concurrent requests against the gitserver for getInventory requests."))
+var redisConcurrency, _ = strconv.Atoi(env.Get("GET_INVENTORY_REDIS_CONCURRENCY", "100", "Changes the number of conrrent requests against the redis cache for getInventory requests."))
 
 type semaphoredReadCloser struct {
 	io.ReadCloser
@@ -53,8 +55,8 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 		return info.OID().String()
 	}
 
-	gitServerSemaphore := semaphore.NewWeighted(int64(conf.GetInventory().GitserverParallelization))
-	cacheSemaphore := semaphore.NewWeighted(int64(conf.GetInventory().CacheParallelization))
+	gitServerSemaphore := semaphore.NewWeighted(int64(gitServerConcurrency))
+	redisSemaphore := semaphore.NewWeighted(int64(redisConcurrency))
 
 	logger = logger.Scoped("InventoryContext").
 		With(log.String("repo", string(repo)), log.String("commitID", string(commitID)))
@@ -89,10 +91,10 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 				return inventory.Inventory{}, false // not cacheable
 			}
 
-			if err := cacheSemaphore.Acquire(ctx, 1); err != nil {
+			if err := redisSemaphore.Acquire(ctx, 1); err != nil {
 				return inventory.Inventory{}, false
 			}
-			defer cacheSemaphore.Release(1)
+			defer redisSemaphore.Release(1)
 
 			if b, ok := inventoryCache.Get(cacheKey); ok {
 				var inv inventory.Inventory
@@ -115,10 +117,10 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 				return
 			}
 
-			if err := cacheSemaphore.Acquire(ctx, 1); err != nil {
+			if err := redisSemaphore.Acquire(ctx, 1); err != nil {
 				return
 			}
-			defer cacheSemaphore.Release(1)
+			defer redisSemaphore.Release(1)
 			inventoryCache.Set(cacheKey, b)
 		},
 	}
