@@ -35,7 +35,7 @@ import { GettingStarted } from '../GettingStarted'
 import { ScopeSelector } from '../ScopeSelector'
 import type { ScopeSelectorProps } from '../ScopeSelector/ScopeSelector'
 
-import { getCodyContextFilterHook } from './useIsFileIgnored'
+import { getUseCodyContextFiltersHook } from './useCodyContextFilters'
 
 import styles from './ChatUi.module.scss'
 
@@ -101,7 +101,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({
     const onSubmit = useCallback((text: string) => submitMessage(text), [submitMessage])
     const onEdit = useCallback((text: string) => editMessage(text), [editMessage])
 
-    const isFileIgnored = getCodyContextFilterHook(isSourcegraphDotCom)()
+    const codyContextFilterFns = getUseCodyContextFiltersHook(isSourcegraphDotCom)()
 
     const scopeSelectorProps: ScopeSelectorProps = useMemo(
         () => ({
@@ -113,7 +113,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({
             transcriptHistory,
             className: 'mt-2',
             authenticatedUser,
-            isFileIgnored,
+            codyContextFilterFns,
         }),
         [
             scope,
@@ -123,7 +123,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({
             logTranscriptEvent,
             transcriptHistory,
             authenticatedUser,
-            isFileIgnored,
+            codyContextFilterFns,
         ]
     )
 

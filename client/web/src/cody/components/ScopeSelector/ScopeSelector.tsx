@@ -10,6 +10,7 @@ import { Text } from '@sourcegraph/wildcard'
 import type { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
 import { EventName } from '../../../util/constants'
 import type { CodyTranscriptEventActions, CodyTranscriptEventFeatures } from '../../useCodyChat'
+import { CodyContextFiltersFns } from '../ChatUI/useCodyContextFilters'
 
 import { ReposStatusQuery } from './backend'
 import { RepositoriesSelectorPopover, getFileName, type IRepo } from './RepositoriesSelectorPopover'
@@ -34,7 +35,7 @@ export interface ScopeSelectorProps {
     // rather than collapsing or flipping position.
     encourageOverlap?: boolean
     authenticatedUser: AuthenticatedUser | null
-    isFileIgnored: (repoName: string, path: string) => boolean
+    codyContextFilterFns: CodyContextFiltersFns
 }
 
 export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function ScopeSelectorComponent({
@@ -48,7 +49,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     renderHint,
     encourageOverlap,
     authenticatedUser,
-    isFileIgnored,
+    codyContextFilterFns,
 }) {
     const [loadReposStatus, { data: newReposStatusData, previousData: previousReposStatusData }] = useLazyQuery<
         ReposStatusResult,
@@ -59,16 +60,16 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
     const activeEditor = useMemo(() => scope.editor.getActiveTextEditor(), [scope.editor])
 
-    const isCurrentFileIgnored =
+    const isCurrentFileIncluded =
         activeEditor?.repoName && activeEditor?.filePath
-            ? isFileIgnored(activeEditor.repoName, activeEditor.filePath)
+            ? codyContextFilterFns.isFileIncluded(activeEditor.repoName, activeEditor.filePath)
             : false
-    const inferredFilePath = (!isCurrentFileIgnored && activeEditor?.filePath) || null
+    const inferredFilePath = (!isCurrentFileIncluded && activeEditor?.filePath) || null
     useEffect(() => {
-        if (isCurrentFileIgnored && scope.includeInferredFile) {
+        if (!isCurrentFileIncluded && scope.includeInferredFile) {
             setScope({ ...scope, includeInferredFile: false, includeInferredRepository: true })
         }
-    }, [isCurrentFileIgnored, scope, setScope])
+    }, [isCurrentFileIncluded, scope, setScope])
 
     useEffect(() => {
         const repoNames = [...scope.repositories]
