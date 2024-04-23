@@ -105,6 +105,9 @@ func (c *Client) ListInstances(ctx context.Context) ([]*Instance, error) {
 func (c *Client) DeployVersion(ctx context.Context, spec *DeploymentSpec) (*Instance, error) {
 	// TODO(burmudar): Better method to get LicenseKeys
 	licenseKey := os.Getenv("EPHEMERAL_LICENSE_KEY")
+	if licenseKey == "" {
+		return nil, errors.New("no license key - the env var 'EPHEMERAL_LICENSE_KEY' is empty")
+	}
 	req := newRequestWithToken(c.token, &cloudapiv1.CreateInstanceRequest{
 		Name:             spec.Name,
 		Version:          pointers.Ptr(spec.Version),
