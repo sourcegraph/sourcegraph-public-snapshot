@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var requiredSamsScope = scopes.ToScope("telemetry_gateway", "events", "write")
+var requiredSamsScope = scopes.ToScope(scopes.ServiceTelemetryGateway, "events", scopes.ActionWrite)
 
 var tracer = otel.GetTracerProvider().Tracer("telemetry-gateway/samsm2m")
 
