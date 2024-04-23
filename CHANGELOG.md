@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added rate and latency instrumentation for git / package repository syncing operations. These are visible in the gitserver dashboards (VCS "Clone/Fetch/IsCloneable" Metrics). [#61708](https://github.com/sourcegraph/sourcegraph/pull/61708)
 - Added syntax highlighting for the [Pkl](https://pkl-lang.org/) configuration language. [#61478](https://github.com/sourcegraph/sourcegraph/pull/61478)
 - New `rev:at.time()` search filter that allows you to search a branch at a point in time. [#61513](https://github.com/sourcegraph/sourcegraph/pull/61513)
+- "cody.contextFilters" field to the site config. Admins can set include and exclude rules to define which repositories Cody can use as context in its requests to third-party LLMs. [#61101](https://github.com/sourcegraph/sourcegraph/pull/61101), [#61641](https://github.com/sourcegraph/sourcegraph/pull/61641)
 - Added exhaustive logging for all gRPC requests sent to gitserver. This feature is off by default, and can be enabled by setting the `SRC_GITSERVER_EXHAUSTIVE_LOGGING_ENABLED` environment variable to `true`. [#61270](https://github.com/sourcegraph/sourcegraph/pull/61270)
 
 ### Changed
