@@ -14,18 +14,18 @@
 
 <script lang="ts">
     import { mdiMenu } from '@mdi/js'
+
     import { browser } from '$app/environment'
-
-    import { Badge, Button } from '$lib/wildcard'
-    import { mark } from '$lib/images'
     import Icon from '$lib/Icon.svelte'
-    import Popover from '$lib/Popover.svelte'
-    import { mainNavigation } from '$lib/navigation/mainNavigation'
+    import { mark } from '$lib/images'
     import GlobalSidebarNavigation from '$lib/navigation/GlobalSidebarNavigation.svelte'
+    import { mainNavigation } from '$lib/navigation/mainNavigation'
     import MainNavigationEntry from '$lib/navigation/MainNavigationEntry.svelte'
+    import Popover from '$lib/Popover.svelte'
+    import { Badge, Button } from '$lib/wildcard'
 
-    import UserMenu from './UserMenu.svelte'
     import { GlobalNavigation_User } from './GlobalNavigation.gql'
+    import UserMenu from './UserMenu.svelte'
 
     export let authenticatedUser: GlobalNavigation_User | null | undefined
     export let handleOptOut: (() => Promise<void>) | undefined
@@ -109,7 +109,7 @@
         gap: 0.75rem;
         padding: 0.5rem;
         border-bottom: 1px solid var(--border-color-2);
-        background-color: var(--color-bg-1);
+        background-color: var(--bg-panel);
 
         // This ensures that all arbitrary content is rendered above
         // other elements on the page.
