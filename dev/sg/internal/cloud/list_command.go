@@ -30,9 +30,6 @@ func listCloudEphemeral(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := validateEmail(email); err != nil {
-		return err
-	}
 
 	cloudClient, err := NewClient(ctx.Context, email, APIEndpoint)
 	if err != nil {
