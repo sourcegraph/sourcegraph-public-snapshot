@@ -43,7 +43,7 @@ var metricsRecorder = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "updat
 type Status struct {
 	Date          time.Time // the time that the last check completed
 	Err           error     // the error that occurred, if any. When present, indicates the instance is offline / unable to contact Sourcegraph.com
-	UpdateVersion string    // the version string of the updated version, if any
+	UpdateVersion string    // the version string of the updated version, if any. i.e. the latest sourcegraph release
 }
 
 // HasUpdate reports whether the status indicates an update is available.

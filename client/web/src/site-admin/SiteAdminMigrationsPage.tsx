@@ -127,6 +127,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
         [migrationsOrError]
     )
 
+    // TODO: we currently just display ll migrations here. We should filter out migrations which have a deprecated value before the firstVersion of the Sourcegraph instance.
     return (
         <div className="site-admin-migrations-page">
             {isErrorLike(migrationsOrError) ? (
@@ -417,15 +418,13 @@ export const isInvalidForVersion = (migration: OutOfBandMigrationFields, version
         return migration.progress !== 0 && !migration.nonDestructive
     }
 
-    // TODO Ensure check for invalid migration ranges
-
     if (migration.deprecated) {
         // Migrations only store major/minor version components
         const deprecated = parseVersion(`${migration.deprecated}.0`)
         if (deprecated && version.major === deprecated.major && version.minor >= deprecated.minor) {
             return migration.progress !== 1
         } else if (deprecated && version.major > deprecated.major) {
-            return true
+            return migration.progress !== 1
         }
     }
 

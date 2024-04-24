@@ -355,8 +355,9 @@ func (r *siteResolver) UpgradeReadiness(ctx context.Context) (*upgradeReadinessR
 	}
 
 	return &upgradeReadinessResolver{
-		logger: r.logger.Scoped("upgradeReadiness"),
-		db:     r.db,
+		logger:  r.logger.Scoped("upgradeReadiness"),
+		db:      r.db,
+		version: r.ProductVersion(),
 	}, nil
 }
 
@@ -507,13 +508,15 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) ([]*schemaDr
 	return resolvers, nil
 }
 
-// isRequiredOutOfBandMigration returns true if a OOB migration is deprecated not
-// after the given version and not yet completed.
-func isRequiredOutOfBandMigration(version oobmigration.Version, m oobmigration.Migration) bool {
-	if m.Deprecated == nil {
+// isRequiredOutOfBandMigration returns true if an OOB migration will be deprecated in the latest version and has not progressed to completion.
+func isRequiredOutOfBandMigration(currentVersion, latestVersion oobmigration.Version, m oobmigration.Migration) bool {
+	// If the migration is not marked as deprecated, or was deprecated before the current product version, it is not required.
+	if m.Deprecated == nil || oobmigration.CompareVersions(*m.Deprecated, currentVersion) == oobmigration.VersionOrderBefore {
 		return false
 	}
-	return oobmigration.CompareVersions(*m.Deprecated, version) != oobmigration.VersionOrderAfter && m.Progress < 1
+
+	// The version the migration is marked as deprecated is not after the latest release version, and is incomplete.
+	return oobmigration.CompareVersions(*m.Deprecated, latestVersion) != oobmigration.VersionOrderAfter && m.Progress < 1
 }
 
 func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
@@ -524,7 +527,15 @@ func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Conte
 	if !updateStatus.HasUpdate() {
 		return nil, nil
 	}
-	version, _, ok := oobmigration.NewVersionAndPatchFromString(updateStatus.UpdateVersion)
+
+	// The current sourcegraph product version
+	currentVersion, _, ok := oobmigration.NewVersionAndPatchFromString(r.version)
+	if !ok {
+		return nil, errors.Errorf("invalid current version %s", r.version)
+	}
+
+	// The latest sourcegraph version available, returned from the updateCheck
+	latestVersion, _, ok := oobmigration.NewVersionAndPatchFromString(updateStatus.UpdateVersion)
 	if !ok {
 		return nil, errors.Errorf("invalid latest update version %q", updateStatus.UpdateVersion)
 	}
@@ -536,7 +547,7 @@ func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Conte
 
 	var requiredMigrations []*outOfBandMigrationResolver
 	for _, m := range migrations {
-		if isRequiredOutOfBandMigration(version, m) {
+		if isRequiredOutOfBandMigration(currentVersion, latestVersion, m) {
 			requiredMigrations = append(requiredMigrations, &outOfBandMigrationResolver{m})
 		}
 	}

@@ -195,21 +195,16 @@ func (r *Runner) UpdateDirection(ctx context.Context, ids []int, applyReverse bo
 
 // Start runs registered migrators on a loop until they complete. This method will periodically
 // re-read from the database in order to refresh its current view of the migrations.
-func (r *Runner) Start(currentVersion Version) {
+func (r *Runner) Start(currentVersion, firstVersion Version) {
 	r.startInternal(func(migration Migration) bool {
 		if CompareVersions(currentVersion, migration.Introduced) == VersionOrderBefore {
 			// current version before migration introduction
 			return false
 		}
 
-		// If a currentVersion is at or after the deprecated version, the migration is considered
-		// deprecated and has been completed.
-		if migration.Deprecated != nil {
-			if CompareVersions(currentVersion, *migration.Deprecated) == VersionOrderAfter {
-				// current version on or after deprecation version
-				r.store.UpdateProgress(r.ctx, migration.ID, 1)
-				return false
-			}
+		if CompareVersions(firstVersion, *migration.Deprecated) == VersionOrderAfter {
+			// instance initialized after migration deprecation
+			return false
 		}
 
 		// migration not yet deprecated or current version is before deprecated version
@@ -248,8 +243,6 @@ func (r *Runner) startInternal(shouldRunMigration func(m Migration) bool) {
 			if !ok {
 				continue
 			}
-
-			// TODO: Refresh Progress Before Migrating
 
 			if !shouldRunMigration(migration) {
 				continue
