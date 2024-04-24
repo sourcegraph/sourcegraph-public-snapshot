@@ -104,7 +104,7 @@ func run(
 		tracer.Init(log.Scoped("tracer"), oobConfig.Tracing)
 	}
 
-	profiler.Init()
+	profiler.Init(logger)
 
 	obctx := observation.ContextWithLogger(log.Scoped(service.Name()), observation.NewContext(logger))
 	ctx := context.Background()

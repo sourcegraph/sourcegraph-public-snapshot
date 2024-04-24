@@ -10,9 +10,9 @@ import (
 	"go.opentelemetry.io/otel/metric"
 
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 func handlePublishEvents(

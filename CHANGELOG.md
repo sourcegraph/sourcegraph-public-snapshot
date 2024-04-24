@@ -20,6 +20,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Added rate and latency instrumentation for git / package repository syncing operations. These are visible in the gitserver dashboards (VCS "Clone/Fetch/IsCloneable" Metrics). [#61708](https://github.com/sourcegraph/sourcegraph/pull/61708)
 - Added syntax highlighting for the [Pkl](https://pkl-lang.org/) configuration language. [#61478](https://github.com/sourcegraph/sourcegraph/pull/61478)
 - New `rev:at.time()` search filter that allows you to search a branch at a point in time. [#61513](https://github.com/sourcegraph/sourcegraph/pull/61513)
+- "cody.contextFilters" field to the site config. Admins can set include and exclude rules to define which repositories Cody can use as context in its requests to third-party LLMs. [#61101](https://github.com/sourcegraph/sourcegraph/pull/61101), [#61641](https://github.com/sourcegraph/sourcegraph/pull/61641)
+- Added exhaustive logging for all gRPC requests sent to gitserver. This feature is off by default, and can be enabled by setting the `SRC_GITSERVER_EXHAUSTIVE_LOGGING_ENABLED` environment variable to `true`. [#61270](https://github.com/sourcegraph/sourcegraph/pull/61270)
 
 ### Changed
 
@@ -32,25 +34,33 @@ All notable changes to Sourcegraph are documented in this file.
 - The GetCommit() RPC in the gitserver service now uses the correct protobuf type that allows for non-utf8 byte sequences in commit messages, author names, and author emails. [#61940](https://github.com/sourcegraph/sourcegraph/pull/61940)
 - The ArchiveReader() RPC in the gitserver service now uses the correct protobuf type that allows for non-utf8 byte sequences in file paths. [#61970](https://github.com/sourcegraph/sourcegraph/pull/61970)
 - Pinned code intel popovers and popovers opened via the keyboard are properly shown again. [#61966](https://github.com/sourcegraph/sourcegraph/pull/61966)
+- Syntax highlighting works correctly for JSX files. [#62027](https://github.com/sourcegraph/sourcegraph/pull/62027)
 
-## Unreleased (April Patch Release - 22nd April, 2024)
+## 5.3.12303
 
 ### Added
 
-## Changed
+- Indexed-search now supports draining a replica of indexes to support zero-downtime reduction in cluster size. [#62005](https://github.com/sourcegraph/sourcegraph/pull/62005)
 
-## Fixed
+### Fixed
+
+- Rust binaries are now built in release mode to avoid unnecessary debug checks. [#61740](https://github.com/sourcegraph/sourcegraph/pull/61740)
+- Fixed how scip-ctags reports errors to avoid failing search indexing on non-fatal errors. [#61712](https://github.com/sourcegraph/sourcegraph/pull/61712)
+- Fixed a bug in Enterprise Cody context for queries containing only stopwords. [#61848](https://github.com/sourcegraph/sourcegraph/pull/61848), [#62026](https://github.com/sourcegraph/sourcegraph/pull/62026)
+- Fixed the instance dropdown on the zoekt grafana dashboard. [#61836](https://github.com/sourcegraph/sourcegraph/pull/61836)
 
 ## 5.3.11625
 
 ### Changed
 
 - Notices configured in the site config now allow for specifying a style or color. [#61338](https://github.com/sourcegraph/sourcegraph/pull/61338)
+- Reduce spamming error logs when canceling symbols indexing or canceling a syntax highlighting request. [#61880](https://github.com/sourcegraph/sourcegraph/pull/61880), [#61719](https://github.com/sourcegraph/sourcegraph/pull/61719), [#61732](https://github.com/sourcegraph/sourcegraph/pull/61732)
 
 ### Fixed
 
 - Fixed a bug where the `src batch preview` command could fail due to an incorrect file-not-found error. [#61984](https://github.com/sourcegraph/sourcegraph/pull/61984)
 - Fixed a bug where the Roles page in the Site Admin view was inaccessible. [#61738](https://github.com/sourcegraph/sourcegraph/pull/61738)
+- Fixed a panic in Cody Attribution in sourcegraph-frontend when reporting an error. [#60439](https://github.com/sourcegraph/sourcegraph/issues/60439)
 
 ## 5.3.9104
 

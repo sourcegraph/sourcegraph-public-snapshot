@@ -24,6 +24,8 @@ tasks:
         - //...
         # exclude testing as it is executed in a seperate job
         - -//testing/...
+      artifact_paths:
+        - build_event_log.bin
   - test:
       name: Integration/E2E
       targets:
@@ -32,6 +34,8 @@ tasks:
         # evaluate Aspect Workflows it is ok
         # TODO(burmudar): Let this only run on main branch
         - //testing:codeintel_integration_test
+      artifact_paths:
+        - build_event_log.bin
   - delivery:
       auto_deliver: true
       icon: 'ship'
