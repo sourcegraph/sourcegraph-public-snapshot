@@ -127,12 +127,21 @@ export const load: LayoutLoad = async ({ parent, params }) => {
                         revision: resolvedRevision.commitID,
                     })
                     .then(
-                        mapOrThrow(({ data, error }) => {
-                            if (!data?.repository?.commit) {
-                                throw new Error(error?.message)
-                            }
+                        mapOrThrow(({ data }) => {
+                            let nodes = data?.repository?.ancestorCommits?.ancestors.nodes ?? []
 
-                            return data.repository.commit.ancestors
+                            // If we got a match for the OID, add it to the list if it doesn't already exist.
+                            // We double check that the OID contains the search term because we cannot search
+                            // specifically by OID, and an empty string resolves to HEAD.
+                            const commitByHash = data?.repository?.commitByHash
+                            if (
+                                commitByHash &&
+                                commitByHash.oid.includes(searchTerm) &&
+                                !nodes.some(node => node.oid === commitByHash.oid)
+                            ) {
+                                nodes = [commitByHash, ...nodes]
+                            }
+                            return { nodes }
                         })
                     )
             ),
