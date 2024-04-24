@@ -10,6 +10,7 @@ import (
 	"github.com/go-enry/go-enry/v2/data"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"go.opentelemetry.io/otel/attribute"
 	"io"
 	"io/fs"
 
@@ -70,8 +71,8 @@ func getLang(ctx context.Context, file fs.FileInfo, buf []byte, getFileReader fu
 		return Lang{}, nil
 	}
 
-	getLangTrc, ctx := trace.New(ctx, "getLang")
-	defer getLangTrc.End()
+	trc, ctx := trace.New(ctx, "getLang")
+	defer trc.End()
 	rc, err := getFileReader(ctx, file.Name())
 	if err != nil {
 		return Lang{}, errors.Wrap(err, "getting file reader")
@@ -85,6 +86,12 @@ func getLang(ctx context.Context, file fs.FileInfo, buf []byte, getFileReader fu
 	// filename. If not, we pass a subset of the file contents for analysis.
 	matchedLang, safe := GetLanguageByFilename(file.Name())
 
+	trc.AddEvent("GetLanguageByFilename",
+		attribute.String("FileName", file.Name()),
+		attribute.Bool("Safe", safe),
+		attribute.String("MatchedLang", matchedLang),
+	)
+
 	// No content
 	if rc == nil {
 		lang.Name = matchedLang
@@ -94,9 +101,7 @@ func getLang(ctx context.Context, file fs.FileInfo, buf []byte, getFileReader fu
 
 	if !safe {
 		// Detect language from content
-		trc, _ := trace.New(ctx, "ReadFull")
 		n, err := io.ReadFull(rc, buf)
-		trc.End()
 		if err == io.EOF {
 			// No bytes read, indicating an empty file
 			return Lang{}, nil
@@ -119,9 +124,7 @@ func getLang(ctx context.Context, file fs.FileInfo, buf []byte, getFileReader fu
 	}
 	lang.Name = matchedLang
 
-	trc, _ := trace.New(ctx, "CountLines")
 	lineCount, byteCount, err := countLines(rc, buf)
-	trc.End()
 	if err != nil {
 		return lang, err
 	}

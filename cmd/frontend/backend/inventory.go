@@ -74,15 +74,16 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 			defer gitServerSemaphore.Release(1)
 			// Using recurse=true is not possible, because we're likely to run into the following error:
 			// "Maximum call stack size exceeded"
+			// This may have been because we're doing a call to ReadTree for every directory.
 			return gsClient.ReadDir(ctx, repo, commitID, path, false)
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
 			trc, ctx := trace.New(ctx, "NewFileReader waits for semaphore")
 			err := gitServerSemaphore.Acquire(ctx, 1)
+			trc.End()
 			if err != nil {
 				return nil, err
 			}
-			trc.End()
 			reader, err := gsClient.NewFileReader(ctx, repo, commitID, path)
 			if err != nil {
 				return nil, err
@@ -98,6 +99,7 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 			}
 
 			if err := redisSemaphore.Acquire(ctx, 1); err != nil {
+				logger.Warn("Failed to acquire semaphore for redis cache.", log.String("path", e.Name()), log.Error(err))
 				return inventory.Inventory{}, false
 			}
 			defer redisSemaphore.Release(1)
@@ -124,6 +126,7 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 			}
 
 			if err := redisSemaphore.Acquire(ctx, 1); err != nil {
+				logger.Warn("Failed to acquire semaphore for redis cache.", log.String("path", e.Name()), log.Error(err))
 				return
 			}
 			defer redisSemaphore.Release(1)
