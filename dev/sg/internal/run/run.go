@@ -76,19 +76,27 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 				runner.printError(cmd, err)
 				return errors.Wrapf(err, "failed to start command %q", config.Name)
 			}
-			defer proc.cancel()
+
+			go func() {
+				select {
+				case <-ctx.Done():
+					proc.cancel()
+				}
+			}()
 
 			// Wait forever until we're asked to stop or that restarting returns an error.
 			for {
 				select {
-				// Handle context cancelled
-				case <-ctx.Done():
-					return ctx.Err()
-
 				// Handle process exit
 				case err := <-proc.Exit():
 					// If the process failed, we exit immediately
 					if err != nil {
+						rerr, ok := err.(runErr)
+						if ok {
+							runner.WriteLine(output.Styledf(output.StyleFailure, "%s%s exited with error: %w%s", output.StyleBold, config.Name, rerr.exitCode, output.StyleReset))
+							return err
+						}
+						runner.WriteLine(output.Styledf(output.StyleFailure, "%s%s exited with error: %w%s", output.StyleBold, config.Name, err, output.StyleReset))
 						return err
 					}
 
@@ -96,6 +104,10 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 
 					// If we shouldn't restart when the process exits, return
 					if !config.ContinueWatchOnExit {
+						return nil
+					}
+
+					if ctx.Err() != nil {
 						return nil
 					}
 
@@ -122,7 +134,6 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 						if err != nil {
 							return err
 						}
-						defer proc.cancel()
 					} else {
 						runner.WriteLine(output.Styledf(output.StylePending, "Binary for %s did not change. Not restarting.", config.Name))
 					}

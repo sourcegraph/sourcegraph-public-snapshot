@@ -223,13 +223,13 @@ func (dc DockerCommand) GetCmd(bin string, isLinux bool) string {
 	return strings.Join([]string{cleanup, load, volumes, dc.Config.PreCmd, docker}, "\n")
 }
 
-func (dc DockerCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
+func (dc DockerCommand) GetExecCmd() (*exec.Cmd, error) {
 	bin, err := dc.GetBinaryLocation()
 	if err != nil {
 		return nil, err
 	}
 	cmd := dc.GetCmd(bin, runtime.GOOS == "linux")
-	return exec.CommandContext(ctx, "bash", "-c", cmd), nil
+	return exec.Command("bash", "-c", cmd), nil
 }
 
 // Overrides the behavior of this command with other command.

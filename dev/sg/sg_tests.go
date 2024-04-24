@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"os/exec"
@@ -112,7 +111,7 @@ type sgTestCommand struct {
 
 // Ovrrides the GetExecCmd method with a custom implementation to construct the command
 // using CLI-passed arguments
-func (test sgTestCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
+func (test sgTestCommand) GetExecCmd() (*exec.Cmd, error) {
 	cmdArgs := []string{test.Command.Cmd}
 	if len(test.args) != 0 {
 		cmdArgs = append(cmdArgs, test.args...)
@@ -120,7 +119,7 @@ func (test sgTestCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
 		cmdArgs = append(cmdArgs, test.Command.DefaultArgs)
 	}
 
-	return exec.CommandContext(ctx, "bash", "-c", strings.Join(cmdArgs, " ")), nil
+	return exec.Command("bash", "-c", strings.Join(cmdArgs, " ")), nil
 }
 
 func newSGTestCommand(cmd run.Command, args []string) sgTestCommand {

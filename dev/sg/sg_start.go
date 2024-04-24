@@ -7,9 +7,12 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"os/signal"
 	"slices"
 	"sort"
 	"strings"
+	"sync"
+	"syscall"
 	"time"
 
 	hashstructure "github.com/mitchellh/hashstructure/v2"
@@ -20,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -34,11 +36,26 @@ func init() {
 		},
 		func(cmd *cli.Context) {
 			ctx, cancel := context.WithCancel(cmd.Context)
-			interrupt.Register(func() {
-				cancel()
-				// TODO wait for stuff properly.
-				time.Sleep(1 * time.Second)
-			})
+			go func() {
+				interrupt := make(chan os.Signal, 2)
+				signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+				go func() {
+					<-interrupt
+
+					go func() {
+						// If we receive a second interrupt, forcibly exit.
+						<-interrupt
+						os.Exit(1)
+					}()
+
+					cancel()
+				}()
+			}()
+			// interrupt.Register(func() {
+			// 	cancel()
+			// 	// TODO wait for stuff properly.
+			// 	time.Sleep(1 * time.Second)
+			// })
 			cmd.Context = ctx
 		},
 	)
@@ -253,12 +270,17 @@ func start(ctx context.Context, args StartArgs) error {
 	var (
 		childCtx context.Context
 		cancel   func()
-		errs     = make(chan error)
+		errs     = make(chan error, 1)
 		hash     uint64
+		wg       sync.WaitGroup
 	)
 	for {
 		select {
 		case <-ctx.Done():
+			if cancel != nil {
+				cancel()
+			}
+			wg.Wait()
 			return nil
 		case err := <-errs:
 			if err != nil {
@@ -304,7 +326,9 @@ func start(ctx context.Context, args StartArgs) error {
 
 			std.Out.ClearScreen()
 
+			wg.Add(1)
 			go func() {
+				defer wg.Done()
 				if args.Describe {
 					errs <- cmds.describe(conf)
 				} else {

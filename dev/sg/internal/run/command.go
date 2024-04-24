@@ -17,7 +17,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/process"
@@ -75,8 +74,8 @@ func (cmd Command) GetBazelTarget() string {
 	return ""
 }
 
-func (cmd Command) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
-	return exec.CommandContext(ctx, "bash", "-c", cmd.Cmd), nil
+func (cmd Command) GetExecCmd() (*exec.Cmd, error) {
+	return exec.Command("bash", "-c", cmd.Cmd), nil
 }
 
 func (cmd Command) RunInstall(ctx context.Context, parentEnv map[string]string) error {
@@ -264,7 +263,7 @@ type outputOptions struct {
 }
 
 func startSgCmd(ctx context.Context, cmd SGConfigCommand, parentEnv map[string]string) (*startedCmd, error) {
-	exec, err := cmd.GetExecCmd(ctx)
+	exec, err := cmd.GetExecCmd()
 	if err != nil {
 		return nil, err
 	}
@@ -324,6 +323,8 @@ func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	sc.cancel = func() {
+		ch := sc.Exit()
+
 		// The default cancel function will use a SIGKILL (9) which does
 		// not allow processes to cleanup. If they have spawned child processes
 		// those child processes will be orphaned and continue running.
@@ -343,9 +344,12 @@ func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 		}
 
 		cancel()
+
+		err := <-ch
+		if err != nil {
+			println(err)
+		}
 	}
-	// Register an interrput handler
-	interrupt.Register(sc.cancel)
 
 	sc.Cmd = opts.exec
 	sc.Cmd.Dir = opts.dir

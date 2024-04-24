@@ -75,7 +75,7 @@ func (bc BazelCommand) StartWatch(ctx context.Context) (<-chan struct{}, error) 
 	}
 }
 
-func (bc BazelCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
+func (bc BazelCommand) GetExecCmd() (*exec.Cmd, error) {
 	var cmd string
 	var err error
 	if bc.RunTarget != "" {
@@ -86,7 +86,7 @@ func (bc BazelCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
 		}
 	}
 
-	return exec.CommandContext(ctx, "bash", "-c", fmt.Sprintf("%s\n%s", bc.Config.PreCmd, cmd)), nil
+	return exec.Command("bash", "-c", fmt.Sprintf("%s\n%s", bc.Config.PreCmd, cmd)), nil
 }
 
 // Merge overrides the behavior of this command with other command.

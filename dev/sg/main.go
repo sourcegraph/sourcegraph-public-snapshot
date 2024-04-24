@@ -168,7 +168,7 @@ var sg = &cli.App{
 		}()
 
 		// Let sg components register pre-interrupt hooks
-		interrupt.Listen()
+		// interrupt.Listen()
 
 		// Configure global output
 		std.Out = std.NewOutput(cmd.App.Writer, verbose)

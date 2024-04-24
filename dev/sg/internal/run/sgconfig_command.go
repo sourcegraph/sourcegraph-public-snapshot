@@ -12,7 +12,7 @@ type SGConfigCommand interface {
 	// Extracts common config and options, allowing the implementation any final overrides
 	GetConfig() SGConfigCommandOptions
 	GetBinaryLocation() (string, error)
-	GetExecCmd(context.Context) (*exec.Cmd, error)
+	GetExecCmd() (*exec.Cmd, error)
 	UpdateConfig(func(*SGConfigCommandOptions)) SGConfigCommand
 
 	// Optionally returns a bazel target associated with this command
