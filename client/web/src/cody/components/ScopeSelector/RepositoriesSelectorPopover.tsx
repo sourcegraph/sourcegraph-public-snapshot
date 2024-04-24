@@ -24,6 +24,7 @@ import {
 
 import type { ReposSelectorSearchResult, ReposSelectorSearchVariables } from '../../../graphql-operations'
 import { ExternalRepositoryIcon } from '../../../site-admin/components/ExternalRepositoryIcon'
+import { useCodyIgnore } from '../../useCodyIgnore'
 
 import { ReposSelectorSearchQuery } from './backend'
 import { Callout } from './Callout'
@@ -85,7 +86,15 @@ export const RepositoriesSelectorPopover: React.FC<{
         omitSuggestions: additionalRepositories,
     })
 
-    const searchResults = useMemo(() => searchResultsData?.repositories.nodes || [], [searchResultsData])
+    const { isRepoIgnored } = useCodyIgnore()
+    const filteredSuggestions = useMemo(
+        () => suggestions.filter(({ name }) => !isRepoIgnored(name)),
+        [suggestions, isRepoIgnored]
+    )
+    const filteredSearchResults = useMemo(
+        () => searchResultsData?.repositories.nodes.filter(r => !isRepoIgnored(r.name)) || [],
+        [searchResultsData]
+    )
 
     const onSearch = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -309,7 +318,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                             </Text>
                                         )}
 
-                                        {!!suggestions.length && (
+                                        {!!filteredSuggestions.length && (
                                             <div className="d-flex flex-column">
                                                 <Text
                                                     className={classNames(
@@ -325,7 +334,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                         styles.contextItemsContainer
                                                     )}
                                                 >
-                                                    {suggestions.map(repository => (
+                                                    {filteredSuggestions.map(repository => (
                                                         <SearchResultsListItem
                                                             additionalRepositories={[]}
                                                             key={repository.id}
@@ -352,8 +361,8 @@ export const RepositoriesSelectorPopover: React.FC<{
                                         </Text>
                                     </div>
                                     <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
-                                        {searchResults.length ? (
-                                            searchResults.map(repository => (
+                                        {filteredSearchResults.length ? (
+                                            filteredSearchResults.map(repository => (
                                                 <SearchResultsListItem
                                                     additionalRepositories={additionalRepositories}
                                                     key={repository.id}
