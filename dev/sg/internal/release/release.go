@@ -209,7 +209,7 @@ func determineMinorVersion() (string, error) {
 		return "", errors.New("Could not get latest release version")
 	}
 	if latestVersion.StatusCode != 200 {
-		return "", errors.New("Releaseregistry did not return 200")
+		return "", errors.New("Releaseregistry did not return statuscode 200")
 	}
 	latestVersionBody, _ := io.ReadAll(latestVersion.Body)
 	defer latestVersion.Body.Close()
@@ -229,8 +229,11 @@ func determineMinorVersion() (string, error) {
 	if err != nil {
 		return "", errors.New("Could not automatically determine new version number")
 	}
+	if resp.StatusCode != 200 {
+		return "", errors.New("Releaseregistry did not return statuscode 200")
+	}
 	bodyBytes, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	defer resp.Body.Close()
 	version := string(bodyBytes)
 	return version, nil
 }
