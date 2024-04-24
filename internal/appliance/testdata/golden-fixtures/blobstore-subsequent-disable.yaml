@@ -64,8 +64,6 @@ resources:
       appliance.sourcegraph.com/currentVersion: 5.3.9104
       appliance.sourcegraph.com/managed: "true"
     creationTimestamp: "2024-04-19T00:00:00Z"
-    labels:
-      sourcegraph.k8s.sourcegraph.com/template-hash: "3961876447"
     name: sg
     namespace: NORMALIZED_FOR_TESTING
     resourceVersion: NORMALIZED_FOR_TESTING
