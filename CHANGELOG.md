@@ -27,6 +27,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Improved syntax highlighting for Dart. [#58480](https://github.com/sourcegraph/sourcegraph/pull/58480)
 - The default noop Event type in the honey package has been replaced with a new type that aggregates fields in memory for testing and logging purposes. [#61854](https://github.com/sourcegraph/sourcegraph/pull/61854)
+- Improved the performance of Language Stats Insights by 50-70% by increasing the concurrent requests from the frontend to the gitserver from 1 to 4. You can override the concurrency with the `GET_INVENTORY_GIT_SERVER_CONCURRENCY` environment variable. [#62011](https://github.com/sourcegraph/sourcegraph/pull/62011)
+- Raised the backend timeout for Language Stats Insights from 3 minutes to 5 minutes. You can override this with the `GET_INVENTORY_TIMEOUT` environment variable. [#62011](https://github.com/sourcegraph/sourcegraph/pull/62011)
 
 ### Fixed
 
