@@ -234,4 +234,5 @@ def oci_deps():
         # postgres:12.18-alpine3.18
         digest = "sha256:090eea940ca3db9214120b0bada22616f3961ac06d669d5389ed60510ce4d2cd",
         image = "index.docker.io/library/postgres",
+        platforms = ["linux/amd64"],
     )
