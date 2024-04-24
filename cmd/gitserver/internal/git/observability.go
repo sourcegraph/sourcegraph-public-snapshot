@@ -369,6 +369,16 @@ func (b *observableBackend) ContributorCounts(ctx context.Context, opt Contribut
 	return b.backend.ContributorCounts(ctx, opt)
 }
 
+func (b *observableBackend) FirstEverCommit(ctx context.Context) (_ api.CommitID, err error) {
+	ctx, _, endObservation := b.operations.firstEverCommit.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("FirstEverCommit").Inc()
+	defer concurrentOps.WithLabelValues("FirstEverCommit").Dec()
+
+	return b.backend.FirstEverCommit(ctx)
+}
+
 type operations struct {
 	configGet         *observation.Operation
 	configSet         *observation.Operation
@@ -387,6 +397,7 @@ type operations struct {
 	revAtTime         *observation.Operation
 	rawDiff           *observation.Operation
 	contributorCounts *observation.Operation
+	firstEverCommit   *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {

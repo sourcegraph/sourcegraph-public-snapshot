@@ -25,6 +25,12 @@ func (e *RevisionNotFoundError) NotFound() bool {
 	return true
 }
 
+// IsRevisionNotFoundError reports if err is a RevisionNotFoundError.
+func IsRevisionNotFoundError(err error) bool {
+	var e *RevisionNotFoundError
+	return errors.As(err, &e)
+}
+
 type BadCommitError struct {
 	Spec   string
 	Commit api.CommitID

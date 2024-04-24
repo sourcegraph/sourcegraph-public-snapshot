@@ -2,12 +2,15 @@ package gitcli
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
@@ -251,5 +254,74 @@ func TestRepository_GetCommit(t *testing.T) {
 			},
 			ModifiedFiles: []string{"file2"},
 		}, c)
+	})
+}
+
+func TestRepository_FirstEverCommit(t *testing.T) {
+	testCases := []struct {
+		commitDates []string
+		want        string
+	}{
+		{
+			commitDates: []string{
+				"2006-01-02T15:04:05Z",
+				"2007-01-02T15:04:05Z",
+				"2008-01-02T15:04:05Z",
+			},
+			want: "2006-01-02T15:04:05Z",
+		},
+		{
+			commitDates: []string{
+				"2007-01-02T15:04:05Z", // Don't think this is possible, but if it is we still want the first commit (not strictly "oldest")
+				"2006-01-02T15:04:05Z",
+				"2007-01-02T15:04:06Z",
+			},
+			want: "2007-01-02T15:04:05Z",
+		},
+	}
+
+	t.Run("basic", func(t *testing.T) {
+		for _, tc := range testCases {
+			ctx := context.Background()
+
+			gitCommands := make([]string, len(tc.commitDates))
+			for i, date := range tc.commitDates {
+				gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
+			}
+
+			backend := BackendWithRepoCommands(
+				t,
+				gitCommands...,
+			)
+
+			id, err := backend.FirstEverCommit(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			commit, err := backend.GetCommit(ctx, id, false)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(tc.want, commit.Committer.Date.Format(time.RFC3339)); diff != "" {
+				t.Fatalf("unexpected commit date (-want +got):\n%s", diff)
+			}
+		}
+	})
+
+	// Added for awareness if this error message changes.
+	// Insights skip over empty repos and check against this error type
+	t.Run("empty repo", func(t *testing.T) {
+		backend := BackendWithRepoCommands(
+			t,
+		)
+
+		_, err := backend.FirstEverCommit(context.Background())
+
+		var repoErr *gitdomain.RevisionNotFoundError
+		if !errors.As(err, &repoErr) {
+			t.Fatalf("unexpected error: %v", err)
+		}
 	})
 }
