@@ -372,6 +372,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                         />
                     ) : (
                         <ChatUI
+                            isSourcegraphDotCom={isSourcegraphDotCom}
                             codyChatStore={codyChatStore}
                             isCodyChatPage={true}
                             authenticatedUser={authenticatedUser}
