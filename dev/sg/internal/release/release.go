@@ -193,6 +193,8 @@ var Command = &cli.Command{
 	},
 }
 
+// Return type from releaseregistry
+// for the /releases/sourcegraph endpoint
 type releaseInfo struct {
 	ID         int    `json:"id"`
 	Name       string `json:"name"`
@@ -203,6 +205,10 @@ type releaseInfo struct {
 	GitSha     string `json:"git_sha"`
 }
 
+// Determines latest major.minor.patch version number by hitting the releaseregistry
+// Is only called when --version auto is passed to the sg release command
+// Should *only* be called for patch releases for the monorepo!
+// returns the new patch number for the latest minor version, in the form of "major.minor.patch"
 func determineMinorVersion() (string, error) {
 	latestVersion, err := http.Get("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph")
 	if err != nil {
