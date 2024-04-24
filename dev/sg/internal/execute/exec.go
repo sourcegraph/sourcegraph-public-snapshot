@@ -11,8 +11,10 @@ func Git(ctx context.Context, args ...string) ([]byte, error) {
 	cmd := GitCmd(ctx, args...)
 
 	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
 	cmd.Stdout = &stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = &stderr
 	cmd.Stdin = os.Stdin
 
 	if err := cmd.Run(); err != nil {

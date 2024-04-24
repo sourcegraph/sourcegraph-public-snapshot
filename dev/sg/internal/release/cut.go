@@ -33,8 +33,24 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	releaseBranch := v.String()
 	defaultBranch := "main"
 
+	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the release branch exists locally ..."))
 	if _, err := execute.Git(ctx, "rev-parse", "--verify", releaseBranch); err == nil {
+		p.Destroy()
 		return errors.Newf("release branch %q already exists", releaseBranch)
+	}
+	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Release branch %q does not exist locally", releaseBranch))
+
+	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the release branch exists in remote ..."))
+	if _, err := execute.Git(ctx, "rev-parse", "--verify", fmt.Sprintf("origin/%s", releaseBranch)); err == nil {
+		p.Destroy()
+		return errors.Newf("release branch %q already exists", fmt.Sprintf("origin/%s", releaseBranch))
+	}
+	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Release branch %q does not exist in remote", releaseBranch))
+
+	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the default branch is up to date with remote ..."))
+	if _, err := execute.Git(ctx, "fetch"); err != nil {
+		p.Destroy()
+		return errors.Wrap(err, "failed to fetch remote")
 	}
 
 	localCommitSHA, err := execute.Git(ctx, "rev-parse", defaultBranch)
@@ -53,11 +69,14 @@ func cutReleaseBranch(cctx *cli.Context) error {
 		p.Destroy()
 		return errors.New("local branch is not up to date with remote, please pull the latest changes")
 	}
+	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Local branch is up to date with remote"))
 
+	p = std.Out.Pending(output.Styled(output.StylePending, "Creating release branch..."))
 	if _, err := execute.Git(ctx, "checkout", "-b", releaseBranch); err != nil {
 		p.Destroy()
 		return errors.Wrap(err, "failed to create release branch")
 	}
+	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Release branch %q created", releaseBranch))
 
 	defer func() {
 		if _, err = execute.Git(ctx, "checkout", "-"); err != nil {
@@ -65,11 +84,14 @@ func cutReleaseBranch(cctx *cli.Context) error {
 		}
 	}()
 
+	p = std.Out.Pending(output.Styled(output.StylePending, "Pushing release branch..."))
 	if _, err := execute.Git(ctx, "push", "origin", releaseBranch); err != nil {
 		p.Destroy()
 		return errors.Wrap(err, "failed to push release branch")
 	}
+	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Release branch %q pushed", releaseBranch))
 
+	p = std.Out.Pending(output.Styled(output.StylePending, "Creating backport label..."))
 	if _, err := execute.GH(
 		ctx,
 		"label",
@@ -81,7 +103,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 		p.Destroy()
 		return errors.Wrap(err, "failed to create backport label")
 	}
+	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Backport label created"))
 
-	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Release branch %q created", releaseBranch))
 	return nil
 }
