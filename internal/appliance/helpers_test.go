@@ -63,6 +63,9 @@ func (suite *ApplianceTestSuite) setupEnvtest() {
 		AttachControlPlaneOutput: true,
 		BinaryAssetsDirectory:    suite.kubebuilderAssetPath(),
 	}
+	apiServerCfg := suite.testEnv.ControlPlane.GetAPIServer()
+	apiServerCfg.Configure().Set("bind-address", "127.0.0.1")
+	apiServerCfg.Configure().Set("advertise-address", "127.0.0.1")
 	cfg, err := suite.testEnv.Start()
 	require.NoError(t, err)
 
