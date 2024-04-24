@@ -7,7 +7,7 @@ import (
 )
 
 var embeddingsAllowed, _ = strconv.ParseBool(env.Get(
-	"SRC_EMBEDDINGS_ALLOWED",
+	"SRC_INTERNAL_EMBEDDINGS_ALLOWED",
 	"false",
 	"Allow embeddings jobs and search to be enabled. NOTE: only intended for internal testing.",
 ))
