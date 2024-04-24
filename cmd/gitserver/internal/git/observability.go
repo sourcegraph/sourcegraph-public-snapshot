@@ -443,6 +443,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		revAtTime:         op("rev-at-time"),
 		rawDiff:           op("raw-diff"),
 		contributorCounts: op("contributor-counts"),
+		firstEverCommit:   op("first-ever-commit"),
 	}
 }
 
