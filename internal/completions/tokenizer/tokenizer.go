@@ -82,7 +82,7 @@ func NewTokenizer(model string) (Tokenizer, error) {
 	model = strings.NewReplacer(AzureModel+"/", "", OpenAIModel+"/", "").Replace(model)
 	modelFamily := modelFamilyFromString(model)
 
-	// Use the offline loader to avoid downloading the encoding at runtime
+	// Use the offline loader to avoid downloading the encoding at runtime.
 	tiktoken.SetBpeLoader(tiktoken_loader.NewOfflineLoader())
 	tkm, err := tiktoken.GetEncoding(tiktoken.MODEL_CL100K_BASE)
 	if err != nil {
