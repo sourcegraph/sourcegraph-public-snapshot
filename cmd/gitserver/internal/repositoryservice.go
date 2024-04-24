@@ -15,14 +15,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewRepositoryServiceServer(server *Server) proto.GitserverRepositoryServiceServer {
-	return &repositoryServiceServer{
+type GRPCRepositoryServiceConfig struct {
+	ExhaustiveRequestLoggingEnabled bool
+}
+
+func NewRepositoryServiceServer(server *Server, config *GRPCRepositoryServiceConfig) proto.GitserverRepositoryServiceServer {
+	var srv proto.GitserverRepositoryServiceServer = &repositoryServiceServer{
 		logger:   server.logger,
 		db:       server.db,
 		hostname: server.hostname,
 		svc:      server,
 		fs:       server.fs,
 	}
+
+	if config.ExhaustiveRequestLoggingEnabled {
+		logger := server.logger.Scoped("gRPCRequestLogger")
+
+		srv = &loggingRepositoryServiceServer{
+			base:   srv,
+			logger: logger,
+		}
+	}
+
+	return srv
 }
 
 type repositoryServiceServer struct {
