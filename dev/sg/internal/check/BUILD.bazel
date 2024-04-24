@@ -23,6 +23,7 @@ go_library(
         "//dev/sg/root",
         "//internal/database/postgresdsn",
         "//internal/limiter",
+        "//lib/cliutil/exit",
         "//lib/errors",
         "//lib/output",
         "@com_github_gomodule_redigo//redis",

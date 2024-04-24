@@ -40,14 +40,17 @@ func NewSearchJob(plan query.Plan, newJob func(query.Basic) (job.Job, error)) (j
 
 	q, err := queryStringToKeywordQuery(query.StringHuman(basicQuery))
 
-	// If there are no patterns left, this query was entirely composed of
-	// stopwords, so we return no results.
-	if err != nil || len(q.patterns) == 0 {
+	if err != nil {
 		return nil, err
 	}
 
 	params := q.query.Parameters
 	patterns := q.patterns
+	// If there are no patterns left, this query was entirely composed of stopwords, so we return no results.
+	// ⚠️ We must return a no-op job instead of nil, since the job framework assumes all jobs are non-nil.
+	if len(patterns) == 0 {
+		return newNoopJob(), nil
+	}
 
 	codeQuery := q.query.MapParameters(append(params, query.Parameter{Field: query.FieldFile, Value: textFileFilter, Negated: true}))
 	codeJob, err := newJob(codeQuery)
@@ -186,3 +189,18 @@ func (j *searchJob) Children() []job.Describer {
 func (j *searchJob) MapChildren(job.MapFunc) job.Job {
 	return j
 }
+
+func newNoopJob() *noopJob {
+	return &noopJob{}
+}
+
+type noopJob struct{}
+
+func (e *noopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error) {
+	return nil, nil
+}
+
+func (e *noopJob) Name() string                                  { return "NoopJob" }
+func (e *noopJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
+func (e *noopJob) Children() []job.Describer                     { return nil }
+func (e *noopJob) MapChildren(job.MapFunc) job.Job               { return e }

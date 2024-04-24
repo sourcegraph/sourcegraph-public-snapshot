@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -151,6 +152,7 @@ func TestMiddleware(t *testing.T) {
 
 	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
+	_ = telemetrytest.AddDBMocks(db)
 
 	securityLogs := dbmocks.NewStrictMockSecurityEventLogsStore()
 	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)
@@ -372,6 +374,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 
 	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
+	_ = telemetrytest.AddDBMocks(db)
 
 	securityLogs := dbmocks.NewStrictMockSecurityEventLogsStore()
 	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)

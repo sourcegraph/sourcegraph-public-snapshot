@@ -1,4 +1,5 @@
 <script lang="ts">
+    // @sg RepoRoot
     import Readme from '$lib/repo/Readme.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'

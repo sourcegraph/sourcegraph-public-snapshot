@@ -1,19 +1,66 @@
-// SvelteKit is rolled out in two stages:
-// - Routes listed here are enabled by default for everyone on S2 (via the `web-next-rollout` feature flag)
-// - Other routes are only enabled for users with the `web-next` feature flag
-const rolledoutRouteIDs = new RegExp(
-    [
-        // Add route IDs here that should be enabled
-        // Keep in sync with 'cmd/frontend/internal/app/ui/sveltekit.go' and 'client/web/src/sveltekit/util.ts'
-        '^/search',
-    ].join('|')
-)
+import { dev } from '$app/environment'
+
+import { svelteKitRoutes, type SvelteKitRoute } from './routes'
+
+let knownRoutesRegex: RegExp | undefined
+
+function getKnownRoutesRegex(): RegExp {
+    if (!knownRoutesRegex) {
+        knownRoutesRegex = new RegExp(`(${window.context?.svelteKit?.knownRoutes?.join(')|(')})`)
+    }
+    return knownRoutesRegex
+}
 
 /**
- * Returns whether the given route is enabled.
+ * Returns whether the SvelteKit app is enabled for the given route ID.
+ * If not the caller should trigger a page reload to load the React app.
+ * The enabled routes are provided by the server via `window.context`.
+ *
+ * Callers should pass an actual route ID retrived from SvelteKit not an
+ * arbitrary path.
+ *
+ * NOTE: When in dev or preview mode, all routes are always enabled.
+ *
+ * @param pathname The pathname of the route to check.
+ * @returns Whether the SvelteKit app is enabled for the given route.
  */
-export function isRouteRolledOut(routeID: string): boolean {
-    return rolledoutRouteIDs.test(routeID)
+export function isRouteEnabled(pathname: string): boolean {
+    // Preview mode is like production mode but with all routes enabled.
+    // This necessary for running `pnpm run preview` or playwright tests.
+    if (dev || import.meta.env.MODE === 'preview') {
+        return true
+    }
+
+    if (!pathname) {
+        return false
+    }
+    const enabledRoutes = window.context?.svelteKit?.enabledRoutes ?? []
+
+    let foundRoute: SvelteKitRoute | undefined
+
+    for (const routeIndex of enabledRoutes) {
+        const route = svelteKitRoutes.at(routeIndex)
+        if (route && route.pattern.test(pathname)) {
+            foundRoute = route
+            if (!route.isRepoRoot) {
+                break
+            }
+            // If the found route is the repo root we have to keep going
+            // to find a more specific route.
+        }
+    }
+
+    if (foundRoute) {
+        if (foundRoute.isRepoRoot) {
+            // Check known routes to see if there is a more specific route than the repo root.
+            // If yes then we should load the React app (if the more specific route was enabled
+            // it would have been found above).
+            return !getKnownRoutesRegex().test(pathname)
+        }
+        return true
+    }
+
+    return false
 }
 
 /**
@@ -24,5 +71,5 @@ export function isRepoRoute(routeID: string | null): boolean {
     if (!routeID) {
         return false
     }
-    return routeID.startsWith('/[...repo=reporev]/')
+    return routeID.startsWith('/[...repo=reporev]')
 }

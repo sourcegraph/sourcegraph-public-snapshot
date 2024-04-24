@@ -2,6 +2,7 @@ package codenav
 
 import (
 	"context"
+	"io"
 	"strconv"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GitTreeTranslator translates a position within a git tree at a source commit into the
@@ -154,8 +156,32 @@ func (g *gitTreeTranslator) readCachedHunks(ctx context.Context, repo *sgtypes.R
 
 // readHunks returns a position-ordered slice of changes (additions or deletions) of
 // the given path between the given source and target commits.
-func (g *gitTreeTranslator) readHunks(ctx context.Context, repo *sgtypes.Repo, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
-	return g.client.DiffPath(ctx, repo.Name, sourceCommit, targetCommit, path)
+func (g *gitTreeTranslator) readHunks(ctx context.Context, repo *sgtypes.Repo, sourceCommit, targetCommit, path string) (_ []*diff.Hunk, err error) {
+	r, err := g.client.Diff(ctx, repo.Name, gitserver.DiffOptions{
+		Base:      sourceCommit,
+		Head:      targetCommit,
+		Paths:     []string{path},
+		RangeType: "..",
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		closeErr := r.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
+
+	fd, err := r.Next()
+	if err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return fd.Hunks, nil
 }
 
 // findHunk returns the last thunk that does not begin after the given line.

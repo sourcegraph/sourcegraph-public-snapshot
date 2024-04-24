@@ -8,6 +8,7 @@ package images
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -106,6 +107,7 @@ var DeploySourcegraphDockerImages = []string{
 	"alpine-3.14",
 	"postgres-12-alpine",
 	"blobstore",
+	"caddy",
 	"cadvisor",
 	"codeinsights-db",
 	"codeintel-db",
@@ -123,7 +125,6 @@ var DeploySourcegraphDockerImages = []string{
 	"postgres_exporter",
 	"precise-code-intel-worker",
 	"prometheus",
-	"qdrant",
 	"redis-cache",
 	"redis-store",
 	"redis_exporter",
@@ -151,6 +152,7 @@ func CandidateImageTag(commit string, buildNumber int) string {
 // - latest tag omitted if empty
 // - branch name omitted when `main`
 func BranchImageTag(now time.Time, commit string, buildNumber int, branchName, latestTag string) string {
+	branchName = sanitizeBranchForDockerTag(branchName)
 	commitSuffix := fmt.Sprintf("%.12s", commit)
 	if latestTag != "" {
 		commitSuffix = latestTag + "-" + commitSuffix
@@ -162,4 +164,10 @@ func BranchImageTag(now time.Time, commit string, buildNumber int, branchName, l
 	}
 
 	return tag
+}
+
+func sanitizeBranchForDockerTag(branch string) string {
+	branch = strings.ReplaceAll(branch, "/", "-")
+	branch = strings.ReplaceAll(branch, "+", "-")
+	return branch
 }

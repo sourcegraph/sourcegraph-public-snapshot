@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
-	vdb "github.com/sourcegraph/sourcegraph/internal/embeddings/db"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -37,7 +37,7 @@ type FileChunkContext struct {
 	EndLine   int
 }
 
-func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient, getQdrantSearcher func() (vdb.VectorSearcher, error), contentFilter RepoContentFilter) *CodyContextClient {
+func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient, gitserverClient gitserver.Client) *CodyContextClient {
 	redMetrics := metrics.NewREDMetrics(
 		obsCtx.Registerer,
 		"codycontext_client",
@@ -56,11 +56,10 @@ func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embedding
 	}
 
 	return &CodyContextClient{
-		db:                db,
-		embeddingsClient:  embeddingsClient,
-		searchClient:      searchClient,
-		getQdrantSearcher: getQdrantSearcher,
-		contentFilter:     contentFilter,
+		db:               db,
+		embeddingsClient: embeddingsClient,
+		searchClient:     searchClient,
+		contentFilter:    newRepoContentFilter(obsCtx.Logger, gitserverClient),
 
 		obsCtx:                 obsCtx,
 		getCodyContextOp:       op("getCodyContext"),
@@ -70,11 +69,10 @@ func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embedding
 }
 
 type CodyContextClient struct {
-	db                database.DB
-	embeddingsClient  embeddings.Client
-	searchClient      client.SearchClient
-	contentFilter     RepoContentFilter
-	getQdrantSearcher func() (vdb.VectorSearcher, error)
+	db               database.DB
+	embeddingsClient embeddings.Client
+	searchClient     client.SearchClient
+	contentFilter    RepoContentFilter
 
 	obsCtx                 *observation.Context
 	getCodyContextOp       *observation.Operation
@@ -120,7 +118,10 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 
 	// Generating the content filter removes any repos where the filter can not
 	// be determined
-	filterableRepos, contextFilter := c.contentFilter.GetFilter(args.Repos, c.obsCtx.Logger)
+	filterableRepos, contextFilter, err := c.contentFilter.GetFilter(ctx, args.Repos)
+	if err != nil {
+		return nil, err
+	}
 	args.Repos = filterableRepos
 
 	embeddingRepos, keywordRepos, err := c.partitionRepos(ctx, args.Repos)

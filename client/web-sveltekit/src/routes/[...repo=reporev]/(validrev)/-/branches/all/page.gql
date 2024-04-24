@@ -6,7 +6,7 @@ query AllBranchesPage_BranchesQuery(
 ) {
     repository(name: $repoName) {
         id
-        branches(first: $first, orderBy: AUTHORED_OR_COMMITTED_AT) {
+        branches(first: $first) {
             ...GitBranchesConnection
         }
     }

@@ -10,7 +10,18 @@
         <meta name="referrer" content="origin-when-cross-origin" />
         <meta name="color-scheme" content="light dark" />
 
+        <script ignore-csp>
+            window.context = {
+                // Necessary to make authenticated GraphQL requests in dev mode
+                xhrHeaders: {
+                    'X-Requested-With': 'Sourcegraph',
+                },
+            }
+            window.pageError = undefined
+        </script>
+
         %sveltekit.head%
+
         <script>
             const userPreference = localStorage.getItem('sourcegraph-theme') || 'System'
             const theme =

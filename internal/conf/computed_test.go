@@ -767,19 +767,6 @@ func TestGetFeaturesConfig(t *testing.T) {
 func TestGetEmbeddingsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
 	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
-	defaultQdrantConfig := conftypes.QdrantConfig{
-		QdrantHNSWConfig: conftypes.QdrantHNSWConfig{
-			OnDisk: true,
-		},
-		QdrantOptimizersConfig: conftypes.QdrantOptimizersConfig{
-			IndexingThreshold: 0,
-			MemmapThreshold:   100,
-		},
-		QdrantQuantizationConfig: conftypes.QdrantQuantizationConfig{
-			Enabled:  true,
-			Quantile: 0.98,
-		},
-	}
 	zeroConfigDefaultWithLicense := &conftypes.EmbeddingsConfig{
 		Provider:                   "sourcegraph",
 		AccessToken:                licenseAccessToken,
@@ -795,7 +782,6 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			MaxFileSizeBytes: 1000000,
 		},
 		ExcludeChunkOnError: true,
-		Qdrant:              defaultQdrantConfig,
 	}
 
 	testCases := []struct {
@@ -911,7 +897,6 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					ExcludedFilePathPatterns: []string{"*.java"},
 				},
 				ExcludeChunkOnError: true,
-				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -945,7 +930,6 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					ExcludedFilePathPatterns: []string{"*.java"},
 				},
 				ExcludeChunkOnError: true,
-				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -981,7 +965,6 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					ExcludedFilePathPatterns: []string{"*.java"},
 				},
 				ExcludeChunkOnError: false,
-				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -1009,7 +992,6 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					MaxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
-				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -1050,7 +1032,6 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					MaxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
-				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
@@ -1094,7 +1075,6 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					MaxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
-				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{

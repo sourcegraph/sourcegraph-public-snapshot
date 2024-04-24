@@ -21,6 +21,7 @@ go_library(
         "sg_embeddings_qa.go",
         "sg_generate.go",
         "sg_help.go",
+        "sg_images.go",
         "sg_insights.go",
         "sg_install.go",
         "sg_lint.go",
@@ -56,6 +57,7 @@ go_library(
         "//dev/sg/internal/backport",
         "//dev/sg/internal/category",
         "//dev/sg/internal/check",
+        "//dev/sg/internal/cloud",
         "//dev/sg/internal/db",
         "//dev/sg/internal/generate",
         "//dev/sg/internal/generate/golang",
@@ -108,6 +110,7 @@ go_library(
         "@com_github_jackc_pgx_v4//:pgx",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_masterminds_semver//:semver",
+        "@com_github_mitchellh_hashstructure_v2//:hashstructure",
         "@com_github_opsgenie_opsgenie_go_sdk_v2//alert",
         "@com_github_opsgenie_opsgenie_go_sdk_v2//client",
         "@com_github_slack_go_slack//:slack",
@@ -141,6 +144,7 @@ go_test(
     timeout = "short",
     srcs = [
         "main_test.go",
+        "sg_images_test.go",
         "sg_start_test.go",
     ],
     # Required by func findRoot() to check if sg is running in sourcegraph/sourcegraph

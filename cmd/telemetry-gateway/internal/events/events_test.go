@@ -16,7 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubtest"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 func TestPublish(t *testing.T) {
@@ -48,8 +48,9 @@ func TestPublish(t *testing.T) {
 		})
 	require.NoError(t, err)
 
-	// Check the evaluated source
+	// Check evaluated attributes
 	assert.Equal(t, "licensed_instance", publisher.GetSourceName())
+	assert.True(t, publisher.IsSourcegraphInstance())
 
 	events := make([]*telemetrygatewayv1.Event, concurrency)
 	for i := range events {
