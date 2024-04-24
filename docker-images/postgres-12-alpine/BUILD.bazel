@@ -4,57 +4,9 @@ load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("//wolfi-images:defs.bzl", "wolfi_base")
 
-filegroup(
-    name = "config",
-    srcs = ["//docker-images/postgres-12-alpine/rootfs:files"] + glob(["config/postgresql.conf.sample"]),
-)
+# The following legacy postgres-12-alpine image is still based on an Alpine upstream image.
+# We're still shipping this legacy image for backwards compatibility.
 
-pkg_tar(
-    name = "config_tar",
-    srcs = [
-        ":config",
-    ],
-    remap_paths = {
-        "/rootfs": "/",
-        "/postgresql.conf.sample": "/usr/share/postgresql/postgresql.conf.sample",
-    },
-)
-
-oci_image(
-    name = "image",
-    base = ":base_image",
-    entrypoint = ["/postgres-wolfi.sh"],
-    env = {
-        "POSTGRES_PASSWORD": "",
-        "POSTGRES_USER": "sg",
-        "POSTGRES_DB": "sg",
-        "PGDATA": "/data/pgdata-12",
-        "LANG": "en_US.utf8",
-        "PGHOST": "/var/run/postgresql",
-    },
-    tars = [":config_tar"],
-    user = "postgres",
-    visibility = ["//visibility:public"],
-)
-
-oci_tarball(
-    name = "image_tarball",
-    image = ":image",
-    repo_tags = ["postgres-12:candidate"],
-    visibility = ["//visibility:public"],
-)
-
-wolfi_base(target = "postgresql-12")
-
-# RFC 793: We are not publishing those images for the 5.1 release, but will the next minor version.
-# oci_push(
-#     name = "candidate_push",
-#     image = ":image",
-#     repository = image_repository("postgres-12-alpine"),  # TODO careful, this is not an alpine
-# )
-
-# The above postgres-12-alpine image is built from the wolfi base image. Where as we're still shipping the legacy
-# image built, postgres-12-alpine, for backwards compatibility.
 filegroup(
     name = "rootfs",
     srcs = ["//docker-images/postgres-12-alpine/rootfs:files"],
@@ -158,3 +110,58 @@ container_structure_test(
         "requires-network",
     ],
 )
+
+#
+# The following image is a Wolfi-based version of the postgres-12 container.
+# We are NOT shipping this image due to a complex database migration that would be required.
+# See RFC 793 for details.
+#
+
+filegroup(
+    name = "config",
+    srcs = ["//docker-images/postgres-12-alpine/rootfs:files"] + glob(["config/postgresql.conf.sample"]),
+)
+
+pkg_tar(
+    name = "config_tar",
+    srcs = [
+        ":config",
+    ],
+    remap_paths = {
+        "/rootfs": "/",
+        "/postgresql.conf.sample": "/usr/share/postgresql/postgresql.conf.sample",
+    },
+)
+
+oci_image(
+    name = "image",
+    base = ":base_image",
+    entrypoint = ["/postgres-wolfi.sh"],
+    env = {
+        "POSTGRES_PASSWORD": "",
+        "POSTGRES_USER": "sg",
+        "POSTGRES_DB": "sg",
+        "PGDATA": "/data/pgdata-12",
+        "LANG": "en_US.utf8",
+        "PGHOST": "/var/run/postgresql",
+    },
+    tars = [":config_tar"],
+    user = "postgres",
+    visibility = ["//visibility:public"],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["postgres-12:candidate"],
+    visibility = ["//visibility:public"],
+)
+
+wolfi_base(target = "postgresql-12")
+
+# RFC 793: We are not publishing those images.
+# oci_push(
+#     name = "candidate_push",
+#     image = ":image",
+#     repository = image_repository("postgres-12-alpine"),  # TODO careful, this is not an alpine
+# )

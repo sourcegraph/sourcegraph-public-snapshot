@@ -1,26 +1,9 @@
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 
-oci_image(
-    name = "image",
-    base = "//docker-images/postgres-12-alpine:image",
-)
+# The following legacy postgres-12-alpine image is still based on an Alpine upstream image.
+# We're still shipping this legacy image for backwards compatibility.
 
-oci_tarball(
-    name = "image_tarball",
-    image = ":image",
-    repo_tags = ["codeintel-db:candidate"],
-)
-
-# RFC 793: We are not publishing those images for the 5.1 release, but will the next minor version.
-# oci_push(
-#     name = "candidate_push",
-#     image = ":image",
-#     repository = image_repository("codeintel-db"),
-# )
-
-# The above postgres-12-codeintel image is built from the wolfi base image. Where as we're still shipping the legacy
-# image built, postgres-12-alpine, for backwards compatibility.
 oci_image(
     name = "legacy_image",
     base = "@legacy_postgres-12-alpine_base",
@@ -66,3 +49,27 @@ container_structure_test(
         "requires-network",
     ],
 )
+
+#
+# The following image is a Wolfi-based version of the postgres-12 container.
+# We are NOT shipping this image due to a complex database migration that would be required.
+# See RFC 793 for details.
+#
+
+oci_image(
+    name = "image",
+    base = "//docker-images/postgres-12-alpine:image",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["codeintel-db:candidate"],
+)
+
+# RFC 793: We are not publishing those images.
+# oci_push(
+#     name = "candidate_push",
+#     image = ":image",
+#     repository = image_repository("codeintel-db"),
+# )
