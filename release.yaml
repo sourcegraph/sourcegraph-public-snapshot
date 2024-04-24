@@ -12,6 +12,10 @@ requirements:
     # `write_builds` permission is all that's needed here
     # You also need to ensure you add access to the Sourcegraph organization on Buildkite.
     env: BUILDKITE_ACCESS_TOKEN
+  - name: "GitHub CLI "
+    cmd: "which gh"
+  - name: "GitHub CLI auth status"
+    cmd: "gh auth status"
 
   # #announce-engineering slack webhook url:
   # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=pldpna5vivapxe4phewnqd42ji&h=team-sourcegraph.1password.com

@@ -277,6 +277,10 @@ func (r *releaseRunner) PromoteFinalize(ctx context.Context) error {
 }
 
 func (r *releaseRunner) Test(ctx context.Context) error {
+	if err := r.checkDeps(ctx); err != nil {
+		return nil
+	}
+
 	if len(r.m.Test.Steps) == 0 {
 		announce2("test", "Skipping release tests, none defined")
 		return nil
