@@ -1,7 +1,7 @@
 <script lang="ts">
     import { tick } from 'svelte'
 
-    import { goto } from '$app/navigation'
+    import { afterNavigate, goto } from '$app/navigation'
     import { page } from '$app/stores'
     import { isErrorLike } from '$lib/common'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
@@ -19,13 +19,14 @@
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
     import { createFileTreeStore } from './fileTreeStore'
-    import { type GitHistory_HistoryConnection } from './layout.gql'
+
+    import type { GitHistory_HistoryConnection, RepoPage_ReferencesLocationConnection } from './layout.gql'
     import RepositoryRevPicker from './RepositoryRevPicker.svelte'
+    import ReferencePanel from './ReferencePanel.svelte'
 
     interface Capture {
         selectedTab: number | null
         historyPanel: HistoryCapture
-        scrollTop: number
     }
 
     export let data: LayoutData
@@ -35,17 +36,12 @@
             return {
                 selectedTab,
                 historyPanel: historyPanel?.capture(),
-                // This works because this specific page is fully scrollable
-                scrollTop: window.scrollY,
             }
         },
         async restore(data) {
             selectedTab = data.selectedTab
-            // Wait until DOM was updated
+            // Wait until DOM was updated to possibly show the history panel
             await tick()
-            // `restore` is called before `afterNavigate`, which resets the scroll position
-            // Restore the scroll position after the componentent was updated
-            window.scrollTo(0, data.scrollTop)
 
             // Restore history panel state if it is open
             if (data.historyPanel) {
@@ -67,6 +63,7 @@
     let selectedTab: number | null = null
     let historyPanel: HistoryPanel
     let commitHistory: GitHistory_HistoryConnection | null
+    let references: RepoPage_ReferencesLocationConnection | null
     let lastCommit: LastCommitFragment | null
 
     $: ({ revision = '', parentPath, repoName, resolvedRevision } = data)
@@ -92,6 +89,20 @@
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(320px, ${$sidebarSize * 100}%)`
+
+    // The observable query to fetch references (due to infinite scrolling)
+    $: referenceQuery = data.references
+    $: references = $referenceQuery?.data?.repository?.commit?.blob?.lsif?.references ?? null
+    $: referencesLoading = ((referenceQuery && !references) || $referenceQuery?.fetching) ?? false
+
+    afterNavigate(() => {
+        if (!!data.references) {
+            references = null
+            selectedTab = 1
+        } else if (selectedTab === 1) {
+            selectedTab = null
+        }
+    })
 </script>
 
 <section>
@@ -140,9 +151,18 @@
                         />
                     {/key}
                 </TabPanel>
+                <TabPanel title="References">
+                    <ReferencePanel
+                        connection={references}
+                        loading={referencesLoading}
+                        on:more={referenceQuery?.fetchMore}
+                    />
+                </TabPanel>
             </Tabs>
-            {#if lastCommit && selectedTab === null}
-                <LastCommit {lastCommit} />
+            {#if lastCommit}
+                <div class="last-commit">
+                    <LastCommit {lastCommit} />
+                </div>
             {/if}
         </div>
     </div>
@@ -201,29 +221,29 @@
     }
 
     .bottom-panel {
-        background-color: var(--code-bg);
         --align-tabs: flex-start;
-        box-shadow: var(--bottom-panel-shadow);
-        max-height: 50vh;
-        overflow: hidden;
+
         display: flex;
+        align-items: center;
         flex-flow: row nowrap;
         justify-content: space-between;
-        padding-right: 0.5rem;
-        max-width: 100%;
+        overflow: hidden;
 
-        :global(.tabs) {
-            flex-grow: 1;
-            height: 100%;
-            max-height: 100%;
-        }
+        box-shadow: var(--bottom-panel-shadow);
+        background-color: var(--code-bg);
 
-        :global(.tabs-header) {
+        :global([data-tab-header]) {
             border-bottom: 1px solid var(--border-color);
         }
 
         &.open {
             height: 30vh;
+            // Disable flex layout so that tabs simply fill the available space
+            display: block;
+
+            .last-commit {
+                display: none;
+            }
         }
     }
 </style>

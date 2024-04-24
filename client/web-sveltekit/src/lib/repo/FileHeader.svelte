@@ -1,8 +1,8 @@
 <script lang="ts">
     import { mdiDotsHorizontal } from '@mdi/js'
 
-    import { page } from '$app/stores'
     import { overflow } from '$lib/dom'
+
     import Icon from '$lib/Icon.svelte'
     import { DropdownMenu } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
@@ -11,15 +11,20 @@
     import { sidebarOpen } from './stores'
     import { navFromPath } from './utils'
 
-    $: breadcrumbs = navFromPath($page.params.path, $page.params.repo)
+    export let repoName: string
+    export let path: string
+    export let hideSidebarToggle = false
+
+    $: breadcrumbs = navFromPath(path, repoName)
 </script>
 
 <div class="header">
-    <div class="toggle-wrapper" class:hidden={$sidebarOpen}>
+    <div class="toggle-wrapper" class:hidden={hideSidebarToggle || $sidebarOpen}>
         <SidebarToggleButton />
     </div>
     <h2>
         {#each breadcrumbs as [name, path], index}
+            {@const last = index === breadcrumbs.length - 1}
             <!--
                 The elements are arranged like this because we want to
                 ensure that the leading / before a segement always stay with
@@ -37,14 +42,16 @@
                 at all.
             -->
             {' '}
-            <span class:last={index === breadcrumbs.length - 1}>
+            <span class:last>
                 {#if index > 0}
                     <span class="slash">/</span>
+                {/if}
+                {#if last}
+                    <slot name="icon" />
                 {/if}
                 {#if path}
                     <a href={path}>{name}</a>
                 {:else}
-                    <slot name="icon" />
                     {name}
                 {/if}
             </span>

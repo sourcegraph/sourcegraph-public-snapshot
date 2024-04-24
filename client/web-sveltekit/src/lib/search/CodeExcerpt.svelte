@@ -7,8 +7,8 @@
     import type { MatchGroupMatch } from '$lib/shared'
 
     export let startLine: number
-    export let plaintextLines: string[]
-    export let highlightedHTMLRows: string[] | undefined = undefined
+    export let plaintextLines: readonly string[]
+    export let highlightedHTMLRows: readonly string[] | undefined = undefined
     export let matches: MatchGroupMatch[] = []
 
     function highlightMatches(node: HTMLElement, matches: MatchGroupMatch[]) {

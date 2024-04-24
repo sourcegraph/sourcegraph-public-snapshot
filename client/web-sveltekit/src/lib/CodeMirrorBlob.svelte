@@ -149,7 +149,7 @@
     export let highlights: string
     export let wrapLines: boolean = false
     export let selectedLines: LineOrPositionOrRange | null = null
-    export let codeIntelAPI: CodeIntelAPI
+    export let codeIntelAPI: CodeIntelAPI | null
     export let staticHighlightRanges: Range[] = []
     /**
      * The initial scroll position when the editor is first mounted.
@@ -187,31 +187,34 @@
         filePath: blobInfo.filePath,
         languages: blobInfo.languages,
     }
-    $: codeIntelExtension = createCodeIntelExtension({
-        api: {
-            api: codeIntelAPI,
-            documentInfo: documentInfo,
-            goToDefinition: (view, definition, options) => goToDefinition(documentInfo, view, definition, options),
-            openReferences,
-            openImplementations,
-            createTooltipView: options => new HovercardView(options.view, options.token, options.hovercardData),
-        },
-        // TODO(fkling): Support tooltip pinning
-        pin: {},
-        navigate: to => {
-            if (typeof to === 'number') {
-                if (to > 0) {
-                    history.forward()
-                } else {
-                    history.back()
-                }
-            } else {
-                goto(to.toString())
-            }
-        },
-    })
-    $: lineWrapping = wrapLines ? EditorView.lineWrapping : []
-    $: syntaxHighlighting = highlights ? syntaxHighlight.of({ content: blobInfo.content, lsif: highlights }) : []
+    $: codeIntelExtension = codeIntelAPI
+        ? createCodeIntelExtension({
+              api: {
+                  api: codeIntelAPI,
+                  documentInfo: documentInfo,
+                  goToDefinition: (view, definition, options) =>
+                      goToDefinition(documentInfo, view, definition, options),
+                  openReferences,
+                  openImplementations,
+                  createTooltipView: options => new HovercardView(options.view, options.token, options.hovercardData),
+              },
+              // TODO(fkling): Support tooltip pinning
+              pin: {},
+              navigate: to => {
+                  if (typeof to === 'number') {
+                      if (to > 0) {
+                          history.forward()
+                      } else {
+                          history.back()
+                      }
+                  } else {
+                      goto(to.toString())
+                  }
+              },
+          })
+        : null
+    $: lineWrapping = wrapLines ? EditorView.lineWrapping : null
+    $: syntaxHighlighting = highlights ? syntaxHighlight.of({ content: blobInfo.content, lsif: highlights }) : null
     $: staticHighlightExtension = staticHighlights(staticHighlightRanges)
 
     $: blameColumnExtension = showBlame
@@ -225,7 +228,7 @@
                   }
               },
           })
-        : []
+        : null
     $: blameDataExtension = blameDataFacet(blameData)
 
     // Reinitialize the editor when its content changes. Update only the extensions when they change.
