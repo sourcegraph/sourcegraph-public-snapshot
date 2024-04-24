@@ -60,7 +60,8 @@ func (suite *ApplianceTestSuite) setupEnvtest() {
 	logger := stdr.New(stdlog.New(os.Stderr, "", stdlog.LstdFlags))
 
 	suite.testEnv = &envtest.Environment{
-		BinaryAssetsDirectory: suite.kubebuilderAssetPath(),
+		AttachControlPlaneOutput: true,
+		BinaryAssetsDirectory:    suite.kubebuilderAssetPath(),
 	}
 	cfg, err := suite.testEnv.Start()
 	require.NoError(t, err)
