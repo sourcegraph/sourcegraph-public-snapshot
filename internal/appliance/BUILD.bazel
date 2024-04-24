@@ -57,6 +57,10 @@ go_test(
     env = {
         "KUBEBUILDER_ASSET_PATHS": "$(rlocationpaths //dev/tools:kubebuilder-assets)",
     },
+    tags = [
+        # Test starts kube-apiserver, which needs to bind an address.
+        "requires-network",
+    ],
     deps = [
         "@com_github_go_logr_stdr//:stdr",
         "@com_github_stretchr_testify//require",
