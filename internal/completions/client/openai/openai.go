@@ -67,7 +67,7 @@ func (c *openAIChatCompletionStreamClient) Complete(
 		// Empty response.
 		return &types.CompletionResponse{}, nil
 	}
-	err = c.tokenManager.TokenizeAndCalculateUsage(requestParams.Messages, response.Choices[0].Text, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature), tokenusage.OpenAI)
+	err = c.tokenManager.UpdateTokenCountsFromModelUsage(response.Usage.PromptTokens, response.Usage.CompletionTokens, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature), tokenusage.OpenAI)
 	if err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 	}
