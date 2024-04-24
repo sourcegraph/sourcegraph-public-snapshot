@@ -1,7 +1,6 @@
 package codycontext
 
 import (
-	"math"
 	"testing"
 
 	"github.com/hexops/autogold/v2"
@@ -10,12 +9,6 @@ import (
 )
 
 func TestTransformPattern(t *testing.T) {
-	old := maxTransformedPatterns
-	defer func() {
-		maxTransformedPatterns = old
-	}()
-	maxTransformedPatterns = math.MaxInt
-
 	patterns := []string{
 		"compute",
 		"K",     // very short terms should be removed

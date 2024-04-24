@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var maxTransformedPatterns = 10
+const maxTransformedPatterns = 10
 
 type keywordQuery struct {
 	query    query.Basic
@@ -93,11 +93,6 @@ func transformPatterns(patterns []string) []string {
 		}
 	}
 
-	// To maintain decent latency, limit the number of patterns we search.
-	if len(transformedPatterns) > maxTransformedPatterns {
-		transformedPatterns = transformedPatterns[:maxTransformedPatterns]
-	}
-
 	return transformedPatterns
 }
 
@@ -114,6 +109,12 @@ func queryStringToKeywordQuery(queryString string) (*keywordQuery, error) {
 	patterns, parameters := nodeToPatternsAndParameters(rawParseTree[0])
 
 	transformedPatterns := transformPatterns(patterns)
+
+	// To maintain decent latency, limit the number of patterns we search.
+	if len(transformedPatterns) > maxTransformedPatterns {
+		transformedPatterns = transformedPatterns[:maxTransformedPatterns]
+	}
+
 	var nodes []query.Node
 	for _, p := range parameters {
 		nodes = append(nodes, p)
