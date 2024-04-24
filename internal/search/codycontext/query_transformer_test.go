@@ -29,6 +29,9 @@ func TestTransformPattern(t *testing.T) {
 		"!?",  // punctuation-only token should be removed
 		"grf::causal_forest",
 		"indexData.scoreFile",
+		"resource->GetServer()",
+		"foo-bar",
+		"bas>quz",
 	}
 	wantPatterns := []string{
 		"comput",
@@ -42,6 +45,10 @@ func TestTransformPattern(t *testing.T) {
 		"causal_forest",
 		"indexdata",
 		"scorefil",
+		"resourc",
+		"getserv",
+		"foo-bar",
+		"bas>quz",
 	}
 
 	gotPatterns := transformPatterns(patterns)
