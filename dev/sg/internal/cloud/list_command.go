@@ -26,7 +26,7 @@ func listCloudEphemeral(ctx *cli.Context) error {
 	if err := printWIPNotice(ctx); err != nil {
 		return err
 	}
-	email, err := GetGcloudAccount(ctx.Context)
+	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
 		return err
 	}

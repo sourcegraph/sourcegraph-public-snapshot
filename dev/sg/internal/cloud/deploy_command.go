@@ -79,7 +79,7 @@ func oneOfEquals(value string, i ...string) bool {
 	return false
 }
 
-func getGcloudAccount(ctx context.Context) (string, error) {
+func getGCloudAccount(ctx context.Context) (string, error) {
 	return run.Cmd(ctx, "gcloud", "config", "get", "account").Run().String()
 }
 
@@ -127,7 +127,7 @@ func printWIPNotice(ctx *cli.Context) error {
 }
 
 func createDeploymentForVersion(ctx context.Context, name, version string) error {
-	email, err := GetGcloudAccount(ctx)
+	email, err := GetGCloudAccount(ctx)
 	if err != nil {
 		return err
 	}

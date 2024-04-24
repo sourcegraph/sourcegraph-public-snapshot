@@ -15,9 +15,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
+// HeaderUserToken is the header name for the user token when communicating with the Cloud API.
 const HeaderUserToken = "X-GCP-User-Token"
+
+// APIEndpoint is the endpoint where Cloud API is running.
 const APIEndpoint = "https://cloud-ops-dev.sgdev.org/api"
+
+// EphemeralInstanceType is the instance type used when creating an instance in Cloud. We have to use internal since
+// cloud recognizes internal along with the Instance Feature "ephemeral": true as the Ephemeral Instance type. An interal
+// instance type without the Instance Feature "ephemeral": true is purely internal and has different requirements and limits.
 const EphemeralInstanceType = "internal"
+
+// DevEnvironment is the environment where Cloud allows ephemeral instance types
 const DevEnvironment = "dev"
 
 type Client struct {
@@ -42,16 +51,11 @@ func NewDeploymentSpec(name, version string) *DeploymentSpec {
 	}
 }
 
-func GetGcloudAccount(ctx context.Context) (string, error) {
+func GetGCloudAccount(ctx context.Context) (string, error) {
 	return run.Cmd(ctx, "gcloud config get account").Run().String()
 }
 
 func NewClient(ctx context.Context, email, endpoint string) (*Client, error) {
-	err := validateEmail(email)
-	if err != nil {
-		return nil, err
-	}
-
 	// have to use IDENTITY token not ACCESS token!
 	token, err := run.Cmd(ctx, "gcloud auth print-identity-token").Run().String()
 	if err != nil {
@@ -88,7 +92,7 @@ func newRequestWithToken[T any](token string, message *T) *connect.Request[T] {
 func (c *Client) ListInstances(ctx context.Context) ([]*Instance, error) {
 	req := newRequestWithToken(c.token, &cloudapiv1.ListInstancesRequest{
 		InstanceFilter: &cloudapiv1.InstanceFilter{
-			AdminEmail: pointers.Ptr(c.email),
+			AdminEmail: &c.email,
 		},
 	})
 	resp, err := c.client.ListInstances(
@@ -110,12 +114,12 @@ func (c *Client) DeployVersion(ctx context.Context, spec *DeploymentSpec) (*Inst
 	}
 	req := newRequestWithToken(c.token, &cloudapiv1.CreateInstanceRequest{
 		Name:             spec.Name,
-		Version:          pointers.Ptr(spec.Version),
+		Version:          &spec.Version,
 		InstanceType:     cloudapiv1.InstanceType_INSTANCE_TYPE_INTERNAL,
 		InstanceFeatures: spec.InstanceFeatures,
 		Environment:      pointers.Ptr(DevEnvironment),
-		AdminEmail:       pointers.Ptr(c.email),
-		LicenseKey:       pointers.Ptr(licenseKey),
+		AdminEmail:       &c.email,
+		LicenseKey:       &licenseKey,
 		GcpRegion:        pointers.Ptr("us-central1"),
 	})
 	resp, err := c.client.CreateInstance(ctx, req)

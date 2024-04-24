@@ -17,7 +17,7 @@ import (
 //	} else if !ok {
 //		return errors.New("response is required")
 //	}
-func PromptAndScan(out *Output, prompt string, result *string) (valueProvided bool, err error) {
+func PromptAndScan(out *Output, prompt string, result *string) (bool, error) {
 	out.Promptf(prompt)
 	n, err := fmt.Scanln(result)
 	if err != nil {
@@ -35,7 +35,9 @@ func PromptAndScan(out *Output, prompt string, result *string) (valueProvided bo
 	return true, nil
 }
 
-func FancyPromptAndScan(out *Output, prompt output.FancyLine, result *string) (valueProvided bool, err error) {
+// FancyPromptAndScan is a helper that renders the given fancy prompt into out and scans for the
+// subsequent input up to a newline. The return value indicates if a value was provided at all
+func FancyPromptAndScan(out *Output, prompt output.FancyLine, result *string) (bool, error) {
 	out.FancyPrompt(prompt)
 	n, err := fmt.Scanln(result)
 	if err != nil {
