@@ -224,8 +224,14 @@ def oci_deps():
         image = "index.docker.io/sourcegraph/executor-vm",
     )
 
+    # Please review the changes in /usr/local/share/postgresql/postgresql.conf.sample
+    # If there is any change, you should ping @team/delivery
+    # And Delivery will make sure changes are reflected in our deploy repository
     oci_pull(
         name = "legacy_postgres-12-alpine_base",
+        # IMPORTANT: Only update to Postgres 12.X Alpine images, and update the tag below
+        # (Bazel doesn't allow both tags and hashes)
+        # postgres:12.18-alpine3.18
         digest = "sha256:090eea940ca3db9214120b0bada22616f3961ac06d669d5389ed60510ce4d2cd",
         image = "index.docker.io/library/postgres",
     )
