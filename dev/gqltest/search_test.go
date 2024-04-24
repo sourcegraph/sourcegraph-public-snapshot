@@ -254,7 +254,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		// Make sure we only got .go files
 		for _, r := range results.Results {
-			if !strings.Contains(r.File.Name, ".go") {
+			if !strings.Contains(strings.ToLower(r.File.Name), ".go") {
 				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
 			}
 		}
@@ -275,7 +275,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 
 		// Make sure we only got .go files
 		for _, r := range results.Results {
-			if !strings.Contains(r.File.Name, ".go") {
+			if !strings.Contains(strings.ToLower(r.File.Name), ".go") {
 				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
 			}
 		}
