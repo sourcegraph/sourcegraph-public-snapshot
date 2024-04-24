@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-    import type { RepositoryGitRefs, RepositoryGitCommits } from './RepositoryRevPicker.gql'
+    import type { RepositoryGitRefs, RevPickerGitCommit } from './RepositoryRevPicker.gql'
 
     export type RepositoryBranches = RepositoryGitRefs['gitRefs']
     export type RepositoryBranch = RepositoryBranches['nodes'][number]
@@ -7,21 +7,22 @@
     export type RepositoryTags = RepositoryGitRefs['gitRefs']
     export type RepositoryTag = RepositoryTags['nodes'][number]
 
-    export type RepositoryCommits = NonNullable<RepositoryGitCommits['commit']>['ancestors']
-    export type RepositoryGitCommit = RepositoryCommits['nodes'][number]
+    export type RepositoryCommits = { nodes: RevPickerGitCommit[] }
+    export type RepositoryGitCommit = RevPickerGitCommit
 </script>
 
 <script lang="ts">
     import { mdiClose, mdiSourceBranch, mdiTagOutline, mdiSourceCommit } from '@mdi/js'
-    import { Button, Badge } from '$lib/wildcard'
-    import Popover from '$lib/Popover.svelte'
-    import Icon from '$lib/Icon.svelte'
-    import Tabs from '$lib/Tabs.svelte'
-    import TabPanel from '$lib/TabPanel.svelte'
-    import Tooltip from '$lib/Tooltip.svelte'
+
+    import { replaceRevisionInURL } from '@sourcegraph/shared/src/util/url'
 
     import { goto } from '$app/navigation'
-    import { replaceRevisionInURL } from '@sourcegraph/shared/src/util/url'
+    import Icon from '$lib/Icon.svelte'
+    import Popover from '$lib/Popover.svelte'
+    import TabPanel from '$lib/TabPanel.svelte'
+    import Tabs from '$lib/Tabs.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
+    import { Button, Badge } from '$lib/wildcard'
 
     import type { ResolvedRevision } from '../../+layout'
 
