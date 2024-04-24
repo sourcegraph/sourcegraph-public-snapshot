@@ -6,11 +6,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"io/fs"
-
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
+	"github.com/grafana/regexp"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"go.opentelemetry.io/otel/attribute"
+	"io"
+	"io/fs"
 
 	"github.com/sourcegraph/log"
 
@@ -39,6 +41,21 @@ type Lang struct {
 
 var newLine = []byte{'\n'}
 
+func isExcluded(name string) (bool, error) {
+	// Exclude lock files by default. We can later make the patterns configurable.
+	excludedFileNamePatterns := []string{".*\\.lock"}
+	for _, pattern := range excludedFileNamePatterns {
+		matched, err := regexp.MatchString(pattern, name)
+		if err != nil {
+			return false, err
+		}
+		if matched {
+			return matched, nil
+		}
+	}
+	return false, nil
+}
+
 func getLang(ctx context.Context, file fs.FileInfo, buf []byte, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error)) (Lang, error) {
 	if file == nil {
 		return Lang{}, nil
@@ -46,6 +63,16 @@ func getLang(ctx context.Context, file fs.FileInfo, buf []byte, getFileReader fu
 	if !file.Mode().IsRegular() || enry.IsVendor(file.Name()) {
 		return Lang{}, nil
 	}
+	fileExcluded, err := isExcluded(file.Name())
+	if err != nil {
+		return Lang{}, errors.Wrap(err, "Failed to evaluate regex of excluded files.")
+	}
+	if fileExcluded {
+		return Lang{}, nil
+	}
+
+	trc, ctx := trace.New(ctx, "getLang")
+	defer trc.End()
 	rc, err := getFileReader(ctx, file.Name())
 	if err != nil {
 		return Lang{}, errors.Wrap(err, "getting file reader")
@@ -58,6 +85,12 @@ func getLang(ctx context.Context, file fs.FileInfo, buf []byte, getFileReader fu
 	// In many cases, GetLanguageByFilename can detect the language conclusively just from the
 	// filename. If not, we pass a subset of the file contents for analysis.
 	matchedLang, safe := GetLanguageByFilename(file.Name())
+
+	trc.AddEvent("GetLanguageByFilename",
+		attribute.String("FileName", file.Name()),
+		attribute.Bool("Safe", safe),
+		attribute.String("MatchedLang", matchedLang),
+	)
 
 	// No content
 	if rc == nil {
