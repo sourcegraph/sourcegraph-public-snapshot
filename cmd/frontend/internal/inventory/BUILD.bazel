@@ -18,6 +18,7 @@ go_library(
         "@com_github_grafana_regexp//:regexp",
         "@com_github_sourcegraph_conc//iter",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
