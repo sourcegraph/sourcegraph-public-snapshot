@@ -229,10 +229,10 @@ def oci_deps():
     # And Delivery will make sure changes are reflected in our deploy repository
     oci_pull(
         name = "legacy_postgres-12-alpine_base",
-        # IMPORTANT: Only update to Postgres 12.X Alpine images, and update the tag below
+        # IMPORTANT: Only update to Postgres 12.X Alpine linux/x86_64 images, and update the tag below
         # (Bazel doesn't allow both tags and hashes)
-        # postgres:12.18-alpine3.18
-        digest = "sha256:090eea940ca3db9214120b0bada22616f3961ac06d669d5389ed60510ce4d2cd",
+        # docker pull --platform linux/x86_64 postgres:12.18-alpine3.18
+        digest = "sha256:a7b33f6dc44abdd049d666ee8d919c54642a0b36563c28cf0849b744997da0a8",
         image = "index.docker.io/library/postgres",
         platforms = ["linux/amd64"],
     )
