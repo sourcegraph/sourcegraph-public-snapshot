@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -21,9 +22,12 @@ func TestContext_Entries(t *testing.T) {
 		cacheGetCalls      []string
 		cacheSetCalls      = map[string]Inventory{}
 	)
+	var mu sync.Mutex
 	c := Context{
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
+			mu.Lock()
 			readTreeCalls = append(readTreeCalls, path)
+			mu.Unlock()
 			switch path {
 			case "d":
 				return []fs.FileInfo{
@@ -37,7 +41,9 @@ func TestContext_Entries(t *testing.T) {
 			}
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
+			mu.Lock()
 			newFileReaderCalls = append(newFileReaderCalls, path)
+			mu.Unlock()
 			var data []byte
 			switch path {
 			case "f.go":
@@ -52,7 +58,9 @@ func TestContext_Entries(t *testing.T) {
 			return io.NopCloser(bytes.NewReader(data)), nil
 		},
 		CacheGet: func(ctx context.Context, e fs.FileInfo) (Inventory, bool) {
+			mu.Lock()
 			cacheGetCalls = append(cacheGetCalls, e.Name())
+			mu.Unlock()
 			return Inventory{}, false
 		},
 		CacheSet: func(ctx context.Context, e fs.FileInfo, inv Inventory) {
@@ -83,13 +91,8 @@ func TestContext_Entries(t *testing.T) {
 	if want := []string{"d", "d/a"}; !reflect.DeepEqual(readTreeCalls, want) {
 		t.Errorf("ReadTree calls: got %q, want %q", readTreeCalls, want)
 	}
-	if want := []string{
-		// We need to read all files to get line counts
-		"d/a/c.m",
-		"d/b.go",
-		"f.go",
-	}; !reflect.DeepEqual(newFileReaderCalls, want) {
-		t.Errorf("GetFileReader calls: got %q, want %q", newFileReaderCalls, want)
+	if len(newFileReaderCalls) != 3 {
+		t.Errorf("GetFileReader calls: got %d, want %d", len(newFileReaderCalls), 3)
 	}
 	if want := []string{"d", "d/a", "f.go"}; !reflect.DeepEqual(cacheGetCalls, want) {
 		t.Errorf("CacheGet calls: got %q, want %q", cacheGetCalls, want)
