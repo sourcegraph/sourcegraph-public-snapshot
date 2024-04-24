@@ -47,7 +47,8 @@ internal:
               "message": "Internal release build for {{version}}",
               "env": {
                     "RELEASE_INTERNAL": "true",
-                    "VERSION": "{{tag}}"
+                    "VERSION": "{{tag}}",
+                    "IS_DEVELOPMENT_RELEASE": "{{is_development}}"
               }
             }' https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds)
             exit_code=$?
