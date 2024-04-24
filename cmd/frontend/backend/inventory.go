@@ -72,9 +72,7 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 				return nil, err
 			}
 			defer gitServerSemaphore.Release(1)
-			// Using recurse=true is not possible, because we're likely to run into the following error:
-			// "Maximum call stack size exceeded"
-			// This may have been because we're doing a call to ReadTree for every directory.
+			// Using recurse=true does not yield a significant performance improvement. See https://github.com/sourcegraph/sourcegraph/pull/62011/files#r1577513913.
 			return gsClient.ReadDir(ctx, repo, commitID, path, false)
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
