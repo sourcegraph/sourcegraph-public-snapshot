@@ -3426,20 +3426,6 @@ def go_dependencies():
         version = "v0.4.0",
     )
     go_repository(
-        name = "com_github_jinzhu_inflection",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/jinzhu/inflection",
-        sum = "h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=",
-        version = "v1.0.0",
-    )
-    go_repository(
-        name = "com_github_jinzhu_now",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/jinzhu/now",
-        sum = "h1:/o9tlHleP7gOFmsnYNz3RGnqzefHA47wQpKrrdTIwXQ=",
-        version = "v1.1.5",
-    )
-    go_repository(
         name = "com_github_jmespath_go_jmespath",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/jmespath/go-jmespath",
@@ -5494,8 +5480,8 @@ def go_dependencies():
         patches = [
             "//third_party/com_github_sourcegraph_zoekt:x_defs_version.patch",
         ],
-        sum = "h1:3DJmyiTtoczytYdvoBqwawkSRZEGZeZB9v0DjfQ6irY=",
-        version = "v0.0.0-20240417165306-43b92256ba71",
+        sum = "h1:ZoA5u9P6wjoUFwfgi+alUVLJ60dc0XkshTjzDNoQpGg=",
+        version = "v0.0.0-20240418025752-74e75efaded6",
     )
     go_repository(
         name = "com_github_spaolacci_murmur3",
@@ -7179,20 +7165,6 @@ def go_dependencies():
         importpath = "go.etcd.io/etcd/server/v3",
         sum = "h1:4NOGyOwD5sUZ22PiWYKmfxqoeh72z6EhYjNosKGLmZg=",
         version = "v3.5.10",
-    )
-    go_repository(
-        name = "io_gorm_driver_postgres",
-        build_file_proto_mode = "disable_global",
-        importpath = "gorm.io/driver/postgres",
-        sum = "h1:Iyrp9Meh3GmbSuyIAGyjkN+n9K+GHX9b9MqsTL4EJCo=",
-        version = "v1.5.4",
-    )
-    go_repository(
-        name = "io_gorm_gorm",
-        build_file_proto_mode = "disable_global",
-        importpath = "gorm.io/gorm",
-        sum = "h1:zR9lOiiYf09VNh5Q1gphfyia1JpiClIWG9hQaxB/mls=",
-        version = "v1.25.5",
     )
     go_repository(
         name = "io_k8s_api",

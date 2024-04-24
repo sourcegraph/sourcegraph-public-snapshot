@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
@@ -36,7 +37,7 @@ var (
 )
 
 func CreateSetup(config rockskipConfig) SetupFunc {
-	repoToSize := map[string]int64{}
+	var repoToSize sync.Map
 
 	if useRockskip {
 		return func(observationCtx *observation.Context, db database.DB, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, error) {
@@ -63,15 +64,15 @@ func CreateSetup(config rockskipConfig) SetupFunc {
 
 				if minRepoSizeMb != -1 {
 					var size int64
-					if _, ok := repoToSize[string(args.Repo)]; ok {
-						size = repoToSize[string(args.Repo)]
+					if value, ok := repoToSize.Load(args.Repo); ok {
+						size = value.(int64)
 					} else {
 						info, err := db.GitserverRepos().GetByName(ctx, args.Repo)
 						if err != nil {
 							return sqliteSearchFunc(ctx, args)
 						}
-						size := info.RepoSizeBytes
-						repoToSize[string(args.Repo)] = size
+						size = info.RepoSizeBytes
+						repoToSize.Store(args.Repo, size)
 					}
 
 					if size >= int64(minRepoSizeMb)*1000*1000 {
