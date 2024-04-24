@@ -33,11 +33,7 @@ func isFirstCommitEmptyRepoError(err error) bool {
 }
 
 func GitFirstEverCommit(ctx context.Context, gitserverClient gitserver.Client, repoName api.RepoName) (*gitdomain.Commit, error) {
-	commit, err := gitserverClient.FirstEverCommit(ctx, repoName)
-	if err != nil && isFirstCommitEmptyRepoError(err) {
-		return nil, errors.Wrap(EmptyRepoErr, err.Error())
-	}
-	return commit, err
+	return gitserverClient.FirstEverCommit(ctx, repoName)
 }
 
 func NewCachedGitFirstEverCommit() *CachedGitFirstEverCommit {
