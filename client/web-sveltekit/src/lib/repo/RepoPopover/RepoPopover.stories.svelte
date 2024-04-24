@@ -17,14 +17,14 @@
         name: `${faker.lorem.word()} / ${faker.lorem.word()}`,
         description: faker.lorem.sentence(),
         stars: faker.datatype.number(),
-        tags: {
-            nodes: [
-                { name: faker.lorem.word() },
-                { name: faker.lorem.word() },
-                { name: faker.lorem.word() },
-                { name: faker.lorem.word() },
-            ],
-        },
+        topics: [
+            faker.lorem.word(),
+            faker.lorem.word(),
+            faker.lorem.word(),
+            faker.lorem.word(),
+            faker.lorem.word(),
+            faker.lorem.word(),
+        ],
         isPrivate: false,
         language: 'Go',
         externalServices: {
@@ -43,6 +43,7 @@
             author: {
                 date: new Date().toISOString(),
                 person: {
+                    __typename: 'Person',
                     displayName: `${faker.person.firstName()} ${faker.person.lastName()}`,
                     avatarURL: faker.internet.avatar(),
                     name: faker.internet.userName(),

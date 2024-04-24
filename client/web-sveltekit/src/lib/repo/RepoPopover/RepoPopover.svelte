@@ -16,7 +16,9 @@ For example:
 
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
+    import { displayRepoName } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
+    import Badge from '$lib/wildcard/Badge.svelte'
 
     import RepoStars from '../RepoStars.svelte'
     import { getIconPathForCodeHost } from '../shared/codehost'
@@ -29,40 +31,25 @@ For example:
 
     const CENTER_DOT = '\u00B7' // interpunct
 
-    function truncateCommitNumber(numStr: string | undefined, length: number): string | null {
-        if (!numStr) {
-            return null
-        }
-        return numStr.substring(numStr.length - length)
-    }
-
-    function formatRepoName(repoName: string): string {
-        const slashes = repoName.split('/')
-        let repo = slashes.pop()
-        let org = slashes.pop()
-        return `${org} / ${repo}`
-    }
-
     $: commit = repo.commit
     $: author = commit?.author
     $: avatar = author?.person
-    $: access = repo.isPrivate ? 'Private' : 'Public'
-    $: codeHostKind = capitalize(repo.externalServices.nodes[0].kind)
-    $: codeHostIcon = getIconPathForCodeHost(codeHostKind)
-    $: abbreviatedCommitSHA = truncateCommitNumber(commit?.oid, 6)
+    $: codeHostKind = repo.externalServices.nodes[0].kind
 </script>
 
 <div class="root">
     {#if withHeader}
         <div class="header">
             <div class="left">
-                <Icon svgPath={orgSVGPath} --color="var(--primary)" />
-                <h4>{formatRepoName(repo.name)}</h4>
-                <small>{access}</small>
+                <Icon svgPath={orgSVGPath} --icon-fill-color="var(--primary)" />
+                <h4>{displayRepoName(repo.name)}</h4>
+                <Badge variant="outlineSecondary" small pill>
+                    {repo.isPrivate ? 'Private' : 'Public'}
+                </Badge>
             </div>
             <div class="right">
-                <Icon svgPath={codeHostIcon} --color="var(--text-body)" --size={24} />
-                <small>{codeHostKind}</small>
+                <Icon svgPath={getIconPathForCodeHost(codeHostKind)} --icon-fill-color="var(--text-body)" --size={24} />
+                <small>{capitalize(codeHostKind)}</small>
             </div>
         </div>
 
@@ -94,7 +81,7 @@ For example:
                     <small>{CENTER_DOT}</small>
                     <small class="commit-number"
                         ><a href={commit.canonicalURL} target="_blank">
-                            {abbreviatedCommitSHA}
+                            {commit.abbreviatedOID}
                         </a></small
                     >
                 </div>

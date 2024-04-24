@@ -5,7 +5,13 @@ import { getGraphQLClient } from '$lib/graphql'
 import type { Settings } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
-import { Init, EvaluatedFeatureFlagsQuery, GlobalAlertsSiteFlags, DisableSveltePrototype, RepoPopoverQuery } from './layout.gql'
+import {
+    Init,
+    EvaluatedFeatureFlagsQuery,
+    GlobalAlertsSiteFlags,
+    DisableSveltePrototype,
+    RepoPopoverQuery,
+} from './layout.gql'
 
 // Disable server side rendering for the whole app
 export const ssr = false
@@ -44,7 +50,7 @@ export const load: LayoutLoad = async ({ fetch }) => {
         featureFlags: result.data.evaluatedFeatureFlags,
         globalSiteAlerts: globalSiteAlerts.then(result => result.data?.site),
         fetchRepoPopoverInfo: async (name: string) => {
-            const response = await client.query(RepoPopoverQuery, { repoName: name }, { fetch, requestPolicy: 'network-only' })
+            const response = await client.query(RepoPopoverQuery, { repoName: name })
             if (!response.data || response.error) {
                 throw new Error(`Failed to fetch repo info: ${response.error}`)
             }

@@ -15,6 +15,7 @@ fragment RepoPopoverFragment on Repository {
     commit(rev: "HEAD") {
         id
             oid
+            abbreviatedOID
             subject
             canonicalURL
             author {
