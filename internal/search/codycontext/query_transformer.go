@@ -89,7 +89,6 @@ func transformPatterns(patterns []string) []string {
 			}
 
 			term = stemTerm(term)
-
 			add(term)
 		}
 	}
