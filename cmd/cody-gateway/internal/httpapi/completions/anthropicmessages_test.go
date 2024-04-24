@@ -36,7 +36,7 @@ func TestIsFlaggedAnthropicMessagesRequest(t *testing.T) {
 		RequestBlockingEnabled:         true,
 		AllowedPromptPatterns:          []string{strings.ToLower(validPreamble)},
 	}
-	tk, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
+	tk, err := tokenizer.NewCL100kBaseTokenizer()
 	require.NoError(t, err)
 
 	// Helper function for calling the AnthropicMessageHandlerMethod's shouldFlagRequest, using the supplied
@@ -161,7 +161,7 @@ func TestIsFlaggedAnthropicMessagesRequest(t *testing.T) {
 }
 
 func TestAnthropicMessagesRequestJSON(t *testing.T) {
-	_, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
+	_, err := tokenizer.NewCL100kBaseTokenizer()
 	require.NoError(t, err)
 
 	r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
