@@ -2,7 +2,6 @@ package codycontext
 
 import (
 	"context"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -30,12 +29,12 @@ const DefaultTextResultsCount = 3
 //
 // The job blocks until all results are collected, then streams them back to the caller. This gives flexibility to
 // combine and reorder the results in any way.
-func NewSearchJob(plan query.Plan, newJob func(query.Basic) (job.Job, error)) (job.Job, error) {
+func NewSearchJob(plan query.Plan, inputs *search.Inputs, newJob func(query.Basic) (job.Job, error)) (job.Job, error) {
 	if len(plan) > 1 {
 		return nil, errors.New("The 'codycontext' patterntype does not support multiple clauses")
 	}
 
-	codeCount, textCount := resultsCounts(plan[0].Parameters)
+	codeCount, textCount := resultsCounts(inputs)
 	basicQuery := plan[0].ToParseTree()
 
 	q, err := queryStringToKeywordQuery(query.StringHuman(basicQuery))
@@ -46,6 +45,7 @@ func NewSearchJob(plan query.Plan, newJob func(query.Basic) (job.Job, error)) (j
 
 	params := q.query.Parameters
 	patterns := q.patterns
+
 	// If there are no patterns left, this query was entirely composed of stopwords, so we return no results.
 	// ⚠️ We must return a no-op job instead of nil, since the job framework assumes all jobs are non-nil.
 	if len(patterns) == 0 {
@@ -67,17 +67,16 @@ func NewSearchJob(plan query.Plan, newJob func(query.Basic) (job.Job, error)) (j
 	return &searchJob{codeJob, codeCount, textJob, textCount, patterns}, nil
 }
 
-func resultsCounts(parameters query.Parameters) (codeCount int, textCount int) {
+func resultsCounts(inputs *search.Inputs) (codeCount, textCount int) {
 	codeCount = DefaultCodeResultsCount
-	textCount = DefaultTextResultsCount
+	if inputs.Features.CodyContextCodeCount > 0 {
+		codeCount = inputs.Features.CodyContextCodeCount
+	}
 
-	// We can ignore errors because the values were already validated during query parsing
-	parameters.VisitParameter(query.FieldCodyCodeCount, func(value string, negated bool, annotation query.Annotation) {
-		codeCount, _ = strconv.Atoi(value)
-	})
-	parameters.VisitParameter(query.FieldCodyTextCount, func(value string, negated bool, annotation query.Annotation) {
-		textCount, _ = strconv.Atoi(value)
-	})
+	textCount = DefaultTextResultsCount
+	if inputs.Features.CodyContextTextCount > 0 {
+		textCount = inputs.Features.CodyContextTextCount
+	}
 	return
 }
 

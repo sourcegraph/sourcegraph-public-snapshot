@@ -401,6 +401,10 @@ type Features struct {
 	// options. This should be used for quick interactive experiments only. An
 	// invalid JSON string or unknown fields will be ignored.
 	ZoektSearchOptionsOverride string
+
+	// Experimental fields for Cody context search, for internal use only.
+	CodyContextCodeCount int
+	CodyContextTextCount int
 }
 
 func (f *Features) String() string {

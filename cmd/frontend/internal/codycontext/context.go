@@ -258,11 +258,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		regexEscapedRepoNames[i] = regexp.QuoteMeta(string(repo.Name))
 	}
 
-	keywordQuery := fmt.Sprintf(`repo:^%s$ type:file type:path codycodecount:%d codytextcount:%d %s`,
-		query.UnionRegExps(regexEscapedRepoNames),
-		args.CodeResultsCount,
-		args.TextResultsCount,
-		args.Query)
+	keywordQuery := fmt.Sprintf(`repo:^%s$ type:file type:path %s`, query.UnionRegExps(regexEscapedRepoNames), args.Query)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -277,6 +273,9 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		search.Streaming,
 		pointers.Ptr(int32(0)),
 	)
+
+	plan.Features.CodyContextCodeCount = int(args.CodeResultsCount)
+	plan.Features.CodyContextTextCount = int(args.TextResultsCount)
 
 	if err != nil {
 		return nil, err

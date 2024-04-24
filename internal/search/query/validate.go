@@ -286,8 +286,6 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	case
 		FieldCount:
 		return satisfies(isSingular, isNumber, isNotNegated)
-	case FieldCodyCodeCount, FieldCodyTextCount:
-		return satisfies(isSingular, isNumber, isNotNegated)
 	case
 		FieldCombyRule:
 		return satisfies(isSingular, isNotNegated)
