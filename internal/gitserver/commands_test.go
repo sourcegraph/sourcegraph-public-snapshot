@@ -2186,7 +2186,7 @@ func TestClient_ContributorCounts(t *testing.T) {
 func TestClient_FirstEverCommit(t *testing.T) {
 	t.Run("correctly returns server response", func(t *testing.T) {
 
-		expectedCommit := gitdomain.Commit{
+		expectedCommit := &gitdomain.Commit{
 			ID:        "deadbeef",
 			Author:    gitdomain.Signature{Name: "Foo", Email: "foo@bar.com"},
 			Committer: &gitdomain.Signature{Name: "Bar", Email: "bar@bar.com"},
