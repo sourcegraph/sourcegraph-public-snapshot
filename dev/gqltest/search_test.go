@@ -261,7 +261,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("lang: filter with case sensitivity", func(t *testing.T) {
-		// Guard against a previous regression where case sensitivity broke lang filters
+		// Guard against a previous regression where case sensitivity broke lang filters. This search
+		// query closely mimics the one the web client ues for search-based code navigation.
 		results, err := client.SearchFiles("type:symbol ^readLine$ lang:go case:yes patterntype:regexp")
 		if err != nil {
 			t.Fatal(err)
