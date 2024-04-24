@@ -6,10 +6,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/purge",
     visibility = ["//cmd/repo-updater:__subpackages__"],
     deps = [
+        "//cmd/repo-updater/internal/gitserver",
         "//internal/actor",
         "//internal/conf/conftypes",
         "//internal/database",
-        "//internal/gitserver",
         "//internal/goroutine",
         "//internal/ratelimit",
         "//lib/errors",

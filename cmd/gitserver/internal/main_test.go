@@ -39,7 +39,7 @@ func runCmd(t *testing.T, dir string, cmd string, arg ...string) string {
 		"GIT_AUTHOR_NAME=a",
 		"GIT_AUTHOR_EMAIL=a@a.com",
 	}
-	b, err := c.CombinedOutput()
+	b, err := c.Output()
 	if err != nil {
 		t.Fatalf("%s %s failed: %s\nOutput: %s", cmd, strings.Join(arg, " "), err, b)
 	}

@@ -17,8 +17,8 @@ type Context struct {
 	NewFileReader func(ctx context.Context, path string) (io.ReadCloser, error)
 
 	// CacheGet, if set, returns the cached inventory and true for the given tree, or false for a cache miss.
-	CacheGet func(fs.FileInfo) (Inventory, bool)
+	CacheGet func(context.Context, fs.FileInfo) (Inventory, bool)
 
 	// CacheSet, if set, stores the inventory in the cache for the given tree.
-	CacheSet func(fs.FileInfo, Inventory)
+	CacheSet func(context.Context, fs.FileInfo, Inventory)
 }

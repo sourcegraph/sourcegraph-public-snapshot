@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -326,8 +327,8 @@ func serveBasicPage(db database.DB, title func(c *Common, r *http.Request) strin
 		}
 		common.Title = title(common, r)
 
-		if useSvelteKit(r) {
-			return renderSvelteKit(w, common)
+		if sveltekit.Enabled(r.Context()) {
+			return sveltekit.RenderTemplate(w, common)
 		}
 
 		return renderTemplate(w, "app.html", common)
@@ -481,8 +482,8 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 
 		common.Title = title(common, r)
 
-		if useSvelteKit(r) {
-			return renderSvelteKit(w, common)
+		if sveltekit.Enabled(r.Context()) {
+			return sveltekit.RenderTemplate(w, common)
 		}
 
 		return renderTemplate(w, "app.html", common)
@@ -538,8 +539,8 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 			return nil
 		}
 
-		if useSvelteKit(r) {
-			return renderSvelteKit(w, common)
+		if sveltekit.Enabled(r.Context()) {
+			return sveltekit.RenderTemplate(w, common)
 		}
 
 		return renderTemplate(w, "app.html", common)

@@ -56,6 +56,7 @@ sg teammate handbook asdine
 				if err != nil {
 					return err
 				}
+
 				teammate, err := resolver.ResolveByName(ctx.Context, strings.Join(args, " "))
 				if err != nil {
 					return err
@@ -84,7 +85,44 @@ sg teammate handbook asdine
 				std.Out.Writef("Opening handbook link for %s: %s", teammate.Name, teammate.HandbookLink)
 				return open.URL(teammate.HandbookLink)
 			},
-		}},
+		},
+			{
+				Name:      "details",
+				ArgsUsage: "<nickname>",
+				Usage:     "print the details of a Sourcegraph",
+				Action: func(ctx *cli.Context) error {
+					args := ctx.Args().Slice()
+					if len(args) == 0 {
+						return errors.New("no nickname provided")
+					}
+					handle := strings.Join(args, " ")
+					resolver, err := getTeamResolver(ctx.Context)
+					if err != nil {
+						return err
+					}
+					teammate, err := resolver.ResolveByName(ctx.Context, handle)
+					if err != nil {
+						return err
+					}
+					markdownFmt := `**Name**       : %s
+**Slack**      : %s
+**Email**      : %s
+**GitHub**     : %s
+**Location**   : %s
+**Role**       : %s
+**Description**: %s`
+					markdown := fmt.Sprintf(markdownFmt,
+						teammate.Name,
+						teammate.SlackName,
+						teammate.Email,
+						fmt.Sprintf("[%s](https://github.com/%s)", teammate.GitHub, teammate.GitHub),
+						teammate.Location,
+						teammate.Role,
+						teammate.Description)
+					return std.Out.WriteMarkdown(markdown)
+				},
+			},
+		},
 	}
 )
 

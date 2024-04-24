@@ -271,11 +271,11 @@ func RegisterInternalServices(
 		logger:          logger.Scoped("searchIndexerServer"),
 		gitserverClient: gsClient.Scoped("zoektindexerserver"),
 		ListIndexable:   backend.NewRepos(logger, db, gsClient.Scoped("zoektindexerserver")).ListIndexable,
-		RepoStore:       db.Repos(),
+		repoStore:       db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},
-		Indexers:               search.Indexers(),
+		indexers:               search.Indexers(),
 		Ranking:                rankingService,
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}

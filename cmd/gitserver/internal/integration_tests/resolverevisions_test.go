@@ -111,7 +111,9 @@ func TestClient_ResolveRevision(t *testing.T) {
 	})
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s, &server.GRPCServerConfig{
+		ExhaustiveRequestLoggingEnabled: true,
+	}))
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, http.NotFoundHandler())
 	srv := httptest.NewServer(handler)
@@ -126,7 +128,7 @@ func TestClient_ResolveRevision(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
-			_, err := cli.RequestRepoUpdate(ctx, api.RepoName(remote))
+			_, _, err := s.FetchRepository(ctx, api.RepoName(remote))
 			require.NoError(t, err)
 
 			got, err := cli.ResolveRevision(ctx, api.RepoName(remote), test.input, gitserver.ResolveRevisionOptions{EnsureRevision: false})

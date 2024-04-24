@@ -16,6 +16,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/githubapp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
@@ -242,7 +243,7 @@ func InitRouter(db database.DB) {
 		return brandNameSubtitle(repoShortName(c.Repo.Name))
 	}))
 	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
-	r.Path(repoRevPath).Methods("GET").Name(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	repoRoot := r.Path(repoRevPath).Methods("GET").Name(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
 		if env.InsecureDev && r.URL.Path == "/__errorTest" {
 			handler(db, serveErrorTest(db)).ServeHTTP(w, r)
@@ -256,9 +257,10 @@ func InitRouter(db database.DB) {
 		serveRepoHandler.ServeHTTP(w, r)
 	}))
 
-	// tree
+	// We don't need to know about repo subroutes
+	sveltekit.RegisterSvelteKit(r, repoRoot)
+
 	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
-	repoRev.PathPrefix("/commits").Methods("GET").Name("repo-commits").Handler(brandedNoIndex("Commits"))
 	// tree
 	repoRev.Path("/tree{Path:.*}").Methods("GET").
 		Name(routeTree).
@@ -280,15 +282,15 @@ func InitRouter(db database.DB) {
 	// raw
 	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw).Handler(handler(db, serveRaw(logger, db, gitserver.NewClient("http.raw"))))
 
-	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
-
-	repo.PathPrefix("/batch-changes").Methods("GET").Name("repo-batch-changes").Handler(brandedIndex("Batch Changes"))
+	// batch changes - branded
+	repoRev.PathPrefix("/batch-changes").Methods("GET").Name("repo-batch-changes").Handler(brandedIndex("Batch Changes"))
 
 	for _, p := range []struct {
 		pathPrefix, name, title string
 	}{
 		{pathPrefix: "/settings", name: "repo-settings", title: "Repository settings"},
 		{pathPrefix: "/code-graph", name: "repo-code-intelligence", title: "Code graph"},
+		{pathPrefix: "/commits", name: "repo-commits", title: "Commits"},
 		{pathPrefix: "/commit", name: "repo-commit", title: "Commit"},
 		{pathPrefix: "/branches", name: "repo-branches", title: "Branches"},
 		{pathPrefix: "/tags", name: "repo-tags", title: "Tags"},
@@ -296,12 +298,12 @@ func InitRouter(db database.DB) {
 		{pathPrefix: "/stats", name: "repo-stats", title: "Stats"},
 		{pathPrefix: "/own", name: "repo-own", title: "Ownership"},
 	} {
-		repo.PathPrefix(p.pathPrefix).Methods("GET").Name(p.name).Handler(brandedNoIndex(p.title))
+		repoRev.PathPrefix(p.pathPrefix).Methods("GET").Name(p.name).Handler(brandedNoIndex(p.title))
 	}
 
 	// legacy redirects
 	if dotcom.SourcegraphDotComMode() {
-		repo.Path("/info").Methods("GET").Name("page.repo.landing").Handler(handler(db, serveRepoLanding(db)))
+		repoRev.Path("/info").Methods("GET").Name("page.repo.landing").Handler(handler(db, serveRepoLanding(db)))
 		repoRev.Path("/{dummy:def|refs}/" + routevar.Def).Methods("GET").Name("page.def.redirect").Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
 		repoRev.Path("/info/" + routevar.Def).Methods("GET").Name(routeLegacyDefLanding).Handler(handler(db, serveDefLanding))
 		repoRev.Path("/land/" + routevar.Def).Methods("GET").Name("page.def.landing.old").Handler(http.HandlerFunc(serveOldRouteDefLanding))

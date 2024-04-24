@@ -74,8 +74,6 @@
         align-items: baseline;
         padding: 0.25rem 0.5rem;
         border-bottom: 1px solid var(--border-color);
-        position: sticky;
-        top: 0px;
         background-color: var(--color-bg-1);
         z-index: 1;
         gap: 0.5rem;
@@ -177,7 +175,7 @@
 
         display: flex;
         gap: 1rem;
-        align-items: baseline;
+        align-items: center;
 
         // With overflow:visible the actions won't shrink past their content size,
         // and this allows us to measure the space needed to show actions fully.

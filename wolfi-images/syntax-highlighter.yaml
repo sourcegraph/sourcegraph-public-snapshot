@@ -1,4 +1,4 @@
-include: ./sourcegraph-base.yaml
+include: ./sourcegraph-template.yaml
 
 contents:
   packages:
@@ -9,3 +9,5 @@ contents:
     ## syntax-highlighter packages
     - libstdc++
     - http-server-stabilizer@sourcegraph
+
+# MANUAL REBUILD: 

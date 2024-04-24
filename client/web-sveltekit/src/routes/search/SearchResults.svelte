@@ -28,6 +28,7 @@
     import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
+    import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
     import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
     import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
@@ -125,9 +126,11 @@
     <title>{queryFromURL} - Sourcegraph</title>
 </svelte:head>
 
-<div class="search">
-    <SearchInput {queryState} />
-</div>
+<GlobalHeaderPortal>
+    <div class="search-header">
+        <SearchInput {queryState} size="compat" />
+    </div>
+</GlobalHeaderPortal>
 
 <div class="search-results">
     <PanelGroup id="search-results-panels">
@@ -178,11 +181,10 @@
 </div>
 
 <style lang="scss">
-    .search {
-        border-bottom: 1px solid var(--border-color);
-        align-self: stretch;
-        padding: 0.25rem;
-        // This ensures that suggestions are rendered above sticky search result headers
+    .search-header {
+        width: 100%;
+        // This ensures that the search suggestions panel is displayed above the
+        // search results panel.
         z-index: 1;
     }
 

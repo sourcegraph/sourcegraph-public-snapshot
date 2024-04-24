@@ -8,10 +8,7 @@ proto_library(
     srcs = ["gitserver.proto"],
     strip_import_prefix = "/internal",  # keep
     visibility = ["//visibility:private"],
-    deps = [
-        "@com_google_protobuf//:duration_proto",
-        "@com_google_protobuf//:timestamp_proto",
-    ],
+    deps = ["@com_google_protobuf//:timestamp_proto"],
 )
 
 go_proto_library(
@@ -32,6 +29,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1",
     visibility = [
         "//cmd/gitserver:__subpackages__",
+        "//cmd/repo-updater/internal/gitserver:__pkg__",
         "//internal/api:__pkg__",
         "//internal/extsvc/gitolite:__pkg__",
         "//internal/gitserver:__pkg__",

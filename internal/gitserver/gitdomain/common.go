@@ -166,16 +166,16 @@ func (c *Commit) ToProto() *proto.GitCommit {
 
 	return &proto.GitCommit{
 		Oid:     string(c.ID),
-		Message: string(c.Message),
+		Message: []byte(c.Message),
 		Parents: parents,
 		Author: &proto.GitSignature{
-			Name:  c.Author.Name,
-			Email: c.Author.Email,
+			Name:  []byte(c.Author.Name),
+			Email: []byte(c.Author.Email),
 			Date:  timestamppb.New(c.Author.Date),
 		},
 		Committer: &proto.GitSignature{
-			Name:  c.Committer.Name,
-			Email: c.Committer.Email,
+			Name:  []byte(c.Committer.Name),
+			Email: []byte(c.Committer.Email),
 			Date:  timestamppb.New(c.Committer.Date),
 		},
 	}
@@ -191,13 +191,17 @@ func CommitFromProto(p *proto.GitCommit) *Commit {
 		ID:      api.CommitID(p.GetOid()),
 		Message: Message(p.GetMessage()),
 		Author: Signature{
-			Name:  p.GetAuthor().GetName(),
-			Email: p.GetAuthor().GetEmail(),
+			// TODO@ggilmore: It's entirely possible that the "name" could include non-utf8 characters, as there is no such enforcement in the git cli. We should consider using []byte here.
+			Name: string(p.GetAuthor().GetName()),
+			// TODO@ggilmore: It's entirely possible that the "email" could include non-utf8 characters, as there is no such enforcement in the git cli. We should consider using []byte here.
+			Email: string(p.GetAuthor().GetEmail()),
 			Date:  p.GetAuthor().GetDate().AsTime(),
 		},
 		Committer: &Signature{
-			Name:  p.GetCommitter().GetName(),
-			Email: p.GetCommitter().GetEmail(),
+			// TODO@ggilmore: It's entirely possible that the "name" could include non-utf8 characters, as there is no such enforcement in the git cli. We should consider using []byte here.
+			Name: string(p.GetCommitter().GetName()),
+			// TODO@ggilmore: It's entirely possible that the "email" could include non-utf8 characters, as there is no such enforcement in the git cli. We should consider using []byte here.
+			Email: string(p.GetCommitter().GetEmail()),
 			Date:  p.GetCommitter().GetDate().AsTime(),
 		},
 		Parents: parents,
@@ -308,7 +312,15 @@ func (h *Hunk) ToProto() *proto.BlameHunk {
 
 // Signature represents a commit signature
 type Signature struct {
-	Name  string    `json:"Name,omitempty"`
+	// Name is the name of the author or committer.
+	//
+	// Note: This is not necessarily a valid UTF-8 string, as git does not enforce
+	// this. It's up to the caller to check validity or sanitize the string as needed.
+	Name string `json:"Name,omitempty"`
+	// Email is the email of the author or committer.
+	//
+	// Note: This is not necessarily a valid UTF-8 string, as git does not enforce
+	// this. It's up to the caller to check validity or sanitize the string as needed.
 	Email string    `json:"Email,omitempty"`
 	Date  time.Time `json:"Date"`
 }
@@ -354,6 +366,33 @@ func (p *ContributorCount) String() string {
 	return fmt.Sprintf("%d %s <%s>", p.Count, p.Name, p.Email)
 }
 
+func ContributorCountFromProto(p *proto.ContributorCount) *ContributorCount {
+	if p == nil {
+		return nil
+	}
+	c := &ContributorCount{
+		Count: p.GetCount(),
+	}
+	if p.GetAuthor() != nil {
+		c.Name = string(p.GetAuthor().GetName())
+		c.Email = string(p.GetAuthor().GetEmail())
+	}
+	return c
+}
+
+func (c *ContributorCount) ToProto() *proto.ContributorCount {
+	if c == nil {
+		return nil
+	}
+	return &proto.ContributorCount{
+		Count: c.Count,
+		Author: &proto.GitSignature{
+			Name:  []byte(c.Name),
+			Email: []byte(c.Email),
+		},
+	}
+}
+
 // Ref describes a Git ref.
 type Ref struct {
 	// Name the full name of the ref (e.g., "refs/heads/mybranch").
@@ -378,8 +417,8 @@ type Ref struct {
 
 func RefFromProto(r *proto.GitRef) Ref {
 	return Ref{
-		Name:        r.GetRefName(),
-		ShortName:   r.GetShortRefName(),
+		Name:        string(r.GetRefName()),
+		ShortName:   string(r.GetShortRefName()),
 		Type:        RefTypeFromProto(r.GetRefType()),
 		CommitID:    api.CommitID(r.GetTargetCommit()),
 		RefOID:      api.CommitID(r.GetRefOid()),
@@ -390,8 +429,8 @@ func RefFromProto(r *proto.GitRef) Ref {
 
 func (r *Ref) ToProto() *proto.GitRef {
 	return &proto.GitRef{
-		RefName:      r.Name,
-		ShortRefName: r.ShortName,
+		RefName:      []byte(r.Name),
+		ShortRefName: []byte(r.ShortName),
 		TargetCommit: string(r.CommitID),
 		RefOid:       string(r.RefOID),
 		CreatedAt:    timestamppb.New(r.CreatedDate),

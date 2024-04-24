@@ -157,8 +157,7 @@ func (g *gitTreeTranslator) readCachedHunks(ctx context.Context, repo *sgtypes.R
 // readHunks returns a position-ordered slice of changes (additions or deletions) of
 // the given path between the given source and target commits.
 func (g *gitTreeTranslator) readHunks(ctx context.Context, repo *sgtypes.Repo, sourceCommit, targetCommit, path string) (_ []*diff.Hunk, err error) {
-	r, err := g.client.Diff(ctx, gitserver.DiffOptions{
-		Repo:      repo.Name,
+	r, err := g.client.Diff(ctx, repo.Name, gitserver.DiffOptions{
 		Base:      sourceCommit,
 		Head:      targetCommit,
 		Paths:     []string{path},
