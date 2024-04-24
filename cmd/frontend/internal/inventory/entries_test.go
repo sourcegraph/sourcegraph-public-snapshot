@@ -26,8 +26,8 @@ func TestContext_Entries(t *testing.T) {
 	c := Context{
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
 			mu.Lock()
+			defer mu.Unlock()
 			readTreeCalls = append(readTreeCalls, path)
-			mu.Unlock()
 			switch path {
 			case "d":
 				return []fs.FileInfo{
@@ -42,8 +42,8 @@ func TestContext_Entries(t *testing.T) {
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
 			mu.Lock()
+			defer mu.Unlock()
 			newFileReaderCalls = append(newFileReaderCalls, path)
-			mu.Unlock()
 			var data []byte
 			switch path {
 			case "f.go":
@@ -59,11 +59,13 @@ func TestContext_Entries(t *testing.T) {
 		},
 		CacheGet: func(ctx context.Context, e fs.FileInfo) (Inventory, bool) {
 			mu.Lock()
+			defer mu.Unlock()
 			cacheGetCalls = append(cacheGetCalls, e.Name())
-			mu.Unlock()
 			return Inventory{}, false
 		},
 		CacheSet: func(ctx context.Context, e fs.FileInfo, inv Inventory) {
+			mu.Lock()
+			defer mu.Unlock()
 			if _, ok := cacheSetCalls[e.Name()]; ok {
 				t.Fatalf("already stored %q in cache", e.Name())
 			}
