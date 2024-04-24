@@ -17,9 +17,8 @@ func TestNewPodTemplate(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		name      string
-		namespace string
-		options   []Option
+		name    string
+		options []Option
 	}
 
 	tests := []struct {
@@ -31,14 +30,12 @@ func TestNewPodTemplate(t *testing.T) {
 		{
 			name: "default container",
 			args: args{
-				name:      "foo",
-				namespace: "sourcegraph",
+				name: "foo",
 			},
 			want: corev1.PodTemplate{
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
-						Namespace: "sourcegraph",
+						Name: "foo",
 						Annotations: map[string]string{
 							"kubectl.kubernetes.io/default-container": "foo",
 						},
@@ -61,8 +58,7 @@ func TestNewPodTemplate(t *testing.T) {
 		{
 			name: "with labels",
 			args: args{
-				name:      "foo",
-				namespace: "sourcegraph",
+				name: "foo",
 				options: []Option{
 					WithLabels(map[string]string{
 						"app":         "bar",
@@ -73,8 +69,7 @@ func TestNewPodTemplate(t *testing.T) {
 			want: corev1.PodTemplate{
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
-						Namespace: "sourcegraph",
+						Name: "foo",
 						Annotations: map[string]string{
 							"kubectl.kubernetes.io/default-container": "foo",
 						},
@@ -98,8 +93,7 @@ func TestNewPodTemplate(t *testing.T) {
 		{
 			name: "with annotations",
 			args: args{
-				name:      "foo",
-				namespace: "sourcegraph",
+				name: "foo",
 				options: []Option{
 					WithAnnotations(map[string]string{
 						"kubectl.kubernetes.io/default-container": "bar",
@@ -110,8 +104,7 @@ func TestNewPodTemplate(t *testing.T) {
 			want: corev1.PodTemplate{
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
-						Namespace: "sourcegraph",
+						Name: "foo",
 						Annotations: map[string]string{
 							"kubectl.kubernetes.io/default-container": "foo",
 							"environment": "prod",
@@ -135,8 +128,7 @@ func TestNewPodTemplate(t *testing.T) {
 		{
 			name: "with affinity",
 			args: args{
-				name:      "foo",
-				namespace: "sourcegraph",
+				name: "foo",
 				options: []Option{
 					WithAffinity(corev1.Affinity{
 						NodeAffinity: &corev1.NodeAffinity{
@@ -151,8 +143,7 @@ func TestNewPodTemplate(t *testing.T) {
 			want: corev1.PodTemplate{
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
-						Namespace: "sourcegraph",
+						Name: "foo",
 						Annotations: map[string]string{
 							"kubectl.kubernetes.io/default-container": "foo",
 						},
@@ -183,8 +174,7 @@ func TestNewPodTemplate(t *testing.T) {
 		{
 			name: "with volumes",
 			args: args{
-				name:      "foo",
-				namespace: "sourcegraph",
+				name: "foo",
 				options: []Option{
 					WithVolumes([]corev1.Volume{
 						{
@@ -199,8 +189,7 @@ func TestNewPodTemplate(t *testing.T) {
 			want: corev1.PodTemplate{
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
-						Namespace: "sourcegraph",
+						Name: "foo",
 						Annotations: map[string]string{
 							"kubectl.kubernetes.io/default-container": "foo",
 						},
@@ -231,8 +220,7 @@ func TestNewPodTemplate(t *testing.T) {
 		{
 			name: "with termination grace period",
 			args: args{
-				name:      "foo",
-				namespace: "sourcegraph",
+				name: "foo",
 				options: []Option{
 					WithTerminationGracePeriod(int64(10)),
 				},
@@ -240,8 +228,7 @@ func TestNewPodTemplate(t *testing.T) {
 			want: corev1.PodTemplate{
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
-						Namespace: "sourcegraph",
+						Name: "foo",
 						Annotations: map[string]string{
 							"kubectl.kubernetes.io/default-container": "foo",
 						},
@@ -265,8 +252,7 @@ func TestNewPodTemplate(t *testing.T) {
 		{
 			name: "with init containers",
 			args: args{
-				name:      "foo",
-				namespace: "sourcegraph",
+				name: "foo",
 				options: []Option{
 					WithInitContainers(func() corev1.Container {
 						c, _ := container.NewContainer("foo")
@@ -277,8 +263,7 @@ func TestNewPodTemplate(t *testing.T) {
 			want: corev1.PodTemplate{
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
-						Namespace: "sourcegraph",
+						Name: "foo",
 						Annotations: map[string]string{
 							"kubectl.kubernetes.io/default-container": "foo",
 						},
@@ -324,8 +309,7 @@ func TestNewPodTemplate(t *testing.T) {
 		{
 			name: "with containers",
 			args: args{
-				name:      "foo",
-				namespace: "sourcegraph",
+				name: "foo",
 				options: []Option{
 					WithContainers(func() corev1.Container {
 						c, _ := container.NewContainer("foo")
@@ -336,8 +320,7 @@ func TestNewPodTemplate(t *testing.T) {
 			want: corev1.PodTemplate{
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
-						Namespace: "sourcegraph",
+						Name: "foo",
 						Annotations: map[string]string{
 							"kubectl.kubernetes.io/default-container": "foo",
 						},
@@ -383,8 +366,7 @@ func TestNewPodTemplate(t *testing.T) {
 		{
 			name: "with service account",
 			args: args{
-				name:      "foo",
-				namespace: "sourcegraph",
+				name: "foo",
 				options: []Option{
 					WithServiceAccount("foobar"),
 				},
@@ -392,8 +374,7 @@ func TestNewPodTemplate(t *testing.T) {
 			want: corev1.PodTemplate{
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
-						Namespace: "sourcegraph",
+						Name: "foo",
 						Annotations: map[string]string{
 							"kubectl.kubernetes.io/default-container": "foo",
 						},
@@ -417,8 +398,7 @@ func TestNewPodTemplate(t *testing.T) {
 		{
 			name: "with security context",
 			args: args{
-				name:      "foo",
-				namespace: "sourcegraph",
+				name: "foo",
 				options: []Option{
 					WithSecurityContext(corev1.PodSecurityContext{
 						RunAsUser:           pointers.Ptr[int64](999),
@@ -431,8 +411,7 @@ func TestNewPodTemplate(t *testing.T) {
 			want: corev1.PodTemplate{
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
-						Namespace: "sourcegraph",
+						Name: "foo",
 						Annotations: map[string]string{
 							"kubectl.kubernetes.io/default-container": "foo",
 						},
@@ -455,8 +434,7 @@ func TestNewPodTemplate(t *testing.T) {
 		{
 			name: "with error",
 			args: args{
-				name:      "foo",
-				namespace: "sourcegraph",
+				name: "foo",
 				options: []Option{
 					func(podTemplate *corev1.PodTemplate) error {
 						return errors.New("test error")
@@ -471,7 +449,7 @@ func TestNewPodTemplate(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, err := NewPodTemplate(tt.args.name, tt.args.namespace, tt.args.options...)
+			got, err := NewPodTemplate(tt.args.name, tt.args.options...)
 			if err != nil && tt.wantErr == false {
 				t.Errorf("NewPodTemplate() error: %v", err)
 			}

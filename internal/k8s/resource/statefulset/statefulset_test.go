@@ -214,7 +214,7 @@ func TestNewStatefulSet(t *testing.T) {
 				namespace: "sourcegraph",
 				options: []Option{
 					WithPodTemplateSpec(func() corev1.PodTemplateSpec {
-						ts, _ := pod.NewPodTemplate("foo", "sourcegraph")
+						ts, _ := pod.NewPodTemplate("foo")
 						return ts.Template
 					}()),
 				},
@@ -243,8 +243,7 @@ func TestNewStatefulSet(t *testing.T) {
 					},
 					Template: corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      "foo",
-							Namespace: "sourcegraph",
+							Name: "foo",
 							Labels: map[string]string{
 								"app":    "foo",
 								"deploy": "sourcegraph",

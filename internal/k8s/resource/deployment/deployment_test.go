@@ -345,7 +345,7 @@ func TestNewDeployment(t *testing.T) {
 				version:   "1.2.3",
 				options: []Option{
 					WithPodTemplateSpec(func() corev1.PodTemplateSpec {
-						ts, _ := pod.NewPodTemplate("foo", "sourcegraph")
+						ts, _ := pod.NewPodTemplate("foo")
 						return ts.Template
 					}()),
 				},
@@ -375,8 +375,7 @@ func TestNewDeployment(t *testing.T) {
 					},
 					Template: corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      "foo",
-							Namespace: "sourcegraph",
+							Name: "foo",
 							Annotations: map[string]string{
 								"kubectl.kubernetes.io/default-container": "foo",
 							},
