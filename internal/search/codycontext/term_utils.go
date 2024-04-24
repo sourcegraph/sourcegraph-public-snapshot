@@ -11,6 +11,20 @@ func removePunctuation(input string) string {
 	return strings.TrimFunc(input, unicode.IsPunct)
 }
 
+var separators = map[rune]struct{}{
+	':': {}, // C++, Rust
+	'.': {}, // Java, Go, Python
+}
+
+// tokenize splits on runes that usually separate namespaces (class, package,
+// ...) from methods or functions.
+func tokenize(input string) []string {
+	return strings.FieldsFunc(input, func(r rune) bool {
+		_, ok := separators[r]
+		return ok
+	})
+}
+
 func stemTerm(input string) string {
 	// Attempt to stem words, but only use the stem if it's a prefix of the original term. This
 	// avoids cases where the stem is noisy and no longer matches the original term.

@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const maxTransformedPatterns = 10
+var maxTransformedPatterns = 10
 
 type keywordQuery struct {
 	query    query.Basic
@@ -81,12 +81,17 @@ func transformPatterns(patterns []string) []string {
 	for _, pattern := range patterns {
 		pattern = strings.ToLower(pattern)
 		pattern = removePunctuation(pattern)
-		if len(pattern) < 3 || isCommonTerm(pattern) {
-			continue
-		}
 
-		pattern = stemTerm(pattern)
-		add(pattern)
+		terms := tokenize(pattern)
+		for _, term := range terms {
+			if len(term) < 3 || isCommonTerm(term) {
+				continue
+			}
+
+			term = stemTerm(term)
+
+			add(term)
+		}
 	}
 
 	// To maintain decent latency, limit the number of patterns we search.
