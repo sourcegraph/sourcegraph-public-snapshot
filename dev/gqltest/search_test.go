@@ -260,6 +260,26 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
+	t.Run("lang: filter with case sensitivity", func(t *testing.T) {
+		// Guard against a previous regression where case sensitivity broke lang filters
+		results, err := client.SearchFiles("type:symbol ^readLine$ lang:go case:yes patterntype:regexp")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Ensure some results are returned
+		if len(results.Results) == 0 {
+			t.Fatal("Want non-zero results but got none")
+		}
+
+		// Make sure we only got .go files
+		for _, r := range results.Results {
+			if !strings.Contains(r.File.Name, ".go") {
+				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
+			}
+		}
+	})
+
 	t.Run("excluding repositories", func(t *testing.T) {
 		results, err := client.SearchFiles("fmt.Sprintf -repo:jsonrpc2")
 		if err != nil {
