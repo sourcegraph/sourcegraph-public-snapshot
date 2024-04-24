@@ -10,7 +10,6 @@ go_test(
         "compute_test.go",
         "external_service_test.go",
         "feature_flag_test.go",
-        "language_stats_test.go",
         "main_test.go",
         "organization_test.go",
         "repository_test.go",
