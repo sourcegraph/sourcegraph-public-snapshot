@@ -107,6 +107,24 @@ pkg_tar(
     visibility = ["//visibility:public"],
 )
 
+pkg_tar(
+    name = "var-lib-postgresql-data_tar",
+    srcs = [],
+    empty_dirs = ["/var/lib/postgresql/data"],
+    mode = "1777",
+    owner = "999.999",
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "var-run-postgresql_tar",
+    srcs = [],
+    empty_dirs = ["/run/postgresql"],
+    mode = "3777",
+    owner = "999.999",
+    visibility = ["//visibility:public"],
+)
+
 oci_image(
     name = "legacy_image",
     base = "@legacy_postgres-12-alpine_base",
@@ -121,6 +139,8 @@ oci_image(
         ":rootfs_tar",
         ":passwd_groups_tar",
         ":pgdata-12-dir_tar",
+        ":var-lib-postgresql-data_tar",
+        ":var-run-postgresql_tar",
     ],
     user = "postgres",
 )

@@ -47,6 +47,8 @@ oci_image(
         "//docker-images/postgres-12-alpine:rootfs_tar",
         "//docker-images/postgres-12-alpine::passwd_groups_tar",
         "//docker-images/postgres-12-alpine::pgdata-12-dir_tar",
+        "//docker-images/postgres-12-alpine:var-lib-postgresql-data_tar",
+        "//docker-images/postgres-12-alpine:var-run-postgresql_tar",
     ],
     user = "postgres",
 )
