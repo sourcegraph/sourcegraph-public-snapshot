@@ -258,7 +258,10 @@ func (r *releaseRunner) checkDeps(ctx context.Context) error {
 }
 
 func (r *releaseRunner) InternalFinalize(ctx context.Context) error {
-	// TODO skip check deps
+	if err := r.checkDeps(ctx); err != nil {
+		return nil
+	}
+
 	if len(r.m.Internal.Finalize.Steps) == 0 {
 		announce2("finalize", "Skipping internal release finalization, none defined")
 		return nil
@@ -267,7 +270,10 @@ func (r *releaseRunner) InternalFinalize(ctx context.Context) error {
 	return r.runSteps(ctx, r.m.Internal.Finalize.Steps)
 }
 func (r *releaseRunner) PromoteFinalize(ctx context.Context) error {
-	// TODO skip check deps
+	if err := r.checkDeps(ctx); err != nil {
+		return nil
+	}
+
 	if len(r.m.PromoteToPublic.Finalize.Steps) == 0 {
 		announce2("finalize", "Skipping public release finalization, none defined")
 		return nil
