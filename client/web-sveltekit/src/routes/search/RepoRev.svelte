@@ -17,7 +17,7 @@
     }
 </script>
 
-<div class="root">
+<span class="root">
     <CodeHostIcon repository={repoName} />
     <!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
     {#key highlights}
@@ -28,11 +28,11 @@
             {/if}
         </a>
     {/key}
-</div>
+</span>
 
 <style lang="scss">
     .root {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         gap: 0.375rem;
 

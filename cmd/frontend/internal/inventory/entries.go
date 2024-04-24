@@ -2,10 +2,10 @@ package inventory
 
 import (
 	"context"
+	"github.com/sourcegraph/conc/iter"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"io/fs"
 	"sort"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // fileReadBufferSize is the size of the buffer we'll use while reading file contents
@@ -48,14 +48,14 @@ func (c *Context) entries(ctx context.Context, entries []fs.FileInfo, buf []byte
 func (c *Context) tree(ctx context.Context, tree fs.FileInfo, buf []byte) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(tree); ok {
+		if inv, ok := c.CacheGet(ctx, tree); ok {
 			return inv, nil // cache hit
 		}
 	}
 	if c.CacheSet != nil {
 		defer func() {
 			if err == nil {
-				c.CacheSet(tree, inv) // store in cache
+				c.CacheSet(ctx, tree, inv) // store in cache
 			}
 		}()
 	}
@@ -64,45 +64,44 @@ func (c *Context) tree(ctx context.Context, tree fs.FileInfo, buf []byte) (inv I
 	if err != nil {
 		return Inventory{}, err
 	}
-	invs := make([]Inventory, len(entries))
-	for i, e := range entries {
+
+	inventories, err := iter.MapErr(entries, func(entry *fs.FileInfo) (Inventory, error) {
+		e := *entry
 		switch {
 		case e.Mode().IsRegular(): // file
 			// Don't individually cache files that we found during tree traversal. The hit rate for
 			// those cache entries is likely to be much lower than cache entries for files whose
 			// inventory was directly requested.
 			lang, err := getLang(ctx, e, buf, c.NewFileReader)
-			if err != nil {
-				return Inventory{}, errors.Wrapf(err, "inventory file %q", e.Name())
-			}
-			invs[i] = Inventory{Languages: []Lang{lang}}
-
+			return Inventory{Languages: []Lang{lang}}, err
 		case e.Mode().IsDir(): // subtree
 			subtreeInv, err := c.tree(ctx, e, buf)
-			if err != nil {
-				return Inventory{}, errors.Wrapf(err, "inventory tree %q", e.Name())
-			}
-			invs[i] = subtreeInv
-
+			return subtreeInv, err
 		default:
 			// Skip symlinks, submodules, etc.
+			return Inventory{}, nil
 		}
+	})
+
+	if err != nil {
+		return Inventory{}, err
 	}
-	return Sum(invs), nil
+
+	return Sum(inventories), nil
 }
 
 // file computes the inventory of a single file. It caches the result.
 func (c *Context) file(ctx context.Context, file fs.FileInfo, buf []byte) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(file); ok {
+		if inv, ok := c.CacheGet(ctx, file); ok {
 			return inv, nil // cache hit
 		}
 	}
 	if c.CacheSet != nil {
 		defer func() {
 			if err == nil {
-				c.CacheSet(file, inv) // store in cache
+				c.CacheSet(ctx, file, inv) // store in cache
 			}
 		}()
 	}
