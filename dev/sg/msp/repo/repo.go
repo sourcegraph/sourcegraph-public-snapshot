@@ -143,7 +143,7 @@ func ToolingLockfileVersion(category spec.EnvironmentCategory) (string, error) {
 
 	version := strings.TrimSpace(string(contents))
 	if len(version) == 0 {
-		return "", fmt.Errorf("empty %q", lockfile)
+		return "", errors.Newf("empty %q", lockfile)
 	}
 	return version, nil
 }
