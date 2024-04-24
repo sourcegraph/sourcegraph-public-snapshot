@@ -44,18 +44,6 @@ oci_tarball(
     visibility = ["//visibility:public"],
 )
 
-container_structure_test(
-    name = "image_test",
-    timeout = "short",
-    configs = ["image_test.yaml"],
-    driver = "docker",
-    image = ":image",
-    tags = [
-        "exclusive",
-        "requires-network",
-    ],
-)
-
 wolfi_base(target = "postgresql-12")
 
 # RFC 793: We are not publishing those images for the 5.1 release, but will the next minor version.
@@ -134,6 +122,8 @@ oci_image(
         "POSTGRES_USER": "sg",
         "POSTGRES_DB": "sg",
         "PGDATA": "/data/pgdata-12",
+        "LANG": "en_US.utf8",
+        "PGHOST": "/var/run/postgresql",
     },
     tars = [
         ":rootfs_tar",
@@ -155,4 +145,16 @@ oci_push(
     name = "candidate_push",
     image = ":legacy_image",
     repository = image_repository("postgres-12-alpine"),
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":legacy_image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
 )
