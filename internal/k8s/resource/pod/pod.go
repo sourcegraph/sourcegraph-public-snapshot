@@ -19,12 +19,11 @@ import (
 //   - SecurityContext with defaults.
 //
 // Additional options can be passed to modify the default values.
-func NewPodTemplate(name, namespace string, options ...Option) (corev1.PodTemplate, error) {
+func NewPodTemplate(name string, options ...Option) (corev1.PodTemplate, error) {
 	podTemplate := corev1.PodTemplate{
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: namespace,
+				Name: name,
 				Annotations: map[string]string{
 					"kubectl.kubernetes.io/default-container": name,
 				},

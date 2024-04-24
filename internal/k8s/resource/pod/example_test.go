@@ -8,7 +8,7 @@ import (
 )
 
 func ExamplePodTemplate() {
-	pt, _ := NewPodTemplate("test", "sourcegraph")
+	pt, _ := NewPodTemplate("test")
 
 	jpt, _ := json.Marshal(pt)
 	fmt.Println(string(jpt))
@@ -17,7 +17,7 @@ func ExamplePodTemplate() {
 	fmt.Println(string(ypt))
 
 	// Output:
-	// {"metadata":{"creationTimestamp":null},"template":{"metadata":{"name":"test","namespace":"sourcegraph","creationTimestamp":null,"labels":{"app":"test","deploy":"sourcegraph"},"annotations":{"kubectl.kubernetes.io/default-container":"test"}},"spec":{"containers":null,"securityContext":{"runAsUser":100,"runAsGroup":101,"fsGroup":101,"fsGroupChangePolicy":"OnRootMismatch"}}}}
+	// {"metadata":{"creationTimestamp":null},"template":{"metadata":{"name":"test","creationTimestamp":null,"labels":{"app":"test","deploy":"sourcegraph"},"annotations":{"kubectl.kubernetes.io/default-container":"test"}},"spec":{"containers":null,"securityContext":{"runAsUser":100,"runAsGroup":101,"fsGroup":101,"fsGroupChangePolicy":"OnRootMismatch"}}}}
 	// metadata:
 	//   creationTimestamp: null
 	// template:
@@ -29,7 +29,6 @@ func ExamplePodTemplate() {
 	//       app: test
 	//       deploy: sourcegraph
 	//     name: test
-	//     namespace: sourcegraph
 	//   spec:
 	//     containers: null
 	//     securityContext:
