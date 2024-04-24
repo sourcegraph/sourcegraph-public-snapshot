@@ -256,3 +256,27 @@ export function baz(n) {
 		return ""
 	}
 }
+
+func TestIsExcluded(t *testing.T) {
+	t.Run("should exclude lock file", func(t *testing.T) {
+		excluded, err := isExcluded("yarn.lock")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !excluded {
+			t.Errorf("expected file to be excluded")
+		}
+	})
+
+	t.Run("should not exclude non-lock file", func(t *testing.T) {
+		excluded, err := isExcluded("hello-world.md")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if excluded {
+			t.Errorf("expected file to not be excluded")
+		}
+	})
+}

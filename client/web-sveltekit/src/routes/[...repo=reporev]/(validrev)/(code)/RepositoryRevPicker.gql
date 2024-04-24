@@ -22,25 +22,13 @@ fragment RepositoryGitRefs on Repository {
     }
 }
 
-# Used to query data for repository git commits
-# NOTE: the query which is going to use this fragment is supposed
-# to have query and anchor revision variables
-fragment RepositoryGitCommits on Repository {
+fragment RevPickerGitCommit on GitCommit {
     __typename
-    commit(rev: $revision) {
-        __typename
-        ancestors(first: 15, query: $query) {
-            __typename
-            nodes {
-                __typename
-                id
-                oid
-                subject
-                abbreviatedOID
-                ...RepositoryGitRevAuthor
-            }
-        }
-    }
+    id
+    oid
+    subject
+    abbreviatedOID
+    ...RepositoryGitRevAuthor
 }
 
 fragment RepositoryGitRevAuthor on GitCommit {

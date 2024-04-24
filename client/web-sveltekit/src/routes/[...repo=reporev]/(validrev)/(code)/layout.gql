@@ -29,9 +29,18 @@ query RepositoryGitRefs($repoName: String!, $query: String, $type: GitRefType!) 
     }
 }
 
-query RepositoryGitCommits($repoName: String!, $query: String, $revision: String!) {
+query RepositoryGitCommits($repoName: String!, $query: String!, $revision: String!) {
     repository(name: $repoName) {
-        ...RepositoryGitCommits
+        commitByHash: commit(rev: $query) {
+            ...RevPickerGitCommit
+        }
+        ancestorCommits: commit(rev: $revision) {
+            ancestors(first: 15, query: $query) {
+                nodes {
+                    ...RevPickerGitCommit
+                }
+            }
+        }
     }
 }
 
