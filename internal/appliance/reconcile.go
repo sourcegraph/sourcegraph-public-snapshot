@@ -17,11 +17,10 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/appliance/hash"
 )
 
 const (
+	annotationKeyManaged        = "appliance.sourcegraph.com/managed"
 	annotationKeyCurrentVersion = "appliance.sourcegraph.com/currentVersion"
 	annotationKeyConfigHash     = "appliance.sourcegraph.com/configHash"
 )
@@ -48,7 +47,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	applianceSpec.Labels = hash.SetTemplateHashLabel(applianceSpec.Labels, applianceSpec.Data)
+	// Emit a ReconcileFinished event at the end. Currently, this is only used
+	// to synchronize this reconcile loop with test code, allowing reliable
+	// assertions on the state of the cluster at the time this event is emitted.
+	// Perhaps this should be feature-flagged so that it is only emitted during
+	// tests, if it isn't useful elsewhere.
+	defer r.Recorder.Event(&applianceSpec, "Normal", "ReconcileFinished", "Reconcile finished.")
 
 	// TODO place holder code until we get the configmap spec'd out and working'
 	data, ok := applianceSpec.Data["spec"]
@@ -88,9 +92,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	applianceAnnotationPredicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
-		return object.GetAnnotations()["appliance.sourcegraph.com/managed"] == "true"
+		return object.GetAnnotations()[annotationKeyManaged] == "true"
 	})
 
+	// When updating this list of owned resources, please update the
+	// corresponding code in gatherResources() in golden_test.go.
 	return ctrl.NewControllerManagedBy(mgr).
 		WithEventFilter(applianceAnnotationPredicate).
 		For(&corev1.ConfigMap{}).

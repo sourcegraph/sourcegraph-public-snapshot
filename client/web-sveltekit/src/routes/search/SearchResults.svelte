@@ -127,7 +127,9 @@
 </svelte:head>
 
 <GlobalHeaderPortal>
-    <SearchInput {queryState} size="compat" />
+    <div class="search-header">
+        <SearchInput {queryState} size="compat" />
+    </div>
 </GlobalHeaderPortal>
 
 <div class="search-results">
@@ -179,6 +181,13 @@
 </div>
 
 <style lang="scss">
+    .search-header {
+        width: 100%;
+        // This ensures that the search suggestions panel is displayed above the
+        // search results panel.
+        z-index: 1;
+    }
+
     .search-results {
         display: flex;
         flex: 1;

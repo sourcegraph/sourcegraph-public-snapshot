@@ -69,6 +69,11 @@ type InsightDataPoint {
     A search query that will show the diff between this point and the previous point
     """
     diffQuery: String
+
+    """
+    A search query that will show the set of results represented by this point
+    """
+    pointInTimeQuery: String
 }
 
 """

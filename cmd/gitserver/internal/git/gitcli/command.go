@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/bytesize"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -36,6 +39,10 @@ var (
 		Name:    "src_gitserver_exec_duration_seconds",
 		Help:    "gitserver.GitCommand latencies in seconds.",
 		Buckets: prometheus.ExponentialBucketsRange(0.01, 60.0, 12),
+	}, []string{"cmd"})
+	highMemoryCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_exec_high_memory_usage_count",
+		Help: "gitcli.GitCommand high memory usage by subcommand",
 	}, []string{"cmd"})
 )
 
@@ -248,14 +255,31 @@ func (rc *cmdReader) waitCmd() (err error) {
 	return rc.err
 }
 
+const highMemoryUsageThreshold = 500 * bytesize.MiB
+
 func (rc *cmdReader) trace() {
 	duration := time.Since(rc.cmdStart)
 
 	execRunning.WithLabelValues(rc.subCmd).Dec()
 	execDuration.WithLabelValues(rc.subCmd).Observe(duration.Seconds())
 
+	processState := rc.cmd.Unwrap().ProcessState
+	var sysUsage syscall.Rusage
+	s, ok := processState.SysUsage().(*syscall.Rusage)
+	if ok {
+		sysUsage = *s
+	}
+
+	memUsage := rssToByteSize(sysUsage.Maxrss)
+
 	isSlow := duration > shortGitCommandSlow(rc.cmd.Unwrap().Args)
-	if honey.Enabled() || isSlow {
+	isHighMem := memUsage > highMemoryUsageThreshold
+
+	if isHighMem {
+		highMemoryCounter.WithLabelValues(rc.subCmd).Inc()
+	}
+
+	if honey.Enabled() || isSlow || isHighMem {
 		act := actor.FromContext(rc.ctx)
 		ev := honey.NewEvent("gitserver-exec")
 		ev.SetSampleRate(HoneySampleRate(rc.subCmd, act))
@@ -264,13 +288,18 @@ func (rc *cmdReader) trace() {
 		ev.AddField("args", rc.cmd.Unwrap().Args)
 		ev.AddField("actor", act.UIDString())
 		ev.AddField("duration_ms", duration.Milliseconds())
-		ev.AddField("exit_status", rc.cmd.Unwrap().ProcessState.ExitCode())
+		ev.AddField("exit_status", processState.ExitCode())
 		if rc.err != nil {
 			ev.AddField("error", rc.err.Error())
 		}
 		ev.AddField("cmd_duration_ms", duration.Milliseconds())
-		ev.AddField("user_time", rc.cmd.Unwrap().ProcessState.UserTime())
-		ev.AddField("system_time", rc.cmd.Unwrap().ProcessState.SystemTime())
+		ev.AddField("user_time", processState.UserTime())
+		ev.AddField("system_time", processState.SystemTime())
+		ev.AddField("cmd_ru_maxrss_kib", memUsage/bytesize.KiB)
+		ev.AddField("cmd_ru_minflt", sysUsage.Minflt)
+		ev.AddField("cmd_ru_majflt", sysUsage.Majflt)
+		ev.AddField("cmd_ru_inblock", sysUsage.Inblock)
+		ev.AddField("cmd_ru_oublock", sysUsage.Oublock)
 
 		if traceID := trace.ID(rc.ctx); traceID != "" {
 			ev.AddField("traceID", traceID)
@@ -284,12 +313,29 @@ func (rc *cmdReader) trace() {
 		if isSlow {
 			rc.logger.Warn("Long exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 		}
+		if isHighMem {
+			rc.logger.Warn("High memory usage exec request", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+		}
 	}
 
-	rc.tr.SetAttributes(attribute.Int("exitCode", rc.cmd.Unwrap().ProcessState.ExitCode()))
+	rc.tr.SetAttributes(attribute.Int("exit_code", processState.ExitCode()))
 	rc.tr.SetAttributes(attribute.Int64("cmd_duration_ms", duration.Milliseconds()))
-	rc.tr.SetAttributes(attribute.Int64("user_time_ms", rc.cmd.Unwrap().ProcessState.UserTime().Milliseconds()))
-	rc.tr.SetAttributes(attribute.Int64("system_time_ms", rc.cmd.Unwrap().ProcessState.SystemTime().Milliseconds()))
+	rc.tr.SetAttributes(attribute.Int64("user_time_ms", processState.UserTime().Milliseconds()))
+	rc.tr.SetAttributes(attribute.Int64("system_time_ms", processState.SystemTime().Milliseconds()))
+	rc.tr.SetAttributes(attribute.Int64("cmd_ru_maxrss_kib", int64(memUsage/bytesize.KiB)))
+	rc.tr.SetAttributes(attribute.Int64("cmd_ru_minflt", sysUsage.Minflt))
+	rc.tr.SetAttributes(attribute.Int64("cmd_ru_majflt", sysUsage.Majflt))
+	rc.tr.SetAttributes(attribute.Int64("cmd_ru_inblock", sysUsage.Inblock))
+	rc.tr.SetAttributes(attribute.Int64("cmd_ru_oublock", sysUsage.Oublock))
+}
+
+func rssToByteSize(rss int64) bytesize.Bytes {
+	if runtime.GOOS == "darwin" {
+		// darwin tracks maxrss in bytes.
+		return bytesize.Bytes(rss) * bytesize.B
+	}
+	// maxrss is tracked in KiB on Linux.
+	return bytesize.Bytes(rss) * bytesize.KiB
 }
 
 const maxStderrCapture = 1024

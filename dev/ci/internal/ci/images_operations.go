@@ -122,6 +122,7 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 				bk.Env("PROD_REGISTRY", prodRegistry),
 				bk.Env("ADDITIONAL_PROD_REGISTRY", additionalProdRegistry),
 				bk.Cmd(bazelStampedCmd(fmt.Sprintf(`build $$(bazel --bazelrc=%s --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc query 'kind("oci_push rule", //...)')`, bazelRC))),
+				bk.ArtifactPaths("build_event_log.bin"),
 				bk.AnnotatedCmd(
 					"./dev/ci/push_all.sh",
 					bk.AnnotatedCmdOpts{

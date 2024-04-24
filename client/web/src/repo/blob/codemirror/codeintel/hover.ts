@@ -1,7 +1,7 @@
 import type { Extension } from '@codemirror/state'
 import { type EditorView, type PluginValue, ViewPlugin, getTooltip, type Tooltip } from '@codemirror/view'
-import { from, fromEvent, Subscription } from 'rxjs'
-import { debounceTime, filter, map, scan, tap } from 'rxjs/operators'
+import { from, fromEvent, Subscription, timer, race } from 'rxjs'
+import { debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
 
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
@@ -55,7 +55,8 @@ function computeMouseDirection(
     return 'towards'
 }
 
-const HOVER_DEBOUNCE_TIME = 25 // ms
+const MOUSEMOVE_DEBOUNCE_TIME = 25 // ms
+const MOUSELEAVE_DEBOUNCE_TIME = 250 // ms
 /**
  * The MouseEvent uses numbers to indicate which button was pressed.
  * See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons#value
@@ -77,14 +78,69 @@ const hoverManager = ViewPlugin.fromClass(
         private tooltip: (Tooltip & { end: number }) | null = null
 
         constructor(private readonly view: EditorView) {
+            let mouseHasLeft = false
+
+            // The 'mousemove' event handler below hides the popover when the mouse
+            // moves away from the tooltip, but it doesn't work in the case when the
+            // mouse "leaves" the file view via a popover ('mousemove' doesn't trigger):
+            //
+            //             ▲      Popover
+            //         ┌───│────────────┐
+            //         │███│████████████│     Editor
+            //    ┌────│███│█Mouse██████│──────────┐
+            //    │    │███│████████████│          │
+            //    │    └───│────────────┘          │
+            //    │ const █│█ = ...                │
+            //    │                                │
+            //    └────────────────────────────────┘
+            //
+            // To handle this case we listen to 'mouseleave' events on the editor view,
+            // and hide the popover when the event is triggered.
+            this.subscription.add(
+                fromEvent(this.view.dom, 'mouseleave')
+                    .pipe(
+                        // We are debouncing 'mousemove' events. To ensure that
+                        // 'mousemove' events are ignored after the mouse has left
+                        // the editor view we are setting a flag here.
+                        tap(() => (mouseHasLeft = true)),
+
+                        switchMap(() =>
+                            race(
+                                // By delaying the 'mouseleave' event here we are allowing the
+                                // user to move the mouse back to the popover to keep it open.
+                                // This is helpful when the user accidentally moves the mouse
+                                // out of the popover.
+                                timer(MOUSELEAVE_DEBOUNCE_TIME).pipe(map(() => true)),
+                                fromEvent(this.view.dom, 'mouseenter').pipe(map(() => false))
+                            )
+                        )
+                    )
+                    .subscribe(hide => {
+                        if (hide) {
+                            this.tooltip = null
+                            setHoverTooltip(view, null)
+                        }
+                    })
+            )
+
             this.subscription.add(
                 fromEvent<MouseEvent>(this.view.dom, 'mousemove')
                     .pipe(
                         // Debounce events so that users can move over tokens without triggering hovercards immediately
-                        debounceTime(HOVER_DEBOUNCE_TIME),
+                        debounceTime(MOUSEMOVE_DEBOUNCE_TIME),
 
                         // Ignore some events
                         filter(event => {
+                            // Ignore events when the mouse has left the editor view.
+                            // Keeping this flag ensures that debounced 'mousemove' events are ignored
+                            // after the mouse has left the editor view.
+                            // We are also resetting the flag here to ensure that the hover manager isn't "stuck"
+                            // in a state where it ignores all events.
+                            if (mouseHasLeft) {
+                                mouseHasLeft = false
+                                return false
+                            }
+
                             // Ignore events when hovering over an existing hovercard.
                             // This causes existing hovercards to stay open.
                             if (
