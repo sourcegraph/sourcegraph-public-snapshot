@@ -116,7 +116,8 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 					// PITR uses a lot of resources and is cumbersome to use -
 					// only enable it for services that require HA, since it is
 					// required for regional deployments:
-					// https://cloud.google.com/sql/docs/mysql/high-availability#backups-and-restores
+					// - https://cloud.google.com/sql/docs/postgres/configure-ha#terraform
+					// - https://cloud.google.com/sql/docs/postgres/high-availability#backups-and-restores
 					return pointers.DerefZero(config.Spec.HighAvailability)
 				}()),
 				StartTime:                   pointers.Ptr("10:00"),
