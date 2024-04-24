@@ -127,7 +127,7 @@ oci_image(
         ":passwd_groups_tar",
         ":pgdata-12-dir_tar",
         ":var-lib-postgresql-data_tar",
-        ":var-run-postgresql_tar","
+        ":var-run-postgresql_tar",
     ],
     user = "postgres",
 )
