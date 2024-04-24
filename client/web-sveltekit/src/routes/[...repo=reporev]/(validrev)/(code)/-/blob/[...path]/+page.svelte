@@ -247,7 +247,7 @@
         flex-direction: column;
         overflow: auto;
         flex: 1;
-        background-color: var(--bg-panel);
+        background-color: var(--color-bg-1);
 
         &.compare {
             flex-direction: column;
@@ -261,7 +261,7 @@
     }
 
     .file-info {
-        background: var(--bg-panel);
+        background: var(--color-bg-1);
         padding: 0.5rem;
         color: var(--text-muted);
         display: flex;

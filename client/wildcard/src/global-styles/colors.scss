@@ -311,10 +311,6 @@ $violet-09: #5f3dc4;
     // Header colors
     --result-header-bg: #f5f8fa;
 
-    // Panel Colors
-    // TODO: This needs to be reverted once body-bg and color-bg-1 are resolved in new color system.
-    --bg-panel: var(--white);
-
     // Search input "chip" colors
     // Transparency needs to be added to make the text selection marker visible
     --search-input-token-pattern: #{rgba($gray-04, 0.6)};
@@ -488,10 +484,6 @@ $violet-09: #5f3dc4;
 
     // Header colors
     --result-header-bg: #22283b;
-
-    // Panel Colors
-    // TODO: This needs to be reverted once body-bg and color-bg-1 are resolved in new color system.
-    --bg-panel: var(--gray-12);
 
     // Search input "chip" colors
     // Transparency needs to be added to make the text selection marker visible

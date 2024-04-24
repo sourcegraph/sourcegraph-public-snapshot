@@ -171,7 +171,7 @@
         }
         display: none;
         overflow: hidden;
-        background-color: var(--bg-panel);
+        background-color: var(--color-bg-1);
         padding: 0.5rem;
         padding-bottom: 0;
         box-shadow: var(--sidebar-shadow);
