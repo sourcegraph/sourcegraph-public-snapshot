@@ -125,9 +125,15 @@ func (f *FireworksHandlerMethods) validateRequest(_ context.Context, _ log.Logge
 	return nil
 }
 
-func (f *FireworksHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger, _ fireworksRequest) (*flaggingResult, error) {
-	// TODO[#61278]: Add missing request validation for all LLM providers in Cody Gateway.
-	return nil, nil
+func (f *FireworksHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, req fireworksRequest) (*flaggingResult, error) {
+	result, err := isFlaggedRequest(
+		nil, /* tokenzier, meaning token counts aren't considered when for flagging consideration. */
+		flaggingRequest{
+			FlattenedPrompt: req.BuildPrompt(),
+			MaxTokens:       int(req.MaxTokens),
+		},
+		makeFlaggingConfig(f.config.FlaggingConfig))
+	return result, err
 }
 
 func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string) {

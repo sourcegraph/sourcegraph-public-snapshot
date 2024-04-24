@@ -6,10 +6,11 @@ import (
 
 	_ "embed"
 
+	"github.com/pkoukk/tiktoken-go"
+	tiktoken_loader "github.com/pkoukk/tiktoken-go-loader"
+
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/pkoukk/tiktoken-go"
 )
 
 // Define constants for model types
@@ -41,26 +42,16 @@ type tiktokenTokenizer struct {
 }
 
 func (t *tiktokenTokenizer) Tokenize(text string) ([]int, error) {
-	if t.modelFamily != Claude2 && t.modelFamily != GPT {
-		// tiktoken Tokenize is only support for Anthropic Claude 2 and OpenAI GPT family of models
-		// so we return nil for all other models so that zero tokens are  counted and token counting is disabled
-		return nil, nil
-	}
 	return t.tk.Encode(text, []string{"all"}, nil), nil
 }
 
+// NumTokenizeFromMessages returns the number of tokens in a list of messages.
 func (t *tiktokenTokenizer) NumTokenizeFromMessages(messages []types.Message) (int, error) {
-	if t.modelFamily != GPT {
-		return 0, errors.Newf("tiktoken NumTokenizeFromMessages is only support for OpenAI GPT family of models")
-	}
 	numTokens := 0
-	tokensPerMessage := 3
 	for _, message := range messages {
-		numTokens += tokensPerMessage
-		numTokens += len(t.tk.Encode(message.Speaker, nil, nil))
 		numTokens += len(t.tk.Encode(message.Text, nil, nil))
 	}
-	numTokens += 3 // every reply is primed with <|start|>assistant<|message|>
+
 	return numTokens, nil
 }
 
@@ -69,49 +60,34 @@ func modelFamilyFromString(model string) ModelFamily {
 	switch {
 	case strings.Contains(model, AnthropicModel):
 		switch {
-		// Selects for claude 2, claude 2.1 and claude instant models
 		case strings.Contains(model, "claude-3"):
 			return Claude3
 		default:
-			// Selects for claude 3 models by exclusion
+			// Claude 2 models by exclusion
 			return Claude2
 		}
 	case strings.Contains(model, OpenAIModel), strings.Contains(model, AzureModel):
-		// Both Azure and OpenAI models use the same tokenizer
 		return GPT
 	default:
 		return UnknownModel
 	}
 }
 
-// NewTokenizer returns a Tokenizer instance based on the provided model.
+// NewTokenizer returns a cl100k_base Tokenizer instance for all models, use for abuse detection only.
+//
+// NOTE: The tokenizer must match the tokenizer used by the Cody clients to ensure consistency across clients,
+// and the Cody clients have standardized on using the cl100k_base tokenizer for token counting.
 func NewTokenizer(model string) (Tokenizer, error) {
-	modelFamily := modelFamilyFromString(model)
-	switch modelFamily {
-	case Claude2:
-		return newAnthropicClaudeTokenizer(model, Claude2)
-	case Claude3:
-		// Claude 3 models are not supported yet so tokenization will eventually need to be implemented
-		return newAnthropicClaudeTokenizer(model, Claude3)
-	case GPT:
-		return newOpenAITokenizer(model, GPT)
-	default:
-		return nil, errors.New("tokenizer not found for this model")
-	}
-}
-
-func newOpenAITokenizer(model string, modelFamily ModelFamily) (*tiktokenTokenizer, error) {
-	// Remove "azure" or "openai" prefix from the model string
+	// Remove "azure" or "openai" prefix from the model string if any
 	model = strings.NewReplacer(AzureModel+"/", "", OpenAIModel+"/", "").Replace(model)
+	modelFamily := modelFamilyFromString(model)
 
-	tkm, err := tiktoken.EncodingForModel(model)
+	// Use the offline loader to avoid downloading the encoding at runtime
+	tiktoken.SetBpeLoader(tiktoken_loader.NewOfflineLoader())
+	tkm, err := tiktoken.GetEncoding(tiktoken.MODEL_CL100K_BASE)
 	if err != nil {
-		return nil, errors.Newf("tiktoken encoding error: %v", err)
+		return nil, errors.Newf("tiktoken getEncoding error: %v", err)
 	}
 
-	return &tiktokenTokenizer{
-		tk:          tkm,
-		model:       model,
-		modelFamily: modelFamily,
-	}, nil
+	return &tiktokenTokenizer{tkm, model, modelFamily}, nil
 }

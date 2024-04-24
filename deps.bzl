@@ -4703,6 +4703,13 @@ def go_dependencies():
         version = "v0.1.6",
     )
     go_repository(
+        name = "com_github_pkoukk_tiktoken_go_loader",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/pkoukk/tiktoken-go-loader",
+        sum = "h1:aOB2gRFzZTCCPi3YsOQXJO771P/5876JAsdebMyazig=",
+        version = "v0.0.1",
+    )
+    go_repository(
         name = "com_github_pmezard_go_difflib",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/pmezard/go-difflib",
@@ -7179,20 +7186,6 @@ def go_dependencies():
         importpath = "go.etcd.io/etcd/server/v3",
         sum = "h1:4NOGyOwD5sUZ22PiWYKmfxqoeh72z6EhYjNosKGLmZg=",
         version = "v3.5.10",
-    )
-    go_repository(
-        name = "io_gorm_driver_postgres",
-        build_file_proto_mode = "disable_global",
-        importpath = "gorm.io/driver/postgres",
-        sum = "h1:Iyrp9Meh3GmbSuyIAGyjkN+n9K+GHX9b9MqsTL4EJCo=",
-        version = "v1.5.4",
-    )
-    go_repository(
-        name = "io_gorm_gorm",
-        build_file_proto_mode = "disable_global",
-        importpath = "gorm.io/gorm",
-        sum = "h1:zR9lOiiYf09VNh5Q1gphfyia1JpiClIWG9hQaxB/mls=",
-        version = "v1.25.5",
     )
     go_repository(
         name = "io_k8s_api",
