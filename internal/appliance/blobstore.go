@@ -49,20 +49,16 @@ func buildBlobstorePersistentVolumeClaim(sg *Sourcegraph) (corev1.PersistentVolu
 		storageClassName = "sourcegraph"
 	}
 
-	p, err := pvc.NewPersistentVolumeClaim("blobstore", sg.Namespace,
-		pvc.WithResources(corev1.VolumeResourceRequirements{
-			Requests: corev1.ResourceList{
-				corev1.ResourceStorage: resource.MustParse(storage),
-			},
-		}),
-	)
-	if err != nil {
-		return corev1.PersistentVolumeClaim{}, err
+	p := pvc.NewPersistentVolumeClaim("blobstore", sg.Namespace)
+	p.Spec.Resources = corev1.VolumeResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceStorage: resource.MustParse(storage),
+		},
 	}
 
 	// set StorageClass name if a custom storage class is being sgeated.
 	if sg.Spec.StorageClass.Create {
-		_ = pvc.WithStorageClassName(storageClassName)(&p)
+		p.Spec.StorageClassName = &storageClassName
 	}
 
 	return p, nil
@@ -77,45 +73,36 @@ func (r *Reconciler) reconcileBlobstorePersistentVolumeClaims(ctx context.Contex
 	return reconcileBlobStoreObject(ctx, r, &p, &corev1.PersistentVolumeClaim{}, sg, owner)
 }
 
-func buildBlobstoreService(sg *Sourcegraph) (corev1.Service, error) {
+func buildBlobstoreService(sg *Sourcegraph) corev1.Service {
 	name := "blobstore"
 
-	s, err := service.NewService(name, sg.Namespace,
-		service.WithPorts(corev1.ServicePort{
+	s := service.NewService(name, sg.Namespace)
+	s.Spec.Ports = []corev1.ServicePort{
+		{
 			Name:       name,
 			Port:       9000,
 			TargetPort: intstr.FromString(name),
-		}),
-		service.WithSelector(map[string]string{
-			"app": name,
-		}),
-	)
-
-	if err != nil {
-		return corev1.Service{}, err
+		},
+	}
+	s.Spec.Selector = map[string]string{
+		"app": name,
 	}
 
-	return s, nil
+	return s
 }
 
 func (r *Reconciler) reconcileBlobstoreServices(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
-	s, err := buildBlobstoreService(sg)
-	if err != nil {
-		return err
-	}
+	s := buildBlobstoreService(sg)
 	return reconcileBlobStoreObject(ctx, r, &s, &corev1.Service{}, sg, owner)
 }
 
-func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
+func buildBlobstoreDeployment(sg *Sourcegraph) appsv1.Deployment {
 	name := "blobstore"
 
-	// TODO: https://github.com/sourcegraph/sourcegraph/issues/62076
-	containerImage := "index.docker.io/sourcegraph/blobstore:5.3.2@sha256:d625be1eefe61cc42f94498e3c588bf212c4159c8b20c519db84eae4ff715efa"
-
-	containerPorts := corev1.ContainerPort{
+	containerPorts := []corev1.ContainerPort{{
 		Name:          name,
 		ContainerPort: 9000,
-	}
+	}}
 
 	containerResources := corev1.ResourceRequirements{
 		Limits: corev1.ResourceList{
@@ -151,27 +138,31 @@ func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
 
 	containerVolumeMounts := []corev1.VolumeMount{
 		{
-			Name:      "blobstore-data",
-			MountPath: "/data",
-		},
-		{
 			Name:      "blobstore",
 			MountPath: "/blobstore",
 		},
+		{
+			Name:      "blobstore-data",
+			MountPath: "/data",
+		},
 	}
 
-	defaultContainer, err := container.NewContainer(name,
-		container.WithPorts(containerPorts),
-		container.WithImage(containerImage),
-		container.WithResources(containerResources),
-		container.WithVolumeMounts(containerVolumeMounts),
-	)
+	defaultContainer := container.NewContainer(name)
 
-	if err != nil {
-		return appsv1.Deployment{}, err
-	}
+	// TODO: https://github.com/sourcegraph/sourcegraph/issues/62076
+	defaultContainer.Image = "index.docker.io/sourcegraph/blobstore:5.3.2@sha256:d625be1eefe61cc42f94498e3c588bf212c4159c8b20c519db84eae4ff715efa"
+
+	defaultContainer.Ports = containerPorts
+	defaultContainer.Resources = containerResources
+	defaultContainer.VolumeMounts = containerVolumeMounts
 
 	podVolumes := []corev1.Volume{
+		{
+			Name: "blobstore",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
 		{
 			Name: "blobstore-data",
 			VolumeSource: corev1.VolumeSource{
@@ -180,41 +171,24 @@ func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
 				},
 			},
 		},
-		{
-			Name: "blobstore",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
 	}
 
-	podTemplate, err := pod.NewPodTemplate(name,
-		pod.WithContainers(defaultContainer),
-		pod.WithVolumes(podVolumes),
-	)
-	if err != nil {
-		return appsv1.Deployment{}, err
-	}
+	podTemplate := pod.NewPodTemplate(name)
+	podTemplate.Template.Spec.Containers = []corev1.Container{defaultContainer}
+	podTemplate.Template.Spec.Volumes = podVolumes
 
-	defaultDeployment, err := deployment.NewDeployment(
+	defaultDeployment := deployment.NewDeployment(
 		name,
 		sg.Namespace,
 		sg.Spec.RequestedVersion,
-		deployment.WithPodTemplateSpec(podTemplate.Template),
 	)
+	defaultDeployment.Spec.Template = podTemplate.Template
 
-	if err != nil {
-		return appsv1.Deployment{}, err
-	}
-
-	return defaultDeployment, nil
+	return defaultDeployment
 }
 
 func (r *Reconciler) reconcileBlobstoreDeployments(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
-	d, err := buildBlobstoreDeployment(sg)
-	if err != nil {
-		return err
-	}
+	d := buildBlobstoreDeployment(sg)
 	return reconcileBlobStoreObject(ctx, r, &d, &appsv1.Deployment{}, sg, owner)
 }
 
