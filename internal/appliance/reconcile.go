@@ -17,8 +17,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/appliance/hash"
 )
 
 const (
@@ -47,8 +45,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		reqLog.Error(err, "failed to fetch sourcegraph appliance spec")
 		return ctrl.Result{}, err
 	}
-
-	applianceSpec.Labels = hash.SetTemplateHashLabel(applianceSpec.Labels, applianceSpec.Data)
 
 	// TODO place holder code until we get the configmap spec'd out and working'
 	data, ok := applianceSpec.Data["spec"]
