@@ -6,8 +6,10 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
@@ -191,7 +193,7 @@ var Command = &cli.Command{
 	},
 }
 
-type ReleaseInfo struct {
+type releaseInfo struct {
 	ID         int    `json:"id"`
 	Name       string `json:"name"`
 	Public     bool   `json:"public"`
@@ -201,24 +203,27 @@ type ReleaseInfo struct {
 	GitSha     string `json:"git_sha"`
 }
 
-func DetermineMinorVersion() (string, error) {
+func determineMinorVersion() (string, error) {
 	latestVersion, err := http.Get("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph")
 	if err != nil {
-		fmt.Print(err)
 		return "", errors.New("Could not get latest release version")
 	}
+	if latestVersion.StatusCode != 200 {
+		return "", errors.New("Releaseregistry did not return 200")
+	}
 	latestVersionBody, _ := io.ReadAll(latestVersion.Body)
-	latestVersion.Body.Close()
-	var versions []ReleaseInfo
+	defer latestVersion.Body.Close()
+	var versions []releaseInfo
 	jsonErr := json.Unmarshal(latestVersionBody, &versions)
 	if jsonErr != nil {
 		return "", errors.New("Could not parse ReleaseInfo json")
 	}
 
-	newestVersion := versions[0].Version
-	patchIndex := strings.LastIndex(newestVersion, ".")
-	minorVersion := strings.TrimPrefix(newestVersion[:patchIndex], "v")
-	url := fmt.Sprintf("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/next/%s", minorVersion)
+	if len(versions[0].Version) == 0 {
+		return "", errors.New("Empty version number detected")
+	}
+	newestVersion := semver.MustParse(strings.TrimPrefix(versions[0].Version, "v"))
+	url := fmt.Sprintf("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/next/%s", strconv.FormatInt(newestVersion.Major(), 10) + "." + strconv.FormatInt(newestVersion.Minor(), 10))
 
 	resp, err := http.Post(url, "", nil)
 	if err != nil {
@@ -244,7 +249,7 @@ func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 	var version string
 	if cctx.String("version") == "auto" {
 		var err error
-		version, err = DetermineMinorVersion()
+		version, err = determineMinorVersion()
 		if err != nil {
 			return nil, err
 		}
