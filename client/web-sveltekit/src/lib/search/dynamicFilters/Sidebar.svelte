@@ -37,6 +37,7 @@
     import LanguageIcon from '$lib/LanguageIcon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry';
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
     import Tooltip from '$lib/Tooltip.svelte'
     import Button from '$lib/wildcard/Button.svelte'
@@ -75,11 +76,17 @@
     $: resetModifier = inferOperatingSystem(navigator.userAgent) === 'MacOS' ? '⌥' : 'Alt'
     $: resetURL = resetFilters($page.url).toString()
     $: enableReset = selectedFilters.length > 0
+
     function handleResetKeydown(event: KeyboardEvent) {
         if (enableReset && event.altKey && event.key === 'Backspace') {
             goto(resetURL)
         }
     }
+
+    function handleFilterSelect(kind: SectionItem['kind']): void {
+        SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.SelectSearchFilter, { kind }, { kind })
+    }
+
     onMount(() => {
         window.addEventListener('keydown', handleResetKeydown)
         return () => window.removeEventListener('keydown', handleResetKeydown)
@@ -98,7 +105,7 @@
         </div>
 
         {#if !queryHasTypeFilter(searchQuery)}
-            <Section items={typeFilters} title="By type" showAll>
+            <Section items={typeFilters} title="By type" showAll onFilterSelect={handleFilterSelect}>
                 <svelte:fragment slot="label" let:label>
                     <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
                     {label}

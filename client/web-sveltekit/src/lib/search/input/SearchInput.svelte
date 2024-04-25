@@ -117,6 +117,7 @@
     export let autoFocus = false
     export let size: 'normal' | 'compat' = 'normal'
     export let queryState: QueryStateStore
+    export let onSubmit: (state: QueryState) => void = () => {}
 
     export function focus() {
         input?.focus()
@@ -191,6 +192,7 @@
         event.preventDefault()
         if (!mode) {
             // Only submit query if you are not in history mode
+            onSubmit($queryState)
             void submitQuery($queryState)
         }
     }
