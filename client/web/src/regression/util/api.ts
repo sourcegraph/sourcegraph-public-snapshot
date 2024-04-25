@@ -12,7 +12,6 @@ import {
     isErrorGraphQLResult,
     gql,
 } from '@sourcegraph/http-client'
-import { EVENT_LOGGER } from '@sourcegraph/shared/out/src/telemetry'
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
@@ -21,6 +20,7 @@ import {
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
 import type { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import type { Config } from '@sourcegraph/shared/src/testing/config'
 
 import type {
