@@ -209,29 +209,38 @@ type releaseInfo struct {
 // Is only called when --version auto is passed to the sg release command
 // Should *only* be called for patch releases for the monorepo!
 // returns the new patch number for the latest minor version, in the form of "major.minor.patch"
-func determineMinorVersion() (string, error) {
-	latestVersion, err := http.Get("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph")
+func determineMinorVersion(ctx context.Context) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph", nil)
 	if err != nil {
-		return "", errors.New("Could not get latest release version")
+		return "", errors.Wrap(err, "Could not create request")
 	}
-	if latestVersion.StatusCode != 200 {
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", errors.Wrap(err, "Could not get response from releaseregistry")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
 		return "", errors.New("Releaseregistry did not return statuscode 200")
 	}
-	latestVersionBody, _ := io.ReadAll(latestVersion.Body)
-	defer latestVersion.Body.Close()
+
 	var versions []releaseInfo
-	jsonErr := json.Unmarshal(latestVersionBody, &versions)
-	if jsonErr != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&versions); err != nil {
 		return "", errors.New("Could not parse ReleaseInfo json")
 	}
 
-	if len(versions[0].Version) == 0 {
-		return "", errors.New("Empty version number detected")
+	if len(versions) == 0 {
+		return "", errors.New("No releases returned")
 	}
 	newestVersion := semver.MustParse(strings.TrimPrefix(versions[0].Version, "v"))
-	url := fmt.Sprintf("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/next/%s", strconv.FormatInt(newestVersion.Major(), 10)+"."+strconv.FormatInt(newestVersion.Minor(), 10))
+	url := fmt.Sprintf("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/next/%d.%d", newestVersion.Major(), newestVersion.Minor())
 
-	resp, err := http.Post(url, "", nil)
+	req, err = http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "Could not create POST request")
+	}
+	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		return "", errors.New("Could not automatically determine new version number")
 	}
@@ -258,7 +267,7 @@ func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 	var version string
 	if cctx.String("version") == "auto" {
 		var err error
-		version, err = determineMinorVersion()
+		version, err = determineMinorVersion(cctx.Context)
 		if err != nil {
 			return nil, err
 		}
