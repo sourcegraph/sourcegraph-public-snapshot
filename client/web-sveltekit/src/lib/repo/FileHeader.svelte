@@ -1,7 +1,7 @@
 <script lang="ts">
     import { mdiDotsHorizontal } from '@mdi/js'
 
-    import { page } from '$app/stores'
+    import { resolveRoute } from '$app/paths'
     import { overflow } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
     import { DropdownMenu } from '$lib/wildcard'
@@ -9,17 +9,31 @@
 
     import SidebarToggleButton from './SidebarToggleButton.svelte'
     import { sidebarOpen } from './stores'
-    import { navFromPath } from './utils'
 
-    $: breadcrumbs = navFromPath($page.params.path, $page.params.repo)
+    const TREE_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]'
+    const BLOB_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/blob/[...path]'
+
+    export let repoName: string
+    export let path: string
+    export let hideSidebarToggle = false
+    export let type: 'blob' | 'tree'
+
+    $: breadcrumbs = path.split('/')
+        .map((part, index, all): [string, string] => [
+            part,
+            resolveRoute(
+                type === 'tree' ? TREE_ROUTE_ID : BLOB_ROUTE_ID,
+                { repo: repoName, path: all.slice(0, index + 1).join('/') }),
+        ])
 </script>
 
 <div class="header">
-    <div class="toggle-wrapper" class:hidden={$sidebarOpen}>
+    <div class="toggle-wrapper" class:hidden={hideSidebarToggle || $sidebarOpen}>
         <SidebarToggleButton />
     </div>
     <h2>
         {#each breadcrumbs as [name, path], index}
+            {@const last = index === breadcrumbs.length - 1}
             <!--
                 The elements are arranged like this because we want to
                 ensure that the leading / before a segement always stay with
@@ -37,14 +51,16 @@
                 at all.
             -->
             {' '}
-            <span class:last={index === breadcrumbs.length - 1}>
+            <span class:last>
                 {#if index > 0}
                     <span class="slash">/</span>
+                {/if}
+                {#if last}
+                    <slot name="icon" />
                 {/if}
                 {#if path}
                     <a href={path}>{name}</a>
                 {:else}
-                    <slot name="icon" />
                     {name}
                 {/if}
             </span>

@@ -24,7 +24,7 @@
     <title>{data.filePath} - {data.displayRepoName} - Sourcegraph</title>
 </svelte:head>
 
-<FileHeader>
+<FileHeader type="tree" repoName={data.repoName} path={data.filePath}>
     <svelte:fragment slot="actions">
         <Permalink commitID={data.resolvedRevision.commitID} />
     </svelte:fragment>
