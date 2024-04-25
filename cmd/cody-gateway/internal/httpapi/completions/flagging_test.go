@@ -59,7 +59,7 @@ func TestIsFlaggedRequest(t *testing.T) {
 
 	// Create a generic tokenizer. If provided to isFlaggedRequest, it will enable
 	// a few more checks.
-	tokenizer, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
+	tokenizer, err := tokenizer.NewCL100kBaseTokenizer()
 	require.NoError(t, err)
 
 	// callIsFlaggedRequest just wraps the call to isFlaggedResult.

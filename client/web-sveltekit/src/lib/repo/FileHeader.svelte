@@ -1,14 +1,15 @@
 <script lang="ts">
+    import { mdiDotsHorizontal } from '@mdi/js'
+
     import { page } from '$app/stores'
+    import { overflow } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
     import { DropdownMenu } from '$lib/wildcard'
-    import { mdiDotsHorizontal } from '@mdi/js'
+    import { getButtonClassName } from '$lib/wildcard/Button'
 
     import SidebarToggleButton from './SidebarToggleButton.svelte'
     import { sidebarOpen } from './stores'
     import { navFromPath } from './utils'
-    import { getButtonClassName } from '$lib/wildcard/Button'
-    import { overflow } from '$lib/dom'
 
     $: breadcrumbs = navFromPath($page.params.path, $page.params.repo)
 </script>
@@ -38,7 +39,7 @@
             {' '}
             <span class:last={index === breadcrumbs.length - 1}>
                 {#if index > 0}
-                    /
+                    <span class="slash">/</span>
                 {/if}
                 {#if path}
                     <a href={path}>{name}</a>
@@ -75,6 +76,7 @@
         padding: 0.25rem 0.5rem;
         border-bottom: 1px solid var(--border-color);
         background-color: var(--color-bg-1);
+        box-shadow: var(--fileheader-shadow);
         z-index: 1;
         gap: 0.5rem;
     }
@@ -99,7 +101,11 @@
         margin: 0;
 
         a {
-            color: var(--body-color);
+            color: var(--text-body);
+        }
+
+        .slash {
+            color: var(--text-disabled);
         }
 
         span {
@@ -107,7 +113,7 @@
         }
 
         .last {
-            font-weight: bold;
+            color: var(--text-title);
         }
     }
 

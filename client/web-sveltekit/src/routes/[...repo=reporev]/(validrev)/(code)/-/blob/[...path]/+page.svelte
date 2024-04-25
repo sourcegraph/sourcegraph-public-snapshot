@@ -8,6 +8,7 @@
 
     import { afterNavigate, goto, preloadData } from '$app/navigation'
     import { page } from '$app/stores'
+    import type { ScrollSnapshot } from '$lib/codemirror/utils'
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import { isErrorLike, SourcegraphURL, type LineOrPositionOrRange, pluralize } from '$lib/common'
     import { toGraphQLResult } from '$lib/graphql'
@@ -17,6 +18,7 @@
     import FileDiff from '$lib/repo/FileDiff.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
+    import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI } from '$lib/shared'
     import { formatBytes } from '$lib/utils'
@@ -26,9 +28,7 @@
     import type { PageData, Snapshot } from './$types'
     import FileViewModeSwitcher from './FileViewModeSwitcher.svelte'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
-    import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
     import { toViewMode, ViewMode } from './util'
-    import type { ScrollSnapshot } from '$lib/codemirror/utils'
 
     export let data: PageData
 
@@ -247,6 +247,7 @@
         flex-direction: column;
         overflow: auto;
         flex: 1;
+        background-color: var(--color-bg-1);
 
         &.compare {
             flex-direction: column;
@@ -260,7 +261,8 @@
     }
 
     .file-info {
-        padding: 0.5rem 0.5rem;
+        background: var(--color-bg-1);
+        padding: 0.5rem;
         color: var(--text-muted);
         display: flex;
         gap: 1rem;

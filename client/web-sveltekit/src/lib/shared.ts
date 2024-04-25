@@ -44,6 +44,7 @@ export {
     type Range,
     type Filter,
     type SearchEvent,
+    type Alert,
 } from '@sourcegraph/shared/src/search/stream'
 export {
     type MatchItem,

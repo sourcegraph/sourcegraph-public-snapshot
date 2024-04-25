@@ -81,17 +81,16 @@ func transformPatterns(patterns []string) []string {
 	for _, pattern := range patterns {
 		pattern = strings.ToLower(pattern)
 		pattern = removePunctuation(pattern)
-		if len(pattern) < 3 || isCommonTerm(pattern) {
-			continue
+
+		terms := tokenize(pattern)
+		for _, term := range terms {
+			if len(term) < 3 || isCommonTerm(term) {
+				continue
+			}
+
+			term = stemTerm(term)
+			add(term)
 		}
-
-		pattern = stemTerm(pattern)
-		add(pattern)
-	}
-
-	// To maintain decent latency, limit the number of patterns we search.
-	if len(transformedPatterns) > maxTransformedPatterns {
-		transformedPatterns = transformedPatterns[:maxTransformedPatterns]
 	}
 
 	return transformedPatterns
@@ -110,6 +109,12 @@ func queryStringToKeywordQuery(queryString string) (*keywordQuery, error) {
 	patterns, parameters := nodeToPatternsAndParameters(rawParseTree[0])
 
 	transformedPatterns := transformPatterns(patterns)
+
+	// To maintain decent latency, limit the number of patterns we search.
+	if len(transformedPatterns) > maxTransformedPatterns {
+		transformedPatterns = transformedPatterns[:maxTransformedPatterns]
+	}
+
 	var nodes []query.Node
 	for _, p := range parameters {
 		nodes = append(nodes, p)

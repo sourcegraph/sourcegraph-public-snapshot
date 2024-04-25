@@ -56,12 +56,12 @@
             backgroundColor: 'transparent',
         },
         '.cm-gutters': {
-            'background-color': 'var(--code-bg)',
+            'background-color': 'transparent',
             border: 'none',
             color: 'var(--line-number-color)',
         },
         '.cm-line': {
-            paddingLeft: '0',
+            paddingLeft: '1ex',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',

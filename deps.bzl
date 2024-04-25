@@ -643,8 +643,8 @@ def go_dependencies():
         name = "com_github_bazelbuild_rules_go",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/bazelbuild/rules_go",
-        sum = "h1:uJStI9o5obVWSwquy9WxKNWfZxf2sKA2rpEsX6x5RVM=",
-        version = "v0.44.0",
+        sum = "h1:TTl2buKt0lqJe5s6up5FtaB1F95Wg997Lv15MWetU88=",
+        version = "v0.47.0",
     )
     go_repository(
         name = "com_github_becheran_wildmatch_go",
@@ -2398,8 +2398,8 @@ def go_dependencies():
         name = "com_github_golang_mock",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/golang/mock",
-        sum = "h1:ErTB+efbowRARo13NNdxyJji2egdxLGQhRaY+DUumQc=",
-        version = "v1.6.0",
+        sum = "h1:YojYx61/OLFsiv6Rw1Z96LpldJIy31o+UHmwAUMJ6/U=",
+        version = "v1.7.0-rc.1",
     )
     go_repository(
         name = "com_github_golang_protobuf",
@@ -3424,20 +3424,6 @@ def go_dependencies():
         importpath = "github.com/jinzhu/copier",
         sum = "h1:w3ciUoD19shMCRargcpm0cm91ytaBhDvuRpz1ODO/U8=",
         version = "v0.4.0",
-    )
-    go_repository(
-        name = "com_github_jinzhu_inflection",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/jinzhu/inflection",
-        sum = "h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=",
-        version = "v1.0.0",
-    )
-    go_repository(
-        name = "com_github_jinzhu_now",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/jinzhu/now",
-        sum = "h1:/o9tlHleP7gOFmsnYNz3RGnqzefHA47wQpKrrdTIwXQ=",
-        version = "v1.1.5",
     )
     go_repository(
         name = "com_github_jmespath_go_jmespath",
@@ -4703,6 +4689,13 @@ def go_dependencies():
         version = "v0.1.6",
     )
     go_repository(
+        name = "com_github_pkoukk_tiktoken_go_loader",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/pkoukk/tiktoken-go-loader",
+        sum = "h1:aOB2gRFzZTCCPi3YsOQXJO771P/5876JAsdebMyazig=",
+        version = "v0.0.1",
+    )
+    go_repository(
         name = "com_github_pmezard_go_difflib",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/pmezard/go-difflib",
@@ -5494,8 +5487,8 @@ def go_dependencies():
         patches = [
             "//third_party/com_github_sourcegraph_zoekt:x_defs_version.patch",
         ],
-        sum = "h1:3DJmyiTtoczytYdvoBqwawkSRZEGZeZB9v0DjfQ6irY=",
-        version = "v0.0.0-20240417165306-43b92256ba71",
+        sum = "h1:ZoA5u9P6wjoUFwfgi+alUVLJ60dc0XkshTjzDNoQpGg=",
+        version = "v0.0.0-20240418025752-74e75efaded6",
     )
     go_repository(
         name = "com_github_spaolacci_murmur3",
@@ -7179,20 +7172,6 @@ def go_dependencies():
         importpath = "go.etcd.io/etcd/server/v3",
         sum = "h1:4NOGyOwD5sUZ22PiWYKmfxqoeh72z6EhYjNosKGLmZg=",
         version = "v3.5.10",
-    )
-    go_repository(
-        name = "io_gorm_driver_postgres",
-        build_file_proto_mode = "disable_global",
-        importpath = "gorm.io/driver/postgres",
-        sum = "h1:Iyrp9Meh3GmbSuyIAGyjkN+n9K+GHX9b9MqsTL4EJCo=",
-        version = "v1.5.4",
-    )
-    go_repository(
-        name = "io_gorm_gorm",
-        build_file_proto_mode = "disable_global",
-        importpath = "gorm.io/gorm",
-        sum = "h1:zR9lOiiYf09VNh5Q1gphfyia1JpiClIWG9hQaxB/mls=",
-        version = "v1.25.5",
     )
     go_repository(
         name = "io_k8s_api",
