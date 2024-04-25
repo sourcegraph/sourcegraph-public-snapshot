@@ -108,7 +108,14 @@ type CodeGraphData {
 }
 
 type Occurrence {
-    symbolName: String
+    """
+    Symbol name using syntax specified by the SCIP schema.
+    https://github.com/sourcegraph/scip/blob/main/scip.proto#L147-L188
+
+    This value will generally be used in conjunction with
+    the `usagesBySymbol` API.
+    """
+    symbol: String
     range: Range!
     roles: [SymbolRole!]
     # We can add diagnostics etc. here in the future if needed.
