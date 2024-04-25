@@ -1,21 +1,30 @@
 <script lang="ts">
     import { mdiDotsHorizontal } from '@mdi/js'
 
+    import { resolveRoute } from '$app/paths'
     import { overflow } from '$lib/dom'
-
     import Icon from '$lib/Icon.svelte'
     import { DropdownMenu } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
 
     import SidebarToggleButton from './SidebarToggleButton.svelte'
     import { sidebarOpen } from './stores'
-    import { navFromPath } from './utils'
+
+    const TREE_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]'
+    const BLOB_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/blob/[...path]'
 
     export let repoName: string
     export let path: string
     export let hideSidebarToggle = false
+    export let type: 'blob' | 'tree'
 
-    $: breadcrumbs = navFromPath(path, repoName)
+    $: breadcrumbs = path.split('/')
+        .map((part, index, all): [string, string] => [
+            part,
+            resolveRoute(
+                type === 'tree' ? TREE_ROUTE_ID : BLOB_ROUTE_ID,
+                { repo: repoName, path: all.slice(0, index + 1).join('/') }),
+        ])
 </script>
 
 <div class="header">

@@ -9,13 +9,13 @@
     import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
     import { SourcegraphURL } from '$lib/common'
     import FilePreview from './FilePreview.svelte'
-    import { sidebarOpen } from '$lib/repo/stores'
     import { Alert } from '$lib/wildcard'
 
     export let connection: ReferencePanel_LocationConnection | null
     export let loading: boolean
 
-    function dedupeLocations(locations: ReferencePanel_Location[]): ReferencePanel_Location[] {
+    // It appears that the backend returns duplicate locations. We need to filter them out.
+    function unique(locations: ReferencePanel_Location[]): ReferencePanel_Location[] {
         const seen = new Set<string>()
         return locations.filter(location => {
             const key = location.canonicalURL
@@ -39,25 +39,18 @@
     }
 
     let selectedLocation: ReferencePanel_Location | null = null
-    let hasUserInteracted = false
 
     $: previewURL = selectedLocation ? getPreviewURL(selectedLocation) : null
-    $: locations = connection ? dedupeLocations(connection.nodes) : []
+    $: locations = connection ? unique(connection.nodes) : []
     $: showUsageInfo = !connection && !loading
     $: showNoReferencesInfo = !loading && locations.length === 0
-
-    // We are hiding the sidebar the first time the user selects a location from
-    // the list, to provide more space for the preview panel.
-    $: if (hasUserInteracted) {
-        $sidebarOpen = false
-    }
 </script>
 
 <div class="root" class:show-info={showUsageInfo || showNoReferencesInfo}>
     {#if showUsageInfo}
         <Alert variant="info">Hover over a symbol and click "Find references" to find references to the symbol.</Alert>
     {:else if showNoReferencesInfo}
-        <Alert variant="warning">No references found.</Alert>
+        <Alert variant="info">No references found.</Alert>
     {:else}
         <PanelGroup id="references">
             <Panel id="references-list">
@@ -70,10 +63,7 @@
                             <li
                                 class="location"
                                 class:selected
-                                on:click={() => {
-                                    hasUserInteracted = true
-                                    selectedLocation = selected ? null : location
-                                }}
+                                on:click={() => selectedLocation = selected ? null : location}
                             >
                                 <span class="code-file">
                                     <span class="code">
