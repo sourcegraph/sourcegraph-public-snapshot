@@ -23,5 +23,3 @@ paths:
     permissions: 0o755
 
 work-dir: /prometheus
-
-# MANUAL REBUILD: 

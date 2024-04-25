@@ -1167,6 +1167,14 @@ func stringsToByteSlices(in []string) [][]byte {
 	return res
 }
 
+func byteSlicesToStrings(in [][]byte) []string {
+	res := make([]string, len(in))
+	for i, s := range in {
+		res[i] = string(s)
+	}
+	return res
+}
+
 func (c *clientImplementor) ListGitoliteRepos(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
 	client, err := c.clientSource.ClientForRepo(ctx, api.RepoName(gitoliteHost))
 	if err != nil {

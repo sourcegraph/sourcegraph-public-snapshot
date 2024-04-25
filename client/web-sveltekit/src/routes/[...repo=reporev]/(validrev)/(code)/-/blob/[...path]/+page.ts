@@ -2,6 +2,7 @@ import { BehaviorSubject, concatMap, from, map } from 'rxjs'
 
 import { fetchBlameHunksMemoized, type BlameHunkData } from '@sourcegraph/web/src/repo/blame/shared'
 
+import { SourcegraphURL } from '$lib/common'
 import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
@@ -15,6 +16,7 @@ export const load: PageLoad = ({ parent, params, url }) => {
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const resolvedRevision = resolveRevision(parent, revision)
     const isBlame = url.searchParams.get('view') === 'blame'
+    const lineOrPosition = SourcegraphURL.from(url).lineRange
 
     // Create a BehaviorSubject so preloading does not create a subscriberless observable
     const blameData = new BehaviorSubject<BlameHunkData>({ current: undefined, externalURLs: undefined })
@@ -41,6 +43,7 @@ export const load: PageLoad = ({ parent, params, url }) => {
 
     return {
         graphQLClient: client,
+        lineOrPosition,
         filePath: params.path,
         blob: resolvedRevision
             .then(resolvedRevision =>
