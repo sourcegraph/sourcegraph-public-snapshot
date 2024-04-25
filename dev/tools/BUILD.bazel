@@ -107,3 +107,13 @@ sh_binary(
     }),
     visibility = ["//visibility:public"],
 )
+
+alias(
+    name = "kubebuilder-assets",
+    actual = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": "@kubebuilder-assets-darwin-amd64//:kubebuilder-assets",
+        "@bazel_tools//src/conditions:darwin_arm64": "@kubebuilder-assets-darwin-arm64//:kubebuilder-assets",
+        "@bazel_tools//src/conditions:linux_x86_64": "@kubebuilder-assets-linux-amd64//:kubebuilder-assets",
+    }),
+    visibility = ["//visibility:public"],
+)

@@ -1372,20 +1372,31 @@ func TestClient_StreamBlameFile(t *testing.T) {
 
 		require.NoError(t, hr.Close())
 	})
-	t.Run("permission errors are returned early", func(t *testing.T) {
+	t.Run("checks for subrepo permissions on the path", func(t *testing.T) {
 		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
 			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 				c := NewMockGitserverServiceClient()
 				bc := NewMockGitserverService_BlameClient()
-				bc.RecvFunc.PushReturn(nil, status.New(codes.PermissionDenied, "bad actor").Err())
+				bc.RecvFunc.SetDefaultHook(func() (*proto.BlameResponse, error) {
+					t.Fatal("should not be called")
+					return nil, nil
+				})
 				c.BlameFunc.SetDefaultReturn(bc, nil)
 				return c
 			}
 		})
 
-		c := NewTestClient(t).WithClientSource(source)
+		srp := authz.NewMockSubRepoPermissionChecker()
+		srp.EnabledFunc.SetDefaultReturn(true)
+		srp.EnabledForRepoFunc.SetDefaultReturn(true, nil)
+		srp.PermissionsFunc.SetDefaultHook(func(ctx context.Context, userID int32, content authz.RepoContent) (authz.Perms, error) {
+			require.Equal(t, "file", content.Path)
+			return authz.None, nil
+		})
+		c := NewTestClient(t).WithClientSource(source).WithChecker(srp)
 
-		_, err := c.StreamBlameFile(context.Background(), "repo", "file", &BlameOptions{})
+		ctx := actor.WithActor(context.Background(), actor.FromUser(1))
+		_, err := c.StreamBlameFile(ctx, "repo", "file", &BlameOptions{})
 		require.Error(t, err)
 		require.True(t, os.IsNotExist(err))
 	})
@@ -1595,20 +1606,31 @@ func TestClient_NewFileReader(t *testing.T) {
 		require.NoError(t, r.Close())
 		require.Equal(t, "", string(content))
 	})
-	t.Run("permission errors are returned early", func(t *testing.T) {
+	t.Run("checks for subrepo permissions on the path", func(t *testing.T) {
 		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
 			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 				c := NewMockGitserverServiceClient()
-				rfc := NewMockGitserverService_ReadFileClient()
-				rfc.RecvFunc.PushReturn(nil, status.New(codes.PermissionDenied, "bad actor").Err())
-				c.ReadFileFunc.SetDefaultReturn(rfc, nil)
+				rc := NewMockGitserverService_ReadFileClient()
+				rc.RecvFunc.SetDefaultHook(func() (*proto.ReadFileResponse, error) {
+					t.Fatal("should not be called")
+					return nil, nil
+				})
+				c.ReadFileFunc.SetDefaultReturn(rc, nil)
 				return c
 			}
 		})
 
-		c := NewTestClient(t).WithClientSource(source)
+		srp := authz.NewMockSubRepoPermissionChecker()
+		srp.EnabledFunc.SetDefaultReturn(true)
+		srp.EnabledForRepoFunc.SetDefaultReturn(true, nil)
+		srp.PermissionsFunc.SetDefaultHook(func(ctx context.Context, userID int32, content authz.RepoContent) (authz.Perms, error) {
+			require.Equal(t, "file", content.Path)
+			return authz.None, nil
+		})
+		c := NewTestClient(t).WithClientSource(source).WithChecker(srp)
 
-		_, err := c.NewFileReader(context.Background(), "repo", "deadbeef", "file")
+		ctx := actor.WithActor(context.Background(), actor.FromUser(1))
+		_, err := c.NewFileReader(ctx, "repo", "HEAD", "file")
 		require.Error(t, err)
 		require.True(t, os.IsNotExist(err))
 	})
@@ -1687,6 +1709,61 @@ func TestClient_GetCommit(t *testing.T) {
 		commit, err := c.GetCommit(context.Background(), "repo", "deadbeef")
 		require.NoError(t, err)
 		require.Equal(t, api.CommitID("deadbeef"), commit.ID)
+	})
+	t.Run("checks for subrepo permissions", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.GetCommitFunc.SetDefaultHook(func(ctx context.Context, req *proto.GetCommitRequest, co ...grpc.CallOption) (*proto.GetCommitResponse, error) {
+					require.Equal(t, true, req.GetIncludeModifiedFiles())
+					// Only modified "file".
+					return &proto.GetCommitResponse{Commit: &proto.GitCommit{Oid: "deadbeef"}, ModifiedFiles: [][]byte{[]byte("file")}}, nil
+				})
+				return c
+			}
+		})
+
+		srp := authz.NewMockSubRepoPermissionChecker()
+		srp.EnabledFunc.SetDefaultReturn(true)
+		srp.EnabledForRepoFunc.SetDefaultReturn(true, nil)
+		srp.PermissionsFunc.SetDefaultHook(func(ctx context.Context, userID int32, content authz.RepoContent) (authz.Perms, error) {
+			require.Equal(t, "file", content.Path)
+			return authz.None, nil
+		})
+		c := NewTestClient(t).WithClientSource(source).WithChecker(srp)
+
+		ctx := actor.WithActor(context.Background(), actor.FromUser(1))
+		_, err := c.GetCommit(ctx, "repo", "deadbeef")
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+	t.Run("checks for subrepo permissions some files visible", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.GetCommitFunc.SetDefaultHook(func(ctx context.Context, req *proto.GetCommitRequest, co ...grpc.CallOption) (*proto.GetCommitResponse, error) {
+					require.Equal(t, true, req.GetIncludeModifiedFiles())
+					return &proto.GetCommitResponse{Commit: &proto.GitCommit{Oid: "deadbeef"}, ModifiedFiles: [][]byte{[]byte("file"), []byte("file2")}}, nil
+				})
+				return c
+			}
+		})
+
+		srp := authz.NewMockSubRepoPermissionChecker()
+		srp.EnabledFunc.SetDefaultReturn(true)
+		srp.EnabledForRepoFunc.SetDefaultReturn(true, nil)
+		srp.PermissionsFunc.SetDefaultHook(func(ctx context.Context, userID int32, content authz.RepoContent) (authz.Perms, error) {
+			if content.Path == "file2" {
+				return authz.Read, nil
+			}
+			require.Equal(t, "file", content.Path)
+			return authz.None, nil
+		})
+		c := NewTestClient(t).WithClientSource(source).WithChecker(srp)
+
+		ctx := actor.WithActor(context.Background(), actor.FromUser(1))
+		_, err := c.GetCommit(ctx, "repo", "deadbeef")
+		require.NoError(t, err)
 	})
 	t.Run("returns correct error for not found", func(t *testing.T) {
 		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
@@ -1845,6 +1922,29 @@ func TestClient_ArchiveReader(t *testing.T) {
 		_, err := c.ArchiveReader(context.Background(), "repo", ArchiveOptions{Treeish: "deadbeef", Format: ArchiveFormatTar, Paths: []string{"file"}})
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+	t.Run("checks for subrepo permissions enabled on the repo", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				ac := NewMockGitserverService_ArchiveClient()
+				ac.RecvFunc.SetDefaultHook(func() (*proto.ArchiveResponse, error) {
+					t.Fatal("should not be called")
+					return nil, nil
+				})
+				c.ArchiveFunc.SetDefaultReturn(ac, nil)
+				return c
+			}
+		})
+
+		srp := authz.NewMockSubRepoPermissionChecker()
+		srp.EnabledFunc.SetDefaultReturn(true)
+		srp.EnabledForRepoFunc.SetDefaultReturn(true, nil)
+		c := NewTestClient(t).WithClientSource(source).WithChecker(srp)
+
+		ctx := actor.WithActor(context.Background(), actor.FromUser(1))
+		_, err := c.ArchiveReader(ctx, "repo", ArchiveOptions{})
+		require.Error(t, err)
 	})
 	t.Run("empty archive", func(t *testing.T) {
 		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {

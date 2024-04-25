@@ -164,7 +164,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	handler = requestinteraction.HTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
-	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, gitserver), handler)
+	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, gitserver, config), handler)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -236,7 +236,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 // makeGRPCServer creates a new *grpc.Server for the gitserver endpoints and registers
 // it with methods on the given server.
-func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
+func makeGRPCServer(logger log.Logger, s *server.Server, c *Config) *grpc.Server {
 	configurationWatcher := conf.DefaultClient()
 	scopedLogger := logger.Scoped("gitserver.accesslog")
 
@@ -245,8 +245,12 @@ func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 		grpc.ChainStreamInterceptor(accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)),
 		grpc.ChainUnaryInterceptor(accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)),
 	)
-	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
-	proto.RegisterGitserverRepositoryServiceServer(grpcServer, server.NewRepositoryServiceServer(s))
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s, &server.GRPCServerConfig{
+		ExhaustiveRequestLoggingEnabled: c.ExhaustiveRequestLoggingEnabled,
+	}))
+	proto.RegisterGitserverRepositoryServiceServer(grpcServer, server.NewRepositoryServiceServer(s, &server.GRPCRepositoryServiceConfig{
+		ExhaustiveRequestLoggingEnabled: c.ExhaustiveRequestLoggingEnabled,
+	}))
 
 	return grpcServer
 }

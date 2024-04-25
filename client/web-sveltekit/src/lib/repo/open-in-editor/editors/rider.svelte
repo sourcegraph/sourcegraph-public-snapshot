@@ -1,4 +1,4 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="16" height="16" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M64.0001 24.9L19.1001 0L49.2001 44.6L55.3001 40.6L64.0001 24.9Z" fill="url(#paint0_linear)" />
     <path
         d="M64.0001 24.8999L51.2001 25.5999L49.1001 44.4999L55.3001 40.5999L64.0001 24.8999Z"
