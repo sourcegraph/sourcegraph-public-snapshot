@@ -192,7 +192,7 @@ func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.Re
 	return embedded, notEmbedded, nil
 }
 
-func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs, filter search.CodyFileMatcher) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs, matcher FileMatcher) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getEmbeddingsContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -238,7 +238,7 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 
 	filtered := make([]FileChunkContext, 0, len(res))
 	for _, chunk := range res {
-		if !filter(chunk.RepoID, chunk.Path) {
+		if !matcher(chunk.RepoID, chunk.Path) {
 			filtered = append(filtered, chunk)
 		}
 	}
@@ -246,7 +246,7 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 }
 
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
-func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, filter search.CodyFileMatcher) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, matcher FileMatcher) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getKeywordContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -285,7 +285,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		return nil, err
 	}
 
-	addLimitsAndFilter(plan, filter, args)
+	addLimitsAndFilter(plan, matcher, args)
 
 	var (
 		mu        sync.Mutex
@@ -318,7 +318,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	return collected, nil
 }
 
-func addLimitsAndFilter(plan *search.Inputs, filter search.CodyFileMatcher, args GetContextArgs) {
+func addLimitsAndFilter(plan *search.Inputs, filter FileMatcher, args GetContextArgs) {
 	if plan.Features == nil {
 		plan.Features = &search.Features{}
 	}

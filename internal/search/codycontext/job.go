@@ -69,7 +69,9 @@ func NewSearchJob(plan query.Plan, inputs *search.Inputs, newJob func(query.Basi
 	return &searchJob{codeJob, codeCount, textJob, textCount, fileMatcher, patterns}, nil
 }
 
-func getFileMatcher(inputs *search.Inputs) search.CodyFileMatcher {
+type codyFileMatcher = func(id api.RepoID, s string) bool
+
+func getFileMatcher(inputs *search.Inputs) codyFileMatcher {
 	if inputs.Features == nil || inputs.Features.CodyFileMatcher == nil {
 		return func(id api.RepoID, s string) bool {
 			return true
@@ -109,7 +111,7 @@ type searchJob struct {
 	textJob   job.Job
 	textCount int
 
-	fileMatcher search.CodyFileMatcher
+	fileMatcher codyFileMatcher
 	patterns    []string
 }
 

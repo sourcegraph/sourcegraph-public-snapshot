@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -240,7 +239,7 @@ func TestDotcomFilterDisabled(t *testing.T) {
 	})
 }
 
-func filterChunks(chunks []FileChunkContext, matcher search.CodyFileMatcher) []FileChunkContext {
+func filterChunks(chunks []FileChunkContext, matcher FileMatcher) []FileChunkContext {
 	filtered := make([]FileChunkContext, 0, len(chunks))
 	for _, chunk := range chunks {
 		if matcher(chunk.RepoID, chunk.Path) {

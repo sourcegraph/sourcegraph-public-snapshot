@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -67,7 +66,7 @@ func (f *enterpriseRepoFilter) getFiltersConfig() (_ filtersConfig, ok bool) {
 }
 
 // GetFilter returns the list of repos that can be filtered based on the Cody context filter value in the site config.
-func (f *enterpriseRepoFilter) GetMatcher(_ context.Context, repos []types.RepoIDName) ([]types.RepoIDName, search.CodyFileMatcher, error) {
+func (f *enterpriseRepoFilter) GetMatcher(_ context.Context, repos []types.RepoIDName) ([]types.RepoIDName, FileMatcher, error) {
 	fc, ok := f.getFiltersConfig()
 	if !ok {
 		// our configuration is invalid, so filter everything out
