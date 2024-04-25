@@ -225,8 +225,8 @@ def oci_deps():
     )
 
     # Please review the changes in /usr/local/share/postgresql/postgresql.conf.sample
-    # If there is any change, you should ping @team/delivery
-    # And Delivery will make sure changes are reflected in our deploy repository
+    # If there is any change, you should ping @release-team
+    # who will make sure changes are reflected in our deploy repository
     oci_pull(
         name = "legacy_postgres-12-alpine_base",
         # IMPORTANT: Only update to Postgres 12.X Alpine linux/x86_64 images, and update the tag below
