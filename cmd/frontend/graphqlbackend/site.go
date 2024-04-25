@@ -355,9 +355,8 @@ func (r *siteResolver) UpgradeReadiness(ctx context.Context) (*upgradeReadinessR
 	}
 
 	return &upgradeReadinessResolver{
-		logger:  r.logger.Scoped("upgradeReadiness"),
-		db:      r.db,
-		version: r.ProductVersion(),
+		logger: r.logger.Scoped("upgradeReadiness"),
+		db:     r.db,
 	}, nil
 }
 
@@ -374,7 +373,7 @@ type upgradeReadinessResolver struct {
 
 var devSchemaFactory = schemas.NewExpectedSchemaFactory(
 	"Local file",
-	[]schemas.NamedRegexp{{Regexp: lazyregexp.New(`^dev$`)}},
+	[]schemas.NamedRegexp{{Regexp: lazyregexp.New(`^(dev|0\.0\.0\+dev)$`)}},
 	func(filename, _ string) string { return filename },
 	schemas.ReadSchemaFromFile,
 )
@@ -420,7 +419,7 @@ func (r *upgradeReadinessResolver) init(ctx context.Context) (_ *runner.Runner, 
 			}
 
 			if v.Dev {
-				return runner, "dev", schemaNames, nil
+				return runner, "0.0.0+dev", schemaNames, nil
 			}
 
 			return runner, v.GitTagWithPatch(patch), schemaNames, nil
@@ -520,18 +519,22 @@ func isRequiredOutOfBandMigration(currentVersion, latestVersion oobmigration.Ver
 }
 
 func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
+	// Get the current version by initializing the resolver
+	_, version, _, err := r.init(ctx)
+	if err != nil {
+		return nil, err
+	}
+	currentVersion, _, ok := oobmigration.NewVersionAndPatchFromString(version)
+	if !ok {
+		return nil, errors.Errorf("invalid current version %s", r.version)
+	}
+
 	updateStatus := updatecheck.Last()
 	if updateStatus == nil {
 		return nil, errors.New("no latest update version available (reload in a few seconds)")
 	}
 	if !updateStatus.HasUpdate() {
 		return nil, nil
-	}
-
-	// The current sourcegraph product version
-	currentVersion, _, ok := oobmigration.NewVersionAndPatchFromString(r.version)
-	if !ok {
-		return nil, errors.Errorf("invalid current version %s", r.version)
 	}
 
 	// The latest sourcegraph version available, returned from the updateCheck

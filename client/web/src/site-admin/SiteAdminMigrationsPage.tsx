@@ -128,6 +128,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
     )
 
     // TODO: we currently just display ll migrations here. We should filter out migrations which have a deprecated value before the firstVersion of the Sourcegraph instance.
+    // Should add flag to oobmigrations call in graphqlbackend/oobmigrations.go such that the resolver does not return deprecated migrations
     return (
         <div className="site-admin-migrations-page">
             {isErrorLike(migrationsOrError) ? (
