@@ -84,7 +84,7 @@ func updateToPrebuiltSG(ctx context.Context, release string) (bool, error) {
 	// with redirections.
 	resp, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil {
-		return false, errors.Newf("Fetch GitHub release %q", release)
+		return false, errors.Wrapf(err, "Fetch GitHub release %q", release)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
