@@ -66,6 +66,7 @@ internal:
     steps:
       - name: 'Register on release registry'
         cmd: |
+          exit 0
           echo "Registering internal sourcegraph/sourcegraph {{version}} release on release registry"
           body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '{
               "name": "sourcegraph",
@@ -87,6 +88,7 @@ internal:
       - name: 'notifications'
         cmd: |
           set -eu
+          exit 0
 
           # Post an annotation.
           cat << EOF | buildkite-agent annotate --style info
