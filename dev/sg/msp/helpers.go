@@ -181,7 +181,7 @@ func (c *toolingLockfileChecker) checkCategoryVersion(out *std.Output, category 
 If there is a diff in the generated output, try running the following:`,
 				category, lockedSgVersion, c.version)
 			_ = out.WriteCode("bash", fmt.Sprintf(
-				"sg update -release %s && SG_SKIP_AUTO_UPDATE=true sg generate -all -category %s",
+				"sg update -release %q &&\n  SG_SKIP_AUTO_UPDATE=true sg msp generate -all -category %q",
 				lockedSgVersion, string(category)))
 		}
 	})
