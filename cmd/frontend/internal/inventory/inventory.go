@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
-	"github.com/grafana/regexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"go.opentelemetry.io/otel/attribute"
 	"io"
@@ -18,6 +17,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// fileReadBufferSize is the size of the buffer we'll use while reading file contents
+const fileReadBufferSize = 4 * 1024
 
 // Inventory summarizes a tree's contents (e.g., which programming
 // languages are used).
@@ -41,33 +43,11 @@ type Lang struct {
 
 var newLine = []byte{'\n'}
 
-func isExcluded(name string) (bool, error) {
-	// Exclude lock files by default. We can later make the patterns configurable.
-	excludedFileNamePatterns := []string{".*\\.lock"}
-	for _, pattern := range excludedFileNamePatterns {
-		matched, err := regexp.MatchString(pattern, name)
-		if err != nil {
-			return false, err
-		}
-		if matched {
-			return matched, nil
-		}
-	}
-	return false, nil
-}
-
-func getLang(ctx context.Context, file fs.FileInfo, buf []byte, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error)) (Lang, error) {
+func getLang(ctx context.Context, file fs.FileInfo, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error)) (Lang, error) {
 	if file == nil {
 		return Lang{}, nil
 	}
 	if !file.Mode().IsRegular() || enry.IsVendor(file.Name()) {
-		return Lang{}, nil
-	}
-	fileExcluded, err := isExcluded(file.Name())
-	if err != nil {
-		return Lang{}, errors.Wrap(err, "Failed to evaluate regex of excluded files.")
-	}
-	if fileExcluded {
 		return Lang{}, nil
 	}
 
@@ -98,6 +78,8 @@ func getLang(ctx context.Context, file fs.FileInfo, buf []byte, getFileReader fu
 		lang.TotalBytes = uint64(file.Size())
 		return lang, nil
 	}
+
+	buf := make([]byte, fileReadBufferSize)
 
 	if !safe {
 		// Detect language from content
