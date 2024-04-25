@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import type { ErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import type { SeenAuthProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { Button, ErrorAlert, H2, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
 
@@ -24,7 +25,6 @@ import styles from './ExternalAccountsModal.module.scss'
 export interface ExternalAccountsModalProps {
     authenticatedUser: AuthenticatedUser
     isLightTheme: boolean
-    setSeenAuthProviders: (seenAuthProviders: SeenAuthProvider[]) => void
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
@@ -32,7 +32,7 @@ export interface ExternalAccountsModalProps {
 // with a list of auth providers that have already been seen by the user.
 // If the active auth providers contain an auth provider that has not yet
 // been seen by the user, true is returned. Otherwise false is returned.
-export const shouldShowExternalAccountsModal = (
+const shouldShowExternalAccountsModal = (
     activeAuthProviders: AuthProvider[],
     seenAuthProviders: SeenAuthProvider[] | undefined
 ): boolean => {
@@ -88,6 +88,13 @@ function filterAuthProviders(
 }
 
 export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModalProps> = props => {
+    const [seenAuthzProviders, setSeenAuthzProviders] = useTemporarySetting('user.seenAuthProviders')
+
+    const externalAccountsModalVisible = shouldShowExternalAccountsModal(
+        props.context.authProviders,
+        seenAuthzProviders
+    )
+
     const [userExternalAccounts, setUserExternalAccounts] = useState<{
         fetched?: UserExternalAccount[]
         lastRemoved?: string
@@ -104,6 +111,7 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
         refetch: userAccountsRefetch,
     } = useQuery<UserExternalAccountsResult, UserExternalAccountsWithAccountDataVariables>(USER_EXTERNAL_ACCOUNTS, {
         variables: { username: props.authenticatedUser.username },
+        skip: !externalAccountsModalVisible,
     })
 
     const { data: authzProvidersData } = useQuery<AuthzProvidersResult, AuthzProvidersVariables>(AUTHZ_PROVIDERS, {})
@@ -151,7 +159,7 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
 
     const onDismiss = (): void => {
         if (confirm('You can always review your external account connections in your user settings.')) {
-            props.setSeenAuthProviders(props.context.authProviders)
+            setSeenAuthzProviders(props.context.authProviders)
             setIsModalOpen(false)
         }
     }
