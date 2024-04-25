@@ -32,6 +32,11 @@
 
     export let data: PageData
 
+    // The following props control the look and file of the file page when used
+    // in a preview context.
+    export let embedded = false
+    export let disableCodeIntel = embedded
+
     export const snapshot: Snapshot<ScrollSnapshot | null> = {
         capture() {
             return cmblob?.getScrollSnapshot() ?? null
@@ -64,7 +69,7 @@
     $: if (!$combinedBlobData.blobPending) {
         blob = $combinedBlobData.blob
         highlights = $combinedBlobData.highlights
-        selectedPosition = SourcegraphURL.from($page.url).lineRange
+        selectedPosition = data.lineOrPosition
     }
     $: fileNotFound = $combinedBlobData.blobPending ? null : !$combinedBlobData.blob
     $: fileLoadingError = $combinedBlobData.blobPending ? null : !$combinedBlobData.blob && $combinedBlobData.blobError
@@ -74,12 +79,14 @@
     $: showBlame = viewMode === ViewMode.Blame
     $: showFormatted = isFormatted && viewMode === ViewMode.Default && !showBlame
 
-    $: codeIntelAPI = createCodeIntelAPI({
-        settings: setting => (isErrorLike(settings?.final) ? undefined : settings?.final?.[setting]),
-        requestGraphQL(options) {
-            return from(graphQLClient.query(options.request, options.variables).then(toGraphQLResult))
-        },
-    })
+    $: codeIntelAPI = disableCodeIntel
+        ? null
+        : createCodeIntelAPI({
+              settings: setting => (isErrorLike(settings?.final) ? undefined : settings?.final?.[setting]),
+              requestGraphQL(options) {
+                  return from(graphQLClient.query(options.request, options.variables).then(toGraphQLResult))
+              },
+          })
 
     afterNavigate(event => {
         // Only restore scroll position when the user used the browser history to navigate back
@@ -118,14 +125,21 @@
 
 <!-- Note: Splitting this at this level is not great but Svelte doesn't allow to conditionally render slots (yet) -->
 {#if data.compare}
-    <FileHeader>
+    <FileHeader type="blob" {repoName} path={filePath}>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
             <span>{data.compare.revisionToCompare}</span>
         </svelte:fragment>
     </FileHeader>
+{:else if embedded}
+    <FileHeader type="blob" {repoName} path={filePath} hideSidebarToggle>
+        <FileIcon slot="icon" file={blob} inline />
+        <svelte:fragment slot="actions">
+            <slot name="actions" />
+        </svelte:fragment>
+    </FileHeader>
 {:else}
-    <FileHeader>
+    <FileHeader type="blob" {repoName} path={filePath}>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
             {#await data.externalServiceType then externalServiceType}
@@ -153,7 +167,7 @@
     </FileHeader>
 {/if}
 
-{#if blob && !blob.binary && !data.compare}
+{#if blob && !blob.binary && !data.compare && !embedded}
     <div class="file-info">
         <FileViewModeSwitcher
             aria-label="View mode"
