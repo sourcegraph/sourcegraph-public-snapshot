@@ -42,5 +42,3 @@ annotations:
   org.opencontainers.image.title: Caddy
   org.opencontainers.image.description: "a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go"
   org.opencontainers.image.licenses: "Apache-2.0"
-
-# MANUAL REBUILD: 
