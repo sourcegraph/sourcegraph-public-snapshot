@@ -214,6 +214,8 @@
         flex-direction: column;
 
         .actions {
+            background-color: var(--color-bg-1);
+            box-shadow: var(--fileheader-shadow);
             border-bottom: 1px solid var(--border-color);
             padding: 0.5rem 0;
             padding-left: 0.25rem;

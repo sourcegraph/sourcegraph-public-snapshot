@@ -59,6 +59,10 @@
         color: var(--text-muted);
         white-space: nowrap;
 
+        small {
+            font-size: 0.75rem;
+        }
+
         .info-badge {
             background-color: var(--primary-2);
             border-radius: 3px;

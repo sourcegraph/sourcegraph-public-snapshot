@@ -41,7 +41,7 @@
         {#if loading}
             <LoadingSpinner inline />
         {:else}
-            <Icon svgPath={icons[severity]} size={18} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
+            <Icon svgPath={icons[severity]} size={16} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
         {/if}
     </div>
 
@@ -55,7 +55,7 @@
             <small>Running Search</small>
         {/if}
     </div>
-    <Icon svgPath={mdiChevronDown} size={18} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
+    <Icon svgPath={mdiChevronDown} size={16} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
 </div>
 
 <style lang="scss">
@@ -67,7 +67,6 @@
         gap: 0.5rem;
         min-width: 200px;
         max-width: fit-content;
-
         padding: 0.25rem;
 
         .messages {
@@ -75,8 +74,7 @@
             flex-flow: column nowrap;
             justify-content: center;
             align-items: flex-start;
-            margin-right: 0.75rem;
-            margin-left: 0.5rem;
+            margin: 0 0.25rem;
             row-gap: 0.25rem;
         }
 

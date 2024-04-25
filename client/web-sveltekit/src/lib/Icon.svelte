@@ -27,7 +27,7 @@
 
 <style lang="scss">
     :root {
-        --icon-size: 1.5rem;
+        --icon-size: 1.25rem;
     }
 
     svg {

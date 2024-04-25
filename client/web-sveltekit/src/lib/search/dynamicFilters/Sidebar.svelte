@@ -160,17 +160,17 @@
 
 <style lang="scss">
     .sidebar {
+        background-color: var(--color-bg-1);
+        box-shadow: var(--sidebar-shadow);
         display: flex;
         flex-direction: column;
         height: 100%;
     }
 
     .scroll-container {
-        padding-top: 1rem;
+        padding: 1.5rem 0;
         height: 100%;
-        background-color: var(--sidebar-bg);
         overflow-y: auto;
-
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
