@@ -177,8 +177,12 @@ func (c *toolingLockfileChecker) checkCategoryVersion(out *std.Output, category 
 			out.WriteWarningf("Unable to determine locked 'sg' version for category %q: %s",
 				category, err.Error())
 		} else if lockedSgVersion != c.version {
-			out.WriteWarningf("Lockfile for category %q declares 'sg' version %q, you are using %q - generated outputs may differ from what is expected.",
+			out.WriteWarningf(`Lockfile for category %q declares 'sg' version %q, you are using %q - generated outputs may differ from what is expected.
+If there is a diff in the generated output, try running the following:`,
 				category, lockedSgVersion, c.version)
+			_ = out.WriteCode("bash", fmt.Sprintf(
+				"sg update -release %s && SG_SKIP_AUTO_UPDATE=true sg generate -all -category %s",
+				lockedSgVersion, string(category)))
 		}
 	})
 }
