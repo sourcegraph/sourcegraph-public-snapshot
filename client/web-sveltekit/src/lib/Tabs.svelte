@@ -98,7 +98,7 @@
         letter-spacing: normal;
         margin: 0;
         min-height: 2rem;
-        padding: 0.25rem 0.5rem;
+        padding: 0.5rem;
         border-radius: 0.125rem;
         color: var(--body-color);
         text-transform: none;
@@ -115,13 +115,13 @@
         }
 
         &[aria-selected='true'] {
-            font-weight: 700;
+            font-weight: 500;
         }
 
         &::before {
             content: attr(data-tab-title);
             display: block;
-            font-weight: 700;
+            font-weight: 500;
             height: 0;
             visibility: hidden;
         }
