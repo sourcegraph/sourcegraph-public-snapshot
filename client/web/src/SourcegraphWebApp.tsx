@@ -29,7 +29,6 @@ import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { WildcardThemeContext, type WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser as authenticatedUserSubject, type AuthenticatedUser, authenticatedUserValue } from './auth'
-import { CodyIgnoreProvider } from './cody/useCodyIgnore'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary, RouteError } from './components/ErrorBoundary'
 import { FeatureFlagsLocalOverrideAgent } from './featureFlags/FeatureFlagsProvider'
@@ -284,7 +283,6 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
                         ...props,
                     }}
                 />,
-                <CodyIgnoreProvider isSourcegraphDotCom={window.context.sourcegraphDotComMode} />,
                 /* eslint-enable react/no-children-prop, react/jsx-key */
             ]}
         >

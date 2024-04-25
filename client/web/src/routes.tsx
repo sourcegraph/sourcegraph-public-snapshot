@@ -30,6 +30,7 @@ const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'S
 const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
 const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
 const CodySidebarStoreProvider = lazyComponent(() => import('./cody/sidebar/Provider'), 'CodySidebarStoreProvider')
+const CodyIgnoreProvider = lazyComponent(() => import('./cody/useCodyIgnore'), 'CodyIgnoreProvider')
 const GetCodyPage = lazyComponent(() => import('./get-cody/GetCodyPage'), 'GetCodyPage')
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 
@@ -375,11 +376,13 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => (
-                    <CodyChatPage
-                        {...props}
-                        context={window.context}
-                        telemetryRecorder={props.platformContext.telemetryRecorder}
-                    />
+                    <CodyIgnoreProvider isSourcegraphDotCom={props.isSourcegraphDotCom}>
+                        <CodyChatPage
+                            {...props}
+                            context={window.context}
+                            telemetryRecorder={props.platformContext.telemetryRecorder}
+                        />
+                    </CodyIgnoreProvider>
                 )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
             />
@@ -419,12 +422,14 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => (
-                    <CodySidebarStoreProvider
-                        authenticatedUser={props.authenticatedUser}
-                        telemetryRecorder={props.platformContext.telemetryRecorder}
-                    >
-                        <RepoContainer {...props} />
-                    </CodySidebarStoreProvider>
+                    <CodyIgnoreProvider isSourcegraphDotCom={props.isSourcegraphDotCom} isRepositoryRelatedPage={true}>
+                        <CodySidebarStoreProvider
+                            authenticatedUser={props.authenticatedUser}
+                            telemetryRecorder={props.platformContext.telemetryRecorder}
+                        >
+                            <RepoContainer {...props} />
+                        </CodySidebarStoreProvider>
+                    </CodyIgnoreProvider>
                 )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />

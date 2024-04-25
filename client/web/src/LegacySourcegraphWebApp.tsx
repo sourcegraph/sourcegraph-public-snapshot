@@ -40,7 +40,6 @@ import { WildcardThemeContext, type WildcardTheme } from '@sourcegraph/wildcard'
 import { authenticatedUser as authenticatedUserSubject, type AuthenticatedUser, authenticatedUserValue } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { isBatchChangesExecutionEnabled } from './batches'
-import { CodyIgnoreProvider } from './cody/useCodyIgnore'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { FeatureFlagsLocalOverrideAgent } from './featureFlags/FeatureFlagsProvider'
@@ -261,7 +260,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                     <SearchResultsCacheProvider />,
                     <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState} />,
                     <LegacyRouteContextProvider context={legacyContext} />,
-                    <CodyIgnoreProvider isSourcegraphDotCom={window.context.sourcegraphDotComMode} />,
                     /* eslint-enable react/no-children-prop, react/jsx-key */
                 ]}
             >

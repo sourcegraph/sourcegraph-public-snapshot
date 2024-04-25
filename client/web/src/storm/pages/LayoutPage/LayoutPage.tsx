@@ -63,6 +63,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                 typeof routeMatch.handle === 'object' &&
                 Object.hasOwn(routeMatch.handle, 'isRepoContainer')
         ) ?? false
+    console.log({ isRepositoryRelatedPage })
     // TODO: Move the search box into a shared layout component that is only used for repo routes
     //       and search routes once we have flattened the router hierarchy.
     const isSearchRelatedPage =
