@@ -190,8 +190,8 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 					} else {
 						schedError.WithLabelValues("repoUpdateResponse").Inc()
 						// We don't want to spam our logs when the rate limiter has been set to block all
-						// updates
-						if !strings.Contains(err.Error(), ratelimit.ErrBlockAll.Error()) {
+						// updates, or when repo-updater is shutting down.
+						if !strings.Contains(err.Error(), ratelimit.ErrBlockAll.Error()) && ctx.Err() == nil {
 							subLogger.Error("error updating repo", log.Error(err), log.String("uri", string(repo.Name)))
 						}
 					}

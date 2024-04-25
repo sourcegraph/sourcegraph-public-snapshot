@@ -23,15 +23,12 @@
     import { limitHit } from '$lib/branded'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
+    import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import type { URLQueryFilter } from '$lib/search/dynamicFilters'
     import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
-    import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
-    import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
-    import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
-    import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
     import {
         type AggregateStreamingSearchResults,
         type PathMatch,
@@ -39,8 +36,12 @@
         type SymbolMatch,
         type ContentMatch,
     } from '$lib/shared'
+    import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
+    import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
+    import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
 
     import PreviewPanel from './PreviewPanel.svelte'
+    import SearchAlert from './SearchAlert.svelte'
     import { getSearchResultComponent } from './searchResultFactory'
     import { setSearchResultsContext } from './searchResultsContext'
     import StreamingProgress from './StreamingProgress.svelte'
@@ -149,6 +150,11 @@
                     <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
                 </aside>
                 <div class="result-list" bind:this={resultContainer}>
+                    {#if $stream.alert}
+                        <div class="message-container">
+                            <SearchAlert alert={$stream.alert} />
+                        </div>
+                    {/if}
                     <ol>
                         {#each resultsToShow as result, i}
                             {@const component = getSearchResultComponent(result)}
@@ -162,7 +168,7 @@
                         {/each}
                     </ol>
                     {#if resultsToShow.length === 0 && state !== 'loading'}
-                        <div class="no-result">
+                        <div class="message-container">
                             <Icon svgPath={mdiCloseOctagonOutline} />
                             <p>No results found</p>
                         </div>
@@ -226,12 +232,13 @@
             }
         }
 
-        .no-result {
+        .message-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             margin: auto;
             color: var(--text-muted);
+            margin: 2rem;
         }
     }
 </style>
