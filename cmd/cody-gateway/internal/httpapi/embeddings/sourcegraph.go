@@ -15,12 +15,14 @@ import (
 )
 
 const modelDimensions = 768
+const inferenceSecretHeaderName = "x-smega-inference-auth"
 
-func NewSourcegraphClient(httpClient httpcli.Doer, apiURL string) EmbeddingsClient {
+func NewSourcegraphClient(httpClient httpcli.Doer, apiURL string, apiToken string) EmbeddingsClient {
 	return &sourcegraphClient{
 		httpClient: httpClient,
 		json:       jsoniter.ConfigCompatibleWithStandardLibrary,
 		apiURL:     apiURL,
+		apiToken:   apiToken,
 	}
 }
 
@@ -28,6 +30,7 @@ type sourcegraphClient struct {
 	httpClient httpcli.Doer
 	json       jsoniter.API
 	apiURL     string
+	apiToken   string
 }
 
 func (s sourcegraphClient) ProviderName() string {
@@ -56,6 +59,7 @@ func (s sourcegraphClient) GenerateEmbeddings(ctx context.Context, request codyg
 	if err != nil {
 		return nil, 0, err
 	}
+	req.Header.Set(inferenceSecretHeaderName, s.apiToken)
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, 0, err
