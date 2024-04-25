@@ -571,7 +571,6 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                         onResize={setCodySidebarSize}
                     >
                         <CodySidebar
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
                             onClose={() => setIsCodySidebarOpen(false)}
                             authenticatedUser={props.authenticatedUser}
                             telemetryRecorder={props.platformContext.telemetryRecorder}

@@ -43,7 +43,6 @@ interface IChatUIProps extends TelemetryV2Props {
     codyChatStore: CodyChatStore
     isCodyChatPage?: boolean
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphDotCom: boolean
 }
 
 export const ChatUI: React.FC<IChatUIProps> = ({
@@ -51,7 +50,6 @@ export const ChatUI: React.FC<IChatUIProps> = ({
     isCodyChatPage,
     authenticatedUser,
     telemetryRecorder,
-    isSourcegraphDotCom,
 }): JSX.Element => {
     const onFeedbackSubmit = (feedback: string): void => {
         eventLogger.log(`web:cody:feedbackSubmit:${feedback}`)
