@@ -5,8 +5,9 @@ meta:
     - '@sourcegraph/release'
 
 requirements:
-  - name: "curl"
-    cmd: "curl --help"
+  # We use wget here, because curl --fail-with-body was introduced in a version ulterior to what we can have on the CI agents.
+  - name: "wget"
+    cmd: "wget --help"
   - name: "Buidkite access token"
     # `write_builds` permission is all that's needed here
     # You also need to ensure you add access to the Sourcegraph organization on Buildkite.
@@ -27,15 +28,15 @@ internal:
         - name: 'buildkite'
           cmd: |
             echo "Triggering build on sourcegraph/sourcegraph with VERSION={{version}} on branch {{git.branch}}"
-            body=$(curl -s --fail-with-body -X POST "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds" -H "Content-Type: application/json" -H "Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" -d '{
-                "commit": "HEAD",
-                "branch": "{{git.branch}}",
-                "message": "Internal release build for {{version}}",
-                "env": {
-                  "RELEASE_INTERNAL": "true",
-                  "VERSION": "{{tag}}"
-                }
-              }')
+            body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" --post-data '{
+              "commit": "HEAD",
+              "branch": "{{git.branch}}",
+              "message": "Internal release build for {{version}}",
+              "env": {
+                    "RELEASE_INTERNAL": "true",
+                    "VERSION": "{{tag}}"
+              }
+            }' https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds)
             exit_code=$?
 
             if [ $exit_code != 0 ]; then
@@ -53,11 +54,11 @@ internal:
       - name: 'Register on release registry'
         cmd: |
           echo "Registering internal sourcegraph/sourcegraph {{version}} release on release registry"
-          body=$(curl -s --fail-with-body -X POST "https://releaseregistry.sourcegraph.com/v1/releases" -H "Content-Type: application/json" -H "Authorization: ${RELEASE_REGISTRY_TOKEN}" -d '{
+          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '{
               "name": "sourcegraph",
               "version": "{{version}}",
               "git_sha": "${COMMIT_SHA}"
-            }')
+            }' "https://releaseregistry.sourcegraph.com/v1/releases")
           exit_code=$?
 
           if [ $exit_code != 0 ]; then
@@ -157,16 +158,16 @@ promoteToPublic:
           # We set DISABLE_ASPECT_WORKFLOWS to true, because the promotion is purely about retagging images
           # and we don't rely on AW at all.
           echo "Triggering build on sourcegraph/sourcegraph with VERSION={{version}} on branch {{git.branch}}"
-          body=$(curl -s --fail-with-body -X POST "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds" -H "Content-Type: application/json" -H "Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" -d '{
-              "commit": "HEAD",
-              "branch": "{{git.branch}}",
-              "message": "Promoting internal release {{version}} to public",
-              "env": {
-                "DISABLE_ASPECT_WORKFLOWS": "true",
-                "RELEASE_PUBLIC": "true",
-                "VERSION": "{{tag}}"
-              }
-            }')
+          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" --post-data '{
+            "commit": "HEAD",
+            "branch": "{{git.branch}}",
+            "message": "Promoting internal release {{version}} to public",
+            "env": {
+              "DISABLE_ASPECT_WORKFLOWS": "true",
+              "RELEASE_PUBLIC": "true",
+              "VERSION": "{{tag}}"
+            }
+          }' "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds")
           exit_code=$?
 
           if [ $exit_code != 0 ]; then
@@ -184,7 +185,7 @@ promoteToPublic:
       - name: 'Promote on release registry'
         cmd: |
           echo "Promoting sourcegraph/sourcegraph {{version}} release on release registry"
-            body=$(curl -s --fail-with-body -X POST "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}/promote" -H "Content-Type: application/json" -H "Authorization: ${RELEASE_REGISTRY_TOKEN}")
+            body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '' "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}/promote")
             exit_code=$?
 
             if [ $exit_code != 0 ]; then
@@ -249,10 +250,10 @@ promoteToPublic:
           echo "Posting slack notification for release"
           tag="{{tag}}"
           changelog_version="${tag//./}"
-          body=$(curl -s --fail-with-body -X POST "$SLACK_WEBHOOK_URL" -H "Content-Type: application/json" -d '{
-            "type": "mrkdwn"
+          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --post-data '{
+            "type": "mrkdwn",
             "text": "*Sourcegraph {{tag}} has been published*\n\n• <https://sourcegraph.com/docs/CHANGELOG#${changelog_version} | Changelog>\n• <https://github.com/sourcegraph/sourcegraph/releases/tag/{{version}} | GitHub release>"
-          }')
+          }' "$SLACK_WEBHOOK_URL")
           exit_code=$?
 
           if [ $exit_code != 0 ]; then
