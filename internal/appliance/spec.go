@@ -29,7 +29,7 @@ type DatabaseSpec struct {
 type BlobstoreSpec struct {
 	// Disabled defines if Blobstore is enabled or not.
 	// Default: false
-	Disabled bool `json:"enabled,omitempty"`
+	Disabled bool `json:"disabled,omitempty"`
 
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 200Gi
@@ -265,9 +265,9 @@ type RepoUpdaterSpec struct {
 
 // SearcherSpec defines the desired state of the Searcher service.
 type SearcherSpec struct {
-	// Enabled defines if Code Intel is enabled or not.
-	// Default: true
-	Enabled bool `json:"enabled,omitempty"`
+	// Disabled defines if Code Intel is enabled or not.
+	// Default: false
+	Disabled bool `json:"disabled,omitempty"`
 
 	// Replicas defines the number of Searcher pod replicas.
 	// Default: 1
