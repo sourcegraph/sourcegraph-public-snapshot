@@ -21,13 +21,12 @@ const HeaderUserToken = "X-GCP-User-Token"
 // APIEndpoint is the endpoint where Cloud API is running.
 const APIEndpoint = "https://cloud-ops-dev.sgdev.org/api"
 
-// EphemeralInstanceType is the instance type used when creating an instance in Cloud. We have to use internal since
-// cloud recognizes internal along with the Instance Feature "ephemeral": true as the Ephemeral Instance type. An interal
-// instance type without the Instance Feature "ephemeral": true is purely internal and has different requirements and limits.
-const EphemeralInstanceType = "internal"
-
 // DevEnvironment is the environment where Cloud allows ephemeral instance types
 const DevEnvironment = "dev"
+
+// EphemeralInstanceType is the instace type we should use when creating an instance with the cloud API.
+// It is set to internal because in cloud, internal instance types does not have metrics or security enabled.
+const EphemeralInstanceType = "internal"
 
 type Client struct {
 	client cloudapiv1connect.InstanceServiceClient
@@ -113,8 +112,10 @@ func (c *Client) DeployVersion(ctx context.Context, spec *DeploymentSpec) (*Inst
 		return nil, errors.New("no license key - the env var 'EPHEMERAL_LICENSE_KEY' is empty")
 	}
 	req := newRequestWithToken(c.token, &cloudapiv1.CreateInstanceRequest{
-		Name:             spec.Name,
-		Version:          &spec.Version,
+		Name:    spec.Name,
+		Version: &spec.Version,
+		// We use internal since internal means the instance will be launched with no security, no metrics
+		// this is also why the environment is set to Dev. Don't want a cloud ephemeral instance with not security in prod :)
 		InstanceType:     cloudapiv1.InstanceType_INSTANCE_TYPE_INTERNAL,
 		InstanceFeatures: spec.InstanceFeatures,
 		Environment:      pointers.Ptr(DevEnvironment),

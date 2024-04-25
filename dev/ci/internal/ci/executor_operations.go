@@ -153,6 +153,9 @@ func executorImageFamilyForConfig(c Config) string {
 
 func executorsE2E(c Config) operations.Operation {
 	registry := images.SourcegraphDockerDevRegistry
+	if c.RunType.Is(runtype.CloudEphemeral) {
+		registry = images.CloudEphemeralRegistry
+	}
 
 	return func(p *bk.Pipeline) {
 		p.AddStep(":bazel::docker::packer: Executors E2E",
