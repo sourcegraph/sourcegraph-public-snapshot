@@ -209,7 +209,7 @@ type releaseInfo struct {
 // Is only called when --version auto is passed to the sg release command
 // Should *only* be called for patch releases for the monorepo!
 // returns the new patch number for the latest minor version, in the form of "major.minor.patch"
-func determineMinorVersion(ctx context.Context) (string, error) {
+func determineNextReleaseVersion(ctx context.Context) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph", nil)
 	if err != nil {
 		return "", errors.Wrap(err, "Could not create request")
