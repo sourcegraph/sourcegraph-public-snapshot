@@ -603,22 +603,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1n0mN+HXLe/6DSayCL7lyOJrVBMA=",
+        "checksum": "Q1ogVH6vzHzlj2jWVN5DGCCex8d94=",
         "control": {
-          "checksum": "sha1-n0mN+HXLe/6DSayCL7lyOJrVBMA=",
-          "range": "bytes=694-1091"
+          "checksum": "sha1-ogVH6vzHzlj2jWVN5DGCCex8d94=",
+          "range": "bytes=693-1080"
         },
         "data": {
-          "checksum": "sha256-zFLgLLDxIOhRWZ8vWoLO6FfnxrPV5QlQurChfb1vqDg=",
-          "range": "bytes=1092-41640451"
+          "checksum": "sha256-whrhuRmbxESHR76NDrXc6A7xLhleXpILJRlu9BHQOa8=",
+          "range": "bytes=1081-41669142"
         },
         "name": "caddy",
         "signature": {
-          "checksum": "sha1-8sr6tyZMUpd1wRGq0IXcFQqOnK0=",
-          "range": "bytes=0-693"
+          "checksum": "sha1-1JElWFYu+EbZrSTGutNrcZzdXBQ=",
+          "range": "bytes=0-692"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/caddy-2.7.6-r7.apk",
-        "version": "2.7.6-r7"
+        "url": "https://packages.wolfi.dev/os/x86_64/caddy-2.7.6-r8.apk",
+        "version": "2.7.6-r8"
       },
       {
         "architecture": "x86_64",
