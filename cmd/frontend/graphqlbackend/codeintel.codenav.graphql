@@ -517,6 +517,7 @@ input UsagesFilter {
     repository: RepositoryFilter
     path: PathFilter
     kind: SymbolUsageKindComparator
+    provenance: ProvenanceComparator
 }
 
 input RepositoryFilter {
