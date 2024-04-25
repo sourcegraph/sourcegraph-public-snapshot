@@ -290,7 +290,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     context={window.context}
                     authenticatedUser={props.authenticatedUser}
                     isLightTheme={theme === Theme.Light}
-                    setSeenAuthProvidersFunc={setSeenAuthzProviders}
+                    setSeenAuthProviders={setSeenAuthzProviders}
                 />
             )}
             {showDeveloperDialog && <LazyDeveloperDialog />}

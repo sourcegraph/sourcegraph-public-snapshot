@@ -24,7 +24,7 @@ import styles from './ExternalAccountsModal.module.scss'
 export interface ExternalAccountsModalProps {
     authenticatedUser: AuthenticatedUser
     isLightTheme: boolean
-    setSeenAuthProvidersFunc: (seenAuthProviders: SeenAuthProvider[]) => void
+    setSeenAuthProviders: (seenAuthProviders: SeenAuthProvider[]) => void
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
@@ -151,7 +151,7 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
 
     const onDismiss = (): void => {
         if (confirm('You can always review your external account connections in your user settings.')) {
-            props.setSeenAuthProvidersFunc(props.context.authProviders)
+            props.setSeenAuthProviders(props.context.authProviders)
             setIsModalOpen(false)
         }
     }
