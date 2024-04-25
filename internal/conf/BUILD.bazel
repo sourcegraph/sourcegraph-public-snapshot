@@ -11,6 +11,7 @@ go_library(
         "computed.go",
         "conf.go",
         "diff.go",
+        "embeddings.go",
         "helpers.go",
         "init.go",
         "log_sinks.go",
