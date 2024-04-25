@@ -274,12 +274,11 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		pointers.Ptr(int32(0)),
 	)
 
-	plan.Features.CodyContextCodeCount = int(args.CodeResultsCount)
-	plan.Features.CodyContextTextCount = int(args.TextResultsCount)
-
 	if err != nil {
 		return nil, err
 	}
+
+	setResultCounts(plan, args.CodeResultsCount, args.TextResultsCount)
 
 	var (
 		mu        sync.Mutex
@@ -310,6 +309,15 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	}
 
 	return collected, nil
+}
+
+func setResultCounts(plan *search.Inputs, codeCount int32, textCount int32) {
+	if plan.Features == nil {
+		plan.Features = &search.Features{}
+	}
+
+	plan.Features.CodyContextCodeCount = int(codeCount)
+	plan.Features.CodyContextTextCount = int(textCount)
 }
 
 func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
