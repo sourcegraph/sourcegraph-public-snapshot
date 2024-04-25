@@ -19,18 +19,18 @@
     export let hideSidebarToggle = false
     export let type: 'blob' | 'tree'
 
-    $: breadcrumbs = path.split('/').map((part, index, all): [string, string] => [
-        part,
-        resolveRoute(
-            // Only the last element in a path can be a blob
-            index < all.length - 1 || type === 'tree' ? TREE_ROUTE_ID : BLOB_ROUTE_ID,
-            {
-                repo: revision ? `${repoName}@${revision}` : repoName,
-                validrev: revision,
-                path: all.slice(0, index + 1).join('/'),
-            }
-        ),
-    ])
+    $: breadcrumbs = path
+        .split('/')
+        .map((part, index, all): [string, string] => [
+            part,
+            resolveRoute(
+                // Only the last element in a path can be a blob
+                index < all.length - 1 ||type === 'tree' ? TREE_ROUTE_ID : BLOB_ROUTE_ID, {
+                    repo: revision ? `${repoName}@${revision}` : repoName,
+                    validrev: revision,
+                    path: all.slice(0, index + 1).join('/'),
+            }),
+        ])
 </script>
 
 <div class="header">

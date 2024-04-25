@@ -1,10 +1,10 @@
 <script lang="ts">
     // @sg RepoRoot
-    import { onMount } from 'svelte';
+    import { onMount } from 'svelte'
 
     import { sidebarOpen } from '$lib/repo/stores'
     import { createPromiseStore } from '$lib/utils'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry';
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import Readme from '$lib/repo/Readme.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
 

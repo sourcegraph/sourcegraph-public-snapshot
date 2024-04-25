@@ -16,7 +16,7 @@
 <script lang="ts">
     import { mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
-    import {onMount, tick} from 'svelte'
+    import { onMount, tick } from 'svelte'
     import { writable } from 'svelte/store'
 
     import { beforeNavigate, goto } from '$app/navigation'
@@ -25,13 +25,13 @@
     import type { URLQueryFilter } from '$lib/search/dynamicFilters'
     import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry';
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
     import {
         type AggregateStreamingSearchResults,
         type PathMatch,
         type SearchMatch,
         type SymbolMatch,
-        type ContentMatch
+        type ContentMatch,
     } from '$lib/shared'
     import type { QueryState } from '$lib/search/state'
     import Icon from '$lib/Icon.svelte'

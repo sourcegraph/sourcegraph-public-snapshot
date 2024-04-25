@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS} from '$lib/telemetry';
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import Tooltip from '$lib/Tooltip.svelte'
     import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'

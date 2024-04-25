@@ -8,7 +8,7 @@
     import { QueryState, queryStateStore } from '$lib/search/state'
     import { settings } from '$lib/stores'
     import { repositoryInsertText } from '$lib/shared'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry';
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
 
     export let repoName: string
 

@@ -1,7 +1,7 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount } from 'svelte'
     import { mdiFileEyeOutline, mdiMapSearch, mdiWrap, mdiWrapDisabled } from '@mdi/js'
     import { capitalize } from 'lodash'
     import { from } from 'rxjs'
@@ -9,7 +9,7 @@
 
     import { afterNavigate, goto, preloadData } from '$app/navigation'
     import { page } from '$app/stores'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry';
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
     import type { ScrollSnapshot } from '$lib/codemirror/utils'
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import { isErrorLike, SourcegraphURL, type LineOrPositionOrRange, pluralize } from '$lib/common'
@@ -111,7 +111,7 @@
     function onViewModeChange(event: CustomEvent<ViewMode>): void {
         // TODO: track other blob mode
         if (event.detail === ViewMode.Blame) {
-              SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.GitBlameEnabled)
+            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.GitBlameEnabled)
         }
 
         goto(viewModeURL(event.detail), { replaceState: true, keepFocus: true })

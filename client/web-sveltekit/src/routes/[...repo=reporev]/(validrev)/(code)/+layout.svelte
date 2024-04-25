@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry';
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
 
     // Not ideal solution, [TODO] Improve Tabs component API in order
     // to expose more info about nature of switch tab / close tab actions

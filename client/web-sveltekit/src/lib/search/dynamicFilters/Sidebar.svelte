@@ -37,7 +37,7 @@
     import LanguageIcon from '$lib/LanguageIcon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry';
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
     import Tooltip from '$lib/Tooltip.svelte'
     import Button from '$lib/wildcard/Button.svelte'
@@ -113,7 +113,12 @@
             </Section>
         {/if}
 
-        <Section items={groupedFilters.repo} title="By repository" filterPlaceholder="Filter repositories">
+        <Section
+            items={groupedFilters.repo}
+            title="By repository"
+            filterPlaceholder="Filter repositories"
+            onFilterSelect={handleFilterSelect}
+        >
             <svelte:fragment slot="label" let:label>
                 <Tooltip tooltip={label} placement="right">
                     <span>
@@ -123,27 +128,42 @@
                 </Tooltip>
             </svelte:fragment>
         </Section>
-        <Section items={groupedFilters.lang} title="By language" filterPlaceholder="Filter languages">
+        <Section
+            items={groupedFilters.lang}
+            title="By language"
+            filterPlaceholder="Filter languages"
+            onFilterSelect={handleFilterSelect}
+        >
             <svelte:fragment slot="label" let:label>
                 <LanguageIcon class="icon" language={label} inline />&nbsp;
                 {label}
             </svelte:fragment>
         </Section>
-        <Section items={groupedFilters['symbol type']} title="By symbol type" filterPlaceholder="Filter symbol types">
+        <Section
+            items={groupedFilters['symbol type']}
+            title="By symbol type"
+            filterPlaceholder="Filter symbol types"
+            onFilterSelect={handleFilterSelect}
+        >
             <svelte:fragment slot="label" let:label>
                 <SymbolKind symbolKind={label.toUpperCase()} />
                 {label}
             </svelte:fragment>
         </Section>
-        <Section items={groupedFilters.author} title="By author" filterPlaceholder="Filter authors" />
-        <Section items={groupedFilters['commit date']} title="By commit date">
+        <Section
+            items={groupedFilters.author}
+            title="By author"
+            filterPlaceholder="Filter authors"
+            onFilterSelect={handleFilterSelect}
+        />
+        <Section items={groupedFilters['commit date']} title="By commit date" onFilterSelect={handleFilterSelect}>
             <span class="commit-date-label" slot="label" let:label let:value>
                 {label}
                 <small><pre>{value}</pre></small>
             </span>
         </Section>
-        <Section items={groupedFilters.file} title="By file" showAll />
-        <Section items={groupedFilters.utility} title="Utility" showAll />
+        <Section items={groupedFilters.file} title="By file" showAll onFilterSelect={handleFilterSelect} />
+        <Section items={groupedFilters.utility} title="Utility" showAll onFilterSelect={handleFilterSelect} />
 
         {#if state === 'loading'}
             <LoadingSkeleton />
