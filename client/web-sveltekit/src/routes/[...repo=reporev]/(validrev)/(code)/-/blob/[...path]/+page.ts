@@ -67,13 +67,13 @@ export const load: PageLoad = ({ parent, params, url }) => {
         compare: revisionToCompare
             ? {
                   revisionToCompare,
-                  diff: client
+                  commit: client
                       .query(BlobDiffQuery, {
                           repoName,
                           revspec: revisionToCompare,
                           paths: [params.path],
                       })
-                      .then(mapOrThrow(result => result.data?.repository?.commit?.diff.fileDiffs.nodes[0] ?? null)),
+                      .then(mapOrThrow(result => result.data?.repository?.commit ?? null)),
               }
             : null,
         externalServiceType: parent()

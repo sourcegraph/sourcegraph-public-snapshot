@@ -2,11 +2,13 @@ query BlobDiffQuery($repoName: String!, $revspec: String!, $paths: [String!]) {
     repository(name: $repoName) {
         id
         commit(rev: $revspec) {
-            id
+            ...DiffSummaryHeaderCommit
             diff {
                 fileDiffs(paths: $paths) {
                     nodes {
-                        ...FileDiff_Diff
+                        hunks {
+                            ...FileDiffHunks_Hunk
+                        }
                     }
                 }
             }

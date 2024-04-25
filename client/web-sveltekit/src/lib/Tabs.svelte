@@ -2,6 +2,7 @@
     export interface Tab {
         id: string
         title: string
+        icon?: string
     }
 
     export interface TabsContext {
@@ -17,6 +18,7 @@
     import { createEventDispatcher, setContext } from 'svelte'
     import { derived, writable, type Readable, type Writable, type Unsubscriber } from 'svelte/store'
     import * as uuid from 'uuid'
+    import Icon from './Icon.svelte'
 
     /**
      * The index of the tab that should be selected by default.
@@ -71,7 +73,8 @@
                 role="tab"
                 on:click={selectTab}
                 data-tab-title={tab.title}
-                data-tab>{tab.title}</button
+                data-tab
+                >{#if tab.icon}<Icon svgPath={tab.icon} aria-hidden inline /> {/if}{tab.title}</button
             >
         {/each}
     </div>
@@ -95,7 +98,6 @@
         cursor: pointer;
         border: none;
         background: none;
-        align-items: center;
         letter-spacing: normal;
         margin: 0;
         min-height: 2rem;
@@ -103,9 +105,6 @@
         border-radius: 0.125rem;
         color: var(--body-color);
         text-transform: none;
-        display: inline-flex;
-        flex-direction: column;
-        justify-content: center;
         white-space: nowrap;
         border-bottom: 2px solid transparent;
 

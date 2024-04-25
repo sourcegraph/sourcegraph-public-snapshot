@@ -17,7 +17,6 @@
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { createBlobDataHandler } from '$lib/repo/blob'
-    import FileDiff from '$lib/repo/FileDiff.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
     import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
@@ -26,11 +25,14 @@
     import { formatBytes } from '$lib/utils'
     import { Alert, MenuButton, MenuLink } from '$lib/wildcard'
     import markdownStyles from '$lib/wildcard/Markdown.module.scss'
+    import FileDiffHunks from '$lib/repo/FileDiffHunks.svelte'
 
     import type { PageData, Snapshot } from './$types'
     import FileViewModeSwitcher from './FileViewModeSwitcher.svelte'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
     import { toViewMode, ViewMode } from './util'
+    import DiffSummaryHeader from './DiffSummaryHeader.svelte'
+    import CloseDiffViewAction from './CloseDiffViewAction.svelte'
 
     export let data: PageData
 
@@ -142,12 +144,13 @@
     <title>{filePath} - {data.displayRepoName} - Sourcegraph</title>
 </svelte:head>
 
+<!-- File header -->
 <!-- Note: Splitting this at this level is not great but Svelte doesn't allow to conditionally render slots (yet) -->
 {#if data.compare}
     <FileHeader type="blob" {repoName} {revision} path={filePath}>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
-            <span>{data.compare.revisionToCompare}</span>
+            <CloseDiffViewAction />
         </svelte:fragment>
     </FileHeader>
 {:else if embedded}
@@ -186,6 +189,7 @@
     </FileHeader>
 {/if}
 
+<!-- additional content information (file or diff info) -->
 {#if blob && !blob.binary && !data.compare && !embedded}
     <div class="file-info">
         <FileViewModeSwitcher
@@ -206,8 +210,19 @@
             {pluralize('line', blob.totalLines)} · {formatBytes(blob.byteSize)}
         </code>
     </div>
+{:else if data.compare}
+    <div class="file-info">
+        {#await data.compare.commit then commit}
+            {#if commit}
+                <DiffSummaryHeader {commit} />
+            {:else}
+                (unable to load commit information)
+            {/if}
+        {/await}
+    </div>
 {/if}
 
+<!-- File content or diff view -->
 <div class="content" class:loading={$combinedBlobData.blobPending} class:compare={!!data.compare} class:fileNotFound>
     {#if !$combinedBlobData.highlightsPending && $combinedBlobData.highlightsError}
         <Alert variant="danger">
@@ -215,13 +230,14 @@
         </Alert>
     {/if}
     {#if data.compare}
-        {#await data.compare.diff}
+        {#await data.compare.commit}
             <LoadingSpinner />
-        {:then fileDiff}
-            {#if fileDiff}
-                <FileDiff {fileDiff} />
+        {:then commit}
+            {@const hunks = commit?.diff.fileDiffs.nodes.at(0)?.hunks}
+            {#if hunks}
+                <FileDiffHunks {hunks} />
             {:else}
-                Unable to load iff
+                <Alert variant="danger">Unable to load diff information.</Alert>
             {/if}
         {/await}
     {:else if $combinedBlobData.blob && showFormatted}

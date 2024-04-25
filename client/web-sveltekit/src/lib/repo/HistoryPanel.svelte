@@ -9,13 +9,14 @@
     import { tick } from 'svelte'
 
     import { page } from '$app/stores'
-    import { scrollIntoView } from '$lib/actions'
+    import { scrollIntoViewOnMount } from '$lib/dom'
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
+    import { Badge } from '$lib/wildcard'
 
     import type { HistoryPanel_HistoryConnection } from './HistoryPanel.gql'
 
@@ -59,7 +60,8 @@
         selectedRev &&
         history &&
         history.nodes.length > 0 &&
-        !history.nodes.some(commit => commit.abbreviatedOID === selectedRev)
+        !history.nodes.some(commit => commit.abbreviatedOID === selectedRev) &&
+        history.pageInfo.hasNextPage
     ) {
         loadMore()
     }
@@ -73,10 +75,9 @@
         <table>
             {#each history.nodes as commit (commit.id)}
                 {@const selected = commit.abbreviatedOID === selectedRev}
-                <tr class:selected use:scrollIntoView={selected}>
+                <tr class:selected use:scrollIntoViewOnMount={selected}>
                     <td>
-                        <Avatar avatar={commit.author.person} />&nbsp;
-                        {commit.author.person.displayName}
+                        <Badge variant="link"><a href={commit.canonicalURL}>{commit.abbreviatedOID}</a></Badge>
                     </td>
                     <td class="subject">
                         {#if enableInlineDiffs}
@@ -85,15 +86,18 @@
                             {commit.subject}
                         {/if}
                     </td>
-                    <td><Timestamp date={new Date(commit.author.date)} strict /></td>
-                    <td><a href={commit.canonicalURL}>{commit.abbreviatedOID}</a></td>
                     <td>
-                        {#if selected}
+                        <Avatar avatar={commit.author.person} />&nbsp;
+                        {commit.author.person.displayName}
+                    </td>
+                    <td><Timestamp date={new Date(commit.author.date)} strict /></td>
+                    {#if selected}
+                        <td>
                             <Tooltip tooltip="Hide comparison">
                                 <a href={clearURL}><Icon svgPath={mdiClose} inline /></a>
                             </Tooltip>
-                        {/if}
-                    </td>
+                        </td>
+                    {/if}
                 </tr>
             {/each}
         </table>
@@ -110,7 +114,7 @@
     }
 
     td {
-        padding: 0.25rem;
+        padding: 0.5rem 1rem;
         white-space: nowrap;
 
         &.subject {
@@ -122,7 +126,7 @@
         border-bottom: 1px solid var(--border-color);
 
         &.selected {
-            background-color: var(--color-bg-2);
+            background-color: var(--color-bg-3);
         }
     }
 </style>
