@@ -5,6 +5,7 @@ import { get, type Readable, readable } from 'svelte/store'
 
 import { goto as svelteGoto } from '$app/navigation'
 import { page } from '$app/stores'
+import { toPrettyBlobURL } from '$lib/shared'
 import {
     positionToOffset,
     type Definition,
@@ -94,13 +95,18 @@ export async function goToDefinition(
 
 export function openReferences(
     view: EditorView,
-    _documentInfo: DocumentInfo,
+    documentInfo: DocumentInfo,
     occurrence: Definition['occurrence']
 ): void {
-    const offset = positionToOffset(view.state.doc, occurrence.range.start)
-    if (offset) {
-        showTemporaryTooltip(view, 'Not supported yet: Find references', offset, 2000)
-    }
+    const url = toPrettyBlobURL({
+        repoName: documentInfo.repoName,
+        revision: documentInfo.revision,
+        commitID: documentInfo.commitID,
+        filePath: documentInfo.filePath,
+        range: occurrence.range.withIncrementedValues(),
+        viewState: 'references',
+    })
+    svelteGoto(url)
 }
 
 export function openImplementations(

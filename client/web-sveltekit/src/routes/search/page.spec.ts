@@ -10,6 +10,34 @@ import {
     createSymbolMatch,
 } from '../../testing/search-testdata'
 
+const chunkMatch: ContentMatch = {
+    type: 'content',
+    path: 'README.md',
+    pathMatches: [],
+    repository: 'github.com/sourcegraph/conc',
+    repoStars: 9001,
+    commit: 'abcde12345',
+    chunkMatches: [
+        {
+            content: 'lorem ipsum\ndolor sit\namet',
+            contentStart: { offset: 0, line: 1, column: 1 },
+            ranges: [
+                {
+                    // "lorem"
+                    start: { offset: 0, line: 0, column: 0 },
+                    end: { offset: 5, line: 0, column: 5 },
+                },
+                {
+                    // "sit"
+                    start: { offset: 18, line: 1, column: 6 },
+                    end: { offset: 21, line: 1, column: 9 },
+                },
+            ],
+        },
+    ],
+    language: 'text',
+}
+
 test('search input is autofocused', async ({ page }) => {
     await page.goto('/search')
     const searchInput = page.getByRole('textbox')
@@ -112,33 +140,6 @@ test('copy path button appears and copies path', async ({ page, sg }) => {
 })
 
 test.describe('preview panel', async () => {
-    const chunkMatch: ContentMatch = {
-        type: 'content',
-        path: 'README.md',
-        pathMatches: [],
-        repository: 'github.com/sourcegraph/conc',
-        repoStars: 9001,
-        commit: 'abcde12345',
-        chunkMatches: [
-            {
-                content: 'lorem ipsum\ndolor sit\namet',
-                contentStart: { offset: 0, line: 1, column: 1 },
-                ranges: [
-                    {
-                        // "lorem"
-                        start: { offset: 0, line: 0, column: 0 },
-                        end: { offset: 5, line: 0, column: 5 },
-                    },
-                    {
-                        // "sit"
-                        start: { offset: 18, line: 1, column: 6 },
-                        end: { offset: 21, line: 1, column: 9 },
-                    },
-                ],
-            },
-        ],
-        language: 'text',
-    }
     test('can be opened and closed', async ({ page, sg }) => {
         const stream = await sg.mockSearchStream()
         await page.goto('/search?q=test')
@@ -212,5 +213,47 @@ test.describe('preview panel', async () => {
 
         await nextButton.click()
         await expect(currentSelection, 'clicking next on the last result should wrap forwards').toHaveText('lorem')
+    })
+})
+
+test.describe('search results', async () => {
+    test('first result visible', async ({ page, sg }) => {
+        const stream = await sg.mockSearchStream()
+        await page.goto('/search?q=test')
+        await page.getByRole('heading', { name: 'Filter results' }).waitFor()
+        await stream.publish(
+            {
+                type: 'matches',
+                data: [chunkMatch],
+            },
+            createProgressEvent(),
+            createDoneEvent()
+        )
+        await stream.close()
+
+        const chunkPath = page.getByRole('link', { name: 'README.md' })
+        await expect(chunkPath).toBeVisible()
+    })
+
+    test('alert is shown', async ({ page, sg }) => {
+        const stream = await sg.mockSearchStream()
+        await page.goto('/search?q=test')
+        await page.getByRole('heading', { name: 'Filter results' }).waitFor()
+        await stream.publish(
+            {
+                type: 'alert',
+                data: {
+                    title: 'Test alert',
+                    description: 'Test description',
+                    proposedQueries: null,
+                },
+            },
+            createProgressEvent(),
+            createDoneEvent()
+        )
+        await stream.close()
+
+        const alert = page.getByRole('heading', { name: 'Test alert' })
+        await expect(alert).toBeVisible()
     })
 })
