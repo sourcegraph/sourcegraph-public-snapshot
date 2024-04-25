@@ -68,6 +68,7 @@ const CODY_IGNORE_CONTENT = gql`
         repository(name: $repoName) {
             id
             commit(rev: $repoRev) {
+                id
                 blob(path: $filePath) {
                     content
                 }
