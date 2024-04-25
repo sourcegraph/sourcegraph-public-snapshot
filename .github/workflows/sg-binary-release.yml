@@ -105,16 +105,19 @@ jobs:
         if: startsWith(matrix.os, 'macos-') == true
         run: |
           cd dev/sg
-          GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
+          GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}" -trimpath \
+            -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .) -X main.ReleaseName=${{ needs.create_release.outputs.release_name }}" .
 
       - name: Build and upload Linux
         if: startsWith(matrix.os, 'ubuntu-') == true
         run: |
           cd dev/sg
-          GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
+          GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}" -trimpath \
+            -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .) -X main.ReleaseName=${{ needs.create_release.outputs.release_name }}" .
 
           # On certain CI agents, the glibc might not be the right one, so we build a static variant
-          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}_static" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
+          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}_static" -trimpath \
+            -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .) -X main.ReleaseName=${{ needs.create_release.outputs.release_name }}" .
 
       - name: Upload release asset
         run: |
