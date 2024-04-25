@@ -212,6 +212,7 @@ export const useCodyChat = ({
     const setScopeFromTranscript = useCallback(
         (t: TranscriptJSON) => {
             const newScope = { ...scope, ...t.scope }
+            // ensure ignored repositories are not added to scope
             newScope.repositories = newScope.repositories.filter(repo => !isRepoIgnored(repo))
             setScopeInternal(newScope)
         },
