@@ -84,7 +84,6 @@ const streamManager = browser ? new CachingStreamManager() : new NonCachingStrea
 
 export const load: PageLoad = ({ url, depends }) => {
     const hasQuery = url.searchParams.has('q')
-    const caseSensitiveURL = url.searchParams.get('case') === 'yes'
     const cachePolicy = getCachePolicyFromURL(url)
     const trace = url.searchParams.get('trace') ?? undefined
 
@@ -97,9 +96,7 @@ export const load: PageLoad = ({ url, depends }) => {
             caseSensitive,
             filters: queryFilters,
         } = parsedQuery
-        // Necessary for allowing to submit the same query again
-        // FIXME: This is not correct
-        depends(`query:${query}--${caseSensitiveURL}`)
+        depends(`search:${url}`)
 
         let searchContext = 'global'
         if (filterExists(query, FilterType.context)) {

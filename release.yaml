@@ -8,16 +8,29 @@ requirements:
   # We use wget here, because curl --fail-with-body was introduced in a version ulterior to what we can have on the CI agents.
   - name: "wget"
     cmd: "wget --help"
+  - name: "jq"
+    cmd: "jq --help"
   - name: "Buidkite access token"
+    env: BUILDKITE_ACCESS_TOKEN
+    only: # We only need this to create CI builds.
+      - internal.create
+      - promoteToPublic.create
     # `write_builds` permission is all that's needed here
     # You also need to ensure you add access to the Sourcegraph organization on Buildkite.
-    env: BUILDKITE_ACCESS_TOKEN
+  - name: "GitHub CLI"
+    cmd: "which gh"
+    only:
+      - promoteToPublic.finalize
+  - name: "GitHub CLI auth status"
+    cmd: "gh auth status"
+    only:
+      - promoteToPublic.finalize
 
-  # #announce-engineering slack webhook url:
-  # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=pldpna5vivapxe4phewnqd42ji&h=team-sourcegraph.1password.com
+   # announce-engineering slack webhook url:
+   # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=pldpna5vivapxe4phewnqd42ji&h=team-sourcegraph.1password.com
 
-  # #bolaji-release-testing
-  # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=isv4abynddpox72wwbhaamo76e&i=7zjax5rm5hlilbgrzeb257i62i&h=team-sourcegraph.1password.com
+   # bolaji-release-testing
+   # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=isv4abynddpox72wwbhaamo76e&i=7zjax5rm5hlilbgrzeb257i62i&h=team-sourcegraph.1password.com
   - name: 'Slack Webhook URL'
     env: SLACK_WEBHOOK_URL
 
