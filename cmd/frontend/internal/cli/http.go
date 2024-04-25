@@ -115,7 +115,7 @@ func newExternalHTTPHandler(
 	h = middleware.BlackHole(h)
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
-	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
+	h = tracepkg.HTTPMiddleware(logger, h)
 	h = instrumentation.HTTPMiddleware("external", h)
 	// 🚨 SECURITY: ip allowlist must be the first middleware to run to avoid doing unnecessary things
 	h = ipAllowlistMiddleware.Handle(h)
@@ -172,7 +172,7 @@ func newInternalHTTPHandler(
 
 	h := http.Handler(internalMux)
 	h = gcontext.ClearHandler(h)
-	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
+	h = tracepkg.HTTPMiddleware(logger, h)
 	h = instrumentation.HTTPMiddleware("internal", h)
 	return h
 }

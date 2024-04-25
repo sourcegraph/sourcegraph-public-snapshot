@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/internal/insights/types"
@@ -201,7 +200,7 @@ func NewSearchResultsAggregatorWithContext(ctx context.Context, tabulator Aggreg
 		progress: client.ProgressAggregator{
 			Start:     time.Now(),
 			RepoNamer: client.RepoNamer(ctx, db),
-			Trace:     trace.URL(trace.ID(ctx), conf.DefaultClient()),
+			Trace:     trace.URL(trace.ID(ctx)),
 		},
 	}
 }
