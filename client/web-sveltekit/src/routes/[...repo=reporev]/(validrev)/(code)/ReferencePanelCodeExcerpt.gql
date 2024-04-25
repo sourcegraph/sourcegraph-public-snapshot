@@ -1,0 +1,23 @@
+fragment ReferencePanelCodeExcerpt_Location on Location {
+    resource {
+        content
+        path
+        commit {
+            oid
+        }
+        repository {
+            id
+            name
+        }
+    }
+    range {
+        start {
+            line
+            character
+        }
+        end {
+            line
+            character
+        }
+    }
+}

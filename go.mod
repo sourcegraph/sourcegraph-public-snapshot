@@ -274,6 +274,7 @@ require (
 	github.com/nxadm/tail v1.4.11
 	github.com/oschwald/maxminddb-golang v1.12.0
 	github.com/pkoukk/tiktoken-go v0.1.6
+	github.com/pkoukk/tiktoken-go-loader v0.0.1
 	github.com/prometheus/statsd_exporter v0.22.7
 	github.com/sourcegraph/cloud-api v0.0.0-20231205211631-907f2d5f11b7
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20230822024612-edb48c530722

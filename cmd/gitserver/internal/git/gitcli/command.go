@@ -287,14 +287,13 @@ func (rc *cmdReader) trace() {
 		ev.AddField("cmd", rc.subCmd)
 		ev.AddField("args", rc.cmd.Unwrap().Args)
 		ev.AddField("actor", act.UIDString())
-		ev.AddField("duration_ms", duration.Milliseconds())
 		ev.AddField("exit_status", processState.ExitCode())
 		if rc.err != nil {
 			ev.AddField("error", rc.err.Error())
 		}
 		ev.AddField("cmd_duration_ms", duration.Milliseconds())
-		ev.AddField("user_time", processState.UserTime())
-		ev.AddField("system_time", processState.SystemTime())
+		ev.AddField("user_time_ms", processState.UserTime().Milliseconds())
+		ev.AddField("system_time_ms", processState.SystemTime().Milliseconds())
 		ev.AddField("cmd_ru_maxrss_kib", memUsage/bytesize.KiB)
 		ev.AddField("cmd_ru_minflt", sysUsage.Minflt)
 		ev.AddField("cmd_ru_majflt", sysUsage.Majflt)

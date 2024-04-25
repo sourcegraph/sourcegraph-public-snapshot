@@ -6,10 +6,20 @@
     import { highlightNodeMultiline } from '$lib/common'
     import type { MatchGroupMatch } from '$lib/shared'
 
+    /**
+     * Number of the first line in the code excerpt. This is 1-indexed.
+     * Doesn't have any effect when `highlightedHTMLRows` or `hideLineNumbers` are set.
+     */
     export let startLine: number
-    export let plaintextLines: string[]
-    export let highlightedHTMLRows: string[] | undefined = undefined
+    export let plaintextLines: readonly string[]
+    export let highlightedHTMLRows: readonly string[] | undefined = undefined
     export let matches: MatchGroupMatch[] = []
+    /**
+     * Causes whitespace to *not* be preserved. Can be useful to ignore the leading whitespace in a code block,
+     * but will also remove any intentional whitespace formatting.
+     */
+    export let collapseWhitespace = false
+    export let hideLineNumbers = false
 
     function highlightMatches(node: HTMLElement, matches: MatchGroupMatch[]) {
         const visibleRows = node.querySelectorAll<HTMLTableRowElement>('tr')
@@ -39,14 +49,14 @@
     }
 </script>
 
-<code>
+<code class:collapseWhitespace class:hideLineNumbers>
     {#key matches}
-        {#if highlightedHTMLRows === undefined}
+        {#if highlightedHTMLRows === undefined || highlightedHTMLRows.length === 0}
             <table use:highlightMatches={matches}>
                 <tbody>
                     {#each plaintextLines as line, index}
                         <tr>
-                            <td class="line" data-line={startLine + index + 1} />
+                            <td class="line" data-line={startLine + index} />
                             <td class="code">{line}</td>
                         </tr>
                     {/each}
@@ -77,11 +87,21 @@
         :global(td.line::before) {
             content: attr(data-line);
             color: var(--text-muted);
+            padding-right: 1rem;
         }
 
         :global(td.code) {
-            white-space: pre;
-            padding-left: 1rem;
+            white-space: inherit;
+        }
+
+        &.collapseWhitespace {
+            white-space: normal;
+        }
+
+        &.hideLineNumbers {
+            :global(td.line::before) {
+                display: none;
+            }
         }
     }
 </style>
