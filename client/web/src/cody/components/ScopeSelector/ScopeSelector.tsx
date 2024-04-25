@@ -58,31 +58,49 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
     const activeEditor = useMemo(() => scope.editor.getActiveTextEditor(), [scope.editor])
 
-    const { isRepoIgnored, isFileIgnored } = useCodyIgnore()
-    const isCurrentRepoIgnored = activeEditor?.repoName ? isRepoIgnored(activeEditor.repoName) : false
-    const isCurrentFileIgnored =
-        activeEditor?.repoName && activeEditor?.filePath
-            ? isFileIgnored(activeEditor.repoName, activeEditor.filePath)
-            : false
+    const codyIgnoreFns = useCodyIgnore()
 
-    const inferredFilePath = (isCurrentFileIgnored && activeEditor?.filePath) || null
+    const inferredFilePath = (() => {
+        if (!activeEditor?.repoName || !activeEditor?.filePath) {
+            return null
+        }
+        if (codyIgnoreFns.isFileIgnored(activeEditor.repoName, activeEditor.filePath)) {
+            return null
+        }
+        return activeEditor.filePath
+    })()
+
     useEffect(() => {
-        if (isCurrentRepoIgnored || isCurrentFileIgnored) {
+        if (!activeEditor?.repoName || !activeEditor?.filePath) {
+            return
+        }
+
+        const isCurrentRepoIgnored = codyIgnoreFns.isRepoIgnored(activeEditor.repoName)
+        if (isCurrentRepoIgnored) {
             setScope({
                 ...scope,
                 includeInferredFile: false,
-                includeInferredRepository: !isCurrentRepoIgnored,
-                repositories: isCurrentRepoIgnored
-                    ? scope.repositories.filter(r => r !== activeEditor?.repoName)
-                    : scope.repositories,
+                includeInferredRepository: false,
+                repositories: scope.repositories.filter(r => r !== activeEditor?.repoName),
             })
+            return
         }
-    }, [isCurrentRepoIgnored, isCurrentFileIgnored, scope, setScope, activeEditor])
+
+        const isCurrentFileIgnored = codyIgnoreFns.isFileIgnored(activeEditor.repoName, activeEditor.filePath)
+        if (isCurrentFileIgnored && scope.includeInferredFile) {
+            setScope({ ...scope, includeInferredFile: false, includeInferredRepository: true })
+            return
+        }
+    }, [activeEditor, codyIgnoreFns, scope, setScope])
 
     useEffect(() => {
         const repoNames = [...scope.repositories]
 
-        if (activeEditor?.repoName && !repoNames.includes(activeEditor.repoName)) {
+        if (
+            activeEditor?.repoName &&
+            !repoNames.includes(activeEditor.repoName) &&
+            !codyIgnoreFns.isRepoIgnored(activeEditor.repoName)
+        ) {
             repoNames.push(activeEditor.repoName)
         }
 
@@ -93,17 +111,17 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
         loadReposStatus({
             variables: { repoNames, first: repoNames.length },
         }).catch(() => null)
-    }, [activeEditor, scope.repositories, loadReposStatus])
+    }, [activeEditor, scope.repositories, codyIgnoreFns, loadReposStatus])
 
     const allRepositories = useMemo(() => reposStatusData?.repositories.nodes || [], [reposStatusData])
 
     const inferredRepository = useMemo(() => {
-        if (activeEditor?.repoName) {
+        if (activeEditor?.repoName && !codyIgnoreFns.isRepoIgnored(activeEditor.repoName)) {
             return allRepositories.find(repo => repo.name === activeEditor.repoName) || null
         }
 
         return null
-    }, [activeEditor, allRepositories])
+    }, [activeEditor, codyIgnoreFns, allRepositories])
 
     const additionalRepositories: IRepo[] = useMemo(
         () =>
@@ -138,8 +156,19 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
     const resetScope = useCallback((): void => {
         logTranscriptEvent(EventName.CODY_CHAT_SCOPE_RESET, 'cody.chat.scope.repo', 'reset')
-        setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
-    }, [scope, setScope, logTranscriptEvent])
+        let isCurrentRepoIgnored = false
+        let isCurrentFileIgnored = false
+        if (activeEditor?.repoName && activeEditor?.filePath) {
+            isCurrentRepoIgnored = codyIgnoreFns.isRepoIgnored(activeEditor.repoName)
+            isCurrentFileIgnored = codyIgnoreFns.isFileIgnored(activeEditor.repoName, activeEditor.filePath)
+        }
+        setScope({
+            ...scope,
+            repositories: [],
+            includeInferredRepository: !isCurrentRepoIgnored,
+            includeInferredFile: !isCurrentFileIgnored,
+        })
+    }, [scope, setScope, logTranscriptEvent, activeEditor, codyIgnoreFns])
 
     return (
         <>
