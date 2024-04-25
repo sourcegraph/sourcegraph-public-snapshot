@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -53,8 +54,8 @@ func TestNewDotcomFilter(t *testing.T) {
 				Path:     "/file2.go",
 			},
 		}
-		_, filter, _ := f.GetFilter(context.Background(), repos)
-		filtered := filter(chunks)
+		_, filter, _ := f.GetMatcher(context.Background(), repos)
+		filtered := filterChunks(chunks, filter)
 		require.Equal(t, 2, len(filtered))
 	})
 
@@ -93,8 +94,8 @@ func TestNewDotcomFilter(t *testing.T) {
 			},
 		}
 
-		_, filter, _ := f.GetFilter(context.Background(), repos)
-		filtered := filter(chunks)
+		_, filter, _ := f.GetMatcher(context.Background(), repos)
+		filtered := filterChunks(chunks, filter)
 		require.Equal(t, 1, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
 	})
@@ -137,8 +138,9 @@ func TestNewDotcomFilter(t *testing.T) {
 			},
 		}
 
-		_, filter, _ := f.GetFilter(context.Background(), repos)
-		filtered := filter(chunks)
+		_, filter, _ := f.GetMatcher(context.Background(), repos)
+		filtered := filterChunks(chunks, filter)
+
 		require.Equal(t, 2, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
 		require.Equal(t, "src/file2.go", filtered[0].Path)
@@ -155,7 +157,7 @@ func TestNewDotcomFilter(t *testing.T) {
 		})
 
 		f := newDotcomFilter(logger, client)
-		filterableRepos, _, _ := f.GetFilter(context.Background(), repos)
+		filterableRepos, _, _ := f.GetMatcher(context.Background(), repos)
 		require.Len(t, filterableRepos, 0)
 	})
 
@@ -168,7 +170,7 @@ func TestNewDotcomFilter(t *testing.T) {
 		})
 
 		f := newDotcomFilter(logger, client)
-		filterableRepos, _, _ := f.GetFilter(context.Background(), repos)
+		filterableRepos, _, _ := f.GetMatcher(context.Background(), repos)
 		require.Len(t, filterableRepos, 0)
 	})
 
@@ -180,7 +182,7 @@ func TestNewDotcomFilter(t *testing.T) {
 		})
 
 		f := newDotcomFilter(logger, client)
-		filterableRepos, _, _ := f.GetFilter(context.Background(), repos)
+		filterableRepos, _, _ := f.GetMatcher(context.Background(), repos)
 		require.Len(t, filterableRepos, 0)
 	})
 }
@@ -232,9 +234,18 @@ func TestDotcomFilterDisabled(t *testing.T) {
 			},
 		}
 
-		_, filter, _ := f.GetFilter(context.Background(), repos)
-		filtered := filter(chunks)
+		_, matcher, _ := f.GetMatcher(context.Background(), repos)
+		filtered := filterChunks(chunks, matcher)
 		require.Equal(t, 4, len(filtered))
 	})
+}
 
+func filterChunks(chunks []FileChunkContext, matcher search.CodyFileMatcher) []FileChunkContext {
+	filtered := make([]FileChunkContext, 0, len(chunks))
+	for _, chunk := range chunks {
+		if matcher(chunk.RepoID, chunk.Path) {
+			filtered = append(filtered, chunk)
+		}
+	}
+	return filtered
 }

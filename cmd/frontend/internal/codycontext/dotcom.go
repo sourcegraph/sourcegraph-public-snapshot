@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -41,10 +42,10 @@ func (f *dotcomRepoFilter) getEnabled() bool {
 	return f.enabled
 }
 
-func (f *dotcomRepoFilter) GetFilter(ctx context.Context, repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc, error) {
+func (f *dotcomRepoFilter) GetMatcher(ctx context.Context, repos []types.RepoIDName) ([]types.RepoIDName, search.CodyFileMatcher, error) {
 	if !f.getEnabled() {
-		return repos, func(fcc []FileChunkContext) []FileChunkContext {
-			return fcc
+		return repos, func(repo api.RepoID, path string) bool {
+			return true
 		}, nil
 	}
 	return f.getFilter(ctx, repos)
@@ -53,7 +54,7 @@ func (f *dotcomRepoFilter) GetFilter(ctx context.Context, repos []types.RepoIDNa
 // getFilter returns the list of repos that can be filtered
 // their .cody/ignore files (or don't have one). If an error
 // occurs that repo will be excluded.
-func (f *dotcomRepoFilter) getFilter(ctx context.Context, repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc, error) {
+func (f *dotcomRepoFilter) getFilter(ctx context.Context, repos []types.RepoIDName) ([]types.RepoIDName, search.CodyFileMatcher, error) {
 	filters := make(map[api.RepoID]filterFunc, len(repos))
 	filterableRepos := make([]types.RepoIDName, 0, len(repos))
 
@@ -79,19 +80,9 @@ func (f *dotcomRepoFilter) getFilter(ctx context.Context, repos []types.RepoIDNa
 		filterableRepos = append(filterableRepos, repo)
 	}
 
-	return filterableRepos, func(fcc []FileChunkContext) []FileChunkContext {
-		filtered := make([]FileChunkContext, 0, len(fcc))
-		for _, fc := range fcc {
-			ignore, ok := filters[fc.RepoID]
-			if !ok {
-				filtered = append(filtered, fc)
-				continue
-			}
-			if !ignore(fc.Path) {
-				filtered = append(filtered, fc)
-			}
-		}
-		return filtered
+	return filterableRepos, func(repo api.RepoID, path string) bool {
+		ignore, ok := filters[repo]
+		return !ok || !ignore(path)
 	}, nil
 }
 

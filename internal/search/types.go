@@ -405,7 +405,12 @@ type Features struct {
 	// Experimental fields for Cody context search, for internal use only.
 	CodyContextCodeCount int
 	CodyContextTextCount int
+	CodyFileMatcher      CodyFileMatcher
 }
+
+// CodyFileMatcher is used to represent "Cody ignore" functionality. The matcher
+// returns true if the given repo and path are allowed to be returned.
+type CodyFileMatcher func(repo api.RepoID, path string) bool
 
 func (f *Features) String() string {
 	jsonObject, err := json.Marshal(f)

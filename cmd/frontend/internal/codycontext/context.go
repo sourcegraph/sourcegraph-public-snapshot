@@ -118,7 +118,7 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 
 	// Generating the content filter removes any repos where the filter can not
 	// be determined
-	filterableRepos, contextFilter, err := c.contentFilter.GetFilter(ctx, args.Repos)
+	filterableRepos, contextFilter, err := c.contentFilter.GetMatcher(ctx, args.Repos)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +192,7 @@ func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.Re
 	return embedded, notEmbedded, nil
 }
 
-func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs, filter FileChunkFilterFunc) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs, filter search.CodyFileMatcher) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getEmbeddingsContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -235,11 +235,18 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 			EndLine:   result.EndLine,
 		})
 	}
-	return filter(res), nil
+
+	filtered := make([]FileChunkContext, 0, len(res))
+	for _, chunk := range res {
+		if !filter(chunk.RepoID, chunk.Path) {
+			filtered = append(filtered, chunk)
+		}
+	}
+	return filtered, nil
 }
 
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
-func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, filter FileChunkFilterFunc) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, filter search.CodyFileMatcher) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getKeywordContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -278,7 +285,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		return nil, err
 	}
 
-	setResultCounts(plan, args.CodeResultsCount, args.TextResultsCount)
+	addLimitsAndFilter(plan, filter, args)
 
 	var (
 		mu        sync.Mutex
@@ -291,7 +298,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 
 		for _, res := range e.Results {
 			if fm, ok := res.(*result.FileMatch); ok {
-				collected = append(collected, filter(fileMatchToContextMatches(fm))...)
+				collected = append(collected, fileMatchToContextMatches(fm)...)
 			}
 		}
 	})
@@ -311,13 +318,14 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	return collected, nil
 }
 
-func setResultCounts(plan *search.Inputs, codeCount int32, textCount int32) {
+func addLimitsAndFilter(plan *search.Inputs, filter search.CodyFileMatcher, args GetContextArgs) {
 	if plan.Features == nil {
 		plan.Features = &search.Features{}
 	}
 
-	plan.Features.CodyContextCodeCount = int(codeCount)
-	plan.Features.CodyContextTextCount = int(textCount)
+	plan.Features.CodyContextCodeCount = int(args.CodeResultsCount)
+	plan.Features.CodyContextTextCount = int(args.TextResultsCount)
+	plan.Features.CodyFileMatcher = filter
 }
 
 func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {

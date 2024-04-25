@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -34,7 +35,8 @@ func NewSearchJob(plan query.Plan, inputs *search.Inputs, newJob func(query.Basi
 		return nil, errors.New("The 'codycontext' patterntype does not support multiple clauses")
 	}
 
-	codeCount, textCount := resultsCounts(inputs)
+	codeCount, textCount := getResultLimits(inputs)
+	fileMatcher := getFileMatcher(inputs)
 	basicQuery := plan[0].ToParseTree()
 
 	q, err := queryStringToKeywordQuery(query.StringHuman(basicQuery))
@@ -64,16 +66,28 @@ func NewSearchJob(plan query.Plan, inputs *search.Inputs, newJob func(query.Basi
 		return nil, err
 	}
 
-	return &searchJob{codeJob, codeCount, textJob, textCount, patterns}, nil
+	return &searchJob{codeJob, codeCount, textJob, textCount, fileMatcher, patterns}, nil
 }
 
-func resultsCounts(inputs *search.Inputs) (codeCount, textCount int) {
+func getFileMatcher(inputs *search.Inputs) search.CodyFileMatcher {
+	if inputs.Features == nil || inputs.Features.CodyFileMatcher == nil {
+		return func(id api.RepoID, s string) bool {
+			return true
+		}
+	}
+	return inputs.Features.CodyFileMatcher
+}
+
+func getResultLimits(inputs *search.Inputs) (codeCount, textCount int) {
 	codeCount = DefaultCodeResultsCount
+	textCount = DefaultTextResultsCount
+	if inputs.Features == nil {
+		return
+	}
+
 	if inputs.Features.CodyContextCodeCount > 0 {
 		codeCount = inputs.Features.CodyContextCodeCount
 	}
-
-	textCount = DefaultTextResultsCount
 	if inputs.Features.CodyContextTextCount > 0 {
 		textCount = inputs.Features.CodyContextTextCount
 	}
@@ -95,7 +109,8 @@ type searchJob struct {
 	textJob   job.Job
 	textCount int
 
-	patterns []string
+	fileMatcher search.CodyFileMatcher
+	patterns    []string
 }
 
 func (j *searchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -150,6 +165,10 @@ func (j *searchJob) doSearch(ctx context.Context, clients job.RuntimeClients, jo
 
 		for _, res := range e.Results {
 			if fm, ok := res.(*result.FileMatch); ok {
+				if !j.fileMatcher(fm.Repo.ID, fm.Path) {
+					continue
+				}
+
 				collected = append(collected, fm)
 				if len(collected) >= limit {
 					cancel()
