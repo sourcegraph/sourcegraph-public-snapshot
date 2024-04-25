@@ -87,13 +87,10 @@ export const RepositoriesSelectorPopover: React.FC<{
     })
 
     const { isRepoIgnored } = useCodyIgnore()
-    const filteredSuggestions = useMemo(
-        () => suggestions.filter(({ name }) => !isRepoIgnored(name)),
-        [suggestions, isRepoIgnored]
-    )
+    // Repo search results with ignored repositories filtered out.
     const filteredSearchResults = useMemo(
         () => searchResultsData?.repositories.nodes.filter(r => !isRepoIgnored(r.name)) || [],
-        [searchResultsData]
+        [searchResultsData, isRepoIgnored]
     )
 
     const onSearch = useCallback(
@@ -318,7 +315,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                             </Text>
                                         )}
 
-                                        {!!filteredSuggestions.length && (
+                                        {!!suggestions.length && (
                                             <div className="d-flex flex-column">
                                                 <Text
                                                     className={classNames(
@@ -334,7 +331,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                         styles.contextItemsContainer
                                                     )}
                                                 >
-                                                    {filteredSuggestions.map(repository => (
+                                                    {suggestions.map(repository => (
                                                         <SearchResultsListItem
                                                             additionalRepositories={[]}
                                                             key={repository.id}
