@@ -104,8 +104,6 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 		prodRegistry = images.SourcegraphInternalReleaseRegistry
 		additionalProdRegistry = "" // we don't want to push to the public registry on internal releases
 	case runtype.CloudEphemeral:
-		// we do not push to the dev registry on cloud ephemeral because that uses a tag the cloud does not expect
-		devRegistry = ""
 		// cloud needs to "prod" tag, so we set the push registry for prod to the cloud ephemeral
 		prodRegistry = images.CloudEphemeralRegistry
 		additionalProdRegistry = "" // we don't want to push to the public registry on cloud ephemeral
