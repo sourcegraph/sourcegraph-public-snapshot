@@ -262,7 +262,7 @@ func (r *releaseRunner) checkRequirements(ctx context.Context, stage string) err
 	var failed bool
 	for _, req := range r.m.Requirements {
 		if shouldSkipReqCheck(req, stage) {
-			saySuccess("reqs", "SKIP %s (excluded for %s)", req.Name, stage)
+			saySuccess("reqs", "🔕 %s (excluded for %s)", req.Name, stage)
 			return nil
 		}
 
@@ -272,23 +272,23 @@ func (r *releaseRunner) checkRequirements(ctx context.Context, stage string) err
 		if req.Env != "" {
 			if _, ok := os.LookupEnv(req.Env); !ok {
 				failed = true
-				sayFail("reqs", "FAIL %s, $%s is not defined.", req.Name, req.Env)
+				sayFail("reqs", "❌ %s, $%s is not defined.", req.Name, req.Env)
 				continue
 			}
-			saySuccess("reqs", "OK %s", req.Name)
+			saySuccess("reqs", "✅ %s", req.Name)
 			continue
 		}
 
 		lines, err := run.Cmd(ctx, req.Cmd).Run().Lines()
 		if err != nil {
 			failed = true
-			sayFail("reqs", "FAIL %s", req.Name)
+			sayFail("reqs", "❌ %s", req.Name)
 			sayFail("reqs", "  Error: %s", err.Error())
 			for _, line := range lines {
 				sayFail("reqs", "  "+line)
 			}
 		} else {
-			saySuccess("reqs", "OK %s", req.Name)
+			saySuccess("reqs", "✅ %s", req.Name)
 		}
 	}
 	if failed {
