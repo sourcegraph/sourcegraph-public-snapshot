@@ -22,7 +22,25 @@ func NewCompletionsFilter2(config CompletionsFilterConfig) (CompletionsFilter, e
 	}, nil
 }
 
-// attributionRunFilter
+// attributionRunFilter implementation of CompletionsFilter that runs attribution search for snippets
+// aboce certain threshold defined by `SnippetLowerBound`.
+// It's inspired by an idea of [communicating sequential processes](https://en.wikipedia.org/wiki/Communicating_sequential_processes):
+// *   Attribution search is going to run async of passing down the completion from the LLM.
+// *   But all the work of actually forwarding LLM completions happens only on the _caller_
+//     thread, that is the one that controls the filter by calling `Send` and `WaitDone`.
+//     Hopefully this will ensure proper desctruction of response sending and no races
+//     with attribution search.
+// *   The synchronization with attribution search happens on 3 elements:
+//     1.  `sync.Once` is used to ensure attribution search is only fired once.
+//         This simplifies logic of starting search once snippet passed a given threshold.
+//     2.  `atomic.Bool` is set to true once we confirm no attribution was found.
+//         This makes it real easy for `Send` to make a decision on the spot whether or not
+//         to forward a completion back to the client.
+//     3.  `chan struct{}` is closed on attribution search finishing.
+//         This is a robust way for `WaitDone` to wait on either context cancellation (timeout)
+//         or attribution search finishing (via select). Channel closing happens
+//         in the attribution search routine, which is fired via sync.Once, so no chance
+//         of multiple goroutines closing the channel.
 type attributionRunFilter struct {
 	config CompletionsFilterConfig
 	// Just to make sure we have run attribution once.
@@ -31,10 +49,13 @@ type attributionRunFilter struct {
 	attributionSucceeded atomic.Bool
 	// Channel that the attribution routine closes when attribution is finished.
 	closeOnSearchFinished chan struct{}
-	// Unsynchronized - only referred to from Send and WaitDone, which are executed in sequence.
+	// Last seen completion that was not sent. Unsynchronized - only referred
+	// to from Send and WaitDone, which are executed in the same request handler routine.
 	last *types.CompletionResponse
 }
 
+// Send forwards the completion to the client if it can given its current idea
+// about attribution status. Otherwise it memoizes completion in `attributionRunFilter#last`.
 func (d *attributionRunFilter) Send(ctx context.Context, r types.CompletionResponse) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -52,6 +73,10 @@ func (d *attributionRunFilter) Send(ctx context.Context, r types.CompletionRespo
 	return nil
 }
 
+// WaitDone awaits either attribution search finishing or timeout.
+// The caller calls WaitDone only after all calls to send, so LLM is done streaming.
+// This is why in case of attribution search finishing it's enough for us
+// to send the last memoized completion here.
 func (d *attributionRunFilter) WaitDone(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
@@ -70,6 +95,10 @@ func (d *attributionRunFilter) shortEnough(r types.CompletionResponse) bool {
 	return !NewThreshold().ShouldSearch(r.Completion)
 }
 
+// runAttribution is a blocking function that defines the goroutine
+// that runs attribution search and then synchronizes with main thread
+// by setting `atomic.Bool` for flagging and closing `chan struct{}`
+// to notify `WaitDone` if needed.
 func (d *attributionRunFilter) runAttribution(ctx context.Context, r types.CompletionResponse) {
 	defer close(d.closeOnSearchFinished)
 	canUse, err := d.config.Test(ctx, r.Completion)
