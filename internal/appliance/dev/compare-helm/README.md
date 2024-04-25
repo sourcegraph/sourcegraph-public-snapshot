@@ -8,13 +8,18 @@ Sourcegraph) in response to certain configuration inputs.
 
 ## Usage
 
+### Dependencies
+
+This tool assumes that GNU diff is higher in PATH than any other diff, e.g. BSD
+diff on macOS. Homebrew users can acquire GNU diff with `brew install
+diffutils`.
+
 Example usage:
 
 ```
 go run ./internal/appliance/dev/compare-helm \
   -component blobstore \
-  -golden-file internal/appliance/testdata/golden-fixtures/blobstore-default.yaml \
-  | colordiff
+  -golden-file internal/appliance/testdata/golden-fixtures/blobstore-default.yaml
 ```
 
 Flags:
@@ -29,9 +34,6 @@ Flags:
 - `deploy-sourcegraph-helm-path`: path to a checkout of deploy-sourcegraph-helm.
   This is needed unless you are running this command from the root of this repo,
   and deploy-sourcegraph-helm is a sibling directory of your working directory.
-
-Piping into `colordiff` is optional, but handy for turning those diffs red and
-green, if that's what you're used to!
 
 ## Interpreting the output
 

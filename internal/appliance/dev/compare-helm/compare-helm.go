@@ -97,7 +97,7 @@ func main() {
 	must(sortedHelmResourceFile.Close())
 	must(sortedGoldenFile.Close())
 
-	diffCmd := exec.Command("diff", helmTemplateOutputPath, sortedGoldenPath)
+	diffCmd := exec.Command("diff", "--color=auto", helmTemplateOutputPath, sortedGoldenPath)
 	diffCmd.Stdout = os.Stdout
 	diffCmd.Stderr = os.Stderr
 	must(diffCmd.Run())
