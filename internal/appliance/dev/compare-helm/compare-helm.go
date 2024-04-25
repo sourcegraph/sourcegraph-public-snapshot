@@ -20,6 +20,7 @@ func main() {
 	helmTemplateExtraArgs := flag.String("helm-template-extra-args", "", "extra args to pass to `helm template`")
 	component := flag.String("component", "", "Which SG service to target.")
 	goldenFile := flag.String("golden-file", "", "Which golden fixture to compare.")
+	noColor := flag.Bool("no-color", false, "Do not try to produce diffs in color. This is necessary for non-GNU diff users.")
 	flag.Parse()
 
 	if *component == "" {
@@ -97,7 +98,12 @@ func main() {
 	must(sortedHelmResourceFile.Close())
 	must(sortedGoldenFile.Close())
 
-	diffCmd := exec.Command("diff", "--color=auto", helmTemplateOutputPath, sortedGoldenPath)
+	var diffCmdArgs []string
+	if !*noColor {
+		diffCmdArgs = append(diffCmdArgs, "--color=auto")
+	}
+	diffCmdArgs = append(diffCmdArgs, helmTemplateOutputPath, sortedGoldenPath)
+	diffCmd := exec.Command("diff", diffCmdArgs...)
 	diffCmd.Stdout = os.Stdout
 	diffCmd.Stderr = os.Stderr
 	must(diffCmd.Run())

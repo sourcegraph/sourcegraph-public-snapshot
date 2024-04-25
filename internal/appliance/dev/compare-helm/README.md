@@ -8,12 +8,6 @@ Sourcegraph) in response to certain configuration inputs.
 
 ## Usage
 
-### Dependencies
-
-This tool assumes that GNU diff is higher in PATH than any other diff, e.g. BSD
-diff on macOS. Homebrew users can acquire GNU diff with `brew install
-diffutils`.
-
 Example usage:
 
 ```
@@ -23,17 +17,21 @@ go run ./internal/appliance/dev/compare-helm \
 ```
 
 Flags:
+
 - `component`: selects a subset of helm-templated resources for comparison.
   Specifically, the "app.kubernetes.io/component" label is used. This appears to
   correspond 1:1 with Sourcegraph services.
 - `golden-file`: path to a golden appliance fixture in this repo.
 - `helm-template-extra-args`: Optional extra arguments to pass to `helm
-  template`. Useful for comparing helm value permutations to different golden
+template`. Useful for comparing helm value permutations to different golden
   fixtures derived from different config inputs. Example: "--set
   repoUpdater.serviceAccount.create=true".
 - `deploy-sourcegraph-helm-path`: path to a checkout of deploy-sourcegraph-helm.
   This is needed unless you are running this command from the root of this repo,
   and deploy-sourcegraph-helm is a sibling directory of your working directory.
+- `no-color`: optional, but needed if your version of `diff` doesn't support the
+  `--color=auto` option. GNU diff supports this, and can be installed on Mac
+  with `brew install diffutils`.
 
 ## Interpreting the output
 
