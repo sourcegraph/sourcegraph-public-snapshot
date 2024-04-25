@@ -76,16 +76,17 @@ Invariants:
 # 1. Request code graph data, specifying 'filter' if needed.
 #    Either the scipDocument or occurrences is fine.
 # 2. When a hover is triggered, attempt to look up occurrence in document or list
-#    or some other lookup structure constructed from those.
-# 3a. If one matching occurrence is found, use symbolName + range to call
-#     usagesForSymbol
+#    of occurrences (or some other lookup structure constructed from those)
+#    based on the source range.
+# 3a. If one matching occurrence is found, use Occurrence.symbol and range to call
+#     usagesForSymbol.
 # 3b. If zero matching occurrences are found, use only range to call usagesForSymbol.
 # 3c. If more than one matching occurrence is found, use some more complex logic
 #     to offer a symbol picker.
-#     - Problem: For a symbol picker, ideally you'd use SymbolInformation.display_name,
-#       which is stored on SymbolInformation. However, display_name is not supported
-#       today by most SCIP indexers. And we don't have any API for getting the detailed
-#       SCIP SymbolInformation for a bunch of occurrences.
+#     - Problem: For a symbol picker, ideally you'd use SymbolInformation.display_name
+#       in SCIP. However, display_name is not supported today by most SCIP indexers.
+#       And we don't have any API for getting the detailed SCIP SymbolInformation
+#       for a bunch of occurrences.
 type CodeGraphData {
     scipDocument: AssociatedSCIPDocument
 
@@ -95,7 +96,7 @@ type CodeGraphData {
     Invariant:
     forall sym in symbols.
         exists occ in occurrences such that
-            sym.name == occ.symbolName && occ.roles.contains(Definition)
+            sym.name == occ.symbol && occ.roles.contains(Definition)
     """
     # TODO: Should this be paginated to gracefully handle large generated files?
     symbols: [SymbolInformation!]
@@ -501,6 +502,11 @@ input LookupPosition {
     """
     character: Int!
 }
+
+# NOTE(id: filter-vs-comparator-terminology)
+#
+# 'Filter' is used for complex objects whereas 'Comparator' is used
+# for primitive objects.
 
 """
 An empty filter allows all kinds of usages for all paths in all repositories.
