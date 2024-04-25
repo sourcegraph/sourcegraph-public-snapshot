@@ -23,7 +23,6 @@ go_test(
     deps = [
         ":guardrails",
         "//internal/completions/types",
-        "//lib/errors",
         "@com_github_stretchr_testify//require",
     ],
 )
