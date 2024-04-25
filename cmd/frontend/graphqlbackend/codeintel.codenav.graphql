@@ -197,8 +197,6 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
 
     """
     A list of definitions of the symbol under the given document position.
-
-    DEPRECATED: Use usagesForSymbol with a Definition filter instead.
     """
     definitions(
         """
@@ -215,12 +213,10 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
         When specified, it filters references by filename.
         """
         filter: String
-    ): LocationConnection!
+    ): LocationConnection! @deprecated(reason: "Superseded by usagesForSymbol; use the Definition filter")
 
     """
     A list of references of the symbol under the given document position.
-
-    DEPRECATED: Use usagesForSymbol with a Reference filter instead.
     """
     references(
         """
@@ -252,12 +248,10 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
         When specified, it filters references by filename.
         """
         filter: String
-    ): LocationConnection!
+    ): LocationConnection! @deprecated(reason: "Superseded by usagesForSymbol; use the Reference filter")
 
     """
     A list of implementations of the symbol under the given document position.
-
-    DEPRECATED: Use usagesForSymbol with Implementations filter instead.
     """
     implementations(
         """
@@ -289,12 +283,10 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
         When specified, it filters implementation by filename.
         """
         filter: String
-    ): LocationConnection!
+    ): LocationConnection! @deprecated(reason: "Superseded by usagesForSymbol; use the Implemention filter")
 
     """
     A list of prototypes of the symbol under the given document position.
-
-    DEPRECATED: Use usagesForSymbol with a Supers filter instead.
     """
     prototypes(
         """
@@ -326,7 +318,7 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
         When specified, it filters prototypes by filename.
         """
         filter: String
-    ): LocationConnection!
+    ): LocationConnection! @deprecated(reason: "Superseded by usagesForSymbol; use the Super filter")
 
     """
     The hover result of the symbol under the given document position.
