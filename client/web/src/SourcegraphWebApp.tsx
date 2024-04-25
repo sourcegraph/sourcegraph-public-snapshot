@@ -1,7 +1,6 @@
 import 'focus-visible'
 
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
-import * as React from 'react'
 
 import { ApolloProvider, SuspenseCache } from '@apollo/client'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
