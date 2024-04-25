@@ -11,7 +11,9 @@ import (
 
 // NewCompletionsFilter2 returns a fully initialized streaming filter.
 // This filter should be used for only a single code completions streaming
-// since it keeps internal state. Public methods are synchronized.
+// since it keeps internal state. `Send` and `WaitDone` methods
+// are expected to be called from single goroutine,
+// and `WaitDone` is only invoked after all `Send` calls have finished.
 func NewCompletionsFilter2(config CompletionsFilterConfig) (CompletionsFilter, error) {
 	if config.Sink == nil || config.Test == nil || config.AttributionError == nil {
 		return nil, errors.New("Attribution filtering misconfigured.")
