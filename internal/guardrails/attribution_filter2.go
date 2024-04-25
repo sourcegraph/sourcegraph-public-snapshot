@@ -36,16 +36,19 @@ type attributionRunFilter struct {
 }
 
 func (d *attributionRunFilter) Send(ctx context.Context, r types.CompletionResponse) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if d.shortEnough(r) {
-		d.last = nil  // last seen completion was sent
+		d.last = nil // last seen completion was sent
 		return d.config.Sink(r)
 	}
-	d.attributionSearch.Do(func () { go d.runAttribution(ctx, r) })
+	d.attributionSearch.Do(func() { go d.runAttribution(ctx, r) })
 	if d.attributionSucceeded.Load() {
-		d.last = nil  // last seen completion was sent
+		d.last = nil // last seen completion was sent
 		return d.config.Sink(r)
 	}
-	d.last = &r  // last seen completion not sent
+	d.last = &r // last seen completion not sent
 	return nil
 }
 
