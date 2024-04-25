@@ -229,7 +229,7 @@ func determineMinorVersion() (string, error) {
 		return "", errors.New("Empty version number detected")
 	}
 	newestVersion := semver.MustParse(strings.TrimPrefix(versions[0].Version, "v"))
-	url := fmt.Sprintf("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/next/%s", strconv.FormatInt(newestVersion.Major(), 10) + "." + strconv.FormatInt(newestVersion.Minor(), 10))
+	url := fmt.Sprintf("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/next/%s", strconv.FormatInt(newestVersion.Major(), 10)+"."+strconv.FormatInt(newestVersion.Minor(), 10))
 
 	resp, err := http.Post(url, "", nil)
 	if err != nil {
