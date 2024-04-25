@@ -368,13 +368,14 @@ extend type Query {
         """
         Symbol to perform the lookup for.
 
-        If provided, then the start and end position in 'range' are optional.
+        If provided, then the start and end position in `range` are optional.
 
-        If not provided, then the start and end position in 'range' must be set.
-        In that case, the results will be merged across all semantic symbols
-        in the source range specified by [start, end]
+        If not provided, and if multiple symbols are detected at the same range,
+        the combined results for all symbols will be returned.
+        In that case, `Usage.symbol.name` can be used to group results.
         """
         symbol: SymbolComparator,
+
         """
         Information about an existing source range for a usage of the symbol.
 
@@ -418,6 +419,10 @@ input ProvenanceComparator {
     equals: Provenance
 }
 
+"""
+Type representing useful information about a symbol in code,
+based on 'SymbolInformation' in SCIP.
+"""
 type SymbolInformation implements WithProvenance {
     """
     Symbol name using syntax specified by the SCIP schema.
@@ -427,6 +432,7 @@ type SymbolInformation implements WithProvenance {
     the `usagesBySymbol` API.
     """
     name: String!
+
     """
     Hover documentation for the symbol, in Markdown format.
 
@@ -440,10 +446,12 @@ type SymbolInformation implements WithProvenance {
     is no appropriate hover documentation to display.
     """
     documentation: [String!]
+
     """
     Coarse-grained information about the data source.
     """
     provenance: Provenance!
+
     """
     Opaque fine-grained information describing the data source.
 
@@ -459,14 +467,16 @@ input LookupRange {
     Defaults to instance-wide search if the repo is not specified.
 
     This field is necessary if LookupSymbol is a repository-local or
-    file-local symbol. It is mandatory for cross-repo symbols
+    file-local symbol. It is mandatory for cross-repository symbols
     due to implementation limitations.
     """
-    repo: String!
+    repository: String!
+
     """
     Defaults to HEAD of the default branch if not specified.
     """
     revision: String
+
     """
     Defaults to repo-wide search if the path is not specified.
 
@@ -475,7 +485,9 @@ input LookupRange {
     due to implementation limitations.
     """
     path: String!
+
     start: LookupPosition
+
     end: LookupPosition
 }
 
@@ -484,6 +496,7 @@ input LookupPosition {
     Zero-based count of newline (\n or \r\n) characters before this position.
     """
     line: Int!
+
     """
     Zero-based UTF-16 code unit offset from preceding newline (\n or \r\n) character.
     """
@@ -503,7 +516,7 @@ input UsagesFilter {
     not: UsagesFilter
     repository: RepositoryFilter
     path: PathFilter
-    kind: SymbolUsageKind
+    kind: SymbolUsageKindComparator
 }
 
 input RepositoryFilter {
@@ -518,10 +531,27 @@ input StringComparator {
     equals: String
 }
 
+input SymbolUsageKindComparator {
+    equals: SymbolUsageKind
+}
+
 enum SymbolUsageKind {
     Definition,
+
     Reference,
+
+    """
+    If a type T implements an interface X or inherits from another type X,
+    then searching for Implementations of X will return T as a result
+    if the data source supports it.
+    """
     Implementation,
+
+    """
+    If a type T implements an interface X or inherits from another type X,
+    then searching for Supers of T will return X as a result
+    if the data source supports it.
+    """
     Super,
 }
 
@@ -531,23 +561,27 @@ type UsageConnection {
 }
 
 type UsageRange {
-    repo: String!
+    repository: String!
     revision: String!
+    path: String!
     range: Range!
 }
 
 type Usage {
     symbol: SymbolInformation!
 
+    """
+    Invariant: `range.path` == `blob.path`. The path is made available
+    as part of this type for convenience.
+    """
     range: UsageRange
 
     """
-    NOTE: Do not pass
-    TODO: For this blob, it is generally more useful to get +N/-N lines
-    rather than having to pass a range internally for the contents since
-    the offsets from the start will not be known a-priori.
+    Instead of requesting `blob.content`, it may be more useful
+    to ask for `surroundingBlobContent`.
     """
     blob: GitBlob!
+
     """
     Instead of blob { content }, allows accessing a sub-span of the content
     using relative coordinates from the range of this usage. If linesBefore
