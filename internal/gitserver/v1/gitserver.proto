@@ -112,10 +112,7 @@ service GitserverService {
   }
   // Blame runs a blame operation on the specified file. It returns a stream of
   // hunks as they are found. The --incremental flag is used on the git CLI
-  // level to achieve this behavior. The endpoint will verify that the user is
-  // allowed to blame the given file if subrepo permissions are enabled for the
-  // repo. If access is denied, an error with a UnauthorizedPayload in the
-  // details is returned.
+  // level to achieve this behavior.
   //
   // If the given repo is not cloned, it will be enqueued for cloning and a
   // NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -132,11 +129,6 @@ service GitserverService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // ReadFile gets a file from the repo ODB and streams the contents back.
-  // The endpoint will verify that the user is allowed to view the given file
-  // if subrepo permissions are enabled for the repo. If access is denied, an
-  // error with a UnauthorizedPayload in the details is returned. If the path
-  // points to a submodule, no error is returned and an empty file is streamed
-  // back.
   //
   // If the given repo is not cloned, it will be enqueued for cloning and a
   // NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -144,11 +136,6 @@ service GitserverService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // GetCommit gets a commit from the repo ODB.
-  // The endpoint will verify that the user is allowed to view the given commit.
-  //
-  // If subrepo permissions are enabled for the repo. If access is denied, an
-  // error with a RevisionNotFoundPayload is returned, to not leak existence of
-  // the commit.
   //
   // If the commit is not found, an error with a RevisionNotFoundPayload is
   // returned.
@@ -380,10 +367,15 @@ message GetCommitRequest {
   // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
   string repo_name = 2;
   string commit = 3;
+  // If true, the modified_files field in the GetCommitResponse will be populated.
+  bool include_modified_files = 4;
 }
 
 message GetCommitResponse {
   GitCommit commit = 1;
+  // Contains the list of files the commit modified.
+  // NOTE: Only populated if include_modified_files in the GetCommitRequest is true.
+  repeated bytes modified_files = 2;
 }
 
 message GitCommit {
@@ -604,15 +596,6 @@ message FileNotFoundPayload {
 message ExecStatusPayload {
   int32 status_code = 1;
   string stderr = 2;
-}
-
-// UnauthorizedPayload is the payload returned when an actor cannot access
-// a commit or file due to subrepo permissions.
-message UnauthorizedPayload {
-  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
-  string repo_name = 2;
-  optional string path = 3;
-  optional string commit = 4;
 }
 
 message SearchRequest {

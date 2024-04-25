@@ -180,10 +180,11 @@
     }
 
     async function submitQuery(state: QueryState): Promise<void> {
+        const url = getQueryURL(state)
         // This ensures that the same query can be resubmitted from the search input. Without
         // this, SvelteKit will not re-run the loader because the URL hasn't changed.
-        await invalidate(`query:${state.query}--${state.caseSensitive}`)
-        void goto(getQueryURL(state))
+        await invalidate(`search:${url}`)
+        void goto(url)
     }
 
     async function handleSubmit(event: Event) {

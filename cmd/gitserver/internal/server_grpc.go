@@ -18,9 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
@@ -32,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type service interface {
@@ -52,7 +49,6 @@ func NewGRPCServer(server *Server, config *GRPCServerConfig) proto.GitserverServ
 		logger:         server.logger,
 		db:             server.db,
 		hostname:       server.hostname,
-		subRepoChecker: authz.DefaultSubRepoPermsChecker,
 		locker:         server.locker,
 		getBackendFunc: server.getBackendFunc,
 		svc:            server,
@@ -75,7 +71,6 @@ type grpcServer struct {
 	logger         log.Logger
 	db             database.DB
 	hostname       string
-	subRepoChecker authz.SubRepoPermissionChecker
 	locker         RepositoryLocker
 	getBackendFunc Backender
 	fs             gitserverfs.FS
@@ -282,15 +277,6 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 
 	if err := gs.checkRepoExists(ss.Context(), repoName); err != nil {
 		return err
-	}
-
-	if !actor.FromContext(ctx).IsInternal() {
-		if enabled, err := gs.subRepoChecker.EnabledForRepo(ctx, repoName); err != nil {
-			return errors.Wrap(err, "sub-repo permissions check")
-		} else if enabled {
-			s := status.New(codes.Unimplemented, "archiveReader invoked for a repo with sub-repo permissions")
-			return s.Err()
-		}
 	}
 
 	// This is a long time, but this never blocks a user request for this
@@ -803,14 +789,9 @@ func (gs *grpcServer) GetCommit(ctx context.Context, req *proto.GetCommitRequest
 		return nil, err
 	}
 
-	subRepoPermsEnabled, err := authz.SubRepoEnabledForRepo(ctx, gs.subRepoChecker, repoName)
-	if err != nil {
-		return nil, err
-	}
-
 	backend := gs.getBackendFunc(repoDir, repoName)
 
-	commit, err := backend.GetCommit(ctx, api.CommitID(req.GetCommit()), subRepoPermsEnabled)
+	commit, err := backend.GetCommit(ctx, api.CommitID(req.GetCommit()), req.GetIncludeModifiedFiles())
 	if err != nil {
 		var e *gitdomain.RevisionNotFoundError
 		if errors.As(err, &e) {
@@ -828,24 +809,14 @@ func (gs *grpcServer) GetCommit(ctx context.Context, req *proto.GetCommitRequest
 		return nil, err
 	}
 
-	hasAccess, err := hasAccessToCommit(ctx, repoName, commit.ModifiedFiles, gs.subRepoChecker)
-	if err != nil {
-		return nil, err
-	}
-
-	if !hasAccess {
-		s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
-			Repo: req.GetRepoName(),
-			Spec: req.GetCommit(),
-		})
-		if err != nil {
-			return nil, err
-		}
-		return nil, s.Err()
+	modifiedFiles := make([][]byte, len(commit.ModifiedFiles))
+	for i, f := range commit.ModifiedFiles {
+		modifiedFiles[i] = []byte(f)
 	}
 
 	return &proto.GetCommitResponse{
-		Commit: commit.ToProto(),
+		Commit:        commit.ToProto(),
+		ModifiedFiles: modifiedFiles,
 	}, nil
 }
 
@@ -876,26 +847,6 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 
 	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
-	}
-
-	// First, verify that the actor has access to the given path.
-	hasAccess, err := authz.FilterActorPath(ctx, gs.subRepoChecker, actor.FromContext(ctx), repoName, req.GetPath())
-	if err != nil {
-		return err
-	}
-	if !hasAccess {
-		up := &proto.UnauthorizedPayload{
-			RepoName: req.GetRepoName(),
-			Commit:   pointers.Ptr(req.GetCommit()),
-			Path:     pointers.Ptr(req.GetPath()),
-		}
-
-		s, marshalErr := status.New(codes.PermissionDenied, "no access to path").WithDetails(up)
-		if marshalErr != nil {
-			gs.logger.Error("failed to marshal error", log.Error(marshalErr))
-			return err
-		}
-		return s.Err()
 	}
 
 	backend := gs.getBackendFunc(repoDir, repoName)
@@ -1036,27 +987,6 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 
 	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
-	}
-
-	// First, verify that the actor has access to the given path.
-	hasAccess, err := authz.FilterActorPath(ctx, gs.subRepoChecker, actor.FromContext(ctx), repoName, req.GetPath())
-	if err != nil {
-		return err
-	}
-	if !hasAccess {
-		up := &proto.UnauthorizedPayload{
-			RepoName: req.GetRepoName(),
-			Path:     pointers.Ptr(req.GetPath()),
-		}
-		if c := req.GetCommit(); c != "" {
-			up.Commit = &c
-		}
-		s, marshalErr := status.New(codes.PermissionDenied, "no access to path").WithDetails(up)
-		if marshalErr != nil {
-			gs.logger.Error("failed to marshal error", log.Error(marshalErr))
-			return err
-		}
-		return s.Err()
 	}
 
 	backend := gs.getBackendFunc(repoDir, repoName)
@@ -1443,29 +1373,6 @@ func (gs *grpcServer) checkRepoExists(ctx context.Context, repo api.RepoName) er
 	cloneInProgress := locked
 
 	return newRepoNotFoundError(repo, cloneInProgress, cloneProgress)
-}
-
-func hasAccessToCommit(ctx context.Context, repoName api.RepoName, files []string, checker authz.SubRepoPermissionChecker) (bool, error) {
-	if len(files) == 0 {
-		return true, nil // If commit has no files, assume user has access to view the commit.
-	}
-
-	if enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, repoName); err != nil {
-		return false, err
-	} else if !enabled {
-		return true, nil
-	}
-
-	a := actor.FromContext(ctx)
-	for _, fileName := range files {
-		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repoName, fileName); err != nil {
-			return false, err
-		} else if hasAccess {
-			// if the user has access to one file modified in the commit, they have access to view the commit
-			return true, nil
-		}
-	}
-	return false, nil
 }
 
 func newRepoNotFoundError(repo api.RepoName, cloneInProgress bool, cloneProgress string) error {

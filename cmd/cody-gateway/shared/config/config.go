@@ -93,6 +93,7 @@ type FireworksConfig struct {
 	AccessToken                            string
 	StarcoderCommunitySingleTenantPercent  int
 	StarcoderEnterpriseSingleTenantPercent int
+	FlaggingConfig                         FlaggingConfig
 }
 
 type OpenAIConfig struct {

@@ -1,0 +1,41 @@
+// This file defines all the Svelte overrides that eventually get propogated into the global Wildcard JS design system.
+// Treat this file as almost a set of recommendations to what we may want to shift all of Wildcard to use.
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 500;
+}
+
+// Theme Light
+
+.theme-light {
+    // Colors
+    --color-bg-1: var(--white);
+
+    // Shadows
+    --sidebar-shadow: 0 79px 22px 0 rgba(30, 4, 47, 0), 0 51px 20 0 rgba(30, 4, 47, 0.01),
+        0 29px 17px 0 rgba(30, 4, 47, 0.02), 0 13px 13px 0 rgba(30, 4, 47, 0.03), 0 3px 7px 0 rgba(30, 4, 47, 0.04);
+    --fileheader-shadow: 0 6px 2px 0 rgba(0, 0, 0, 0), 0 4px 2px 0 rgba(0, 0, 0, 0.01), 0 2px 1px 0 rgba(0, 0, 0, 0.02),
+        0 1px 1px 0 rgba(0, 0, 0, 0.03), 0 0 1px 0 rgba(0, 0, 0, 0.04);
+    --bottom-panel-shadow: 0 -37px 10 0 rgba(1, 6, 12, 0), 0 -24px 10 0 rgba(1, 6, 12, 0.01),
+        0 -13px 8px 0 rgba(1, 6, 12, 0.02), 0 -6px 6px 0 rgba(1, 6, 12, 0.03), 0 -1px 3px 0 rgba(1, 6, 12, 0.04);
+}
+
+// Theme Dark
+
+.theme-dark {
+    // Colors
+    --color-bg-1: var(--gray-12);
+
+    // Shadows
+    --sidebar-shadow: 0 318px 89px 0 rgba(12, 1, 19, 0.01), 0 203px 81px 0 rgba(12, 1, 19, 0.05),
+        0 114px 69px 0 rgba(12, 1, 19, 0.16), 0 51px 51px 0 rgba(12, 1, 19, 0.27), 0 13px 28px 0 rgba(12, 1, 19, 0.31);
+    --fileheader-shadow: 0 6px 2px 0 rgba(15, 2, 24, 0.01), 0 4px 2px 0 rgba(15, 2, 24, 0.05),
+        0 2px 1px 0 rgba(15, 2, 24, 0.16), 0 1px 1px 0 rgba(15, 2, 24, 0.27), 0 0 1px 0 rgba(15, 2, 24, 0.31);
+    --bottom-panel-shadow: 0 -37px 10 0 rgba(1, 6, 12, 0.01), 0 -24px 10 0 rgba(1, 6, 12, 0.05),
+        0 -13px 8px 0 rgba(1, 6, 12, 0.16), 0 -6px 6px 0 rgba(1, 6, 12, 0.27), 0 -1px 3px 0 rgba(1, 6, 12, 0.31);
+}
