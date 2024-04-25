@@ -5,12 +5,12 @@ import classNames from 'classnames'
 import { format } from 'date-fns'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { AnchorLink, Card, H2, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import type { OverviewStatisticsResult, OverviewStatisticsVariables } from '../../../graphql-operations'
 import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../../productSubscription/helpers'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../../../util/checkRequestAccessAllowed'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { HorizontalSelect } from '../components/HorizontalSelect'
@@ -32,7 +32,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
         {}
     )
     useEffect(() => {
-        eventLogger.logPageView('AdminAnalyticsOverview')
+        EVENT_LOGGER.logPageView('AdminAnalyticsOverview')
     }, [])
 
     const userStatisticsItems = useMemo(() => {

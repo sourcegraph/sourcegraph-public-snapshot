@@ -12,6 +12,7 @@ import {
     isErrorGraphQLResult,
     gql,
 } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/out/src/telemetry'
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
@@ -594,10 +595,10 @@ export function createOrganization(
     }).pipe(
         mergeMap(({ data, errors }) => {
             if (!data?.createOrganization) {
-                eventLogger.log('NewOrgFailed')
+                EVENT_LOGGER.log('NewOrgFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('NewOrgCreated')
+            EVENT_LOGGER.log('NewOrgCreated')
             return concat([data.createOrganization])
         })
     )
@@ -711,10 +712,10 @@ export function addExternalService(
     }).pipe(
         map(({ data, errors }) => {
             if (!data?.addExternalService || (errors && errors.length > 0)) {
-                eventLogger.log('AddExternalServiceFailed')
+                EVENT_LOGGER.log('AddExternalServiceFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('AddExternalServiceSucceeded')
+            EVENT_LOGGER.log('AddExternalServiceSucceeded')
             return data.addExternalService
         })
     )

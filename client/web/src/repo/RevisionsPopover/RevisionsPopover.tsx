@@ -4,10 +4,10 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { GitRefType, type Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, useLocalStorage, Tab, TabList, TabPanel, TabPanels, Icon } from '@sourcegraph/wildcard'
 
 import type { GitCommitAncestorFields, GitRefFields } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { replaceRevisionInURL } from '../../util/url'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
 
@@ -101,7 +101,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
     const { getPathFromRevision = replaceRevisionInURL, repoServiceType } = props
 
     useEffect(() => {
-        eventLogger.logViewEvent('RevisionsPopover')
+        EVENT_LOGGER.logViewEvent('RevisionsPopover')
     }, [])
 
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)

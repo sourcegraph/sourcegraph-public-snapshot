@@ -5,12 +5,12 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, tap } from 'rxjs/operators'
 
 import { asError, logger } from '@sourcegraph/common'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Link, Label, H2, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
 import { PageTitle } from '../components/PageTitle'
 import type { CreateUserResult } from '../graphql-operations'
-import { eventLogger } from '../tracking/eventLogger'
 
 import { createUser } from './backend'
 import { AccountCreatedAlert } from './components/AccountCreatedAlert'
@@ -45,7 +45,7 @@ export class SiteAdminCreateUserPage extends React.Component<{}, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminCreateUser')
+        EVENT_LOGGER.logViewEvent('SiteAdminCreateUser')
 
         this.subscriptions.add(
             this.submits

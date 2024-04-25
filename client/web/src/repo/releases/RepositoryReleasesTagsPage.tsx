@@ -2,6 +2,7 @@ import React, { useCallback, useEffect } from 'react'
 
 import { type Observable, of } from 'rxjs'
 
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
@@ -13,7 +14,6 @@ import {
     type GitRefFields,
     type RepositoryFields,
 } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import {
     GitReferenceNode,
     type GitReferenceNodeProps,
@@ -39,7 +39,7 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWith
     queryGitReferences: queryGitReferences = queryGitReferencesFromBackend,
 }) => {
     useEffect(() => {
-        eventLogger.logViewEvent('RepositoryReleasesTags')
+        EVENT_LOGGER.logViewEvent('RepositoryReleasesTags')
     }, [])
 
     const queryTags = useCallback(

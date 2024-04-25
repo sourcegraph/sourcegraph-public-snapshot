@@ -7,6 +7,7 @@ import { animated, useSpring } from 'react-spring'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Alert, Button, H4, Icon, Tooltip, useAccordion, useStopwatch, ErrorAlert } from '@sourcegraph/wildcard'
 
 import type { Connection } from '../../../../../components/FilteredConnection'
@@ -15,7 +16,6 @@ import {
     type PreviewHiddenBatchSpecWorkspaceFields,
     type PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
-import { eventLogger } from '../../../../../tracking/eventLogger'
 import { useBatchChangesLicense } from '../../../useBatchChangesLicense'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
 import { type BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
@@ -166,7 +166,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren
                             isWorkspacesPreviewInProgress
                                 ? cancel
                                 : () => {
-                                      eventLogger.log('batch_change_editor:preview_workspaces:clicked')
+                                      EVENT_LOGGER.log('batch_change_editor:preview_workspaces:clicked')
                                       telemetryRecorder.recordEvent('batchChange.editor.previewWorkspaces', 'click')
                                       return preview(debouncedCode)
                                   }

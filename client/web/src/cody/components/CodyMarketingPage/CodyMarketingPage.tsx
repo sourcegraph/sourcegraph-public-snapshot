@@ -4,6 +4,7 @@ import { mdiChevronRight, mdiCodeBracesBox, mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
 import { Badge, H1, H2, H3, H4, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
@@ -14,7 +15,6 @@ import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import type { SourcegraphContext } from '../../../jscontext'
 import { MeetCodySVG } from '../../../repo/components/TryCodyWidget/WidgetIcons'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { EventName } from '../../../util/constants'
 import { CodyColorIcon, CodyHelpIcon, CodyWorkIcon } from '../../chat/CodyPageIcon'
 
@@ -29,7 +29,7 @@ interface CodyPlatformCardProps {
 
 /* eslint-disable  @sourcegraph/sourcegraph/check-help-links */
 
-const onSpeakToAnEngineer = (): void => eventLogger.log(EventName.SPEAK_TO_AN_ENGINEER_CTA)
+const onSpeakToAnEngineer = (): void => EVENT_LOGGER.log(EventName.SPEAK_TO_AN_ENGINEER_CTA)
 
 const IDEIcon: React.FunctionComponent<{}> = () => (
     <svg viewBox="-4 -4 31 31" fill="none" xmlns="http://www.w3.org/2000/svg" className={styles.codyPlatformCardIcon}>
@@ -182,7 +182,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                                 ctaClassName={styles.authButton}
                                 iconClassName={styles.buttonIcon}
                                 telemetryRecorder={telemetryRecorder}
-                                telemetryService={eventLogger}
+                                telemetryService={EVENT_LOGGER}
                             />
                         </div>
                         <Text className="mt-3 mb-0">

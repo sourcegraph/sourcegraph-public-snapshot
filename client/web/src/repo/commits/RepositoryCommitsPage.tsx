@@ -8,6 +8,7 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import type { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Code, Heading, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -29,7 +30,6 @@ import {
     type RepositoryGitCommitsVariables,
     RepositoryType,
 } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
 import { externalLinkFieldsFragment } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -183,7 +183,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
     }
 
     useEffect(() => {
-        eventLogger.logPageView('RepositoryCommits')
+        EVENT_LOGGER.logPageView('RepositoryCommits')
     }, [])
 
     useBreadcrumb(

@@ -17,8 +17,7 @@ import {
     aggregateStreamingSearch,
     type AggregateStreamingSearchResults,
 } from '@sourcegraph/shared/src/search/stream'
-
-import { eventLogger } from '../../../tracking/eventLogger'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 
 export const searchResultsToFileContent = (
     searchResults: SearchMatch[],
@@ -272,7 +271,7 @@ export const downloadSearchResults = (
         a.style.display = 'none'
         a.download = buildFileName(query)
         a.click()
-        eventLogger.log('SearchExportPerformed', { count: results.results.length }, { count: results.results.length })
+        EVENT_LOGGER.log('SearchExportPerformed', { count: results.results.length }, { count: results.results.length })
 
         // cleanup
         a.remove()
