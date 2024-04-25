@@ -25,22 +25,22 @@ func NewCompletionsFilter2(config CompletionsFilterConfig) (CompletionsFilter, e
 // attributionRunFilter implementation of CompletionsFilter that runs attribution search for snippets
 // aboce certain threshold defined by `SnippetLowerBound`.
 // It's inspired by an idea of [communicating sequential processes](https://en.wikipedia.org/wiki/Communicating_sequential_processes):
-// *   Attribution search is going to run async of passing down the completion from the LLM.
-// *   But all the work of actually forwarding LLM completions happens only on the _caller_
+//   - Attribution search is going to run async of passing down the completion from the LLM.
+//   - But all the work of actually forwarding LLM completions happens only on the _caller_
 //     thread, that is the one that controls the filter by calling `Send` and `WaitDone`.
 //     Hopefully this will ensure proper desctruction of response sending and no races
 //     with attribution search.
-// *   The synchronization with attribution search happens on 3 elements:
+//   - The synchronization with attribution search happens on 3 elements:
 //     1.  `sync.Once` is used to ensure attribution search is only fired once.
-//         This simplifies logic of starting search once snippet passed a given threshold.
+//     This simplifies logic of starting search once snippet passed a given threshold.
 //     2.  `atomic.Bool` is set to true once we confirm no attribution was found.
-//         This makes it real easy for `Send` to make a decision on the spot whether or not
-//         to forward a completion back to the client.
+//     This makes it real easy for `Send` to make a decision on the spot whether or not
+//     to forward a completion back to the client.
 //     3.  `chan struct{}` is closed on attribution search finishing.
-//         This is a robust way for `WaitDone` to wait on either context cancellation (timeout)
-//         or attribution search finishing (via select). Channel closing happens
-//         in the attribution search routine, which is fired via sync.Once, so no chance
-//         of multiple goroutines closing the channel.
+//     This is a robust way for `WaitDone` to wait on either context cancellation (timeout)
+//     or attribution search finishing (via select). Channel closing happens
+//     in the attribution search routine, which is fired via sync.Once, so no chance
+//     of multiple goroutines closing the channel.
 type attributionRunFilter struct {
 	config CompletionsFilterConfig
 	// Just to make sure we have run attribution once.

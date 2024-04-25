@@ -358,7 +358,7 @@ func TestAttributionSearchFinishesAfterWaitDoneIsCalled(t *testing.T) {
 			// not streamed yet
 		}
 		for got := []string{}; reflect.DeepEqual(want, got); got = client.trimmedDiffs() {
-			time.Sleep(10)  // Poor man's awaitility.
+			time.Sleep(10) // Poor man's awaitility.
 		}
 		search.response <- true // Finish attribution search.
 		wg.Wait()               // WaitDone returns.
