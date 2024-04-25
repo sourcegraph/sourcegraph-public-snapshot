@@ -26,13 +26,13 @@ requirements:
     only:
       - promoteToPublic.finalize
 
-  # #announce-engineering slack webhook url:
-  # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=pldpna5vivapxe4phewnqd42ji&h=team-sourcegraph.1password.com
+   # announce-engineering slack webhook url:
+   # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=pldpna5vivapxe4phewnqd42ji&h=team-sourcegraph.1password.com
 
-  # #bolaji-release-testing
-  # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=isv4abynddpox72wwbhaamo76e&i=7zjax5rm5hlilbgrzeb257i62i&h=team-sourcegraph.1password.com
-  # - name: 'Slack Webhook URL'
-  #   env: SLACK_WEBHOOK_URL
+   # bolaji-release-testing
+   # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=isv4abynddpox72wwbhaamo76e&i=7zjax5rm5hlilbgrzeb257i62i&h=team-sourcegraph.1password.com
+  - name: 'Slack Webhook URL'
+    env: SLACK_WEBHOOK_URL
 
 internal:
   create:
@@ -66,7 +66,6 @@ internal:
     steps:
       - name: 'Register on release registry'
         cmd: |
-          exit 0
           echo "Registering internal sourcegraph/sourcegraph {{version}} release on release registry"
           body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '{
               "name": "sourcegraph",
@@ -88,7 +87,6 @@ internal:
       - name: 'notifications'
         cmd: |
           set -eu
-          exit 0
 
           # Post an annotation.
           cat << EOF | buildkite-agent annotate --style info
