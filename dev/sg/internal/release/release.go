@@ -267,7 +267,7 @@ func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 	var version string
 	if cctx.String("version") == "auto" {
 		var err error
-		version, err = determineMinorVersion(cctx.Context)
+		version, err = determineNextReleaseVersion(cctx.Context)
 		if err != nil {
 			return nil, err
 		}
