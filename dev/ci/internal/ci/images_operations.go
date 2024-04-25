@@ -79,7 +79,7 @@ func bazelPushImagesFinal(c Config) func(*bk.Pipeline) {
 
 // Used in CandidateNoTest run type
 func bazelPushImagesNoTest(c Config) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(c, false)
+	return bazelPushImagesCmd(c, true)
 }
 
 func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk.Pipeline) {
@@ -105,6 +105,7 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 		additionalProdRegistry = "" // we don't want to push to the public registry on internal releases
 	case runtype.CloudEphemeral:
 		devRegistry = images.CloudEphemeralRegistry
+		prodRegistry = ""           // we don't want to push to the public registry on cloud ephemeral
 		additionalProdRegistry = "" // we don't want to push to the public registry on cloud ephemeral
 	}
 
@@ -121,6 +122,7 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 				bk.Env("PROD_REGISTRY", prodRegistry),
 				bk.Env("ADDITIONAL_PROD_REGISTRY", additionalProdRegistry),
 				bk.Cmd(bazelStampedCmd(fmt.Sprintf(`build $$(bazel --bazelrc=%s --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc query 'kind("oci_push rule", //...)')`, bazelRC))),
+				bk.ArtifactPaths("build_event_log.bin"),
 				bk.AnnotatedCmd(
 					"./dev/ci/push_all.sh",
 					bk.AnnotatedCmdOpts{

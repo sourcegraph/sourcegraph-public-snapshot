@@ -30,12 +30,7 @@ type ReleaseManifest struct {
 	// Requirements is a list of commands that must exit without errors for the manifest to be
 	// considered to be valid. Alternatively, instead of defining Cmd, Env can be set to
 	// ensure an environment variable is defnined.
-	Requirements []struct {
-		Name            string `yaml:"name"`
-		Cmd             string `yaml:"cmd"`
-		Env             string `yaml:"env"`
-		FixInstructions string `yaml:"fixInstructions"`
-	} `yaml:"requirements"`
+	Requirements []requirement `yaml:"requirements,omitempty"`
 	// Inputs defines a list of k=v strings, defining the required inputs for that release manifest.
 	// Typically, this is either empty or server=vX.Y.Z to build a release that uses that particular
 	// server version.
@@ -75,6 +70,46 @@ type ReleaseManifest struct {
 			Steps []cmdManifest `yaml:"steps"`
 		} `yaml:"finalize"`
 	} `yaml:"promoteToPublic"`
+}
+
+type requirement struct {
+	Name            string `yaml:"name"`
+	Cmd             string `yaml:"cmd"`
+	Env             string `yaml:"env"`
+	FixInstructions string `yaml:"fixInstructions"`
+	// Only allows to check a requirement just for a specific stage.
+	Only []string `yaml:"only,omitempty"`
+}
+
+const (
+	stageInternalCreate   = "internal.create"
+	stageInternalFinalize = "internal.finalize"
+	stageTest             = "test"
+	stagePromoteCreate    = "promoteToPublic.create"
+	stagePromoteFinalize  = "promoteToPublic.finalize"
+)
+
+func validateRequirementOnly(only []string) error {
+	if len(only) == 0 {
+		return nil
+	}
+	for _, str := range only {
+		switch str {
+		case stageInternalCreate:
+			continue
+		case stageInternalFinalize:
+			continue
+		case stageTest:
+			continue
+		case stagePromoteCreate:
+			continue
+		case stagePromoteFinalize:
+			continue
+		default:
+			return errors.Newf("invalid only value: %q", str)
+		}
+	}
+	return nil
 }
 
 type cmdManifest struct {
@@ -205,49 +240,55 @@ func NewReleaseRunner(ctx context.Context, workdir string, version string, input
 	return r, nil
 }
 
-func parseInputs(str string) (map[string]string, error) {
-	if str == "" {
-		return nil, nil
+func shouldSkipReqCheck(req requirement, stage string) bool {
+	if len(req.Only) == 0 {
+		return false
 	}
-	m := map[string]string{}
-	parts := strings.Split(str, ",")
-	for _, part := range parts {
-		subparts := strings.Split(part, "=")
-		if len(subparts) != 2 {
-			return nil, errors.New("invalid inputs")
+	for _, o := range req.Only {
+		if o == stage {
+			return false
 		}
-		m[subparts[0]] = subparts[1]
 	}
-	return m, nil
+	return true
 }
 
-func (r *releaseRunner) checkDeps(ctx context.Context) error {
+func (r *releaseRunner) checkRequirements(ctx context.Context, stage string) error {
 	announce2("reqs", "Checking requirements...")
+
+	if len(r.m.Requirements) == 0 {
+		saySuccess("reqs", "Requirement checks skipped, no requirements defined.")
+	}
+
 	var failed bool
 	for _, req := range r.m.Requirements {
+		if shouldSkipReqCheck(req, stage) {
+			saySuccess("reqs", "🔕 %s (excluded for %s)", req.Name, stage)
+			return nil
+		}
+
 		if req.Env != "" && req.Cmd != "" {
 			return errors.Newf("requirement %q can't have both env and cmd defined", req.Name)
 		}
 		if req.Env != "" {
 			if _, ok := os.LookupEnv(req.Env); !ok {
 				failed = true
-				sayFail("reqs", "FAIL %s, $%s is not defined.", req.Name, req.Env)
+				sayFail("reqs", "❌ %s, $%s is not defined.", req.Name, req.Env)
 				continue
 			}
-			saySuccess("reqs", "OK %s", req.Name)
+			saySuccess("reqs", "✅ %s", req.Name)
 			continue
 		}
 
 		lines, err := run.Cmd(ctx, req.Cmd).Run().Lines()
 		if err != nil {
 			failed = true
-			sayFail("reqs", "FAIL %s", req.Name)
+			sayFail("reqs", "❌ %s", req.Name)
 			sayFail("reqs", "  Error: %s", err.Error())
 			for _, line := range lines {
 				sayFail("reqs", "  "+line)
 			}
 		} else {
-			saySuccess("reqs", "OK %s", req.Name)
+			saySuccess("reqs", "✅ %s", req.Name)
 		}
 	}
 	if failed {
@@ -257,36 +298,8 @@ func (r *releaseRunner) checkDeps(ctx context.Context) error {
 	return nil
 }
 
-func (r *releaseRunner) InternalFinalize(ctx context.Context) error {
-	// TODO skip check deps
-	if len(r.m.Internal.Finalize.Steps) == 0 {
-		announce2("finalize", "Skipping internal release finalization, none defined")
-		return nil
-	}
-	announce2("finalize", "Running finalize steps for %s", r.version)
-	return r.runSteps(ctx, r.m.Internal.Finalize.Steps)
-}
-func (r *releaseRunner) PromoteFinalize(ctx context.Context) error {
-	// TODO skip check deps
-	if len(r.m.PromoteToPublic.Finalize.Steps) == 0 {
-		announce2("finalize", "Skipping public release finalization, none defined")
-		return nil
-	}
-	announce2("finalize", "Running promote finalize steps for %s", r.version)
-	return r.runSteps(ctx, r.m.PromoteToPublic.Finalize.Steps)
-}
-
-func (r *releaseRunner) Test(ctx context.Context) error {
-	if len(r.m.Test.Steps) == 0 {
-		announce2("test", "Skipping release tests, none defined")
-		return nil
-	}
-	announce2("test", "Running testing steps for %s", r.version)
-	return r.runSteps(ctx, r.m.Test.Steps)
-}
-
 func (r *releaseRunner) CreateRelease(ctx context.Context) error {
-	if err := r.checkDeps(ctx); err != nil {
+	if err := r.checkRequirements(ctx, stageInternalCreate); err != nil {
 		return nil
 	}
 
@@ -310,12 +323,51 @@ func (r *releaseRunner) CreateRelease(ctx context.Context) error {
 	return r.runSteps(ctx, steps)
 }
 
+func (r *releaseRunner) InternalFinalize(ctx context.Context) error {
+	if err := r.checkRequirements(ctx, stageInternalCreate); err != nil {
+		return nil
+	}
+
+	if len(r.m.Internal.Finalize.Steps) == 0 {
+		announce2("finalize", "Skipping internal release finalization, none defined")
+		return nil
+	}
+	announce2("finalize", "Running finalize steps for %s", r.version)
+	return r.runSteps(ctx, r.m.Internal.Finalize.Steps)
+}
+
+func (r *releaseRunner) Test(ctx context.Context) error {
+	if err := r.checkRequirements(ctx, stageTest); err != nil {
+		return nil
+	}
+
+	if len(r.m.Test.Steps) == 0 {
+		announce2("test", "Skipping release tests, none defined")
+		return nil
+	}
+	announce2("test", "Running testing steps for %s", r.version)
+	return r.runSteps(ctx, r.m.Test.Steps)
+}
+
 func (r *releaseRunner) Promote(ctx context.Context) error {
-	if err := r.checkDeps(ctx); err != nil {
+	if err := r.checkRequirements(ctx, stagePromoteCreate); err != nil {
 		return nil
 	}
 	announce2("promote", "Will promote %q to a public release", r.version)
 	return r.runSteps(ctx, r.m.PromoteToPublic.Create.Steps)
+}
+
+func (r *releaseRunner) PromoteFinalize(ctx context.Context) error {
+	if err := r.checkRequirements(ctx, stagePromoteFinalize); err != nil {
+		return nil
+	}
+
+	if len(r.m.PromoteToPublic.Finalize.Steps) == 0 {
+		announce2("finalize", "Skipping public release finalization, none defined")
+		return nil
+	}
+	announce2("finalize", "Running promote finalize steps for %s", r.version)
+	return r.runSteps(ctx, r.m.PromoteToPublic.Finalize.Steps)
 }
 
 func (r *releaseRunner) runSteps(ctx context.Context, steps []cmdManifest) error {
@@ -371,4 +423,20 @@ func saySuccess(section string, format string, a ...any) {
 
 func sayKind(style output.Style, section string, format string, a ...any) {
 	std.Out.WriteLine(output.Linef("  ", style, fmt.Sprintf("[%10s] %s", section, format), a...))
+}
+
+func parseInputs(str string) (map[string]string, error) {
+	if str == "" {
+		return nil, nil
+	}
+	m := map[string]string{}
+	parts := strings.Split(str, ",")
+	for _, part := range parts {
+		subparts := strings.Split(part, "=")
+		if len(subparts) != 2 {
+			return nil, errors.New("invalid inputs")
+		}
+		m[subparts[0]] = subparts[1]
+	}
+	return m, nil
 }

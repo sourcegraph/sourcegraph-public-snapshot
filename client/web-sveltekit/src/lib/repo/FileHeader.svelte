@@ -1,24 +1,39 @@
 <script lang="ts">
-    import { page } from '$app/stores'
+    import { mdiDotsHorizontal } from '@mdi/js'
+
+    import { resolveRoute } from '$app/paths'
+    import { overflow } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
     import { DropdownMenu } from '$lib/wildcard'
-    import { mdiDotsHorizontal } from '@mdi/js'
+    import { getButtonClassName } from '$lib/wildcard/Button'
 
     import SidebarToggleButton from './SidebarToggleButton.svelte'
     import { sidebarOpen } from './stores'
-    import { navFromPath } from './utils'
-    import { getButtonClassName } from '$lib/wildcard/Button'
-    import { overflow } from '$lib/dom'
 
-    $: breadcrumbs = navFromPath($page.params.path, $page.params.repo)
+    const TREE_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]'
+    const BLOB_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/blob/[...path]'
+
+    export let repoName: string
+    export let path: string
+    export let hideSidebarToggle = false
+    export let type: 'blob' | 'tree'
+
+    $: breadcrumbs = path.split('/')
+        .map((part, index, all): [string, string] => [
+            part,
+            resolveRoute(
+                type === 'tree' ? TREE_ROUTE_ID : BLOB_ROUTE_ID,
+                { repo: repoName, path: all.slice(0, index + 1).join('/') }),
+        ])
 </script>
 
 <div class="header">
-    <div class="toggle-wrapper" class:hidden={$sidebarOpen}>
+    <div class="toggle-wrapper" class:hidden={hideSidebarToggle || $sidebarOpen}>
         <SidebarToggleButton />
     </div>
     <h2>
         {#each breadcrumbs as [name, path], index}
+            {@const last = index === breadcrumbs.length - 1}
             <!--
                 The elements are arranged like this because we want to
                 ensure that the leading / before a segement always stay with
@@ -36,14 +51,16 @@
                 at all.
             -->
             {' '}
-            <span class:last={index === breadcrumbs.length - 1}>
+            <span class:last>
                 {#if index > 0}
-                    /
+                    <span class="slash">/</span>
+                {/if}
+                {#if last}
+                    <slot name="icon" />
                 {/if}
                 {#if path}
                     <a href={path}>{name}</a>
                 {:else}
-                    <slot name="icon" />
                     {name}
                 {/if}
             </span>
@@ -75,6 +92,7 @@
         padding: 0.25rem 0.5rem;
         border-bottom: 1px solid var(--border-color);
         background-color: var(--color-bg-1);
+        box-shadow: var(--fileheader-shadow);
         z-index: 1;
         gap: 0.5rem;
     }
@@ -99,7 +117,11 @@
         margin: 0;
 
         a {
-            color: var(--body-color);
+            color: var(--text-body);
+        }
+
+        .slash {
+            color: var(--text-disabled);
         }
 
         span {
@@ -107,7 +129,7 @@
         }
 
         .last {
-            font-weight: bold;
+            color: var(--text-title);
         }
     }
 
@@ -175,7 +197,7 @@
 
         display: flex;
         gap: 1rem;
-        align-items: baseline;
+        align-items: center;
 
         // With overflow:visible the actions won't shrink past their content size,
         // and this allows us to measure the space needed to show actions fully.

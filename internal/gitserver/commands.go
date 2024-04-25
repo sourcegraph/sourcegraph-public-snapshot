@@ -714,6 +714,15 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 		}, opt.Attrs()...),
 	})
 
+	// First, verify that the actor has access to the given path.
+	hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, actor.FromContext(ctx), repo, path)
+	if err != nil {
+		return nil, err
+	}
+	if !hasAccess {
+		return nil, fs.ErrNotExist
+	}
+
 	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
 		endObservation(1, observation.Args{})
@@ -1171,6 +1180,14 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 		},
 	})
 
+	// First, verify the actor can see the path.
+	a := actor.FromContext(ctx)
+	if hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, repo, name); err != nil {
+		return nil, err
+	} else if !hasAccess {
+		return nil, os.ErrNotExist
+	}
+
 	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
 		endObservation(1, observation.Args{})
@@ -1322,15 +1339,36 @@ func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id
 		return nil, err
 	}
 
+	subRepoEnabled := false
+	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
+		subRepoEnabled, err = authz.SubRepoEnabledForRepo(ctx, c.subRepoPermsChecker, repo)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to check sub repo permissions")
+		}
+	}
+
 	res, err := client.GetCommit(ctx, &proto.GetCommitRequest{
-		RepoName: string(repo),
-		Commit:   string(id),
+		RepoName:             string(repo),
+		Commit:               string(id),
+		IncludeModifiedFiles: subRepoEnabled,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return gitdomain.CommitFromProto(res.GetCommit()), nil
+	commit := gitdomain.CommitFromProto(res.GetCommit())
+
+	if subRepoEnabled {
+		ok, err := hasAccessToCommit(ctx, &wrappedCommit{Commit: commit, files: byteSlicesToStrings(res.GetModifiedFiles())}, repo, c.subRepoPermsChecker)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to check sub repo permissions")
+		}
+		if !ok {
+			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(id)}
+		}
+	}
+
+	return commit, nil
 }
 
 // Commits returns all commits matching the options.
@@ -1858,6 +1896,14 @@ func (c *clientImplementor) ArchiveReader(ctx context.Context, repo api.RepoName
 			options.Attrs()...,
 		),
 	})
+
+	if authz.SubRepoEnabled(c.subRepoPermsChecker) && !actor.FromContext(ctx).IsInternal() {
+		if enabled, err := authz.SubRepoEnabledForRepo(ctx, c.subRepoPermsChecker, repo); err != nil {
+			return nil, errors.Wrap(err, "sub-repo permissions check")
+		} else if enabled {
+			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
+		}
+	}
 
 	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {

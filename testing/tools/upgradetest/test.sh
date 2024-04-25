@@ -27,5 +27,3 @@ FRONTEND_TARBALL="$3"
 # internal/database/_schema.json
 # internal/database/_schema.md
 "$RUNNER" "${@:13}"
-
-exit

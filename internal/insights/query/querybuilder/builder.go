@@ -20,6 +20,10 @@ import (
 // by fully parsing and reconstructing the tree, and does **not** overwrite user supplied values for the default fields.
 // This also converts count:all to count:99999999.
 func withDefaults(inputQuery BasicQuery, defaults searchquery.Parameters) (BasicQuery, error) {
+	if len(defaults) == 0 {
+		return inputQuery, nil
+	}
+
 	plan, err := searchquery.Pipeline(searchquery.Init(string(inputQuery), searchquery.SearchTypeLiteral))
 	if err != nil {
 		return "", errors.Wrap(err, "Pipeline")
@@ -190,6 +194,69 @@ func PointDiffQuery(diffInfo PointDiffQueryOpts) (BasicQuery, error) {
 		Field:   searchquery.FieldType,
 		Value:   "diff",
 		Negated: false,
+	})
+
+	queryPlan, err := ParseQuery(diffInfo.SearchQuery.String(), "literal")
+	if err != nil {
+		return "", err
+	}
+	modifiedPlan := make(searchquery.Plan, 0, len(queryPlan))
+	for _, step := range queryPlan {
+		s := make(searchquery.Parameters, 0, len(step.Parameters)+len(newFilters))
+		for _, filter := range newFilters {
+			s = append(s, filter)
+		}
+		s = append(s, step.Parameters...)
+		modifiedPlan = append(modifiedPlan, step.MapParameters(s))
+	}
+	query := searchquery.StringHuman(modifiedPlan.ToQ())
+
+	// If a repo search was provided treat it like its own query and combine to preserve proper groupings in compound query cases
+	if diffInfo.RepoSearch != nil {
+		queryWithRepo, err := MakeQueryWithRepoFilters(*diffInfo.RepoSearch, BasicQuery(query), false)
+		if err != nil {
+			return "", err
+		}
+		query = queryWithRepo.String()
+	}
+
+	return BasicQuery(query), nil
+}
+
+func PointInTimeQuery(diffInfo PointDiffQueryOpts) (BasicQuery, error) {
+	// Build up a list of parameters that should be added to the original query
+	newFilters := []searchquery.Parameter{}
+
+	if len(diffInfo.FilterRepoIncludes) > 0 {
+		newFilters = append(newFilters, searchquery.Parameter{
+			Field:   searchquery.FieldRepo,
+			Value:   strings.Join(diffInfo.FilterRepoIncludes, "|"),
+			Negated: false,
+		})
+	}
+
+	if len(diffInfo.FilterRepoExcludes) > 0 {
+		newFilters = append(newFilters, searchquery.Parameter{
+			Field:   searchquery.FieldRepo,
+			Value:   strings.Join(diffInfo.FilterRepoExcludes, "|"),
+			Negated: true,
+		})
+	}
+
+	if len(diffInfo.RepoList) > 0 {
+		escapedRepos := make([]string, len(diffInfo.RepoList))
+		for i, repo := range diffInfo.RepoList {
+			escapedRepos[i] = regexp.QuoteMeta(repo)
+		}
+		newFilters = append(newFilters, searchquery.Parameter{
+			Field: searchquery.FieldRepo,
+			Value: fmt.Sprintf("^(%s)$", strings.Join(escapedRepos, "|")),
+		})
+
+	}
+	newFilters = append(newFilters, searchquery.Parameter{
+		Field: searchquery.FieldRev,
+		Value: fmt.Sprintf("at.time(%s)", diffInfo.Before.UTC().Format(time.RFC3339)),
 	})
 
 	queryPlan, err := ParseQuery(diffInfo.SearchQuery.String(), "literal")

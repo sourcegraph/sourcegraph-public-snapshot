@@ -435,6 +435,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                             </li>
                         </ul>
                     </li>
+                    <li>Whether Cody context filters are configured in the site config (true/false)</li>
                 </ul>
                 {updatesDisabled && <Text>All telemetry is disabled.</Text>}
             </Container>
