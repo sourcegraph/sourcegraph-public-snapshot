@@ -82,6 +82,7 @@
     .tabs {
         display: flex;
         flex-direction: column;
+        height: 100%;
     }
 
     .tabs-header {
