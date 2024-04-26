@@ -2,16 +2,16 @@
     import { mdiMapSearch } from '@mdi/js'
 
     import Icon from '$lib/Icon.svelte'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
+    import type { TreeEntryWithCommitInfo } from '$lib/repo/FileTable.gql'
+    import FileTable from '$lib/repo/FileTable.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
+    import Readme from '$lib/repo/Readme.svelte'
     import { createPromiseStore } from '$lib/utils'
+    import { Alert } from '$lib/wildcard'
 
     import type { PageData } from './$types'
-    import FileTable from '$lib/repo/FileTable.svelte'
-    import Readme from '$lib/repo/Readme.svelte'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import { Alert } from '$lib/wildcard'
-    import type { TreeEntryWithCommitInfo } from '$lib/repo/FileTable.gql'
 
     export let data: PageData
 
@@ -24,7 +24,7 @@
     <title>{data.filePath} - {data.displayRepoName} - Sourcegraph</title>
 </svelte:head>
 
-<FileHeader type="tree" repoName={data.repoName} path={data.filePath}>
+<FileHeader type="tree" repoName={data.repoName} revision={data.revision} path={data.filePath}>
     <svelte:fragment slot="actions">
         <Permalink commitID={data.resolvedRevision.commitID} />
     </svelte:fragment>

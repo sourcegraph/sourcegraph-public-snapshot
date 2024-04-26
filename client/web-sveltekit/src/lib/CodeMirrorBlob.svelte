@@ -104,6 +104,7 @@
         }),
         defaultTheme,
         linkify,
+        hideEmptyLastLine,
     ]
 </script>
 
@@ -132,6 +133,7 @@
         type BlameHunkData,
         lockFirstVisibleLine,
         temporaryTooltip,
+        hideEmptyLastLine,
     } from '$lib/web'
 
     import BlameDecoration from './blame/BlameDecoration.svelte'
