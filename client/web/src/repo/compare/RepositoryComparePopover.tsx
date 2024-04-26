@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 
 import { escapeRevspecForURL } from '@sourcegraph/common'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../tracking/eventLogger'
 import { RepoRevisionChevronDownIcon } from '../components/RepoRevision'
 import { RevisionsPopover } from '../RevisionsPopover'
 
@@ -41,7 +41,7 @@ export const RepositoryComparePopover: React.FunctionComponent<
     const togglePopover = (): void => setPopoverOpen(previous => !previous)
 
     const handleSelect = (): void => {
-        eventLogger.log('RepositoryComparisonSubmitted')
+        EVENT_LOGGER.log('RepositoryComparisonSubmitted')
         togglePopover()
     }
 

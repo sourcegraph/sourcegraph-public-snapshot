@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { groupBy, sortBy, startCase, sumBy } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Card,
     H2,
@@ -20,7 +21,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import type { CodeIntelStatisticsResult, CodeIntelStatisticsVariables } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
@@ -46,7 +46,7 @@ export const AnalyticsCodeIntelPage: React.FC = () => {
         }
     )
     useEffect(() => {
-        eventLogger.logPageView('AdminAnalyticsCodeIntel')
+        EVENT_LOGGER.logPageView('AdminAnalyticsCodeIntel')
     }, [])
 
     type Kind = 'inApp' | 'codeHost' | 'crossRepo' | 'precise'

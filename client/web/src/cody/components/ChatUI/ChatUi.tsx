@@ -24,9 +24,9 @@ import {
 } from '@sourcegraph/cody-ui'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../../tracking/eventLogger'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
 import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
@@ -54,7 +54,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({
     telemetryRecorder,
 }): JSX.Element => {
     const onFeedbackSubmit = (feedback: string): void => {
-        eventLogger.log(`web:cody:feedbackSubmit:${feedback}`)
+        EVENT_LOGGER.log(`web:cody:feedbackSubmit:${feedback}`)
         // TODO (dadlerj): update @sourcegraph/cody-ui/dist/Chat package to enforce a limited set of feedback strings.
         // Until then, this is a hack to avoid arbitrary event features.
         if (feedback === 'positive' || feedback === 'negative') {

@@ -1,9 +1,12 @@
 <script lang="ts">
     // @sg RepoRoot
-    import Readme from '$lib/repo/Readme.svelte'
-    import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
+    import { onMount } from 'svelte'
+
     import { sidebarOpen } from '$lib/repo/stores'
     import { createPromiseStore } from '$lib/utils'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import Readme from '$lib/repo/Readme.svelte'
+    import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
 
     import type { PageData } from './$types'
     import type { RepoPage_Readme } from './page.gql'
@@ -12,6 +15,10 @@
 
     const readme = createPromiseStore<RepoPage_Readme | null>()
     $: readme.set(data.readme)
+
+    onMount(() => {
+        SVELTE_LOGGER.logViewEvent(SVELTE_TELEMETRY_EVENTS.ViewRepositoryPage)
+    })
 </script>
 
 <h3 class="header">

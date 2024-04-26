@@ -4,10 +4,10 @@ import classNames from 'classnames'
 
 import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Card, Input, Text, H2 } from '@sourcegraph/wildcard'
 
 import { AnalyticsDateRange } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { formatNumber } from '../utils'
 
 import styles from './index.module.scss'
@@ -210,7 +210,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                                                 ...percentageInputChangeLogs,
                                                 [index]: true,
                                             })
-                                            eventLogger.log(`AdminAnalytics${page}PercentageInputEdited`)
+                                            EVENT_LOGGER.log(`AdminAnalytics${page}PercentageInputEdited`)
                                         }
                                     }}
                                 />
@@ -235,7 +235,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                                             ...minutesInputChangeLogs,
                                             [index]: true,
                                         })
-                                        eventLogger.log(`AdminAnalytics${page}MinutesInputEdited`)
+                                        EVENT_LOGGER.log(`AdminAnalytics${page}MinutesInputEdited`)
                                     }
                                 }}
                             />
@@ -319,7 +319,7 @@ export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculatorPro
                                 setMinPerItemSaved(Number(event.target.value))
                                 if (!inputChangeLogged) {
                                     setInputChangeLogged(true)
-                                    eventLogger.log(`AdminAnalytics${page}MinutesInputEdited`)
+                                    EVENT_LOGGER.log(`AdminAnalytics${page}MinutesInputEdited`)
                                 }
                             }}
                         />

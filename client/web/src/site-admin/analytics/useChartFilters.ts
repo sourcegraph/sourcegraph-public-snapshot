@@ -1,6 +1,7 @@
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
+
 import { AnalyticsDateRange, AnalyticsGrouping } from '../../graphql-operations'
 import { useURLSyncedState } from '../../hooks'
-import { eventLogger } from '../../tracking/eventLogger'
 
 type IAggregation = 'count' | 'uniqueUsers'
 
@@ -48,7 +49,7 @@ export function useChartFilters(props: IProps): IResult {
                     grouping:
                         value === AnalyticsDateRange.LAST_WEEK ? AnalyticsGrouping.DAILY : AnalyticsGrouping.WEEKLY,
                 })
-                eventLogger.log(`AdminAnalytics${props.name}DateRange${value}`)
+                EVENT_LOGGER.log(`AdminAnalytics${props.name}DateRange${value}`)
             },
             items: [
                 { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
@@ -60,7 +61,7 @@ export function useChartFilters(props: IProps): IResult {
             selected: data.aggregation,
             onChange: value => {
                 setData({ aggregation: value })
-                eventLogger.log(`AdminAnalytics${props.name}Aggregate${value === 'count' ? 'Totals' : 'Uniques'}`)
+                EVENT_LOGGER.log(`AdminAnalytics${props.name}Aggregate${value === 'count' ? 'Totals' : 'Uniques'}`)
             },
             items: [
                 {
@@ -80,7 +81,7 @@ export function useChartFilters(props: IProps): IResult {
             label: 'Display as',
             onChange: value => {
                 setData({ grouping: value })
-                eventLogger.log(`AdminAnalytics${props.name}DisplayAs${value}`)
+                EVENT_LOGGER.log(`AdminAnalytics${props.name}DisplayAs${value}`)
             },
             items: [
                 { value: AnalyticsGrouping.DAILY, label: 'Daily' },

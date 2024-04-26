@@ -4,10 +4,10 @@ import { Navigate, useParams } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { LoadingSpinner, useObservable, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { fetchPreciseIndex } from './backend'
 
@@ -16,7 +16,7 @@ import { fetchPreciseIndex } from './backend'
  */
 export const SiteAdminPreciseIndexPage: React.FC<{}> = () => {
     const { id = '' } = useParams<{ id: string }>()
-    useEffect(() => eventLogger.logViewEvent('SiteAdminPreciseIndex'))
+    useEffect(() => EVENT_LOGGER.logViewEvent('SiteAdminPreciseIndex'))
 
     const indexOrError = useObservable(
         useMemo(() => fetchPreciseIndex({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)])), [id])

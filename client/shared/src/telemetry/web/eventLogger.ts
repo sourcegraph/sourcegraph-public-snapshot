@@ -3,15 +3,15 @@ import { catchError, map, share, take } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { isErrorLike, isFirefox, logger } from '@sourcegraph/common'
-import type { SharedEventLogger } from '@sourcegraph/shared/src/api/sharedEventLogger'
-import { EventClient } from '@sourcegraph/shared/src/graphql-operations'
-import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import type { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 
-import { EventName } from '../util/constants'
-import { observeQuerySelector } from '../util/dom'
+import type { SharedEventLogger } from '../../api/sharedEventLogger'
+import { type Event, EventClient, EventSource } from '../../graphql-operations'
+import type { UTMMarker } from '../../tracking/utm'
+import { EventName } from '../event-names'
+import type { TelemetryService } from '../telemetryService'
 
-import { serverAdmin } from './services/serverAdminWrapper'
+import { logEvent } from './backend'
+import { observeQuerySelector } from './dom'
 import { sessionTracker } from './sessionTracker'
 import { userTracker } from './userTracker'
 import { stripURLParameters } from './util'
@@ -100,13 +100,13 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     }
 
     private logViewEventInternal(eventName: string, eventProperties?: any, logAsActiveUser = true): void {
-        const props = pageViewQueryParameters(window.location.href)
-        serverAdmin.trackPageView(eventName, logAsActiveUser, eventProperties)
+        const props = pageViewQueryParameters(location.href)
+        logEvent(this.createEvent(eventName, logAsActiveUser, eventProperties))
         this.logToConsole(eventName, props)
 
         // Use flag to ensure URL query params are only stripped once
         if (!this.hasStrippedQueryParameters) {
-            handleQueryEvents(window.location.href)
+            handleQueryEvents(location.href)
             this.hasStrippedQueryParameters = true
         }
     }
@@ -175,13 +175,13 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
         // Use flag to ensure URL query params are only stripped once
         if (!this.hasStrippedQueryParameters) {
-            handleQueryEvents(window.location.href)
+            handleQueryEvents(location.href)
             this.hasStrippedQueryParameters = true
         }
     }
 
     public logInternal(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
-        serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
+        logEvent(this.createEvent(eventLabel, eventProperties, publicArgument))
         this.logToConsole(eventLabel, eventProperties, publicArgument)
     }
 
@@ -227,13 +227,38 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         this.listeners.add(callback)
         return () => this.listeners.delete(callback)
     }
+
+    private createEvent(event: string, eventProperties?: unknown, publicArgument?: unknown): Event {
+        return {
+            event,
+            userCookieID: EVENT_LOGGER.user.anonymousUserID,
+            cohortID: EVENT_LOGGER.user.cohortID || null,
+            firstSourceURL: EVENT_LOGGER.session.getFirstSourceURL(),
+            lastSourceURL: EVENT_LOGGER.session.getLastSourceURL(),
+            referrer: EVENT_LOGGER.session.getReferrer(),
+            originalReferrer: EVENT_LOGGER.session.getOriginalReferrer(),
+            sessionReferrer: EVENT_LOGGER.session.getSessionReferrer(),
+            sessionFirstURL: EVENT_LOGGER.session.getSessionFirstURL(),
+            deviceSessionID: EVENT_LOGGER.user.deviceSessionID,
+            url: location.href,
+            source: EventSource.WEB,
+            argument: eventProperties ? JSON.stringify(eventProperties) : null,
+            publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
+            deviceID: EVENT_LOGGER.user.deviceID,
+            eventID: EVENT_LOGGER.getEventID(),
+            insertID: EVENT_LOGGER.getInsertID(),
+            client: EVENT_LOGGER.getClient(),
+            connectedSiteID: window.context?.siteID,
+            hashedLicenseKey: window.context?.hashedLicenseKey,
+        }
+    }
 }
 
 /**
  * @deprecated Use a TelemetryRecorder or TelemetryRecorderProvider from
  * src/telemetry instead.
  */
-export const eventLogger = new EventLogger()
+export const EVENT_LOGGER = new EventLogger()
 
 export function debugEventLoggingEnabled(): boolean {
     return !!localStorage && localStorage.getItem('eventLogDebug') === 'true'
@@ -254,12 +279,12 @@ function handleQueryEvents(url: string): void {
     const parsedUrl = new URL(url)
     if (parsedUrl.searchParams.has('signup')) {
         const args = { serviceType: parsedUrl.searchParams.get('signup') || '' }
-        eventLogger.logInternal(EventName.SIGNUP_COMPLETED, args, args)
+        EVENT_LOGGER.logInternal(EventName.SIGNUP_COMPLETED, args, args)
     }
 
     if (parsedUrl.searchParams.has('signin')) {
         const args = { serviceType: parsedUrl.searchParams.get('signin') || '' }
-        eventLogger.logInternal(EventName.SINGIN_COMPLETED, args, args)
+        EVENT_LOGGER.logInternal(EventName.SINGIN_COMPLETED, args, args)
     }
 
     stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'signup', 'signin'])
@@ -284,13 +309,13 @@ function pageViewQueryParameters(url: string): UTMMarker {
     }
 
     if (utmSource === 'saved-search-email') {
-        eventLogger.log('SavedSearchEmailClicked')
+        EVENT_LOGGER.log('SavedSearchEmailClicked')
     } else if (utmSource === 'saved-search-slack') {
-        eventLogger.log('SavedSearchSlackClicked')
+        EVENT_LOGGER.log('SavedSearchSlackClicked')
     } else if (utmSource === 'code-monitoring-email') {
-        eventLogger.log('CodeMonitorEmailLinkClicked')
+        EVENT_LOGGER.log('CodeMonitorEmailLinkClicked')
     } else if (utmSource === 'hubspot' && utmCampaign?.match(/^cloud-onboarding-email(.*)$/)) {
-        eventLogger.log('UTMCampaignLinkClicked', utmProps, utmProps)
+        EVENT_LOGGER.log('UTMCampaignLinkClicked', utmProps, utmProps)
     } else if (
         [
             'safari-extension',
@@ -301,9 +326,9 @@ function pageViewQueryParameters(url: string): UTMMarker {
             'gitlab-integration',
         ].includes(utmSource ?? '')
     ) {
-        eventLogger.log('UTMCodeHostIntegration', utmProps, utmProps)
+        EVENT_LOGGER.log('UTMCodeHostIntegration', utmProps, utmProps)
     } else if (utmMedium === 'VSCODE' && utmCampaign === 'vsce-sign-up') {
-        eventLogger.log('VSCODESignUpLinkClicked', utmProps, utmProps)
+        EVENT_LOGGER.log('VSCODESignUpLinkClicked', utmProps, utmProps)
     }
 
     return utmProps

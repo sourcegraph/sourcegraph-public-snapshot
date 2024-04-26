@@ -2,9 +2,8 @@ import { FILTERS_URL_KEY } from '@sourcegraph/branded/src/search-ui/results/filt
 import { compatNavigate } from '@sourcegraph/common'
 import type { SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-
-import { eventLogger } from '../tracking/eventLogger'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './results/components/aggregation/constants'
 
@@ -63,7 +62,7 @@ export function submitSearch({
     }
 
     const queryWithContext = appendContextFilter(query, selectedSearchContextSpec)
-    eventLogger.log(
+    EVENT_LOGGER.log(
         'SearchSubmitted',
         {
             query: queryWithContext,

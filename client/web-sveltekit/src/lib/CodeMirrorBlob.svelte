@@ -104,6 +104,7 @@
         }),
         defaultTheme,
         linkify,
+        hideEmptyLastLine,
     ]
 </script>
 
@@ -132,6 +133,7 @@
         type BlameHunkData,
         lockFirstVisibleLine,
         temporaryTooltip,
+        hideEmptyLastLine,
     } from '$lib/web'
 
     import BlameDecoration from './blame/BlameDecoration.svelte'
@@ -151,6 +153,7 @@
     export let selectedLines: LineOrPositionOrRange | null = null
     export let codeIntelAPI: CodeIntelAPI | null
     export let staticHighlightRanges: Range[] = []
+    export let onCopy: () => void = () => {}
     /**
      * The initial scroll position when the editor is first mounted.
      * Changing the value afterwards has no effect.
@@ -324,7 +327,7 @@
 </script>
 
 {#if browser}
-    <div bind:this={container} class="root test-editor" data-editor="codemirror6" />
+    <div bind:this={container} class="root test-editor" data-editor="codemirror6" on:copy={onCopy} />
 {:else}
     <div class="root">
         <pre>{blobInfo.content}</pre>

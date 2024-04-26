@@ -10,6 +10,7 @@ import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
     Button,
@@ -41,7 +42,6 @@ import type {
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import type { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
 
@@ -255,7 +255,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
 
     // Log page view when initially rendered
     useEffect(() => {
-        eventLogger.logPageView('RepositoryStatsContributors')
+        EVENT_LOGGER.logPageView('RepositoryStatsContributors')
     }, [])
 
     // Update spec when search params change

@@ -7,8 +7,8 @@ import '@sourcegraph/testing/src/jestDomMatchers'
 vi.mock('zustand')
 
 // We do not want to fire any logs when running tests
-vi.mock('../../src/tracking/eventLogger', () => ({
-    eventLogger: {
+vi.mock('@sourcegraph/shared/src/telemetry/web/eventLogger', () => ({
+    EVENT_LOGGER: {
         log: () => undefined,
         logViewEvent: () => undefined,
         logPageView: () => undefined,
