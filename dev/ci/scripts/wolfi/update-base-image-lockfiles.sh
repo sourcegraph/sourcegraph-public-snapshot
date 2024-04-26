@@ -11,6 +11,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 echo "~~~ :aspect: :stethoscope: Agent Health check"
 /etc/aspect/workflows/bin/agent_health_check
 
+aspectRC="/tmp/aspect-generated.bazelrc"
+rosetta bazelrc >"$aspectRC"
+export BAZELRC="$aspectRC"
+
 echo "~~~ Running sg wolfi lock"
 
 echo "Author Name: $GIT_AUTHOR_NAME"
@@ -60,12 +64,14 @@ echo "[$(date)] Git push"
 git push --force -u origin "${BRANCH_NAME}"
 echo ":git: Successfully commited changes and pushed to branch ${BRANCH_NAME}"
 
+GHR="bazel --bazelrc=${aspectRC} run //dev/tools:gh"
+
 # Check if an update PR already exists
-if gh pr list --head "${BRANCH_NAME}" --state open | grep -q "${PR_TITLE}"; then
+if $GHR pr list --head "${BRANCH_NAME}" --state open | grep -q "${PR_TITLE}"; then
   echo ":github: A pull request already exists - editing it"
-  gh pr edit "${BRANCH_NAME}" --body "${PR_BODY}"
+  $GHR pr edit "${BRANCH_NAME}" --body "${PR_BODY}"
 else
   # If not, create a new PR from the branch
-  gh pr create --title "${PR_TITLE}" --head "${BRANCH_NAME}" --base "${BUILDKITE_BRANCH}" --body "${PR_BODY}" --label "${PR_LABELS}"
+  $GHR pr create --title "${PR_TITLE}" --head "${BRANCH_NAME}" --base "${BUILDKITE_BRANCH}" --body "${PR_BODY}" --label "${PR_LABELS}"
   echo ":github: Created a new pull request from branch '${BRANCH_NAME}' with title '${PR_TITLE}'"
 fi
