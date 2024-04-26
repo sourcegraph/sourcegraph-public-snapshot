@@ -8,6 +8,7 @@ import { map } from 'rxjs/operators'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     LoadingSpinner,
     Button,
@@ -33,7 +34,6 @@ import type {
     AddUserToOrganizationVariables,
     InviteUserToOrganizationFields,
 } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 
 import styles from './InviteForm.module.scss'
 
@@ -68,7 +68,7 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
     const [isInviteShown, setShowInvitation] = useState<boolean>(false)
 
     const inviteUser = useCallback(() => {
-        eventLogger.log('InviteOrgMemberClicked')
+        EVENT_LOGGER.log('InviteOrgMemberClicked')
         ;(async () => {
             setLoading('inviteUserToOrganization')
             const { invitationURL, sentInvitationEmail } = await inviteUserToOrganization(username, orgID)
@@ -226,10 +226,10 @@ function inviteUserToOrganization(
         ).pipe(
             map(({ data, errors }) => {
                 if (!data?.inviteUserToOrganization || (errors && errors.length > 0)) {
-                    eventLogger.log('InviteOrgMemberFailed')
+                    EVENT_LOGGER.log('InviteOrgMemberFailed')
                     throw createAggregateError(errors)
                 }
-                eventLogger.log('OrgMemberInvited')
+                EVENT_LOGGER.log('OrgMemberInvited')
                 return data.inviteUserToOrganization
             })
         )
@@ -253,10 +253,10 @@ function addUserToOrganization(username: string, organization: Scalars['ID']): P
         ).pipe(
             map(({ data, errors }) => {
                 if (!data?.addUserToOrganization || (errors && errors.length > 0)) {
-                    eventLogger.log('AddOrgMemberFailed')
+                    EVENT_LOGGER.log('AddOrgMemberFailed')
                     throw createAggregateError(errors)
                 }
-                eventLogger.log('OrgMemberAdded')
+                EVENT_LOGGER.log('OrgMemberAdded')
             })
         )
     )

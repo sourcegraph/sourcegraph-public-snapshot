@@ -9,6 +9,7 @@ import { map, switchMap, tap } from 'rxjs/operators'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Button,
     Container,
@@ -34,7 +35,6 @@ import type {
     SettingsAreaRepositoryFields,
     RepositoryTextSearchIndexResult,
 } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
 
 import { BaseActionContainer } from './components/ActionContainer'
@@ -258,7 +258,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RepoSettingsIndex')
+        EVENT_LOGGER.logViewEvent('RepoSettingsIndex')
 
         this.subscriptions.add(
             this.updates

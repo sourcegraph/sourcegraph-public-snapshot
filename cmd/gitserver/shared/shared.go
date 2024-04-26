@@ -240,17 +240,17 @@ func makeGRPCServer(logger log.Logger, s *server.Server, c *Config) *grpc.Server
 	configurationWatcher := conf.DefaultClient()
 	scopedLogger := logger.Scoped("gitserver.accesslog")
 
-	config := &server.GRPCServerConfig{
-		ExhaustiveRequestLoggingEnabled: c.ExhaustiveRequestLoggingEnabled,
-	}
-
 	grpcServer := defaults.NewServer(
 		logger,
 		grpc.ChainStreamInterceptor(accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)),
 		grpc.ChainUnaryInterceptor(accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)),
 	)
-	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s, config))
-	proto.RegisterGitserverRepositoryServiceServer(grpcServer, server.NewRepositoryServiceServer(s))
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s, &server.GRPCServerConfig{
+		ExhaustiveRequestLoggingEnabled: c.ExhaustiveRequestLoggingEnabled,
+	}))
+	proto.RegisterGitserverRepositoryServiceServer(grpcServer, server.NewRepositoryServiceServer(s, &server.GRPCRepositoryServiceConfig{
+		ExhaustiveRequestLoggingEnabled: c.ExhaustiveRequestLoggingEnabled,
+	}))
 
 	return grpcServer
 }

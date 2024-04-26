@@ -8,10 +8,10 @@ import { capitalize } from 'lodash'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { useSettings } from '@sourcegraph/shared/src/settings/settings'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, ButtonGroup, ErrorAlert, Link, Icon, Code, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
 import { type GitCommitFields, RepositoryType } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 import { DiffModeSelector } from '../commit/DiffModeSelector'
 import type { DiffMode } from '../commit/RepositoryCommitPage'
@@ -101,13 +101,13 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     preferAbsoluteTimestamps = preferAbsoluteTimestamps ?? Boolean(settings?.['history.preferAbsoluteTimestamps'])
 
     const toggleShowCommitMessageBody = useCallback((): void => {
-        eventLogger.log('CommitBodyToggled')
+        EVENT_LOGGER.log('CommitBodyToggled')
         setShowCommitMessageBody(!showCommitMessageBody)
     }, [showCommitMessageBody])
 
     const copyToClipboard = useCallback(
         (oid: string): void => {
-            eventLogger.log(isPerforceDepot ? 'ChangelistIDCopiedToClipboard' : 'CommitSHACopiedToClipboard')
+            EVENT_LOGGER.log(isPerforceDepot ? 'ChangelistIDCopiedToClipboard' : 'CommitSHACopiedToClipboard')
             copy(oid)
             setFlashCopiedToClipboardMessage(true)
             screenReaderAnnounce('Copied!')

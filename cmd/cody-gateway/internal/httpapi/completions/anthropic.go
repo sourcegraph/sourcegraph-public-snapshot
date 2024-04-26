@@ -33,7 +33,7 @@ func NewAnthropicHandler(
 	autoFlushStreamingResponses bool,
 ) (http.Handler, error) {
 	// Tokenizer only needs to be initialized once, and can be shared globally.
-	anthropicTokenizer, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
+	anthropicTokenizer, err := tokenizer.NewCL100kBaseTokenizer()
 	if err != nil {
 		return nil, err
 	}

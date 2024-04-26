@@ -36,7 +36,7 @@ func TestIsFlaggedAnthropicMessagesRequest(t *testing.T) {
 		RequestBlockingEnabled:         true,
 		AllowedPromptPatterns:          []string{strings.ToLower(validPreamble)},
 	}
-	tk, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
+	tk, err := tokenizer.NewCL100kBaseTokenizer()
 	require.NoError(t, err)
 
 	// Helper function for calling the AnthropicMessageHandlerMethod's shouldFlagRequest, using the supplied
@@ -137,7 +137,7 @@ func TestIsFlaggedAnthropicMessagesRequest(t *testing.T) {
 		require.True(t, result.IsFlagged())
 		require.False(t, result.shouldBlock)
 		require.Contains(t, result.reasons, "high_prompt_token_count")
-		require.Equal(t, result.promptTokenCount, validPreambleTokens+4+cfg.PromptTokenFlaggingLimit+4, cfg)
+		require.Equal(t, result.promptTokenCount, validPreambleTokens+3+cfg.PromptTokenFlaggingLimit+3, cfg)
 	})
 
 	t.Run("high prompt token count (below block limit)", func(t *testing.T) {
@@ -156,12 +156,12 @@ func TestIsFlaggedAnthropicMessagesRequest(t *testing.T) {
 		require.True(t, result.IsFlagged())
 		require.True(t, result.shouldBlock)
 		require.Contains(t, result.reasons, "high_prompt_token_count")
-		require.Equal(t, result.promptTokenCount, validPreambleTokens+4+cfg.PromptTokenBlockingLimit+4)
+		require.Equal(t, result.promptTokenCount, validPreambleTokens+3+cfg.PromptTokenBlockingLimit+3, cfg)
 	})
 }
 
 func TestAnthropicMessagesRequestJSON(t *testing.T) {
-	_, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
+	_, err := tokenizer.NewCL100kBaseTokenizer()
 	require.NoError(t, err)
 
 	r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{

@@ -7,6 +7,7 @@ import { capitalize } from 'lodash'
 
 import { pluralize } from '@sourcegraph/common'
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Card, Text, Alert, PageSwitcher, Link, Select, Button, Badge, Tooltip } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -27,7 +28,6 @@ import {
     type GetAccessRequestsResult,
 } from '../../graphql-operations'
 import { useURLSyncedString } from '../../hooks/useUrlSyncedString'
-import { eventLogger } from '../../tracking/eventLogger'
 import { AccountCreatedAlert } from '../components/AccountCreatedAlert'
 import { SiteAdminPageTitle } from '../components/SiteAdminPageTitle'
 import { type IColumn, Table } from '../UserManagement/components/Table'
@@ -185,7 +185,7 @@ const FIRST_COUNT = 25
 
 export const AccessRequestsPage: React.FunctionComponent = () => {
     useEffect(() => {
-        eventLogger.logPageView('AccessRequestsPage')
+        EVENT_LOGGER.logPageView('AccessRequestsPage')
     }, [])
     const [error, setError] = useState<Error | null>(null)
 
@@ -219,7 +219,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
             if (!confirm('Are you sure you want to reject the selected access request?')) {
                 return
             }
-            eventLogger.log('AccessRequestRejected', { id })
+            EVENT_LOGGER.log('AccessRequestRejected', { id })
             rejectAccessRequest({
                 variables: {
                     id,
@@ -256,7 +256,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
             if (!confirm('Are you sure you want to approve the selected access request?')) {
                 return
             }
-            eventLogger.log('AccessRequestApproved', { id })
+            EVENT_LOGGER.log('AccessRequestApproved', { id })
             async function createUserAndApproveRequest(): Promise<void> {
                 const username = await generateUsername(name)
                 const { data } = await createUser({

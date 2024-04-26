@@ -226,10 +226,7 @@ type GitserverServiceClient interface {
 	MergeBase(ctx context.Context, in *MergeBaseRequest, opts ...grpc.CallOption) (*MergeBaseResponse, error)
 	// Blame runs a blame operation on the specified file. It returns a stream of
 	// hunks as they are found. The --incremental flag is used on the git CLI
-	// level to achieve this behavior. The endpoint will verify that the user is
-	// allowed to blame the given file if subrepo permissions are enabled for the
-	// repo. If access is denied, an error with a UnauthorizedPayload in the
-	// details is returned.
+	// level to achieve this behavior.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -242,21 +239,11 @@ type GitserverServiceClient interface {
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	DefaultBranch(ctx context.Context, in *DefaultBranchRequest, opts ...grpc.CallOption) (*DefaultBranchResponse, error)
 	// ReadFile gets a file from the repo ODB and streams the contents back.
-	// The endpoint will verify that the user is allowed to view the given file
-	// if subrepo permissions are enabled for the repo. If access is denied, an
-	// error with a UnauthorizedPayload in the details is returned. If the path
-	// points to a submodule, no error is returned and an empty file is streamed
-	// back.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error)
 	// GetCommit gets a commit from the repo ODB.
-	// The endpoint will verify that the user is allowed to view the given commit.
-	//
-	// If subrepo permissions are enabled for the repo. If access is denied, an
-	// error with a RevisionNotFoundPayload is returned, to not leak existence of
-	// the commit.
 	//
 	// If the commit is not found, an error with a RevisionNotFoundPayload is
 	// returned.
@@ -805,10 +792,7 @@ type GitserverServiceServer interface {
 	MergeBase(context.Context, *MergeBaseRequest) (*MergeBaseResponse, error)
 	// Blame runs a blame operation on the specified file. It returns a stream of
 	// hunks as they are found. The --incremental flag is used on the git CLI
-	// level to achieve this behavior. The endpoint will verify that the user is
-	// allowed to blame the given file if subrepo permissions are enabled for the
-	// repo. If access is denied, an error with a UnauthorizedPayload in the
-	// details is returned.
+	// level to achieve this behavior.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -821,21 +805,11 @@ type GitserverServiceServer interface {
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	DefaultBranch(context.Context, *DefaultBranchRequest) (*DefaultBranchResponse, error)
 	// ReadFile gets a file from the repo ODB and streams the contents back.
-	// The endpoint will verify that the user is allowed to view the given file
-	// if subrepo permissions are enabled for the repo. If access is denied, an
-	// error with a UnauthorizedPayload in the details is returned. If the path
-	// points to a submodule, no error is returned and an empty file is streamed
-	// back.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error
 	// GetCommit gets a commit from the repo ODB.
-	// The endpoint will verify that the user is allowed to view the given commit.
-	//
-	// If subrepo permissions are enabled for the repo. If access is denied, an
-	// error with a RevisionNotFoundPayload is returned, to not leak existence of
-	// the commit.
 	//
 	// If the commit is not found, an error with a RevisionNotFoundPayload is
 	// returned.

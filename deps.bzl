@@ -4689,6 +4689,13 @@ def go_dependencies():
         version = "v0.1.6",
     )
     go_repository(
+        name = "com_github_pkoukk_tiktoken_go_loader",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/pkoukk/tiktoken-go-loader",
+        sum = "h1:aOB2gRFzZTCCPi3YsOQXJO771P/5876JAsdebMyazig=",
+        version = "v0.0.1",
+    )
+    go_repository(
         name = "com_github_pmezard_go_difflib",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/pmezard/go-difflib",
@@ -5362,6 +5369,13 @@ def go_dependencies():
         importpath = "github.com/sourcegraph/log",
         sum = "h1:tHKdC+bXxxGJ0cy/R06kg6Z0zqwVGOWMx8uWsIwsaoY=",
         version = "v0.0.0-20231018134238-fbadff7458bb",
+    )
+    go_repository(
+        name = "com_github_sourcegraph_log_logr",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/log/logr",
+        sum = "h1:Ov40bLTzue0PfsOCGcRWEJt4Xh8ayq4OwBtawEqHgbM=",
+        version = "v0.0.0-20240425170707-431bcb6c8668",
     )
     go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_cloudflare",

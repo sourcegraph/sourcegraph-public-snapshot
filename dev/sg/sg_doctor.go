@@ -90,11 +90,10 @@ func runDoctorDiagnostics(cmd *cli.Context) error {
 	if o.Mode()&os.ModeCharDevice != os.ModeCharDevice {
 		// our output has been redirected to another program, so lets just render it raw
 		fmt.Println(markdown)
-	} else {
-		// rendering to a terminal! so lets make it nice
-		diagOut.WriteMarkdown(markdown)
+		return nil
 	}
-	return nil
+	// rendering to a terminal! so lets make it nice
+	return diagOut.WriteMarkdown(markdown)
 }
 
 func (d *diagnosticRunner) Run(ctx context.Context) DiagnosticReport {
@@ -123,6 +122,7 @@ func buildMarkdownReport(report DiagnosticReport) string {
 	fmt.Fprintf(&sb, "# Diagnostic Report\n\n")
 	// General information
 	fmt.Fprintf(&sb, "sg commit: `%s`\n\n", BuildCommit)
+	fmt.Fprintf(&sb, "sg release: `%s`\n\n", ReleaseName)
 	fmt.Fprintf(&sb, "generated on: `%s`\n\n", time.Now())
 	titleCaser := cases.Title(language.English)
 

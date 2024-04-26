@@ -237,11 +237,12 @@ type pingRequest struct {
 	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Cody App
 	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
 	// CodyUsage is deprecated, but here so we can receive pings from older instances
-	CodyUsage         json.RawMessage `json:"codyUsage,omitempty"`
-	CodyUsage2        json.RawMessage `json:"codyUsage2,omitempty"`
-	CodyProviders     json.RawMessage `json:"codyProviders,omitempty"`
-	RepoMetadataUsage json.RawMessage `json:"repoMetadataUsage,omitempty"`
-	LlmUsage          json.RawMessage `json:"llmUsage,omitempty"`
+	CodyUsage                    json.RawMessage `json:"codyUsage,omitempty"`
+	CodyUsage2                   json.RawMessage `json:"codyUsage2,omitempty"`
+	CodyProviders                json.RawMessage `json:"codyProviders,omitempty"`
+	RepoMetadataUsage            json.RawMessage `json:"repoMetadataUsage,omitempty"`
+	LlmUsage                     json.RawMessage `json:"llmUsage,omitempty"`
+	CodyContextFiltersConfigured bool            `json:"codyContextFiltersConfigured,omitempty"`
 }
 
 type dependencyVersions struct {
@@ -373,6 +374,7 @@ type pingPayload struct {
 	CodyProviders                 json.RawMessage `json:"cody_providers"`
 	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
 	LlmUsage                      json.RawMessage `json:"llm_usage"`
+	CodyContextFiltersConfigured  string          `json:"cody_context_filters_configured"`
 }
 
 func logPing(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter, r *http.Request, pr *pingRequest, hasUpdate bool) {
@@ -476,6 +478,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		CodyProviders:                 pr.CodyProviders,
 		RepoMetadataUsage:             pr.RepoMetadataUsage,
 		LlmUsage:                      pr.LlmUsage,
+		CodyContextFiltersConfigured:  strconv.FormatBool(pr.CodyContextFiltersConfigured),
 	})
 }
 

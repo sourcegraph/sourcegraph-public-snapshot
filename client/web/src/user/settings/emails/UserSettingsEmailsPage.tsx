@@ -5,6 +5,7 @@ import { lastValueFrom } from 'rxjs'
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Container, PageHeader, LoadingSpinner, Alert, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
@@ -18,7 +19,6 @@ import type {
     UserSettingsEmailsSiteFlagsResult,
     UserSettingsEmailsSiteFlagsVariables,
 } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { ScimAlert } from '../ScimAlert'
 
 import { AddUserEmailForm } from './AddUserEmailForm'
@@ -79,7 +79,7 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
     }, [user, setStatusOrError, setEmails])
 
     useEffect(() => {
-        eventLogger.logViewEvent('UserSettingsEmails')
+        EVENT_LOGGER.logViewEvent('UserSettingsEmails')
     }, [])
 
     useEffect(() => {

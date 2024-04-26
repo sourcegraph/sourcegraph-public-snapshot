@@ -5,10 +5,11 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewEnterpriseFilter(t *testing.T) {
@@ -525,10 +526,17 @@ func TestNewEnterpriseFilter(t *testing.T) {
 			})
 
 			f := newEnterpriseFilter(logtest.Scoped(t))
-			allowedRepos, filter, _ := f.GetFilter(context.Background(), tt.repos)
+			allowedRepos, matcher, _ := f.GetMatcher(context.Background(), tt.repos)
 
 			require.Equal(t, tt.wantRepos, allowedRepos)
-			require.Equal(t, tt.wantChunks, filter(tt.chunks))
+
+			filtered := make([]FileChunkContext, 0, len(tt.chunks))
+			for _, chunk := range tt.chunks {
+				if matcher(chunk.RepoID, chunk.Path) {
+					filtered = append(filtered, chunk)
+				}
+			}
+			require.Equal(t, tt.wantChunks, filtered)
 		})
 	}
 }

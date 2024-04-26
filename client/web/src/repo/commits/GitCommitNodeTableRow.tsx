@@ -4,9 +4,9 @@ import { mdiChevronUp, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Link, Icon, Code } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../tracking/eventLogger'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 import { Linkified } from '../linkifiy/Linkified'
 import { isPerforceChangelistMappingEnabled } from '../utils'
@@ -30,7 +30,7 @@ export const GitCommitNodeTableRow: React.FC<
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
 
     const toggleShowCommitMessageBody = useCallback((): void => {
-        eventLogger.log('CommitBodyToggled')
+        EVENT_LOGGER.log('CommitBodyToggled')
         setShowCommitMessageBody(!showCommitMessageBody)
     }, [showCommitMessageBody])
 
