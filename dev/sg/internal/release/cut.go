@@ -68,10 +68,20 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Release branch %q does not exist in remote", releaseBranch))
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the default branch is up to date with remote ..."))
+	if _, err := defaultGitRepoBranch.FetchOrigin(ctx); err != nil {
+		p.Destroy()
+		return errors.Wrapf(err, "fetching origin for %q", defaultBranch)
+	}
+
+	if err := defaultGitRepoBranch.Checkout(ctx); err != nil {
+		p.Destroy()
+		return errors.Wrapf(err, "checking out %q", defaultBranch)
+	}
+
 	if ok, err := defaultGitRepoBranch.IsOutOfSync(ctx); err != nil {
 		p.Destroy()
 		return errors.Wrapf(err, "checking if %q branch is up to date with remote", defaultBranch)
-	} else if !ok {
+	} else if ok {
 		p.Destroy()
 		return errors.Newf("local branch %q is not up to date with remote", defaultBranch)
 	}
