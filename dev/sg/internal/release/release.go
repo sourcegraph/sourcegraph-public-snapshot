@@ -209,6 +209,12 @@ var Command = &cli.Command{
 					Usage:    "the version to cut",
 					Aliases:  []string{"v"},
 				},
+				&cli.StringFlag{
+					Name:    "branch",
+					Aliases: []string{"b"},
+					Usage:   "the branch to cut the release from",
+					Value:   "main",
+				},
 			},
 		},
 	},

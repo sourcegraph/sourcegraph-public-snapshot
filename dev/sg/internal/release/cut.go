@@ -28,10 +28,10 @@ func cutReleaseBranch(cctx *cli.Context) error {
 		return errors.Newf("invalid version %q, must be semver", version)
 	}
 
-	ctx := cctx.Context
-
 	releaseBranch := v.String()
-	defaultBranch := "main"
+	defaultBranch := cctx.String("branch")
+
+	ctx := cctx.Context
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the release branch exists locally ..."))
 	if _, err := execute.Git(ctx, "rev-parse", "--verify", releaseBranch); err == nil {
