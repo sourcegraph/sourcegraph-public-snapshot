@@ -31,6 +31,7 @@ import {
     createFileNamesResult,
     createResolveCloningRepoRevisionResult,
     createFileTreeEntriesResult,
+    createCodyContextFiltersResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants, removeContextFromQuery } from './utils'
@@ -48,6 +49,7 @@ export const getCommonRepositoryGraphQlResults = (
     TreeEntries: () => createTreeEntriesResult(repositoryUrl, fileEntries),
     FileTreeEntries: () => createFileTreeEntriesResult(repositoryUrl, fileEntries),
     Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
+    ContextFilters: () => createCodyContextFiltersResult(),
 })
 
 const now = new Date()
