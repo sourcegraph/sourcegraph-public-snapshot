@@ -509,6 +509,11 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) ([]*schemaDr
 
 // isRequiredOutOfBandMigration returns true if an OOB migration will be deprecated in the latest version and has not progressed to completion.
 func isRequiredOutOfBandMigration(currentVersion, latestVersion oobmigration.Version, m oobmigration.Migration) bool {
+	// If current version is dev, no deprecated migrations are required.
+	if currentVersion.Dev && m.Deprecated != nil {
+		return false
+	}
+
 	// If the migration is not marked as deprecated, or was deprecated before the current product version, it is not required.
 	if m.Deprecated == nil || oobmigration.CompareVersions(*m.Deprecated, currentVersion) == oobmigration.VersionOrderBefore {
 		return false

@@ -660,8 +660,44 @@ export const SET_AUTO_UPGRADE = gql`
 export function fetchAllOutOfBandMigrations(): Observable<OutOfBandMigrationFields[]> {
     return requestGraphQL<OutOfBandMigrationsResult, OutOfBandMigrationsVariables>(
         gql`
-            query OutOfBandMigrations {
+            query AllOutOfBandMigrations {
                 outOfBandMigrations {
+                    ...OutOfBandMigrationFields
+                }
+            }
+
+            fragment OutOfBandMigrationFields on OutOfBandMigration {
+                id
+                team
+                component
+                description
+                introduced
+                deprecated
+                progress
+                created
+                lastUpdated
+                nonDestructive
+                applyReverse
+                errors {
+                    message
+                    created
+                }
+            }
+        `
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.outOfBandMigrations)
+    )
+}
+
+/**
+ * Fetches out-of-band migrations which have not been deprecated or were not deprecated before the Sourcegraph init version.
+ */
+export function fetchRelevantOutOfBandMigrations(): Observable<OutOfBandMigrationFields[]> {
+    return requestGraphQL<OutOfBandMigrationsResult, OutOfBandMigrationsVariables>(
+        gql`
+            query RelevantOutOfBandMigrations {
+                outOfBandMigrations(FilterDeprecatedBeforeFirstVersion: true) {
                     ...OutOfBandMigrationFields
                 }
             }

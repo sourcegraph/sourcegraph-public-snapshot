@@ -29,14 +29,14 @@ import { PageTitle } from '../components/PageTitle'
 import type { OutOfBandMigrationFields } from '../graphql-operations'
 
 import {
-    fetchAllOutOfBandMigrations as defaultFetchAllMigrations,
+    fetchRelevantOutOfBandMigrations as defaultFetchRelevantMigrations,
     fetchSiteUpdateCheck as defaultFetchSiteUpdateCheck,
 } from './backend'
 
 import styles from './SiteAdminMigrationsPage.module.scss'
 
 export interface SiteAdminMigrationsPageProps extends TelemetryProps {
-    fetchAllMigrations?: typeof defaultFetchAllMigrations
+    fetchRelevantMigrations?: typeof defaultFetchRelevantMigrations
     fetchSiteUpdateCheck?: () => Observable<{ productVersion: string }>
     now?: () => Date
 }
@@ -81,7 +81,7 @@ const DOWNGRADE_RANGE = 1
 export const SiteAdminMigrationsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminMigrationsPageProps>
 > = ({
-    fetchAllMigrations = defaultFetchAllMigrations,
+    fetchRelevantMigrations = defaultFetchRelevantMigrations,
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
     now,
     telemetryService,
@@ -91,14 +91,14 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
             () =>
                 timer(0, REFRESH_INTERVAL_MS, undefined).pipe(
                     concatMap(() =>
-                        fetchAllMigrations().pipe(
+                        fetchRelevantMigrations().pipe(
                             catchError((error): [ErrorLike] => [asError(error)]),
                             repeat({ delay: REFRESH_INTERVAL_MS })
                         )
                     ),
                     takeWhile(() => true, true)
                 ),
-            [fetchAllMigrations]
+            [fetchRelevantMigrations]
         )
     )
 
