@@ -88,17 +88,11 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Local branch is up to date with remote"))
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Creating release branch..."))
-	if _, err := execute.Git(ctx, "checkout", "-b", releaseBranch); err != nil {
+	if err := releaseGitRepoBranch.Checkout(ctx); err != nil {
 		p.Destroy()
 		return errors.Wrap(err, "failed to create release branch")
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Release branch %q created", releaseBranch))
-
-	defer func() {
-		if _, err = execute.Git(ctx, "checkout", "-"); err != nil {
-			std.Out.WriteWarningf("Unable to checkout previous branch before branch cut. %s", err.Error())
-		}
-	}()
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Pushing release branch..."))
 	if _, err := releaseGitRepoBranch.Push(ctx); err != nil {
