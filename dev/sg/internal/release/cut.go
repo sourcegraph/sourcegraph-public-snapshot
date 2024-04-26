@@ -90,9 +90,6 @@ func cutReleaseBranch(cctx *cli.Context) error {
 		}
 	}()
 
-	fmt.Println("done...")
-	return nil
-
 	p = std.Out.Pending(output.Styled(output.StylePending, "Pushing release branch..."))
 	if _, err := releaseGitRepoBranch.Push(ctx); err != nil {
 		p.Destroy()
