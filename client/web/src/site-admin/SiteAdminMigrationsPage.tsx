@@ -424,7 +424,9 @@ export const isInvalidForVersion = (migration: OutOfBandMigrationFields, version
         const deprecated = parseVersion(`${migration.deprecated}.0`)
         if (deprecated && version.major === deprecated.major && version.minor >= deprecated.minor) {
             return migration.progress !== 1
-        } else if (deprecated && version.major > deprecated.major) {
+        }
+
+        if (deprecated && version.major > deprecated.major) {
             return migration.progress !== 1
         }
     }
