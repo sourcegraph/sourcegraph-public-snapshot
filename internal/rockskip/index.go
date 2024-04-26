@@ -138,7 +138,7 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 		addedPaths := []string{}
 		for _, pathStatus := range entry.PathStatuses {
 			if !utf8.ValidString(pathStatus.Path) {
-				s.logger.Error(
+				s.logger.Warn(
 					"Rockskip skipping file due to path not being utf-8 encoded",
 					log.String("repo", repo),
 					log.String("path", pathStatus.Path),
