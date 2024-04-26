@@ -275,7 +275,7 @@ func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 
 	workdir := cctx.String("workdir")
 	pretend := cctx.Bool("pretend")
-  isDevelopment := cctx.Bool("development")
+	isDevelopment := cctx.Bool("development")
 	var version string
 	if cctx.String("version") == "auto" {
 		var err error
