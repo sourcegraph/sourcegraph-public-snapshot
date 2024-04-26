@@ -125,21 +125,21 @@
 
 <!-- Note: Splitting this at this level is not great but Svelte doesn't allow to conditionally render slots (yet) -->
 {#if data.compare}
-    <FileHeader type="blob" {repoName} path={filePath}>
+    <FileHeader type="blob" {repoName} {revision} path={filePath}>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
             <span>{data.compare.revisionToCompare}</span>
         </svelte:fragment>
     </FileHeader>
 {:else if embedded}
-    <FileHeader type="blob" {repoName} path={filePath} hideSidebarToggle>
+    <FileHeader type="blob" {repoName} {revision} path={filePath} hideSidebarToggle>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
             <slot name="actions" />
         </svelte:fragment>
     </FileHeader>
 {:else}
-    <FileHeader type="blob" {repoName} path={filePath}>
+    <FileHeader type="blob" {repoName} {revision} path={filePath}>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
             {#await data.externalServiceType then externalServiceType}
