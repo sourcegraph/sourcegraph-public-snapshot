@@ -9,10 +9,10 @@ import { catchError, debounceTime } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
-import { eventLogger } from '../tracking/eventLogger'
 
 import { ApiConsoleToolbar } from './ApiConsoleToolbar'
 
@@ -104,7 +104,7 @@ class ApiConsoleInner extends React.PureComponent<InnerProps, State> {
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('ApiConsole')
+        EVENT_LOGGER.logViewEvent('ApiConsole')
         this.props.telemetryRecorder.recordEvent('api-console', 'view')
 
         // Update the browser URL bar when query/variables/operation name are

@@ -47,7 +47,8 @@ internal:
               "message": "Internal release build for {{version}}",
               "env": {
                     "RELEASE_INTERNAL": "true",
-                    "VERSION": "{{tag}}"
+                    "VERSION": "{{tag}}",
+                    "IS_DEVELOPMENT_RELEASE": "{{is_development}}"
               }
             }' https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds)
             exit_code=$?
@@ -81,8 +82,8 @@ internal:
             echo "--- raw body ---"
             exit $exit_code
           else
-            echo "Build created, see:"
-            echo $body | jq .web_url
+            echo "Release created, see:"
+            echo $body
           fi
       - name: 'notifications'
         cmd: |
@@ -166,6 +167,25 @@ test:
 promoteToPublic:
   create:
     steps:
+      - name: 'validate promotion criteria'
+        cmd: |
+          echo "validating promotion criteria"
+          body=$(wget --content-on-error -O- --header="Content-Type: application/json" "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}")
+          exit_code=$?
+
+          if [ $exit_code != 0 ]; then
+            echo "❌ Failed to fetch release on release registry, got:"
+            echo "--- raw body ---"
+            echo $body
+            echo "--- raw body ---"
+            exit $exit_code
+          fi
+
+          is_development=$(echo "$body" | jq -r '.is_development')
+          if [ "$is_development" = "true" ]; then
+            echo "cannot promote a development release"
+            exit 1
+          fi
       - name: 'buildkite'
         cmd: |
           # We set DISABLE_ASPECT_WORKFLOWS to true, because the promotion is purely about retagging images
@@ -208,8 +228,8 @@ promoteToPublic:
               echo "--- raw body ---"
               exit $exit_code
             else
-              echo "Build created, see:"
-              echo $body | jq .web_url
+              echo "Release promoted, see:"
+              echo $body
             fi
       - name: 'git:tag'
         cmd: |

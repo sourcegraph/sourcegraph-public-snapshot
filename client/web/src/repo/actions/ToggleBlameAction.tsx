@@ -3,10 +3,10 @@ import { useCallback } from 'react'
 import { mdiGit } from '@mdi/js'
 
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import type { RenderMode } from '@sourcegraph/shared/src/util/url'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../tracking/eventLogger'
 import { useBlameVisibility } from '../blame/hooks'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import { RepoActionInfo } from '../RepoActionInfo'
@@ -34,10 +34,10 @@ export const ToggleBlameAction: React.FC<Props> = props => {
     const toggleBlameState = useCallback(() => {
         if (isBlameVisible) {
             setIsBlameVisible(false)
-            eventLogger.log('GitBlameDisabled')
+            EVENT_LOGGER.log('GitBlameDisabled')
         } else {
             setIsBlameVisible(true)
-            eventLogger.log('GitBlameEnabled')
+            EVENT_LOGGER.log('GitBlameEnabled')
         }
     }, [isBlameVisible, setIsBlameVisible])
 

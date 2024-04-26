@@ -6,6 +6,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Container, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
@@ -17,7 +18,6 @@ import type {
     ProductSubscriptionsVariables,
     UserAreaUserFields,
 } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import {
     ProductSubscriptionNode,
     ProductSubscriptionNodeHeader,
@@ -89,7 +89,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                         <Link
                             to="https://sourcegraph.com"
                             onClick={() => {
-                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Subscriptions' })
+                                EVENT_LOGGER.log('ClickedOnEnterpriseCTA', { location: 'Subscriptions' })
                                 props.telemetryRecorder.recordEvent('settings.userSubscriptions.enterpriseCTA', 'click')
                             }}
                         >

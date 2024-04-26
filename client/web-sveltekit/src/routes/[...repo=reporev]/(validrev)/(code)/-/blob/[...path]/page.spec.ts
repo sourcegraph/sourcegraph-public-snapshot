@@ -241,6 +241,15 @@ test.describe('file header', () => {
         await expect(page.getByText('12.35 KB')).toBeVisible()
         await expect(page.getByText('42 lines')).toBeVisible()
     })
+
+    test('breadcrumbs', async ({ page }) => {
+        await page.goto(url)
+        const parentBreadcrumb = page.getByRole('link', { name: 'src' })
+        await expect(parentBreadcrumb).toBeVisible()
+        await parentBreadcrumb.click()
+        await page.waitForURL(`${repoName}/-/tree/src`)
+        await expect(page.getByRole('link', { name: 'src' })).toBeVisible()
+    })
 })
 
 test.describe('scroll behavior', () => {

@@ -4,10 +4,10 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, type Series } from '@sourcegraph/wildcard'
 
 import type { SearchStatisticsResult, SearchStatisticsVariables } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
@@ -30,7 +30,7 @@ export const AnalyticsSearchPage: React.FC = () => {
         },
     })
     useEffect(() => {
-        eventLogger.logPageView('AdminAnalyticsSearch')
+        EVENT_LOGGER.logPageView('AdminAnalyticsSearch')
     }, [])
     const [stats, legends] = useMemo(() => {
         if (!data) {

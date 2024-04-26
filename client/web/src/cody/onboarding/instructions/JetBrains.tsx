@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react'
 import classNames from 'classnames'
 
 import type { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, H2, Link, Text } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../../tracking/eventLogger'
 import { EventName } from '../../../util/constants'
 import { EditorStep } from '../../management/CodyManagementPage'
 
@@ -29,10 +29,10 @@ export function JetBrainsInstructions({
 
     useEffect(() => {
         if (step === EditorStep.SetupInstructions) {
-            eventLogger.log(EventName.CODY_EDITOR_SETUP_VIEWED, { editor: 'JetBrains' })
+            EVENT_LOGGER.log(EventName.CODY_EDITOR_SETUP_VIEWED, { editor: 'JetBrains' })
             telemetryRecorder.recordEvent('cody.editorSetupPage', 'view', { metadata: { jetBrains: 1 } })
         } else if (step === EditorStep.CodyFeatures) {
-            eventLogger.log(EventName.CODY_EDITOR_FEATURES_VIEWED, { editor: 'JetBrains' })
+            EVENT_LOGGER.log(EventName.CODY_EDITOR_FEATURES_VIEWED, { editor: 'JetBrains' })
             telemetryRecorder.recordEvent('cody.editorFeaturesPage', 'view', { metadata: { jetBrains: 1 } })
         }
     }, [step, telemetryRecorder])
@@ -60,7 +60,7 @@ export function JetBrainsInstructions({
                                             rel="noopener"
                                             onClick={event => {
                                                 event.preventDefault()
-                                                eventLogger.log(EventName.CODY_EDITOR_SETUP_OPEN_MARKETPLACE, {
+                                                EVENT_LOGGER.log(EventName.CODY_EDITOR_SETUP_OPEN_MARKETPLACE, {
                                                     editor: 'JetBrains',
                                                 })
                                                 telemetryRecorder.recordEvent(

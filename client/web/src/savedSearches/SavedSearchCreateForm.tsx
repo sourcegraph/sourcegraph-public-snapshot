@@ -6,12 +6,12 @@ import { catchError, map, switchMap } from 'rxjs/operators'
 import type { Omit } from 'utility-types'
 
 import { type ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import type { NamespaceProps } from '../namespaces'
 import { createSavedSearch } from '../search/backend'
-import { eventLogger } from '../tracking/eventLogger'
 
 import { type SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
@@ -69,7 +69,7 @@ class InnerSavedSearchCreateForm extends React.Component<Props, State> {
                 .subscribe(([createdOrError, queryDescription]) => {
                     this.setState({ createdOrError })
                     if (createdOrError === true) {
-                        eventLogger.log('SavedSearchCreated')
+                        EVENT_LOGGER.log('SavedSearchCreated')
                         this.props.telemetryRecorder.recordEvent(
                             `${this.props.namespace.__typename.toLowerCase()}.savedSearch`,
                             'create'
@@ -81,7 +81,7 @@ class InnerSavedSearchCreateForm extends React.Component<Props, State> {
                     }
                 })
         )
-        eventLogger.logViewEvent('NewSavedSearchPage')
+        EVENT_LOGGER.logViewEvent('NewSavedSearchPage')
         this.props.telemetryRecorder.recordEvent(
             `${this.props.namespace.__typename.toLowerCase()}.savedSearches.new`,
             'view'
