@@ -101,6 +101,12 @@ type GitBackend interface {
 	// If the repository is empty, a RevisionNotFoundError is returned (as the
 	// "HEAD" ref does not exist).
 	FirstEverCommit(ctx context.Context) (api.CommitID, error)
+
+	// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+	// revspecs).
+	// If one of the two given revspecs does not exist, a RevisionNotFoundError
+	// is returned.
+	GetBehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error)
 }
 
 type GitDiffComparisonType int

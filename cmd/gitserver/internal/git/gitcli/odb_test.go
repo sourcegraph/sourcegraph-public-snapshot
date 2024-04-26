@@ -325,3 +325,61 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 		}
 	})
 }
+
+func TestGitCLIBackend_GetBehindAhead(t *testing.T) {
+	ctx := context.Background()
+
+	// Prepare repo state:
+	backend := BackendWithRepoCommands(t,
+		"echo abcd > file1",
+		"git add file1",
+		"git commit -m commit1 --author='Foo Author <foo@sourcegraph.com>'",
+		"git branch branch1",
+		"echo efgh > file2",
+		"git add file2",
+		"git commit -m commit2 --author='Foo Author <foo@sourcegraph.com>'",
+		"git checkout branch1",
+		"echo ijkl > file3",
+		"git add file3",
+		"git commit -m commit3 --author='Foo Author <foo@sourcegraph.com>'",
+	)
+
+	left := "branch1"
+	right := "master"
+
+	t.Run("valid branches", func(t *testing.T) {
+		behindAhead, err := backend.GetBehindAhead(ctx, left, right)
+		require.NoError(t, err)
+		require.Equal(t, &gitdomain.BehindAhead{Behind: 1, Ahead: 1}, behindAhead)
+	})
+
+	t.Run("missing left branch", func(t *testing.T) {
+		_, err := backend.GetBehindAhead(ctx, left, "")
+		require.NoError(t, err) // Should compare to HEAD
+	})
+
+	t.Run("missing right branch", func(t *testing.T) {
+		_, err := backend.GetBehindAhead(ctx, "", right)
+		require.NoError(t, err) // Should compare to HEAD
+	})
+
+	t.Run("invalid left branch", func(t *testing.T) {
+		_, err := backend.GetBehindAhead(ctx, "invalid-branch", right)
+		require.Error(t, err)
+		var e *gitdomain.RevisionNotFoundError
+		require.True(t, errors.As(err, &e))
+	})
+
+	t.Run("invalid right branch", func(t *testing.T) {
+		_, err := backend.GetBehindAhead(ctx, left, "invalid-branch")
+		require.Error(t, err)
+		var e *gitdomain.RevisionNotFoundError
+		require.True(t, errors.As(err, &e))
+	})
+
+	t.Run("same branch", func(t *testing.T) {
+		behindAhead, err := backend.GetBehindAhead(ctx, left, left)
+		require.NoError(t, err)
+		require.Equal(t, &gitdomain.BehindAhead{Behind: 0, Ahead: 0}, behindAhead)
+	})
+}

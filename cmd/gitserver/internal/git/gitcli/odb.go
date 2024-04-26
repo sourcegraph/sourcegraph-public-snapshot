@@ -3,6 +3,7 @@ package gitcli
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -186,6 +187,49 @@ func (g *gitCLIBackend) getBlobOID(ctx context.Context, commit api.CommitID, pat
 		return "", errIsSubmodule
 	}
 	return api.CommitID(fields[2]), nil
+}
+
+func (g *gitCLIBackend) GetBehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error) {
+	if err := checkSpecArgSafety(left); err != nil {
+		return nil, err
+	}
+	if err := checkSpecArgSafety(right); err != nil {
+		return nil, err
+	}
+
+	rc, err := g.NewCommand(ctx, WithArguments("rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right)))
+	if err != nil {
+		return nil, errors.Wrap(err, "running git rev-list")
+	}
+	defer rc.Close()
+
+	out, err := io.ReadAll(rc)
+	if err != nil {
+		var cmdFailedErr *CommandFailedError
+		if errors.As(err, &cmdFailedErr) {
+			if cmdFailedErr.ExitStatus == 128 && bytes.Contains(cmdFailedErr.Stderr, []byte("fatal: ambiguous argument")) {
+				// If the error is due to an unknown or ambiguous revision, return a sentinel error.
+				e := &gitdomain.RevisionNotFoundError{
+					Repo: g.repoName,
+					Spec: fmt.Sprintf("%s...%s", left, right),
+				}
+				return nil, e
+			}
+		}
+
+		return nil, errors.Wrap(err, "reading git rev-list output")
+	}
+
+	behindAhead := strings.Split(strings.TrimSuffix(string(out), "\n"), "\t")
+	b, err := strconv.ParseUint(behindAhead[0], 10, 0)
+	if err != nil {
+		return nil, err
+	}
+	a, err := strconv.ParseUint(behindAhead[1], 10, 0)
+	if err != nil {
+		return nil, err
+	}
+	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
 func (g *gitCLIBackend) FirstEverCommit(ctx context.Context) (api.CommitID, error) {
