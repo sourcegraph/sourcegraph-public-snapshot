@@ -174,7 +174,7 @@ promoteToPublic:
           exit_code=$?
 
           if [ $exit_code != 0 ]; then
-            echo "❌ Failed to promote release on release registry, got:"
+            echo "❌ Failed to fetch release on release registry, got:"
             echo "--- raw body ---"
             echo $body
             echo "--- raw body ---"
