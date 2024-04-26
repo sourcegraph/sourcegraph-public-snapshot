@@ -25,8 +25,10 @@ import type {
     OrganizationsResult,
     OrganizationsVariables,
     OutOfBandMigrationFields,
-    OutOfBandMigrationsResult,
-    OutOfBandMigrationsVariables,
+    AllOutOfBandMigrationsResult,
+    AllOutOfBandMigrationsVariables,
+    RelevantOutOfBandMigrationsResult,
+    RelevantOutOfBandMigrationsVariables,
     RandomizeUserPasswordResult,
     ReloadSiteResult,
     ReloadSiteVariables,
@@ -658,7 +660,7 @@ export const SET_AUTO_UPGRADE = gql`
  * Fetches all out-of-band migrations.
  */
 export function fetchAllOutOfBandMigrations(): Observable<OutOfBandMigrationFields[]> {
-    return requestGraphQL<OutOfBandMigrationsResult, OutOfBandMigrationsVariables>(
+    return requestGraphQL<AllOutOfBandMigrationsResult, AllOutOfBandMigrationsVariables>(
         gql`
             query AllOutOfBandMigrations {
                 outOfBandMigrations {
@@ -694,7 +696,7 @@ export function fetchAllOutOfBandMigrations(): Observable<OutOfBandMigrationFiel
  * Fetches out-of-band migrations which have not been deprecated or were not deprecated before the Sourcegraph init version.
  */
 export function fetchRelevantOutOfBandMigrations(): Observable<OutOfBandMigrationFields[]> {
-    return requestGraphQL<OutOfBandMigrationsResult, OutOfBandMigrationsVariables>(
+    return requestGraphQL<RelevantOutOfBandMigrationsResult, RelevantOutOfBandMigrationsVariables>(
         gql`
             query RelevantOutOfBandMigrations {
                 outOfBandMigrations(FilterDeprecatedBeforeFirstVersion: true) {
