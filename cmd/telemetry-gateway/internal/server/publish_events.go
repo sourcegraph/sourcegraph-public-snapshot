@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cockroachdb/redact"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 func handlePublishEvents(
@@ -32,7 +33,9 @@ func handlePublishEvents(
 	results := publisher.Publish(ctx, events)
 
 	// Aggregate failure details
-	summary := summarizePublishEventsResults(results)
+	summary := summarizePublishEventsResults(results, summarizePublishEventsResultsOpts{
+		onlyReportRetriableAsFailed: publisher.IsSourcegraphInstance(),
+	})
 
 	// Record the result on the trace and metrics
 	resultAttribute := attribute.String("result", summary.result)
@@ -76,17 +79,53 @@ type publishEventsSummary struct {
 	failedEvents    []events.PublishEventResult
 }
 
-func summarizePublishEventsResults(results []events.PublishEventResult) publishEventsSummary {
+type summarizePublishEventsResultsOpts struct {
+	onlyReportRetriableAsFailed bool
+}
+
+func summarizePublishEventsResults(results []events.PublishEventResult, opts summarizePublishEventsResultsOpts) publishEventsSummary {
 	var (
 		errFields = make([]log.Field, 0)
 		succeeded = make([]string, 0, len(results))
 		failed    = make([]events.PublishEventResult, 0)
 	)
 
+	// We aggregate all errors on a single log entry to get accurate
+	// representations of issues in Sentry, while not generating thousands of
+	// log entries at the same time. Because this means we only get higher-level
+	// logger context, we must annotate the errors with some hidden details to
+	// preserve Sentry grouping while adding context for diagnostics.
 	for i, result := range results {
 		if result.PublishError != nil {
-			failed = append(failed, result)
-			errFields = append(errFields, log.NamedError(fmt.Sprintf("error.%d", i), result.PublishError))
+			if result.Retryable {
+				// Let the client know that this event failed to submit, so they
+				// can retry it.
+				failed = append(failed, result)
+			} else if opts.onlyReportRetriableAsFailed {
+				// Sourcegraph instances will continue to retry unretriable
+				// failures - for clients where we should only provide retriable
+				// failures, we want to PRETEND that non-retriable issues were
+				// successful, so that clients don't retry endlessly.
+				//
+				// We will still generate a log entry for these errors in all
+				// cases, so this discard is okay.
+				succeeded = append(succeeded, result.EventID)
+			} else {
+				// Let the client know that this event failed to submit.
+				failed = append(failed, result)
+			}
+			// Construct details to annotate the error with in Sentry reports
+			// without affecting the error itself (which is important for
+			// grouping within Sentry)
+			errFields = append(errFields, log.NamedError(fmt.Sprintf("error.%d", i),
+				errors.WithSafeDetails(result.PublishError,
+					"feature:%[1]q action:%[2]q id:%[3]q %[4]s", // mimic format of result.EventSource
+					redact.Safe(result.EventFeature),
+					redact.Safe(result.EventAction),
+					redact.Safe(result.EventID),
+					redact.Safe(result.EventSource),
+				),
+			))
 		} else {
 			succeeded = append(succeeded, result.EventID)
 		}

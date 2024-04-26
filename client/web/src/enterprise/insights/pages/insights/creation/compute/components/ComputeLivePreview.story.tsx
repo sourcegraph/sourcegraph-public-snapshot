@@ -44,29 +44,37 @@ const mock: MockedResponse<GetInsightPreviewResult> = {
                     __typename: 'SearchInsightLivePreviewSeries',
                     label: 'Foo',
                     points: [
-                        { __typename: 'InsightDataPoint', diffQuery: 'type:diff', dateTime: '0', value: 100 },
-                        { __typename: 'InsightDataPoint', diffQuery: 'type:diff', dateTime: '0', value: 200 },
+                        { __typename: 'InsightDataPoint', pointInTimeQuery: 'type:diff', dateTime: '0', value: 100 },
+                        { __typename: 'InsightDataPoint', pointInTimeQuery: 'type:diff', dateTime: '0', value: 200 },
                     ],
                 },
                 {
                     __typename: 'SearchInsightLivePreviewSeries',
                     label: 'Boo',
-                    points: [{ __typename: 'InsightDataPoint', diffQuery: 'type:diff', dateTime: '0', value: 200 }],
+                    points: [
+                        { __typename: 'InsightDataPoint', pointInTimeQuery: 'type:diff', dateTime: '0', value: 200 },
+                    ],
                 },
                 {
                     __typename: 'SearchInsightLivePreviewSeries',
                     label: 'Baz',
-                    points: [{ __typename: 'InsightDataPoint', diffQuery: 'type:diff', dateTime: '0', value: 500 }],
+                    points: [
+                        { __typename: 'InsightDataPoint', pointInTimeQuery: 'type:diff', dateTime: '0', value: 500 },
+                    ],
                 },
                 {
                     __typename: 'SearchInsightLivePreviewSeries',
                     label: 'Qux',
-                    points: [{ __typename: 'InsightDataPoint', diffQuery: 'type:diff', dateTime: '0', value: 300 }],
+                    points: [
+                        { __typename: 'InsightDataPoint', pointInTimeQuery: 'type:diff', dateTime: '0', value: 300 },
+                    ],
                 },
                 {
                     __typename: 'SearchInsightLivePreviewSeries',
                     label: 'Corge',
-                    points: [{ __typename: 'InsightDataPoint', diffQuery: 'type:diff', dateTime: '0', value: 150 }],
+                    points: [
+                        { __typename: 'InsightDataPoint', pointInTimeQuery: 'type:diff', dateTime: '0', value: 150 },
+                    ],
                 },
             ],
         },

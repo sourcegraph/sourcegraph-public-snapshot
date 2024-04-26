@@ -515,9 +515,9 @@ function filterValueSuggestions(caches: Caches): InternalSource {
         const from = token.value?.range.start ?? token.range.end
         const to = token.value?.range.end ?? token.range.end
 
+        const predicates = staticFilterPredicateOptions(resolvedFilter.type, token, from, to)
         switch (resolvedFilter.definition.suggestions) {
             case 'repo': {
-                const predicates = staticFilterPredicateOptions('repo', token, from, to)
                 return caches.repo.query(
                     value,
                     entries => {
@@ -550,7 +550,6 @@ function filterValueSuggestions(caches: Caches): InternalSource {
             }
 
             case 'path': {
-                const predicates = staticFilterPredicateOptions('file', token, from, to)
                 return caches.file.query(
                     value,
                     entries => {
@@ -596,12 +595,21 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                                     options: entries.map(entry => toContextCompletion(entry, from, to)),
                                 },
                                 contextActions,
+                                ...(predicates.length > 0 ? [{ title: 'Predicates', options: predicates }] : []),
                             ]
                         })
                     }
                     default: {
                         const options = staticFilterValueOptions(token, resolvedFilter)
-                        return options.length > 0 ? { result: [{ title: '', options }] } : null
+                        if (options.length === 0 && predicates.length === 0) {
+                            return null
+                        }
+                        return {
+                            result: [
+                                ...(options.length > 0 ? [{ title: '', options }] : []),
+                                ...(predicates.length > 0 ? [{ title: 'Predicates', options: predicates }] : []),
+                            ],
+                        }
                     }
                 }
             }
@@ -711,7 +719,7 @@ const predicateFzfOption: PredicateFzfOptions = {
 /**
  * Returns predicate options for the provided filter type.
  */
-function staticFilterPredicateOptions(type: 'repo' | 'file', filter: Filter, from: number, to: number): Option[] {
+function staticFilterPredicateOptions(type: FilterType, filter: Filter, from: number, to: number): Option[] {
     const fzf = new Fzf(predicateCompletion(type), predicateFzfOption)
     return fzf.find(filter.value?.value || '').map(({ item, positions }) => ({
         label: item.label,

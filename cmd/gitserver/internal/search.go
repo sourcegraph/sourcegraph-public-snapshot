@@ -8,9 +8,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -20,7 +23,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
+var (
+	searchRunning = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_search_running",
+		Help: "number of gitserver.Search running concurrently.",
+	})
+	searchDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_gitserver_search_duration_seconds",
+		Help:    "gitserver.Search duration in seconds.",
+		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	}, []string{"error"})
+	searchLatency = promauto.NewHistogram(prometheus.HistogramOpts{
+		Name:    "src_gitserver_search_latency_seconds",
+		Help:    "gitserver.Search latency (time until first result is sent) in seconds.",
+		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	})
+)
+
+func searchWithObservability(ctx context.Context, logger log.Logger, repoDir common.GitDir, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
 	searchStart := time.Now()
 
 	searchRunning.Inc()
@@ -63,7 +83,7 @@ func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, ar
 				_ = ev.Send()
 			}
 			if traceLogs {
-				s.logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+				logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 			}
 		}
 	}()
@@ -77,12 +97,12 @@ func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, ar
 		return onMatch(cm)
 	}
 
-	return s.search(ctx, args, onMatchWithLatency)
+	return doSearch(ctx, logger, repoDir, args, onMatchWithLatency)
 }
 
-// search handles the core logic of the search. It is passed a matchesBuf so it doesn't need to
+// doSearch handles the core logic of the search. It is passed a matchesBuf so it doesn't need to
 // concern itself with event types, and all instrumentation is handled in the calling function.
-func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
+func doSearch(ctx context.Context, logger log.Logger, repoDir common.GitDir, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
 	}
@@ -102,7 +122,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 		}
 	})
 
-	// Create a callback that detects whether we've hit a limit
+	// Create a recvCallback that detects whether we've hit a limit
 	// and stops sending when we have.
 	var sentCount atomic.Int64
 	var hitLimit atomic.Bool
@@ -118,9 +138,9 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 	}
 
 	searcher := &search.CommitSearcher{
-		Logger:               s.logger,
+		Logger:               logger,
 		RepoName:             args.Repo,
-		RepoDir:              string(s.fs.RepoDir(args.Repo)),
+		RepoDir:              string(repoDir),
 		Revisions:            args.Revisions,
 		Query:                mt,
 		IncludeDiff:          args.IncludeDiff,

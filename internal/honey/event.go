@@ -21,9 +21,6 @@ type Event interface {
 	AddField(key string, val any)
 	// AddAttributes adds each otel/attribute key-value field to this event.
 	AddAttributes([]attribute.KeyValue)
-	// Add adds a complex type to the event. For structs, it adds each exported field.
-	// For maps, it adds each key/value. Add will error on all other types.
-	Add(data any) error
 	// Fields returns all the added fields of the event. The returned map is not safe to
 	// be modified concurrently with calls Add/AddField/AddLogFields.
 	Fields() map[string]any
@@ -119,7 +116,7 @@ func NewEventWithFields(dataset string, fields map[string]any) Event {
 func newEvent(dataset string) (Event, bool) {
 	if !Enabled() {
 		metricNewEvent.WithLabelValues("false", dataset).Inc()
-		return noopEvent{}, false
+		return NonSendingEvent(), false
 	}
 	metricNewEvent.WithLabelValues("true", dataset).Inc()
 

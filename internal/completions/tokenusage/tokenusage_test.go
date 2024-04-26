@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
@@ -12,15 +13,18 @@ func TestTokenizeAndCalculateUsage(t *testing.T) {
 	rcache.SetupForTest(t)
 	mockCache := rcache.NewWithTTL("LLMUsage", 1800)
 	manager := tokenusage.NewManager()
-
-	err := manager.TokenizeAndCalculateUsage("input text", "output text", tokenizer.AnthropicModel, "feature1")
+	messages := []types.Message{
+		{Speaker: "human", Text: "Hello"},
+		{Speaker: "user", Text: "Hi"},
+	}
+	err := manager.TokenizeAndCalculateUsage(messages, "output text", tokenizer.OpenAIModel+"/gpt-4", "feature1", tokenusage.OpenAI)
 	if err != nil {
 		t.Fatalf("TokenizeAndCalculateUsage returned an error: %v", err)
 	}
 
 	// Verify that token counts are updated in the cache
-	inputKey := "anthropic:feature1:input"
-	outputKey := "anthropic:feature1:output"
+	inputKey := "openai:openai/gpt-4:feature1:input"
+	outputKey := "openai:openai/gpt-4:feature1:output"
 
 	if val, exists, _ := mockCache.GetInt64(inputKey); !exists || val <= 0 {
 		t.Errorf("Expected input token count to be updated in cache, but key %s was not found or value is not positive", inputKey)
@@ -44,12 +48,12 @@ func TestGetAllTokenUsageData(t *testing.T) {
 		t.Error(err)
 	}
 
-	llmUsage, ok := usageSummary["llm_usage"].(map[string]interface{})
+	llmUsage, ok := usageSummary["llm_usage"].([]map[string]interface{})
 	if !ok {
 		t.Fatalf("Expected llm_usage key to be present and be a map")
 	}
 
-	models, ok := llmUsage["models"].([]tokenusage.ModelData)
+	models, ok := llmUsage[0]["models"].([]tokenusage.ModelData)
 	if !ok || len(models) != 2 {
 		t.Fatalf("Expected models to be a slice of map with 2 items, got %d", len(models))
 	}

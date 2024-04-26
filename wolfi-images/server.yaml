@@ -1,6 +1,10 @@
-include: ./sourcegraph-base.yaml
+include: ./sourcegraph-template.yaml
 
 contents:
+  keyring:
+  - https://packages.sgdev.org/chainguard/chainguard-enterprise.rsa.pub
+  repositories:
+  - '@chainguard https://packages.sgdev.org/chainguard'
   packages:
     # Included by existing SG base image
     - tini
@@ -82,5 +86,3 @@ paths:
   - path: /sg_grafana_additional_dashboards
     type: directory
     permissions: 0o755
-
-# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

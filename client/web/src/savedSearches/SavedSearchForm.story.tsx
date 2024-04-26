@@ -1,5 +1,7 @@
 import type { Meta, StoryFn } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import { WebStory } from '../components/WebStory'
 
 import { SavedSearchForm, type SavedSearchFormProps } from './SavedSearchForm'
@@ -29,6 +31,7 @@ const commonProps: Omit<SavedSearchFormProps, 'isLightTheme'> = {
         id: '',
         url: '',
     },
+    telemetryRecorder: noOpTelemetryRecorder,
 }
 
 export const NewSavedSearch: StoryFn = () => (

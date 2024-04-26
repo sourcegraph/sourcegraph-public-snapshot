@@ -74,7 +74,7 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, client gitserv
 		}
 
 		opt := gitserver.ResolveRevisionOptions{
-			NoEnsureRevision: !args.FetchMissing,
+			EnsureRevision: args.FetchMissing,
 		}
 
 		// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
@@ -242,8 +242,7 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 			paths := pointers.Deref(args.Paths, nil)
 
 			var iter *gitserver.DiffFileIterator
-			iter, err = cmp.gitserverClient.Diff(ctx, gitserver.DiffOptions{
-				Repo:      cmp.repo.RepoName(),
+			iter, err = cmp.gitserverClient.Diff(ctx, cmp.repo.RepoName(), gitserver.DiffOptions{
 				Base:      base,
 				Head:      string(cmp.head.OID()),
 				RangeType: cmp.rangeType,

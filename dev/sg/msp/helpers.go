@@ -9,9 +9,11 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/clouddeploy"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/terraform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
@@ -153,6 +155,8 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 type generateTerraformOptions struct {
 	// targetEnv generates the specified env only, otherwise generates all
 	targetEnv string
+	// targetCategory generates the specified category only
+	targetCategory spec.EnvironmentCategory
 	// stableGenerate disables updating of any values that are evaluated at
 	// generation time
 	stableGenerate bool
@@ -176,8 +180,16 @@ func generateTerraform(service *spec.Spec, opts generateTerraformOptions) error 
 	for _, env := range envs {
 		env := env
 
-		pending := std.Out.Pending(output.Styledf(output.StylePending,
-			"[%s] Preparing Terraform for environment %q", serviceID, env.ID))
+		if opts.targetCategory != "" && env.Category != opts.targetCategory {
+			// Quietly skip environments that don't match specified category
+			std.Out.WriteLine(output.StyleSuggestion.Linef(
+				"[%s] Skipping non-%q environment %q (category %q)",
+				serviceID, opts.targetCategory, env.ID, env.Category))
+			continue
+		}
+
+		pending := std.Out.Pending(output.StylePending.Linef(
+			"[%s] Preparing Terraform for %q environment %q", serviceID, env.Category, env.ID))
 		renderer := managedservicesplatform.Renderer{
 			OutputDir:      filepath.Join(filepath.Dir(serviceSpecPath), "terraform", env.ID),
 			StableGenerate: opts.stableGenerate,
@@ -202,8 +214,8 @@ func generateTerraform(service *spec.Spec, opts generateTerraformOptions) error 
 			return err
 		}
 
-		pending.Updatef("[%s] Generating Terraform assets in %q for environment %q...",
-			serviceID, renderer.OutputDir, env.ID)
+		pending.Updatef("[%s] Generating Terraform assets in %q for %q environment %q...",
+			serviceID, renderer.OutputDir, env.Category, env.ID)
 		if err := cdktf.Synthesize(); err != nil {
 			return err
 		}
@@ -298,4 +310,19 @@ func generateCloudDeployDocstring(projectID, serviceID, gcpRegion, cloudDeployFi
 # that can be used to provision workload auth, for example https://sourcegraph.sourcegraph.com/github.com/sourcegraph/infrastructure/-/blob/managed-services/continuous-deployment-pipeline/main.tf?L5-20
 `, // TODO improve the releases DX
 		projectID, serviceID, gcpRegion, cloudDeployFilename)
+}
+
+func CollectAlertPolicies(svc *spec.Spec) (map[string]terraform.AlertPolicy, error) {
+	// Deduplicate alerts across environments into a single map
+	collectedAlerts := make(map[string]terraform.AlertPolicy)
+	for _, env := range svc.ListEnvironmentIDs() {
+		// Parse the generated alert policies to create alerting docs
+		monitoringPath := msprepo.ServiceStackCDKTFPath(svc.Service.ID, env, "monitoring")
+		monitoring, err := terraform.ParseMonitoringCDKTF(monitoringPath)
+		if err != nil {
+			return nil, err
+		}
+		maps.Copy(collectedAlerts, monitoring.ResourceType.GoogleMonitoringAlertPolicy)
+	}
+	return collectedAlerts, nil
 }

@@ -1,6 +1,6 @@
 package server
 
-import telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+import telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 
 // migrateEvents does an in-place migration of any legacy field usages to support
 // older exporters.

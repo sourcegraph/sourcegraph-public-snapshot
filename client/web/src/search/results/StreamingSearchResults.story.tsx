@@ -147,7 +147,7 @@ export const ProgressWithWarning: StoryFn = () => {
             matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
             skipped: [
                 {
-                    reason: 'excluded-fork',
+                    reason: 'repository-fork',
                     message: '10k forked repositories excluded',
                     severity: 'info',
                     title: '10k forked repositories excluded',

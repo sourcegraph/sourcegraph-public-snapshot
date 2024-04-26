@@ -15,8 +15,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 // see TestRecorderEndToEnd for tests that include teestore.Store and the database

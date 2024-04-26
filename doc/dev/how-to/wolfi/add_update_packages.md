@@ -39,15 +39,15 @@ It's common to need to update a package to the most recent release in order to p
 - You should also reset the `package.epoch` field to 0 when updating the version.
   - The `version` is the version of the dependency being packaged, but the `epoch` is like the version of the _package itself_. It should be incremented whenever making changes, and reset to 0 when the dependency version increases.
 
-3. Optionally, build the package locally with `sg wolfi package <package-name>`.
+3. Optionally, build the package locally with `sg wolfi package <package-name>` and test by following the instructions in the output.
 
-4. Push your branch and create a PR. Open the Buildkite page for your build (`sg ci status --web`) - the pipeline will automatically rebuild any base images that use this package and show instructions for how to pull these locally for testing.
+4. Push your branch and open the Buildkite page `sg ci status --web`. Buildkite will build your package, push it to our dev package repository, and provide instructions at the top of the page for testing it locally.
 
-5. After validating the new package and base images, merge to `main`. This will add the updated packages to the [Sourcegraph package repository](#sourcegraph-package-repository) and push the updated base images to Dockerhub.
+5. After validating the new package and base images, merge to `main`. This will add the updated packages to the [Sourcegraph package repository](#sourcegraph-package-repository).
 
-6. Wait until the Buildkite pipeline for `main` has run - the next step depends on the images that this pipeline pushes to Dockerhub.
+6. Wait until the Buildkite pipeline for `main` has run - the next step depends on the packages having been pushed to our production package repo.
 
-7. Check out main, create a new branch, and run `sg wolfi update-hashes <image-name>` locally to update the base images digests in `dev/oci_deps.bzl`. Create another PR and merge to main. This ensures that the updated base images are used when building final images.
+7. Create a new PR from `main`, and run `sg wolfi lock`. This will pull in the new version of your packages in any image that uses them. Push, and merge.
 
 ### Create a new package
 

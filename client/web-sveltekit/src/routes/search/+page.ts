@@ -5,7 +5,7 @@ import { browser } from '$app/environment'
 import { navigating } from '$app/stores'
 import { SearchPatternType } from '$lib/graphql-operations'
 import { parseExtendedSearchURL, type ExtendedParsedSearchURL } from '$lib/search'
-import { USE_CLIENT_CACHE_QUERY_PARAMETER } from '$lib/search/constants'
+import { SearchCachePolicy, getCachePolicyFromURL } from '$lib/search/state'
 import {
     aggregateStreamingSearch,
     LATEST_VERSION,
@@ -32,13 +32,13 @@ class CachingStreamManager {
     search(
         parsedQuery: ExtendedParsedSearchURL,
         searchOptions: StreamSearchOptions,
-        bypassCache: boolean
+        useCache: boolean
     ): Observable<AggregateStreamingSearchResults> {
-        const key = createCacheKey(parsedQuery, searchOptions)
+        const key = this.createCacheKey(parsedQuery, searchOptions)
 
         const searchStream = this.cache.get(key)
 
-        if (bypassCache || !searchStream) {
+        if (!useCache || !searchStream) {
             const stream = this.streamManager.search(parsedQuery, searchOptions)
             const searchStream = new BehaviorSubject<AggregateStreamingSearchResults>(emptyAggregateResults)
             this.cache.set(key, searchStream)
@@ -51,6 +51,20 @@ class CachingStreamManager {
         }
 
         return searchStream
+    }
+
+    private createCacheKey(parsedQuery: ExtendedParsedSearchURL, options: StreamSearchOptions): string {
+        return [
+            options.version,
+            options.patternType,
+            options.caseSensitive,
+            options.searchMode,
+            options.chunkMatches,
+            parsedQuery.filteredQuery,
+            parsedQuery.searchMode,
+            parsedQuery.patternType,
+            parsedQuery.caseSensitive,
+        ].join('--')
     }
 }
 
@@ -70,8 +84,7 @@ const streamManager = browser ? new CachingStreamManager() : new NonCachingStrea
 
 export const load: PageLoad = ({ url, depends }) => {
     const hasQuery = url.searchParams.has('q')
-    const caseSensitiveURL = url.searchParams.get('case') === 'yes'
-    const forceCache = url.searchParams.has(USE_CLIENT_CACHE_QUERY_PARAMETER)
+    const cachePolicy = getCachePolicyFromURL(url)
     const trace = url.searchParams.get('trace') ?? undefined
 
     if (hasQuery) {
@@ -83,9 +96,7 @@ export const load: PageLoad = ({ url, depends }) => {
             caseSensitive,
             filters: queryFilters,
         } = parsedQuery
-        // Necessary for allowing to submit the same query again
-        // FIXME: This is not correct
-        depends(`query:${query}--${caseSensitiveURL}`)
+        depends(`search:${url}`)
 
         let searchContext = 'global'
         if (filterExists(query, FilterType.context)) {
@@ -111,15 +122,21 @@ export const load: PageLoad = ({ url, depends }) => {
             maxLineLen: 5 * 1024,
         }
 
+        let useClientCache = false
+        switch (cachePolicy) {
+            case SearchCachePolicy.CacheFirst:
+                useClientCache = true
+                break
+            case SearchCachePolicy.Default:
+                useClientCache = get(navigating)?.type === 'popstate'
+                break
+        }
+
         // We create a new stream only if
         // - we do not have a cached stream (in the browser)
         // - the search result page was expliclty navigated to (not via back/forward buttons)
         // - cache is not enforced (which is used in the filters sidebar)
-        const searchStream = streamManager.search(
-            parsedQuery,
-            options,
-            !forceCache && get(navigating)?.type !== 'popstate'
-        )
+        const searchStream = streamManager.search(parsedQuery, options, useClientCache)
 
         return {
             searchStream,
@@ -148,18 +165,4 @@ function withoutGlobalContext(query: string): string {
         return omitFilter(query, globalSearchContext.filter)
     }
     return query
-}
-
-function createCacheKey(parsedQuery: ExtendedParsedSearchURL, options: StreamSearchOptions): string {
-    return [
-        options.version,
-        options.patternType,
-        options.caseSensitive,
-        options.searchMode,
-        options.chunkMatches,
-        parsedQuery.filteredQuery,
-        parsedQuery.searchMode,
-        parsedQuery.patternType,
-        parsedQuery.caseSensitive,
-    ].join('--')
 }

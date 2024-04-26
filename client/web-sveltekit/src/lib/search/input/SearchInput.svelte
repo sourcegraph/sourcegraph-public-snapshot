@@ -114,8 +114,9 @@
 <script lang="ts">
     import { mdiClockOutline } from '@mdi/js'
 
-    export let queryState: QueryStateStore
     export let autoFocus = false
+    export let size: 'normal' | 'compat' = 'normal'
+    export let queryState: QueryStateStore
 
     export function focus() {
         input?.focus()
@@ -179,10 +180,11 @@
     }
 
     async function submitQuery(state: QueryState): Promise<void> {
+        const url = getQueryURL(state)
         // This ensures that the same query can be resubmitted from the search input. Without
         // this, SvelteKit will not re-run the loader because the URL hasn't changed.
-        await invalidate(`query:${state.query}--${state.caseSensitive}`)
-        void goto(getQueryURL(state))
+        await invalidate(`search:${url}`)
+        void goto(url)
     }
 
     async function handleSubmit(event: Event) {
@@ -209,11 +211,12 @@
 </script>
 
 <form
-    bind:clientHeight={suggestionsPaddingTop}
-    class="search-box"
-    action="/search"
     method="get"
+    action="/search"
+    class="search-box"
+    class:compat={size === 'compat'}
     on:submit={handleSubmit}
+    bind:clientHeight={suggestionsPaddingTop}
 >
     <input class="hidden" value={$queryState.query} name="q" />
     <div class="focus-container" class:userHasInteracted>
@@ -292,6 +295,12 @@
             .userHasInteracted + .suggestions {
                 display: block;
             }
+        }
+
+        &.compat {
+            padding: 0.25rem;
+            margin: -0.25rem;
+            width: calc(100% + 0.5rem);
         }
     }
 

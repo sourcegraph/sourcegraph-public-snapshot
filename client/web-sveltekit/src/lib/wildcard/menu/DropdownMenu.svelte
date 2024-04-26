@@ -35,7 +35,7 @@
     setContext({ item, separator, builders })
 </script>
 
-<button {...$trigger} use:trigger class={triggerButtonClass} {...$$restProps}>
+<button data-dropdown-trigger {...$trigger} use:trigger class={triggerButtonClass} {...$$restProps}>
     <slot name="trigger" />
 </button>
 

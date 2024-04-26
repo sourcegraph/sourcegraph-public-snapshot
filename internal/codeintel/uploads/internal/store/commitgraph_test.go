@@ -110,8 +110,8 @@ func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(3): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(3): {{IsHead: true}},
 	}
 
 	for range 3 {
@@ -122,7 +122,7 @@ func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T
 	}
 
 	// This test is mainly a syntax check against `transaction_timestamp()`
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 3, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 3, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 }
@@ -174,19 +174,19 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
 	t2 := time.Now().Add(-time.Minute * 30) // < 1 hr
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
+	refs := map[string][]gitdomain.Ref{
 		// stale
-		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: &t1}},
-		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: &t1}},
+		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: t1}},
+		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: t1}},
 
 		// fresh
-		makeCommit(4):  {{Name: "v2", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
-		makeCommit(5):  {{Name: "v3", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
-		makeCommit(7):  {{Name: "main", Type: gitdomain.RefTypeBranch, IsDefaultBranch: true, CreatedDate: &t2}},
-		makeCommit(12): {{Name: "feat2", Type: gitdomain.RefTypeBranch, CreatedDate: &t2}},
+		makeCommit(4):  {{Name: "v2", Type: gitdomain.RefTypeTag, CreatedDate: t2}},
+		makeCommit(5):  {{Name: "v3", Type: gitdomain.RefTypeTag, CreatedDate: t2}},
+		makeCommit(7):  {{Name: "main", Type: gitdomain.RefTypeBranch, IsHead: true, CreatedDate: t2}},
+		makeCommit(12): {{Name: "feat2", Type: gitdomain.RefTypeBranch, CreatedDate: t2}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -284,19 +284,19 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
 	t2 := time.Now().Add(-time.Minute * 30) // < 1 hr
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
+	refs := map[string][]gitdomain.Ref{
 		// stale
-		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: &t1}},
-		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: &t1}},
+		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: t1}},
+		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: t1}},
 
 		// fresh
-		makeCommit(4):  {{Name: "v2", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
-		makeCommit(5):  {{Name: "v3", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
-		makeCommit(7):  {{Name: "main", Type: gitdomain.RefTypeBranch, IsDefaultBranch: true, CreatedDate: &t2}},
-		makeCommit(12): {{Name: "feat2", Type: gitdomain.RefTypeBranch, CreatedDate: &t2}},
+		makeCommit(4):  {{Name: "v2", Type: gitdomain.RefTypeTag, CreatedDate: t2}},
+		makeCommit(5):  {{Name: "v3", Type: gitdomain.RefTypeTag, CreatedDate: t2}},
+		makeCommit(7):  {{Name: "main", Type: gitdomain.RefTypeBranch, IsHead: true, CreatedDate: t2}},
+		makeCommit(12): {{Name: "feat2", Type: gitdomain.RefTypeBranch, CreatedDate: t2}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Second, time.Second, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Second, time.Second, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -359,11 +359,11 @@ func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(8): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(8): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -418,11 +418,11 @@ func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(3): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(3): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -462,11 +462,11 @@ func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(2): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(2): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -532,11 +532,11 @@ func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(6): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(6): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -589,11 +589,11 @@ func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(5): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(5): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -634,8 +634,8 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(3): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(3): {{IsHead: true}},
 	}
 
 	for range 3 {
@@ -648,7 +648,7 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	// Non-latest dirty token - should not clear flag
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 2, now); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 2, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
@@ -660,7 +660,7 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	}
 
 	// Latest dirty token - should clear flag
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 3, now); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 3, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 	dirtyRepositories, err = store.GetDirtyRepositories(context.Background())
@@ -1010,6 +1010,7 @@ func TestFindClosestCompletedUploadsIndexerName(t *testing.T) {
 		{ID: 6, Commit: makeCommit(2), Root: "root2/", Indexer: "idx2"},
 		{ID: 7, Commit: makeCommit(3), Root: "root3/", Indexer: "idx2"},
 		{ID: 8, Commit: makeCommit(4), Root: "root4/", Indexer: "idx2"},
+		{ID: 9, Commit: makeCommit(4), Root: "root4/", Indexer: shared.SyntacticIndexer},
 	}
 	insertUploads(t, db, uploads...)
 
@@ -1051,6 +1052,7 @@ func TestFindClosestCompletedUploadsIndexerName(t *testing.T) {
 			{UploadID: 6, Distance: 2},
 			{UploadID: 7, Distance: 1},
 			{UploadID: 8, Distance: 0},
+			{UploadID: 9, Distance: 0},
 		},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
@@ -1078,6 +1080,9 @@ func TestFindClosestCompletedUploadsIndexerName(t *testing.T) {
 		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{6}},
 		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{7}},
 		{commit: makeCommit(5), file: "root4/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{8}},
+		// Searching for visible uploads with indexer == "" yields all non-syntactic indexes
+		{commit: makeCommit(5), file: "root4/file.ts", indexer: "", graph: graph, allOfIDs: []int{4, 8}},
+		{commit: makeCommit(5), file: "root4/file.ts", indexer: shared.SyntacticIndexer, graph: graph, allOfIDs: []int{9}},
 	})
 }
 
@@ -1542,8 +1547,8 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 		b.Fatalf("unexpected error reading benchmark commit graph: %s", err)
 	}
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(3): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(3): {{IsHead: true}},
 	}
 
 	uploads, err := readBenchmarkCommitGraphView()
@@ -1555,7 +1560,7 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		b.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 }

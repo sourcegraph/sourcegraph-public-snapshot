@@ -5,12 +5,11 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
 type recordCounter struct {
-	store   *database.RecordEncrypter
+	store   *recordEncrypter
 	metrics *metrics
 	logger  log.Logger
 }
@@ -21,7 +20,7 @@ var (
 )
 
 func (c *recordCounter) Handle(ctx context.Context) (err error) {
-	for _, config := range database.EncryptionConfigs {
+	for _, config := range encryptionConfigs {
 		numEncrypted, numUnencrypted, err := c.store.Count(ctx, config)
 		if err != nil {
 			return err
