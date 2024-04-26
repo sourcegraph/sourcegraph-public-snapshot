@@ -60,8 +60,14 @@
             border: 'none',
             color: 'var(--line-number-color)',
         },
+        '.cm-gutterElement': {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
         '.cm-line': {
-            paddingLeft: '1ex',
+            paddingLeft: '2ex',
+            height: '20px',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',

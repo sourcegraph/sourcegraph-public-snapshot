@@ -1,12 +1,13 @@
 <script lang="ts">
-    import { getEditor, parseBrowserRepoURL, buildRepoBaseNameAndPath, buildEditorUrl } from '$lib/web'
-    import { getEditorSettingsErrorMessage } from './build-url'
-    import Tooltip from '$lib/Tooltip.svelte'
-    import EditorIcon from '$lib/repo/open-in-editor/EditorIcon.svelte'
-    import { settings } from '$lib/stores'
     import { page } from '$app/stores'
     import type { ExternalRepository } from '$lib/graphql-types'
     import DefaultEditorIcon from '$lib/repo/open-in-editor/DefaultEditorIcon.svelte'
+    import EditorIcon from '$lib/repo/open-in-editor/EditorIcon.svelte'
+    import { settings } from '$lib/stores'
+    import Tooltip from '$lib/Tooltip.svelte'
+    import { getEditor, parseBrowserRepoURL, buildRepoBaseNameAndPath, buildEditorUrl } from '$lib/web'
+
+    import { getEditorSettingsErrorMessage } from './build-url'
 
     export let externalServiceType: ExternalRepository['serviceType'] = ''
 
@@ -57,7 +58,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0.25rem;
+        gap: 0.5rem;
         color: var(--body-color);
         text-decoration: none;
         white-space: nowrap;

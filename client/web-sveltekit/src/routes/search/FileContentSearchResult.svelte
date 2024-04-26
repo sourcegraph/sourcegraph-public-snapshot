@@ -135,7 +135,7 @@
         text-align: left;
         border: none;
         padding: 0.25rem 0.5rem;
-        background-color: var(--code-bg);
+        background-color: var(--color-bg-1);
         color: var(--text-muted);
         cursor: pointer;
 

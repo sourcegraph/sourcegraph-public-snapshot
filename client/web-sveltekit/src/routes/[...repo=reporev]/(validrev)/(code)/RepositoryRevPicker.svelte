@@ -63,7 +63,7 @@
 
 <Popover let:registerTrigger let:toggle placement="right-start">
     <div class="button-group" class:is-on-specific-rev={isOnSpecificRev}>
-        <Button variant="secondary" size="sm">
+        <Button variant="secondary">
             <svelte:fragment slot="custom" let:buttonClass>
                 <button use:registerTrigger class={`${buttonClass} revision-trigger`} on:click={() => toggle()}>
                     @{revisionLabel}
@@ -75,7 +75,6 @@
             <span class="reset-button-container">
                 <Tooltip tooltip="Go to default branch">
                     <Button
-                        size="sm"
                         variant="secondary"
                         on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
                     >
@@ -155,6 +154,7 @@
     .button-group {
         display: flex;
         min-width: 0;
+        width: 100%;
 
         .reset-button-container {
             display: contents;
@@ -177,6 +177,7 @@
             white-space: nowrap;
             text-overflow: ellipsis;
             overflow: hidden;
+            width: 100%;
         }
 
         &.is-on-specific-rev .revision-trigger {

@@ -1,12 +1,13 @@
 <script lang="ts">
+    import { mdiMagnify } from '@mdi/js'
     import { createDialog } from '@melt-ui/svelte'
+    import { tick } from 'svelte'
+
     import Icon from '$lib/Icon.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { queryStateStore } from '$lib/search/state'
-    import { settings } from '$lib/stores'
-    import { mdiMagnify } from '@mdi/js'
-    import { tick } from 'svelte'
     import { repositoryInsertText } from '$lib/shared'
+    import { settings } from '$lib/stores'
 
     export let repoName: string
 
@@ -36,7 +37,7 @@
 {:else}
     <button {...$trigger} use:trigger>
         <Icon svgPath={mdiMagnify} inline aria-hidden="true" />
-        Search
+        Type / to search
     </button>
 {/if}
 
@@ -68,7 +69,7 @@
         border-radius: 4px;
         padding: 0 0.5rem;
         height: 100%;
-        width: 10rem;
+        width: 18.75rem;
         text-align: left;
         color: var(--text-muted);
         white-space: nowrap;

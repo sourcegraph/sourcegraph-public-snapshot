@@ -5,14 +5,14 @@
     import { onMount } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
-    import { Alert } from '$lib/wildcard'
     import Icon from '$lib/Icon.svelte'
     import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntryFields } from '$lib/repo/api/tree'
+    import FileIcon from '$lib/repo/FileIcon.svelte'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import { createForwardStore } from '$lib/utils'
     import { replaceRevisionInURL } from '$lib/web'
-    import FileIcon from '$lib/repo/FileIcon.svelte'
+    import { Alert } from '$lib/wildcard'
 
     export let repoName: string
     export let treeProvider: FileTreeProvider
@@ -157,7 +157,7 @@
     }
 
     a {
-        color: var(--body-color);
+        color: var(--text-body);
         flex: 1;
         text-overflow: ellipsis;
         overflow: hidden;
@@ -167,7 +167,7 @@
     }
 
     .note {
-        color: var(--body-color);
+        color: var(--text-body);
         overflow: hidden;
         border: 1px solid var(--border-color);
         background-color: var(--subtle-bg);

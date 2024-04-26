@@ -1,7 +1,8 @@
 <script lang="ts">
-    import Tooltip from '$lib/Tooltip.svelte'
     import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
+
     import type { OpenInCodeHostAction } from './OpenInCodeHostAction.gql'
 
     export let data: OpenInCodeHostAction
@@ -24,6 +25,10 @@
 
 <style lang="scss">
     a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
         color: var(--body-color);
         text-decoration: none;
         white-space: nowrap;
