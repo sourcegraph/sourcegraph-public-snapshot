@@ -5,11 +5,11 @@ import classNames from 'classnames'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
 
 import { CallToActionBanner } from '../../components/CallToActionBanner'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 
@@ -72,7 +72,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
     const assetsRoot = window.context?.assetsRoot || ''
 
     const logExampleMonitorClicked = useCallback(() => {
-        eventLogger.log('CodeMonitoringExampleMonitorClicked')
+        EVENT_LOGGER.log('CodeMonitoringExampleMonitorClicked')
         telemetryRecorder.recordEvent('codeMonitor.example', 'click')
     }, [telemetryRecorder])
 
@@ -113,7 +113,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                     <Link
                         to={ctaBannerUrl}
                         onClick={() => {
-                            eventLogger.log('ClickedOnEnterpriseCTA', { location: 'MonitoringGettingStarted' })
+                            EVENT_LOGGER.log('ClickedOnEnterpriseCTA', { location: 'MonitoringGettingStarted' })
                             telemetryRecorder.recordEvent('codeMonitor.enterpriseCTA', 'click', {
                                 metadata: { location: 0 },
                             })

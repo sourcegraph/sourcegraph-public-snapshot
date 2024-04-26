@@ -4,10 +4,10 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Card, LoadingSpinner, useMatchMedia, Text, LineChart, BarChart, type Series } from '@sourcegraph/wildcard'
 
 import type { UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../../../util/checkRequestAccessAllowed'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
@@ -30,7 +30,7 @@ export const AnalyticsUsersPage: FC = () => {
         },
     })
     useEffect(() => {
-        eventLogger.logPageView('AdminAnalyticsUsers')
+        EVENT_LOGGER.logPageView('AdminAnalyticsUsers')
     }, [])
     const [uniqueOrPercentage, setUniqueOrPercentage] = useState<'unique' | 'percentage'>('unique')
 

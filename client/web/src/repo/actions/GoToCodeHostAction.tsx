@@ -14,11 +14,11 @@ import type { Position, Range } from '@sourcegraph/extension-api-types'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 // TODO: Switch mdi icon
 import { HelixSwarmIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import type { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { type ButtonLinkProps, Icon, Link, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
 import { type ExternalLinkFields, ExternalServiceKind, type RepositoryFields } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { fetchCommitMessage, fetchFileExternalLinks } from '../backend'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import { RepoActionInfo } from '../RepoActionInfo'
@@ -92,7 +92,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
         }, [serviceType, props.perforceCodeHostUrlToSwarmUrlMap, props.repo, props.repoName, props.revision])
     )
 
-    const onClick = useCallback(() => eventLogger.log('GoToCodeHostClicked'), [])
+    const onClick = useCallback(() => EVENT_LOGGER.log('GoToCodeHostClicked'), [])
 
     // If the default branch is undefined, set to HEAD
     const defaultBranch = (!isErrorLike(props.repo) && props.repo?.defaultBranch?.displayName) || 'HEAD'

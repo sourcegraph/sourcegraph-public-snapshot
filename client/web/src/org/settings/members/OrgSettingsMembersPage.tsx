@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { pluralize } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Container,
     PageHeader,
@@ -31,7 +32,6 @@ import type {
     RemoveUserFromOrganizationResult,
     RemoveUserFromOrganizationVariables,
 } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { userURL } from '../../../user'
 import type { OrgAreaRouteContext } from '../../area/OrgArea'
 import { ORGANIZATION_MEMBERS_QUERY, REMOVE_USER_FROM_ORGANIZATION_QUERY } from '../../backend'
@@ -136,7 +136,7 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
     onOrganizationUpdate,
 }) => {
     React.useEffect(() => {
-        eventLogger.logViewEvent('OrgMembers')
+        EVENT_LOGGER.logViewEvent('OrgMembers')
     }, [])
 
     const navigate = useNavigate()

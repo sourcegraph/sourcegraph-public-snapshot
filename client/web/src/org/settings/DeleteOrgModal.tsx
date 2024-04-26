@@ -4,9 +4,9 @@ import { gql, useMutation } from '@apollo/client'
 import { mdiClose } from '@mdi/js'
 import { useNavigate } from 'react-router-dom'
 
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Input, LoadingSpinner, Modal, Icon, H3, Text } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../tracking/eventLogger'
 import type { OrgAreaRouteContext } from '../area/OrgArea'
 
 interface DeleteOrgModalProps extends OrgAreaRouteContext {
@@ -52,7 +52,7 @@ export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<Del
                 pathname: '/settings',
             })
         } catch {
-            eventLogger.log('OrgDeletionFailed')
+            EVENT_LOGGER.log('OrgDeletionFailed')
         }
     }, [org, deleteOrganization, navigate])
 

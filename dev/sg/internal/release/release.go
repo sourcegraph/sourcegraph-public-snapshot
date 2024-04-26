@@ -58,11 +58,18 @@ var releaseRunFlags = append(releaseBaseFlags, &cli.StringFlag{
 //
 // TODO https://github.com/sourcegraph/sourcegraph/issues/61077 to add the "auto" value that ask
 // the releaseregistry to provide the version number.
-var releaseCreatePromoteFlags = append(releaseBaseFlags, &cli.StringFlag{
-	Name:     "version",
-	Usage:    "Force version (required)",
-	Required: true,
-})
+var releaseCreatePromoteFlags = append(releaseBaseFlags, []cli.Flag{
+	&cli.StringFlag{
+		Name:     "version",
+		Usage:    "Force version (required)",
+		Required: true,
+	},
+	&cli.BoolFlag{
+		Name:    "development",
+		Aliases: []string{"d"},
+		Usage:   "Create a development release. This is a release that is not meant to be promoted to public, but is meant to be used by other developers to test their changes. It is not meant to be used by customers.",
+	},
+}...)
 
 var Command = &cli.Command{
 	Name:     "release",
@@ -199,6 +206,7 @@ func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 
 	workdir := cctx.String("workdir")
 	pretend := cctx.Bool("pretend")
+	isDevelopment := cctx.Bool("development")
 	// Normalize the version string, to prevent issues where this was given with the wrong convention
 	// which requires a full rebuild.
 	version := fmt.Sprintf("v%s", strings.TrimPrefix(cctx.String("version"), "v"))
@@ -229,5 +237,5 @@ func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 		inputs = rc.Inputs
 	}
 
-	return NewReleaseRunner(cctx.Context, workdir, version, inputs, typ, branch, pretend)
+	return NewReleaseRunner(cctx.Context, workdir, version, inputs, typ, branch, pretend, isDevelopment)
 }
