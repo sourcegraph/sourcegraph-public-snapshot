@@ -63,7 +63,7 @@
                             <li
                                 class="location"
                                 class:selected
-                                on:click={() => selectedLocation = selected ? null : location}
+                                on:click={() => (selectedLocation = selected ? null : location)}
                             >
                                 <span class="code-file">
                                     <span class="code">

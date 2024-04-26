@@ -3,10 +3,10 @@ import React, { useMemo, useEffect } from 'react'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Card, LoadingSpinner, H2, Text, LineChart, type Series } from '@sourcegraph/wildcard'
 
 import type { BatchChangesStatisticsResult, BatchChangesStatisticsVariables } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
@@ -31,7 +31,7 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent = () => {
         }
     )
     useEffect(() => {
-        eventLogger.logPageView('AdminAnalyticsBatchChanges')
+        EVENT_LOGGER.logPageView('AdminAnalyticsBatchChanges')
     }, [])
     const [stats, legends, calculatorProps] = useMemo(() => {
         if (!data) {

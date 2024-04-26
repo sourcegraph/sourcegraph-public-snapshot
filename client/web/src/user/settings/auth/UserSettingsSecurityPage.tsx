@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 
 import type { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Container,
     PageHeader,
@@ -30,7 +31,6 @@ import type {
     UserExternalAccountsWithAccountDataVariables,
 } from '../../../graphql-operations'
 import type { AuthProvider, SourcegraphContext } from '../../../jscontext'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { getPasswordRequirements } from '../../../util/security'
 import { CREATE_PASSWORD, USER_EXTERNAL_ACCOUNTS, UPDATE_PASSWORD } from '../backend'
 
@@ -91,7 +91,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     }
 
     useEffect(() => {
-        eventLogger.logPageView('UserSettingsPassword')
+        EVENT_LOGGER.logPageView('UserSettingsPassword')
 
         setAccounts({ fetched: data?.user?.externalAccounts.nodes, lastRemoved: '' })
     }, [data])

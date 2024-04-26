@@ -1,3 +1,21 @@
+<script context="module" lang="ts">
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+
+    // Not ideal solution, [TODO] Improve Tabs component API in order
+    // to expose more info about nature of switch tab / close tab actions
+    function trackHistoryPanelTabAction(selectedTab: number | null, nextSelectedTab: number | null) {
+        if (nextSelectedTab === 0) {
+            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.ShowHistoryPanel)
+            return
+        }
+
+        if (nextSelectedTab === null && selectedTab == 0) {
+            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.HideHistoryPanel)
+            return
+        }
+    }
+</script>
+
 <script lang="ts">
     import { tick } from 'svelte'
 
@@ -51,6 +69,8 @@
     }
 
     async function selectTab(event: { detail: number | null }) {
+        trackHistoryPanelTabAction(selectedTab, event.detail)
+
         if (event.detail === null) {
             const url = new URL($page.url)
             url.searchParams.delete('rev')

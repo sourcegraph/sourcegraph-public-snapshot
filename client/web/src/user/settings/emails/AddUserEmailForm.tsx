@@ -5,13 +5,13 @@ import { lastValueFrom } from 'rxjs'
 
 import { asError, isErrorLike, type ErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
 import { screenReaderAnnounce, Input, Label, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'
 import type { AddUserEmailResult, AddUserEmailVariables, UserSettingsAreaUserFields } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 
 interface Props {
     user: Pick<UserSettingsAreaUserFields, 'id' | 'scimControlled'>
@@ -70,7 +70,7 @@ export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>>
                     )
                 )
 
-                eventLogger.log('NewUserEmailAddressAdded')
+                EVENT_LOGGER.log('NewUserEmailAddressAdded')
                 screenReaderAnnounce('Email address added')
 
                 overrideEmailState({ value: '' })

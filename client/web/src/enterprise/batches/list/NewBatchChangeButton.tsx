@@ -3,9 +3,8 @@ import React from 'react'
 import { mdiPlus } from '@mdi/js'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Link, type LinkProps, Button, Icon, Tooltip } from '@sourcegraph/wildcard'
-
-import { eventLogger } from '../../../tracking/eventLogger'
 
 interface NewBatchChangeButtonProps extends Pick<LinkProps, 'to'>, TelemetryV2Props {
     // canCreate indicates whether or not the currently-authenticated user has sufficient
@@ -27,7 +26,7 @@ export const NewBatchChangeButton: React.FunctionComponent<React.PropsWithChildr
             variant="primary"
             as={Link}
             onClick={() => {
-                eventLogger.log('batch_change_list_page:create_batch_change_details:clicked')
+                EVENT_LOGGER.log('batch_change_list_page:create_batch_change_details:clicked')
                 telemetryRecorder.recordEvent('batchChanges', 'create')
             }}
         >
