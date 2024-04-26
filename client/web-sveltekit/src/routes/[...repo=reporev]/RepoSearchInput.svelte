@@ -46,7 +46,7 @@
 {:else}
     <button {...$trigger} use:trigger>
         <Icon svgPath={mdiMagnify} inline aria-hidden="true" />
-        Search
+        Type / to search
     </button>
 {/if}
 
@@ -78,7 +78,7 @@
         border-radius: 4px;
         padding: 0 0.5rem;
         height: 100%;
-        width: 10rem;
+        width: 18.75rem;
         text-align: left;
         color: var(--text-muted);
         white-space: nowrap;
