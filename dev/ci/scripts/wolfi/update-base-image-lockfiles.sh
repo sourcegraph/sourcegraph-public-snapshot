@@ -14,9 +14,7 @@ echo "~~~ :aspect: :stethoscope: Agent Health check"
 echo "~~~ Running sg wolfi lock"
 
 buildkite-agent artifact download sg . --step bazel-prechecks
-
-# TODO: Remove
-ls -al ./
+chmod +x ./sg
 
 # Update hashes for all base images
 ./sg wolfi lock
