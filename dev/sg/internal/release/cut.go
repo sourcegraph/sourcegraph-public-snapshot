@@ -33,7 +33,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	defaultBranch := cctx.String("branch")
 
 	ctx := cctx.Context
-	releasGitRepoBranch := repo.NewGitRepo(releaseBranch, releaseBranch)
+	releaseGitRepoBranch := repo.NewGitRepo(releaseBranch, releaseBranch)
 	defaultGitRepoBranch := repo.NewGitRepo(defaultBranch, defaultBranch)
 
 	if ok, err := defaultGitRepoBranch.IsDirty(ctx); err != nil {
@@ -43,7 +43,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	}
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the release branch exists locally ..."))
-	if ok, err := releasGitRepoBranch.HasLocalBranch(ctx); err != nil {
+	if ok, err := releaseGitRepoBranch.HasLocalBranch(ctx); err != nil {
 		p.Destroy()
 		return errors.Wrapf(err, "checking if %q branch exists localy", releaseBranch)
 	} else if ok {
@@ -53,7 +53,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Release branch %q does not exist locally", releaseBranch))
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the release branch exists in remote ..."))
-	if ok, err := releasGitRepoBranch.HasRemoteBranch(ctx); err != nil {
+	if ok, err := releaseGitRepoBranch.HasRemoteBranch(ctx); err != nil {
 		p.Destroy()
 		return errors.Wrapf(err, "checking if %q branch exists in remote repo", releaseBranch)
 	} else if ok {
@@ -86,7 +86,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	}()
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Pushing release branch..."))
-	if _, err := releasGitRepoBranch.Push(ctx); err != nil {
+	if _, err := releaseGitRepoBranch.Push(ctx); err != nil {
 		p.Destroy()
 		return errors.Wrap(err, "failed to push release branch")
 	}
