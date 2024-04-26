@@ -491,6 +491,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 	var cvc clientVersionConstraint
 	switch clientName {
 	case types.CodyClientWeb:
+		// Cody Web is of the same version as the Sourcegraph instance, thus no version constraint is needed.
 		return nil
 	case types.CodyClientVscode:
 		cvc = clientVersionConstraint{client: clientName, constraint: ">= 1.20.0"}
