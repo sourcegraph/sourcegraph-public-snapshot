@@ -11,7 +11,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 echo "~~~ :aspect: :stethoscope: Agent Health check"
 /etc/aspect/workflows/bin/agent_health_check
 
-echo "~~~ Running script"
+echo "~~~ Running sg wolfi lock"
 
 buildkite-agent artifact download sg . --step bazel-prechecks
 
@@ -20,6 +20,9 @@ ls -al ./
 
 # Update hashes for all base images
 ./sg wolfi lock
+
+echo "~~~ Committing changes and opening PR"
+
 # Print git status
 echo "[$(date)] Running git status"
 git status
