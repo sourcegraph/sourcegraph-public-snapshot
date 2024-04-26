@@ -1,0 +1,92 @@
+.root {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: 1.5rem;
+    overflow: auto;
+}
+
+.header {
+    display: flex;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.logo {
+    max-width: 20rem;
+}
+
+.content {
+    margin: 3rem auto;
+    background-color: var(--color-bg-1);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--dropdown-shadow);
+    padding: 2rem;
+    max-width: 50rem;
+    width: 100%;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 2rem;
+}
+
+.option {
+    width: 100%;
+    display: grid;
+    row-gap: 0.25rem;
+    column-gap: 0.75rem;
+    padding: 1rem;
+    cursor: pointer;
+    border-radius: 0.25rem;
+    background-color: var(--color-bg-2);
+    border: 1px solid var(--border-color);
+    grid-template-rows: auto;
+    grid-template-columns: min-content auto;
+    grid-template-areas:
+        'checkbox title'
+        'filler message';
+
+    &:hover {
+        background: var(--primary-4);
+        border-color: var(--primary);
+    }
+
+    &:has(:checked) {
+        background: var(--primary-4);
+        border-color: var(--primary);
+        box-shadow: var(--focus-box-shadow);
+    }
+
+    &:has(:focus) {
+        box-shadow: var(--focus-box-shadow);
+    }
+
+    &-checkbox {
+        grid-area: checkbox;
+    }
+
+    &-title {
+        grid-area: title;
+        font-weight: bold;
+    }
+
+    &-message {
+        grid-area: message;
+        color: var(--text-muted);
+    }
+}
+
+.sub-heading {
+    margin-top: 1rem;
+}
+
+.footer {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+}
