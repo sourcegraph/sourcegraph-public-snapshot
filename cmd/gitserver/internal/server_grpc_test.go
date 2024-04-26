@@ -990,6 +990,84 @@ func TestGRPCServer_FirstCommitEver(t *testing.T) {
 	})
 }
 
+func TestGRPCServer_GetBehindAhead(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &grpcServer{}
+		_, err := gs.GetBehindAhead(ctx, &proto.GetBehindAheadRequest{RepoName: ""})
+		require.ErrorContains(t, err, "repo must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("checks for uncloned repo", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
+		_, err := gs.GetBehindAhead(ctx, &proto.GetBehindAheadRequest{RepoName: "therepo", Base: []byte("base"), Head: []byte("head")})
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		require.Contains(t, err.Error(), "repo not found")
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
+	})
+
+	t.Run("revision not found", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		// Repo is cloned, proceed!
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
+		gs := &grpcServer{
+			svc: NewMockService(),
+			fs:  fs,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				b := git.NewMockGitBackend()
+				b.GetBehindAheadFunc.SetDefaultReturn(&gitdomain.BehindAhead{}, &gitdomain.RevisionNotFoundError{Repo: "therepo", Spec: "base...head"})
+				return b
+			},
+		}
+		_, err := gs.GetBehindAhead(ctx, &proto.GetBehindAheadRequest{RepoName: "therepo", Base: []byte("base"), Head: []byte("head")})
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RevisionNotFoundPayload{})
+		require.Contains(t, err.Error(), "revision not found")
+	})
+
+	t.Run("e2e", func(t *testing.T) {
+		expectedBehindAhead := gitdomain.BehindAhead{Behind: 5, Ahead: 3}
+
+		fs := gitserverfs.NewMockFS()
+		// Repo is cloned, proceed!
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
+		b := git.NewMockGitBackend()
+		b.GetBehindAheadFunc.SetDefaultReturn(&expectedBehindAhead, nil)
+		gs := &grpcServer{
+			svc: NewMockService(),
+			fs:  fs,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				return b
+			},
+		}
+
+		cli := spawnServer(t, gs)
+		response, err := cli.GetBehindAhead(ctx, &proto.GetBehindAheadRequest{
+			RepoName: "therepo",
+			Base:     []byte("base"),
+			Head:     []byte("head"),
+		})
+		require.NoError(t, err)
+
+		if diff := cmp.Diff(&proto.GetBehindAheadResponse{
+			Behind: expectedBehindAhead.Behind,
+			Ahead:  expectedBehindAhead.Ahead,
+		}, response, cmpopts.IgnoreUnexported(proto.GetBehindAheadResponse{})); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+	})
+}
+
 func assertGRPCStatusCode(t *testing.T, err error, want codes.Code) {
 	t.Helper()
 	s, ok := status.FromError(err)

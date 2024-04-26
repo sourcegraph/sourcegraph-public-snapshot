@@ -223,6 +223,14 @@ service GitserverService {
   rpc FirstEverCommit(FirstEverCommitRequest) returns (FirstEverCommitResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+
+  // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+  // revspecs).
+  // If one of the two given revspecs does not exist, an error with a RevisionNotFoundPayload is
+  // is returned.
+  rpc GetBehindAhead(GetBehindAheadRequest) returns (GetBehindAheadResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message ContributorCountsRequest {
@@ -1039,4 +1047,19 @@ message FirstEverCommitRequest {
 // a repo.
 message FirstEverCommitResponse {
   GitCommit commit = 1;
+}
+
+message GetBehindAheadRequest {
+  // repo_name is the name of the repo to get the behind/ahead information for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // base is a revspec, for now, we allow non-utf8 revspecs.
+  bytes base = 3;
+  // head is a revspec, for now, we allow non-utf8 revspecs.
+  bytes head = 4;
+}
+
+message GetBehindAheadResponse {
+  uint32 behind = 1;
+  uint32 ahead = 2;
 }
