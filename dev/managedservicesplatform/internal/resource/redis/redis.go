@@ -38,10 +38,8 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			Name:    pointers.Ptr(id.DisplayName()),
 
 			Tier: pointers.Ptr(func() string {
-				// Default to 'true' - TODO(@bobheadxi) migrate default to false
-				// after explicitly configuring production instances to use HA
-				// Redis for now.
-				if pointers.Deref(config.Spec.HighAvailability, true) {
+				// Default to 'false'
+				if pointers.DerefZero(config.Spec.HighAvailability) {
 					return "STANDARD_HA" // multi-zone in a region
 				}
 				return "BASIC" // single-zone
