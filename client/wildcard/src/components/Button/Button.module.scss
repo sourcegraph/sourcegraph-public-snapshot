@@ -196,7 +196,7 @@ input.btn {
         &:active,
         &:global(.active) {
             color: var(--btn-text-color);
-            background-color: var(--btn-dark-color-variant);
+            background-color: var(--color-bg-2);
         }
 
         &:focus-visible,

@@ -174,9 +174,16 @@
         }
 
         .revision-trigger {
+            display: flex;
+            align-items: flex-start;
+            padding: 0.5rem 0.75rem;
             white-space: nowrap;
             text-overflow: ellipsis;
             overflow: hidden;
+            width: 100%;
+            font-size: var(--font-size-base);
+            background-color: var(--secondary-4);
+            border-radius: var(--border-radius);
         }
 
         &.is-on-specific-rev .revision-trigger {

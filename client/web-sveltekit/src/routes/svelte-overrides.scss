@@ -19,6 +19,7 @@ h6 {
     // Shadows
     --sidebar-shadow: 0 79px 22px 0 rgba(30, 4, 47, 0), 0 51px 20 0 rgba(30, 4, 47, 0.01),
         0 29px 17px 0 rgba(30, 4, 47, 0.02), 0 13px 13px 0 rgba(30, 4, 47, 0.03), 0 3px 7px 0 rgba(30, 4, 47, 0.04);
+    --sidebar-header-shadow: 0px 13px 4px 0px rgba(176, 176, 176, 0.00), 0px 8px 3px 0px rgba(176, 176, 176, 0.01), 0px 5px 3px 0px rgba(176, 176, 176, 0.05), 0px 2px 2px 0px rgba(176, 176, 176, 0.09), 0px 1px 1px 0px rgba(176, 176, 176, 0.10);
     --fileheader-shadow: 0 6px 2px 0 rgba(0, 0, 0, 0), 0 4px 2px 0 rgba(0, 0, 0, 0.01), 0 2px 1px 0 rgba(0, 0, 0, 0.02),
         0 1px 1px 0 rgba(0, 0, 0, 0.03), 0 0 1px 0 rgba(0, 0, 0, 0.04);
     --bottom-panel-shadow: 0 -37px 10 0 rgba(1, 6, 12, 0), 0 -24px 10 0 rgba(1, 6, 12, 0.01),
@@ -34,6 +35,7 @@ h6 {
     // Shadows
     --sidebar-shadow: 0 318px 89px 0 rgba(12, 1, 19, 0.01), 0 203px 81px 0 rgba(12, 1, 19, 0.05),
         0 114px 69px 0 rgba(12, 1, 19, 0.16), 0 51px 51px 0 rgba(12, 1, 19, 0.27), 0 13px 28px 0 rgba(12, 1, 19, 0.31);
+    --sidebar-header-shadow: 0px 23px 7px 0px rgba(2, 6, 23, 0.00), 0px 15px 6px 0px rgba(2, 6, 23, 0.04), 0px 8px 5px 0px rgba(2, 6, 23, 0.12), 0px 4px 4px 0px rgba(2, 6, 23, 0.20), 0px 1px 2px 0px rgba(2, 6, 23, 0.24);
     --fileheader-shadow: 0 6px 2px 0 rgba(15, 2, 24, 0.01), 0 4px 2px 0 rgba(15, 2, 24, 0.05),
         0 2px 1px 0 rgba(15, 2, 24, 0.16), 0 1px 1px 0 rgba(15, 2, 24, 0.27), 0 0 1px 0 rgba(15, 2, 24, 0.31);
     --bottom-panel-shadow: 0 -37px 10 0 rgba(1, 6, 12, 0.01), 0 -24px 10 0 rgba(1, 6, 12, 0.05),

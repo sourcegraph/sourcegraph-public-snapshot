@@ -162,7 +162,7 @@
 
         &:hover,
         &[data-highlighted] {
-            background: var(--color-bg-3);
+            background: var(--color-bg-2);
         }
     }
 

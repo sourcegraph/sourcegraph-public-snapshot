@@ -128,17 +128,31 @@
 <section>
     <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
         <header>
-            <h3>
-                <SidebarToggleButton />&nbsp; Files
-            </h3>
-            <RepositoryRevPicker
-                repoURL={data.repoURL}
-                revision={data.revision}
-                resolvedRevision={data.resolvedRevision}
-                getRepositoryBranches={data.getRepoBranches}
-                getRepositoryCommits={data.getRepoCommits}
-                getRepositoryTags={data.getRepoTags}
-            />
+            <div class="repo-picker">
+                <div class="icon-placeholder">
+                    <img src="/.assets/img/sourcegraph-mark.svg?v2" alt="Sourcegraph" width="25" height="25" class="s-Uu8x9DCn_2BG">
+                </div>
+                <div class="repo-info">
+                    <div class="repo-title">
+                        <h2>sourcegraph</h2><span class="slash">/</span><h2>sourcegraph</h2>
+                    </div>
+                    <small>
+                        Switch
+                        <!-- Convert into KeyboardShortcut component -->
+                        <div class="keyboard-shortcut">⌥I</div>
+                    </small>
+                </div>
+            </div>
+            <div class="repo-rev-picker">
+                <RepositoryRevPicker
+                    repoURL={data.repoURL}
+                    revision={data.revision}
+                    resolvedRevision={data.resolvedRevision}
+                    getRepositoryBranches={data.getRepoBranches}
+                    getRepositoryCommits={data.getRepoCommits}
+                    getRepositoryTags={data.getRepoTags}
+                />
+            </div>
         </header>
         {#if $fileTreeStore}
             {#if isErrorLike($fileTreeStore)}
@@ -198,10 +212,20 @@
 
     header {
         display: flex;
-        gap: 0.5rem;
+        flex-direction: column;
         justify-content: space-between;
-        align-items: center;
         margin-bottom: 0.5rem;
+        background-color: var(--color-bg-1);
+        box-shadow: var(--sidebar-header-shadow);
+
+        small {
+            display: flex;
+            flex-flow: row nowrap;
+            align-items: center;
+            gap: 0.3rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
     }
 
     .sidebar {
@@ -212,7 +236,6 @@
         display: none;
         overflow: hidden;
         background-color: var(--color-bg-1);
-        padding: 0.5rem;
         padding-bottom: 0;
         box-shadow: var(--sidebar-shadow);
         z-index: 1;
@@ -224,6 +247,62 @@
         flex-direction: column;
         min-width: 0;
         overflow: hidden;
+    }
+
+    h2 {
+        font-size: 0.9375rem;
+        font-weight: 00;
+        margin: 0;
+        padding: 0;
+        letter-spacing: -0.25px;
+    }
+
+    .slash {
+        margin: 0 0.35rem;
+        color: var(--text-disabled);
+        font-weight: 300;
+    }
+
+    .icon-placeholder {
+        padding: 0.25rem;
+
+        img {
+            width: 20px;
+            height: 20px;
+        }
+    }
+
+    .repo-picker {
+        display: flex;
+        flex-flow: row nowrap;
+        gap: 0.25rem;
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .repo-title {
+        display: flex;
+        flex-flow: row nowrap;
+    }
+
+    .repo-info {
+        display: flex;
+        flex-flow: column nowrap;
+        gap: 0.15rem;
+        padding: 0 0.25rem;
+    }
+
+    .keyboard-shortcut {
+        font-size: 10px;
+        font-weight: 400;
+        color: var(--text-disabled);
+        padding: 0.1rem 0.2rem;
+        background-color: var(--secondary-4);
+        border-radius: var(--border-radius);
+    }
+
+    .repo-rev-picker {
+        padding: 1rem;
     }
 
     h3 {
