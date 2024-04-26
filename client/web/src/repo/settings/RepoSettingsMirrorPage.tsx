@@ -5,6 +5,7 @@ import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Container,
     PageHeader,
@@ -41,7 +42,6 @@ import {
     RECLONE_REPOSITORY_MUTATION,
     UPDATE_MIRROR_REPOSITORY,
 } from '../../site-admin/backend'
-import { eventLogger } from '../../tracking/eventLogger'
 import { DirectImportRepoAlert } from '../DirectImportRepoAlert'
 
 import { FETCH_SETTINGS_AREA_REPOSITORY_GQL } from './backend'
@@ -294,7 +294,7 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = ({
     repo: initialRepo,
     disablePolling = false,
 }) => {
-    eventLogger.logPageView('RepoSettingsMirror')
+    EVENT_LOGGER.logPageView('RepoSettingsMirror')
     const [reachable, setReachable] = useState<boolean>()
     const [recloneRepository] = useMutation<RecloneRepositoryResult, RecloneRepositoryVariables>(
         RECLONE_REPOSITORY_MUTATION,

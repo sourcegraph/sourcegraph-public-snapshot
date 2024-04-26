@@ -1,12 +1,14 @@
 <script lang="ts">
+    import { tick } from 'svelte'
+    import { mdiMagnify } from '@mdi/js'
     import { createDialog } from '@melt-ui/svelte'
+
     import Icon from '$lib/Icon.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import { queryStateStore } from '$lib/search/state'
+    import { QueryState, queryStateStore } from '$lib/search/state'
     import { settings } from '$lib/stores'
-    import { mdiMagnify } from '@mdi/js'
-    import { tick } from 'svelte'
     import { repositoryInsertText } from '$lib/shared'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
 
     export let repoName: string
 
@@ -17,6 +19,14 @@
 
     let searchInput: SearchInput | undefined
     let queryState = queryStateStore({ query: `repo:${repositoryInsertText({ repository: repoName })} ` }, $settings)
+
+    function handleSearchSubmit(state: QueryState): void {
+        SVELTE_LOGGER.log(
+            SVELTE_TELEMETRY_EVENTS.SearchSubmit,
+            { source: 'repo', query: state.query },
+            { source: 'repo', patternType: state.patternType }
+        )
+    }
 
     $: if ($open) {
         // @melt-ui automatically focuses the search input but that positions the cursor at the
@@ -30,7 +40,7 @@
     <div class="wrapper">
         <div {...$overlay} use:overlay class="overlay" />
         <div {...$content} use:content>
-            <SearchInput bind:this={searchInput} {queryState} />
+            <SearchInput bind:this={searchInput} {queryState} onSubmit={handleSearchSubmit} />
         </div>
     </div>
 {:else}

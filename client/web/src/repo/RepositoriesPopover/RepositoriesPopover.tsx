@@ -4,6 +4,7 @@ import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
@@ -19,7 +20,6 @@ import type {
     RepositoriesForPopoverVariables,
     RepositoryPopoverFields,
 } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import {
     ConnectionPopover,
     ConnectionPopoverContainer,
@@ -69,7 +69,7 @@ export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildre
     const query = useDebounce(searchValue, 200)
 
     useEffect(() => {
-        eventLogger.logViewEvent('RepositoriesPopover')
+        EVENT_LOGGER.logViewEvent('RepositoriesPopover')
         telemetryService.log('RepositoriesPopover')
     }, [telemetryService])
 

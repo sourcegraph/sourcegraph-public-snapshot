@@ -4,9 +4,9 @@ import { lastValueFrom } from 'rxjs'
 
 import { type ErrorLike, logger } from '@sourcegraph/common'
 import { BillingCategory, BillingProduct } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { TelemetryRecorder } from '@sourcegraph/telemetry'
 
-import { eventLogger } from '../../../tracking/eventLogger'
 import { CodeInsightsBackendContext, type Insight } from '../core'
 import { getTrackingTypeByInsightType } from '../pings'
 import { V2InsightType } from '../pings/types'
@@ -45,7 +45,7 @@ export function useDeleteInsight(
                 await lastValueFrom(deleteInsight(insight.id), { defaultValue: undefined })
                 const insightType = getTrackingTypeByInsightType(insight.type)
 
-                eventLogger.log('InsightRemoval', { insightType }, { insightType })
+                EVENT_LOGGER.log('InsightRemoval', { insightType }, { insightType })
                 telemetryRecorder.recordEvent('insight', 'delete', {
                     metadata: { insightType: V2InsightType[insightType] },
                 })

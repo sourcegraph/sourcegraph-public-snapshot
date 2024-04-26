@@ -14,7 +14,7 @@ export class SessionTracker {
      * Session tracking is only done in Sourcegraph.com, where cookie values are set in Google Tag Manager
      * to ensure consistency across all public Sourcegraph-managed properties (e.g. marketing sites, blog, etc.)
      */
-    private isSourcegraphDotComMode = window.context?.sourcegraphDotComMode || false
+    private isSourcegraphDotComMode = window.context?.sourcegraphDotComMode
 
     private originalReferrer: string
     private sessionReferrer: string

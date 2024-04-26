@@ -4,11 +4,11 @@ import { useNavigate } from 'react-router-dom'
 
 import { useMutation, gql } from '@sourcegraph/http-client'
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, LoadingSpinner, Label, Text, Form } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import type { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { SurveyRatingRadio } from '../components/SurveyRatingRadio'
 import { SurveyUseCaseForm } from '../components/SurveyUseCaseForm'
 
@@ -79,7 +79,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
             return
         }
 
-        eventLogger.log('SurveySubmitted')
+        EVENT_LOGGER.log('SurveySubmitted')
         telemetryRecorder.recordEvent('surveyNPS', 'submit')
 
         await submitSurvey({

@@ -15,11 +15,11 @@ import {
     jsonHighlighting,
     useCodeMirror,
 } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Container, H3, Link, LoadingSpinner, PageHeader, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
-import { eventLogger } from '../tracking/eventLogger'
 
 // This seems to be necessary to have properly rounded corners on
 // the right side.
@@ -41,7 +41,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
         useMemo(() => fromFetch<{}>('/site-admin/pings/latest', { selector: response => checkOk(response).json() }), [])
     )
     useEffect(() => {
-        eventLogger.logViewEvent('SiteAdminPings')
+        EVENT_LOGGER.logViewEvent('SiteAdminPings')
     }, [])
 
     const updatesDisabled = window.context.site['update.channel'] !== 'release'

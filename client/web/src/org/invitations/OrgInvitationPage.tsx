@@ -7,6 +7,7 @@ import { logger } from '@sourcegraph/common'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Alert, AnchorLink, Button, LoadingSpinner, Link, H2, H3, Form } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
@@ -19,7 +20,6 @@ import type {
     RespondToOrgInvitationResult,
     RespondToOrgInvitationVariables,
 } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { OrgAvatar } from '../OrgAvatar'
 
@@ -92,7 +92,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
     const willVerifyEmail = data?.recipientEmail && !data?.isVerifiedEmail
 
     useEffect(() => {
-        eventLogger.logPageView('OrganizationInvitation', { organizationId: orgId, invitationId: data?.id })
+        EVENT_LOGGER.logPageView('OrganizationInvitation', { organizationId: orgId, invitationId: data?.id })
     }, [orgId, data?.id])
 
     const [respondToInvitation, { loading: respondLoading, error: respondError }] = useMutation<
@@ -105,7 +105,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
     })
 
     const acceptInvitation = useCallback(async () => {
-        eventLogger.log(
+        EVENT_LOGGER.log(
             'OrganizationInvitationAcceptClicked',
             {
                 organizationId: orgId,
@@ -125,13 +125,13 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
                     response: OrganizationInvitationResponseType.ACCEPT,
                 },
             })
-            eventLogger.log(
+            EVENT_LOGGER.log(
                 'OrganizationInvitationAcceptSucceeded',
                 { organizationId: orgId, invitationId: data?.id },
                 { organizationId: orgId, invitationId: data?.id }
             )
         } catch {
-            eventLogger.log(
+            EVENT_LOGGER.log(
                 'OrganizationInvitationAcceptFailed',
                 { organizationId: orgId, invitationId: data?.id },
                 { organizationId: orgId, invitationId: data?.id }
@@ -145,7 +145,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
     }, [data?.id, navigate, orgId, orgName, respondToInvitation, willVerifyEmail])
 
     const declineInvitation = useCallback(async () => {
-        eventLogger.log(
+        EVENT_LOGGER.log(
             'OrganizationInvitationDeclineClicked',
             {
                 organizationId: orgId,
@@ -165,13 +165,13 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
                     response: OrganizationInvitationResponseType.REJECT,
                 },
             })
-            eventLogger.log(
+            EVENT_LOGGER.log(
                 'OrganizationInvitationDeclineSucceeded',
                 { organizationId: orgId, invitationId: data?.id },
                 { organizationId: orgId, invitationId: data?.id }
             )
         } catch {
-            eventLogger.log(
+            EVENT_LOGGER.log(
                 'OrganizationInvitationDeclineFailed',
                 { organizationId: orgId, invitationId: data?.id },
                 { organizationId: orgId, invitationId: data?.id }
