@@ -60,9 +60,17 @@
             border: 'none',
             color: 'var(--line-number-color)',
         },
+        '.cm-gutterElement': {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            minWidth: '40px !important',
+        },
         '.cm-line': {
             paddingLeft: '3ex',
             height: '20px',
+            display: 'flex',
+            alignItems: 'center',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
