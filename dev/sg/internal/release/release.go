@@ -210,7 +210,8 @@ type releaseInfo struct {
 // Should *only* be called for patch releases for the monorepo!
 // returns the new patch number for the latest minor version, in the form of "major.minor.patch"
 func determineNextReleaseVersion(ctx context.Context) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph", nil)
+	releaseEndpoint := "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph" // In the future we may wish to change this to name of the product being released
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, releaseEndpoint, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "Could not create request")
 	}
@@ -245,9 +246,12 @@ func determineNextReleaseVersion(ctx context.Context) (string, error) {
 		return "", errors.New("Could not automatically determine new version number")
 	}
 	if resp.StatusCode != 200 {
-		return "", errors.New("Releaseregistry did not return statuscode 200")
+		return "", errors.Newf("API error, got status %d", resp.StatusCode)
 	}
-	bodyBytes, _ := io.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.New("Could not read new version number")
+	}
 	defer resp.Body.Close()
 	version := string(bodyBytes)
 	return version, nil
