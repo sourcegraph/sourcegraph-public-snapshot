@@ -222,7 +222,7 @@ func determineNextReleaseVersion(ctx context.Context) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return "", errors.New("Releaseregistry did not return statuscode 200")
+		return "", errors.Newf("API error, got status %d", resp.StatusCode)
 	}
 
 	var versions []releaseInfo
