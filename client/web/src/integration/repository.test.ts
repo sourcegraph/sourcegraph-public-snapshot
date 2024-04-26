@@ -36,7 +36,7 @@ import {
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants, removeContextFromQuery } from './utils'
 
-export const getCommonRepositoryGraphQlResults = (
+const getCommonRepositoryGraphQlResults = (
     repositoryName: string,
     repositoryUrl: string,
     fileEntries: string[] = []
@@ -735,6 +735,7 @@ describe('Repository', () => {
                         },
                     },
                 }),
+                ContextFilters: () => createCodyContextFiltersResult(),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph/-/commits')
             await driver.page.waitForSelector('[data-testid="commits-page"]', { visible: true })
