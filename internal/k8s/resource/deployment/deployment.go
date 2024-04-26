@@ -29,9 +29,6 @@ func NewDeployment(name, namespace, version string) appsv1.Deployment {
 					"app": name,
 				},
 			},
-			Strategy: appsv1.DeploymentStrategy{
-				Type: appsv1.RecreateDeploymentStrategyType,
-			},
 		},
 	}
 }
