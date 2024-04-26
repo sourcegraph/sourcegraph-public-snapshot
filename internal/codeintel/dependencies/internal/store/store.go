@@ -94,12 +94,18 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 		}})
 	}()
 
+	orderBy := sqlf.Sprintf("ORDER BY lr.id ASC")
+
+	if opts.Name != "" {
+		orderBy = sqlf.Sprintf("ORDER BY (CASE WHEN lr.name = %s THEN 1 ELSE 2 END), lr.name", opts.Name)
+	}
+
 	query := sqlf.Sprintf(
 		listDependencyReposQuery,
 		sqlf.Sprintf(groupedVersionedPackageReposColumns),
 		sqlf.Join([]*sqlf.Query{makeListDependencyReposConds(opts), makeOffset(opts.After)}, "AND"),
 		sqlf.Sprintf("GROUP BY lr.id"),
-		sqlf.Sprintf("ORDER BY lr.id ASC"),
+		orderBy,
 		makeLimit(opts.Limit),
 	)
 	dependencyRepos, err = basestore.NewSliceScanner(scanDependencyRepoWithVersions)(s.db.Query(ctx, query))
