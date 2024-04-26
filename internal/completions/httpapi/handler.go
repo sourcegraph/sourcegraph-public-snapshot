@@ -484,9 +484,9 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 	case types.CodyClientWeb:
 		return nil
 	case types.CodyClientVscode:
-		cvc = clientVersionConstraint{client: clientName, constraint: "> 1.14.1"}
+		cvc = clientVersionConstraint{client: clientName, constraint: ">= 1.20.0"}
 	case types.CodyClientJetbrains:
-		cvc = clientVersionConstraint{client: clientName, constraint: "> 5.5.5"}
+		cvc = clientVersionConstraint{client: clientName, constraint: ">= 6.0.0"}
 	default:
 		return &clientCodyIgnoreCompatibilityError{
 			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
