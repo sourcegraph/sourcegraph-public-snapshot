@@ -30,9 +30,14 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	}
 
 	releaseBranch := v.String()
+	if v.Patch() == 0 {
+		releaseBranch = fmt.Sprintf("%d.%d", v.Major(), v.Minor()) // 5.3 not 5.3.0
+	}
+
 	defaultBranch := cctx.String("branch")
 
 	ctx := cctx.Context
+	fmt.Println("releaseBranch", releaseBranch)
 	releaseGitRepoBranch := repo.NewGitRepo(releaseBranch, releaseBranch)
 	defaultGitRepoBranch := repo.NewGitRepo(defaultBranch, defaultBranch)
 
@@ -41,9 +46,6 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	} else if ok {
 		return errors.Newf("current branch is dirty. please commit your unstaged changes")
 	}
-
-	fmt.Println("done...")
-	return nil
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the release branch exists locally ..."))
 	if ok, err := releaseGitRepoBranch.HasLocalBranch(ctx); err != nil {
@@ -87,6 +89,9 @@ func cutReleaseBranch(cctx *cli.Context) error {
 			std.Out.WriteWarningf("Unable to checkout previous branch before branch cut. %s", err.Error())
 		}
 	}()
+
+	fmt.Println("done...")
+	return nil
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Pushing release branch..."))
 	if _, err := releaseGitRepoBranch.Push(ctx); err != nil {
