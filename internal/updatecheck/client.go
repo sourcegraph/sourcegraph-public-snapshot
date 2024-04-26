@@ -600,13 +600,6 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	if err != nil {
 		logFunc("getAndMarshalBatchChangesUsageJSON failed", log.Error(err))
 	}
-	// We don't bother doing this on Sourcegraph.com as it is expensive and not needed.
-	if !dotcom.SourcegraphDotComMode() {
-		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
-		}
-	}
 	r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
 	if err != nil {
 		logFunc("getAndMarshalSavedSearchesJSON failed", log.Error(err))
@@ -672,14 +665,6 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("getAndMarshalIDEExtensionsUsageJSON failed", log.Error(err))
 	}
 
-	// We don't bother doing this on Sourcegraph.com as it is expensive and not needed.
-	if !dotcom.SourcegraphDotComMode() {
-		r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
-		}
-	}
-
 	r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)
 	if err != nil {
 		logFunc("getAndMarshalCodeHostVersionsJSON failed", log.Error(err))
@@ -717,6 +702,21 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
 	r.AccessRequestEnabled = conf.IsAccessRequestEnabled()
 	r.AuthProviders = authProviderTypes()
+
+	// We don't bother doing this on Sourcegraph.com as it is expensive and not needed.
+	if !dotcom.SourcegraphDotComMode() {
+		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
+		if err != nil {
+			logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
+		}
+
+		r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
+		}
+
+		r.CodyContextFiltersConfigured = conf.SiteConfig().CodyContextFilters != nil
+	}
 
 	// The following methods are the most expensive to calculate, so we do them in
 	// parallel.
