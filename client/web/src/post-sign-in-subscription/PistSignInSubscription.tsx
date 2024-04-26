@@ -1,7 +1,7 @@
 import type { FC, ChangeEvent, FocusEventHandler } from 'react'
 
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
-import { H1, H3, Label, Form, useForm, useCheckboxes } from '@sourcegraph/wildcard'
+import { H1, H2, Label, Form, useForm, useCheckboxes } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 
@@ -55,7 +55,7 @@ export const PostSignInSubscription: FC = props => {
                         onChange={onChange}
                     />
 
-                    <H3 className={styles.subHeading}>Help improve Sourcegraph</H3>
+                    <H2 className={styles.subHeading}>Help improve Sourcegraph</H2>
 
                     <SubscriptionOption
                         value="research-program"
