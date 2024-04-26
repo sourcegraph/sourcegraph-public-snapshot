@@ -23,11 +23,13 @@
         part,
         resolveRoute(
             // Only the last element in a path can be a blob
-                index < all.length - 1 ||type === 'tree' ? TREE_ROUTE_ID : BLOB_ROUTE_ID, {
-                    repo: revision ? `${repoName}@${revision}` : repoName,
-                    validrev: revision,
-                    path: all.slice(0, index + 1).join('/'),
-        }),
+            index < all.length - 1 || type === 'tree' ? TREE_ROUTE_ID : BLOB_ROUTE_ID,
+            {
+                repo: revision ? `${repoName}@${revision}` : repoName,
+                validrev: revision,
+                path: all.slice(0, index + 1).join('/'),
+            }
+        ),
     ])
 </script>
 
