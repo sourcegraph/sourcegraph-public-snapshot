@@ -5483,8 +5483,8 @@ def go_dependencies():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/sourcegraph-accounts-sdk-go",
-        sum = "h1:621jnJedYfjgES+dn5CAk4VVAwI84gnuzaDCkE83i9w=",
-        version = "v0.0.0-20240409140445-b228ef93f415",
+        sum = "h1:lOQJ+wDbQ5lSBuAv6GgCuoFKucte5k2bPf1a7navsd0=",
+        version = "v0.0.0-20240426173441-db5b0a145ceb",
     )
     go_repository(
         name = "com_github_sourcegraph_zoekt",

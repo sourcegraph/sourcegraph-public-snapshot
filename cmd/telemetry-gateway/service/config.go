@@ -17,10 +17,10 @@ type Config struct {
 		StreamPublishConcurrency int
 	}
 
-	SAMS SAMS
+	SAMS SAMSConfig
 }
 
-type SAMS struct {
+type SAMSConfig struct {
 	sams.ConnConfig
 	ClientID     string
 	ClientSecret string
