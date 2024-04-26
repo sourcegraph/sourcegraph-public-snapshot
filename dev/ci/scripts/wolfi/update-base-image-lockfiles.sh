@@ -13,6 +13,14 @@ echo "~~~ :aspect: :stethoscope: Agent Health check"
 
 echo "~~~ Running sg wolfi lock"
 
+echo "Author Name: $GIT_AUTHOR_NAME"
+echo "Author Email: $GIT_AUTHOR_EMAIL"
+echo "Committer Name: $GIT_COMMITTER_NAME"
+echo "Committer Email: $GIT_COMMITTER_EMAIL"
+
+echo "git config Author Name: $(git config user.name)"
+echo "git config Author Email: $(git config user.email)"
+
 buildkite-agent artifact download sg . --step bazel-prechecks
 chmod +x ./sg
 
