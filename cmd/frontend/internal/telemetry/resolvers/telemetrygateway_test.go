@@ -29,8 +29,8 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 			name: "basic",
 			ctx:  context.Background(),
 			event: graphqlbackend.TelemetryEventInput{
-				Feature: "Feature",
-				Action:  "Example",
+				Feature: "feature",
+				Action:  "example",
 			},
 			expect: autogold.Expect(`{
   "action": "Example",
@@ -50,8 +50,8 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 			name: "with anonymous user",
 			ctx:  actor.WithActor(context.Background(), actor.FromAnonymousUser("1234")),
 			event: graphqlbackend.TelemetryEventInput{
-				Feature: "Feature",
-				Action:  "Example",
+				Feature: "feature",
+				Action:  "example",
 			},
 			expect: autogold.Expect(`{
   "action": "Example",
@@ -74,8 +74,8 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 			name: "with authenticated user",
 			ctx:  actor.WithActor(context.Background(), actor.FromMockUser(1234)),
 			event: graphqlbackend.TelemetryEventInput{
-				Feature: "Feature",
-				Action:  "Example",
+				Feature: "feature",
+				Action:  "example",
 			},
 			expect: autogold.Expect(`{
   "action": "Example",
@@ -98,8 +98,8 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 			name: "with parameters",
 			ctx:  context.Background(),
 			event: graphqlbackend.TelemetryEventInput{
-				Feature: "Feature",
-				Action:  "Example",
+				Feature: "feature",
+				Action:  "example",
 				Parameters: graphqlbackend.TelemetryEventParametersInput{
 					Version: 0,
 					Metadata: &[]graphqlbackend.TelemetryEventMetadataInput{
@@ -146,8 +146,8 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 			name: "with string PrivateMetadata",
 			ctx:  context.Background(),
 			event: graphqlbackend.TelemetryEventInput{
-				Feature: "Feature",
-				Action:  "Example",
+				Feature: "feature",
+				Action:  "example",
 				Parameters: graphqlbackend.TelemetryEventParametersInput{
 					Version: 0,
 					PrivateMetadata: &graphqlbackend.JSONValue{
@@ -177,8 +177,8 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 			name: "with numeric PrivateMetadata",
 			ctx:  context.Background(),
 			event: graphqlbackend.TelemetryEventInput{
-				Feature: "Feature",
-				Action:  "Example",
+				Feature: "feature",
+				Action:  "example",
 				Parameters: graphqlbackend.TelemetryEventParametersInput{
 					Version: 0,
 					PrivateMetadata: &graphqlbackend.JSONValue{
@@ -209,8 +209,8 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 			ctx:  context.Background(),
 			event: graphqlbackend.TelemetryEventInput{
 				Timestamp: &gqlutil.DateTime{Time: staticTime.Add(48 * time.Hour)},
-				Feature:   "Feature",
-				Action:    "Example",
+				Feature:   "feature",
+				Action:    "example",
 			},
 			expect: autogold.Expect(`{
   "action": "Example",
