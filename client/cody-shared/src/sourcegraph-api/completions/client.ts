@@ -15,7 +15,7 @@ export interface CompletionLogger {
 
 export type CompletionsClientConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'accessToken' | 'debugEnable' | 'customHeaders'
+    'serverEndpoint' | 'accessToken' | 'debugEnable' | 'customHeaders' | 'clientName' | 'clientVersion'
 >
 
 /**
@@ -35,7 +35,19 @@ export abstract class SourcegraphCompletionsClient {
     }
 
     protected get completionsEndpoint(): string {
-        return new URL('/.api/completions/stream', this.config.serverEndpoint).href
+        const url = new URL('/.api/completions/stream', this.config.serverEndpoint)
+
+        // Sourcegraph >=5.4 instances require client name and version params on the completions endpoint to ensure
+        // client supports Cody Ignore functionality. See https://github.com/sourcegraph/sourcegraph/pull/62048.
+        const { clientName, clientVersion } = this.config
+        if (clientName) {
+            url.searchParams.set('client-name', clientName)
+            if (clientVersion) {
+                url.searchParams.set('client-version', clientVersion)
+            }
+        }
+
+        return url.href
     }
 
     protected sendEvents(events: Event[], cb: CompletionCallbacks): void {
