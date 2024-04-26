@@ -30,6 +30,7 @@ export const FEATURE_FLAGS = [
     'sourcegraph-operator-site-admin-hide-maintenance',
     'cody-payments-testing-mode',
     'ab-hubspot-form-workpersonal-to-handraiser',
+    'ab-shortened-install-first-signup-flow-cody-2024-04',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]
