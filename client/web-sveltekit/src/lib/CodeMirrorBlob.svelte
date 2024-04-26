@@ -61,7 +61,8 @@
             color: 'var(--line-number-color)',
         },
         '.cm-line': {
-            paddingLeft: '1ex',
+            paddingLeft: '3ex',
+            height: '20px',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
