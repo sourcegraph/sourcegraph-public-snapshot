@@ -42,6 +42,9 @@ func cutReleaseBranch(cctx *cli.Context) error {
 		return errors.Newf("current branch is dirty. please commit your unstaged changes")
 	}
 
+	fmt.Println("done...")
+	return nil
+
 	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the release branch exists locally ..."))
 	if ok, err := releaseGitRepoBranch.HasLocalBranch(ctx); err != nil {
 		p.Destroy()
