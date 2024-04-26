@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/execute"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -32,42 +33,42 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	defaultBranch := cctx.String("branch")
 
 	ctx := cctx.Context
+	releasGitRepoBranch := repo.NewGitRepo(releaseBranch, releaseBranch)
+	defaultGitRepoBranch := repo.NewGitRepo(defaultBranch, defaultBranch)
+
+	if ok, err := defaultGitRepoBranch.IsDirty(ctx); err != nil {
+		return errors.Wrap(err, "check if current branch is dirty")
+	} else if ok {
+		return errors.Newf("current branch is dirty. please commit your unstaged changes")
+	}
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the release branch exists locally ..."))
-	if _, err := execute.Git(ctx, "rev-parse", "--verify", releaseBranch); err == nil {
+	if ok, err := releasGitRepoBranch.HasLocalBranch(ctx); err != nil {
 		p.Destroy()
-		return errors.Newf("release branch %q already exists", releaseBranch)
+		return errors.Wrapf(err, "checking if %q branch exists localy", releaseBranch)
+	} else if ok {
+		p.Destroy()
+		return errors.Newf("branch %q exists locally", releaseBranch)
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Release branch %q does not exist locally", releaseBranch))
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the release branch exists in remote ..."))
-	if _, err := execute.Git(ctx, "rev-parse", "--verify", fmt.Sprintf("origin/%s", releaseBranch)); err == nil {
+	if ok, err := releasGitRepoBranch.HasRemoteBranch(ctx); err != nil {
 		p.Destroy()
-		return errors.Newf("release branch %q already exists", fmt.Sprintf("origin/%s", releaseBranch))
+		return errors.Wrapf(err, "checking if %q branch exists in remote repo", releaseBranch)
+	} else if ok {
+		p.Destroy()
+		return errors.Newf("release branch %q exists in remote repo", releaseBranch)
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Release branch %q does not exist in remote", releaseBranch))
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Checking if the default branch is up to date with remote ..."))
-	if _, err := execute.Git(ctx, "fetch"); err != nil {
+	if ok, err := defaultGitRepoBranch.IsOutOfSync(ctx); err != nil {
 		p.Destroy()
-		return errors.Wrap(err, "failed to fetch remote")
-	}
-
-	localCommitSHA, err := execute.Git(ctx, "rev-parse", defaultBranch)
-	if err != nil {
+		return errors.Wrapf(err, "checking if %q branch is up to date with remote", defaultBranch)
+	} else if !ok {
 		p.Destroy()
-		return errors.Wrap(err, "failed to get local commit SHA")
-	}
-
-	remoteCommitSHA, err := execute.Git(ctx, "rev-parse", fmt.Sprintf("origin/%s", defaultBranch))
-	if err != nil {
-		p.Destroy()
-		return errors.Wrap(err, "failed to get remote commit SHA")
-	}
-
-	if string(localCommitSHA) != string(remoteCommitSHA) {
-		p.Destroy()
-		return errors.New("local branch is not up to date with remote, please pull the latest changes")
+		return errors.Newf("local branch %q is not up to date with remote", defaultBranch)
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Local branch is up to date with remote"))
 
@@ -85,7 +86,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	}()
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Pushing release branch..."))
-	if _, err := execute.Git(ctx, "push", "origin", releaseBranch); err != nil {
+	if _, err := releasGitRepoBranch.Push(ctx); err != nil {
 		p.Destroy()
 		return errors.Wrap(err, "failed to push release branch")
 	}
