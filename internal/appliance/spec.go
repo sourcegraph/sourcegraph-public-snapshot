@@ -3,6 +3,9 @@ package appliance
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 )
 
 type ManagementStateType string
@@ -27,20 +30,17 @@ type DatabaseSpec struct {
 
 // BlobstoreSpec defines the desired state of Blobstore.
 type BlobstoreSpec struct {
-	// Disabled defines if Blobstore is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
+	config.StandardConfig
 
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 200Gi
 	StorageSize string `json:"storageSize,omitempty"`
 
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-
 	// Env defines environment variables for Blobstore.
 	Env map[string]string `json:"env,omitempty"`
 }
+
+func (BlobstoreSpec) PrometheusPort() *int { return nil }
 
 // CodeInsightsDBSpec defines the desired state of Code Insights database.
 type CodeInsightsDBSpec struct {
@@ -256,18 +256,13 @@ type RedisStoreSpec struct {
 
 // RepoUpdaterSpec defines the desired state of the Repo Updater service.
 type RepoUpdaterSpec struct {
-	// Disabled defines if Repo Updater is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	config.StandardConfig
 
 	// Env defines environment variables for Redis Updater.
 	Env map[string]string `json:"env,omitempty"`
-
-	ServiceAccountAnnotations map[string]string `json:"serviceAccountAnnotations,omitempty"`
 }
+
+func (RepoUpdaterSpec) PrometheusPort() *int { return ptr.To(6060) }
 
 // SearcherSpec defines the desired state of the Searcher service.
 type SearcherSpec struct {
@@ -361,11 +356,6 @@ type SourcegraphSpec struct {
 	// ManagementState defines if Sourcegraph should be managed by the operator or not.
 	// Default is managed.
 	ManagementState ManagementStateType `json:"managementState,omitempty"`
-
-	// LocalDevMode will remove all resource requests, allowing the scheduler to best-fit pods.
-	// Intended for local development with limited resources.
-	// Default: false
-	LocalDevMode bool `json:"localDevMode,omitempty"`
 
 	// MaintenancePassword will set the password for the administrator maintenance UI.
 	// If no password is set, a random password will be generated and storage in a secret.
