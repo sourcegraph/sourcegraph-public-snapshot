@@ -4,7 +4,7 @@
 # Push a new branch to GitHub, and open a PR.
 # Can be run from any base branch, and will create an appropriate PR.
 
-set -exu -o pipefail
+# set -exu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
