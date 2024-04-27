@@ -2947,6 +2947,8 @@ type SiteConfiguration struct {
 	SscApiBaseUrl string `json:"ssc.apiBaseUrl,omitempty"`
 	// SscSamsHostName description: The hostname of SAMS instance to connect.
 	SscSamsHostName string `json:"ssc.samsHostName,omitempty"`
+	// SscUseEmbeddedUI description: Whether or not to direct users to manage Cody Pro subscriptions on accounts.sourcegraph.com
+	SscUseEmbeddedUI bool `json:"ssc.useEmbeddedUI,omitempty"`
 	// SyntaxHighlighting description: Syntax highlighting configuration
 	SyntaxHighlighting *SyntaxHighlighting `json:"syntaxHighlighting,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
@@ -3122,6 +3124,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "search.limits")
 	delete(m, "ssc.apiBaseUrl")
 	delete(m, "ssc.samsHostName")
+	delete(m, "ssc.useEmbeddedUI")
 	delete(m, "syntaxHighlighting")
 	delete(m, "update.channel")
 	delete(m, "webhook.logging")
