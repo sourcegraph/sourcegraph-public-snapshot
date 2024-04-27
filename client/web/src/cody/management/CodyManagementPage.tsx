@@ -21,13 +21,14 @@ import {
 import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
-import { useCodyPaymentsUrl } from '../subscription/CodySubscriptionPage'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
+import { manageSubscriptionRedirectURL } from '../util'
 
 import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
 
 import styles from './CodyManagementPage.module.scss'
+
 
 interface CodyManagementPageProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
@@ -75,7 +76,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const subscription = data?.currentUser?.codySubscription
 
-    const codyPaymentsUrl = useCodyPaymentsUrl()
+    const navigate = useNavigate()
     const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
 
     useEffect(() => {
