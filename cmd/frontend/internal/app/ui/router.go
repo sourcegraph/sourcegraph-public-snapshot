@@ -146,6 +146,7 @@ func InitRouter(db database.DB) {
 		{path: "/app/coming-soon", name: "app-coming-soon", title: "Coming soon", index: false},
 		{path: "/app/auth/callback", name: "app-auth-callback", title: "Auth callback", index: false},
 		{path: "/cody/manage", name: "cody", title: "Cody Manage", index: false},
+		{path: "/cody/manage/subscription", name: "cody", title: "Manage Subscription", index: false},
 		{path: "/cody/subscription", name: "cody", title: "Cody Pricing", index: false},
 		{path: "/cody/chat", name: "cody", title: "Cody", index: false},
 		{path: "/cody/chat/{chatID}", name: "cody-chat", title: "Cody", index: false},

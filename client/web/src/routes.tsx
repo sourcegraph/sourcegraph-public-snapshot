@@ -9,6 +9,7 @@ import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
 import { isSearchJobsEnabled } from './search-jobs/utility'
+import { showEmbeddedCodyProUI } from './cody/util'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
@@ -64,6 +65,10 @@ const SearchPageWrapper = lazyComponent(() => import('./search/SearchPageWrapper
 const CodySearchPage = lazyComponent(() => import('./cody/search/CodySearchPage'), 'CodySearchPage')
 const CodyChatPage = lazyComponent(() => import('./cody/chat/CodyChatPage'), 'CodyChatPage')
 const CodyManagementPage = lazyComponent(() => import('./cody/management/CodyManagementPage'), 'CodyManagementPage')
+const CodyManageSubscriptionPage = lazyComponent(
+    () => import('./cody/management/subscription/ManageSubscriptionPage'),
+    'ManageSubscriptionPage'
+)
 const CodySubscriptionPage = lazyComponent(
     () => import('./cody/subscription/CodySubscriptionPage'),
     'CodySubscriptionPage'
@@ -393,6 +398,21 @@ export const routes: RouteObject[] = [
                     <CodyManagementPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
                 )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.CodyManagementSubscription,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <CodyManageSubscriptionPage
+                        authenticatedUser={props.authenticatedUser}
+                        telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
+                condition={({ isSourcegraphDotCom }) => {
+                    return isSourcegraphDotCom && showEmbeddedCodyProUI()
+                }}
             />
         ),
     },
