@@ -2,19 +2,15 @@ import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 
+import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { H2, H3, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../auth'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
+import { type UserCodyPlanResult, type UserCodyPlanVariables } from '../../../graphql-operations'
 import { CodyProIcon } from '../../components/CodyIcon'
-
-import { useQuery } from '@sourcegraph/http-client'
-import {
-    type UserCodyPlanResult,
-    type UserCodyPlanVariables,
-} from '../../../graphql-operations'
 import { USER_CODY_PLAN } from '../../subscription/queries'
 
 import styles from './ManageSubscriptionPage.module.scss'
@@ -53,13 +49,14 @@ export const ManageSubscriptionPage: React.FunctionComponent<ManageSubscriptionP
                         <div>
                             <H2>My subscription</H2>
                             <Text className="text-muted mb-0">
-                                Hello {authenticatedUser?.displayName}. Depending on whether or not you have a Cody Pro subscription,
-                                the Stripe Checkout form or "Manage my Subscription" UI will be displayed here.
+                                Hello {authenticatedUser?.displayName}. Depending on whether or not you have a Cody Pro
+                                subscription, the Stripe Checkout form or "Manage my Subscription" UI will be displayed
+                                here.
                             </Text>
 
                             <H3>Current Subscription Details</H3>
                             <div>
-                                {data?.currentUser?.codySubscription && <pre>{ JSON.stringify(data, null, 4) }</pre>}
+                                {data?.currentUser?.codySubscription && <pre>{JSON.stringify(data, null, 4)}</pre>}
                             </div>
                         </div>
                     </div>

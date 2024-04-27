@@ -5,11 +5,11 @@ import { Navigate, useNavigate, type RouteObject } from 'react-router-dom'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { showEmbeddedCodyProUI } from './cody/util'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
 import { isSearchJobsEnabled } from './search-jobs/utility'
-import { showEmbeddedCodyProUI } from './cody/util'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
@@ -408,7 +408,8 @@ export const routes: RouteObject[] = [
                 render={props => (
                     <CodyManageSubscriptionPage
                         authenticatedUser={props.authenticatedUser}
-                        telemetryRecorder={props.platformContext.telemetryRecorder} />
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    />
                 )}
                 condition={({ isSourcegraphDotCom }) => {
                     return isSourcegraphDotCom && showEmbeddedCodyProUI()
