@@ -289,7 +289,7 @@ require (
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/slack v0.0.0-20240103014439-025608ddf849
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20231218231056-4749baca142f
 	github.com/sourcegraph/scip v0.3.3
-	github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240409140445-b228ef93f415
+	github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240426173441-db5b0a145ceb
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20240422195121-52350cd2e507
 	github.com/sourcegraph/sourcegraph/lib/managedservicesplatform v0.0.0-00010101000000-000000000000
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-00010101000000-000000000000
