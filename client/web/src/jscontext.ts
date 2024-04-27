@@ -301,6 +301,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         knownRoutes: string[]
         showToggle: boolean
     }
+
+    /** Whether or not to use the Subscription Management UI in sourcegraph/sourcegraph. */
+    useSelfServeCodyEmbeddedUI?: SiteConfiguration['ssc.useEmbeddedUI']
 }
 
 export interface BrandAssets {

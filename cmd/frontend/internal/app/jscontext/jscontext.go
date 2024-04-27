@@ -258,6 +258,10 @@ type JSContext struct {
 	RunningOnMacOS bool `json:"runningOnMacOS"`
 
 	SvelteKit sveltekit.JSContext `json:"svelteKit"`
+
+	// UseSelfServeCodyEmbeddedUI is the site configuration option to enable
+	// the embedded Self-Serve Cody UI.
+	UseSelfServeCodyEmbeddedUI bool `json:"useSelfServeCodyEmbeddedUI"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -451,6 +455,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		RunningOnMacOS: runningOnMacOS,
 
 		SvelteKit: sveltekit.GetJSContext(req.Context()),
+
+		UseSelfServeCodyEmbeddedUI: conf.Get().SscUseEmbeddedUI,
 	}
 
 	// If the license a Sourcegraph instance is running under does not support Code Search features
