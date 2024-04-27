@@ -95,7 +95,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return doSearch(args)
 	}
 
-	p := pool.New().WithContext(ctx).WithMaxGoroutines(4).WithFirstError()
+	p := pool.New().WithContext(ctx).WithMaxGoroutines(j.Concurrency).WithFirstError()
 
 	for _, repoRev := range j.Repos {
 		repoRev := repoRev
