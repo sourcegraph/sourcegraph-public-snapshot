@@ -29,7 +29,6 @@ import { UseCodyInEditorSection } from './UseCodyInEditorSection'
 
 import styles from './CodyManagementPage.module.scss'
 
-
 interface CodyManagementPageProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
