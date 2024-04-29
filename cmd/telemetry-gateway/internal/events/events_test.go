@@ -3,6 +3,7 @@ package events_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"sync/atomic"
 	"testing"
@@ -56,9 +57,10 @@ func TestPublish(t *testing.T) {
 	for i := range events {
 		events[i] = &telemetrygatewayv1.Event{
 			Id:        strconv.Itoa(i),
-			Feature:   t.Name(),
-			Action:    strconv.Itoa(i),
 			Timestamp: timestamppb.Now(),
+			// Feature, Action must pass validation
+			Feature: "testPublish",
+			Action:  fmt.Sprintf("action-%d", i),
 		}
 	}
 
@@ -81,6 +83,7 @@ func TestPublish(t *testing.T) {
 
 	// Collect all the results we got
 	for _, r := range results {
+		assert.Nil(t, r.PublishError)
 		eventResults[r.EventID] = true
 	}
 

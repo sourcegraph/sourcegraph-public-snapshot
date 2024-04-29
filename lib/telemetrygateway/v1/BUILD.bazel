@@ -55,6 +55,7 @@ go_library(
         "//internal/telemetrygateway/protocol:__pkg__",
     ],
     deps = [
+        "//lib/errors",
         "@com_github_google_uuid//:uuid",
         "@com_github_grafana_regexp//:regexp",
     ],
