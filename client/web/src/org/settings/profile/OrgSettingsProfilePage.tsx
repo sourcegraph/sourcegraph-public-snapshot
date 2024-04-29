@@ -10,7 +10,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import type { OrgAreaRouteContext } from '../../area/OrgArea'
 import { updateOrganization } from '../../backend'
 
-interface Props extends Pick<OrgAreaRouteContext, 'org' | 'onOrganizationUpdate'> {}
+interface Props extends Pick<OrgAreaRouteContext, 'org' | 'onOrganizationUpdate' | 'telemetryRecorder'> {}
 
 /**
  * The organization profile settings page.
@@ -18,10 +18,12 @@ interface Props extends Pick<OrgAreaRouteContext, 'org' | 'onOrganizationUpdate'
 export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     org,
     onOrganizationUpdate,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
         EVENT_LOGGER.logViewEvent('OrgSettingsProfile')
-    }, [org.id])
+        telemetryRecorder.recordEvent('org.profile', 'view')
+    }, [org.id, telemetryRecorder])
 
     const [displayName, setDisplayName] = useState<string>(org.displayName ?? '')
     const onDisplayNameFieldChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
@@ -45,7 +47,7 @@ export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChil
             event.preventDefault()
             setIsLoading(true)
             try {
-                await updateOrganization(org.id, displayName)
+                await updateOrganization(org.id, displayName, telemetryRecorder)
                 onOrganizationUpdate()
                 // Reenable submit button, flash "updated" text
                 setIsLoading(false)
@@ -60,7 +62,7 @@ export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChil
                 setIsLoading(asError(error))
             }
         },
-        [displayName, onOrganizationUpdate, org.id]
+        [displayName, onOrganizationUpdate, org.id, telemetryRecorder]
     )
 
     return (

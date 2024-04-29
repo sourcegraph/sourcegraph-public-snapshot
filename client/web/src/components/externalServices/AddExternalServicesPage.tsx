@@ -1,4 +1,4 @@
-import { type FC, useMemo } from 'react'
+import { type FC, useMemo, useEffect } from 'react'
 
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
@@ -80,6 +80,12 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         () => computeExternalServicesGroup(codeHostExternalServices),
         [codeHostExternalServices]
     )
+
+    useEffect(() => {
+        if (!externalService) {
+            telemetryRecorder.recordEvent('admin.allCodeHostConnections.add', 'view')
+        }
+    }, [telemetryRecorder, externalService])
 
     if (externalService) {
         return (

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -68,6 +69,11 @@ func (g *GitRepo) IsOutOfSync(ctx context.Context) (bool, error) {
 	}
 
 	return !g.HasRemoteCommit(ctx), nil
+}
+
+func (g *GitRepo) Checkout(ctx context.Context) error {
+	err := run.Cmd(ctx, "git", "checkout", g.Branch).Run().Wait()
+	return err
 }
 
 // ListChangedFiles lists the files that have changed since the last commit

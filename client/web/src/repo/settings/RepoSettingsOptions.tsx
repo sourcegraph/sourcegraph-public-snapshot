@@ -31,7 +31,8 @@ interface Props {
 export const RepoSettingsOptions: FC<Props> = ({ repo }) => {
     useEffect(() => {
         EVENT_LOGGER.logViewEvent('RepoSettings')
-    })
+        // No need to use v2 telemetry here. This event is duplicative with 'repo.settings.mirror', 'view'
+    }, [])
 
     const { data, error, loading } = useQuery<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
         FETCH_SETTINGS_AREA_REPOSITORY_GQL,

@@ -15,6 +15,7 @@ import {
     jsonHighlighting,
     useCodeMirror,
 } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Container, H3, Link, LoadingSpinner, PageHeader, Text, useObservable } from '@sourcegraph/wildcard'
@@ -30,19 +31,20 @@ const theme = EditorView.theme({
     },
 })
 
-interface Props {}
+interface Props extends TelemetryV2Props {}
 
 /**
  * A page displaying information about telemetry pings for the site.
  */
-export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
+export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemetryRecorder }) => {
     const isLightTheme = useIsLightTheme()
     const latestPing = useObservable(
         useMemo(() => fromFetch<{}>('/site-admin/pings/latest', { selector: response => checkOk(response).json() }), [])
     )
     useEffect(() => {
         EVENT_LOGGER.logViewEvent('SiteAdminPings')
-    }, [])
+        telemetryRecorder.recordEvent('admin.pings', 'view')
+    }, [telemetryRecorder])
 
     const updatesDisabled = window.context.site['update.channel'] !== 'release'
     const jsonEditorContainerRef = useRef<HTMLDivElement | null>(null)
