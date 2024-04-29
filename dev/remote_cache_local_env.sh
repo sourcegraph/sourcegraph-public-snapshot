@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-GCP_PROJECT="sourcegraph-ci"
+GCP_PROJECT="sourcegraph-local-dev"
 
 function emit_headers() {
   echo "{\"headers\":{\"Authorization\":[\"Bearer ${1}\"]}}"
