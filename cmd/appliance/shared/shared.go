@@ -10,6 +10,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/sourcegraph/log"
@@ -29,6 +30,14 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	logr := sglogr.New(logger)
 
 	ctrl.SetLogger(logr)
+
+	k8sClient, err := client.New(config.k8sConfig, client.Options{})
+	if err != nil {
+		logger.Error("unable to create kubernetes client", log.Error(err))
+		return err
+	}
+
+	app := appliance.NewAppliance(k8sClient)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Logger: logr,
@@ -59,7 +68,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		return err
 	}
 
-	grpcServer := makeGRPCServer(logger)
+	grpcServer := makeGRPCServer(logger, app)
 
 	g, ctx := errgroup.WithContext(ctx)
 	ctx = shutdownOnSignal(ctx)
@@ -92,9 +101,9 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	return g.Wait()
 }
 
-func makeGRPCServer(logger log.Logger) *grpc.Server {
+func makeGRPCServer(logger log.Logger, server pb.ApplianceServiceServer) *grpc.Server {
 	grpcServer := defaults.NewServer(logger)
-	pb.RegisterApplianceServiceServer(grpcServer, &appliance.GRPCServer{})
+	pb.RegisterApplianceServiceServer(grpcServer, server)
 
 	return grpcServer
 }
