@@ -61,9 +61,7 @@
             color: 'var(--line-number-color)',
         },
         '.cm-gutterElement': {
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
+            lineHeight: '1.6',
             minWidth: '40px !important',
         },
         '.cm-line': {
