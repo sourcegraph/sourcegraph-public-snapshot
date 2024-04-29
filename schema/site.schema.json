@@ -2234,6 +2234,32 @@
               "type": "string"
             }
           }
+        },
+        "codyProConfig": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "useEmbeddedUI": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether or not to direct users to manage their Cody Pro subscriptions on accounts.sourcegraph.com."
+            },
+            "stripePublishableKey": {
+              "type": "string",
+              "default": null,
+              "description": "Stripe publishable key for use in Stripe Checkout, Stripe Elements. This is not considered a secret."
+            },
+            "samsBackendOrigin": {
+              "type": "string",
+              "default": "",
+              "description": "Origin of the SAMS backend. (Must match the SAMS OIDC registration in auth.providers.)"
+            },
+            "sscBackendOrigin": {
+              "type": "string",
+              "default": "",
+              "description": "Origin of the Self-serve Cody backend."
+            }
+          }
         }
       },
       "group": "Sourcegraph.com"

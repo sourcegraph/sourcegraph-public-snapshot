@@ -258,6 +258,12 @@ type JSContext struct {
 	RunningOnMacOS bool `json:"runningOnMacOS"`
 
 	SvelteKit sveltekit.JSContext `json:"svelteKit"`
+
+	// CodyProConfig contains configuration data for the Cody Pro offering.
+	// IMPORTANT: We don't want to expose all configuration data, as some
+	// things may include secrets. The `frontendCodyProConfig` is the subset
+	// of things that are required by the frontend.
+	CodyProConfig *schema.FrontendCodyProConfig `json:"frontendCodyProConfig"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -451,6 +457,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		RunningOnMacOS: runningOnMacOS,
 
 		SvelteKit: sveltekit.GetJSContext(req.Context()),
+	}
+	if dotcomConfig := conf.Get().Dotcom; dotcomConfig != nil {
+		context.CodyProConfig = schema.MakeFrontendCodyProConfig(dotcomConfig.CodyProConfig)
 	}
 
 	// If the license a Sourcegraph instance is running under does not support Code Search features
