@@ -50,11 +50,7 @@ export const RepoContainerError: React.FunctionComponent<React.PropsWithChildren
 
     if (isRepoDeniedErrorLike(repoFetchError)) {
         return (
-            <RepoDeniedPage
-                repoFetchError={repoFetchError}
-                repoName={repoName}
-                telemetryRecorder={telemetryRecorder}
-            />
+            <RepoDeniedPage repoFetchError={repoFetchError} repoName={repoName} telemetryRecorder={telemetryRecorder} />
         )
     }
 
@@ -79,7 +75,7 @@ export const RepoContainerError: React.FunctionComponent<React.PropsWithChildren
         )
     }
 
-    return (<OtherRepoErrorPage repoFetchError={repoFetchError} telemetryRecorder={telemetryRecorder} />)
+    return <OtherRepoErrorPage repoFetchError={repoFetchError} telemetryRecorder={telemetryRecorder} />
 }
 
 interface RepoDeniedPageProps extends TelemetryV2Props {
@@ -87,7 +83,7 @@ interface RepoDeniedPageProps extends TelemetryV2Props {
     repoName: string
 }
 
-export const RepoDeniedPage: React.FunctionComponent<React.PropsWithChildren<RepoDeniedPageProps> = props => {
+export const RepoDeniedPage: React.FunctionComponent<React.PropsWithChildren<RepoDeniedPageProps>> = props => {
     const { repoName, repoFetchError, telemetryRecorder } = props
 
     useEffect(() => telemetryRecorder.recordEvent('repo.error.repoDenied', 'view'), [telemetryRecorder])
@@ -148,7 +144,9 @@ export const RevisionNotFoundErrorPage: React.FunctionComponent<
     )
 }
 
-export const OtherRepoErrorPage: React.FunctionComponent<React.PropsWithChildren<Pick<RepoContainerErrorProps, 'repoFetchError' | 'telemetryRecorder'>>> = props => {
+export const OtherRepoErrorPage: React.FunctionComponent<
+    React.PropsWithChildren<Pick<RepoContainerErrorProps, 'repoFetchError' | 'telemetryRecorder'>>
+> = props => {
     const { repoFetchError, telemetryRecorder } = props
 
     useEffect(() => telemetryRecorder.recordEvent('repo.error.other', 'view'), [telemetryRecorder])
