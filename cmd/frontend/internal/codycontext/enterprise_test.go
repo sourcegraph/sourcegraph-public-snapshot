@@ -546,12 +546,12 @@ func TestNewEnterpriseFilter(t *testing.T) {
 					},
 				})
 
-				db := dbmocks.NewMockDB()
+				featureFlags := dbmocks.NewMockFeatureFlagStore()
 				if ff != nil {
-					featureFlags := dbmocks.NewMockFeatureFlagStore()
 					featureFlags.GetFeatureFlagFunc.SetDefaultReturn(ff, nil)
-					db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 				}
+				db := dbmocks.NewMockDB()
+				db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 				f := newEnterpriseFilter(logtest.Scoped(t), db)
 				allowedRepos, matcher, _ := f.getMatcher(context.Background(), tt.repos)
