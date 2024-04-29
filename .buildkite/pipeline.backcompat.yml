@@ -4,5 +4,3 @@ steps:
     agents: { queue: aspect-default }
     commands:
     - ./dev/backcompat/bazel-backcompat.sh
-    soft_fail:
-    - exit_status: 1

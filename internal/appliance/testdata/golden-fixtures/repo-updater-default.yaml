@@ -7,11 +7,11 @@ resources:
     creationTimestamp: "2024-04-19T00:00:00Z"
     generation: 1
     labels:
-      app.kubernetes.io/component: blobstore
+      app.kubernetes.io/component: repo-updater
       app.kubernetes.io/name: sourcegraph
       app.kubernetes.io/version: 5.3.9104
       deploy: sourcegraph
-    name: blobstore
+    name: repo-updater
     namespace: NORMALIZED_FOR_TESTING
     resourceVersion: NORMALIZED_FOR_TESTING
     uid: NORMALIZED_FOR_TESTING
@@ -22,7 +22,7 @@ resources:
     revisionHistoryLimit: 10
     selector:
       matchLabels:
-        app: blobstore
+        app: repo-updater
     strategy:
       rollingUpdate:
         maxSurge: 25%
@@ -31,28 +31,67 @@ resources:
     template:
       metadata:
         annotations:
-          kubectl.kubernetes.io/default-container: blobstore
+          kubectl.kubernetes.io/default-container: repo-updater
         creationTimestamp: null
         labels:
-          app: blobstore
+          app: repo-updater
           deploy: sourcegraph
-        name: blobstore
+        name: repo-updater
       spec:
         containers:
-        - image: index.docker.io/sourcegraph/blobstore:5.3.2@sha256:d625be1eefe61cc42f94498e3c588bf212c4159c8b20c519db84eae4ff715efa
+        - env:
+          - name: REDIS_CACHE_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                key: endpoint
+                name: redis-cache
+          - name: REDIS_STORE_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                key: endpoint
+                name: redis-store
+          - name: OTEL_AGENT_HOST
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.hostIP
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: http://$(OTEL_AGENT_HOST):4317
+          image: index.docker.io/sourcegraph/repo-updater:5.3.2@sha256:5a414aa030c7e0922700664a43b449ee5f3fafa68834abef93988c5992c747c6
           imagePullPolicy: IfNotPresent
-          name: blobstore
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: debug
+              scheme: HTTP
+            periodSeconds: 1
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: repo-updater
           ports:
-          - containerPort: 9000
-            name: blobstore
+          - containerPort: 3182
+            name: http
             protocol: TCP
+          - containerPort: 6060
+            name: debug
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ready
+              port: debug
+              scheme: HTTP
+            periodSeconds: 1
+            successThreshold: 1
+            timeoutSeconds: 5
           resources:
             limits:
               cpu: "1"
-              memory: 500M
+              memory: 2Gi
             requests:
               cpu: "1"
-              memory: 500M
+              memory: 500Mi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -60,11 +99,6 @@ resources:
             runAsUser: 100
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: FallbackToLogsOnError
-          volumeMounts:
-          - mountPath: /blobstore
-            name: blobstore
-          - mountPath: /data
-            name: blobstore-data
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
@@ -73,13 +107,9 @@ resources:
           fsGroupChangePolicy: OnRootMismatch
           runAsGroup: 101
           runAsUser: 100
+        serviceAccount: repo-updater
+        serviceAccountName: repo-updater
         terminationGracePeriodSeconds: 30
-        volumes:
-        - emptyDir: {}
-          name: blobstore
-        - name: blobstore-data
-          persistentVolumeClaim:
-            claimName: blobstore
   status: {}
 - apiVersion: v1
   data:
@@ -87,7 +117,8 @@ resources:
       spec:
         requestedVersion: "5.3.9104"
 
-        blobstore: {}
+        blobstore:
+          disabled: true
 
         codeInsights:
           disabled: true
@@ -125,8 +156,7 @@ resources:
         redisStore:
           disabled: true
 
-        repoUpdater:
-          disabled: true
+        repoUpdater: {}
 
         searcher:
           disabled: true
@@ -150,28 +180,17 @@ resources:
     resourceVersion: NORMALIZED_FOR_TESTING
     uid: NORMALIZED_FOR_TESTING
 - apiVersion: v1
-  kind: PersistentVolumeClaim
+  kind: ServiceAccount
   metadata:
     annotations:
       appliance.sourcegraph.com/configHash: ec8df597cb447c262ad15de9e72b1f836e1b631c928fcc06914500caa58f8cc3
     creationTimestamp: "2024-04-19T00:00:00Z"
-    finalizers:
-    - kubernetes.io/pvc-protection
     labels:
       deploy: sourcegraph
-    name: blobstore
+    name: repo-updater
     namespace: NORMALIZED_FOR_TESTING
     resourceVersion: NORMALIZED_FOR_TESTING
     uid: NORMALIZED_FOR_TESTING
-  spec:
-    accessModes:
-    - ReadWriteOnce
-    resources:
-      requests:
-        storage: 100Gi
-    volumeMode: Filesystem
-  status:
-    phase: Pending
 - apiVersion: v1
   kind: Service
   metadata:
@@ -179,9 +198,9 @@ resources:
       appliance.sourcegraph.com/configHash: ec8df597cb447c262ad15de9e72b1f836e1b631c928fcc06914500caa58f8cc3
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
-      app: blobstore
+      app: repo-updater
       deploy: sourcegraph
-    name: blobstore
+    name: repo-updater
     namespace: NORMALIZED_FOR_TESTING
     resourceVersion: NORMALIZED_FOR_TESTING
     uid: NORMALIZED_FOR_TESTING
@@ -194,12 +213,12 @@ resources:
     - IPv4
     ipFamilyPolicy: SingleStack
     ports:
-    - name: blobstore
-      port: 9000
+    - name: http
+      port: 3182
       protocol: TCP
-      targetPort: blobstore
+      targetPort: http
     selector:
-      app: blobstore
+      app: repo-updater
     sessionAffinity: None
     type: ClusterIP
   status:
