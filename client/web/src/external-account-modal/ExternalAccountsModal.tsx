@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 
+import { useFeatureFlag } from 'src/featureFlags/useFeatureFlag'
+
 import type { ErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
@@ -88,6 +90,8 @@ function filterAuthProviders(
 }
 
 export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModalProps> = props => {
+    const [enableExternalAccountsModal] = useFeatureFlag('external-accounts-modal')
+
     const [seenAuthzProviders, setSeenAuthzProviders] = useTemporarySetting('user.seenAuthProviders')
 
     const externalAccountsModalVisible = shouldShowExternalAccountsModal(
@@ -111,7 +115,7 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
         refetch: userAccountsRefetch,
     } = useQuery<UserExternalAccountsResult, UserExternalAccountsWithAccountDataVariables>(USER_EXTERNAL_ACCOUNTS, {
         variables: { username: props.authenticatedUser.username },
-        skip: !externalAccountsModalVisible,
+        skip: !enableExternalAccountsModal && !externalAccountsModalVisible,
     })
 
     const { data: authzProvidersData } = useQuery<AuthzProvidersResult, AuthzProvidersVariables>(AUTHZ_PROVIDERS, {})
@@ -167,7 +171,7 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
     return (
         <Modal
             aria-label="Connect your external accounts"
-            isOpen={isModalOpen}
+            isOpen={isModalOpen && enableExternalAccountsModal}
             onDismiss={onDismiss}
             className={styles.modal}
             position="center"
