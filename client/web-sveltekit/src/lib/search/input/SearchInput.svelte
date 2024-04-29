@@ -113,7 +113,7 @@
 
 <script lang="ts">
     import { mdiClockOutline } from '@mdi/js'
-    import { registerHotkey } from '../../Hotkey'
+    import { registerHotkey } from '$lib/Hotkey'
 
     export let autoFocus = false
     export let size: 'normal' | 'compat' = 'normal'
@@ -156,7 +156,7 @@
 
     registerHotkey({
         keys: { key: '/' },
-        handler: () => focus(),
+        handler: focus,
     })
 
     $: regularExpressionEnabled = $queryState.patternType === SearchPatternType.regexp
