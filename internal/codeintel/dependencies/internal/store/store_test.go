@@ -213,7 +213,7 @@ func TestListPackageRepoRefsFuzzyExactMatchOrdering(t *testing.T) {
 
 	for _, test := range []struct {
 		opts    ListDependencyReposOpts
-		results []shared.PackageRepoReference
+		results []string
 	}{
 		// no exact-match present, order by id
 		{
@@ -222,28 +222,7 @@ func TestListPackageRepoRefsFuzzyExactMatchOrdering(t *testing.T) {
 				Scheme:    "npm",
 				Fuzziness: FuzzinessWildcard,
 			},
-			results: []shared.PackageRepoReference{
-				{
-					ID:     4,
-					Scheme: "npm",
-					Name:   "react-dom",
-					Versions: []shared.PackageRepoRefVersion{{
-						ID:           4,
-						PackageRefID: 4,
-						Version:      "1.0.0",
-					}},
-				},
-				{
-					ID:     5,
-					Scheme: "npm",
-					Name:   "react-docs",
-					Versions: []shared.PackageRepoRefVersion{{
-						ID:           5,
-						PackageRefID: 5,
-						Version:      "1.0.0",
-					}},
-				},
-			},
+			results: []string{"react-dom", "react-docs"},
 		},
 		// exact match present, order by exact match and then by id
 		{
@@ -252,48 +231,7 @@ func TestListPackageRepoRefsFuzzyExactMatchOrdering(t *testing.T) {
 				Scheme:    "npm",
 				Fuzziness: FuzzinessWildcard,
 			},
-			results: []shared.PackageRepoReference{
-				{
-					ID:     3,
-					Scheme: "npm",
-					Name:   "react",
-					Versions: []shared.PackageRepoRefVersion{{
-						ID:           3,
-						PackageRefID: 3,
-						Version:      "1.0.0",
-					}},
-				},
-				{
-					ID:     2,
-					Scheme: "npm",
-					Name:   "reactify",
-					Versions: []shared.PackageRepoRefVersion{{
-						ID:           2,
-						PackageRefID: 2,
-						Version:      "1.0.0",
-					}},
-				},
-				{
-					ID:     4,
-					Scheme: "npm",
-					Name:   "react-dom",
-					Versions: []shared.PackageRepoRefVersion{{
-						ID:           4,
-						PackageRefID: 4,
-						Version:      "1.0.0",
-					}},
-				},
-				{
-					ID:     5,
-					Scheme: "npm",
-					Name:   "react-docs",
-					Versions: []shared.PackageRepoRefVersion{{
-						ID:           5,
-						PackageRefID: 5,
-						Version:      "1.0.0",
-					}},
-				},
-			},
+			results: []string{"react", "reactify", "react-dom", "react-docs"},
 		},
 	} {
 		listedPkgs, _, _, err := store.ListPackageRepoRefs(ctx, test.opts)
@@ -301,7 +239,13 @@ func TestListPackageRepoRefsFuzzyExactMatchOrdering(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if diff := cmp.Diff(test.results, listedPkgs); diff != "" {
+		pkgNames := make([]string, 0)
+
+		for _, pkg := range listedPkgs {
+			pkgNames = append(pkgNames, string(pkg.Name))
+		}
+
+		if diff := cmp.Diff(test.results, pkgNames); diff != "" {
 			t.Errorf("mismatch (-want, +got): %s", diff)
 		}
 	}

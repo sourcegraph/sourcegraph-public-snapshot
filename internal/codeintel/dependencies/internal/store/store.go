@@ -97,6 +97,7 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 	orderBy := sqlf.Sprintf("ORDER BY lr.id ASC")
 
 	if opts.Name != "" {
+		// this ordering ensures that the exact match will always be first on the list
 		orderBy = sqlf.Sprintf("ORDER BY (CASE WHEN lr.name = %s THEN 1 ELSE 2 END) ASC, lr.id ASC", opts.Name)
 	}
 
