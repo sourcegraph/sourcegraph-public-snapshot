@@ -94,7 +94,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                     // In the new query input, context is either omitted (-> global)
                     // or explicitly specified.
                     selectedSearchContextSpec: v2QueryInput ? undefined : selectedSearchContextSpec,
-                    telemetryRecorder: noOpTelemetryRecorder,
+                    telemetryRecorder,
                     ...parameters,
                 })
             }
@@ -108,6 +108,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             caseSensitive,
             searchMode,
             v2QueryInput,
+            telemetryRecorder,
         ]
     )
     const submitSearchOnChangeRef = useRef(submitSearchOnChange)
@@ -135,7 +136,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         <LazyV2SearchInput
             autoFocus={!isTouchOnlyDevice}
             telemetryService={telemetryService}
-            telemetryRecorder={noOpTelemetryRecorder}
+            telemetryRecorder={telemetryRecorder}
             patternType={patternType}
             interpretComments={false}
             queryState={queryState}
