@@ -248,7 +248,7 @@
         flex-flow: row nowrap;
         justify-content: space-between;
         overflow: hidden;
-
+        border-top: 1px solid var(--border-color);
         box-shadow: var(--bottom-panel-shadow);
         background-color: var(--code-bg);
 

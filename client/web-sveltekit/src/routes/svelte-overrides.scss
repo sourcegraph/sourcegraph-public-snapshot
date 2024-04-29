@@ -41,9 +41,10 @@ body {
     // Colors
     --color-bg-1: var(--gray-12);
     --text-body: var(--gray-05);
+    // TODO: `search-result-header-bg` needs to be converted to something that works in the design system colors.
     --search-result-header-bg: #1a1e2b;
     --line-number-color: var(--gray-07);
-    --code-selection-bg: rgba(25, 31, 52, 0.8);
+    --code-selection-bg: var(--color-bg-2);
     --code-bg: var(--gray-12);
 
     // Shadows

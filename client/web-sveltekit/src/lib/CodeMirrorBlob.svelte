@@ -63,6 +63,10 @@
         '.cm-gutterElement': {
             lineHeight: '1.54',
             minWidth: '40px !important',
+
+            '&:hover': {
+                color: 'var(--text-body)',
+            },
         },
         '.cm-line': {
             paddingLeft: '3ex',
