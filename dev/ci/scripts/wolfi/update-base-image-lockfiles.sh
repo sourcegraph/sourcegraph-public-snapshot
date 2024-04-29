@@ -42,13 +42,17 @@ BRANCH_NAME="wolfi-auto-update/${BUILDKITE_BRANCH}"
 TIMESTAMP=$(TZ=UTC date "+%Y-%m-%d %H:%M:%S UTC")
 PR_TITLE="Auto-update package lockfiles for Wolfi base images"
 # PR_REVIEWER="sourcegraph/security"
-PR_LABELS="SSDLC,wolfi-auto-update"
+PR_LABELS="SSDLC,security-auto-update,security-auto-update/images"
 PR_BODY="Automatically generated PR to update package lockfiles for Wolfi base images.
 
 Built from Buildkite run [#${BUILDKITE_BUILD_NUMBER}](https://buildkite.com/sourcegraph/sourcegraph/builds/${BUILDKITE_BUILD_NUMBER}).
 ## Test Plan
 - CI build verifies image functionality
 - [ ] Confirm PR should be backported to release branch"
+
+# Ensure git commit details are correct
+git config --global user.email \"buildkite@sourcegraph.com\"
+git config --global user.name \"Buildkite\"
 
 # Commit changes to dev/oci-deps.bzl
 # Delete branch if it exists; catch status code if not
