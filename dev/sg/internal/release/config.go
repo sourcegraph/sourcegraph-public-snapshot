@@ -268,7 +268,7 @@ func (r *releaseRunner) checkRequirements(ctx context.Context, stage string) err
 	for _, req := range r.m.Requirements {
 		if shouldSkipReqCheck(req, stage) {
 			saySuccess("reqs", "🔕 %s (excluded for %s)", req.Name, stage)
-			return nil
+			continue
 		}
 
 		if req.Env != "" && req.Cmd != "" {
@@ -305,7 +305,7 @@ func (r *releaseRunner) checkRequirements(ctx context.Context, stage string) err
 
 func (r *releaseRunner) CreateRelease(ctx context.Context) error {
 	if err := r.checkRequirements(ctx, stageInternalCreate); err != nil {
-		return nil
+		return err
 	}
 
 	var steps []cmdManifest
