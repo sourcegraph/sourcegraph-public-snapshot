@@ -30,7 +30,7 @@ const featureActionMaxLength = 64
 // should be used where event features and actions are provided by a client.
 func ValidateEventFeatureAction(feature, action string) error {
 	if feature == "" || action == "" {
-		return errors.New("'feature', action must both be provided")
+		return errors.New("'feature', 'action' must both be provided")
 	}
 	if len(feature) > featureActionMaxLength {
 		return errors.New("'feature' must be less than 64 characters")
