@@ -251,15 +251,20 @@
         border-top: 1px solid var(--border-color);
         box-shadow: var(--bottom-panel-shadow);
         background-color: var(--code-bg);
+        padding: 0.125rem 0;
 
         :global([data-tab-header]) {
-            border-bottom: 1px solid var(--border-color);
+            padding: 0 0.5rem;
         }
 
         &.open {
             height: 30vh;
             // Disable flex layout so that tabs simply fill the available space
             display: block;
+
+            :global([data-tab-header]) {
+                border-bottom: 1px solid var(--border-color);
+            }
 
             .last-commit {
                 display: none;

@@ -99,19 +99,21 @@
         letter-spacing: normal;
         margin: 0;
         min-height: 2rem;
-        padding: 0.5rem;
+        padding: 0.5rem 0.75rem;
         border-radius: 0.125rem;
-        color: var(--body-color);
+        color: var(--text-body);
         text-transform: none;
         display: inline-flex;
         flex-direction: column;
         justify-content: center;
         white-space: nowrap;
         border-bottom: 2px solid transparent;
+        font-size: 0.9375rem;
+        font-weight: 500;
 
         &[aria-selected='true'],
         &:hover {
-            color: var(--body-color);
+            color: var(--text-title);
             background-color: var(--color-bg-2);
         }
 
