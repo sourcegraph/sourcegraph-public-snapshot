@@ -52,7 +52,7 @@
 {:else}
     <button {...$trigger} use:trigger>
         <Icon svgPath={mdiMagnify} inline aria-hidden="true" />
-        Type / to search
+        Type <kbd>/</kbd> to search
     </button>
 {/if}
 
