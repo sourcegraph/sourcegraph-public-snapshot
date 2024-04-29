@@ -108,13 +108,13 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
 
     const [authzProviders, setAuthzProviders] = useState<AuthProvider[]>([])
 
-    const {
-        data: userAccountsData,
-        loading: userAccountsLoading,
-        refetch: userAccountsRefetch,
-    } = useQuery<UserExternalAccountsResult, UserExternalAccountsWithAccountDataVariables>(USER_EXTERNAL_ACCOUNTS, {
+    const { loading: userAccountsLoading, refetch: userAccountsRefetch } = useQuery<
+        UserExternalAccountsResult,
+        UserExternalAccountsWithAccountDataVariables
+    >(USER_EXTERNAL_ACCOUNTS, {
         variables: { username: props.authenticatedUser.username },
         skip: !enableExternalAccountsModal && !externalAccountsModalVisible,
+        onCompleted: res => setUserExternalAccounts({ fetched: res.user.externalAccounts.nodes, lastRemoved: '' }),
     })
 
     const { data: authzProvidersData } = useQuery<AuthzProvidersResult, AuthzProvidersVariables>(AUTHZ_PROVIDERS, {})
@@ -125,10 +125,6 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
         setError(error)
         return []
     }
-
-    useEffect(() => {
-        setUserExternalAccounts({ fetched: userAccountsData?.user?.externalAccounts.nodes, lastRemoved: '' })
-    }, [userAccountsData])
 
     const [isModalOpen, setIsModalOpen] = useState(false)
 
