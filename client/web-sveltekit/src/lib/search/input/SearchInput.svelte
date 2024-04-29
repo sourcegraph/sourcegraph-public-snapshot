@@ -156,7 +156,7 @@
 
     registerHotkey({
         keys: { key: '/' },
-        handler: () => editor?.focus(),
+        handler: () => focus(),
     })
 
     $: regularExpressionEnabled = $queryState.patternType === SearchPatternType.regexp
