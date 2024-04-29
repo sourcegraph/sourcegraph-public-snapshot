@@ -33,8 +33,8 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 				Action:  "example",
 			},
 			expect: autogold.Expect(`{
-  "action": "Example",
-  "feature": "Feature",
+  "action": "example",
+  "feature": "feature",
   "id": "basic",
   "parameters": {},
   "source": {
@@ -54,8 +54,8 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 				Action:  "example",
 			},
 			expect: autogold.Expect(`{
-  "action": "Example",
-  "feature": "Feature",
+  "action": "example",
+  "feature": "feature",
   "id": "with anonymous user",
   "parameters": {},
   "source": {
@@ -78,8 +78,8 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 				Action:  "example",
 			},
 			expect: autogold.Expect(`{
-  "action": "Example",
-  "feature": "Feature",
+  "action": "example",
+  "feature": "feature",
   "id": "with authenticated user",
   "parameters": {},
   "source": {
@@ -118,8 +118,8 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 				},
 			},
 			expect: autogold.Expect(`{
-  "action": "Example",
-  "feature": "Feature",
+  "action": "example",
+  "feature": "feature",
   "id": "with parameters",
   "parameters": {
     "billingMetadata": {
@@ -156,8 +156,8 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 				},
 			},
 			expect: autogold.Expect(`{
-  "action": "Example",
-  "feature": "Feature",
+  "action": "example",
+  "feature": "feature",
   "id": "with string PrivateMetadata",
   "parameters": {
     "privateMetadata": {
@@ -187,8 +187,8 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 				},
 			},
 			expect: autogold.Expect(`{
-  "action": "Example",
-  "feature": "Feature",
+  "action": "example",
+  "feature": "feature",
   "id": "with numeric PrivateMetadata",
   "parameters": {
     "privateMetadata": {
@@ -213,8 +213,8 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 				Action:    "example",
 			},
 			expect: autogold.Expect(`{
-  "action": "Example",
-  "feature": "Feature",
+  "action": "example",
+  "feature": "feature",
   "id": "with custom timestamp",
   "parameters": {},
   "source": {
