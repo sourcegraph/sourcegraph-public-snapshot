@@ -1,3 +1,6 @@
+import { useEffect } from 'react'
+
+import { R } from 'linguist-languages'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import AlertIcon from 'mdi-react/AlertIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
@@ -9,6 +12,7 @@ import {
     isRevisionNotFoundErrorLike,
     isRepoNotFoundErrorLike,
     isRepoDeniedErrorLike,
+    RepoDeniedError,
 } from '@sourcegraph/shared/src/backend/errors'
 import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -45,58 +49,108 @@ export const RepoContainerError: React.FunctionComponent<React.PropsWithChildren
     }
 
     if (isRepoDeniedErrorLike(repoFetchError)) {
-        telemetryRecorder.recordEvent('repo.error.repoDenied', 'view')
         return (
-            <HeroPage
-                icon={AlertIcon}
-                title={displayRepoName(repoName)}
-                body={<Text className="mt-4">Repository cannot be added on-demand: {repoFetchError.reason}.</Text>}
+            <RepoDeniedPage
+                repoFetchError={repoFetchError}
+                repoName={repoName}
+                telemetryRecorder={telemetryRecorder}
             />
         )
     }
 
     if (isCloneInProgressErrorLike(repoFetchError)) {
-        telemetryRecorder.recordEvent('repo.error.cloneInProgress', 'view')
         return (
-            <HeroPage
-                icon={SourceRepositoryIcon}
-                title={displayRepoName(repoName)}
-                className="repository-cloning-in-progress-page"
-                subtitle={<Text>Cloning in progress</Text>}
-                detail={
-                    <>
-                        <Code>{(repoFetchError as CloneInProgressError).progress}</Code>
-                        {viewerCanAdminister && (
-                            <Text className="mt-4">
-                                <Link to={`${repoName}/-/settings`}>Go to settings</Link> to view details
-                            </Text>
-                        )}
-                    </>
-                }
-                body={<DirectImportRepoAlert className="mt-3" />}
+            <CloneInProgressPage
+                repoName={repoName}
+                viewerCanAdminister={viewerCanAdminister}
+                repoFetchError={repoFetchError}
+                telemetryRecorder={telemetryRecorder}
             />
         )
     }
 
     if (isRevisionNotFoundErrorLike(repoFetchError)) {
-        telemetryRecorder.recordEvent('repo.error.revisionNotFound', 'view')
         return (
-            <HeroPage
-                icon={RepoQuestionIcon}
-                title="Empty repository"
-                detail={
-                    <>
-                        {viewerCanAdminister && (
-                            <Text>
-                                <Link to={`${repoName}/-/settings`}>Go to settings</Link>
-                            </Text>
-                        )}
-                    </>
-                }
+            <RevisionNotFoundErrorPage
+                repoName={repoName}
+                viewerCanAdminister={viewerCanAdminister}
+                telemetryRecorder={telemetryRecorder}
             />
         )
     }
 
-    telemetryRecorder.recordEvent('repo.error.other', 'view')
+    return (<OtherRepoErrorPage repoFetchError={repoFetchError} telemetryRecorder={telemetryRecorder} />)
+}
+
+interface RepoDeniedPageProps extends TelemetryV2Props {
+    repoFetchError: RepoDeniedError
+    repoName: string
+}
+
+export const RepoDeniedPage: React.FunctionComponent<React.PropsWithChildren<RepoDeniedPageProps> = props => {
+    const { repoName, repoFetchError, telemetryRecorder } = props
+
+    useEffect(() => telemetryRecorder.recordEvent('repo.error.repoDenied', 'view'), [telemetryRecorder])
+    return (
+        <HeroPage
+            icon={AlertIcon}
+            title={displayRepoName(repoName)}
+            body={<Text className="mt-4">Repository cannot be added on-demand: {repoFetchError.reason}.</Text>}
+        />
+    )
+}
+
+export const CloneInProgressPage: React.FunctionComponent<React.PropsWithChildren<RepoContainerErrorProps>> = props => {
+    const { repoName, viewerCanAdminister, repoFetchError, telemetryRecorder } = props
+
+    useEffect(() => telemetryRecorder.recordEvent('repo.error.cloneInProgress', 'view'), [telemetryRecorder])
+    return (
+        <HeroPage
+            icon={SourceRepositoryIcon}
+            title={displayRepoName(repoName)}
+            className="repository-cloning-in-progress-page"
+            subtitle={<Text>Cloning in progress</Text>}
+            detail={
+                <>
+                    <Code>{(repoFetchError as CloneInProgressError).progress}</Code>
+                    {viewerCanAdminister && (
+                        <Text className="mt-4">
+                            <Link to={`${repoName}/-/settings`}>Go to settings</Link> to view details
+                        </Text>
+                    )}
+                </>
+            }
+            body={<DirectImportRepoAlert className="mt-3" />}
+        />
+    )
+}
+
+export const RevisionNotFoundErrorPage: React.FunctionComponent<
+    React.PropsWithChildren<Pick<RepoContainerErrorProps, 'repoName' | 'viewerCanAdminister' | 'telemetryRecorder'>>
+> = props => {
+    const { repoName, viewerCanAdminister, telemetryRecorder } = props
+
+    useEffect(() => telemetryRecorder.recordEvent('repo.error.revisionNotFound', 'view'), [telemetryRecorder])
+    return (
+        <HeroPage
+            icon={RepoQuestionIcon}
+            title="Empty repository"
+            detail={
+                <>
+                    {viewerCanAdminister && (
+                        <Text>
+                            <Link to={`${repoName}/-/settings`}>Go to settings</Link>
+                        </Text>
+                    )}
+                </>
+            }
+        />
+    )
+}
+
+export const OtherRepoErrorPage: React.FunctionComponent<React.PropsWithChildren<Pick<RepoContainerErrorProps, 'repoFetchError' | 'telemetryRecorder'>>> = props => {
+    const { repoFetchError, telemetryRecorder } = props
+
+    useEffect(() => telemetryRecorder.recordEvent('repo.error.other', 'view'), [telemetryRecorder])
     return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={repoFetchError} />} />
 }
