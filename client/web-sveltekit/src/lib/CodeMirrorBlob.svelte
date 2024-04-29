@@ -68,9 +68,8 @@
         },
         '.cm-line': {
             paddingLeft: '3ex',
+            lineHeight: '1.5',
             height: '20px',
-            display: 'flex',
-            alignItems: 'center',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
