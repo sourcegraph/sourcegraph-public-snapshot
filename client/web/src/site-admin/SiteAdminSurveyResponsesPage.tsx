@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { Subscription } from 'rxjs'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Badge,
     type BADGE_VARIANTS,
@@ -35,7 +36,6 @@ import {
     fetchSurveyResponseAggregates,
 } from '../marketing/backend'
 import { SURVEY_QUESTIONS } from '../marketing/components/SurveyUseCaseForm'
-import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 
 import { ValueLegendItem } from './analytics/components/ValueLegendList'
@@ -322,7 +322,7 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWi
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
 
     useEffect(() => {
-        eventLogger.logViewEvent('SiteAdminSurveyResponses')
+        EVENT_LOGGER.logViewEvent('SiteAdminSurveyResponses')
     }, [])
 
     return (

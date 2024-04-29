@@ -3,10 +3,10 @@ import { useState, useEffect } from 'react'
 import classNames from 'classnames'
 
 import type { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Text, Button } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 
 import styles from './CodyOnboarding.module.scss'
@@ -23,7 +23,7 @@ export function WelcomeStep({
     const [show, setShow] = useState(false)
     const isLightTheme = useIsLightTheme()
     useEffect(() => {
-        eventLogger.log(
+        EVENT_LOGGER.log(
             EventName.CODY_ONBOARDING_WELCOME_VIEWED,
             { tier: pro ? 'pro' : 'free' },
             { tier: pro ? 'pro' : 'free' }

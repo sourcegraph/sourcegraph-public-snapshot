@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "compare-helm_lib",
+    srcs = ["compare-helm.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/dev/compare-helm",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/util/yaml",
+        "@io_k8s_sigs_yaml//:yaml",
+    ],
+)
+
+go_binary(
+    name = "compare-helm",
+    embed = [":compare-helm_lib"],
+    visibility = ["//:__subpackages__"],
+)

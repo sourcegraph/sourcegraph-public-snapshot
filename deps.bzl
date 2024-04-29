@@ -5371,6 +5371,13 @@ def go_dependencies():
         version = "v0.0.0-20231018134238-fbadff7458bb",
     )
     go_repository(
+        name = "com_github_sourcegraph_log_logr",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/log/logr",
+        sum = "h1:Ov40bLTzue0PfsOCGcRWEJt4Xh8ayq4OwBtawEqHgbM=",
+        version = "v0.0.0-20240425170707-431bcb6c8668",
+    )
+    go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_cloudflare",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare",
@@ -5476,8 +5483,8 @@ def go_dependencies():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/sourcegraph-accounts-sdk-go",
-        sum = "h1:621jnJedYfjgES+dn5CAk4VVAwI84gnuzaDCkE83i9w=",
-        version = "v0.0.0-20240409140445-b228ef93f415",
+        sum = "h1:lOQJ+wDbQ5lSBuAv6GgCuoFKucte5k2bPf1a7navsd0=",
+        version = "v0.0.0-20240426173441-db5b0a145ceb",
     )
     go_repository(
         name = "com_github_sourcegraph_zoekt",

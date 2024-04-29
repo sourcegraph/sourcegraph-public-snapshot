@@ -53,7 +53,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 			return nil, errors.New("The 'codycontext' patterntype is not compatible with Smart Search")
 		}
 
-		newJobTree, err := codycontext.NewSearchJob(plan, newJob)
+		newJobTree, err := codycontext.NewSearchJob(plan, inputs, newJob)
 		if err != nil {
 			return nil, err
 		}

@@ -256,11 +256,17 @@ type RedisStoreSpec struct {
 
 // RepoUpdaterSpec defines the desired state of the Repo Updater service.
 type RepoUpdaterSpec struct {
+	// Disabled defines if Repo Updater is enabled or not.
+	// Default: false
+	Disabled bool `json:"disabled,omitempty"`
+
 	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Env defines environment variables for Redis Updater.
 	Env map[string]string `json:"env,omitempty"`
+
+	ServiceAccountAnnotations map[string]string `json:"serviceAccountAnnotations,omitempty"`
 }
 
 // SearcherSpec defines the desired state of the Searcher service.

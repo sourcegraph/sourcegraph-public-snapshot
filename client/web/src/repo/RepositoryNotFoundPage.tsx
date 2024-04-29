@@ -2,10 +2,10 @@ import * as React from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Code, Link, Text } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../components/HeroPage'
-import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './RepositoryNotFoundPage.module.scss'
 
@@ -22,7 +22,7 @@ interface Props {
  * attempts to present the user with actions to solve the problem.
  */
 export const RepositoryNotFoundPage: React.FunctionComponent<Props> = ({ repo, viewerCanAdminister }) => {
-    React.useEffect(() => eventLogger.logViewEvent('RepositoryError'), [])
+    React.useEffect(() => EVENT_LOGGER.logViewEvent('RepositoryError'), [])
 
     return (
         <HeroPage

@@ -3,12 +3,12 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Container, PageHeader, LoadingSpinner, Link, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
 import { createOrganization } from '../backend'
 
 import styles from './NewOrganizationPage.module.scss'
@@ -18,7 +18,7 @@ interface Props {}
 export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
     const navigate = useNavigate()
     useEffect(() => {
-        eventLogger.logViewEvent('NewOrg')
+        EVENT_LOGGER.logViewEvent('NewOrg')
     }, [])
     const [loading, setLoading] = useState<boolean | Error>(false)
     const [name, setName] = useState<string>('')
@@ -36,7 +36,7 @@ export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildre
     const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
         async event => {
             event.preventDefault()
-            eventLogger.log('CreateNewOrgClicked')
+            EVENT_LOGGER.log('CreateNewOrgClicked')
             if (!event.currentTarget.checkValidity()) {
                 return
             }

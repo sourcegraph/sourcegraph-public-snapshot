@@ -32,6 +32,8 @@ export const userCookieSettings: CookieAttributes = {
     sameSite: 'Lax',
     // Specify the Domain attribute to ensure subdomains (sourcegraph.com) can receive this cookie.
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_where_cookies_are_sent
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     domain: location.hostname,
 }
 
@@ -46,5 +48,7 @@ export const deviceSessionCookieSettings: CookieAttributes = {
     sameSite: 'Lax',
     // Specify the Domain attribute to ensure subdomains (sourcegraph.com) can receive this cookie.
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_where_cookies_are_sent
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     domain: location.hostname,
 }

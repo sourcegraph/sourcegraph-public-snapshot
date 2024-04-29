@@ -1,6 +1,7 @@
 <svelte:options immutable />
 
 <script lang="ts">
+    import { onMount } from 'svelte'
     import { mdiFileEyeOutline, mdiMapSearch, mdiWrap, mdiWrapDisabled } from '@mdi/js'
     import { capitalize } from 'lodash'
     import { from } from 'rxjs'
@@ -8,6 +9,8 @@
 
     import { afterNavigate, goto, preloadData } from '$app/navigation'
     import { page } from '$app/stores'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
+    import type { ScrollSnapshot } from '$lib/codemirror/utils'
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import { isErrorLike, SourcegraphURL, type LineOrPositionOrRange, pluralize } from '$lib/common'
     import { toGraphQLResult } from '$lib/graphql'
@@ -17,6 +20,7 @@
     import FileDiff from '$lib/repo/FileDiff.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
+    import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI } from '$lib/shared'
     import { formatBytes } from '$lib/utils'
@@ -26,11 +30,14 @@
     import type { PageData, Snapshot } from './$types'
     import FileViewModeSwitcher from './FileViewModeSwitcher.svelte'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
-    import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
     import { toViewMode, ViewMode } from './util'
-    import type { ScrollSnapshot } from '$lib/codemirror/utils'
 
     export let data: PageData
+
+    // The following props control the look and file of the file page when used
+    // in a preview context.
+    export let embedded = false
+    export let disableCodeIntel = embedded
 
     export const snapshot: Snapshot<ScrollSnapshot | null> = {
         capture() {
@@ -64,7 +71,7 @@
     $: if (!$combinedBlobData.blobPending) {
         blob = $combinedBlobData.blob
         highlights = $combinedBlobData.highlights
-        selectedPosition = SourcegraphURL.from($page.url).lineRange
+        selectedPosition = data.lineOrPosition
     }
     $: fileNotFound = $combinedBlobData.blobPending ? null : !$combinedBlobData.blob
     $: fileLoadingError = $combinedBlobData.blobPending ? null : !$combinedBlobData.blob && $combinedBlobData.blobError
@@ -74,11 +81,17 @@
     $: showBlame = viewMode === ViewMode.Blame
     $: showFormatted = isFormatted && viewMode === ViewMode.Default && !showBlame
 
-    $: codeIntelAPI = createCodeIntelAPI({
-        settings: setting => (isErrorLike(settings?.final) ? undefined : settings?.final?.[setting]),
-        requestGraphQL(options) {
-            return from(graphQLClient.query(options.request, options.variables).then(toGraphQLResult))
-        },
+    $: codeIntelAPI = disableCodeIntel
+        ? null
+        : createCodeIntelAPI({
+              settings: setting => (isErrorLike(settings?.final) ? undefined : settings?.final?.[setting]),
+              requestGraphQL(options) {
+                  return from(graphQLClient.query(options.request, options.variables).then(toGraphQLResult))
+              },
+          })
+
+    onMount(() => {
+        SVELTE_LOGGER.logViewEvent(SVELTE_TELEMETRY_EVENTS.ViewBlobPage)
     })
 
     afterNavigate(event => {
@@ -90,6 +103,19 @@
             initialScrollPosition = null
         }
     })
+
+    function handleCopy(): void {
+        SVELTE_LOGGER.log(...codeCopiedEvent('blob-view'))
+    }
+
+    function onViewModeChange(event: CustomEvent<ViewMode>): void {
+        // TODO: track other blob mode
+        if (event.detail === ViewMode.Blame) {
+            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.GitBlameEnabled)
+        }
+
+        goto(viewModeURL(event.detail), { replaceState: true, keepFocus: true })
+    }
 
     function viewModeURL(viewMode: ViewMode) {
         switch (viewMode) {
@@ -118,14 +144,21 @@
 
 <!-- Note: Splitting this at this level is not great but Svelte doesn't allow to conditionally render slots (yet) -->
 {#if data.compare}
-    <FileHeader>
+    <FileHeader type="blob" {repoName} {revision} path={filePath}>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
             <span>{data.compare.revisionToCompare}</span>
         </svelte:fragment>
     </FileHeader>
+{:else if embedded}
+    <FileHeader type="blob" {repoName} {revision} path={filePath} hideSidebarToggle>
+        <FileIcon slot="icon" file={blob} inline />
+        <svelte:fragment slot="actions">
+            <slot name="actions" />
+        </svelte:fragment>
+    </FileHeader>
 {:else}
-    <FileHeader>
+    <FileHeader type="blob" {repoName} {revision} path={filePath}>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
             {#await data.externalServiceType then externalServiceType}
@@ -153,7 +186,7 @@
     </FileHeader>
 {/if}
 
-{#if blob && !blob.binary && !data.compare}
+{#if blob && !blob.binary && !data.compare && !embedded}
     <div class="file-info">
         <FileViewModeSwitcher
             aria-label="View mode"
@@ -162,7 +195,7 @@
                 ? [ViewMode.Default, ViewMode.Code, ViewMode.Blame]
                 : [ViewMode.Default, ViewMode.Blame]}
             on:preload={event => preloadData(viewModeURL(event.detail))}
-            on:change={event => goto(viewModeURL(event.detail), { replaceState: true, keepFocus: true })}
+            on:change={onViewModeChange}
         >
             <svelte:fragment slot="label" let:value>
                 {value === ViewMode.Default ? (isFormatted ? 'Formatted' : 'Code') : capitalize(value)}
@@ -227,6 +260,7 @@
                     )
                 }}
                 {codeIntelAPI}
+                onCopy={handleCopy}
             />
         {/key}
     {:else if fileLoadingError}
@@ -247,6 +281,7 @@
         flex-direction: column;
         overflow: auto;
         flex: 1;
+        background-color: var(--color-bg-1);
 
         &.compare {
             flex-direction: column;
@@ -260,7 +295,8 @@
     }
 
     .file-info {
-        padding: 0.5rem 0.5rem;
+        background: var(--color-bg-1);
+        padding: 0.5rem;
         color: var(--text-muted);
         display: flex;
         gap: 1rem;
