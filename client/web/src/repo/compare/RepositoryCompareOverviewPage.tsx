@@ -6,12 +6,12 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 
 import { asError, createAggregateError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { LoadingSpinner, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import type { RepositoryComparisonFields, RepositoryComparisonResult, Scalars } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import type { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
@@ -62,7 +62,7 @@ function queryRepositoryComparison(args: {
             ) {
                 throw createAggregateError(errors)
             }
-            eventLogger.log('RepositoryComparisonFetched')
+            EVENT_LOGGER.log('RepositoryComparisonFetched')
             return repo.comparison.range
         })
     )
@@ -96,7 +96,7 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RepositoryCompareOverview')
+        EVENT_LOGGER.logViewEvent('RepositoryCompareOverview')
 
         this.subscriptions.add(
             this.componentUpdates

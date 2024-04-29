@@ -3,13 +3,13 @@
 <script lang="ts">
     import { observeIntersection } from '$lib/intersection-observer'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
-    import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
+    import CodeExcerpt from '$lib/CodeExcerpt.svelte'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
     import type { SymbolMatch } from '$lib/shared'
 
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
     import PreviewButton from './PreviewButton.svelte'
-    import RepoStars from './RepoStars.svelte'
+    import RepoStars from '$lib/repo/RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
 
     export let result: SymbolMatch
@@ -46,7 +46,7 @@
                         </div>
                         {#await highlightedHTMLRows then result}
                             <CodeExcerpt
-                                startLine={symbol.line - 1}
+                                startLine={symbol.line}
                                 plaintextLines={['']}
                                 highlightedHTMLRows={result?.[index]}
                                 --background-color="transparent"

@@ -101,17 +101,33 @@ For example:
 }
 ```
 
+
 ### Adding New Syntax Highlighting
 
-To support syntax highlighting on code files, search results, diff views, and more:
 
-1. Follow the [directions](https://github.com/sourcegraph/syntect_server#adding-languages) to add a language to [syntect server](https://github.com/sourcegraph/syntect_server).
-1. Update the [SyntectLanguageMap](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@56a9eec78566499b108e1f869712865d90cc29cf/-/blob/internal/highlight/syntect_language_map.go#L5:5) in [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
+To add syntax highlighting on a new language follow the following steps in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository. (You can also refer to this [PR](https://github.com/sourcegraph/sourcegraph/pull/61478) that added highlighting support for the Pkl language)
 
-To support syntax highlighting in hovers:
 
-1. Update the [highlight.js contributions](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@e7ffd56b10e9bae004dfbb5d7d1c1accc93072fd/-/blob/client/shared/src/highlight/contributions.ts#L21) map in [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
+**Under [docker-images/syntax-highlighter/crates](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/docker-images/syntax-highlighter/crates):**
 
-## Search support
+1. In  [tree-sitter-all-languages](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/docker-images/syntax-highlighter/crates/tree-sitter-all-languages/README.md) add a [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar dependency for the language in the crate (e.g. `cargo add --git https://github.com/example/repo.git --rev abcdef1234` ).
 
-Coming soon.
+1. In [tree-sitter-all-languages/lib.rs](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/docker-images/syntax-highlighter/crates/tree-sitter-all-languages/src/lib.rs) add new entries in the `ParserId` enum and associated references. 
+
+1. In [syntax-analysis/queries](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/docker-images/syntax-highlighter/crates/syntax-analysis/queries) add a folder for the language with three files in it (`highlights.scm`, `locals.scm`, and `injections.scm`). These files can be empty besides `highlights.scm`, which must contain tree-sitter queries for identifying and labeling all tokens in the language requiring highlighting. For more information on writing tree-sitter queries, see the [tree-sitter docs](https://tree-sitter.github.io/tree-sitter/syntax-highlighting#highlights) or refer to the other `.scm` files in the folder. 
+
+1. In [syntax-analysis/src/highlighting/snapshots/files](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/docker-images/syntax-highlighter/crates/syntax-analysis/src/highlighting/snapshots/files) add an example file for the language which demonstrates all key language elements needing highlighting. Try to keep file minimal and avoid redundancy. 
+
+1.  In [syntax-analysis/src/highlighting](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/docker-images/syntax-highlighter/crates/syntax-analysis) run cargo tests `cargo test` to execute the tests and `cargo insta review` to update and regenerate new snapshots. Please review the snapshot generated and ensure the file has proper highlighting annotations ([example](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/docker-images/syntax-highlighter/crates/syntax-analysis/src/highlighting/snapshots/syntax_analysis__highlighting__tree_sitter__test__python.py.snap)). 
+ 
+
+**Under [internal/gosyntect/languages.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/internal/gosyntect/languages.go):**
+1. Add the new language to the list of tree-sitter supported file types. 
+
+
+**(Optional) If the language is not yet supported in [go-enry](https://github.com/go-enry/go-enry)**
+
+Under [lib/codeintel/languages/extensions.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/lib/codeintel/languages/extensions.go?L67):
+1. Add a mapping of the language's extension to name in the `unsupportedByEnryExtensionsMap` and update associated unit test
+
+ 

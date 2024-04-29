@@ -236,32 +236,6 @@ func (r *UserResolver) CodySubscription(ctx context.Context) (*CodySubscriptionR
 	return &CodySubscriptionResolver{subscription: subscription}, nil
 }
 
-func (r *UserResolver) CodyGatewayRateLimitStatus(ctx context.Context) (*[]RateLimitStatus, error) {
-	if !dotcom.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
-	}
-
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
-	// settings, because they may contain secrets or other sensitive data.
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
-		return nil, err
-	}
-
-	limits, err := cody.GetGatewayRateLimits(ctx, r.user.ID, r.db)
-	if err != nil {
-		return nil, err
-	}
-
-	rateLimits := make([]RateLimitStatus, 0, len(limits))
-	for _, limit := range limits {
-		rateLimits = append(rateLimits, &codyRateLimit{
-			rl: limit,
-		})
-	}
-
-	return &rateLimits, nil
-}
-
 func (r *UserResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.user.CreatedAt}
 }

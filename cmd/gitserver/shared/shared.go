@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/log"
 	"google.golang.org/grpc"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/cloneurl"
@@ -90,7 +91,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// Setup our server megastruct.
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
-	cloneQueue := server.NewCloneQueue(observationCtx, list.New())
 	locker := server.NewRepositoryLocker()
 	hostname := config.ExternalAddress
 	gitserver := server.NewServer(&server.ServerOpts{
@@ -135,7 +135,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		FS:                      fs,
 		Hostname:                hostname,
 		DB:                      db,
-		CloneQueue:              cloneQueue,
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
 		Locker:                  locker,
@@ -157,15 +156,15 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos, recordingConf.IgnoredGitCommands), recordingConf.Size)
 	})
 
-	gitserver.RegisterMetrics(observationCtx, db)
+	internal.RegisterEchoMetric(logger.Scoped("echoMetricReporter"))
 
-	handler := gitserver.Handler()
+	handler := internal.NewHTTPHandler(logger, fs)
 	handler = actor.HTTPMiddleware(logger, handler)
 	handler = requestclient.InternalHTTPMiddleware(handler)
 	handler = requestinteraction.HTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
-	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, gitserver), handler)
+	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, gitserver, config), handler)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -174,7 +173,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		httpserver.NewFromAddr(config.ListenAddress, &http.Server{
 			Handler: handler,
 		}),
-		gitserver.NewClonePipeline(logger, cloneQueue),
 		server.NewRepoStateSyncer(
 			ctx,
 			logger,
@@ -238,7 +236,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 // makeGRPCServer creates a new *grpc.Server for the gitserver endpoints and registers
 // it with methods on the given server.
-func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
+func makeGRPCServer(logger log.Logger, s *server.Server, c *Config) *grpc.Server {
 	configurationWatcher := conf.DefaultClient()
 	scopedLogger := logger.Scoped("gitserver.accesslog")
 
@@ -247,7 +245,12 @@ func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 		grpc.ChainStreamInterceptor(accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)),
 		grpc.ChainUnaryInterceptor(accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)),
 	)
-	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s, &server.GRPCServerConfig{
+		ExhaustiveRequestLoggingEnabled: c.ExhaustiveRequestLoggingEnabled,
+	}))
+	proto.RegisterGitserverRepositoryServiceServer(grpcServer, server.NewRepositoryServiceServer(s, &server.GRPCRepositoryServiceConfig{
+		ExhaustiveRequestLoggingEnabled: c.ExhaustiveRequestLoggingEnabled,
+	}))
 
 	return grpcServer
 }

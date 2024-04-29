@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -58,9 +57,7 @@ func testDeleteRepo(t *testing.T, deletedInDB bool) {
 	s := makeTestServer(ctx, t, reposDir, remote, db)
 
 	// This will perform an initial clone
-	s.RepoUpdate(ctx, &protocol.RepoUpdateRequest{
-		Repo: repoName,
-	})
+	require.NoError(t, s.repoUpdateOrClone(ctx, repoName))
 
 	size, err := s.fs.DirSize(string(s.fs.RepoDir(repoName)))
 	require.NoError(t, err)

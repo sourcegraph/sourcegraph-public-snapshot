@@ -41,7 +41,7 @@ func TestGetTargetCommitPathFromSourcePath(t *testing.T) {
 
 func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 	client := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "deadbeef1", "deadbeef2", "--", "/foo/bar.go"}
+		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef1..deadbeef2", "--", "/foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
 		}
@@ -106,7 +106,7 @@ func TestGetTargetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
 
 func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 	client := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "deadbeef2", "deadbeef1", "--", "/foo/bar.go"}
+		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef2..deadbeef1", "--", "/foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
 		}
@@ -142,7 +142,7 @@ func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 
 func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 	client := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "deadbeef1", "deadbeef2", "--", "/foo/bar.go"}
+		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef1..deadbeef2", "--", "/foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
 		}
@@ -216,7 +216,7 @@ func TestGetTargetCommitRangeFromSourceRangeEmptyDiff(t *testing.T) {
 
 func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
 	client := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "deadbeef2", "deadbeef1", "--", "/foo/bar.go"}
+		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef2..deadbeef1", "--", "/foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
 		}

@@ -1,12 +1,16 @@
 <svelte:options immutable />
 
 <script lang="ts">
+    import { onMount } from 'svelte'
     import { mdiFileEyeOutline, mdiMapSearch, mdiWrap, mdiWrapDisabled } from '@mdi/js'
+    import { capitalize } from 'lodash'
     import { from } from 'rxjs'
-    import { toViewMode, ViewMode } from './util'
+    import { writable } from 'svelte/store'
 
-    import { goto } from '$app/navigation'
+    import { afterNavigate, goto, preloadData } from '$app/navigation'
     import { page } from '$app/stores'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
+    import type { ScrollSnapshot } from '$lib/codemirror/utils'
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import { isErrorLike, SourcegraphURL, type LineOrPositionOrRange, pluralize } from '$lib/common'
     import { toGraphQLResult } from '$lib/graphql'
@@ -15,24 +19,42 @@
     import { createBlobDataHandler } from '$lib/repo/blob'
     import FileDiff from '$lib/repo/FileDiff.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
+    import FileIcon from '$lib/repo/FileIcon.svelte'
+    import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI } from '$lib/shared'
+    import { formatBytes } from '$lib/utils'
     import { Alert, MenuButton, MenuLink } from '$lib/wildcard'
     import markdownStyles from '$lib/wildcard/Markdown.module.scss'
 
-    import type { PageData } from './$types'
-    import FileIcon from '$lib/repo/FileIcon.svelte'
-    import { formatBytes } from '$lib/utils'
+    import type { PageData, Snapshot } from './$types'
     import FileViewModeSwitcher from './FileViewModeSwitcher.svelte'
-    import { capitalize } from 'lodash'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
-    import { writable } from 'svelte/store'
+    import { toViewMode, ViewMode } from './util'
 
     export let data: PageData
 
+    // The following props control the look and file of the file page when used
+    // in a preview context.
+    export let embedded = false
+    export let disableCodeIntel = embedded
+
+    export const snapshot: Snapshot<ScrollSnapshot | null> = {
+        capture() {
+            return cmblob?.getScrollSnapshot() ?? null
+        },
+        restore(data) {
+            initialScrollPosition = data
+        },
+    }
+
     const combinedBlobData = createBlobDataHandler()
-    let selectedPosition: LineOrPositionOrRange | null = null
     const lineWrap = writable<boolean>(false)
+    let cmblob: CodeMirrorBlob | null = null
+    let blob: Awaited<PageData['blob']> | null = null
+    let highlights: Awaited<PageData['highlights']> = ''
+    let selectedPosition: LineOrPositionOrRange | null = null
+    let initialScrollPosition: ScrollSnapshot | null = null
 
     $: ({
         repoURL,
@@ -42,26 +64,60 @@
         filePath,
         settings,
         graphQLClient,
+        blameData,
     } = data)
-    $: viewMode = toViewMode($page.url.searchParams.get('view'))
     $: combinedBlobData.set(data.blob, data.highlights)
-    $: ({ blob, highlights, blobPending } = $combinedBlobData)
-    $: isFormatted = !!blob?.richHTML
-    $: fileNotFound = !blob && !blobPending
-    $: fileLoadingError = (!blobPending && !blob && $combinedBlobData.blobError) || null
-    $: showRaw = $page.url.searchParams.get('view') === 'raw'
-    $: codeIntelAPI = createCodeIntelAPI({
-        settings: setting => (isErrorLike(settings?.final) ? undefined : settings?.final?.[setting]),
-        requestGraphQL(options) {
-            return from(graphQLClient.query(options.request, options.variables).then(toGraphQLResult))
-        },
+
+    $: if (!$combinedBlobData.blobPending) {
+        blob = $combinedBlobData.blob
+        highlights = $combinedBlobData.highlights
+        selectedPosition = data.lineOrPosition
+    }
+    $: fileNotFound = $combinedBlobData.blobPending ? null : !$combinedBlobData.blob
+    $: fileLoadingError = $combinedBlobData.blobPending ? null : !$combinedBlobData.blob && $combinedBlobData.blobError
+    $: isFormatted = !!$combinedBlobData.blob?.richHTML
+
+    $: viewMode = toViewMode($page.url.searchParams.get('view'))
+    $: showBlame = viewMode === ViewMode.Blame
+    $: showFormatted = isFormatted && viewMode === ViewMode.Default && !showBlame
+
+    $: codeIntelAPI = disableCodeIntel
+        ? null
+        : createCodeIntelAPI({
+              settings: setting => (isErrorLike(settings?.final) ? undefined : settings?.final?.[setting]),
+              requestGraphQL(options) {
+                  return from(graphQLClient.query(options.request, options.variables).then(toGraphQLResult))
+              },
+          })
+
+    onMount(() => {
+        SVELTE_LOGGER.logViewEvent(SVELTE_TELEMETRY_EVENTS.ViewBlobPage)
     })
-    $: if (!blobPending) {
-        // Update selected position as soon as blob is loaded
-        selectedPosition = SourcegraphURL.from($page.url).lineRange
+
+    afterNavigate(event => {
+        // Only restore scroll position when the user used the browser history to navigate back
+        // and forth. When the user reloads the page, in which case SvelteKit will also call
+        // Snapshot.restore, we don't want to restore the scroll position. Instead we want the
+        // selected line (if any) to scroll into view.
+        if (event.type !== 'popstate') {
+            initialScrollPosition = null
+        }
+    })
+
+    function handleCopy(): void {
+        SVELTE_LOGGER.log(...codeCopiedEvent('blob-view'))
     }
 
-    function changeViewMode({ detail: viewMode }: { detail: ViewMode }) {
+    function onViewModeChange(event: CustomEvent<ViewMode>): void {
+        // TODO: track other blob mode
+        if (event.detail === ViewMode.Blame) {
+            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.GitBlameEnabled)
+        }
+
+        goto(viewModeURL(event.detail), { replaceState: true, keepFocus: true })
+    }
+
+    function viewModeURL(viewMode: ViewMode) {
         switch (viewMode) {
             case ViewMode.Code: {
                 const url = SourcegraphURL.from($page.url)
@@ -70,18 +126,14 @@
                 } else {
                     url.deleteSearchParameter('view')
                 }
-                goto(url.toString(), { replaceState: true, keepFocus: true })
-                break
+                return url.toString()
             }
             case ViewMode.Blame:
-                // TODO: Implement
-                break
+                const url = SourcegraphURL.from($page.url)
+                url.setSearchParameter('view', 'blame')
+                return url.toString()
             case ViewMode.Default:
-                goto(SourcegraphURL.from($page.url).deleteSearchParameter('view').toString(), {
-                    replaceState: true,
-                    keepFocus: true,
-                })
-                break
+                return SourcegraphURL.from($page.url).deleteSearchParameter('view').toString()
         }
     }
 </script>
@@ -92,16 +144,28 @@
 
 <!-- Note: Splitting this at this level is not great but Svelte doesn't allow to conditionally render slots (yet) -->
 {#if data.compare}
-    <FileHeader>
+    <FileHeader type="blob" {repoName} {revision} path={filePath}>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
             <span>{data.compare.revisionToCompare}</span>
         </svelte:fragment>
     </FileHeader>
-{:else}
-    <FileHeader>
+{:else if embedded}
+    <FileHeader type="blob" {repoName} {revision} path={filePath} hideSidebarToggle>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
+            <slot name="actions" />
+        </svelte:fragment>
+    </FileHeader>
+{:else}
+    <FileHeader type="blob" {repoName} {revision} path={filePath}>
+        <FileIcon slot="icon" file={blob} inline />
+        <svelte:fragment slot="actions">
+            {#await data.externalServiceType then externalServiceType}
+                {#if externalServiceType}
+                    <OpenInEditor {externalServiceType} />
+                {/if}
+            {/await}
             {#if blob}
                 <OpenInCodeHostAction data={blob} />
             {/if}
@@ -122,13 +186,16 @@
     </FileHeader>
 {/if}
 
-{#if !blobPending && blob && !blob.binary && !data.compare}
+{#if blob && !blob.binary && !data.compare && !embedded}
     <div class="file-info">
         <FileViewModeSwitcher
             aria-label="View mode"
             value={viewMode}
-            options={isFormatted ? [ViewMode.Default, ViewMode.Code] : [ViewMode.Default]}
-            on:change={changeViewMode}
+            options={isFormatted
+                ? [ViewMode.Default, ViewMode.Code, ViewMode.Blame]
+                : [ViewMode.Default, ViewMode.Blame]}
+            on:preload={event => preloadData(viewModeURL(event.detail))}
+            on:change={onViewModeChange}
         >
             <svelte:fragment slot="label" let:value>
                 {value === ViewMode.Default ? (isFormatted ? 'Formatted' : 'Code') : capitalize(value)}
@@ -141,7 +208,7 @@
     </div>
 {/if}
 
-<div class="content" class:loading={blobPending} class:compare={!!data.compare} class:fileNotFound>
+<div class="content" class:loading={$combinedBlobData.blobPending} class:compare={!!data.compare} class:fileNotFound>
     {#if !$combinedBlobData.highlightsPending && $combinedBlobData.highlightsError}
         <Alert variant="danger">
             Unable to load syntax highlighting: {$combinedBlobData.highlightsError.message}
@@ -157,21 +224,32 @@
                 Unable to load iff
             {/if}
         {/await}
+    {:else if $combinedBlobData.blob && showFormatted}
+        <div class={`rich ${markdownStyles.markdown}`}>
+            {@html $combinedBlobData.blob.richHTML}
+        </div>
     {:else if blob}
-        {#if blob.richHTML && !showRaw}
-            <div class={`rich ${markdownStyles.markdown}`}>
-                {@html blob.richHTML}
-            </div>
-        {:else}
+        <!--
+            This ensures that a new CodeMirror instance is created when the file changes.
+            This makes the CodeMirror behavior more predictable and avoids issues with
+            carrying over state from the previous file.
+            Specifically this will make it so that the scroll position is reset to
+            `initialScrollPosition` when the file changes.
+        -->
+        {#key blob.canonicalURL}
             <CodeMirrorBlob
+                bind:this={cmblob}
+                {initialScrollPosition}
                 blobInfo={{
                     ...blob,
-                    revision: revision ?? '',
+                    repoName,
                     commitID,
-                    repoName: repoName,
+                    revision: revision ?? '',
                     filePath,
                 }}
                 {highlights}
+                {showBlame}
+                blameData={$blameData}
                 wrapLines={$lineWrap}
                 selectedLines={selectedPosition?.line ? selectedPosition : null}
                 on:selectline={({ detail: range }) => {
@@ -182,19 +260,18 @@
                     )
                 }}
                 {codeIntelAPI}
+                onCopy={handleCopy}
             />
-        {/if}
-    {:else if !blobPending}
-        {#if fileLoadingError}
-            <Alert variant="danger">
-                Unable to load file data: {fileLoadingError.message}
-            </Alert>
-        {:else if fileNotFound}
-            <div class="circle">
-                <Icon svgPath={mdiMapSearch} size={80} />
-            </div>
-            <h2>File not found</h2>
-        {/if}
+        {/key}
+    {:else if fileLoadingError}
+        <Alert variant="danger">
+            Unable to load file data: {fileLoadingError.message}
+        </Alert>
+    {:else if fileNotFound}
+        <div class="circle">
+            <Icon svgPath={mdiMapSearch} size={80} />
+        </div>
+        <h2>File not found</h2>
     {/if}
 </div>
 
@@ -202,8 +279,9 @@
     .content {
         display: flex;
         flex-direction: column;
-        overflow-x: auto;
+        overflow: auto;
         flex: 1;
+        background-color: var(--color-bg-1);
 
         &.compare {
             flex-direction: column;
@@ -217,7 +295,8 @@
     }
 
     .file-info {
-        padding: 0.5rem 0.5rem;
+        background: var(--color-bg-1);
+        padding: 0.5rem;
         color: var(--text-muted);
         display: flex;
         gap: 1rem;
@@ -230,7 +309,6 @@
 
     .rich {
         padding: 1rem;
-        overflow: auto;
         max-width: 50rem;
     }
 

@@ -8,6 +8,7 @@ pub enum ParserId {
     Cpp,
     #[allow(non_camel_case_types)]
     C_Sharp,
+    Dart,
     Go,
     Java,
     Javascript,
@@ -26,7 +27,8 @@ pub enum ParserId {
     Xlsg,
     Zig,
 
-    // These two are special cases
+    // These two are special cases since we process them
+    // in a way where they can inherit tree-sitter queries from others languages
     Typescript,
     Tsx,
 }
@@ -37,6 +39,7 @@ impl ParserId {
             ParserId::C => tree_sitter_c::language(),
             ParserId::Cpp => tree_sitter_cpp::language(),
             ParserId::C_Sharp => tree_sitter_c_sharp::language(),
+            ParserId::Dart => tree_sitter_dart::language(),
             ParserId::Go => tree_sitter_go::language(),
             ParserId::Java => tree_sitter_java::language(),
             ParserId::Javascript => tree_sitter_javascript::language(),
@@ -64,6 +67,7 @@ impl ParserId {
             "c" => Some(ParserId::C),
             "cpp" => Some(ParserId::Cpp),
             "c_sharp" => Some(ParserId::C_Sharp),
+            "dart" => Some(ParserId::Dart),
             "go" => Some(ParserId::Go),
             "java" => Some(ParserId::Java),
             "javascript" => Some(ParserId::Javascript),
@@ -92,6 +96,7 @@ impl ParserId {
             ParserId::C => "c",
             ParserId::Cpp => "cpp",
             ParserId::C_Sharp => "c_sharp",
+            ParserId::Dart => "dart",
             ParserId::Go => "go",
             ParserId::Java => "java",
             ParserId::Javascript => "javascript",
@@ -135,6 +140,7 @@ impl ParserId {
             "c" => Some(ParserId::C),
             "cpp" => Some(ParserId::Cpp),
             "cs" => Some(ParserId::C_Sharp),
+            "dart" => Some(ParserId::Dart),
             "go" => Some(ParserId::Go),
             "java" => Some(ParserId::Java),
             "js" => Some(ParserId::Javascript),

@@ -16,17 +16,21 @@ const SavedSearchUpdateForm = lazyComponent(
 export const namespaceAreaRoutes: readonly NamespaceAreaRoute[] = [
     {
         path: 'searches',
-        render: props => <SavedSearchListPage {...props} />,
+        render: props => <SavedSearchListPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />,
         condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: 'searches/add',
-        render: props => <SavedSearchCreateForm {...props} />,
+        render: props => (
+            <SavedSearchCreateForm {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+        ),
         condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: 'searches/:id',
-        render: props => <SavedSearchUpdateForm {...props} />,
+        render: props => (
+            <SavedSearchUpdateForm {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+        ),
         condition: ({ license }) => license.isCodeSearchEnabled,
     },
 ]

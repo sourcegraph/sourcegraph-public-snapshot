@@ -21,25 +21,21 @@ type operations struct {
 	getBehindAhead           *observation.Operation
 	getCommit                *observation.Operation
 	hasCommitAfter           *observation.Operation
-	listBranches             *observation.Operation
 	listRefs                 *observation.Operation
-	listTags                 *observation.Operation
 	lstat                    *observation.Operation
 	mergeBase                *observation.Operation
 	newFileReader            *observation.Operation
 	readDir                  *observation.Operation
 	resolveRevision          *observation.Operation
+	revAtTime                *observation.Operation
 	revList                  *observation.Operation
 	search                   *observation.Operation
 	stat                     *observation.Operation
 	streamBlameFile          *observation.Operation
 	systemsInfo              *observation.Operation
 	systemInfo               *observation.Operation
-	requestRepoUpdate        *observation.Operation
-	requestRepoClone         *observation.Operation
 	isRepoCloneable          *observation.Operation
 	repoCloneProgress        *observation.Operation
-	remove                   *observation.Operation
 	isPerforcePathCloneable  *observation.Operation
 	checkPerforceCredentials *observation.Operation
 	perforceUsers            *observation.Operation
@@ -51,15 +47,12 @@ type operations struct {
 	createCommitFromPatch    *observation.Operation
 	getObject                *observation.Operation
 	commitGraph              *observation.Operation
-	refDescriptions          *observation.Operation
-	branchesContaining       *observation.Operation
 	commitsUniqueToBranch    *observation.Operation
 	getDefaultBranch         *observation.Operation
 	listDirectoryChildren    *observation.Operation
 	lsFiles                  *observation.Operation
 	logReverseEach           *observation.Operation
 	diffSymbols              *observation.Operation
-	diffPath                 *observation.Operation
 	commitLog                *observation.Operation
 	diff                     *observation.Operation
 }
@@ -118,25 +111,21 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getBehindAhead:           op("GetBehindAhead"),
 		getCommit:                op("GetCommit"),
 		hasCommitAfter:           op("HasCommitAfter"),
-		listBranches:             op("ListBranches"),
 		listRefs:                 op("ListRefs"),
-		listTags:                 op("ListTags"),
 		lstat:                    subOp("lStat"),
 		mergeBase:                op("MergeBase"),
 		newFileReader:            op("NewFileReader"),
 		readDir:                  op("ReadDir"),
 		resolveRevision:          resolveRevisionOperation,
+		revAtTime:                op("RevAtTime"),
 		revList:                  op("RevList"),
 		search:                   op("Search"),
 		stat:                     op("Stat"),
 		streamBlameFile:          op("StreamBlameFile"),
 		systemsInfo:              op("SystemsInfo"),
 		systemInfo:               op("SystemInfo"),
-		requestRepoUpdate:        op("RequestRepoUpdate"),
-		requestRepoClone:         op("RequestRepoClone"),
 		isRepoCloneable:          op("IsRepoCloneable"),
 		repoCloneProgress:        op("RepoCloneProgress"),
-		remove:                   op("Remove"),
 		isPerforcePathCloneable:  op("IsPerforcePathCloneable"),
 		checkPerforceCredentials: op("CheckPerforceCredentials"),
 		perforceUsers:            op("PerforceUsers"),
@@ -148,15 +137,12 @@ func newOperations(observationCtx *observation.Context) *operations {
 		createCommitFromPatch:    op("CreateCommitFromPatch"),
 		getObject:                op("GetObject"),
 		commitGraph:              op("CommitGraph"),
-		refDescriptions:          op("RefDescriptions"),
-		branchesContaining:       op("BranchesContaining"),
 		commitsUniqueToBranch:    op("CommitsUniqueToBranch"),
 		getDefaultBranch:         op("GetDefaultBranch"),
 		listDirectoryChildren:    op("ListDirectoryChildren"),
 		lsFiles:                  op("LsFiles"),
 		logReverseEach:           op("LogReverseEach"),
 		diffSymbols:              op("DiffSymbols"),
-		diffPath:                 op("DiffPath"),
 		commitLog:                op("CommitLog"),
 		diff:                     op("Diff"),
 	}

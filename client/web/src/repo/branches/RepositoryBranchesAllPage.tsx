@@ -2,10 +2,11 @@ import { type FC, useCallback, useEffect } from 'react'
 
 import type { Observable } from 'rxjs'
 
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
+
 import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { GitRefType, type GitRefConnectionFields, type GitRefFields } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode, queryGitReferences } from '../GitReference'
 
 import type { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
@@ -17,7 +18,7 @@ export const RepositoryBranchesAllPage: FC<Props> = props => {
     const { repo } = props
 
     useEffect(() => {
-        eventLogger.logViewEvent('RepositoryBranchesAll')
+        EVENT_LOGGER.logViewEvent('RepositoryBranchesAll')
     }, [])
 
     const queryBranches = useCallback(

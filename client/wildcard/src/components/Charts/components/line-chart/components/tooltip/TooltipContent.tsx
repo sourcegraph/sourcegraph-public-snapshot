@@ -1,7 +1,6 @@
 import { type ReactElement, useMemo } from 'react'
 
-import { isDefined } from '@sourcegraph/common'
-
+import { isDefined } from '../../../../../../utils'
 import { H3 } from '../../../../../Typography'
 import { TooltipList, TooltipListBlankItem, TooltipListItem } from '../../../../core'
 import { formatYTick } from '../../../../core/components/axis/tick-formatters'

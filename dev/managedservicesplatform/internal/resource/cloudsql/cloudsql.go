@@ -90,9 +90,14 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			}).HexValue)),
 
 		Settings: &sqldatabaseinstance.SqlDatabaseInstanceSettings{
-			Tier:             pointers.Ptr(machineType),
-			AvailabilityType: pointers.Ptr("ZONAL"),
-			DiskType:         pointers.Ptr("PD_SSD"),
+			Tier: pointers.Ptr(machineType),
+			AvailabilityType: pointers.Ptr(func() string {
+				if pointers.DerefZero(config.Spec.HighAvailability) {
+					return "REGIONAL" // multi-zone in a region
+				}
+				return "ZONAL" // single-zone
+			}()),
+			DiskType: pointers.Ptr("PD_SSD"),
 
 			// Arbitrary starting disk size - we use autoresizing to scale the
 			// disk up automatically. The minimum size is 10GB.
@@ -106,8 +111,15 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			// Production disks for MSP are configured with daily snapshots and retention set at ninety days,
 			// so we do the same.
 			BackupConfiguration: &sqldatabaseinstance.SqlDatabaseInstanceSettingsBackupConfiguration{
-				Enabled:                     pointers.Ptr(true),
-				PointInTimeRecoveryEnabled:  pointers.Ptr(false), // PITR uses a lot of resources and is cumbersome to use
+				Enabled: pointers.Ptr(true),
+				// PITR uses a lot of resources and is cumbersome to use -
+				// only enable it for services that require HA, since it is
+				// required for regional deployments:
+				// - https://cloud.google.com/sql/docs/postgres/configure-ha#terraform
+				// - https://cloud.google.com/sql/docs/postgres/high-availability#backups-and-restores
+				PointInTimeRecoveryEnabled: pointers.Ptr(
+					pointers.DerefZero(config.Spec.HighAvailability),
+				),
 				StartTime:                   pointers.Ptr("10:00"),
 				TransactionLogRetentionDays: pointers.Float64(7),
 				BackupRetentionSettings: &sqldatabaseinstance.SqlDatabaseInstanceSettingsBackupConfigurationBackupRetentionSettings{

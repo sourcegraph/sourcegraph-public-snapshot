@@ -10,6 +10,8 @@ import { useCallbackRef } from 'use-callback-ref'
 
 import { logger } from '@sourcegraph/common'
 import type { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
     Container,
@@ -27,13 +29,14 @@ import { usePageSwitcherPagination } from '../components/FilteredConnection/hook
 import { PageTitle } from '../components/PageTitle'
 import type { SavedSearchFields, SavedSearchesResult, SavedSearchesVariables } from '../graphql-operations'
 import type { NamespaceProps } from '../namespaces'
+import type { NamespaceAreaContext } from '../namespaces/NamespaceArea'
 import { deleteSavedSearch, savedSearchesQuery } from '../search/backend'
 import { useNavbarQueryState } from '../stores'
-import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './SavedSearchListPage.module.scss'
 
-interface NodeProps extends SearchPatternTypeProps {
+interface NodeProps extends SearchPatternTypeProps, TelemetryV2Props {
+    namespaceType: NamespaceAreaContext['namespace']['__typename']
     savedSearch: SavedSearchFields
     onDelete: () => void
     linkRef: React.MutableRefObject<HTMLAnchorElement | null> | null
@@ -67,7 +70,11 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     )
                 )
                 .subscribe(() => {
-                    eventLogger.log('SavedSearchDeleted')
+                    EVENT_LOGGER.log('SavedSearchDeleted')
+                    this.props.telemetryRecorder.recordEvent(
+                        `${this.props.namespaceType.toLowerCase()}.savedSearch`,
+                        'delete'
+                    )
                     this.setState({ isDeleting: false })
                     this.props.onDelete()
                 })
@@ -136,8 +143,9 @@ interface Props extends NamespaceProps {}
 
 export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
     React.useEffect(() => {
-        eventLogger.logViewEvent('SavedSearchListPage')
-    }, [])
+        EVENT_LOGGER.logViewEvent('SavedSearchListPage')
+        props.telemetryRecorder.recordEvent(`${props.namespace.__typename.toLowerCase()}.savedSearches.list`, 'view')
+    }, [props.telemetryRecorder, props.namespace.__typename])
 
     const { connection, loading, error, refetch, ...paginationProps } = usePageSwitcherPagination<
         SavedSearchesResult,
@@ -216,6 +224,7 @@ const SavedSearchListPageContent: React.FunctionComponent<React.PropsWithChildre
                         {...props}
                         patternType={searchPatternType}
                         savedSearch={search}
+                        namespaceType={namespace.__typename}
                     />
                 ))}
             </div>

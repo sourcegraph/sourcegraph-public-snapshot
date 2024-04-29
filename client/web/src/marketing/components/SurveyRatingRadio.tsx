@@ -4,9 +4,8 @@ import classNames from 'classnames'
 import { range } from 'lodash'
 
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button } from '@sourcegraph/wildcard'
-
-import { eventLogger } from '../../tracking/eventLogger'
 
 import radioStyles from './SurveyRatingRadio.module.scss'
 
@@ -29,7 +28,7 @@ export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<
     }
 
     const handleChange = (score: number): void => {
-        eventLogger.log('SurveyButtonClicked', { score }, { score })
+        EVENT_LOGGER.log('SurveyButtonClicked', { score }, { score })
         props.telemetryRecorder.recordEvent('surveyNPS.button', 'click', { metadata: { score } })
 
         if (props.onChange) {

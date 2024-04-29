@@ -6,12 +6,14 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 )
 
 const providerType = "http-header"
@@ -20,10 +22,10 @@ const providerType = "http-header"
 // requests to both the app and API and add headers.
 //
 // See the "func middleware" docs for more information.
-func Middleware(db database.DB) *auth.Middleware {
+func Middleware(logger log.Logger, db database.DB) *auth.Middleware {
 	return &auth.Middleware{
-		API: middleware(db),
-		App: middleware(db),
+		API: middleware(log.Scoped("api"), db),
+		App: middleware(log.Scoped("app"), db),
 	}
 }
 
@@ -40,7 +42,7 @@ func Middleware(db database.DB) *auth.Middleware {
 // starting up a proxy for multiple users.
 //
 // 🚨 SECURITY
-func middleware(db database.DB) func(next http.Handler) http.Handler {
+func middleware(logger log.Logger, db database.DB) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authProvider, ok := providers.GetProviderByConfigID(providers.ConfigID{Type: providerType}).(*provider)
@@ -50,7 +52,7 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 			}
 
 			if authProvider.c.UsernameHeader == "" {
-				log15.Error("No HTTP header set for username (set the http-header auth provider's usernameHeader property).")
+				logger.Error("no HTTP header set for username (set the http-header auth provider's usernameHeader property)")
 				http.Error(w, "misconfigured http-header auth provider", http.StatusInternalServerError)
 				return
 			}
@@ -78,7 +80,9 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 			if rawUsername != "" {
 				username, err = auth.NormalizeUsername(rawUsername)
 				if err != nil {
-					log15.Error("Error normalizing username from HTTP auth proxy.", "username", rawUsername, "err", err)
+					logger.Error("Error normalizing username from HTTP auth proxy.",
+						log.Error(err),
+						log.String("username", rawUsername))
 					http.Error(w, "unable to normalize username", http.StatusInternalServerError)
 					return
 				}
@@ -86,12 +90,16 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 				// if they don't have a username, let's create one from their email
 				username, err = auth.NormalizeUsername(rawEmail)
 				if err != nil {
-					log15.Error("Error normalizing username from email header in HTTP auth proxy.", "email", rawEmail, "err", err)
+					logger.Error("Error normalizing username from email header in HTTP auth proxy.",
+						log.Error(err),
+						log.String("email", rawEmail))
 					http.Error(w, "unable to normalize username", http.StatusInternalServerError)
 					return
 				}
 			}
-			newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), db, auth.GetAndSaveUserOp{
+
+			recorder := telemetryrecorder.New(db)
+			newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), logger, db, recorder, auth.GetAndSaveUserOp{
 				UserProps: database.NewUser{
 					Username: username,
 					Email:    rawEmail,

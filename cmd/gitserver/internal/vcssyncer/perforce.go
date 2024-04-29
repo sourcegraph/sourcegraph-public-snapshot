@@ -208,20 +208,20 @@ func (s *perforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, usern
 }
 
 // Fetch tries to fetch updates of a Perforce depot as a Git repository.
-func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir, _ string) ([]byte, error) {
+func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, dir common.GitDir, progressWriter io.Writer) error {
 	source, err := s.getRemoteURLSource(ctx, repoName)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting remote URL source")
+		return errors.Wrap(err, "getting remote URL source")
 	}
 
 	remoteURL, err := source.RemoteURL(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting remote URL") // This should never happen for Perforce
+		return errors.Wrap(err, "getting remote URL") // This should never happen for Perforce
 	}
 
 	p4user, p4passwd, p4port, depot, err := perforce.DecomposePerforceRemoteURL(remoteURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "invalid perforce remote URL")
+		return errors.Wrap(err, "invalid perforce remote URL")
 	}
 
 	// First, do a quick check if we can reach the Perforce server.
@@ -231,7 +231,7 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 		P4Passwd: p4passwd,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "verifying connection to perforce server")
+		return errors.Wrap(err, "verifying connection to perforce server")
 	}
 
 	var cmd *wrexec.Cmd
@@ -246,7 +246,7 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 	}
 	cmd.Env, err = s.p4CommandEnv(string(dir), p4port, p4user, p4passwd)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to build p4 command env")
+		return errors.Wrap(err, "failed to build p4 command env")
 	}
 	dir.Set(cmd.Cmd)
 
@@ -254,14 +254,15 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 	// we have runRemoteGitCommand which sets TLS settings/etc. Do we need
 	// something for p4?
 	output, err := cmd.CombinedOutput()
+	tryWrite(s.logger, progressWriter, urlredactor.New(remoteURL).Redact(string(output)))
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to update with output %q", urlredactor.New(remoteURL).Redact(string(output)))
+		return errors.Wrapf(err, "failed to update")
 	}
 
 	if !s.fusionConfig.Enabled {
 		p4home, err := s.fs.P4HomeDir()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create p4home")
+			return errors.Wrap(err, "failed to create p4home")
 		}
 
 		// Force update "master" to "refs/remotes/p4/master" where changes are synced into
@@ -274,7 +275,7 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 		)
 		dir.Set(cmd.Cmd)
 		if output, err := cmd.CombinedOutput(); err != nil {
-			return nil, errors.Wrapf(err, "failed to force update branch with output %q", string(output))
+			return errors.Wrapf(err, "failed to force update branch with output %q", string(output))
 		}
 	}
 
@@ -286,7 +287,7 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, repoName api.RepoName, 
 		s.logger.Error("failed to touch HEAD after perforce fetch", log.Error(err))
 	}
 
-	return output, nil
+	return nil
 }
 
 func (s *perforceDepotSyncer) p4CommandOptions() []string {

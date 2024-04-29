@@ -60,3 +60,5 @@ dev/backcompat/flakes.json
 client/browser/src/types/webextension-polyfill/index.d.ts
 
 graphql-operations.ts
+
+wolfi-images/*.lock.json

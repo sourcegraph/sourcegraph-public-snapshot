@@ -13,9 +13,9 @@ import type {
 import { Transcript, useClient, NoopEditor } from '@sourcegraph/cody-shared'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../tracking/eventLogger'
 import { EventName } from '../util/constants'
 
 import { isEmailVerificationNeededForCody } from './isCodyEnabled'
@@ -196,7 +196,7 @@ export const useCodyChat = ({
             if (!transcript) {
                 return
             }
-            eventLogger.log(v1EventLabel, { transcriptId: transcript.id, ...eventProperties })
+            EVENT_LOGGER.log(v1EventLabel, { transcriptId: transcript.id, ...eventProperties })
 
             let numericID = new Date(transcript.id).getTime()
             if (isNaN(numericID)) {
@@ -257,7 +257,7 @@ export const useCodyChat = ({
             return
         }
 
-        eventLogger.log(EventName.CODY_CHAT_HISTORY_CLEARED)
+        EVENT_LOGGER.log(EventName.CODY_CHAT_HISTORY_CLEARED)
 
         const newTranscript = initializeNewChatInternal()
         if (newTranscript) {
@@ -360,7 +360,7 @@ export const useCodyChat = ({
 
     const executeRecipe = useCallback<typeof executeRecipeInternal>(
         async (recipeId, options): Promise<Transcript | null> => {
-            eventLogger.log(`web:codyChat:recipe:${recipeId}:executed`, { recipeId })
+            EVENT_LOGGER.log(`web:codyChat:recipe:${recipeId}:executed`, { recipeId })
 
             const transcript = await executeRecipeInternal(recipeId, options)
 

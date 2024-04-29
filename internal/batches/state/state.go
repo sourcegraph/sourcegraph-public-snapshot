@@ -793,8 +793,7 @@ func computeDiffStat(ctx context.Context, client gitserver.Client, c *btypes.Cha
 	if c.SyncState.BaseRefOid == c.SyncState.HeadRefOid {
 		return c.DiffStat(), nil
 	}
-	iter, err := client.Diff(ctx, gitserver.DiffOptions{
-		Repo: repo,
+	iter, err := client.Diff(ctx, repo, gitserver.DiffOptions{
 		Base: c.SyncState.BaseRefOid,
 		Head: c.SyncState.HeadRefOid,
 	})
@@ -861,7 +860,7 @@ func computeRev(ctx context.Context, client gitserver.Client, repo api.RepoName,
 
 	// Resolve the revision to make sure it's on gitserver and, in case we did
 	// the fallback to ref, to get the specific revision.
-	gitRev, err := client.ResolveRevision(ctx, repo, rev, gitserver.ResolveRevisionOptions{})
+	gitRev, err := client.ResolveRevision(ctx, repo, rev, gitserver.ResolveRevisionOptions{EnsureRevision: true})
 	return string(gitRev), err
 }
 

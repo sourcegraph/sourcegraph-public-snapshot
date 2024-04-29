@@ -2,11 +2,11 @@ import React, { useEffect } from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { gql } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import type { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { ScimAlert } from '../ScimAlert'
 
 import { EditUserProfileForm } from './EditUserProfileForm'
@@ -30,7 +30,7 @@ interface Props {
 }
 
 export const UserSettingsProfilePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ user }) => {
-    useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
+    useEffect(() => EVENT_LOGGER.logViewEvent('UserProfile'), [])
 
     return (
         <div>
