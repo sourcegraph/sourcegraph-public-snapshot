@@ -45,8 +45,7 @@ var _ http.Handler = (*APIProxyHandler)(nil)
 
 // getUserIDFromRequest extracts the Sourcegraph User ID from the incomming request,
 // or returns an error suitable for sending to the end user.
-func (p *APIProxyHandler) getUserIDFromRequest(r *http.Request) (int32, error) {
-	ctx := r.Context()
+func (p *APIProxyHandler) getUserIDFromContext(ctx context.Context) (int32, error) {
 	callingActor := actor.FromContext(ctx)
 	if callingActor == nil || !callingActor.IsAuthenticated() {
 		p.Logger.Warn("rejecting request made by unauthenticated Sourcegraph user")
@@ -77,7 +76,7 @@ func (p *APIProxyHandler) buildProxyRequest(sourceReq *http.Request, token strin
 	// Proxy :    "cody/api/v1/" + "teams/current/members"
 	sourceURLPath := strings.TrimPrefix(sourceReq.URL.Path, p.URLPrefix)
 	sscURL := fmt.Sprintf(
-		"%s/cody/api/v1%s?%s",
+		"%s/cody/api/v1/%s?%s",
 		p.CodyProConfig.SscBackendOrigin,
 		sourceURLPath,
 		sourceReq.URL.Query().Encode())
@@ -142,7 +141,7 @@ func (p *APIProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	p.Logger.Info("proxying SSC API request", log.String("url", r.URL.String()))
 
-	sgUserID, err := p.getUserIDFromRequest(r)
+	sgUserID, err := p.getUserIDFromContext(ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
