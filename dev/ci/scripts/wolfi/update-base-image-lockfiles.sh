@@ -68,14 +68,15 @@ echo "[$(date)] Git push"
 git push --force -u origin "${BRANCH_NAME}"
 echo ":git: Successfully commited changes and pushed to branch ${BRANCH_NAME}"
 
-GHR="bazel --bazelrc=${aspectRC} run //dev/tools:gh"
+# Generate a wrapper script for GitHub CLI tool
+bazel --bazelrc=${aspectRC} run --script_path=gh.sh --noshow_progress --noshow_loading_progress //dev/tools:gh
 
 # Check if an update PR already exists
-if $GHR -- pr list --head "${BRANCH_NAME}" --state open | grep -q "${PR_TITLE}"; then
+if ./gh.sh pr list --head "${BRANCH_NAME}" --state open | grep -q "${PR_TITLE}"; then
   echo ":github: A pull request already exists - editing it"
-  $GHR -- pr edit "${BRANCH_NAME}" --body "${PR_BODY}"
+  ./gh.sh pr edit "${BRANCH_NAME}" --body "${PR_BODY}"
 else
   # If not, create a new PR from the branch
-  $GHR -- pr create --title "${PR_TITLE}" --head "${BRANCH_NAME}" --base "${BUILDKITE_BRANCH}" --body "${PR_BODY}" --label "${PR_LABELS}"
+  ./gh.sh pr create --title "${PR_TITLE}" --head "${BRANCH_NAME}" --base "${BUILDKITE_BRANCH}" --body "${PR_BODY}" --label "${PR_LABELS}"
   echo ":github: Created a new pull request from branch '${BRANCH_NAME}' with title '${PR_TITLE}'"
 fi
