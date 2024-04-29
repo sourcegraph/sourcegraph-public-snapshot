@@ -210,6 +210,7 @@ func CodeMonitors() ComputedCodeMonitors {
 			res.Concurrency = cm.Concurrency
 		}
 		if cm.PollInterval != "" {
+			// ignore err since it's validated above
 			dur, _ := time.ParseDuration(cm.PollInterval)
 			res.PollInterval = dur
 		}
