@@ -41,7 +41,7 @@ func maybeValidateSiteConfig(ctx context.Context, db database.DB) error {
 	if !enabled {
 		conf.ContributeValidator(func(confQuerier conftypes.SiteConfigQuerier) (problems conf.Problems) {
 			if confQuerier.SiteConfig().CodyContextFilters != nil {
-				problems = append(problems, conf.NewSiteProblem("\"cody.contextFilters\" param can't be set as it is not supported by Cody IDE clients (VSCode and JetBrains) yet. For information on when IDE support will be available, please visit our documentation: https://sourcegraph.com/docs/cody/capabilities/ignore-context#cody-ignore."))
+				problems = append(problems, conf.NewSiteProblem("\"cody.contextFilters\" param can't be set as it is not supported by Cody IDE clients (VS Code and JetBrains) yet. For information on when IDE support will be available, please visit our documentation: https://sourcegraph.com/docs/cody/capabilities/ignore-context#cody-ignore."))
 			}
 			return problems
 		})
