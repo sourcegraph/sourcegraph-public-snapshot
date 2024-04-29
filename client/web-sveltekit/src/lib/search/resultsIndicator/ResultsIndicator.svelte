@@ -41,7 +41,7 @@
         {#if loading}
             <LoadingSpinner inline />
         {:else}
-            <Icon svgPath={icons[severity]} size={18} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
+            <Icon svgPath={icons[severity]} size={16} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
         {/if}
     </div>
 
@@ -52,10 +52,10 @@
         {:else if done}
             <SuggestedAction {progress} {suggestedItems} {severity} {state} />
         {:else}
-            <small>Running Search</small>
+            <span>Running search...</span>
         {/if}
     </div>
-    <Icon svgPath={mdiChevronDown} size={18} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
+    <Icon svgPath={mdiChevronDown} size={16} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
 </div>
 
 <style lang="scss">
@@ -80,7 +80,7 @@
             row-gap: 0.25rem;
         }
 
-        small {
+        span {
             color: var(--text-muted);
         }
     }

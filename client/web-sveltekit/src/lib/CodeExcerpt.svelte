@@ -81,7 +81,7 @@
 
         font-family: var(--code-font-family);
         font-size: var(--code-font-size);
-        line-height: 1rem;
+        line-height: 1.2rem;
         white-space: pre;
 
         :global(td.line::before) {
