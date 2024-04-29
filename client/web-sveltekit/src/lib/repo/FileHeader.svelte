@@ -123,6 +123,10 @@
 
         a {
             color: var(--text-body);
+
+            &:hover{
+                color: var(--text-title);
+            }
         }
 
         .slash {
