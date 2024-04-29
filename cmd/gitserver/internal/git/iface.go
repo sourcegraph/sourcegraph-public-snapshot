@@ -217,6 +217,8 @@ type ChangedFilesIterator interface {
 	// If there are no more files, io.EOF is returned.
 	Next() (gitdomain.PathStatus, error)
 	// Close releases resources associated with the iterator.
+	//
+	// After Close() is called, Next() will always return io.EOF.
 	Close() error
 }
 

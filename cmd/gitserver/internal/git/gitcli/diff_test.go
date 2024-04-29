@@ -660,6 +660,32 @@ func TestGitDiffIterator(t *testing.T) {
 
 		err := iter.Close()
 		require.NoError(t, err)
+
+		// Verify that Next returns io.EOF after the iterator is closed
+		_, err = iter.Next()
+		require.Equal(t, io.EOF, err)
+	})
+
+	t.Run("close iterator during iteration", func(t *testing.T) {
+		input := combineBytes(
+			[]byte("A"), []byte{NUL}, []byte("file1.txt"), []byte{NUL},
+			[]byte("M"), []byte{NUL}, []byte("file2.txt"), []byte{NUL},
+			[]byte("D"), []byte{NUL}, []byte("file3.txt"), []byte{NUL},
+		)
+		rc := io.NopCloser(bytes.NewReader(input))
+		iter := newGitDiffIterator(rc)
+
+		// Iterate over the first change
+		_, err := iter.Next()
+		require.NoError(t, err)
+
+		// Close the iterator during iteration
+		err = iter.Close()
+		require.NoError(t, err)
+
+		// Verify that Next returns io.EOF after the iterator is closed
+		_, err = iter.Next()
+		require.Equal(t, io.EOF, err)
 	})
 }
 

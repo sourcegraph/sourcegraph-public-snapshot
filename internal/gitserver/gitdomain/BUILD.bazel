@@ -23,7 +23,10 @@ go_library(
 go_test(
     name = "gitdomain_test",
     timeout = "short",
-    srcs = ["common_test.go"],
+    srcs = [
+        "common_test.go",
+        "log_test.go",
+    ],
     embed = [":gitdomain"],
     deps = [
         "//internal/api",

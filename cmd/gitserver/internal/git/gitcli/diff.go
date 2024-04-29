@@ -87,13 +87,18 @@ func newGitDiffIterator(rc io.ReadCloser) git.ChangedFilesIterator {
 	scanner := bufio.NewScanner(rc)
 	scanner.Split(byteutils.ScanNullLines)
 
+	closeChan := make(chan struct{})
 	closer := sync.OnceValue(func() error {
-		return rc.Close()
+		err := rc.Close()
+		close(closeChan)
+
+		return err
 	})
 
 	return &gitDiffIterator{
 		rc:             rc,
 		scanner:        scanner,
+		closeChan:      closeChan,
 		onceFuncCloser: closer,
 	}
 }
@@ -102,11 +107,24 @@ type gitDiffIterator struct {
 	rc      io.ReadCloser
 	scanner *bufio.Scanner
 
+	closeChan      chan struct{}
 	onceFuncCloser func() error
 }
 
 func (i *gitDiffIterator) Next() (gitdomain.PathStatus, error) {
+	select {
+	case <-i.closeChan:
+		return gitdomain.PathStatus{}, io.EOF
+	default:
+	}
+
 	for i.scanner.Scan() {
+		select {
+		case <-i.closeChan:
+			return gitdomain.PathStatus{}, io.EOF
+		default:
+		}
+
 		status := i.scanner.Text()
 		if len(status) == 0 {
 			continue
