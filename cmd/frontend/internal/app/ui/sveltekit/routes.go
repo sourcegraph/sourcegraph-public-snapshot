@@ -49,8 +49,8 @@ var svelteKitRoutes = []svelteKitRoute{
 		Tag:     tags.EnableOptIn,
 	},
 	{
-		Id:      "/[...repo=reporev]/(validrev)/-/commits",
-		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/commits/?$"),
+		Id:      "/[...repo=reporev]/(validrev)/-/commits/[...path]",
+		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/commits(?:/.*)?/?$"),
 		Tag:     tags.EnableOptIn,
 	},
 	{

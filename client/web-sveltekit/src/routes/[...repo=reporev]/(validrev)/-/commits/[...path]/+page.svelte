@@ -1,12 +1,13 @@
 <script lang="ts">
-    import Commit from '$lib/Commit.svelte'
+    import { get } from 'svelte/store'
 
-    import type { PageData, Snapshot } from './$types'
+    import { navigating } from '$app/stores'
+    import Commit from '$lib/Commit.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
-    import { get } from 'svelte/store'
-    import { navigating } from '$app/stores'
     import { Alert } from '$lib/wildcard'
+
+    import type { PageData, Snapshot } from './$types'
     import type { CommitsPage_GitCommitConnection } from './page.gql'
 
     export let data: PageData
@@ -52,6 +53,9 @@
 </svelte:head>
 
 <section>
+    {#if data.path}
+        <h2>Commits in <code>{data.path}</code></h2>
+    {/if}
     <Scroller bind:this={scroller} margin={600} on:more={fetchMore}>
         {#if !$commitsQuery.restoring && commits}
             <ul>
@@ -68,7 +72,7 @@
             <div>
                 <LoadingSpinner />
             </div>
-        {:else if $commitsQuery.error}
+        {:else if !$commitsQuery.fetching && $commitsQuery.error}
             <div>
                 <Alert variant="danger">
                     Unable to fetch commits: {$commitsQuery.error.message}
@@ -85,6 +89,7 @@
         overflow: hidden;
     }
 
+    h2,
     ul,
     div {
         padding: 1rem;

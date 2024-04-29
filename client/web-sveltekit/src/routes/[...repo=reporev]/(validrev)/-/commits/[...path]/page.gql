@@ -8,12 +8,12 @@ fragment CommitsPage_GitCommitConnection on GitCommitConnection {
     }
 }
 
-query CommitsPage_CommitsQuery($repoName: String!, $revision: String!, $first: Int, $afterCursor: String) {
+query CommitsPage_CommitsQuery($repoName: String!, $revision: String!, $first: Int, $path: String, $afterCursor: String) {
     repository(name: $repoName) {
         id
         commit(rev: $revision) {
             id
-            ancestors(first: $first, afterCursor: $afterCursor) {
+            ancestors(first: $first, afterCursor: $afterCursor, path: $path) {
                 ...CommitsPage_GitCommitConnection
             }
         }
