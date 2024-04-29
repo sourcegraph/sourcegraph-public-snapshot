@@ -2,6 +2,7 @@ import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, type WildcardMockedResponse, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
@@ -124,7 +125,7 @@ export const Overview: StoryFn = () => (
                     )
                 }
             >
-                <BatchChangesSiteConfigSettingsPage />
+                <BatchChangesSiteConfigSettingsPage telemetryRecorder={noOpTelemetryRecorder} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -134,7 +135,7 @@ export const NoItems: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink([ROLLOUT_WINDOWS_CONFIGURATION_MOCK, createMock()])}>
-                <BatchChangesSiteConfigSettingsPage />
+                <BatchChangesSiteConfigSettingsPage telemetryRecorder={noOpTelemetryRecorder} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -220,7 +221,7 @@ export const ConfigAdded: StoryFn = () => (
                     ])
                 }
             >
-                <BatchChangesSiteConfigSettingsPage />
+                <BatchChangesSiteConfigSettingsPage telemetryRecorder={noOpTelemetryRecorder} />
             </MockedTestProvider>
         )}
     </WebStory>
