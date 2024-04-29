@@ -3,7 +3,6 @@ package events_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"sync/atomic"
 	"testing"
@@ -60,7 +59,7 @@ func TestPublish(t *testing.T) {
 			Timestamp: timestamppb.Now(),
 			// Feature, Action must pass validation
 			Feature: "testPublish",
-			Action:  fmt.Sprintf("action-%d", i),
+			Action:  "action",
 		}
 	}
 
@@ -84,6 +83,8 @@ func TestPublish(t *testing.T) {
 	// Collect all the results we got
 	for _, r := range results {
 		assert.Nil(t, r.PublishError)
+		assert.Equal(t, r.EventFeature, "testPublish")
+		assert.Equal(t, r.EventAction, "action")
 		eventResults[r.EventID] = true
 	}
 

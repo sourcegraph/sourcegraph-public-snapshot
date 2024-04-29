@@ -22,7 +22,7 @@ var DefaultEventIDFunc = func() string {
 // - Start with a lowercase letter
 // - Contain only letters, and dashes and dots as delimters
 // - Not contain any whitespace
-var featureActionRegex = regexp.MustCompile(`^[a-z][a-zA-Z0-9-\.]+$`)
+var featureActionRegex = regexp.MustCompile(`^[a-z][a-zA-Z-\.]+$`)
 
 // featureActionMaxLength is the maximum length of a feature or action name.
 const featureActionMaxLength = 64
@@ -40,10 +40,10 @@ func ValidateEventFeatureAction(feature, action string) error {
 		return errors.New("'action' must be less than 64 characters")
 	}
 	if !featureActionRegex.MatchString(feature) {
-		return errors.New("'feature' must start with a lowercase letter and contain only letters, numbers, dashes, and dots")
+		return errors.New("'feature' must start with a lowercase letter and contain only letters, dashes, and dots")
 	}
 	if !featureActionRegex.MatchString(action) {
-		return errors.New("'action' must start with a lowercase letter and contain only letters, numbers, dashes, and dots")
+		return errors.New("'action' must start with a lowercase letter and contain only letters, dashes, and dots")
 	}
 	return nil
 }
