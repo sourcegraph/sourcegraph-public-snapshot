@@ -12,5 +12,8 @@ fragment GitTagsConnection on GitRefConnection {
         id
         ...GitReference_Ref
     }
+    pageInfo {
+        hasNextPage
+    }
     totalCount
 }
