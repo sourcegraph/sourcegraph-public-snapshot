@@ -60,8 +60,17 @@
             border: 'none',
             color: 'var(--line-number-color)',
         },
+        '.cm-gutterElement': {
+            lineHeight: '1.54',
+            minWidth: '40px !important',
+
+            '&:hover': {
+                color: 'var(--text-body)',
+            },
+        },
         '.cm-line': {
-            paddingLeft: '1ex',
+            paddingLeft: '3ex',
+            lineHeight: '1.54',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
