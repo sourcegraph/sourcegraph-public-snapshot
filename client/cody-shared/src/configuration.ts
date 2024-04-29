@@ -31,8 +31,6 @@ export interface Configuration {
     autocompleteExperimentalSyntacticPostProcessing?: boolean
     autocompleteExperimentalGraphContext?: boolean
     isRunningInsideAgent?: boolean
-    clientName?: string
-    clientVersion?: string
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

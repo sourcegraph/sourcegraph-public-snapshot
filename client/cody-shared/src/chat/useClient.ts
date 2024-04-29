@@ -23,13 +23,7 @@ import { reformatBotMessage } from './viewHelpers'
 
 export type CodyClientConfig = Pick<
     ConfigurationWithAccessToken,
-    | 'serverEndpoint'
-    | 'useContext'
-    | 'accessToken'
-    | 'customHeaders'
-    | 'experimentalLocalSymbols'
-    | 'clientName'
-    | 'clientVersion'
+    'serverEndpoint' | 'useContext' | 'accessToken' | 'customHeaders' | 'experimentalLocalSymbols'
 > & { debugEnable: boolean; needsEmailVerification: boolean }
 
 export interface CodyClientScope {

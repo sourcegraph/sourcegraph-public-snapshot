@@ -154,22 +154,6 @@ export const useCodyChat = ({
         [setTranscriptHistoryStateInternal, setStorageQuotaExceeded]
     )
 
-    const config = useMemo(() => {
-        const c: CodyClientConfig = initialConfig || {
-            serverEndpoint: window.location.origin,
-            useContext: 'unified',
-            accessToken: null,
-            customHeaders: window.context.xhrHeaders,
-            debugEnable: false,
-            needsEmailVerification: isEmailVerificationNeededForCody(),
-            experimentalLocalSymbols: false,
-        }
-        // Sourcegraph >=5.4 instances require client name and version params on the completions endpoint to ensure client supports Cody Ignore functionality.
-        // Ensure client name is always set to "web" for Cody Web. Client version is not required for Cody Web as it aligns with server version.
-        // See https://github.com/sourcegraph/sourcegraph/pull/62048.
-        c.clientName = 'web'
-        return c
-    }, [initialConfig])
     const {
         transcript,
         isMessageInProgress,
@@ -187,7 +171,19 @@ export const useCodyChat = ({
         editMessage: editMessageInternal,
         executeRecipe: executeRecipeInternal,
         ...client
-    } = useClient({ config, scope: initialScope, onEvent })
+    } = useClient({
+        config: initialConfig || {
+            serverEndpoint: window.location.origin,
+            useContext: 'unified',
+            accessToken: null,
+            customHeaders: window.context.xhrHeaders,
+            debugEnable: false,
+            needsEmailVerification: isEmailVerificationNeededForCody(),
+            experimentalLocalSymbols: false,
+        },
+        scope: initialScope,
+        onEvent,
+    })
 
     /** Event logger for transcript specific events to capture the transcriptId */
     const logTranscriptEvent = useCallback(
