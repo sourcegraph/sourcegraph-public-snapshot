@@ -9,6 +9,7 @@
     import { settings } from '$lib/stores'
     import { repositoryInsertText } from '$lib/shared'
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import { registerHotkey } from '$lib/Hotkey'
 
     export let repoName: string
 
@@ -19,6 +20,11 @@
 
     let searchInput: SearchInput | undefined
     let queryState = queryStateStore({ query: `repo:${repositoryInsertText({ repository: repoName })} ` }, $settings)
+
+    registerHotkey({
+        keys: { key: '/' },
+        handler: () => open.set(true),
+    })
 
     function handleSearchSubmit(state: QueryState): void {
         SVELTE_LOGGER.log(
@@ -46,7 +52,7 @@
 {:else}
     <button {...$trigger} use:trigger>
         <Icon svgPath={mdiMagnify} inline aria-hidden="true" />
-        Type / to search
+        Type <kbd>/</kbd> to search
     </button>
 {/if}
 
