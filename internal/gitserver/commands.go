@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -1107,30 +1108,51 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, ba
 	return api.CommitID(res.GetMergeBaseCommitSha()), nil
 }
 
-// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
-func (c *clientImplementor) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) (err error) {
+func (c *clientImplementor) RevList(ctx context.Context, repo api.RepoName, commit string, count int) (_ []api.CommitID, nextCursor string, err error) {
 	ctx, _, endObservation := c.operations.revList.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
-			attribute.String("repo", repo),
+			repo.Attr(),
 			attribute.String("commit", commit),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
-	command := c.gitCommand(api.RepoName(repo), RevListArgs(commit)...)
-	command.DisableTimeout()
-	stdout, err := command.StdoutReader(ctx)
-	if err != nil {
-		return err
-	}
-	defer stdout.Close()
+	command := c.gitCommand(repo, revListArgs(count, commit)...)
 
-	return gitdomain.RevListEach(stdout, onCommit)
+	stdout, err := command.Output(ctx)
+	if err != nil {
+		return nil, "", err
+	}
+
+	commits := make([]api.CommitID, 0, count+1)
+
+	lr := byteutils.NewLineReader(stdout)
+	for lr.Scan() {
+		line := lr.Line()
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		commit := api.CommitID(line)
+		commits = append(commits, commit)
+	}
+
+	if len(commits) > count {
+		nextCursor = string(commits[len(commits)-1])
+		commits = commits[:count]
+	}
+
+	return commits, nextCursor, nil
 }
 
-func RevListArgs(givenCommit string) []string {
-	return []string{"rev-list", "--first-parent", givenCommit}
+func revListArgs(count int, givenCommit string) []string {
+	return []string{
+		"rev-list",
+		"--first-parent",
+		fmt.Sprintf("--max-count=%d", count+1),
+		givenCommit,
+	}
 }
 
 // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git

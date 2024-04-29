@@ -101,8 +101,30 @@ func (c *gitserverClient) LogReverseEach(ctx context.Context, repo string, commi
 	return c.innerClient.LogReverseEach(ctx, repo, commit, n, onLogEntry)
 }
 
+const revListPageSize = 100
+
 func (c *gitserverClient) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	return c.innerClient.RevList(ctx, repo, commit, onCommit)
+	nextCursor := commit
+	for {
+		var commits []api.CommitID
+		var err error
+		commits, nextCursor, err = c.innerClient.RevList(ctx, api.RepoName(repo), nextCursor, revListPageSize)
+		if err != nil {
+			return err
+		}
+		for _, c := range commits {
+			shouldContinue, err := onCommit(string(c))
+			if err != nil {
+				return err
+			}
+			if !shouldContinue {
+				return nil
+			}
+		}
+		if nextCursor == "" {
+			return nil
+		}
+	}
 }
 
 var NUL = []byte{0}
