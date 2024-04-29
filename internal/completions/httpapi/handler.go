@@ -453,12 +453,12 @@ func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature t
 	}
 }
 
-type clientCodyIgnoreCompatibilityError struct {
+type codyIgnoreCompatibilityError struct {
 	reason     string
 	statusCode int
 }
 
-func (e *clientCodyIgnoreCompatibilityError) Error() string {
+func (e *codyIgnoreCompatibilityError) Error() string {
 	// prefix value is used to identify specific errors in the Cody clients codebases.
 	// When changing its value be sure to update the clients code.
 	const prefix = "ClientCodyIgnoreCompatibilityError"
@@ -466,9 +466,9 @@ func (e *clientCodyIgnoreCompatibilityError) Error() string {
 }
 
 // checkClientCodyIgnoreCompatibility checks if the client version respects Cody context filters (a.k.a. Cody Ignore) defined in the site config.
-// A non-nil clientCodyIgnoreCompatibilityError implies that the HTTP request should be rejected with the error text and code from the returned error.
+// A non-nil codyIgnoreCompatibilityError implies that the HTTP request should be rejected with the error text and code from the returned error.
 // Error text is safe to be surfaced to end user.
-func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompatibilityError {
+func checkClientCodyIgnoreCompatibility(r *http.Request) *codyIgnoreCompatibilityError {
 	// If Cody context filters are not defined on the instance, we do not restrict client version.
 	// Because the site hasn't configured Cody Ignore, no need to enforce it.
 	if conf.SiteConfig().CodyContextFilters == nil {
@@ -477,7 +477,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 
 	clientName := types.CodyClientName(r.URL.Query().Get("client-name"))
 	if clientName == "" {
-		return &clientCodyIgnoreCompatibilityError{
+		return &codyIgnoreCompatibilityError{
 			reason:     "\"client-name\" query param is required.",
 			statusCode: http.StatusNotAcceptable,
 		}
@@ -498,7 +498,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 	case types.CodyClientJetbrains:
 		cvc = clientVersionConstraint{client: clientName, constraint: ">= 6.0.0"}
 	default:
-		return &clientCodyIgnoreCompatibilityError{
+		return &codyIgnoreCompatibilityError{
 			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
 			statusCode: http.StatusNotAcceptable,
 		}
@@ -506,7 +506,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 
 	clientVersion := r.URL.Query().Get("client-version")
 	if clientVersion == "" {
-		return &clientCodyIgnoreCompatibilityError{
+		return &codyIgnoreCompatibilityError{
 			reason:     "\"client-version\" query param is required.",
 			statusCode: http.StatusNotAcceptable,
 		}
@@ -514,7 +514,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 
 	c, err := semver.NewConstraint(cvc.constraint)
 	if err != nil {
-		return &clientCodyIgnoreCompatibilityError{
+		return &codyIgnoreCompatibilityError{
 			reason:     fmt.Sprintf("Cody for %s version constraint %q doesn't follow semver spec.", cvc.client, cvc.constraint),
 			statusCode: http.StatusInternalServerError,
 		}
@@ -522,7 +522,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 
 	v, err := semver.NewVersion(clientVersion)
 	if err != nil {
-		return &clientCodyIgnoreCompatibilityError{
+		return &codyIgnoreCompatibilityError{
 			reason:     fmt.Sprintf("Cody for %s version %q doesn't follow semver spec.", cvc.client, clientVersion),
 			statusCode: http.StatusBadRequest,
 		}
@@ -530,7 +530,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *clientCodyIgnoreCompat
 
 	ok := c.Check(v)
 	if !ok {
-		return &clientCodyIgnoreCompatibilityError{
+		return &codyIgnoreCompatibilityError{
 			reason:     fmt.Sprintf("Cody for %s version %q doesn't match version constraint %q", cvc.client, clientVersion, cvc.constraint),
 			statusCode: http.StatusNotAcceptable,
 		}

@@ -31,7 +31,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 		name string
 		ccf  *schema.CodyContextFilters
 		q    url.Values
-		want *clientCodyIgnoreCompatibilityError
+		want *codyIgnoreCompatibilityError
 	}{
 		{
 			name: "Cody context filters not defined in the site config",
@@ -42,7 +42,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			name: "missing client name and version",
 			ccf:  ccf,
 			q:    url.Values{},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     "\"client-name\" query param is required.",
 				statusCode: http.StatusNotAcceptable,
 			},
@@ -53,7 +53,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			q: url.Values{
 				"client-version": []string{"1.1.1"},
 			},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     "\"client-name\" query param is required.",
 				statusCode: http.StatusNotAcceptable,
 			},
@@ -64,7 +64,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			q: url.Values{
 				"client-name": []string{string(types.CodyClientVscode)},
 			},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     "\"client-version\" query param is required.",
 				statusCode: http.StatusNotAcceptable,
 			},
@@ -75,7 +75,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			q: url.Values{
 				"client-name": []string{"sublime"},
 			},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     fmt.Sprintf("please use one of the supported clients: %s, %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
 				statusCode: http.StatusNotAcceptable,
 			},
@@ -87,7 +87,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-name":    []string{string(types.CodyClientVscode)},
 				"client-version": []string{"dev"},
 			},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     "Cody for vscode version \"dev\" doesn't follow semver spec.",
 				statusCode: http.StatusBadRequest,
 			},
@@ -99,7 +99,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-name":    []string{string(types.CodyClientVscode)},
 				"client-version": []string{"."},
 			},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     "Cody for vscode version \".\" doesn't follow semver spec.",
 				statusCode: http.StatusBadRequest,
 			},
@@ -111,7 +111,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-name":    []string{string(types.CodyClientVscode)},
 				"client-version": []string{"1.2.3-"},
 			},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     "Cody for vscode version \"1.2.3-\" doesn't follow semver spec.",
 				statusCode: http.StatusBadRequest,
 			},
@@ -123,7 +123,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-name":    []string{string(types.CodyClientVscode)},
 				"client-version": []string{"1.2.3-a^1"},
 			},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     "Cody for vscode version \"1.2.3-a^1\" doesn't follow semver spec.",
 				statusCode: http.StatusBadRequest,
 			},
@@ -135,7 +135,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-name":    []string{string(types.CodyClientVscode)},
 				"client-version": []string{"1.2.3-alpha+"},
 			},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     "Cody for vscode version \"1.2.3-alpha+\" doesn't follow semver spec.",
 				statusCode: http.StatusBadRequest,
 			},
@@ -147,7 +147,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-name":    []string{string(types.CodyClientVscode)},
 				"client-version": []string{"0.1"},
 			},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     fmt.Sprintf("Cody for %s version \"0.1\" doesn't match version constraint \">= 1.20.0\"", types.CodyClientVscode),
 				statusCode: http.StatusNotAcceptable,
 			},
@@ -159,7 +159,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-name":    []string{string(types.CodyClientVscode)},
 				"client-version": []string{"1.2"},
 			},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     fmt.Sprintf("Cody for %s version \"1.2\" doesn't match version constraint \">= 1.20.0\"", types.CodyClientVscode),
 				statusCode: http.StatusNotAcceptable,
 			},
@@ -171,7 +171,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-name":    []string{string(types.CodyClientVscode)},
 				"client-version": []string{"1.19.0"},
 			},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     fmt.Sprintf("Cody for %s version \"1.19.0\" doesn't match version constraint \">= 1.20.0\"", types.CodyClientVscode),
 				statusCode: http.StatusNotAcceptable,
 			},
@@ -220,7 +220,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-name":    []string{string(types.CodyClientVscode)},
 				"client-version": []string{"2.3.11-alpha"},
 			},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     fmt.Sprintf("Cody for %s version \"2.3.11-alpha\" doesn't match version constraint \">= 1.20.0\"", types.CodyClientVscode),
 				statusCode: http.StatusNotAcceptable,
 			},
@@ -233,7 +233,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-name":    []string{string(types.CodyClientVscode)},
 				"client-version": []string{"2.3.11-beta+exp.sha.5114f85a"},
 			},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     fmt.Sprintf("Cody for %s version \"2.3.11-beta+exp.sha.5114f85a\" doesn't match version constraint \">= 1.20.0\"", types.CodyClientVscode),
 				statusCode: http.StatusNotAcceptable,
 			},
@@ -245,7 +245,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-name":    []string{string(types.CodyClientJetbrains)},
 				"client-version": []string{"1.14.0"},
 			},
-			want: &clientCodyIgnoreCompatibilityError{
+			want: &codyIgnoreCompatibilityError{
 				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint \">= 6.0.0\"", types.CodyClientJetbrains),
 				statusCode: http.StatusNotAcceptable,
 			},
