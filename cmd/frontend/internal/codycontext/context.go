@@ -250,7 +250,6 @@ func getKeywordContextExcludeFilePathsQuery() string {
 	var excludeFilePaths = []string{
 		"\\.min\\.js$",
 		"\\.map$",
-		"dist\\",
 	}
 
 	filters := []string{}
@@ -261,7 +260,7 @@ func getKeywordContextExcludeFilePathsQuery() string {
 	return strings.Join(filters, " ")
 }
 
-var keywordContextExcludeFilePaths = getKeywordContextExcludeFilePathsQuery()
+var keywordContextExcludeFilePathsQuery = getKeywordContextExcludeFilePathsQuery()
 
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
 func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, matcher FileMatcher) (_ []FileChunkContext, err error) {
@@ -283,7 +282,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		regexEscapedRepoNames[i] = regexp.QuoteMeta(string(repo.Name))
 	}
 
-	keywordQuery := fmt.Sprintf(`repo:^%s$ type:file type:path %s %s`, query.UnionRegExps(regexEscapedRepoNames), keywordContextExcludeFilePaths, args.Query)
+	keywordQuery := fmt.Sprintf(`repo:^%s$ type:file type:path %s %s`, query.UnionRegExps(regexEscapedRepoNames), keywordContextExcludeFilePathsQuery, args.Query)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
