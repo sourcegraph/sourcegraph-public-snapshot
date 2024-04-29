@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 
-import { R } from 'linguist-languages'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import AlertIcon from 'mdi-react/AlertIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
