@@ -1,4 +1,5 @@
 @import 'wildcard/src/global-styles/base.scss';
+@import 'svelte-overrides.scss';
 
 .match-highlight {
     background-color: var(--mark-bg);

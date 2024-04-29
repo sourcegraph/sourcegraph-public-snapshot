@@ -284,7 +284,16 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 		f := guardrails.NoopCompletionsFilter(eventSink)
 		if cf := conf.GetConfigFeatures(conf.SiteConfig()); cf != nil && cf.Attribution &&
 			featureflag.FromContext(ctx).GetBoolOr("autocomplete-attribution", true) {
-			ff, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
+			factory := guardrails.NewCompletionsFilter
+			// TODO(#61828) - Validate & cleanup:
+			// 1.  If experiments are successful on S2 and we do not see any panics,
+			//     please switch the feature flag default value to true.
+			// 2.  Afterwards cleanup the implementation and only use V2 completion filter.
+			//     Remove v1 implementation completely.
+			if featureflag.FromContext(ctx).GetBoolOr("autocomplete-attribution-v2", false) {
+				factory = guardrails.NewCompletionsFilter2
+			}
+			ff, err := factory(guardrails.CompletionsFilterConfig{
 				Sink:             eventSink,
 				Test:             test,
 				AttributionError: attributionErrorLog,

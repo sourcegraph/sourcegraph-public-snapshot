@@ -29,7 +29,7 @@ type DatabaseSpec struct {
 type BlobstoreSpec struct {
 	// Disabled defines if Blobstore is enabled or not.
 	// Default: false
-	Disabled bool `json:"enabled,omitempty"`
+	Disabled bool `json:"disabled,omitempty"`
 
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 200Gi
@@ -256,18 +256,24 @@ type RedisStoreSpec struct {
 
 // RepoUpdaterSpec defines the desired state of the Repo Updater service.
 type RepoUpdaterSpec struct {
+	// Disabled defines if Repo Updater is enabled or not.
+	// Default: false
+	Disabled bool `json:"disabled,omitempty"`
+
 	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Env defines environment variables for Redis Updater.
 	Env map[string]string `json:"env,omitempty"`
+
+	ServiceAccountAnnotations map[string]string `json:"serviceAccountAnnotations,omitempty"`
 }
 
 // SearcherSpec defines the desired state of the Searcher service.
 type SearcherSpec struct {
-	// Enabled defines if Code Intel is enabled or not.
-	// Default: true
-	Enabled bool `json:"enabled,omitempty"`
+	// Disabled defines if Code Intel is enabled or not.
+	// Default: false
+	Disabled bool `json:"disabled,omitempty"`
 
 	// Replicas defines the number of Searcher pod replicas.
 	// Default: 1

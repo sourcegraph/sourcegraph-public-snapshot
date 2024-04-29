@@ -3,6 +3,7 @@ import { map, mergeMap } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 
 import { refreshAuthenticatedUser } from '../auth'
 import { requestGraphQL } from '../backend/graphql'
@@ -15,7 +16,6 @@ import type {
     UpdateOrganizationResult,
     UpdateOrganizationVariables,
 } from '../graphql-operations'
-import { eventLogger } from '../tracking/eventLogger'
 
 export const ORGANIZATION_MEMBERS_QUERY = gql`
     query OrganizationSettingsMembers(
@@ -80,10 +80,10 @@ export function createOrganization(args: {
         ).pipe(
             mergeMap(({ data, errors }) => {
                 if (!data?.createOrganization) {
-                    eventLogger.log('NewOrgFailed')
+                    EVENT_LOGGER.log('NewOrgFailed')
                     throw createAggregateError(errors)
                 }
-                eventLogger.log('NewOrgCreated')
+                EVENT_LOGGER.log('NewOrgCreated')
                 return concat(refreshAuthenticatedUser(), [data.createOrganization])
             })
         )
@@ -115,10 +115,10 @@ export function removeUserFromOrganization(args: {
     ).pipe(
         mergeMap(({ errors }) => {
             if (errors && errors.length > 0) {
-                eventLogger.log('RemoveOrgMemberFailed')
+                EVENT_LOGGER.log('RemoveOrgMemberFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('OrgMemberRemoved')
+            EVENT_LOGGER.log('OrgMemberRemoved')
             // Reload user data
             return concat(refreshAuthenticatedUser(), [undefined])
         })
@@ -149,10 +149,10 @@ export function updateOrganization(id: Scalars['ID'], displayName: string): Prom
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || (errors && errors.length > 0)) {
-                    eventLogger.log('UpdateOrgSettingsFailed')
+                    EVENT_LOGGER.log('UpdateOrgSettingsFailed')
                     throw createAggregateError(errors)
                 }
-                eventLogger.log('OrgSettingsUpdated')
+                EVENT_LOGGER.log('OrgSettingsUpdated')
                 return
             })
         )

@@ -11,6 +11,7 @@ import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/que
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Alert,
     Button,
@@ -36,7 +37,6 @@ import {
 } from '../../../../batches/utils'
 import { useHandleSubmitFeedback } from '../../../../hooks'
 import { SavedSearchModal } from '../../../../savedSearches/SavedSearchModal'
-import { eventLogger } from '../../../../tracking/eventLogger'
 import { DOTCOM_URL } from '../../../../tracking/util'
 import { SearchResultsCsvExportModal } from '../../export/SearchResultsCsvExportModal'
 import { AggregationUIMode, useAggregationUIMode } from '../aggregation'
@@ -195,7 +195,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
             return
         }
 
-        eventLogger.log(
+        EVENT_LOGGER.log(
             'web:codySearch:feedbackSubmitted',
             !isPrivateInstance ? { ...codySearchInput, positive } : null,
             !isPrivateInstance ? { ...codySearchInput, positive } : null

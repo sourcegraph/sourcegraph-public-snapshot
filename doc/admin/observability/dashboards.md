@@ -6350,6 +6350,37 @@ Query:
 
 <br />
 
+#### gitserver: high_memory_git_commands
+
+<p class="subtitle">Number of git commands that exceeded the threshold for high memory usage</p>
+
+This graph tracks the number of git subcommands that gitserver ran that exceeded the threshold for high memory usage.
+This graph in itself is not an alert, but it is used to learn about the memory usage of gitserver.
+
+If gitserver frequently serves requests where the status code is KILLED, this graph might help to correlate that
+with the high memory usage.
+
+This graph spiking is not a problem necessarily. But when subcommands or the whole gitserver service are getting
+OOM killed and this graph shows spikes, increasing the memory might be useful.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100021` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query:
+
+```
+sort_desc(sum(sum_over_time(src_gitserver_exec_high_memory_usage_count{instance=~`${shard:regex}`}[2m])) by (cmd))
+```
+</details>
+
+<br />
+
 #### gitserver: running_git_commands
 
 <p class="subtitle">Git commands running on each gitserver instance</p>

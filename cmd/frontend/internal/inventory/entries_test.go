@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -21,8 +22,11 @@ func TestContext_Entries(t *testing.T) {
 		cacheGetCalls      []string
 		cacheSetCalls      = map[string]Inventory{}
 	)
+	var mu sync.Mutex
 	c := Context{
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
+			mu.Lock()
+			defer mu.Unlock()
 			readTreeCalls = append(readTreeCalls, path)
 			switch path {
 			case "d":
@@ -37,6 +41,8 @@ func TestContext_Entries(t *testing.T) {
 			}
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
+			mu.Lock()
+			defer mu.Unlock()
 			newFileReaderCalls = append(newFileReaderCalls, path)
 			var data []byte
 			switch path {
@@ -51,11 +57,15 @@ func TestContext_Entries(t *testing.T) {
 			}
 			return io.NopCloser(bytes.NewReader(data)), nil
 		},
-		CacheGet: func(e fs.FileInfo) (Inventory, bool) {
+		CacheGet: func(ctx context.Context, e fs.FileInfo) (Inventory, bool) {
+			mu.Lock()
+			defer mu.Unlock()
 			cacheGetCalls = append(cacheGetCalls, e.Name())
 			return Inventory{}, false
 		},
-		CacheSet: func(e fs.FileInfo, inv Inventory) {
+		CacheSet: func(ctx context.Context, e fs.FileInfo, inv Inventory) {
+			mu.Lock()
+			defer mu.Unlock()
 			if _, ok := cacheSetCalls[e.Name()]; ok {
 				t.Fatalf("already stored %q in cache", e.Name())
 			}
@@ -83,13 +93,8 @@ func TestContext_Entries(t *testing.T) {
 	if want := []string{"d", "d/a"}; !reflect.DeepEqual(readTreeCalls, want) {
 		t.Errorf("ReadTree calls: got %q, want %q", readTreeCalls, want)
 	}
-	if want := []string{
-		// We need to read all files to get line counts
-		"d/a/c.m",
-		"d/b.go",
-		"f.go",
-	}; !reflect.DeepEqual(newFileReaderCalls, want) {
-		t.Errorf("GetFileReader calls: got %q, want %q", newFileReaderCalls, want)
+	if len(newFileReaderCalls) != 3 {
+		t.Errorf("GetFileReader calls: got %d, want %d", len(newFileReaderCalls), 3)
 	}
 	if want := []string{"d", "d/a", "f.go"}; !reflect.DeepEqual(cacheGetCalls, want) {
 		t.Errorf("CacheGet calls: got %q, want %q", cacheGetCalls, want)

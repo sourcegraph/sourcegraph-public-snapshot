@@ -5,6 +5,7 @@ import { lastValueFrom } from 'rxjs'
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
@@ -15,7 +16,6 @@ import type {
     UserEmailsResult,
     UserSettingsAreaUserFields,
 } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 
 import styles from './SetUserPrimaryEmailForm.module.scss'
 
@@ -73,7 +73,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
                     )
                 )
 
-                eventLogger.log('UserEmailAddressSetAsPrimary')
+                EVENT_LOGGER.log('UserEmailAddressSetAsPrimary')
                 setStatusOrError(undefined)
 
                 if (onDidSet) {

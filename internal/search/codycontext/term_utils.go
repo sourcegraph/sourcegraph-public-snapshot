@@ -4,11 +4,20 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/grafana/regexp"
 	"github.com/kljensen/snowball"
 )
 
 func removePunctuation(input string) string {
 	return strings.TrimFunc(input, unicode.IsPunct)
+}
+
+var separatorRegex = regexp.MustCompile("[:.]|->")
+
+// tokenize splits on runes that usually separate namespaces (class, package,
+// ...) from methods or functions.
+func tokenize(input string) []string {
+	return separatorRegex.Split(input, -1)
 }
 
 func stemTerm(input string) string {

@@ -33,7 +33,7 @@ import (
 // limitations of Go generics.
 func createOrUpdateObject[R client.Object](
 	ctx context.Context, r *Reconciler, updateIfChanged any,
-	owner client.Object, obj client.Object, objKind R,
+	owner client.Object, obj, objKind R,
 ) error {
 	logger := log.FromContext(ctx).WithValues("kind", obj.GetObjectKind().GroupVersionKind(), "namespace", obj.GetNamespace(), "name", obj.GetName())
 	namespacedName := types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}

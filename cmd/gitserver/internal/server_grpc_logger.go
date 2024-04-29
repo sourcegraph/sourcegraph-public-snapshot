@@ -26,7 +26,7 @@ type loggingGRPCServer struct {
 	proto.UnsafeGitserverServiceServer // Consciously opt out of forward compatibility checks to ensure that the go-compiler will catch any breaking changes.
 }
 
-func (l *loggingGRPCServer) doLog(fullMethod string, statusCode codes.Code, traceID string, duration time.Duration, requestFields ...log.Field) {
+func doLog(logger log.Logger, fullMethod string, statusCode codes.Code, traceID string, duration time.Duration, requestFields ...log.Field) {
 	server, method := grpcutil.SplitMethodName(fullMethod)
 
 	fields := []log.Field{
@@ -43,8 +43,7 @@ func (l *loggingGRPCServer) doLog(fullMethod string, statusCode codes.Code, trac
 		fields = append(fields, log.String("request", "<empty>"))
 	}
 
-	l.logger.Debug(fmt.Sprintf("Handled %s RPC", method), fields...)
-
+	logger.Debug(fmt.Sprintf("Handled %s RPC", method), fields...)
 }
 
 func (l *loggingGRPCServer) CreateCommitFromPatchBinary(server proto.GitserverService_CreateCommitFromPatchBinaryServer) (err error) {
@@ -60,7 +59,8 @@ func (l *loggingGRPCServer) CreateCommitFromPatchBinary(server proto.GitserverSe
 			fields = createCommitFromPatchBinaryRequestMetadataToLogFields(meta)
 		}
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_CreateCommitFromPatchBinary_FullMethodName,
 			status.Code(err),
 			trace.Context(server.Context()).TraceID,
@@ -138,7 +138,8 @@ func (l *loggingGRPCServer) DiskInfo(ctx context.Context, request *proto.DiskInf
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_DiskInfo_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -155,7 +156,8 @@ func (l *loggingGRPCServer) Exec(request *proto.ExecRequest, server proto.Gitser
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_Exec_FullMethodName,
 			status.Code(err),
 			trace.Context(server.Context()).TraceID,
@@ -185,7 +187,8 @@ func (l *loggingGRPCServer) GetObject(ctx context.Context, request *proto.GetObj
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_GetObject_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -211,7 +214,8 @@ func (l *loggingGRPCServer) IsRepoCloneable(ctx context.Context, request *proto.
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_IsRepoCloneable_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -236,7 +240,8 @@ func (l *loggingGRPCServer) ListGitolite(ctx context.Context, request *proto.Lis
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_ListGitolite_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -269,7 +274,8 @@ func (l *loggingGRPCServer) Search(request *proto.SearchRequest, server proto.Gi
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_Search_FullMethodName,
 			status.Code(err),
 			trace.Context(server.Context()).TraceID,
@@ -384,7 +390,8 @@ func (l *loggingGRPCServer) Archive(request *proto.ArchiveRequest, server proto.
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_Archive_FullMethodName,
 			status.Code(err),
 			trace.Context(server.Context()).TraceID,
@@ -412,7 +419,8 @@ func (l *loggingGRPCServer) RepoCloneProgress(ctx context.Context, request *prot
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_RepoCloneProgress_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -437,7 +445,8 @@ func (l *loggingGRPCServer) IsPerforcePathCloneable(ctx context.Context, request
 
 	defer func() {
 		elapsed := time.Since(start)
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_IsPerforcePathCloneable_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -471,7 +480,8 @@ func (l *loggingGRPCServer) CheckPerforceCredentials(ctx context.Context, reques
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_CheckPerforceCredentials_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -497,7 +507,8 @@ func (l *loggingGRPCServer) PerforceUsers(ctx context.Context, request *proto.Pe
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_PerforceUsers_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -522,7 +533,8 @@ func (l *loggingGRPCServer) PerforceProtectsForUser(ctx context.Context, request
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_PerforceProtectsForUser_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -548,7 +560,8 @@ func (l *loggingGRPCServer) PerforceProtectsForDepot(ctx context.Context, reques
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_PerforceProtectsForDepot_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -574,7 +587,8 @@ func (l *loggingGRPCServer) PerforceGroupMembers(ctx context.Context, request *p
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_PerforceGroupMembers_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -600,7 +614,8 @@ func (l *loggingGRPCServer) IsPerforceSuperUser(ctx context.Context, request *pr
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_IsPerforceSuperUser_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -625,7 +640,8 @@ func (l *loggingGRPCServer) PerforceGetChangelist(ctx context.Context, request *
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_PerforceGetChangelist_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -651,7 +667,8 @@ func (l *loggingGRPCServer) MergeBase(ctx context.Context, request *proto.MergeB
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_MergeBase_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -678,7 +695,8 @@ func (l *loggingGRPCServer) Blame(request *proto.BlameRequest, server proto.Gits
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_Blame_FullMethodName,
 			status.Code(err),
 			trace.Context(server.Context()).TraceID,
@@ -714,7 +732,8 @@ func (l *loggingGRPCServer) DefaultBranch(ctx context.Context, request *proto.De
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_DefaultBranch_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -740,7 +759,8 @@ func (l *loggingGRPCServer) ReadFile(request *proto.ReadFileRequest, server prot
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_ReadFile_FullMethodName,
 			status.Code(err),
 			trace.Context(server.Context()).TraceID,
@@ -767,7 +787,8 @@ func (l *loggingGRPCServer) GetCommit(ctx context.Context, request *proto.GetCom
 
 	defer func() {
 		elapsed := time.Since(start)
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_GetCommit_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -793,7 +814,8 @@ func (l *loggingGRPCServer) ResolveRevision(ctx context.Context, request *proto.
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_ResolveRevision_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -820,7 +842,8 @@ func (l *loggingGRPCServer) ListRefs(request *proto.ListRefsRequest, server prot
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_ListRefs_FullMethodName,
 			status.Code(err),
 			trace.Context(server.Context()).TraceID,
@@ -849,7 +872,8 @@ func (l *loggingGRPCServer) RevAtTime(ctx context.Context, request *proto.RevAtT
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_RevAtTime_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -876,7 +900,8 @@ func (l *loggingGRPCServer) RawDiff(request *proto.RawDiffRequest, server proto.
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_RawDiff_FullMethodName,
 			status.Code(server.Context().Err()),
 			trace.Context(server.Context()).TraceID,
@@ -904,7 +929,8 @@ func (l *loggingGRPCServer) ContributorCounts(ctx context.Context, request *prot
 	defer func() {
 		elapsed := time.Since(start)
 
-		l.doLog(
+		doLog(
+			l.logger,
 			proto.GitserverService_ContributorCounts_FullMethodName,
 			status.Code(err),
 			trace.Context(ctx).TraceID,
@@ -926,4 +952,68 @@ func contributorCountsToLogFields(req *proto.ContributorCountsRequest) []log.Fie
 	}
 }
 
-var _ proto.GitserverServiceServer = &loggingGRPCServer{}
+type loggingRepositoryServiceServer struct {
+	base   proto.GitserverRepositoryServiceServer
+	logger log.Logger
+
+	proto.UnsafeGitserverRepositoryServiceServer
+}
+
+func (l *loggingRepositoryServiceServer) DeleteRepository(ctx context.Context, request *proto.DeleteRepositoryRequest) (resp *proto.DeleteRepositoryResponse, err error) {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+
+			proto.GitserverRepositoryService_DeleteRepository_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			deleteRepositoryRequestToLogFields(request)...,
+		)
+
+	}()
+	return l.base.DeleteRepository(ctx, request)
+}
+
+func deleteRepositoryRequestToLogFields(req *proto.DeleteRepositoryRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+	}
+}
+
+func (l *loggingRepositoryServiceServer) FetchRepository(ctx context.Context, request *proto.FetchRepositoryRequest) (resp *proto.FetchRepositoryResponse, err error) {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+
+			proto.GitserverRepositoryService_FetchRepository_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			fetchRepositoryRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.FetchRepository(ctx, request)
+}
+
+func fetchRepositoryRequestToLogFields(req *proto.FetchRepositoryRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+	}
+}
+
+var (
+	_ proto.GitserverServiceServer           = &loggingGRPCServer{}
+	_ proto.GitserverRepositoryServiceServer = &loggingRepositoryServiceServer{}
+)

@@ -4,6 +4,7 @@ import { lastValueFrom } from 'rxjs'
 
 import { asError, type ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Badge, Button, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
@@ -16,7 +17,6 @@ import type {
     SetUserEmailVerifiedVariables,
     UserEmailsResult,
 } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 
 import styles from './UserEmail.module.scss'
 
@@ -51,7 +51,7 @@ export const resendVerificationEmail = async (
             )
         )
 
-        eventLogger.log('UserEmailAddressVerificationResent')
+        EVENT_LOGGER.log('UserEmailAddressVerificationResent')
 
         options?.onSuccess?.()
     } catch (error) {
@@ -98,7 +98,7 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
             )
 
             setIsLoading(false)
-            eventLogger.log('UserEmailAddressDeleted')
+            EVENT_LOGGER.log('UserEmailAddressDeleted')
             screenReaderAnnounce('Email address removed')
 
             if (onDidRemove) {
@@ -131,9 +131,9 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
             setIsLoading(false)
 
             if (verified) {
-                eventLogger.log('UserEmailAddressMarkedVerified')
+                EVENT_LOGGER.log('UserEmailAddressMarkedVerified')
             } else {
-                eventLogger.log('UserEmailAddressMarkedUnverified')
+                EVENT_LOGGER.log('UserEmailAddressMarkedUnverified')
             }
 
             if (onEmailVerify) {

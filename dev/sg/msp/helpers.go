@@ -155,6 +155,8 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 type generateTerraformOptions struct {
 	// targetEnv generates the specified env only, otherwise generates all
 	targetEnv string
+	// targetCategory generates the specified category only
+	targetCategory spec.EnvironmentCategory
 	// stableGenerate disables updating of any values that are evaluated at
 	// generation time
 	stableGenerate bool
@@ -178,8 +180,16 @@ func generateTerraform(service *spec.Spec, opts generateTerraformOptions) error 
 	for _, env := range envs {
 		env := env
 
-		pending := std.Out.Pending(output.Styledf(output.StylePending,
-			"[%s] Preparing Terraform for environment %q", serviceID, env.ID))
+		if opts.targetCategory != "" && env.Category != opts.targetCategory {
+			// Quietly skip environments that don't match specified category
+			std.Out.WriteLine(output.StyleSuggestion.Linef(
+				"[%s] Skipping non-%q environment %q (category %q)",
+				serviceID, opts.targetCategory, env.ID, env.Category))
+			continue
+		}
+
+		pending := std.Out.Pending(output.StylePending.Linef(
+			"[%s] Preparing Terraform for %q environment %q", serviceID, env.Category, env.ID))
 		renderer := managedservicesplatform.Renderer{
 			OutputDir:      filepath.Join(filepath.Dir(serviceSpecPath), "terraform", env.ID),
 			StableGenerate: opts.stableGenerate,
@@ -204,8 +214,8 @@ func generateTerraform(service *spec.Spec, opts generateTerraformOptions) error 
 			return err
 		}
 
-		pending.Updatef("[%s] Generating Terraform assets in %q for environment %q...",
-			serviceID, renderer.OutputDir, env.ID)
+		pending.Updatef("[%s] Generating Terraform assets in %q for %q environment %q...",
+			serviceID, renderer.OutputDir, env.Category, env.ID)
 		if err := cdktf.Synthesize(); err != nil {
 			return err
 		}

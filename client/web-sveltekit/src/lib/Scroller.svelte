@@ -5,7 +5,7 @@
 </script>
 
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte'
+    import { afterUpdate, createEventDispatcher } from 'svelte'
 
     export let margin: number
 
@@ -41,6 +41,15 @@
             dispatch('more')
         }
     }
+
+    afterUpdate(() => {
+        // This premptively triggers a 'more' event when the scrollable content is smaller than than
+        // scroller. Without this, the 'more' event would not be triggered because there is nothing
+        // to scroll.
+        if (scroller.scrollHeight <= scroller.clientHeight) {
+            dispatch('more')
+        }
+    })
 </script>
 
 <div class="viewport" bind:this={viewport}>

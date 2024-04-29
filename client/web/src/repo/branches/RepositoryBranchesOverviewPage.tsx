@@ -2,11 +2,11 @@ import React, { useMemo } from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
 
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Link, LoadingSpinner, CardHeader, Card, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode } from '../GitReference'
 
 import { useBranches } from './backend'
@@ -19,7 +19,7 @@ interface Props extends RepositoryBranchesAreaPageProps {}
 /** A page with an overview of the repository's branches. */
 export const RepositoryBranchesOverviewPage: React.FunctionComponent<Props> = ({ repo }) => {
     useMemo(() => {
-        eventLogger.logViewEvent('RepositoryBranchesOverview')
+        EVENT_LOGGER.logViewEvent('RepositoryBranchesOverview')
     }, [])
 
     const { loading, error, activeBranches, defaultBranch, hasMoreActiveBranches } = useBranches(repo.id, 10)
