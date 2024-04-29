@@ -9,6 +9,7 @@ import (
 	"cdr.dev/slog/sloggers/sloghuman"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"oss.terrastruct.com/d2/d2format"
 	"oss.terrastruct.com/d2/d2graph"
 	"oss.terrastruct.com/d2/d2layouts/d2dagrelayout"
@@ -84,6 +85,15 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 		return errors.Wrap(err, "failed to generate cloudrun")
 	}
 
+	graph, sentry, err := sentry(graph, env)
+	if err != nil {
+		return errors.Wrap(err, "failed to generate sentry")
+	}
+	graph, err = addDirectedConnection(graph, cloudrun, sentry, "")
+	if err != nil {
+		return errors.Wrap(err, "failed to add connection from cloudrun to sentry")
+	}
+
 	graph, monitoring, err := monitoring(graph, env)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate monitoring")
@@ -91,6 +101,18 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 	graph, err = addDirectedConnection(graph, cloudrun, monitoring, "")
 	if err != nil {
 		return errors.Wrap(err, "failed to add connection from cloudrun to monitoring")
+	}
+
+	if env.Category != spec.EnvironmentCategoryTest && env.Alerting != nil && pointers.DerefZero(env.Alerting.Opsgenie) {
+		ograph, opsgenie, err := opsgenie(graph, env)
+		if err != nil {
+			return errors.Wrap(err, "failed to generate opsgenie")
+		}
+		ograph, err = addDirectedConnection(ograph, monitoring, opsgenie, "")
+		if err != nil {
+			return errors.Wrap(err, "failed to add connection from monitoring to opsgenie")
+		}
+		graph = ograph
 	}
 
 	if env.EnvironmentServiceSpec != nil {

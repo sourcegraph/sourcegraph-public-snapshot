@@ -40,6 +40,8 @@ go_library(
         "assets/externalipaddress",
         "assets/internet",
         "assets/loadbalancer",
+        "assets/opsgenie",
+        "assets/sentry",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/diagram",
     visibility = ["//visibility:public"],

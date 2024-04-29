@@ -100,6 +100,10 @@ func monitoring(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, 
 	return CreateWithIcon(graph, "Monitoring", CloudMonitoring)
 }
 
+func opsgenie(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+	return CreateWithIcon(graph, "Opsgenie", Opsgenie)
+}
+
 func postgres(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
 	graph, key, err := CreateContainer(graph, "Postgres", CloudSQL)
 	if err != nil {
@@ -129,6 +133,10 @@ func redis(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, strin
 	return CreateWithIcon(graph, "Redis", CloudMemorystore)
 }
 
+func sentry(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+	return CreateWithIcon(graph, "Sentry", Sentry)
+}
+
 func trace(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
-	return CreateWithIcon(graph, "Trace", CloudTrace)
+	return CreateWithIcon(graph, "Cloud Trace", CloudTrace)
 }

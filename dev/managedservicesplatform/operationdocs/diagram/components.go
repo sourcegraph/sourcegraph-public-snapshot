@@ -35,6 +35,10 @@ var (
 	CloudMonitoring Icon
 	//go:embed assets/cloudtrace
 	CloudTrace Icon
+	//go:embed assets/sentry
+	Sentry Icon
+	//go:embed assets/opsgenie
+	Opsgenie Icon
 )
 
 // CreateWithIcon creates a shape with a key, label and icon.

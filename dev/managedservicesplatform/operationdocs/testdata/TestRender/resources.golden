@@ -97,6 +97,10 @@ sg msp pg connect -write-access msp-testbed test
 | Dataset ID      | `msp_testbed`                                                                                                                                                                                                                  |
 | Tables          | [`bar`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/bar.bigquerytable.json), [`baz`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/baz.bigquerytable.json) |
 
+#### test Architecture Diagram
+
+![Architecture Diagram](./msp-testbed-test.svg)
+
 #### test Terraform Cloud
 
 This service's configuration is defined in [`sourcegraph/managed-services/services/msp-testbed/service.yaml`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml), and `sg msp generate msp-testbed test` generates the required infrastructure configuration for this environment in Terraform.
@@ -122,7 +126,7 @@ The Terraform Cloud workspaces for this service environment are [grouped under t
 sg msp tfc view msp-testbed test
 ```
 
-### Alert Policies
+## Alert Policies
 
 The following alert policies are defined for each of this service's environments.
 
