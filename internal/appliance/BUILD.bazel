@@ -14,6 +14,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/appliance/config",
         "//internal/appliance/v1:appliance",
         "//internal/k8s/resource/container",
         "//internal/k8s/resource/deployment",
@@ -21,9 +22,7 @@ go_library(
         "//internal/k8s/resource/pvc",
         "//internal/k8s/resource/service",
         "//internal/k8s/resource/serviceaccount",
-        "//internal/maps",
         "//lib/errors",
-        "//lib/pointers",
         "@io_k8s_api//apps/v1:apps",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/api/errors",
@@ -39,6 +38,7 @@ go_library(
         "@io_k8s_sigs_controller_runtime//pkg/predicate",
         "@io_k8s_sigs_controller_runtime//pkg/reconcile",
         "@io_k8s_sigs_yaml//:yaml",
+        "@io_k8s_utils//ptr",
     ],
 )
 

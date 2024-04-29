@@ -3,7 +3,7 @@ resources:
   kind: Deployment
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: d73279f7ebebb47045eb1d91067d2496b4cbc68be737857d4ac87e25566a98ff
+      appliance.sourcegraph.com/configHash: 230da28e00c1e55a03bd1337e6d09fbb05ddfda1dec6600a4f96ef456f174f7d
     creationTimestamp: "2024-04-19T00:00:00Z"
     generation: 1
     labels:
@@ -185,7 +185,7 @@ resources:
   kind: ServiceAccount
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: d73279f7ebebb47045eb1d91067d2496b4cbc68be737857d4ac87e25566a98ff
+      appliance.sourcegraph.com/configHash: 230da28e00c1e55a03bd1337e6d09fbb05ddfda1dec6600a4f96ef456f174f7d
       foo: bar
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
@@ -198,10 +198,13 @@ resources:
   kind: Service
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: d73279f7ebebb47045eb1d91067d2496b4cbc68be737857d4ac87e25566a98ff
+      appliance.sourcegraph.com/configHash: 230da28e00c1e55a03bd1337e6d09fbb05ddfda1dec6600a4f96ef456f174f7d
+      prometheus.io/port: "6060"
+      sourcegraph.prometheus/scrape: "true"
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
       app: repo-updater
+      app.kubernetes.io/component: repo-updater
       deploy: sourcegraph
     name: repo-updater
     namespace: NORMALIZED_FOR_TESTING

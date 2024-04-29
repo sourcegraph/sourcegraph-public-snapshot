@@ -42,13 +42,7 @@ spec:
 
   repoUpdater:
     resources:
-      repo-updater:
-        requests:
-          cpu: 1500m
-          memory: 2Gi
-        limits:
-          cpu: "4"
-          memory: 4Gi
+      repo-updater: null
 
   searcher:
     disabled: true

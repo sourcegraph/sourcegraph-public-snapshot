@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pod"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/service"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/serviceaccount"
-	"github.com/sourcegraph/sourcegraph/internal/maps"
 )
 
 func (r *Reconciler) reconcileRepoUpdater(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
@@ -31,7 +30,7 @@ func (r *Reconciler) reconcileRepoUpdater(ctx context.Context, sg *Sourcegraph, 
 }
 
 func (r *Reconciler) reconcileRepoUpdaterService(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
-	svc := service.NewService("repo-updater", sg.Namespace)
+	svc := service.NewService("repo-updater", sg.Namespace, sg.Spec.RepoUpdater)
 	svc.Spec.Ports = []corev1.ServicePort{
 		{Name: "http", TargetPort: intstr.FromString("http"), Port: 3182},
 	}
@@ -39,14 +38,23 @@ func (r *Reconciler) reconcileRepoUpdaterService(ctx context.Context, sg *Source
 		"app": "repo-updater",
 	}
 
-	return reconcileRepoUpdaterObject(ctx, r, &svc, &corev1.Service{}, sg, owner)
+	return reconcileObject(ctx, r, sg.Spec.RepoUpdater, &svc, &corev1.Service{}, sg, owner)
 }
 
 func (r *Reconciler) reconcileRepoUpdaterDeployment(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.RepoUpdater
 	name := "repo-updater"
 
-	ctr := container.NewContainer(name)
+	ctr := container.NewContainer(name, cfg, corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1"),
+			corev1.ResourceMemory: resource.MustParse("500Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1"),
+			corev1.ResourceMemory: resource.MustParse("2Gi"),
+		},
+	})
 
 	// TODO: https://github.com/sourcegraph/sourcegraph/issues/62076
 	ctr.Image = "index.docker.io/sourcegraph/repo-updater:5.3.2@sha256:5a414aa030c7e0922700664a43b449ee5f3fafa68834abef93988c5992c747c6"
@@ -90,22 +98,6 @@ func (r *Reconciler) reconcileRepoUpdaterDeployment(ctx context.Context, sg *Sou
 		TimeoutSeconds:   5,
 	}
 
-	// default resources
-	ctr.Resources = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1"),
-			corev1.ResourceMemory: resource.MustParse("500Mi"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1"),
-			corev1.ResourceMemory: resource.MustParse("2Gi"),
-		},
-	}
-
-	if cfg.Resources != nil {
-		ctr.Resources = *cfg.Resources
-	}
-
 	podTemplate := pod.NewPodTemplate(name)
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
 
@@ -113,31 +105,11 @@ func (r *Reconciler) reconcileRepoUpdaterDeployment(ctx context.Context, sg *Sou
 	dep.Spec.Template = podTemplate.Template
 	dep.Spec.Template.Spec.ServiceAccountName = name
 
-	return reconcileRepoUpdaterObject(ctx, r, &dep, &appsv1.Deployment{}, sg, owner)
+	return reconcileObject(ctx, r, sg.Spec.RepoUpdater, &dep, &appsv1.Deployment{}, sg, owner)
 }
 
 func (r *Reconciler) reconcileRepoUpdaterServiceAccount(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.RepoUpdater
-	sa := serviceaccount.NewServiceAccount("repo-updater", sg.Namespace)
-	sa.SetAnnotations(maps.Merge(sa.GetAnnotations(), cfg.ServiceAccountAnnotations))
-	return reconcileRepoUpdaterObject(ctx, r, &sa, &corev1.ServiceAccount{}, sg, owner)
-}
-
-func reconcileRepoUpdaterObject[T client.Object](ctx context.Context, r *Reconciler, obj, objKind T, sg *Sourcegraph, owner client.Object) error {
-	if sg.Spec.RepoUpdater.Disabled {
-		return r.ensureObjectDeleted(ctx, obj)
-	}
-
-	// Any secrets (or other configmaps) referenced in this spec can be
-	// added to this struct so that they are hashed, and cause an update to the
-	// resource if changed.
-	updateIfChanged := struct {
-		RepoUpdaterSpec
-		Version string
-	}{
-		RepoUpdaterSpec: sg.Spec.RepoUpdater,
-		Version:         sg.Spec.RequestedVersion,
-	}
-
-	return createOrUpdateObject(ctx, r, updateIfChanged, owner, obj, objKind)
+	sa := serviceaccount.NewServiceAccount("repo-updater", sg.Namespace, cfg)
+	return reconcileObject(ctx, r, sg.Spec.RepoUpdater, &sa, &corev1.ServiceAccount{}, sg, owner)
 }
