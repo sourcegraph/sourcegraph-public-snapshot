@@ -59,7 +59,7 @@ func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embedding
 		db:               db,
 		embeddingsClient: embeddingsClient,
 		searchClient:     searchClient,
-		contentFilter:    newRepoContentFilter(obsCtx.Logger, gitserverClient),
+		contentFilter:    newRepoContentFilter(obsCtx.Logger, db, gitserverClient),
 
 		obsCtx:                 obsCtx,
 		getCodyContextOp:       op("getCodyContext"),
@@ -72,7 +72,7 @@ type CodyContextClient struct {
 	db               database.DB
 	embeddingsClient embeddings.Client
 	searchClient     client.SearchClient
-	contentFilter    RepoContentFilter
+	contentFilter    repoContentFilter
 
 	obsCtx                 *observation.Context
 	getCodyContextOp       *observation.Operation
@@ -118,7 +118,7 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 
 	// Generating the content filter removes any repos where the filter can not
 	// be determined
-	filterableRepos, contextFilter, err := c.contentFilter.GetMatcher(ctx, args.Repos)
+	filterableRepos, contextFilter, err := c.contentFilter.getMatcher(ctx, args.Repos)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +192,7 @@ func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.Re
 	return embedded, notEmbedded, nil
 }
 
-func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs, matcher FileMatcher) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs, matcher fileMatcher) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getEmbeddingsContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -246,7 +246,7 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 }
 
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
-func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, matcher FileMatcher) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, matcher fileMatcher) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getKeywordContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -318,7 +318,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	return collected, nil
 }
 
-func addLimitsAndFilter(plan *search.Inputs, filter FileMatcher, args GetContextArgs) {
+func addLimitsAndFilter(plan *search.Inputs, filter fileMatcher, args GetContextArgs) {
 	if plan.Features == nil {
 		plan.Features = &search.Features{}
 	}
