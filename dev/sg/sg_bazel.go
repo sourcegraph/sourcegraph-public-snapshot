@@ -77,6 +77,12 @@ var bazelCommand = &cli.Command{
 			}
 		}
 
+		// If we end up running `sg bazel` in CI, we don't want to use the remote cache for local environment,
+		// so we force disable the flag explicilty.
+		if os.Getenv("CI") == "true" || os.Getenv("BUILDKITE") == "true" {
+			disableRemoteCache = true
+		}
+
 		if !disableRemoteCache {
 			newArgs := make([]string, 0, len(args)+1)
 			// Bazelrc flags must be added before the actual command (build, run, test ...)
