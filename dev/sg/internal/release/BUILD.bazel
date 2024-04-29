@@ -16,6 +16,7 @@ go_library(
         "//dev/sg/internal/bk",
         "//dev/sg/internal/category",
         "//dev/sg/internal/execute",
+        "//dev/sg/internal/repo",
         "//dev/sg/internal/std",
         "//internal/jsonc",
         "//lib/errors",
