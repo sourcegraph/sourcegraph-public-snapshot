@@ -9,11 +9,12 @@ import (
 )
 
 // NewContainer creates a new k8s Container with some default values set.
-func NewContainer(name string, cfg config.StandardComponent) corev1.Container {
+func NewContainer(name string, cfg config.StandardComponent, defaultResources corev1.ResourceRequirements) corev1.Container {
 	ctr := corev1.Container{
 		Name:                     name,
 		ImagePullPolicy:          corev1.PullIfNotPresent,
 		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
+		Resources:                defaultResources,
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser:                pointers.Ptr[int64](100),
 			RunAsGroup:               pointers.Ptr[int64](101),
@@ -23,8 +24,8 @@ func NewContainer(name string, cfg config.StandardComponent) corev1.Container {
 	}
 
 	if cfg != nil {
-		if ctrResources := cfg.GetResources()[name]; ctrResources != nil {
-			ctr.Resources = *ctrResources
+		if ctrResources, ok := cfg.GetResources()[name]; ok {
+			ctr.Resources = ctrResources
 		}
 	}
 
@@ -86,8 +87,4 @@ func NewEnvVarFieldRef(name, fieldPath string) corev1.EnvVar {
 			},
 		},
 	}
-}
-
-func HasNoConfiguredResources(ctr corev1.Container) bool {
-	return ctr.Resources.Limits == nil && ctr.Resources.Requests == nil
 }

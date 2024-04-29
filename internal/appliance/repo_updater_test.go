@@ -10,6 +10,7 @@ func (suite *ApplianceTestSuite) TestDeployRepoUpdater() {
 	}{
 		{name: "repo-updater-default"},
 		{name: "repo-updater-with-resources"},
+		{name: "repo-updater-with-no-resources"},
 		{name: "repo-updater-with-sa-annotations"},
 	} {
 		suite.Run(tc.name, func() {

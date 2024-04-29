@@ -45,7 +45,16 @@ func (r *Reconciler) reconcileRepoUpdaterDeployment(ctx context.Context, sg *Sou
 	cfg := sg.Spec.RepoUpdater
 	name := "repo-updater"
 
-	ctr := container.NewContainer(name, cfg)
+	ctr := container.NewContainer(name, cfg, corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1"),
+			corev1.ResourceMemory: resource.MustParse("500Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1"),
+			corev1.ResourceMemory: resource.MustParse("2Gi"),
+		},
+	})
 
 	// TODO: https://github.com/sourcegraph/sourcegraph/issues/62076
 	ctr.Image = "index.docker.io/sourcegraph/repo-updater:5.3.2@sha256:5a414aa030c7e0922700664a43b449ee5f3fafa68834abef93988c5992c747c6"
@@ -87,20 +96,6 @@ func (r *Reconciler) reconcileRepoUpdaterDeployment(ctx context.Context, sg *Sou
 		FailureThreshold: 3,
 		PeriodSeconds:    1,
 		TimeoutSeconds:   5,
-	}
-
-	// default resources
-	if container.HasNoConfiguredResources(ctr) {
-		ctr.Resources = corev1.ResourceRequirements{
-			Requests: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("1"),
-				corev1.ResourceMemory: resource.MustParse("500Mi"),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("1"),
-				corev1.ResourceMemory: resource.MustParse("2Gi"),
-			},
-		}
 	}
 
 	podTemplate := pod.NewPodTemplate(name)

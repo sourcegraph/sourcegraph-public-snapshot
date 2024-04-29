@@ -27,8 +27,8 @@ By embedding StandardConfig, you'll get various features for almost-free:
   logic at all, usually.
 - Container resources
 - Service account annotations
-   - This is an extremely common customization need, e.g. to enable GKE
-     workload-identity bindings.
+  - This is an extremely common customization need, e.g. to enable GKE
+    workload-identity bindings.
 - Adding standard prometheus scrape directive annotations to Services (k8s
   v1.Service - there's that term overloading again).
 
@@ -43,7 +43,7 @@ prometheus annotations appear? Fix / add standard features as required.
 
 ### Reconciler
 
-`reconciler.go` is the entrypoint to start at. The aim is to write a function
+`reconcile.go` is the entrypoint to start at. The aim is to write a function
 that converges the cluster onto some desired state based on the config input.
 See the `reconcileXYZ` (e.g. `reconcileBlobstore`). Follow the patterns other
 services use, to create/update/delete Kubernetes objects required for your
