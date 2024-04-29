@@ -123,6 +123,7 @@ const createBreadcrumbs = (path: string) => [
                     revision="main"
                     repoName="sourcegraph/sourcegraph"
                     repo={undefined}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             ),
         },

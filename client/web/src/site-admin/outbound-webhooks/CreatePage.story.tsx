@@ -1,5 +1,6 @@
 import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -21,7 +22,7 @@ export const Page: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={[eventTypesMock]}>
-                <CreatePage telemetryService={NOOP_TELEMETRY_SERVICE} />
+                <CreatePage telemetryService={NOOP_TELEMETRY_SERVICE} telemetryRecorder={noOpTelemetryRecorder} />
             </MockedTestProvider>
         )}
     </WebStory>

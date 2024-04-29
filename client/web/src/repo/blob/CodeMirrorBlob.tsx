@@ -215,6 +215,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         staticHighlightRanges,
         'data-testid': dataTestId,
         telemetryService,
+        telemetryRecorder,
     } = props
 
     const apolloClient = useApolloClient()
@@ -499,7 +500,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
     const logEventOnCopy = useCallback(() => {
         telemetryService.log(...codeCopiedEvent('blob-view'))
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('repo.blob.code', 'copy')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <>

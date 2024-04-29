@@ -9,6 +9,7 @@ import { map, switchMap, tap } from 'rxjs/operators'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Button,
@@ -238,7 +239,7 @@ const TextSearchIndexedReference: React.FunctionComponent<
     )
 }
 
-interface Props {
+interface Props extends TelemetryV2Props {
     repo: SettingsAreaRepositoryFields
 }
 
@@ -259,6 +260,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         EVENT_LOGGER.logViewEvent('RepoSettingsIndex')
+        this.props.telemetryRecorder.recordEvent('repo.settings.index', 'view')
 
         this.subscriptions.add(
             this.updates

@@ -531,7 +531,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
 
     private reloadSite = (): void => {
         EVENT_LOGGER.log('SiteReloaded')
-        this.props.telemetryRecorder.recordEvent('admin.configuration.site', 'reload')
+        this.props.telemetryRecorder.recordEvent('admin.configuration', 'reloadInstance')
         this.siteReloads.next()
     }
 }

@@ -4,6 +4,7 @@ import { Navigate, useParams } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { LoadingSpinner, useObservable, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -11,12 +12,17 @@ import { PageTitle } from '../../components/PageTitle'
 
 import { fetchPreciseIndex } from './backend'
 
+interface Props extends TelemetryV2Props {}
+
 /**
  * A page displaying metadata about a precise index.
  */
-export const SiteAdminPreciseIndexPage: React.FC<{}> = () => {
+export const SiteAdminPreciseIndexPage: React.FC<Props> = ({ telemetryRecorder }) => {
     const { id = '' } = useParams<{ id: string }>()
-    useEffect(() => EVENT_LOGGER.logViewEvent('SiteAdminPreciseIndex'))
+    useEffect(() => {
+        EVENT_LOGGER.logViewEvent('SiteAdminPreciseIndex')
+        telemetryRecorder.recordEvent('admin.preciseIndex', 'view')
+    }, [telemetryRecorder])
 
     const indexOrError = useObservable(
         useMemo(() => fetchPreciseIndex({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)])), [id])

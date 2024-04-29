@@ -52,6 +52,8 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         telemetryRecorder.recordEvent('cody.management', 'view')
     }, [utm_source, telemetryRecorder])
 
+    // The cody_client_user URL query param is added by the VS Code extension.
+    // We redirect them to a "switch account" screen if they are logged into their IDE as a different user account than their browser.
     const codyClientUser = parameters.get('cody_client_user')
     const accountSwitchRequired = !!codyClientUser && authenticatedUser && authenticatedUser.username !== codyClientUser
     useEffect(() => {
