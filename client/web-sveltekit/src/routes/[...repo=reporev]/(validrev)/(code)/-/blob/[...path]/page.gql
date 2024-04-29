@@ -1,57 +1,33 @@
-query BlobDiffQuery($repoName: String!, $revspec: String!, $paths: [String!]) {
-    repository(name: $repoName) {
-        id
-        commit(rev: $revspec) {
-            ...DiffSummaryHeaderCommit
-            diff {
-                fileDiffs(paths: $paths) {
-                    nodes {
-                        hunks {
-                            ...FileDiffHunks_Hunk
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-query BlobPageQuery($repoName: String!, $revspec: String!, $path: String!) {
+query BlobDiffViewCommitQuery($repoName: String!, $revspec: String!, $path: String!) {
     repository(name: $repoName) {
         id
         commit(rev: $revspec) {
             id
+
+            blob(path: $path) {
+                ...DiffViewGitBlob
+            }
+
+            ...DiffViewCommit
+        }
+    }
+}
+
+query BlobFileViewBlobQuery($repoName: String!, $revspec: String!, $path: String!) {
+    repository(name: $repoName) {
+        id
+
+        commit(rev: $revspec) {
+            id
             oid
             blob(path: $path) {
-                ...BlobPage_Blob
+                ...FileViewGitBlob
             }
         }
     }
 }
 
-fragment BlobPage_ResolvedRevision on Repository {
-    externalRepository {
-        serviceType
-    }
-    externalURLs {
-        url
-        serviceKind
-    }
-}
-
-fragment BlobPage_Blob on GitBlob {
-    canonicalURL
-    content
-    richHTML
-    languages
-    binary
-    totalLines
-    byteSize
-    ...OpenInCodeHostAction
-    ...FileIcon_GitBlob
-}
-
-query BlobSyntaxHighlightQuery(
+query BlobFileViewHighlightedFileQuery(
     $repoName: String!
     $revspec: String!
     $path: String!
@@ -65,10 +41,21 @@ query BlobSyntaxHighlightQuery(
             blob(path: $path) {
                 canonicalURL
                 highlight(disableTimeout: $disableTimeout, format: $format) {
-                    aborted
-                    lsif
+                    ...FileViewHighlightedFile
                 }
             }
         }
     }
+}
+
+query BlobFileViewCommitQuery_revisionOverride($repoName: String!, $revspec: String!) {
+    repository(name: $repoName) {
+        commit(rev: $revspec) {
+            ...FileViewCommit
+        }
+    }
+}
+
+fragment BlobPage_ResolvedRevision on Repository {
+    ...FileView_ResolvedRevision
 }

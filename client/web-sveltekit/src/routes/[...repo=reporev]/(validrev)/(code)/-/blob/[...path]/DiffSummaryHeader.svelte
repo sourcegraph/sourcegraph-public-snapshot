@@ -1,12 +1,12 @@
 <script lang="ts">
     import { mdiCompareHorizontal } from '@mdi/js'
 
+    import { numberWithCommas } from '$lib/common'
+    import Icon from '$lib/Icon.svelte'
+    import DiffSquares from '$lib/repo/DiffSquares.svelte'
     import { Badge } from '$lib/wildcard'
 
     import type { DiffSummaryHeaderCommit } from './DiffSummaryHeader.gql'
-    import Icon from '$lib/Icon.svelte'
-    import DiffSquares from '$lib/repo/DiffSquares.svelte'
-    import { numberWithCommas } from '$lib/common'
 
     export let commit: DiffSummaryHeaderCommit
 

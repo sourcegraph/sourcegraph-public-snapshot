@@ -6,11 +6,13 @@
     import Icon from '$lib/Icon.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
 
-    $: href = SourcegraphURL.from($page.url).deleteSearchParameter('rev').toString()
+    export let label: string
+
+    $: href = SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString()
 </script>
 
-<Tooltip tooltip="Close diff">
-    <a {href}><Icon svgPath={mdiClose} inline /> <span data-action-label>Close diff</span></a>
+<Tooltip tooltip={label}>
+    <a {href}><Icon svgPath={mdiClose} inline /> <span data-action-label>{label}</span></a>
 </Tooltip>
 
 <style lang="scss">

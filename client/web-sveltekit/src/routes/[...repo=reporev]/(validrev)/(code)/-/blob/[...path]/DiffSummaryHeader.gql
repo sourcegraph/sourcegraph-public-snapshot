@@ -10,7 +10,7 @@ fragment DiffSummaryHeaderCommit on GitCommit {
         }
     }
     diff {
-        fileDiffs(paths: $paths) {
+        fileDiffs(paths: [$path]) {
             diffStat {
                 added
                 deleted
