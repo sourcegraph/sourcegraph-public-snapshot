@@ -109,12 +109,6 @@ elif [[ "$BUILDKITE_BRANCH" =~ ^main-dry-run/.*  ]]; then
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=false
-elif [[ "$BUILDKITE_BRANCH" =~ ^cloud-ephemeral/.* ]]; then
-  # Cloud Ephemeral images need a proper semver version
-  dev_tags+=("insiders" "${PUSH_VERSION}")
-  prod_tags+=("insiders")
-  push_prod=false
-
 elif [[ "$BUILDKITE_BRANCH" =~ ^[0-9]+\.[0-9]+$ ]]; then
   # All release branch builds must be published to prod tags to support
   # format introduced by https://github.com/sourcegraph/sourcegraph/pull/48050
@@ -128,6 +122,12 @@ elif [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\-rc\.[0-9]+)?$ ]]; then
   dev_tags+=("${BUILDKITE_TAG:1}")
   prod_tags+=("${BUILDKITE_TAG:1}")
   push_prod=true
+fi
+
+# If we're building ephemeral cloud images, we don't push to prod but we need to prod version as tag
+if [ "${CLOUD_EPHEMERAL:-}" == "true" ]; then
+  dev_tags+=("${PUSH_VERSION}")
+  push_prod=false
 fi
 
 # If CANDIDATE_ONLY is set, only push the candidate tag to the dev repo

@@ -96,7 +96,6 @@
         display: flex;
         align-items: baseline;
         padding: 0.25rem 0.5rem;
-        border-bottom: 1px solid var(--border-color);
         background-color: var(--color-bg-1);
         box-shadow: var(--fileheader-shadow);
         z-index: 1;
@@ -124,6 +123,10 @@
 
         a {
             color: var(--text-body);
+
+            &:hover{
+                color: var(--text-title);
+            }
         }
 
         .slash {

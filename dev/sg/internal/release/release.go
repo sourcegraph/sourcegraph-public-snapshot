@@ -197,6 +197,27 @@ var Command = &cli.Command{
 				},
 			},
 		},
+		{
+			Name:      "cut",
+			Usage:     "Cut a release",
+			Category:  category.Util,
+			UsageText: "sg release cut",
+			Action:    cutReleaseBranch,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     "version",
+					Required: true,
+					Usage:    "the version to cut",
+					Aliases:  []string{"v"},
+				},
+				&cli.StringFlag{
+					Name:    "branch",
+					Aliases: []string{"b"},
+					Usage:   "the branch to cut the release from",
+					Value:   "main",
+				},
+			},
+		},
 	},
 }
 
