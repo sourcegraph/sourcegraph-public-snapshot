@@ -1201,6 +1201,7 @@ func TestResolver_AuthzProviderTypes(t *testing.T) {
 
 		ghProvider := github.NewProvider("https://github.com", github.ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
 		authz.SetProviders(false, []authz.Provider{ghProvider})
+		defer authz.SetProviders(true, nil)
 		result, err := (&Resolver{db: db}).AuthzProviderTypes(ctx)
 		assert.NoError(t, err)
 		assert.Equal(t, []string{"github"}, result)
@@ -2709,9 +2710,41 @@ func TestResolver_AuthzProviders(t *testing.T) {
 	t.Run("get authz providers", func(t *testing.T) {
 		ghProvider := github.NewProvider("https://github.com", github.ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
 		authz.SetProviders(false, []authz.Provider{ghProvider})
+		defer authz.SetProviders(true, nil)
 		result, err := (&Resolver{}).AuthzProviders(context.Background())
 		assert.NoError(t, err)
 		assert.Equal(t, result[0].ServiceType(), "github")
 		assert.Equal(t, result[0].ServiceID(), "https://github.com/")
+	})
+
+	t.Run("test full stack get authz providers", func(t *testing.T) {
+		ghProvider := github.NewProvider("https://github.com", github.ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+		authz.SetProviders(false, []authz.Provider{ghProvider})
+		defer authz.SetProviders(true, nil)
+		db := dbmocks.NewStrictMockDB()
+
+		gqlTests := []*graphqlbackend.Test{{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+				query {
+					authzProviders {
+						serviceID
+						serviceType
+					}
+				}
+						`,
+			ExpectedResult: `
+				{
+					"authzProviders": [
+						{
+							"serviceID": "https://github.com/",
+							"serviceType": "github"
+						}
+					]
+				}
+						`,
+		}}
+
+		graphqlbackend.RunTests(t, gqlTests)
 	})
 }
