@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import { mdiGit } from '@mdi/js'
 
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import type { RenderMode } from '@sourcegraph/shared/src/util/url'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
@@ -13,7 +14,7 @@ import { RepoActionInfo } from '../RepoActionInfo'
 
 import styles from './actions.module.scss'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     source?: 'repoHeader' | 'actionItemsBar'
     actionType?: 'nav' | 'dropdown'
     renderMode?: RenderMode
@@ -35,11 +36,13 @@ export const ToggleBlameAction: React.FC<Props> = props => {
         if (isBlameVisible) {
             setIsBlameVisible(false)
             EVENT_LOGGER.log('GitBlameDisabled')
+            props.telemetryRecorder.recordEvent('repo.gitBlame', 'disable')
         } else {
             setIsBlameVisible(true)
             EVENT_LOGGER.log('GitBlameEnabled')
+            props.telemetryRecorder.recordEvent('repo.gitBlame', 'enable')
         }
-    }, [isBlameVisible, setIsBlameVisible])
+    }, [isBlameVisible, setIsBlameVisible, props.telemetryRecorder])
 
     const icon = <Icon aria-hidden={true} svgPath={mdiGit} />
 
