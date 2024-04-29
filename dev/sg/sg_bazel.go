@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -84,9 +86,13 @@ var bazelCommand = &cli.Command{
 		}
 
 		if !disableRemoteCache {
+			rootDir, err := root.RepositoryRoot()
+			if err != nil {
+				return errors.Wrap(err, "getting repository root")
+			}
 			newArgs := make([]string, 0, len(args)+1)
 			// Bazelrc flags must be added before the actual command (build, run, test ...)
-			newArgs = append(newArgs, "--bazelrc=.aspect/bazelrc/remote_cache_for_local.bazelrc")
+			newArgs = append(newArgs, fmt.Sprintf("--bazelrc=%s", filepath.Join(rootDir, ".aspect/bazelrc/remote_cache_for_local.bazelrc")))
 			newArgs = append(newArgs, args...)
 			args = newArgs
 		}
