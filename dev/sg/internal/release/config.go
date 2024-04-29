@@ -268,7 +268,7 @@ func (r *releaseRunner) checkRequirements(ctx context.Context, stage string) err
 	for _, req := range r.m.Requirements {
 		if shouldSkipReqCheck(req, stage) {
 			saySuccess("reqs", "🔕 %s (excluded for %s)", req.Name, stage)
-			return nil
+			continue
 		}
 
 		if req.Env != "" && req.Cmd != "" {
@@ -305,7 +305,7 @@ func (r *releaseRunner) checkRequirements(ctx context.Context, stage string) err
 
 func (r *releaseRunner) CreateRelease(ctx context.Context) error {
 	if err := r.checkRequirements(ctx, stageInternalCreate); err != nil {
-		return nil
+		return err
 	}
 
 	var steps []cmdManifest
@@ -330,7 +330,7 @@ func (r *releaseRunner) CreateRelease(ctx context.Context) error {
 
 func (r *releaseRunner) InternalFinalize(ctx context.Context) error {
 	if err := r.checkRequirements(ctx, stageInternalCreate); err != nil {
-		return nil
+		return err
 	}
 
 	if len(r.m.Internal.Finalize.Steps) == 0 {
@@ -343,7 +343,7 @@ func (r *releaseRunner) InternalFinalize(ctx context.Context) error {
 
 func (r *releaseRunner) Test(ctx context.Context) error {
 	if err := r.checkRequirements(ctx, stageTest); err != nil {
-		return nil
+		return err
 	}
 
 	if len(r.m.Test.Steps) == 0 {
@@ -356,7 +356,7 @@ func (r *releaseRunner) Test(ctx context.Context) error {
 
 func (r *releaseRunner) Promote(ctx context.Context) error {
 	if err := r.checkRequirements(ctx, stagePromoteCreate); err != nil {
-		return nil
+		return err
 	}
 	announce2("promote", "Will promote %q to a public release", r.version)
 	return r.runSteps(ctx, r.m.PromoteToPublic.Create.Steps)
@@ -364,7 +364,7 @@ func (r *releaseRunner) Promote(ctx context.Context) error {
 
 func (r *releaseRunner) PromoteFinalize(ctx context.Context) error {
 	if err := r.checkRequirements(ctx, stagePromoteFinalize); err != nil {
-		return nil
+		return err
 	}
 
 	if len(r.m.PromoteToPublic.Finalize.Steps) == 0 {

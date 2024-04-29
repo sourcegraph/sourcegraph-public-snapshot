@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pvc"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/service"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func (r *Reconciler) reconcileBlobstore(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
@@ -70,13 +69,13 @@ func (r *Reconciler) reconcileBlobstorePersistentVolumeClaims(ctx context.Contex
 		return err
 	}
 
-	return reconcileBlobStoreObject(ctx, r, &p, &corev1.PersistentVolumeClaim{}, sg, owner)
+	return reconcileObject(ctx, r, sg.Spec.Blobstore, &p, &corev1.PersistentVolumeClaim{}, sg, owner)
 }
 
 func buildBlobstoreService(sg *Sourcegraph) corev1.Service {
 	name := "blobstore"
 
-	s := service.NewService(name, sg.Namespace)
+	s := service.NewService(name, sg.Namespace, sg.Spec.Blobstore)
 	s.Spec.Ports = []corev1.ServicePort{
 		{
 			Name:       name,
@@ -93,7 +92,7 @@ func buildBlobstoreService(sg *Sourcegraph) corev1.Service {
 
 func (r *Reconciler) reconcileBlobstoreServices(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
 	s := buildBlobstoreService(sg)
-	return reconcileBlobStoreObject(ctx, r, &s, &corev1.Service{}, sg, owner)
+	return reconcileObject(ctx, r, sg.Spec.Blobstore, &s, &corev1.Service{}, sg, owner)
 }
 
 func buildBlobstoreDeployment(sg *Sourcegraph) appsv1.Deployment {
@@ -103,38 +102,6 @@ func buildBlobstoreDeployment(sg *Sourcegraph) appsv1.Deployment {
 		Name:          name,
 		ContainerPort: 9000,
 	}}
-
-	containerResources := corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1"),
-			corev1.ResourceMemory: resource.MustParse("500M"),
-		},
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1"),
-			corev1.ResourceMemory: resource.MustParse("500M"),
-		},
-	}
-	if sg.Spec.Blobstore.Resources != nil {
-		limCPU := sg.Spec.Blobstore.Resources.Limits.Cpu()
-		limMem := sg.Spec.Blobstore.Resources.Limits.Memory()
-		reqCPU := sg.Spec.Blobstore.Resources.Limits.Cpu()
-		reqMem := sg.Spec.Blobstore.Resources.Limits.Memory()
-
-		containerResources = corev1.ResourceRequirements{
-			Limits: corev1.ResourceList{
-				corev1.ResourceCPU:    pointers.DerefZero(limCPU),
-				corev1.ResourceMemory: pointers.DerefZero(limMem),
-			},
-			Requests: corev1.ResourceList{
-				corev1.ResourceCPU:    pointers.DerefZero(reqCPU),
-				corev1.ResourceMemory: pointers.DerefZero(reqMem),
-			},
-		}
-	}
-
-	if sg.Spec.LocalDevMode {
-		containerResources = corev1.ResourceRequirements{}
-	}
 
 	containerVolumeMounts := []corev1.VolumeMount{
 		{
@@ -147,13 +114,21 @@ func buildBlobstoreDeployment(sg *Sourcegraph) appsv1.Deployment {
 		},
 	}
 
-	defaultContainer := container.NewContainer(name)
+	defaultContainer := container.NewContainer(name, sg.Spec.Blobstore, corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1"),
+			corev1.ResourceMemory: resource.MustParse("500M"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1"),
+			corev1.ResourceMemory: resource.MustParse("500M"),
+		},
+	})
 
 	// TODO: https://github.com/sourcegraph/sourcegraph/issues/62076
 	defaultContainer.Image = "index.docker.io/sourcegraph/blobstore:5.3.2@sha256:d625be1eefe61cc42f94498e3c588bf212c4159c8b20c519db84eae4ff715efa"
 
 	defaultContainer.Ports = containerPorts
-	defaultContainer.Resources = containerResources
 	defaultContainer.VolumeMounts = containerVolumeMounts
 
 	podVolumes := []corev1.Volume{
@@ -189,24 +164,5 @@ func buildBlobstoreDeployment(sg *Sourcegraph) appsv1.Deployment {
 
 func (r *Reconciler) reconcileBlobstoreDeployments(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
 	d := buildBlobstoreDeployment(sg)
-	return reconcileBlobStoreObject(ctx, r, &d, &appsv1.Deployment{}, sg, owner)
-}
-
-func reconcileBlobStoreObject[T client.Object](ctx context.Context, r *Reconciler, obj, objKind T, sg *Sourcegraph, owner client.Object) error {
-	if sg.Spec.Blobstore.Disabled {
-		return r.ensureObjectDeleted(ctx, obj)
-	}
-
-	// Any secrets (or other configmaps) referenced in BlobStoreSpec can be
-	// added to this struct so that they are hashed, and cause an update to the
-	// Deployment if changed.
-	updateIfChanged := struct {
-		BlobstoreSpec
-		Version string
-	}{
-		BlobstoreSpec: sg.Spec.Blobstore,
-		Version:       sg.Spec.RequestedVersion,
-	}
-
-	return createOrUpdateObject(ctx, r, updateIfChanged, owner, obj, objKind)
+	return reconcileObject(ctx, r, sg.Spec.Blobstore, &d, &appsv1.Deployment{}, sg, owner)
 }

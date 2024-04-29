@@ -5301,8 +5301,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_cloud_api",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/cloud-api",
-        sum = "h1:RItox0Y6fEbxqdCeGGFLfXZ6yDo13K5nxjUFeg9UkZg=",
-        version = "v0.0.0-20231205211631-907f2d5f11b7",
+        sum = "h1:tgqkTr812ydrUTktrJGRD9BpIEt/Gv0/NsJiugr6qe0=",
+        version = "v0.0.0-20240423104735-5602ff6597cc",
     )
     go_repository(
         name = "com_github_sourcegraph_conc",
