@@ -2,6 +2,7 @@ package service
 
 import (
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
+
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 )
 
@@ -16,7 +17,13 @@ type Config struct {
 		StreamPublishConcurrency int
 	}
 
-	SAMS sams.ClientV1ConnConfig
+	SAMS SAMSConfig
+}
+
+type SAMSConfig struct {
+	sams.ConnConfig
+	ClientID     string
+	ClientSecret string
 }
 
 func (c *Config) Load(env *runtime.Env) {
