@@ -375,7 +375,7 @@ func (p *PersistentRepoIterator) doFinishN(ctx context.Context, store *basestore
 			errorsCount++
 		}
 	}
-	successfulRepoCount := int(math.Max(float64(len(repos)-errorsCount), 0))
+	successfulRepoCount := max(len(repos)-errorsCount, 0)
 	if isRetry {
 		cursorOffset = 0
 	}
