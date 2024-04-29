@@ -24,6 +24,7 @@ var DefaultEventIDFunc = func() string {
 // - Not contain any whitespace
 var featureActionRegex = regexp.MustCompile(`^[a-z][a-zA-Z-\.]+$`)
 
+// featureActionMaxLength is the maximum length of a feature or action name.
 const featureActionMaxLength = 64
 
 // ValidateEventFeatureAction validates the given feature and action names. It

@@ -17,10 +17,16 @@ func TestValidateEventFeatureAction(t *testing.T) {
 		wantErr autogold.Value
 	}{
 		{
-			name:    "empty feature and action",
+			name:    "feature is empty",
 			feature: "",
+			action:  "valid",
+			wantErr: autogold.Expect("'feature', 'action' must both be provided"),
+		},
+		{
+			name:    "action is empty",
+			feature: "valid",
 			action:  "",
-			wantErr: autogold.Expect("'feature', action must both be provided"),
+			wantErr: autogold.Expect("'feature', 'action' must both be provided"),
 		},
 		{
 			name:    "feature too long",
