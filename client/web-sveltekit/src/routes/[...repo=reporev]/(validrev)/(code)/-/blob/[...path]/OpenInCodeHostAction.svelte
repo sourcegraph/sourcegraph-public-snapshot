@@ -37,7 +37,7 @@
         text-decoration: none;
         white-space: nowrap;
 
-        :hover {
+        &:hover {
             color: var(--text-title);
         }
     }
