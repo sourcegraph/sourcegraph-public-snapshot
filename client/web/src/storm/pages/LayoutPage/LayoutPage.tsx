@@ -205,6 +205,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
             {!isSiteInit && props.isSourcegraphDotCom && props.authenticatedUser && (
                 <CodySurveyToast
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.platformContext.telemetryRecorder}
                     authenticatedUser={props.authenticatedUser}
                 />
             )}
