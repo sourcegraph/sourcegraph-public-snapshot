@@ -146,7 +146,7 @@ func createDeploymentForVersion(ctx context.Context, name, version string) error
 		name,
 		version,
 	)
-	inst, err := cloudClient.DeployVersion(ctx, spec)
+	inst, err := cloudClient.CreateInstance(ctx, spec)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "deployment failed: %v", err))
 		return errors.Wrapf(err, "failed to deploy version %v", version)

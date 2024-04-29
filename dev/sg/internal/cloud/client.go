@@ -28,6 +28,15 @@ const DevEnvironment = "dev"
 // It is set to internal because in cloud, internal instance types does not have metrics or security enabled.
 const EphemeralInstanceType = "internal"
 
+var _ EphemeralClient = &Client{}
+
+type EphemeralClient interface {
+	CreateInstance(context.Context, *DeploymentSpec) (*Instance, error)
+	GetInstance(context.Context, string) (*Instance, error)
+	ListInstances(context.Context) ([]*Instance, error)
+	DeleteInstance(context.Context, string) error
+}
+
 type Client struct {
 	client cloudapiv1connect.InstanceServiceClient
 	token  string
@@ -88,6 +97,21 @@ func newRequestWithToken[T any](token string, message *T) *connect.Request[T] {
 	return req
 }
 
+func (c *Client) GetInstance(ctx context.Context, name string) (*Instance, error) {
+	req := newRequestWithToken(c.token, &cloudapiv1.GetInstanceRequest{
+		Name:        name,
+		Environment: DevEnvironment,
+	},
+	)
+
+	resp, err := c.client.GetInstance(ctx, req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get instance %q", name)
+	}
+
+	return newInstance(resp.Msg.GetInstance()), nil
+}
+
 func (c *Client) ListInstances(ctx context.Context) ([]*Instance, error) {
 	req := newRequestWithToken(c.token, &cloudapiv1.ListInstancesRequest{
 		InstanceFilter: &cloudapiv1.InstanceFilter{
@@ -105,7 +129,7 @@ func (c *Client) ListInstances(ctx context.Context) ([]*Instance, error) {
 	return toInstances(resp.Msg.GetInstances()...), nil
 }
 
-func (c *Client) DeployVersion(ctx context.Context, spec *DeploymentSpec) (*Instance, error) {
+func (c *Client) CreateInstance(ctx context.Context, spec *DeploymentSpec) (*Instance, error) {
 	// TODO(burmudar): Better method to get LicenseKeys
 	licenseKey := os.Getenv("EPHEMERAL_LICENSE_KEY")
 	if licenseKey == "" {
