@@ -114,10 +114,10 @@
     .root {
         display: flex;
         flex-direction: column;
-    }
 
-    :global([data-input-container]) {
-        margin: 0.75rem;
+        :global([data-input-container]) {
+            margin: 0.75rem;
+        }
     }
 
     .loading-state,

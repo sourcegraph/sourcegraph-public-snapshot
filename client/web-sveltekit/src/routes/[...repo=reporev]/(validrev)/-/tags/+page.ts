@@ -6,11 +6,13 @@ import { TagsPage_TagsQuery } from './page.gql'
 
 const PAGE_SIZE = 50
 
-export const load: PageLoad = ({ params }) => {
+export const load: PageLoad = ({ params, url }) => {
     const client = getGraphQLClient()
     const { repoName } = parseRepoRevision(params.repo)
+    const query = url.searchParams.get('query') ?? ''
 
     return {
+        query,
         tagsQuery: infinityQuery({
             client,
             query: TagsPage_TagsQuery,
@@ -18,6 +20,7 @@ export const load: PageLoad = ({ params }) => {
                 repoName,
                 first: PAGE_SIZE,
                 withBehindAhead: false,
+                query,
             },
             nextVariables: previousResult => {
                 if (previousResult?.data?.repository?.gitRefs?.pageInfo?.hasNextPage) {
