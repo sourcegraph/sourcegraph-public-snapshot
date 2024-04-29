@@ -3,6 +3,7 @@ package codycontext
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/grafana/regexp"
@@ -245,6 +246,20 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 	return filtered, nil
 }
 
+func getKeywordContextExcludeFilePathsQuery() string {
+	var excludeFilePaths = []string{
+		"\\.min\\.js$",
+		"\\.map$",
+	}
+
+	filters := []string{}
+	for _, filePath := range excludeFilePaths {
+		filters = append(filters, fmt.Sprintf("-file:%v", filePath))
+	}
+
+	return strings.Join(filters, " ")
+}
+
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
 func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, matcher FileMatcher) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getKeywordContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
@@ -265,7 +280,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		regexEscapedRepoNames[i] = regexp.QuoteMeta(string(repo.Name))
 	}
 
-	keywordQuery := fmt.Sprintf(`repo:^%s$ type:file type:path %s`, query.UnionRegExps(regexEscapedRepoNames), args.Query)
+	keywordQuery := fmt.Sprintf(`repo:^%s$ type:file type:path %s %s`, query.UnionRegExps(regexEscapedRepoNames), getKeywordContextExcludeFilePathsQuery(), args.Query)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
