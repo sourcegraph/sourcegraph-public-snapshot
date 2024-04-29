@@ -31,7 +31,7 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
     const [isRemoveAccountModalOpen, setIsRemoveAccountModalOpen] = useState(false)
     const [isAddGerritAccountModalOpen, setIsGerritAccountModalOpen] = useState(false)
 
-    useEffect(() => telemetryRecorder.recordEvent('settings.externalAccount', 'view'))
+    useEffect(() => telemetryRecorder.recordEvent('settings.externalAccount', 'view'), [telemetryRecorder])
 
     const navigateToAuthProvider = useCallback((): void => {
         if (authProvider.serviceType === 'gerrit') {
