@@ -93,7 +93,7 @@ func newCompletionsHandler(
 			return
 		}
 
-		// Enterprise customers may define instance-wide Cody context filters (a.k.a. Cody Ignore) in the site config.
+		// Enterprise customers may define instance-wide Cody context filters (aka Cody Ignore) in the site config.
 		// To ensure Cody clients respect these restrictions, we enforce the minimum supported client version.
 		isDotcom := dotcom.SourcegraphDotComMode()
 		if !isDotcom {
@@ -465,7 +465,7 @@ func (e *codyIgnoreCompatibilityError) Error() string {
 	return fmt.Sprintf("%s: %s", prefix, e.reason)
 }
 
-// checkClientCodyIgnoreCompatibility checks if the client version respects Cody context filters (a.k.a. Cody Ignore) defined in the site config.
+// checkClientCodyIgnoreCompatibility checks if the client version respects Cody context filters (aka Cody Ignore) defined in the site config.
 // A non-nil codyIgnoreCompatibilityError implies that the HTTP request should be rejected with the error text and code from the returned error.
 // Error text is safe to be surfaced to end user.
 func checkClientCodyIgnoreCompatibility(r *http.Request) *codyIgnoreCompatibilityError {
