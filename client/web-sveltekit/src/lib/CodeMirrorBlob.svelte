@@ -63,7 +63,6 @@
         '.cm-gutterElement': {
             lineHeight: '1.55',
             minWidth: '40px !important',
-            height: '20px',
         },
         '.cm-line': {
             paddingLeft: '3ex',
