@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
 
-import { useFeatureFlag } from 'src/featureFlags/useFeatureFlag'
-
 import type { ErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
@@ -10,6 +8,7 @@ import { Button, ErrorAlert, H2, LoadingSpinner, Modal, Text } from '@sourcegrap
 
 import type { AuthenticatedUser } from '../auth'
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import type {
     AuthzProvidersResult,
     AuthzProvidersVariables,
