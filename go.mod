@@ -279,8 +279,8 @@ require (
 	github.com/sourcegraph/cloud-api v0.0.0-20240423104735-5602ff6597cc
 	github.com/sourcegraph/log/logr v0.0.0-20240425170707-431bcb6c8668
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20230822024612-edb48c530722
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20240325114905-87053fe51a82
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20240325114905-87053fe51a82
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20240424172240-25e368a6e822
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20240424172240-25e368a6e822
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/nobl9 v0.0.0-20240131130226-cb88836e6df8
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie v0.0.0-20231230001101-a13188f9c749
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20231220215815-b87ebb3e8c47
