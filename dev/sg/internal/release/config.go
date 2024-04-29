@@ -308,8 +308,6 @@ func (r *releaseRunner) CreateRelease(ctx context.Context) error {
 		return err
 	}
 
-	fmt.Println("gotten an error ----")
-
 	var steps []cmdManifest
 	switch r.typ {
 	case "patch":
