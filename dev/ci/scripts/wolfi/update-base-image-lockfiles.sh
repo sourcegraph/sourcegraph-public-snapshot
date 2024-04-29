@@ -4,7 +4,7 @@
 # Push a new branch to GitHub, and open a PR.
 # Can be run from any base branch, and will create an appropriate PR.
 
-# set -exu -o pipefail
+set -exu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
@@ -41,7 +41,7 @@ Built from Buildkite run [#${BUILDKITE_BUILD_NUMBER}](https://buildkite.com/sour
 ## Test Plan
 - CI build verifies image functionality"
 
-# Ensure git commit details are correct
+# Ensure git author details are correct
 git config --global user.email \"buildkite@sourcegraph.com\"
 git config --global user.name \"Buildkite\"
 
