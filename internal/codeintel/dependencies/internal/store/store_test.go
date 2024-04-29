@@ -185,6 +185,128 @@ func TestListPackageRepoRefs(t *testing.T) {
 	}
 }
 
+func TestListPackageRepoRefsFuzzyExactMatchOrdering(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(t))
+	store := New(observation.TestContextTB(t), db)
+
+	pkgs := []shared.MinimalPackageRepoRef{
+		{Scheme: "npm", Name: "foo", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}}},
+		{Scheme: "npm", Name: "reactify", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}}},
+		{Scheme: "npm", Name: "react", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}}},
+		{Scheme: "npm", Name: "react-dom", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}}},
+		{Scheme: "npm", Name: "react-docs", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}}},
+	}
+
+	// Inserting each package separetely to ensure that the ordering is stable.
+	// `InsertPackageRepoRefs` internall sorts the provided package list by name/schema.
+	for _, pkg := range pkgs {
+		if _, _, err := store.InsertPackageRepoRefs(ctx, []shared.MinimalPackageRepoRef{pkg}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for _, test := range []struct {
+		opts    ListDependencyReposOpts
+		results []shared.PackageRepoReference
+	}{
+		// no exact-match present, order by id
+		{
+			opts: ListDependencyReposOpts{
+				Name:      "react-do",
+				Scheme:    "npm",
+				Fuzziness: FuzzinessWildcard,
+			},
+			results: []shared.PackageRepoReference{
+				{
+					ID:     4,
+					Scheme: "npm",
+					Name:   "react-dom",
+					Versions: []shared.PackageRepoRefVersion{{
+						ID:           4,
+						PackageRefID: 4,
+						Version:      "1.0.0",
+					}},
+				},
+				{
+					ID:     5,
+					Scheme: "npm",
+					Name:   "react-docs",
+					Versions: []shared.PackageRepoRefVersion{{
+						ID:           5,
+						PackageRefID: 5,
+						Version:      "1.0.0",
+					}},
+				},
+			},
+		},
+		// exact match present, order by exact match and then by id
+		{
+			opts: ListDependencyReposOpts{
+				Name:      "react",
+				Scheme:    "npm",
+				Fuzziness: FuzzinessWildcard,
+			},
+			results: []shared.PackageRepoReference{
+				{
+					ID:     3,
+					Scheme: "npm",
+					Name:   "react",
+					Versions: []shared.PackageRepoRefVersion{{
+						ID:           3,
+						PackageRefID: 3,
+						Version:      "1.0.0",
+					}},
+				},
+				{
+					ID:     2,
+					Scheme: "npm",
+					Name:   "reactify",
+					Versions: []shared.PackageRepoRefVersion{{
+						ID:           2,
+						PackageRefID: 2,
+						Version:      "1.0.0",
+					}},
+				},
+				{
+					ID:     4,
+					Scheme: "npm",
+					Name:   "react-dom",
+					Versions: []shared.PackageRepoRefVersion{{
+						ID:           4,
+						PackageRefID: 4,
+						Version:      "1.0.0",
+					}},
+				},
+				{
+					ID:     5,
+					Scheme: "npm",
+					Name:   "react-docs",
+					Versions: []shared.PackageRepoRefVersion{{
+						ID:           5,
+						PackageRefID: 5,
+						Version:      "1.0.0",
+					}},
+				},
+			},
+		},
+	} {
+		listedPkgs, _, _, err := store.ListPackageRepoRefs(ctx, test.opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(test.results, listedPkgs); diff != "" {
+			t.Errorf("mismatch (-want, +got): %s", diff)
+		}
+	}
+}
+
 func TestListPackageRepoRefsFuzzy(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
