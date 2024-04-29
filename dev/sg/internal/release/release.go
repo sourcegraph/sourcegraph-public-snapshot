@@ -1,10 +1,15 @@
 package release
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
@@ -195,6 +200,70 @@ var Command = &cli.Command{
 	},
 }
 
+// Return type from releaseregistry
+// for the /releases/sourcegraph endpoint
+type releaseInfo struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	Public     bool   `json:"public"`
+	CreatedAt  string `json:"created_at"`
+	PromotedAt string `json:"promoted_at"`
+	Version    string `json:"version"`
+	GitSha     string `json:"git_sha"`
+}
+
+// determineNextReleaseVersion determines latest major.minor.patch version number by hitting the releaseregistry
+// Is only called when --version auto is passed to the sg release command
+// Should *only* be called for patch releases for the monorepo!
+// returns the new patch number for the latest minor version, in the form of "major.minor.patch"
+func determineNextReleaseVersion(ctx context.Context) (string, error) {
+	releaseEndpoint := "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph" // In the future we may wish to change this to name of the product being released
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, releaseEndpoint, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "Could not create request")
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", errors.Wrap(err, "Could not get response from releaseregistry")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", errors.Newf("API error, got status %d", resp.StatusCode)
+	}
+
+	var versions []releaseInfo
+	if err := json.NewDecoder(resp.Body).Decode(&versions); err != nil {
+		return "", errors.New("Could not parse ReleaseInfo json")
+	}
+
+	if len(versions) == 0 {
+		return "", errors.New("No releases returned")
+	}
+	newestVersion := semver.MustParse(strings.TrimPrefix(versions[0].Version, "v"))
+	url := fmt.Sprintf("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/next/%d.%d", newestVersion.Major(), newestVersion.Minor())
+
+	req, err = http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "Could not create POST request")
+	}
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		return "", errors.New("Could not automatically determine new version number")
+	}
+	if resp.StatusCode != 200 {
+		return "", errors.Newf("API error, got status %d", resp.StatusCode)
+	}
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.New("Could not read new version number")
+	}
+	defer resp.Body.Close()
+	version := string(bodyBytes)
+	return version, nil
+}
+
 func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 	if cctx.Bool("config-from-commit") && cctx.String("version") != "" {
 		return nil, errors.New("You cannot use --config-from-commit and --version at the same time")
@@ -207,9 +276,18 @@ func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 	workdir := cctx.String("workdir")
 	pretend := cctx.Bool("pretend")
 	isDevelopment := cctx.Bool("development")
-	// Normalize the version string, to prevent issues where this was given with the wrong convention
-	// which requires a full rebuild.
-	version := fmt.Sprintf("v%s", strings.TrimPrefix(cctx.String("version"), "v"))
+	var version string
+	if cctx.String("version") == "auto" {
+		var err error
+		version, err = determineNextReleaseVersion(cctx.Context)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// Normalize the version string, to prevent issues where this was given with the wrong convention
+		// which requires a full rebuild.
+		version = fmt.Sprintf("v%s", strings.TrimPrefix(cctx.String("version"), "v"))
+	}
 	typ := cctx.String("type")
 	inputs := cctx.String("inputs")
 	branch := cctx.String("branch")
