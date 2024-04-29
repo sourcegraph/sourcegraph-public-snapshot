@@ -22,11 +22,11 @@
     </div>
     <div class="commit-message">
         <a href={canonicalURL}>
-            <span>{commitMessage}</span>
+            {commitMessage}
         </a>
     </div>
     <div class="commit-date">
-        <span>{commitDate}</span>
+       {commitDate}
     </div>
 </div>
 

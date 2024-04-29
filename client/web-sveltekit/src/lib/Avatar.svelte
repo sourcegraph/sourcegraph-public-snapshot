@@ -47,8 +47,9 @@
 
     img,
     div {
-        --min-size: 1.5rem;
+        --min-size: 1.25rem;
         --size: var(--avatar-size, var(--icon-inline-size, var(--min-size)));
+        --avatar-size: 1.5rem;
 
         min-width: var(--min-size);
         min-height: var(--min-size);
