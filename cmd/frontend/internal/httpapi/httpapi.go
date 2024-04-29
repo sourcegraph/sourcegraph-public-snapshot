@@ -40,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/sams"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -204,14 +205,35 @@ func NewHandler(
 				SAMSClient: samsClient,
 			}
 
-			// API endpoint for ssc to trigger cody's rate limit refresh for a user
-			// TODO(sourcegraph#59625) remove this as part of adding SAMSActor source
+			// API endpoint for the SSC backend to trigger cody's rate limit refresh for a user.
+			// TODO(sourcegraph#59625): Remove this as part of adding SAMSActor source.
 			m.Path("/ssc/users/{samsAccountID}/cody/limits/refresh").Methods("POST").Handler(
 				samsAuthenticator.RequireScopes(
 					[]sams.Scope{sams.ScopeDotcom},
 					newSSCRefreshCodyRateLimitHandler(logger, db),
 				),
 			)
+
+			// API endpoint for proxying an arbitrary API request to the SSC backend.
+			//
+			// SECURITY: We are relying on the caller of this function to register the
+			// necessary authentication middleware. (e.g. injecting the Sourcegraph actor
+			// based on the session cookie or Sg user access token in the request's header.)
+			//
+			// This middleware handler then exchanges the authenticated Sourcegraph user's
+			// credentials for their SAMS external identy's access token, and proxies the
+			// HTTP call to the SSC backend.
+			//
+			// This means that for any cookie-based authentication method, we need to have
+			// CSRF protection. (However, that appears to be the case, see `newExternalHTTPHandler`
+			// and its use of `CookieMiddlewareWithCSRFSafety`.)
+			sscBackendProxy := ssc.APIProxyHandler{
+				CodyProConfig: conf.Get().Dotcom.CodyProConfig,
+				DB:            db,
+				Logger:        logger.Scoped("SSC Proxy"),
+				URLPrefix:     "/.api/ssc/proxy",
+			}
+			m.PathPrefix("/ssc/proxy/").Handler(&sscBackendProxy)
 		}
 	}
 
