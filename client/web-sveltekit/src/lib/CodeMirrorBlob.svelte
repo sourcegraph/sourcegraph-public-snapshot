@@ -61,12 +61,12 @@
             color: 'var(--line-number-color)',
         },
         '.cm-gutterElement': {
-            lineHeight: '1.55',
+            lineHeight: '1.54',
             minWidth: '40px !important',
         },
         '.cm-line': {
             paddingLeft: '3ex',
-            lineHeight: '1.55',
+            lineHeight: '1.54',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
