@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var GetEphemeralCommand = cli.Command{
+var StatusEphemeralCommand = cli.Command{
 	Name:        "status",
 	Usage:       "sg could status",
 	Description: "get the status of the ephemeral cloud instance for this branch or instance with the provided slug",
