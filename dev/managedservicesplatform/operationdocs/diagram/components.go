@@ -10,6 +10,12 @@ import (
 	"oss.terrastruct.com/d2/d2oracle"
 )
 
+// Icon is a data-uri encoded svg.
+// We need to embed the icons in our output svg
+// rather than using urls to externally hosted svgs
+// as _most_ sites block requests to external content for security reasons
+//
+// Note: when adding a new icon ensure there is no trailing whitespace/newline
 type Icon string
 
 var (
@@ -39,12 +45,14 @@ var (
 	Sentry Icon
 	//go:embed assets/opsgenie
 	Opsgenie Icon
+	//go:embed assets/vpc
+	VPC Icon
 )
 
 // CreateWithIcon creates a shape with a key, label and icon.
 // Key cannot contain periods
-func CreateWithLabelIcon(graph *d2graph.Graph, key string, label string, icon Icon) (*d2graph.Graph, string, error) {
-	graph, key, err := CreateContainerWithLabel(graph, key, label, icon)
+func createWithLabelIcon(graph *d2graph.Graph, key string, label string, icon Icon) (*d2graph.Graph, string, error) {
+	graph, key, err := createContainerWithLabel(graph, key, label, icon)
 	if err != nil {
 		return graph, key, err
 	}
@@ -55,27 +63,27 @@ func CreateWithLabelIcon(graph *d2graph.Graph, key string, label string, icon Ic
 	return graph, key, nil
 }
 
-// CreateWithIcon creates a shape with a key and icon.
+// createWithIcon creates a shape with a key and icon.
 // The label of the shape will be the same as key.
 // Key cannot contain periods
-func CreateWithIcon(graph *d2graph.Graph, key string, icon Icon) (*d2graph.Graph, string, error) {
+func createWithIcon(graph *d2graph.Graph, key string, icon Icon) (*d2graph.Graph, string, error) {
 	if strings.Contains(key, ".") {
 		return graph, "", errors.Newf("key must not contain a period: %s", key)
 	}
-	return CreateWithLabelIcon(graph, key, key, icon)
+	return createWithLabelIcon(graph, key, key, icon)
 }
 
-// CreateContainer creates a non-icon shape designed for nested other shapes within.
+// createContainer creates a non-icon shape designed for nested other shapes within.
 // An icon is still used to identify the container as well as its label which is the same as the key
 // Key cannot contain periods.
-func CreateContainer(graph *d2graph.Graph, key string, icon Icon) (*d2graph.Graph, string, error) {
-	return CreateContainerWithLabel(graph, key, key, icon)
+func createContainer(graph *d2graph.Graph, key string, icon Icon) (*d2graph.Graph, string, error) {
+	return createContainerWithLabel(graph, key, key, icon)
 }
 
 // / CreateContainer creates a non-icon shape designed for nested other shapes within.
 // An icon is still used to identify the container as well as its label which can be specified
 // Key cannot contain periods.
-func CreateContainerWithLabel(graph *d2graph.Graph, key string, label string, icon Icon) (*d2graph.Graph, string, error) {
+func createContainerWithLabel(graph *d2graph.Graph, key string, label string, icon Icon) (*d2graph.Graph, string, error) {
 	if strings.Contains(key, ".") {
 		return graph, "", errors.Newf("key must not contain a period: %s", key)
 	}

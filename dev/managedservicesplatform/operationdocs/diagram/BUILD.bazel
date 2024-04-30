@@ -1,26 +1,6 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "diagrams",
-    srcs = [
-        "components.go",
-        "diagrams.go",
-    ],
-    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/diagrams",
-    visibility = ["//visibility:public"],
-    deps = [
-        "//dev/managedservicesplatform/spec",
-        "//lib/errors",
-        "@com_terrastruct_oss_d2//d2format",
-        "@com_terrastruct_oss_d2//d2graph",
-        "@com_terrastruct_oss_d2//d2layouts/d2dagrelayout",
-        "@com_terrastruct_oss_d2//d2lib",
-        "@com_terrastruct_oss_d2//d2oracle",
-        "@com_terrastruct_oss_d2//lib/textmeasure",
-    ],
-)
-
-go_library(
     name = "diagram",
     srcs = [
         "components.go",
@@ -42,6 +22,7 @@ go_library(
         "assets/loadbalancer",
         "assets/opsgenie",
         "assets/sentry",
+        "assets/vpc",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/diagram",
     visibility = ["//visibility:public"],

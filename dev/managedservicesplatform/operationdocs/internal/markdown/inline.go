@@ -68,31 +68,6 @@ func Linkf(text, url string, vars ...any) string {
 	return Link(text, fmt.Sprintf(url, vars...))
 }
 
-// Image generates a markdown image.
-func Image(text, url string) string {
-	// some urls params are not escaped properly, let's fix that magically
-	parsedUrl, err := neturl.Parse(url)
-	// we are intentionally ignoring the error here
-	// if the user supplied an invalid url, it may or may not be intentional
-	// either way, not this method's problem
-	if err == nil {
-		params := neturl.Values{}
-		for k, v := range parsedUrl.Query() {
-			for _, vv := range v {
-				params.Add(k, vv)
-			}
-		}
-		parsedUrl.RawQuery = params.Encode()
-		url = parsedUrl.String()
-	}
-	return fmt.Sprintf("![%s](%s)", text, url)
-}
-
-// Imagef generates a Markdown image. Format arguments only apply to the URL.
-func Imagef(text, url string, vars ...any) string {
-	return Image(text, fmt.Sprintf(url, vars...))
-}
-
 // List generates a Markdown list.
 // It supports arbitrary nesting of lists of string, and each sub-list will be indented.
 func List(lines any) string {

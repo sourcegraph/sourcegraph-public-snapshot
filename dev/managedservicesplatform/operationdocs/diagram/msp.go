@@ -8,8 +8,8 @@ import (
 	"oss.terrastruct.com/d2/d2oracle"
 )
 
-func bigquery(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
-	graph, key, err := CreateContainer(graph, "BigQuery", BigQuery)
+func newBigQueryNode(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+	graph, key, err := createContainer(graph, "BigQuery", BigQuery)
 	if err != nil {
 		return graph, key, errors.Wrap(err, "failed to create bigquery container")
 	}
@@ -33,27 +33,27 @@ func bigquery(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Graph, 
 	return graph, key, nil
 }
 
-func cloudflare(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
-	return CreateWithLabelIcon(graph, "Cloudflare", "", Cloudflare)
+func newCloudflareNode(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+	return createWithLabelIcon(graph, "Cloudflare", "", Cloudflare)
 }
 
-func cloudrun(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+func newCloudRunNode(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
 	key := "Cloud Run Service"
 	if env.EnvironmentJobSpec != nil {
 		key = "Cloud Run Job"
 	}
-	return CreateWithIcon(graph, key, CloudRun)
+	return createWithIcon(graph, key, CloudRun)
 }
 
-func externalIpAddress(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
-	return CreateWithIcon(graph, "External IP Address", CloudExternalIPAddress)
+func newExternalIPAddressNode(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+	return createWithIcon(graph, "External IP Address", CloudExternalIPAddress)
 }
 
-func internet(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
-	return CreateWithIcon(graph, "Internet", Internet)
+func newInternetNode(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+	return createWithIcon(graph, "Internet", Internet)
 }
 
-func loadbalancer(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+func newLoadBalancerNode(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
 	// Create Cloud Armor rules also
 	if env.Category.IsProduction() && env.Domain.Cloudflare.ShouldProxy() {
 		// create a container for the load balancer + cloud armor
@@ -66,7 +66,7 @@ func loadbalancer(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Gra
 			return graph, container, errors.Wrap(err, "failed to set loadbalancer container label to empty")
 		}
 
-		graph, loadbalancer, err := CreateWithIcon(graph, "Application Load Balancer", CloudLoadBalancer)
+		graph, loadbalancer, err := createWithIcon(graph, "Application Load Balancer", CloudLoadBalancer)
 		if err != nil {
 			return graph, container, errors.Wrap(err, "failed to create ALB")
 		}
@@ -76,7 +76,7 @@ func loadbalancer(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Gra
 			return graph, container, errors.Wrap(err, "failed to move ALB into container")
 		}
 
-		graph, cloudarmor, err := CreateWithIcon(graph, "Cloud Armor", CloudArmor)
+		graph, cloudarmor, err := createWithIcon(graph, "Cloud Armor", CloudArmor)
 		if err != nil {
 			return graph, container, errors.Wrap(err, "failed to create cloud armor")
 		}
@@ -93,19 +93,19 @@ func loadbalancer(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Gra
 		return graph, container, nil
 
 	}
-	return CreateWithIcon(graph, "Application Load Balancer", CloudLoadBalancer)
+	return createWithIcon(graph, "Application Load Balancer", CloudLoadBalancer)
 }
 
-func monitoring(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
-	return CreateWithIcon(graph, "Monitoring", CloudMonitoring)
+func newMonitoringNode(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+	return createWithIcon(graph, "Monitoring", CloudMonitoring)
 }
 
-func opsgenie(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
-	return CreateWithIcon(graph, "Opsgenie", Opsgenie)
+func newOpsgenieNode(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+	return createWithIcon(graph, "Opsgenie", Opsgenie)
 }
 
-func postgres(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
-	graph, key, err := CreateContainer(graph, "Postgres", CloudSQL)
+func newPostgresNode(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+	graph, key, err := createContainer(graph, "Cloud SQL (Postgres)", CloudSQL)
 	if err != nil {
 		return graph, key, errors.Wrap(err, "failed to create postgres container")
 	}
@@ -129,14 +129,18 @@ func postgres(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Graph, 
 	return graph, key, nil
 }
 
-func redis(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
-	return CreateWithIcon(graph, "Redis", CloudMemorystore)
+func newRedisNode(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+	return createWithIcon(graph, "Redis", CloudMemorystore)
 }
 
-func sentry(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
-	return CreateWithIcon(graph, "Sentry", Sentry)
+func newSentryNode(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+	return createWithIcon(graph, "Sentry", Sentry)
 }
 
-func trace(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
-	return CreateWithIcon(graph, "Cloud Trace", CloudTrace)
+func newTraceNode(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+	return createWithIcon(graph, "Cloud Trace", CloudTrace)
+}
+
+func newVPCNode(graph *d2graph.Graph, _ *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
+	return createWithIcon(graph, "VPC", VPC)
 }

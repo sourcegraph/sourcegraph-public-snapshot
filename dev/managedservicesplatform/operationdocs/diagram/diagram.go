@@ -80,140 +80,172 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 
 	env := s.GetEnvironment(e)
 
-	graph, cloudrun, err := cloudrun(graph, env)
+	graph, cloudrunNode, err := newCloudRunNode(graph, env)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate cloudrun")
 	}
 
-	graph, sentry, err := sentry(graph, env)
+	// we conditionally use this in multiple locations
+	// if vpcNode != "" we can generate it when needed
+	var vpcNode string
+	createVPCNode := func(g *d2graph.Graph) error {
+		graph, vpcNode, err = newVPCNode(g, env)
+		if err != nil {
+			return errors.Wrap(err, "failed to generate vpc")
+		}
+		graph, err = addDirectedConnection(graph, cloudrunNode, vpcNode, "private networking")
+		if err != nil {
+			return errors.Wrap(err, "failed to add connection from cloudrun to sentry")
+		}
+		return nil
+	}
+
+	graph, sentryNode, err := newSentryNode(graph, env)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate sentry")
 	}
-	graph, err = addDirectedConnection(graph, cloudrun, sentry, "")
+	graph, err = addDirectedConnection(graph, cloudrunNode, sentryNode, "")
 	if err != nil {
 		return errors.Wrap(err, "failed to add connection from cloudrun to sentry")
 	}
 
-	graph, monitoring, err := monitoring(graph, env)
+	graph, monitoringNode, err := newMonitoringNode(graph, env)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate monitoring")
 	}
-	graph, err = addDirectedConnection(graph, cloudrun, monitoring, "")
+	graph, err = addDirectedConnection(graph, cloudrunNode, monitoringNode, "")
 	if err != nil {
 		return errors.Wrap(err, "failed to add connection from cloudrun to monitoring")
 	}
 
 	if env.Category != spec.EnvironmentCategoryTest && env.Alerting != nil && pointers.DerefZero(env.Alerting.Opsgenie) {
-		ograph, opsgenie, err := opsgenie(graph, env)
+		var opsgenieNode string
+		graph, opsgenieNode, err = newOpsgenieNode(graph, env)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate opsgenie")
 		}
-		ograph, err = addDirectedConnection(ograph, monitoring, opsgenie, "")
+		graph, err = addDirectedConnection(graph, monitoringNode, opsgenieNode, "")
 		if err != nil {
 			return errors.Wrap(err, "failed to add connection from monitoring to opsgenie")
 		}
-		graph = ograph
 	}
 
 	if env.EnvironmentServiceSpec != nil {
-		tgraph, trace, err := trace(graph, env)
+		var traceNode string
+		graph, traceNode, err = newTraceNode(graph, env)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate trace")
 		}
-		tgraph, err = addDirectedConnection(tgraph, cloudrun, trace, "")
+		graph, err = addDirectedConnection(graph, cloudrunNode, traceNode, "")
 		if err != nil {
 			return errors.Wrap(err, "failed to add a connection from cloudrun to trace")
 		}
-		graph = tgraph
 	}
 
 	if env.Resources != nil && env.Resources.Redis != nil {
-		rgraph, redis, err := redis(graph, env)
+		var redisNode string
+		graph, redisNode, err = newRedisNode(graph, env)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate redis")
 		}
 
-		rgraph, err = addDirectedConnection(rgraph, cloudrun, redis, "")
+		// conditionally generate vpc node
+		if vpcNode == "" {
+			err = createVPCNode(graph)
+			if err != nil {
+				return err
+			}
+		}
+
+		graph, err = addDirectedConnection(graph, vpcNode, redisNode, "private networking")
 		if err != nil {
 			return errors.Wrap(err, "failed to add connection from cloudrun to redis")
 		}
-		graph = rgraph
+
 	}
 
 	if env.Resources != nil && env.Resources.BigQueryDataset != nil {
-		bgraph, bigquery, err := bigquery(graph, env)
+		var bigqueryNode string
+		graph, bigqueryNode, err = newBigQueryNode(graph, env)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate bigquery")
 		}
 
-		bgraph, err = addDirectedConnection(bgraph, cloudrun, bigquery, "")
+		graph, err = addDirectedConnection(graph, cloudrunNode, bigqueryNode, "")
 		if err != nil {
 			return errors.Wrap(err, "failed to add a connection from cloudrun to bigquery")
 		}
-		graph = bgraph
 	}
 
 	if env.Resources != nil && env.Resources.PostgreSQL != nil {
-		pgraph, postgres, err := postgres(graph, env)
+		var postgresNode string
+		graph, postgresNode, err = newPostgresNode(graph, env)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate postgres")
 		}
 
-		pgraph, err = addDirectedConnection(pgraph, cloudrun, postgres, "")
+		// conditionally generate vpc node
+		if vpcNode == "" {
+			err = createVPCNode(graph)
+			if err != nil {
+				return err
+			}
+		}
+
+		graph, err = addDirectedConnection(graph, vpcNode, postgresNode, "private networking")
 		if err != nil {
 			return errors.Wrap(err, "failed to add a connection from cloudrun to postgres")
 		}
-
-		graph = pgraph
 	}
 
 	if env.EnvironmentServiceSpec != nil {
-		sgraph, loadbalancer, err := loadbalancer(graph, env)
+		var loadBalancerNode string
+		graph, loadBalancerNode, err = newLoadBalancerNode(graph, env)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate loadbalancer")
 		}
-		sgraph, err = addDirectedConnection(sgraph, loadbalancer, cloudrun, "")
+		graph, err = addDirectedConnection(graph, loadBalancerNode, cloudrunNode, "")
 		if err != nil {
 			return errors.Wrap(err, "failed to add a connection from loadbalancer to cloudrun")
 		}
 
-		sgraph, ip, err := externalIpAddress(sgraph, env)
+		var ipNode string
+		graph, ipNode, err = newExternalIPAddressNode(graph, env)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate external ip")
 		}
-		sgraph, err = addDirectedConnection(sgraph, ip, loadbalancer, "")
+		graph, err = addDirectedConnection(graph, ipNode, loadBalancerNode, "")
 		if err != nil {
 			return errors.Wrap(err, "failed to add a connection from ip to loadbalancer")
 		}
 
-		// destination is set to the endpoint users hit
+		// destinationNode is set to the endpoint users hit
 		// ip: if not proxied through cloudflare
 		// cloudflare: if proxied through cloudflare
-		destination := ip
+		destination := ipNode
 		if env.Domain.Cloudflare != nil && env.Domain.Cloudflare.ShouldProxy() {
-			cgraph, cloudflare, err := cloudflare(sgraph, env)
+			var cloudflareNode string
+			graph, cloudflareNode, err = newCloudflareNode(graph, env)
 			if err != nil {
 				return errors.Wrap(err, "failed to generate cloudflare")
 			}
-			cgraph, err = addDirectedConnection(cgraph, cloudflare, ip, "")
+			graph, err = addDirectedConnection(graph, cloudflareNode, ipNode, "")
 			if err != nil {
 				return errors.Wrap(err, "failed to add a connection from cloudflare to ip")
 			}
 
-			destination = cloudflare
-			sgraph = cgraph
+			destination = cloudflareNode
 		}
 
-		sgraph, internet, err := internet(sgraph, env)
+		var internetNode string
+		graph, internetNode, err = newInternetNode(graph, env)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate cloudrun")
 		}
-		sgraph, err = addDirectedConnection(sgraph, internet, destination, "")
+		graph, err = addDirectedConnection(graph, internetNode, destination, "")
 		if err != nil {
 			return errors.Wrap(err, "failed to add a connection from internet to destination")
 		}
-
-		graph = sgraph
 	}
 
 	d.graph = graph
@@ -241,21 +273,33 @@ func (d *diagram) Render() ([]byte, error) {
 // createEdge add an undirected connection between shapes.
 // Optionally annotate the connection with a label
 func addConnection(graph *d2graph.Graph, firstKey string, secondKey string, label string) (*d2graph.Graph, error) {
-	graph, _, err := d2oracle.Create(graph, nil, fmt.Sprintf("%s - %s: '%s'", firstKey, secondKey, label))
+	graph, key, err := d2oracle.Create(graph, nil, fmt.Sprintf("%s - %s", firstKey, secondKey))
+	if err != nil {
+		return graph, err
+	}
+	graph, err = d2oracle.Set(graph, nil, key+".label", nil, pointers.Ptr(label))
 	return graph, err
 }
 
 // addDirectedConnection adds a directed connection between shapes.
 // Optionally annotate the connection with a label
 func addDirectedConnection(graph *d2graph.Graph, firstKey string, secondKey string, label string) (*d2graph.Graph, error) {
-	graph, _, err := d2oracle.Create(graph, nil, fmt.Sprintf("%s -> %s: '%s'", firstKey, secondKey, label))
+	graph, key, err := d2oracle.Create(graph, nil, fmt.Sprintf("%s -> %s", firstKey, secondKey))
+	if err != nil {
+		return graph, err
+	}
+	graph, err = d2oracle.Set(graph, nil, key+".label", nil, pointers.Ptr(label))
 	return graph, err
 }
 
 // addBidirectionalConnection adds a bidirectional connection between shapes.
 // Optionally annotate the connection with a label
 func addBidirectionalConnection(graph *d2graph.Graph, firstKey string, secondKey string, label string) (*d2graph.Graph, error) {
-	graph, _, err := d2oracle.Create(graph, nil, fmt.Sprintf("%s <-> %s: '%s'", firstKey, secondKey, label))
+	graph, key, err := d2oracle.Create(graph, nil, fmt.Sprintf("%s <-> %s", firstKey, secondKey))
+	if err != nil {
+		return graph, err
+	}
+	graph, err = d2oracle.Set(graph, nil, key+".label", nil, pointers.Ptr(label))
 	return graph, err
 }
 
