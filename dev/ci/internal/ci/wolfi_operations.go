@@ -327,7 +327,7 @@ func WolfiCheckApkoLocks() *operations.Set {
 						MultiJobContext: "apko-check-lock",
 					},
 				}),
-				bk.Agent("queue", AspectWorkflows.QueueSmall),
+				bk.Agent("queue", AspectWorkflows.QueueDefault),
 				bk.Key("apko-check-lock"),
 				bk.SoftFail(222),
 			)
