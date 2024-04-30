@@ -138,7 +138,7 @@ func buildBlobstoreDeployment(sg *Sourcegraph) appsv1.Deployment {
 		},
 	}
 
-	podTemplate := pod.NewPodTemplate(name)
+	podTemplate := pod.NewPodTemplate(name, sg.Spec.Blobstore)
 	podTemplate.Template.Spec.Containers = []corev1.Container{defaultContainer}
 	podTemplate.Template.Spec.Volumes = podVolumes
 
