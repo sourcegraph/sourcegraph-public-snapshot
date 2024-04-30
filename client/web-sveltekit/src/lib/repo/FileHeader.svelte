@@ -124,7 +124,7 @@
         a {
             color: var(--text-body);
 
-            &:hover{
+            &:hover {
                 color: var(--text-title);
             }
         }
