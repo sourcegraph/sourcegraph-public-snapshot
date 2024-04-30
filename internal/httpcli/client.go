@@ -764,15 +764,13 @@ func extractRetryAfter(response *http.Response) (retryAfterHeader string, retryA
 			}
 
 			// If we weren't able to parse as seconds, try to parse as RFC1123.
+			after, err := time.Parse(time.RFC1123, retryAfterHeader)
 			if err != nil {
-				after, err := time.Parse(time.RFC1123, retryAfterHeader)
-				if err != nil {
-					// We don't know how to parse this header
-					return retryAfterHeader, nil
-				}
-				in := time.Until(after)
-				return retryAfterHeader, &in
+				// We don't know how to parse this header
+				return retryAfterHeader, nil
 			}
+			in := time.Until(after)
+			return retryAfterHeader, &in
 		}
 	}
 	return retryAfterHeader, nil
