@@ -157,7 +157,7 @@
         }
 
         &:hover {
-            background-color: var(--subtle-bg-2);
+            background-color: var(--color-bg-2);
         }
 
         a {
