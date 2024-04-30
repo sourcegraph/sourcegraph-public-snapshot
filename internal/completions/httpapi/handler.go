@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
@@ -92,6 +93,16 @@ func newCompletionsHandler(
 			return
 		}
 
+		// Enterprise customers may define instance-wide Cody context filters (aka Cody Ignore) in the site config.
+		// To ensure Cody clients respect these restrictions, we enforce the minimum supported client version.
+		isDotcom := dotcom.SourcegraphDotComMode()
+		if !isDotcom {
+			if err := checkClientCodyIgnoreCompatibility(r); err != nil {
+				http.Error(w, err.Error(), err.statusCode)
+				return
+			}
+		}
+
 		var requestParams types.CodyCompletionRequestParameters
 		if err := json.NewDecoder(r.Body).Decode(&requestParams); err != nil {
 			http.Error(w, "could not decode request body", http.StatusBadRequest)
@@ -114,7 +125,6 @@ func newCompletionsHandler(
 
 		// Use the user's access token for Cody Gateway on dotcom if PLG is enabled.
 		accessToken := completionsConfig.AccessToken
-		isDotcom := dotcom.SourcegraphDotComMode()
 		isProviderCodyGateway := completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
 		if isDotcom && isProviderCodyGateway {
 			// Note: if we have no Authorization header, that's fine too, this will return an error
@@ -441,4 +451,90 @@ func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature t
 		}
 		_, _ = w.Write(completionBytes)
 	}
+}
+
+type codyIgnoreCompatibilityError struct {
+	reason     string
+	statusCode int
+}
+
+func (e *codyIgnoreCompatibilityError) Error() string {
+	// prefix value is used to identify specific errors in the Cody clients codebases.
+	// When changing its value be sure to update the clients code.
+	const prefix = "ClientCodyIgnoreCompatibilityError"
+	return fmt.Sprintf("%s: %s", prefix, e.reason)
+}
+
+// checkClientCodyIgnoreCompatibility checks if the client version respects Cody context filters (aka Cody Ignore) defined in the site config.
+// A non-nil codyIgnoreCompatibilityError implies that the HTTP request should be rejected with the error text and code from the returned error.
+// Error text is safe to be surfaced to end user.
+func checkClientCodyIgnoreCompatibility(r *http.Request) *codyIgnoreCompatibilityError {
+	// If Cody context filters are not defined on the instance, we do not restrict client version.
+	// Because the site hasn't configured Cody Ignore, no need to enforce it.
+	if conf.SiteConfig().CodyContextFilters == nil {
+		return nil
+	}
+
+	clientName := types.CodyClientName(r.URL.Query().Get("client-name"))
+	if clientName == "" {
+		return &codyIgnoreCompatibilityError{
+			reason:     "\"client-name\" query param is required.",
+			statusCode: http.StatusNotAcceptable,
+		}
+	}
+
+	// clientVersionConstraint defines the minimum client version required to support Cody Ignore.
+	type clientVersionConstraint struct {
+		client     types.CodyClientName
+		constraint string // represents client version constraint following the semver spec
+	}
+	var cvc clientVersionConstraint
+	switch clientName {
+	case types.CodyClientWeb:
+		// Cody Web is of the same version as the Sourcegraph instance, thus no version constraint is needed.
+		return nil
+	case types.CodyClientVscode:
+		cvc = clientVersionConstraint{client: clientName, constraint: ">= 1.20.0"}
+	case types.CodyClientJetbrains:
+		cvc = clientVersionConstraint{client: clientName, constraint: ">= 6.0.0"}
+	default:
+		return &codyIgnoreCompatibilityError{
+			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
+			statusCode: http.StatusNotAcceptable,
+		}
+	}
+
+	clientVersion := r.URL.Query().Get("client-version")
+	if clientVersion == "" {
+		return &codyIgnoreCompatibilityError{
+			reason:     "\"client-version\" query param is required.",
+			statusCode: http.StatusNotAcceptable,
+		}
+	}
+
+	c, err := semver.NewConstraint(cvc.constraint)
+	if err != nil {
+		return &codyIgnoreCompatibilityError{
+			reason:     fmt.Sprintf("Cody for %s version constraint %q doesn't follow semver spec.", cvc.client, cvc.constraint),
+			statusCode: http.StatusInternalServerError,
+		}
+	}
+
+	v, err := semver.NewVersion(clientVersion)
+	if err != nil {
+		return &codyIgnoreCompatibilityError{
+			reason:     fmt.Sprintf("Cody for %s version %q doesn't follow semver spec.", cvc.client, clientVersion),
+			statusCode: http.StatusBadRequest,
+		}
+	}
+
+	ok := c.Check(v)
+	if !ok {
+		return &codyIgnoreCompatibilityError{
+			reason:     fmt.Sprintf("Cody for %s version %q doesn't match version constraint %q", cvc.client, clientVersion, cvc.constraint),
+			statusCode: http.StatusNotAcceptable,
+		}
+	}
+
+	return nil
 }

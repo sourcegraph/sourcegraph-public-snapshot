@@ -7,6 +7,7 @@ export {
     toPrettyBlobURL,
     toRepoURL,
     type AbsoluteRepoFile,
+    replaceRevisionInURL,
 } from '@sourcegraph/shared/src/util/url'
 export {
     isCloneInProgressErrorLike,

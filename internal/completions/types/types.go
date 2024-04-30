@@ -178,6 +178,15 @@ const (
 	CompletionsV1            CompletionsVersion = 1
 )
 
+// CodyClientName represents the name of a client in URL query parameters.
+type CodyClientName string
+
+const (
+	CodyClientWeb       CodyClientName = "web"
+	CodyClientVscode    CodyClientName = "vscode"
+	CodyClientJetbrains CodyClientName = "jetbrains"
+)
+
 type CompletionsClient interface {
 	// Stream executions a completions request, streaming results to the callback.
 	// Callers should check for ErrStatusNotOK and handle the error appropriately.

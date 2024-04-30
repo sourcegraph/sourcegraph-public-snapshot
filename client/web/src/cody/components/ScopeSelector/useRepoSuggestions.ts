@@ -10,6 +10,7 @@ import type {
     SuggestedReposResult,
     SuggestedReposVariables,
 } from '../../../graphql-operations'
+import { useCodyIgnore } from '../../useCodyIgnore'
 
 import { SuggestedReposQuery } from './backend'
 
@@ -53,6 +54,8 @@ const DEFAULT_OPTS: UseRepoSuggestionsOpts = {
  * browsing history, embedded repositories available on their instance, and any fallbacks
  * configured in the options.
  *
+ * If Cody Ignore are configured on the instance, repositories matching ignore rules are excluded from suggestions.
+ *
  * The number of suggestions can be configured with `opts.numSuggestions`. The default is 10.
  *
  * Fallback suggestions can be configured with `opts.fallbackSuggestions`. The default is
@@ -72,6 +75,7 @@ export const useRepoSuggestions = (
 ): ContextSelectorRepoFields[] => {
     const { numSuggestions, fallbackSuggestions, omitSuggestions } = { ...DEFAULT_OPTS, ...opts }
 
+    const { isRepoIgnored } = useCodyIgnore()
     const userHistory = useUserHistory(authenticatedUser?.id, false)
     const suggestedRepoNames: string[] = useMemo(() => {
         const flattenedTranscriptHistoryEntries = transcriptHistory
@@ -89,6 +93,8 @@ export const useRepoSuggestions = (
             .flat()
             // Remove duplicates.
             .filter(removeDupes)
+            // Remove ignored repositories.
+            .filter(r => !isRepoIgnored(r.name))
             // We only need up to the first numSuggestions.
             .slice(0, numSuggestions)
 
@@ -100,6 +106,10 @@ export const useRepoSuggestions = (
                     // Parse a date from the last acessed timestamp.
                     lastAccessed: new Date(item.lastAccessed),
                 }))
+                // Remove duplicates.
+                .filter(removeDupes)
+                // Remove ignored repositories.
+                .filter(r => !isRepoIgnored(r.name))
                 // We only need up to the first numSuggestions.
                 .slice(0, numSuggestions) || []
 
@@ -111,6 +121,8 @@ export const useRepoSuggestions = (
                 // We order by most recently accessed; these should always be ranked last.
                 lastAccessed: new Date(0),
             }))
+            // Remove ignored repositories.
+            .filter(r => !isRepoIgnored(r.name))
             .slice(0, numSuggestions)
 
         // Merge the lists.
@@ -124,7 +136,7 @@ export const useRepoSuggestions = (
 
         // Return just the names.
         return merged.map(({ name }) => name)
-    }, [transcriptHistory, userHistory, numSuggestions, fallbackSuggestions])
+    }, [transcriptHistory, userHistory, numSuggestions, fallbackSuggestions, isRepoIgnored])
 
     // Query for the suggested repositories.
     const { data: suggestedReposData } = useQuery<SuggestedReposResult, SuggestedReposVariables>(SuggestedReposQuery, {
@@ -157,12 +169,14 @@ export const useRepoSuggestions = (
             [...sortedByNameNodes, ...suggestedReposData.firstN.nodes]
                 // Remove any duplicates.
                 .filter(removeDupes)
+                // Remove ignored repositories. Repositories we looked up by name are already filtered, but the first N repos are not.
+                .filter(r => !isRepoIgnored(r.name))
                 // Take the first numSuggestions.
                 .slice(0, numSuggestions)
                 // Finally, filter out repositories that are should be omitted.
                 .filter(suggestion => !omitSuggestions.find(toOmit => toOmit.name === suggestion.name))
         )
-    }, [suggestedReposData, suggestedRepoNames, omitSuggestions, numSuggestions])
+    }, [suggestedReposData, suggestedRepoNames, omitSuggestions, numSuggestions, isRepoIgnored])
 
     return suggestions
 }

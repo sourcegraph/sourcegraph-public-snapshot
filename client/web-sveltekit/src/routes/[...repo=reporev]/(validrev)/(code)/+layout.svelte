@@ -17,11 +17,12 @@
 </script>
 
 <script lang="ts">
+    import { mdiHistory, mdiListBoxOutline } from '@mdi/js'
     import { tick } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
     import { page } from '$app/stores'
-    import { isErrorLike } from '$lib/common'
+    import { isErrorLike, SourcegraphURL } from '$lib/common'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
     import HistoryPanel, { type Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
@@ -41,6 +42,11 @@
     import type { GitHistory_HistoryConnection, RepoPage_ReferencesLocationConnection } from './layout.gql'
     import RepositoryRevPicker from './RepositoryRevPicker.svelte'
     import ReferencePanel from './ReferencePanel.svelte'
+
+    enum TabPanels {
+        History,
+        References,
+    }
 
     interface Capture {
         selectedTab: number | null
@@ -111,15 +117,25 @@
     $: sidebarWidth = `max(320px, ${$sidebarSize * 100}%)`
 
     // The observable query to fetch references (due to infinite scrolling)
-    $: referenceQuery = data.references
+    $: sgURL = SourcegraphURL.from($page.url)
+    $: selectedLine = sgURL.lineRange
+    $: referenceQuery =
+        sgURL.viewState === 'references' && selectedLine?.line ? data.getReferenceStore(selectedLine) : null
     $: references = $referenceQuery?.data?.repository?.commit?.blob?.lsif?.references ?? null
     $: referencesLoading = ((referenceQuery && !references) || $referenceQuery?.fetching) ?? false
 
-    afterNavigate(() => {
-        if (!!data.references) {
-            references = null
-            selectedTab = 1
-        } else if (selectedTab === 1) {
+    afterNavigate(async () => {
+        // We need to wait for referenceQuery to be updated before checking its state
+        await tick()
+
+        // todo(fkling): Figure out a proper way to represent bottom panel state
+        if (sgURL.viewState === 'references') {
+            selectedTab = TabPanels.References
+        } else if ($page.url.searchParams.has('rev')) {
+            // The file view/history panel use the 'rev' parameter to specify the commit to load
+            selectedTab = TabPanels.History
+        } else if (selectedTab === TabPanels.References) {
+            // Close references panel when navigating to a URL that doesn't have the 'references' view state
             selectedTab = null
         }
     })
@@ -160,7 +176,7 @@
         <slot />
         <div class="bottom-panel" class:open={selectedTab !== null}>
             <Tabs selected={selectedTab} toggable on:select={selectTab}>
-                <TabPanel title="History">
+                <TabPanel title="History" icon={mdiHistory}>
                     {#key $page.params.path}
                         <HistoryPanel
                             bind:this={historyPanel}
@@ -171,7 +187,7 @@
                         />
                     {/key}
                 </TabPanel>
-                <TabPanel title="References">
+                <TabPanel title="References" icon={mdiListBoxOutline}>
                     <ReferencePanel
                         connection={references}
                         loading={referencesLoading}

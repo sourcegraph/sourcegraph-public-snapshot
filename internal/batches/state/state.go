@@ -448,15 +448,15 @@ func combineCheckStates(states []btypes.ChangesetCheckState) btypes.ChangesetChe
 	}
 
 	switch {
-	case stateMap[btypes.ChangesetCheckStateUnknown]:
-		// If there are unknown states, overall is Pending.
-		return btypes.ChangesetCheckStateUnknown
 	case stateMap[btypes.ChangesetCheckStatePending]:
 		// If there are pending states, overall is Pending.
 		return btypes.ChangesetCheckStatePending
 	case stateMap[btypes.ChangesetCheckStateFailed]:
 		// If there are no pending states, but we have errors then overall is Failed.
 		return btypes.ChangesetCheckStateFailed
+	case stateMap[btypes.ChangesetCheckStateUnknown]:
+		// If there are unknown states, overall is Unknown.
+		return btypes.ChangesetCheckStateUnknown
 	case stateMap[btypes.ChangesetCheckStatePassed]:
 		// No pending or error states then overall is Passed.
 		return btypes.ChangesetCheckStatePassed
@@ -482,6 +482,7 @@ func parseGithubCheckState(s string) btypes.ChangesetCheckState {
 func parseGithubCheckSuiteState(status, conclusion string) btypes.ChangesetCheckState {
 	status = strings.ToUpper(status)
 	conclusion = strings.ToUpper(conclusion)
+
 	switch status {
 	case "IN_PROGRESS", "QUEUED", "REQUESTED":
 		return btypes.ChangesetCheckStatePending
@@ -489,8 +490,9 @@ func parseGithubCheckSuiteState(status, conclusion string) btypes.ChangesetCheck
 	if status != "COMPLETED" {
 		return btypes.ChangesetCheckStateUnknown
 	}
+
 	switch conclusion {
-	case "SUCCESS", "NEUTRAL":
+	case "SUCCESS", "NEUTRAL", "SKIPPED":
 		return btypes.ChangesetCheckStatePassed
 	case "ACTION_REQUIRED":
 		return btypes.ChangesetCheckStatePending

@@ -57,7 +57,9 @@
     {/if}
 </div>
 {#if !isBinary && expanded}
-    <FileDiffHunks hunks={fileDiff.hunks} />
+    <div class="hunks">
+        <FileDiffHunks hunks={fileDiff.hunks} />
+    </div>
 {/if}
 
 <style lang="scss">
@@ -69,6 +71,11 @@
 
     .file-link {
         margin-left: 0.5rem;
+    }
+
+    .hunks {
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
     }
 
     button {
