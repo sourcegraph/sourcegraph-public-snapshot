@@ -477,13 +477,18 @@ type pager[T any] func(page int) (items []T, hasNext bool, cost int, err error)
 
 // fetchAll returns all items from the given pager.
 func fetchAll[T any](pager pager[T]) (allItems []T, err error) {
-	for page, hasNextPage, items, err := 1, true, []T{}, error(nil); hasNextPage; page++ {
-		items, hasNextPage, _, err = pager(page)
+	for page := 1; true; page++ {
+		items, hasNextPage, _, err := pager(page)
 		if err != nil {
 			return nil, err
 		}
 		allItems = append(allItems, items...)
+
+		if !hasNextPage {
+			break
+		}
 	}
+
 	return allItems, nil
 }
 
