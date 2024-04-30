@@ -14,10 +14,6 @@ fi
 
 # We're transitioning to GAR because of DockerHub new rate limiting affecting GCP
 # See https://github.com/sourcegraph/sourcegraph/issues/61696
-while read -r registry; do
-  PROMOTION_REGISTRIES+=("$registry")
-done <<< "$ADDITIONAL_PROD_REGISTRIES"
-
 # Set IFS to space and read into an array
 IFS=' ' read -r -a PROMOTION_REGISTRIES <<< "$ADDITIONAL_PROD_REGISTRIES"
 PROMOTION_REGISTRIES=("$PUBLIC_REGISTRY" "${PROMOTION_REGISTRIES[@]}" )
