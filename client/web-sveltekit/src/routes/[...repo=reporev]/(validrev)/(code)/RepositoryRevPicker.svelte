@@ -78,7 +78,7 @@
                         variant="secondary"
                         on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
                     >
-                        <Icon svgPath={mdiClose} size={16} />
+                        <Icon svgPath={mdiClose} --icon-size="16px" />
                     </Button>
                 </Tooltip>
             </span>
