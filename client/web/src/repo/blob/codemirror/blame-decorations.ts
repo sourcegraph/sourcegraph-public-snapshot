@@ -311,7 +311,7 @@ const blameGutter: Extension = [
         },
         '.sg-recency-gutter': {
             width: 'var(--blame-recency-width)',
-            marginLeft: '8px',
+            minWidth: 'var(--blame-recency-width)'
         },
         '.sg-recency-marker': {
             position: 'relative',

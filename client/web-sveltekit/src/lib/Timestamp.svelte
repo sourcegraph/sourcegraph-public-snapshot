@@ -47,5 +47,5 @@
 </script>
 
 <Tooltip tooltip={showAbsolute ? relativeDate : formattedDate}>
-    <span class="timestamp" data-testid="timestamp" data-timestamp>{showAbsolute ? formattedDate : relativeDate} </span>
+    <span class="timestamp" data-testid="timestamp">{showAbsolute ? formattedDate : relativeDate} </span>
 </Tooltip>
