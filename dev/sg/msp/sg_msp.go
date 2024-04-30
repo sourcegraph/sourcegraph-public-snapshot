@@ -8,6 +8,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/maps"
@@ -320,6 +321,11 @@ sg msp generate -all -category=test
 					}
 				}
 
+				toolingChecker := &toolingLockfileChecker{
+					version:    c.App.Version,
+					categories: make(map[spec.EnvironmentCategory]*sync.Once),
+				}
+
 				// Generate a specific service environment if '-all' is not provided
 				if !generateAll {
 					std.Out.WriteNoticef("Generating a specific service environment...")
@@ -328,6 +334,7 @@ sg msp generate -all -category=test
 						return err
 					}
 					return generateTerraform(svc, generateTerraformOptions{
+						tooling:        toolingChecker,
 						targetEnv:      env.ID,
 						stableGenerate: stableGenerate,
 					})
@@ -341,6 +348,7 @@ sg msp generate -all -category=test
 						return err
 					}
 					return generateTerraform(svc, generateTerraformOptions{
+						tooling:        toolingChecker,
 						stableGenerate: stableGenerate,
 						targetCategory: generateCategory,
 					})
@@ -360,6 +368,7 @@ sg msp generate -all -category=test
 						return err
 					}
 					if err := generateTerraform(s, generateTerraformOptions{
+						tooling:        toolingChecker,
 						stableGenerate: stableGenerate,
 						targetCategory: generateCategory,
 					}); err != nil {

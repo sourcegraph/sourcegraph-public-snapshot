@@ -41,9 +41,15 @@ export interface Props
 const AuthenticatedOrgsArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
     <Routes>
         {(!props.isSourcegraphDotCom || props.authenticatedUser.siteAdmin) && (
-            <Route path="new" element={<NewOrganizationPage />} />
+            <Route
+                path="new"
+                element={<NewOrganizationPage telemetryRecorder={props.platformContext.telemetryRecorder} />}
+            />
         )}
-        <Route path="invitation/:token" element={<OrgInvitationPage {...props} />} />
+        <Route
+            path="invitation/:token"
+            element={<OrgInvitationPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />}
+        />
         <Route path=":orgName/*" element={<OrgAreaWithRouteProps {...props} />} />
         <Route path="*" element={<NotFoundPage pageType="organization" />} />
     </Routes>

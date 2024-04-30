@@ -14,11 +14,12 @@ import type { Position, Range } from '@sourcegraph/extension-api-types'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 // TODO: Switch mdi icon
 import { HelixSwarmIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import type { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { type ButtonLinkProps, Icon, Link, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
 import { type ExternalLinkFields, ExternalServiceKind, type RepositoryFields } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { fetchCommitMessage, fetchFileExternalLinks } from '../backend'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import { RepoActionInfo } from '../RepoActionInfo'
@@ -26,7 +27,7 @@ import type { RepoHeaderContext } from '../RepoHeader'
 
 import styles from './actions.module.scss'
 
-interface Props extends RevisionSpec, Partial<FileSpec> {
+interface Props extends RevisionSpec, Partial<FileSpec>, TelemetryV2Props {
     repo?: Pick<RepositoryFields, 'name' | 'defaultBranch' | 'externalURLs' | 'externalRepository'> | null
     filePath?: string
     commitRange?: string
@@ -50,7 +51,7 @@ interface Props extends RevisionSpec, Partial<FileSpec> {
 export const GoToCodeHostAction: React.FunctionComponent<
     React.PropsWithChildren<Props & RepoHeaderContext>
 > = props => {
-    const { repo, revision, filePath } = props
+    const { repo, revision, filePath, telemetryRecorder } = props
 
     const serviceType = props.repo?.externalRepository?.serviceType
 
@@ -92,7 +93,10 @@ export const GoToCodeHostAction: React.FunctionComponent<
         }, [serviceType, props.perforceCodeHostUrlToSwarmUrlMap, props.repo, props.repoName, props.revision])
     )
 
-    const onClick = useCallback(() => eventLogger.log('GoToCodeHostClicked'), [])
+    const onClick = useCallback(() => {
+        EVENT_LOGGER.log('GoToCodeHostClicked')
+        telemetryRecorder.recordEvent('repo.goToCodeHost', 'click')
+    }, [telemetryRecorder])
 
     // If the default branch is undefined, set to HEAD
     const defaultBranch = (!isErrorLike(props.repo) && props.repo?.defaultBranch?.displayName) || 'HEAD'

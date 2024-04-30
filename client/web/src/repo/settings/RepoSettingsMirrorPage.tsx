@@ -5,6 +5,8 @@ import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Container,
     PageHeader,
@@ -41,7 +43,6 @@ import {
     RECLONE_REPOSITORY_MUTATION,
     UPDATE_MIRROR_REPOSITORY,
 } from '../../site-admin/backend'
-import { eventLogger } from '../../tracking/eventLogger'
 import { DirectImportRepoAlert } from '../DirectImportRepoAlert'
 
 import { FETCH_SETTINGS_AREA_REPOSITORY_GQL } from './backend'
@@ -282,7 +283,7 @@ const CorruptionLogsContainer: FC<CorruptionLogProps> = props => {
     )
 }
 
-interface RepoSettingsMirrorPageProps {
+interface RepoSettingsMirrorPageProps extends TelemetryV2Props {
     repo: SettingsAreaRepositoryFields
     disablePolling?: boolean
 }
@@ -293,8 +294,13 @@ interface RepoSettingsMirrorPageProps {
 export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = ({
     repo: initialRepo,
     disablePolling = false,
+    telemetryRecorder,
 }) => {
-    eventLogger.logPageView('RepoSettingsMirror')
+    useEffect(() => {
+        EVENT_LOGGER.logPageView('RepoSettingsMirror')
+        telemetryRecorder.recordEvent('repo.settings.mirror', 'view')
+    }, [telemetryRecorder])
+
     const [reachable, setReachable] = useState<boolean>()
     const [recloneRepository] = useMutation<RecloneRepositoryResult, RecloneRepositoryVariables>(
         RECLONE_REPOSITORY_MUTATION,

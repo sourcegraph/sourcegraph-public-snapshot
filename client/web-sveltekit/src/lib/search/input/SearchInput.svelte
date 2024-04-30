@@ -113,10 +113,12 @@
 
 <script lang="ts">
     import { mdiClockOutline } from '@mdi/js'
+    import { registerHotkey } from '$lib/Hotkey'
 
     export let autoFocus = false
     export let size: 'normal' | 'compat' = 'normal'
     export let queryState: QueryStateStore
+    export let onSubmit: (state: QueryState) => void = () => {}
 
     export function focus() {
         input?.focus()
@@ -152,6 +154,19 @@
         },
     })
 
+    registerHotkey({
+        keys: { key: '/' },
+        // Allows `/` symbol to populate input's value
+        // when input is focused
+        allowDefault: true,
+        handler: () => {
+            // If the search input doesn't have focus, focus it
+            // and disallow `/` symbol populate the input value
+            focus()
+            return false
+        },
+    })
+
     $: regularExpressionEnabled = $queryState.patternType === SearchPatternType.regexp
     $: structuralEnabled = $queryState.patternType === SearchPatternType.structural
     $: suggestionsExtension = suggestions({
@@ -180,16 +195,18 @@
     }
 
     async function submitQuery(state: QueryState): Promise<void> {
+        const url = getQueryURL(state)
         // This ensures that the same query can be resubmitted from the search input. Without
         // this, SvelteKit will not re-run the loader because the URL hasn't changed.
-        await invalidate(`query:${state.query}--${state.caseSensitive}`)
-        void goto(getQueryURL(state))
+        await invalidate(`search:${url}`)
+        void goto(url)
     }
 
     async function handleSubmit(event: Event) {
         event.preventDefault()
         if (!mode) {
             // Only submit query if you are not in history mode
+            onSubmit($queryState)
             void submitQuery($queryState)
         }
     }

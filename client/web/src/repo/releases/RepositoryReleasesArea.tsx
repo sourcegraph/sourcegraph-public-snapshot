@@ -7,7 +7,7 @@ import type { RepoContainerContext } from '../RepoContainer'
 
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 
-interface Props extends Pick<RepoContainerContext, 'repo'>, BreadcrumbSetters {
+interface Props extends Pick<RepoContainerContext, 'repo' | 'platformContext'>, BreadcrumbSetters {
     repo: RepositoryFields
 }
 
@@ -41,7 +41,11 @@ export const RepositoryReleasesArea: FC<Props> = props => {
         <div className="repository-graph-area">
             <div className="container">
                 <div className="container-inner">
-                    <RepositoryReleasesTagsPage repo={repo} isPackage={isPackage} />
+                    <RepositoryReleasesTagsPage
+                        repo={repo}
+                        isPackage={isPackage}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    />
                 </div>
             </div>
         </div>

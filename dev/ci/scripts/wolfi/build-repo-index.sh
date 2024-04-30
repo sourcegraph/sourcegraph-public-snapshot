@@ -15,6 +15,8 @@ IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
 echo "~~~ :aspect: :stethoscope: Agent Health check"
 /etc/aspect/workflows/bin/agent_health_check
 
+echo "~~~ :package: :card_index_dividers: Build repository index"
+
 # shellcheck disable=SC2001
 BRANCH_PATH=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9_-]/-/g')
 if [[ "$IS_MAIN" != "true" ]]; then

@@ -5,6 +5,7 @@ import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -17,7 +18,7 @@ import { OwnerList } from './OwnerList'
 
 import styles from './FileOwnershipPanel.module.scss'
 
-export interface OwnershipPanelProps {
+export interface OwnershipPanelProps extends TelemetryV2Props {
     repoID: string
     revision?: string
     filePath: string
@@ -30,10 +31,12 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     filePath,
     telemetryService,
     showAddOwnerButton,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
         telemetryService.log('OwnershipPanelOpened')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('repo.blob.ownershipPanel', 'open')
+    }, [telemetryService, telemetryRecorder])
 
     const { data, loading, error, refetch } = useQuery<FetchTreeOwnershipResult, FetchTreeOwnershipVariables>(
         FETCH_TREE_OWNERS,

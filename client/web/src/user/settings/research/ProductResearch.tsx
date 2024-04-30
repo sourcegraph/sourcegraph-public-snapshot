@@ -2,13 +2,14 @@ import React, { useEffect } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader, ButtonLink, Icon, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../auth'
 import { PageTitle } from '../../../components/PageTitle'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     telemetryService: TelemetryService
     authenticatedUser: Pick<AuthenticatedUser, 'emails'>
 }
@@ -17,11 +18,13 @@ const SIGN_UP_FORM_URL = 'https://info.sourcegraph.com/product-research'
 
 export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
     authenticatedUser,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsProductResearch')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('settings.productResearch', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     const signUpForm = new URL(SIGN_UP_FORM_URL)
     const primaryEmail = authenticatedUser.emails.find(email => email.isPrimary)

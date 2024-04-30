@@ -10,6 +10,8 @@ import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
     Button,
@@ -41,7 +43,6 @@ import type {
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import type { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
 
@@ -191,7 +192,7 @@ const BATCH_COUNT = 20
 
 const equalOrEmpty = (a: string | undefined, b: string | undefined): boolean => a === b || (!a && !b)
 
-interface Props extends RepositoryStatsAreaPageProps {}
+interface Props extends RepositoryStatsAreaPageProps, TelemetryV2Props {}
 
 const contributorsPageInputIds: Record<string, string> = {
     REVISION_RANGE: 'repository-stats-contributors-page__revision-range',
@@ -211,7 +212,7 @@ const getUrlQuery = (spec: Partial<QuerySpec>): string => {
 }
 
 /** A page that shows a repository's contributors. */
-export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = ({ repo }) => {
+export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = ({ repo, telemetryRecorder }) => {
     const location = useLocation()
     const navigate = useNavigate()
     const queryParameters = new URLSearchParams(location.search)
@@ -255,8 +256,9 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
 
     // Log page view when initially rendered
     useEffect(() => {
-        eventLogger.logPageView('RepositoryStatsContributors')
-    }, [])
+        EVENT_LOGGER.logPageView('RepositoryStatsContributors')
+        telemetryRecorder.recordEvent('repo.stats.contributors', 'view')
+    }, [telemetryRecorder])
 
     // Update spec when search params change
     useEffect(() => {

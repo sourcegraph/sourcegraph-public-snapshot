@@ -51,3 +51,36 @@ fragment GitHistory_HistoryConnection on GitCommitConnection {
         endCursor
     }
 }
+
+query RepoPage_PreciseCodeIntel(
+    $repoName: String!
+    $revspec: String!
+    $filePath: String!
+    $line: Int!
+    $character: Int!
+    $first: Int
+    $afterCursor: String
+) {
+    repository(name: $repoName) {
+        id
+        commit(rev: $revspec) {
+            id
+            blob(path: $filePath) {
+                canonicalURL
+                lsif {
+                    references(line: $line, character: $character, first: $first, after: $afterCursor) {
+                        ...RepoPage_ReferencesLocationConnection
+                    }
+                }
+            }
+        }
+    }
+}
+
+fragment RepoPage_ReferencesLocationConnection on LocationConnection {
+    ...ReferencePanel_LocationConnection
+    pageInfo {
+        hasNextPage
+        endCursor
+    }
+}

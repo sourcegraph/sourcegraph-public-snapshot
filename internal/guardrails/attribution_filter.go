@@ -95,6 +95,7 @@ func NewCompletionsFilter(config CompletionsFilterConfig) (CompletionsFilter, er
 func (a *completionsFilter) Send(ctx context.Context, e types.CompletionResponse) error {
 	if err := ctx.Err(); err != nil {
 		a.blockSending()
+		return err
 	}
 	if a.attributionResultPermissive() {
 		return a.send(e)

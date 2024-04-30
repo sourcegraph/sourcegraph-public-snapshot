@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package appliance.v1;
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/appliance/v1";
+
+service ApplianceService {
+  rpc GetApplianceVersion(GetApplianceVersionRequest) returns (GetApplianceVersionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  rpc GetApplianceStage(GetApplianceStageRequest) returns (GetApplianceStageResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message GetApplianceVersionRequest {}
+
+message GetApplianceVersionResponse {
+  string version = 1;
+}
+
+message GetApplianceStageRequest {}
+
+message GetApplianceStageResponse {
+  string stage = 1;
+}

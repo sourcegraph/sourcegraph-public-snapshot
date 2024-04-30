@@ -65,7 +65,6 @@ func TestGetLang_language(t *testing.T) {
 		t.Run(label, func(t *testing.T) {
 			lang, err := getLang(context.Background(),
 				test.file,
-				make([]byte, fileReadBufferSize),
 				makeFileReader(test.file.Contents))
 			if err != nil {
 				t.Fatal(err)
@@ -130,7 +129,7 @@ func TestGet_readFile(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.file.Name(), func(t *testing.T) {
 			fr := makeFileReader(test.file.(fi).Contents)
-			lang, err := getLang(context.Background(), test.file, make([]byte, fileReadBufferSize), fr)
+			lang, err := getLang(context.Background(), test.file, fr)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -160,12 +159,11 @@ func BenchmarkGetLang(b *testing.B) {
 		b.Fatal(err)
 	}
 	fr := newFileReader(files)
-	buf := make([]byte, fileReadBufferSize)
 	b.Logf("Calling Get on %d files.", len(files))
 	b.ResetTimer()
 	for range b.N {
 		for _, file := range files {
-			_, err = getLang(context.Background(), file, buf, fr)
+			_, err = getLang(context.Background(), file, fr)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -255,28 +253,4 @@ export function baz(n) {
 	default:
 		return ""
 	}
-}
-
-func TestIsExcluded(t *testing.T) {
-	t.Run("should exclude lock file", func(t *testing.T) {
-		excluded, err := isExcluded("yarn.lock")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if !excluded {
-			t.Errorf("expected file to be excluded")
-		}
-	})
-
-	t.Run("should not exclude non-lock file", func(t *testing.T) {
-		excluded, err := isExcluded("hello-world.md")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if excluded {
-			t.Errorf("expected file to not be excluded")
-		}
-	})
 }

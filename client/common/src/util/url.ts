@@ -379,8 +379,10 @@ export class SourcegraphURL {
     /**
      * Removes a search parameter from the URL.
      */
-    public deleteSearchParameter(key: string): this {
-        this.url.searchParams.delete(key)
+    public deleteSearchParameter(...keys: string[]): this {
+        for (const key of keys) {
+            this.url.searchParams.delete(key)
+        }
         return this
     }
 
