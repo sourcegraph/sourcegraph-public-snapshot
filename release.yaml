@@ -283,7 +283,7 @@ promoteToPublic:
 
       # tag is usually in the format `5.3.2`
       # while version is usually the tag prepended with a v, `v5.3.2`
-      - name: 'Slack notification (#announce-engineering)'
+      - name: 'Slack notification (#announce-engineering, #team-cloud-ops)'
         cmd: |
           echo "Posting slack notification for release"
           tag="{{tag}}"
