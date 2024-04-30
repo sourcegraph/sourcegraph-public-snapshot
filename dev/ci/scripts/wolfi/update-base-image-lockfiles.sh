@@ -32,10 +32,10 @@ git status
 # Git and GitHub config
 BRANCH_NAME="wolfi-auto-update/${BUILDKITE_BRANCH}"
 TIMESTAMP=$(TZ=UTC date "+%Y-%m-%d %H:%M:%S UTC")
-PR_TITLE="Auto-update package lockfiles for Wolfi base images"
+PR_TITLE="Auto-update package lockfiles for Sourcegraph base images"
 # PR_REVIEWER="sourcegraph/security"
 PR_LABELS="SSDLC,security-auto-update,security-auto-update/images"
-PR_BODY="Automatically generated PR to update package lockfiles for Wolfi base images.
+PR_BODY="Automatically generated PR to update package lockfiles for Sourcegraph base images.
 
 Built from Buildkite run [#${BUILDKITE_BUILD_NUMBER}](https://buildkite.com/sourcegraph/sourcegraph/builds/${BUILDKITE_BUILD_NUMBER}).
 ## Test Plan
