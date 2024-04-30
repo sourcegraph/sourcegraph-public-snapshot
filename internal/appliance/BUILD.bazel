@@ -11,6 +11,7 @@ go_library(
         "reconcile.go",
         "repo_updater.go",
         "spec.go",
+        "symbols.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance",
     visibility = ["//:__subpackages__"],
@@ -23,6 +24,7 @@ go_library(
         "//internal/k8s/resource/pvc",
         "//internal/k8s/resource/service",
         "//internal/k8s/resource/serviceaccount",
+        "//internal/k8s/resource/statefulset",
         "//lib/errors",
         "//lib/pointers",
         "@com_github_masterminds_semver//:semver",
@@ -57,6 +59,7 @@ go_test(
         "golden_test.go",
         "helpers_test.go",
         "repo_updater_test.go",
+        "symbols_test.go",
     ],
     data = [
         ":testdata",

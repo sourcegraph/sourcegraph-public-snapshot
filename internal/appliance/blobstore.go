@@ -48,17 +48,7 @@ func buildBlobstorePersistentVolumeClaim(sg *Sourcegraph) (corev1.PersistentVolu
 		storageClassName = "sourcegraph"
 	}
 
-	p := pvc.NewPersistentVolumeClaim("blobstore", sg.Namespace)
-	p.Spec.Resources = corev1.VolumeResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceStorage: resource.MustParse(storage),
-		},
-	}
-
-	// set StorageClass name if a custom storage class is being sgeated.
-	if sg.Spec.StorageClass.Create {
-		p.Spec.StorageClassName = &storageClassName
-	}
+	p := pvc.NewPersistentVolumeClaim("blobstore", sg.Namespace, resource.MustParse(storage), storageClassName)
 
 	return p, nil
 }
