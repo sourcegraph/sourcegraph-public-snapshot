@@ -1125,7 +1125,26 @@ func TestNewPlanJob(t *testing.T) {
     (query . )
     (originalQuery . )
     (patternType . codycontext)
-    ))
+    NOOP))
+`),
+		},
+		{
+			query:      `context:global repo:sourcegraph/.* what is symf? lang:go`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeCodyContext,
+			want: autogold.Expect(`
+(LOG
+  (ALERT
+    (features . error decoding features)
+    (protocol . Streaming)
+    (onSourcegraphDotCom . true)
+    (query . )
+    (originalQuery . )
+    (patternType . codycontext)
+    (CODYCONTEXTSEARCH
+      (patterns . [symf])
+      (codeCount . 12)
+      (textCount . 3))))
 `),
 		},
 		// The next query shows an unexpected way that a query is

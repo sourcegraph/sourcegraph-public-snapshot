@@ -2,11 +2,12 @@ import React, { useMemo } from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Link, LoadingSpinner, CardHeader, Card, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode } from '../GitReference'
 
 import { useBranches } from './backend'
@@ -14,13 +15,14 @@ import type { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 
 import styles from './RepositoryBranchesOverviewPage.module.scss'
 
-interface Props extends RepositoryBranchesAreaPageProps {}
+interface Props extends RepositoryBranchesAreaPageProps, TelemetryV2Props {}
 
 /** A page with an overview of the repository's branches. */
-export const RepositoryBranchesOverviewPage: React.FunctionComponent<Props> = ({ repo }) => {
+export const RepositoryBranchesOverviewPage: React.FunctionComponent<Props> = ({ repo, telemetryRecorder }) => {
     useMemo(() => {
-        eventLogger.logViewEvent('RepositoryBranchesOverview')
-    }, [])
+        EVENT_LOGGER.logViewEvent('RepositoryBranchesOverview')
+        telemetryRecorder.recordEvent('repo.branches', 'view')
+    }, [telemetryRecorder])
 
     const { loading, error, activeBranches, defaultBranch, hasMoreActiveBranches } = useBranches(repo.id, 10)
 

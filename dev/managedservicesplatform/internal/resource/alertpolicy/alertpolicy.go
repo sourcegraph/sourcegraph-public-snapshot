@@ -159,7 +159,9 @@ func (c Config) makeDocsSubject() string {
 		c.Service.GetName(), c.EnvironmentID, c.Name)
 }
 
-type Output struct{}
+type Output struct {
+	AlertPolicy monitoringalertpolicy.MonitoringAlertPolicy
+}
 
 func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
 	if err := onlyOneNonNil([]any{config.ThresholdAggregation, config.ResponseCodeMetric, config.MetricAbsence}); err != nil {
@@ -220,7 +222,7 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 	}
 
 	// Build the final alert policy
-	_ = monitoringalertpolicy.NewMonitoringAlertPolicy(scope, id.TerraformID(config.ID),
+	alert := monitoringalertpolicy.NewMonitoringAlertPolicy(scope, id.TerraformID(config.ID),
 		&monitoringalertpolicy.MonitoringAlertPolicyConfig{
 			Project:     pointers.Ptr(config.ProjectID),
 			DisplayName: pointers.Ptr(config.Name),
@@ -244,7 +246,9 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 			Conditions: []*monitoringalertpolicy.MonitoringAlertPolicyConditions{condition},
 		})
 
-	return &Output{}, nil
+	return &Output{
+		AlertPolicy: alert,
+	}, nil
 }
 
 func onlyOneNonNil(options []any) error {

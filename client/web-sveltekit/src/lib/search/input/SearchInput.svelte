@@ -113,9 +113,12 @@
 
 <script lang="ts">
     import { mdiClockOutline } from '@mdi/js'
+    import { registerHotkey } from '$lib/Hotkey'
 
-    export let queryState: QueryStateStore
     export let autoFocus = false
+    export let size: 'normal' | 'compat' = 'normal'
+    export let queryState: QueryStateStore
+    export let onSubmit: (state: QueryState) => void = () => {}
 
     export function focus() {
         input?.focus()
@@ -151,6 +154,11 @@
         },
     })
 
+    registerHotkey({
+        keys: { key: '/' },
+        handler: focus,
+    })
+
     $: regularExpressionEnabled = $queryState.patternType === SearchPatternType.regexp
     $: structuralEnabled = $queryState.patternType === SearchPatternType.structural
     $: suggestionsExtension = suggestions({
@@ -179,16 +187,18 @@
     }
 
     async function submitQuery(state: QueryState): Promise<void> {
+        const url = getQueryURL(state)
         // This ensures that the same query can be resubmitted from the search input. Without
         // this, SvelteKit will not re-run the loader because the URL hasn't changed.
-        await invalidate(`query:${state.query}--${state.caseSensitive}`)
-        void goto(getQueryURL(state))
+        await invalidate(`search:${url}`)
+        void goto(url)
     }
 
     async function handleSubmit(event: Event) {
         event.preventDefault()
         if (!mode) {
             // Only submit query if you are not in history mode
+            onSubmit($queryState)
             void submitQuery($queryState)
         }
     }
@@ -209,11 +219,12 @@
 </script>
 
 <form
-    bind:clientHeight={suggestionsPaddingTop}
-    class="search-box"
-    action="/search"
     method="get"
+    action="/search"
+    class="search-box"
+    class:compat={size === 'compat'}
     on:submit={handleSubmit}
+    bind:clientHeight={suggestionsPaddingTop}
 >
     <input class="hidden" value={$queryState.query} name="q" />
     <div class="focus-container" class:userHasInteracted>
@@ -292,6 +303,12 @@
             .userHasInteracted + .suggestions {
                 display: block;
             }
+        }
+
+        &.compat {
+            padding: 0.25rem;
+            margin: -0.25rem;
+            width: calc(100% + 0.5rem);
         }
     }
 

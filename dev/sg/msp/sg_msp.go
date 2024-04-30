@@ -8,6 +8,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/maps"
@@ -272,10 +273,15 @@ Supports completions on services and environments.`,
 			UsageText: `
 # generate single env for a single service
 sg msp generate <service> <env>
+
 # generate all envs for a single service
 sg msp generate -all <service>
+
 # generate all envs across all services
 sg msp generate -all
+
+# generate all test envs across all services
+sg msp generate -all -category=test
 			`,
 			Before: msprepo.UseManagedServicesRepo,
 			Flags: []cli.Flag{
@@ -283,6 +289,10 @@ sg msp generate -all
 					Name:  "all",
 					Usage: "Generate infrastructure stacks for all services, or all envs for a service if service ID is provided",
 					Value: false,
+				},
+				&cli.StringFlag{
+					Name:  "category",
+					Usage: "Filter generated environments by category (one of 'test', 'internal', 'external') - must be used with '-all'",
 				},
 				&cli.BoolFlag{
 					Name:  "stable",
@@ -293,12 +303,27 @@ sg msp generate -all
 			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 			Action: func(c *cli.Context) error {
 				var (
-					generateAll    = c.Bool("all")
-					stableGenerate = c.Bool("stable")
+					generateAll      = c.Bool("all")
+					generateCategory = spec.EnvironmentCategory(c.String("category"))
+					stableGenerate   = c.Bool("stable")
 				)
 
 				if stableGenerate {
 					std.Out.WriteSuggestionf("Using stable generate - tfvars will not be updated.")
+				}
+
+				if generateCategory != "" {
+					if !generateAll {
+						return errors.New("'-category' must be used with '-all'")
+					}
+					if err := generateCategory.Validate(); err != nil {
+						return errors.Wrap(err, "invalid value for '-category'")
+					}
+				}
+
+				toolingChecker := &toolingLockfileChecker{
+					version:    c.App.Version,
+					categories: make(map[spec.EnvironmentCategory]*sync.Once),
 				}
 
 				// Generate a specific service environment if '-all' is not provided
@@ -309,6 +334,7 @@ sg msp generate -all
 						return err
 					}
 					return generateTerraform(svc, generateTerraformOptions{
+						tooling:        toolingChecker,
 						targetEnv:      env.ID,
 						stableGenerate: stableGenerate,
 					})
@@ -322,7 +348,9 @@ sg msp generate -all
 						return err
 					}
 					return generateTerraform(svc, generateTerraformOptions{
+						tooling:        toolingChecker,
 						stableGenerate: stableGenerate,
+						targetCategory: generateCategory,
 					})
 				}
 
@@ -340,7 +368,9 @@ sg msp generate -all
 						return err
 					}
 					if err := generateTerraform(s, generateTerraformOptions{
+						tooling:        toolingChecker,
 						stableGenerate: stableGenerate,
+						targetCategory: generateCategory,
 					}); err != nil {
 						return errors.Wrap(err, serviceID)
 					}
@@ -375,8 +405,14 @@ sg msp generate -all
 					return errors.Wrap(err, "msprepo.GitRevision")
 				}
 
+				collectedAlerts, err := CollectAlertPolicies(svc)
+				if err != nil {
+					return errors.Wrap(err, "CollectAlertPolicies")
+				}
+
 				doc, err := operationdocs.Render(*svc, operationdocs.Options{
 					ManagedServicesRevision: repoRev,
+					AlertPolicies:           collectedAlerts,
 				})
 				if err != nil {
 					return errors.Wrap(err, "operationdocs.Render")
@@ -451,6 +487,11 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 								return errors.Wrapf(err, "load service %q", s)
 							}
 							serviceSpecs = append(serviceSpecs, svc)
+							collectedAlerts, err := CollectAlertPolicies(svc)
+							opts.AlertPolicies = collectedAlerts
+							if err != nil {
+								return errors.Wrapf(err, "%s: CollectAlertPolicies", s)
+							}
 							doc, err := operationdocs.Render(*svc, opts)
 							if err != nil {
 								return errors.Wrap(err, s)

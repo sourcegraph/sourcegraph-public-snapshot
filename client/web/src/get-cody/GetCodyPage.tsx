@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Badge, H2, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { ExternalsAuth } from '../auth/components/ExternalsAuth'
@@ -13,7 +14,6 @@ import { CodyLetsWorkIcon } from '../cody/chat/CodyPageIcon'
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
 import type { SourcegraphContext } from '../jscontext'
-import { eventLogger } from '../tracking/eventLogger'
 import { EventName } from '../util/constants'
 
 import { DownloadAppButton } from './DownloadAppButton'
@@ -39,9 +39,9 @@ const SOURCEGRAPH_MAC_INTEL = 'https://sourcegraph.com/.api/app/latest?arch=x86_
 const SOURCEGRAPH_LINUX = 'https://sourcegraph.com/.api/app/latest?arch=x86_64&target=linux'
 
 const logEvent = (eventName: string, type?: string, source?: string): void =>
-    eventLogger.log(eventName, { type, source })
+    EVENT_LOGGER.log(eventName, { type, source })
 
-const logPageView = (pageTitle: string): void => eventLogger.logPageView(pageTitle)
+const logPageView = (pageTitle: string): void => EVENT_LOGGER.logPageView(pageTitle)
 
 /* eslint-disable  @sourcegraph/sourcegraph/check-help-links */
 
@@ -112,7 +112,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                         onClick={() => {}}
                                         ctaClassName={styles.authButton}
                                         telemetryRecorder={noOpTelemetryRecorder}
-                                        telemetryService={eventLogger}
+                                        telemetryService={EVENT_LOGGER}
                                     />
                                 </div>
                             </div>

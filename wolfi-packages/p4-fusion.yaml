@@ -3,7 +3,7 @@
 package:
   name: p4-fusion
   version: 1.12
-  epoch: 10
+  epoch: 11
   description: "A fast Perforce to Git conversion tool"
   target-architecture:
     - x86_64
@@ -89,4 +89,4 @@ update:
   enabled: true
   github:
     identifier: salesforce/p4-fusion
-    strip-prefix: "p4-fusion v"
+    strip-prefix: "v"

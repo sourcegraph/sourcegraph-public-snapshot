@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -14,13 +16,15 @@ import (
 	"github.com/sourcegraph/run"
 )
 
-// These commands are meant to be executed with a VERSION env var with a hypothetical stamped release version
-// This type is used to assign the stamp version from VERSION
 type stampVersionKey struct{}
 type postReleaseKey struct{}
+type targetRegistryKey struct{}
+type fromRegistryKey struct{}
 
 // Register upgrade commands -- see README.md for more details.
 func main() {
+	fmt.Println("👉 Upgrade test ...")
+
 	app := &cli.App{
 		Name:  "upgrade-test",
 		Usage: "Upgrade test is a tool for testing the migrator services creation of upgrade paths and application of upgrade paths.\nWhen run relevant upgrade paths are tested for each version relevant to a given upgrade type, initializing Sourcegraph databases and frontend services for each version, and attempting to generate and apply an upgrade path to your current branches head.",
@@ -41,11 +45,21 @@ func main() {
 						Aliases: []string{"pv"},
 						Usage:   "Select an already released version as the target version for the test suite.",
 					},
+					&cli.StringFlag{
+						Name:  "target-registry",
+						Usage: "Registry host and path to pull the targeted version from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
+					},
+					&cli.StringFlag{
+						Name:  "from-registry",
+						Usage: "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
+					},
 					&cli.IntFlag{
 						Name:    "max-routines",
 						Aliases: []string{"mr"},
-						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
-						Value:   10,
+						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to CPU cores count minus two.",
+						Value:   runtime.NumCPU() - 2,
 					},
 					&cli.StringSliceFlag{
 						Name:    "standard-versions",
@@ -66,6 +80,8 @@ func main() {
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
 					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
+					ctx = context.WithValue(ctx, targetRegistryKey{}, cCtx.String("target-registry"))
+					ctx = context.WithValue(ctx, fromRegistryKey{}, cCtx.String("from-registry"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
@@ -74,7 +90,12 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, latestStableVersion, targetVersion, stdVersions, mvuVersions, autoVersions, err := handleVersions(cCtx, cCtx.StringSlice("standard-versions"), cCtx.StringSlice("mvu-versions"), cCtx.StringSlice("auto-versions"), cCtx.String("post-release-version"))
+					latestMinorVersion, latestStableVersion, targetVersion, stdVersions, mvuVersions, autoVersions, err := handleVersions(cCtx,
+						cCtx.StringSlice("standard-versions"),
+						cCtx.StringSlice("mvu-versions"),
+						cCtx.StringSlice("auto-versions"),
+						cCtx.String("post-release-version"),
+					)
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
@@ -83,7 +104,7 @@ func main() {
 					var targetMigratorImage string
 					switch {
 					case ctx.Value(postReleaseKey{}) != "":
-						targetMigratorImage = fmt.Sprintf("sourcegraph/migrator:%s", ctx.Value(postReleaseKey{}))
+						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), strings.TrimPrefix(ctx.Value(postReleaseKey{}).(string), "v"))
 					case ctx.Value(stampVersionKey{}) != "":
 						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
 					default:
@@ -168,6 +189,10 @@ func main() {
 					// This is where we do the majority of our printing to stdout.
 					results.OrderByVersion()
 					results.PrintSimpleResults()
+					if results.Failed() {
+						results.DisplayErrors()
+						os.Exit(1)
+					}
 
 					return nil
 				},
@@ -188,10 +213,20 @@ func main() {
 						Aliases: []string{"pv"},
 						Usage:   "Select an already released version as the target version for the test suite.",
 					},
+					&cli.StringFlag{
+						Name:  "target-registry",
+						Usage: "Registry host and path to pull the targeted version from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
+					},
+					&cli.StringFlag{
+						Name:  "from-registry",
+						Usage: "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
+					},
 					&cli.IntFlag{
 						Name:    "max-routines",
 						Aliases: []string{"mr"}, Usage: "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
-						Value: 10,
+						Value: runtime.NumCPU() - 2,
 					},
 					&cli.StringSliceFlag{
 						Name:    "standard-versions",
@@ -202,6 +237,8 @@ func main() {
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
 					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
+					ctx = context.WithValue(ctx, targetRegistryKey{}, cCtx.String("target-registry"))
+					ctx = context.WithValue(ctx, fromRegistryKey{}, cCtx.String("from-registry"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
@@ -219,7 +256,7 @@ func main() {
 					var targetMigratorImage string
 					switch {
 					case ctx.Value(postReleaseKey{}) != "":
-						targetMigratorImage = fmt.Sprintf("sourcegraph/migrator:%s", ctx.Value(postReleaseKey{}))
+						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), strings.TrimPrefix(ctx.Value(postReleaseKey{}).(string), "v"))
 					case ctx.Value(stampVersionKey{}) != "":
 						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
 					default:
@@ -250,17 +287,30 @@ func main() {
 							result := standardUpgradeTest(ctx, version, targetVersion, latestStableVersion)
 							result.Runtime = time.Since(start)
 							results.AddStdTest(result)
+							if len(result.Errors) > 0 {
+								return result.Errors[0]
+							}
 							return nil
 						})
 					}
 					if err := stdTestPool.Wait(); err != nil {
 						fmt.Println("🚨 Error: failed to run tests in pool: ", err)
+						for _, t := range results.StandardUpgradeTests {
+							fmt.Println("LOGS")
+							t.DisplayLog()
+							fmt.Println("ERROR")
+							t.DisplayErrors()
+						}
 						return err
 					}
 
 					// This is where we do the majority of our printing to stdout.
 					results.OrderByVersion()
 					results.PrintSimpleResults()
+					if results.Failed() {
+						results.DisplayErrors()
+						os.Exit(1)
+					}
 
 					return nil
 				},
@@ -281,11 +331,21 @@ func main() {
 						Aliases: []string{"pv"},
 						Usage:   "Select an already released version as the target version for the test suite.",
 					},
+					&cli.StringFlag{
+						Name:  "target-registry",
+						Usage: "Registry host and path to pull the targeted version from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
+					},
+					&cli.StringFlag{
+						Name:  "from-registry",
+						Usage: "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
+					},
 					&cli.IntFlag{
 						Name:    "max-routines",
 						Aliases: []string{"mr"},
 						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
-						Value:   10,
+						Value:   runtime.NumCPU() - 2,
 					},
 					&cli.StringSliceFlag{
 						Name:    "mvu-versions",
@@ -296,6 +356,8 @@ func main() {
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
 					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
+					ctx = context.WithValue(ctx, targetRegistryKey{}, cCtx.String("target-registry"))
+					ctx = context.WithValue(ctx, fromRegistryKey{}, cCtx.String("from-registry"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
@@ -313,7 +375,7 @@ func main() {
 					var targetMigratorImage string
 					switch {
 					case ctx.Value(postReleaseKey{}) != "":
-						targetMigratorImage = fmt.Sprintf("sourcegraph/migrator:%s", ctx.Value(postReleaseKey{}))
+						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), strings.TrimPrefix(ctx.Value(postReleaseKey{}).(string), "v"))
 					case ctx.Value(stampVersionKey{}) != "":
 						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
 					default:
@@ -342,6 +404,9 @@ func main() {
 							result := multiversionUpgradeTest(ctx, version, targetVersion, latestStableVersion)
 							result.Runtime = time.Since(start)
 							results.AddMVUTest(result)
+							if len(result.Errors) > 0 {
+								return result.Errors[0]
+							}
 							return nil
 						})
 					}
@@ -352,6 +417,10 @@ func main() {
 
 					results.OrderByVersion()
 					results.PrintSimpleResults()
+					if results.Failed() {
+						results.DisplayErrors()
+						os.Exit(1)
+					}
 
 					return nil
 				},
@@ -372,11 +441,22 @@ func main() {
 						Aliases: []string{"pv"},
 						Usage:   "Select an already released version as the target version for the test suite.",
 					},
+
+					&cli.StringFlag{
+						Name:  "target-registry",
+						Usage: "Registry host and path to pull the targeted version from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
+					},
+					&cli.StringFlag{
+						Name:  "from-registry",
+						Usage: "Registry host and path to pull versions we're upgrading from, i.e. index.docker.io/sourcegraph will pull index.docker.io/sourcegraph/migrator:<tag>",
+						Value: "sourcegraph/",
+					},
 					&cli.IntFlag{
 						Name:    "max-routines",
 						Aliases: []string{"mr"},
 						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
-						Value:   10,
+						Value:   runtime.NumCPU() - 2,
 					},
 					&cli.StringSliceFlag{
 						Name:    "auto-versions",
@@ -387,6 +467,8 @@ func main() {
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
 					ctx = context.WithValue(ctx, postReleaseKey{}, cCtx.String("post-release-version"))
+					ctx = context.WithValue(ctx, targetRegistryKey{}, cCtx.String("target-registry"))
+					ctx = context.WithValue(ctx, fromRegistryKey{}, cCtx.String("from-registry"))
 
 					// check docker is running
 					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
@@ -404,7 +486,7 @@ func main() {
 					var targetMigratorImage string
 					switch {
 					case ctx.Value(postReleaseKey{}) != "":
-						targetMigratorImage = fmt.Sprintf("sourcegraph/migrator:%s", ctx.Value(postReleaseKey{}))
+						targetMigratorImage = fmt.Sprintf("%smigrator:%s", ctx.Value(targetRegistryKey{}), strings.TrimPrefix(ctx.Value(postReleaseKey{}).(string), "v"))
 					case ctx.Value(stampVersionKey{}) != "":
 						targetMigratorImage = fmt.Sprintf("migrator:candidate stamped as %s", ctx.Value(stampVersionKey{}))
 					default:
@@ -433,6 +515,10 @@ func main() {
 							result := autoUpgradeTest(ctx, version, targetVersion, latestStableVersion)
 							result.Runtime = time.Since(start)
 							results.AddAutoTest(result)
+							if len(result.Errors) > 0 {
+								return result.Errors[0]
+							}
+
 							return nil
 						})
 					}
@@ -443,6 +529,10 @@ func main() {
 
 					results.OrderByVersion()
 					results.PrintSimpleResults()
+					if results.Failed() {
+						results.DisplayErrors()
+						os.Exit(1)
+					}
 
 					return nil
 				},
@@ -452,6 +542,7 @@ func main() {
 
 	if err := app.Run(os.Args); err != nil {
 		fmt.Println("🚨 Error: failed to run tests: ", err)
+		os.Exit(1)
 	}
 
 }

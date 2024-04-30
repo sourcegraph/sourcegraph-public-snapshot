@@ -1,8 +1,7 @@
 import classNames from 'classnames'
 
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Badge, Icon, Link } from '@sourcegraph/wildcard'
-
-import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './DownloadAppButton.module.scss'
 
@@ -24,7 +23,7 @@ export const DownloadAppButton: React.FunctionComponent<DownloadAppButtonProps> 
     eventType,
 }) => {
     const handleOnClick = (): void => {
-        eventLogger.log(eventName, { type: eventType })
+        EVENT_LOGGER.log(eventName, { type: eventType })
     }
 
     return (

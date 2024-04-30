@@ -1,6 +1,8 @@
 import { render } from '@testing-library/react'
 import { describe, expect, test } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import type { AuthProvider } from '../../../jscontext'
 
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
@@ -52,6 +54,7 @@ describe('ExternalAccountsSignIn', () => {
                 onDidRemove={() => {}}
                 onDidAdd={() => {}}
                 onDidError={() => {}}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )
         expect(cmp.asFragment()).toMatchSnapshot()

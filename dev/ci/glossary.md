@@ -12,7 +12,6 @@ This markdown is used to generate an annotation at the top of every build, displ
     <li><strong>GraphQL</strong> GraphQL is a data query and manipulation language for APIs, and a runtime for executing those queries with your existing data.</li>
     <li><strong>Jest</strong> is a JavaScript testing framework developed by Facebook, which provides complete and easy-to-set-up testing functionality.</li>
     <li><strong>Mocha</strong> is a feature-rich JavaScript test framework running on Node.js and in the browser, making asynchronous testing simple and fun.</li>
-    <li><strong>Chromatic</strong> is a visual regression testing tool designed specifically for Storybook stories, enabling automated comparison of user interfaces to ensure consistency and functionality across various browsers.</li>
     <li><strong>Percy</strong> is a visual testing and review platform that enables teams to catch visual changes across web apps, static sites, component libraries, and more.</li>
     <li><strong>Puppeteer</strong> is a Node library which provides a high-level API to control Chrome or Chromium over the DevTools Protocol, enabling tasks such as generating screenshots and PDFs of pages.</li>
     <li><strong>ESBuild</strong> is an extremely fast JavaScript bundler and minifier, primarily designed for speed and performance.</li>

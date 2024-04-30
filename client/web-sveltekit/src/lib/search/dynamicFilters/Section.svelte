@@ -12,6 +12,7 @@
     export let title: string
     export let filterPlaceholder: string = ''
     export let showAll: boolean = false
+    export let onFilterSelect: (kind: SectionItem['kind']) => void = () => {}
 
     let filterText = ''
     $: processedFilterText = filterText.trim().toLowerCase()
@@ -37,6 +38,7 @@
                     <a
                         href={updateFilterInURL($page.url, item, item.selected).toString()}
                         class:selected={item.selected}
+                        on:click={() => onFilterSelect(item.kind)}
                     >
                         <span class="label">
                             <slot name="label" label={item.label} value={item.value}>

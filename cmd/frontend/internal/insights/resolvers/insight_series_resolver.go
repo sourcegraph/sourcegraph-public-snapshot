@@ -57,6 +57,19 @@ func (i insightsDataPointResolver) DiffQuery() (*string, error) {
 	return &q, nil
 }
 
+func (i insightsDataPointResolver) PointInTimeQuery() (*string, error) {
+	if i.diffInfo == nil {
+		return nil, nil
+	}
+	query, err := querybuilder.PointInTimeQuery(*i.diffInfo)
+	if err != nil {
+		// we don't want to error the whole process if query building errored.
+		return nil, nil
+	}
+	q := query.String()
+	return &q, nil
+}
+
 type statusInfo struct {
 	totalPoints, pendingJobs, completedJobs, failedJobs int32
 	backfillQueuedAt                                    *time.Time

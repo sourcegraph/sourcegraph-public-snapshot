@@ -1,6 +1,8 @@
 package service
 
 import (
+	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
+
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 )
 
@@ -15,11 +17,13 @@ type Config struct {
 		StreamPublishConcurrency int
 	}
 
-	SAMS struct {
-		ServerURL    string
-		ClientID     string
-		ClientSecret string
-	}
+	SAMS SAMSConfig
+}
+
+type SAMSConfig struct {
+	sams.ConnConfig
+	ClientID     string
+	ClientSecret string
 }
 
 func (c *Config) Load(env *runtime.Env) {
@@ -32,8 +36,10 @@ func (c *Config) Load(env *runtime.Env) {
 	c.Events.StreamPublishConcurrency = env.GetInt("TELEMETRY_GATEWAY_EVENTS_STREAM_PUBLISH_CONCURRENCY", "250",
 		"Per-stream concurrent publishing limit.")
 
-	c.SAMS.ServerURL = env.Get("TELEMETRY_GATEWAY_SAMS_SERVER_URL", "https://accounts.sourcegraph.com",
-		"Sourcegraph Accounts Management System URL")
+	// Construct by hand instead of sams.NewClientV1ConnectionConfigFromEnv for
+	// backwards compatibility.
+	c.SAMS.ExternalURL = env.Get("SAMS_URL", "https://accounts.sourcegraph.com", "External URL of the connected SAMS instance")
+	c.SAMS.APIURL = env.GetOptional("TELEMETRY_GATEWAY_SAMS_SERVER_URL", "Sourcegraph Accounts Management System URL")
 	c.SAMS.ClientID = env.Get("TELEMETRY_GATEWAY_SAMS_CLIENT_ID", "",
 		"Sourcegraph Accounts Management System client ID")
 	c.SAMS.ClientSecret = env.Get("TELEMETRY_GATEWAY_SAMS_CLIENT_SECRET", "",

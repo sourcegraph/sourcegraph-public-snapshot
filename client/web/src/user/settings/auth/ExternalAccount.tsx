@@ -1,6 +1,7 @@
-import React, { useState, useCallback, type FC } from 'react'
+import React, { useState, useCallback, type FC, useEffect } from 'react'
 
 import type { ErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Link, H3 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -10,7 +11,7 @@ import { AddGerritAccountModal } from './AddGerritAccountModal'
 import type { NormalizedExternalAccount } from './ExternalAccountsSignIn'
 import { RemoveExternalAccountModal } from './RemoveExternalAccountModal'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     account: NormalizedExternalAccount
     authProvider: AuthProvider
     onDidRemove: (id: string, name: string) => void
@@ -24,10 +25,13 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
     onDidRemove,
     onDidError,
     onDidAdd,
+    telemetryRecorder,
 }) => {
     const [isLoading, setIsLoading] = useState(false)
     const [isRemoveAccountModalOpen, setIsRemoveAccountModalOpen] = useState(false)
     const [isAddGerritAccountModalOpen, setIsGerritAccountModalOpen] = useState(false)
+
+    useEffect(() => telemetryRecorder.recordEvent('settings.externalAccount', 'view'), [telemetryRecorder])
 
     const navigateToAuthProvider = useCallback((): void => {
         if (authProvider.serviceType === 'gerrit') {

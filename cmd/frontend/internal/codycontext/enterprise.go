@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -65,11 +66,11 @@ func (f *enterpriseRepoFilter) getFiltersConfig() (_ filtersConfig, ok bool) {
 }
 
 // GetFilter returns the list of repos that can be filtered based on the Cody context filter value in the site config.
-func (f *enterpriseRepoFilter) GetFilter(_ context.Context, repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc, error) {
+func (f *enterpriseRepoFilter) GetMatcher(_ context.Context, repos []types.RepoIDName) ([]types.RepoIDName, FileMatcher, error) {
 	fc, ok := f.getFiltersConfig()
 	if !ok {
 		// our configuration is invalid, so filter everything out
-		return []types.RepoIDName{}, func(fcc []FileChunkContext) []FileChunkContext { return nil }, errors.New("Cody context filters configuration is invalid. Please contact your admin.")
+		return []types.RepoIDName{}, func(api.RepoID, string) bool { return false }, errors.New("Cody context filters configuration is invalid. Please contact your admin.")
 	}
 
 	allowedRepos := make([]types.RepoIDName, 0, len(repos))
@@ -79,15 +80,8 @@ func (f *enterpriseRepoFilter) GetFilter(_ context.Context, repos []types.RepoID
 		}
 	}
 
-	return allowedRepos, func(fcc []FileChunkContext) []FileChunkContext {
-		filtered := make([]FileChunkContext, 0, len(fcc))
-		for _, fc := range fcc {
-			isFromAllowedRepo := slices.ContainsFunc(allowedRepos, func(r types.RepoIDName) bool { return r.ID == fc.RepoID })
-			if isFromAllowedRepo {
-				filtered = append(filtered, fc)
-			}
-		}
-		return filtered
+	return allowedRepos, func(repo api.RepoID, path string) bool {
+		return slices.ContainsFunc(allowedRepos, func(r types.RepoIDName) bool { return r.ID == repo })
 	}, nil
 }
 

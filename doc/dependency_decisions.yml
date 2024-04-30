@@ -570,3 +570,9 @@
     :why: Internal module
     :versions: []
     :when: 2023-09-23 22:04:27.722891000 Z
+- - :ignore
+  - github.com/sourcegraph/cloud-api
+  - :who:
+    :why: Internal sourcegraph library
+    :versions: []
+    :when: 2024-04-22 13:42:26.498522000 Z

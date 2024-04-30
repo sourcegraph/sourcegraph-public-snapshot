@@ -64,6 +64,10 @@ const SearchPageWrapper = lazyComponent(() => import('./search/SearchPageWrapper
 const CodySearchPage = lazyComponent(() => import('./cody/search/CodySearchPage'), 'CodySearchPage')
 const CodyChatPage = lazyComponent(() => import('./cody/chat/CodyChatPage'), 'CodyChatPage')
 const CodyManagementPage = lazyComponent(() => import('./cody/management/CodyManagementPage'), 'CodyManagementPage')
+const CodySwitchAccountPage = lazyComponent(
+    () => import('./cody/switch-account/CodySwitchAccountPage'),
+    'CodySwitchAccountPage'
+)
 const CodySubscriptionPage = lazyComponent(
     () => import('./cody/subscription/CodySubscriptionPage'),
     'CodySubscriptionPage'
@@ -247,7 +251,12 @@ export const routes: RouteObject[] = [
         path: PageRoutes.SearchConsole,
         element: (
             <LegacyRoute
-                render={props => <SearchConsolePageOrRedirect {...props} />}
+                render={props => (
+                    <SearchConsolePageOrRedirect
+                        {...props}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    />
+                )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),
@@ -386,6 +395,17 @@ export const routes: RouteObject[] = [
         ),
     },
     {
+        path: PageRoutes.CodySwitchAccount,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <CodySwitchAccountPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
+            />
+        ),
+    },
+    {
         path: PageRoutes.CodyManagement,
         element: (
             <LegacyRoute
@@ -450,7 +470,7 @@ function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Eleme
 function SearchPageOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element {
     const { isCodeSearchEnabled } = props.licenseFeatures
     if (!isCodeSearchEnabled) {
-        return <SearchUpsellPage />
+        return <SearchUpsellPage telemetryRecorder={props.platformContext.telemetryRecorder} />
     }
     return <SearchPageWrapper {...props} />
 }

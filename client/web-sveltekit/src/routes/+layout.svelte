@@ -1,20 +1,17 @@
 <script lang="ts">
+    import { onDestroy } from 'svelte'
     import { writable } from 'svelte/store'
+    import { browser } from '$app/environment'
+    import { beforeNavigate } from '$app/navigation'
 
-    import { browser, dev } from '$app/environment'
     import { isErrorLike } from '$lib/common'
-    import { classNames } from '$lib/dom'
     import { TemporarySettingsStorage } from '$lib/shared'
-    import { isLightTheme, setAppContext, scrollAll } from '$lib/stores'
+    import { isLightTheme, setAppContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
-
-    import Header from './Header.svelte'
+    import GlobalHeader from '$lib/navigation/GlobalHeader.svelte'
 
     import './styles.scss'
 
-    import { onDestroy } from 'svelte'
-
-    import { beforeNavigate } from '$app/navigation'
     import { createFeatureFlagStore } from '$lib/featureflags'
     import GlobalNotification from '$lib/global-notifications/GlobalNotifications.svelte'
     import { getGraphQLClient } from '$lib/graphql/apollo'
@@ -67,7 +64,7 @@
             return
         }
 
-        if (dev || isRouteEnabled(navigation.to.url.pathname)) {
+        if (isRouteEnabled(navigation.to.url.pathname)) {
             // Routes are handled by SvelteKit
             return
         }
@@ -93,30 +90,24 @@
     <meta name="description" content="Code search" />
 </svelte:head>
 
-<svelte:body use:classNames={$scrollAll ? '' : 'overflowHidden'} />
-
 {#await data.globalSiteAlerts then globalSiteAlerts}
     {#if globalSiteAlerts}
         <GlobalNotification globalAlerts={globalSiteAlerts} />
     {/if}
 {/await}
 
-<Header authenticatedUser={$user} {handleOptOut} />
+<GlobalHeader authenticatedUser={$user} {handleOptOut} />
 
 <main>
     <slot />
 </main>
 
 <style lang="scss">
-    :global(body.overflowHidden) {
-        display: flex;
-        flex-direction: column;
+    :global(body) {
         height: 100vh;
         overflow: hidden;
-
-        main {
-            overflow-y: auto;
-        }
+        display: flex;
+        flex-direction: column;
     }
 
     main {
@@ -125,5 +116,6 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+        overflow-y: auto;
     }
 </style>

@@ -14,7 +14,7 @@
     import { observeIntersection } from '$lib/intersection-observer'
     import RepoStars from '$lib/repo/RepoStars.svelte'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
-    import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
+    import CodeExcerpt from '$lib/CodeExcerpt.svelte'
     import { rankContentMatch } from '$lib/search/results'
     import { getFileMatchUrl, type ContentMatch, rankByLine, rankPassthrough } from '$lib/shared'
     import { settings } from '$lib/stores'
@@ -96,7 +96,7 @@
                     -->
                     {#await highlightedHTMLRows}
                         <CodeExcerpt
-                            startLine={group.startLine}
+                            startLine={group.startLine + 1}
                             matches={group.matches}
                             plaintextLines={group.plaintextLines}
                             --background-color="transparent"

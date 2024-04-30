@@ -123,7 +123,8 @@
     .loading-state,
     .error-state,
     .zero-data-state {
-        margin: 2rem;
+        grid-column: 1/-1;
+        padding: 2rem;
         display: flex;
         align-items: center;
         justify-content: center;

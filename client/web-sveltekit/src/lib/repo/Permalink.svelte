@@ -23,8 +23,16 @@
 
 <style lang="scss">
     a {
-        color: var(--body-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        color: var(--text-body);
         text-decoration: none;
         white-space: nowrap;
+
+        &:hover {
+            color: var(--text-title);
+        }
     }
 </style>
