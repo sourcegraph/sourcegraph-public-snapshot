@@ -26,13 +26,21 @@ export const GitCommitNodeTableRow: React.FC<
         | 'onHandleDiffMode'
         | 'diffMode'
     >
-> = ({ node, className, expandCommitMessageBody, hideExpandCommitMessageBody, messageSubjectClassName }) => {
+> = ({
+    node,
+    className,
+    expandCommitMessageBody,
+    hideExpandCommitMessageBody,
+    messageSubjectClassName,
+    telemetryRecorder,
+}) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
 
     const toggleShowCommitMessageBody = useCallback((): void => {
         EVENT_LOGGER.log('CommitBodyToggled')
+        telemetryRecorder.recordEvent('repo.commit.body', 'toggle')
         setShowCommitMessageBody(!showCommitMessageBody)
-    }, [showCommitMessageBody])
+    }, [showCommitMessageBody, telemetryRecorder])
 
     const canonicalURL =
         isPerforceChangelistMappingEnabled() && node.perforceChangelist?.canonicalURL

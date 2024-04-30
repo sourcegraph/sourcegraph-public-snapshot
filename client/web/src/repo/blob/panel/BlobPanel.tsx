@@ -117,6 +117,7 @@ function useBlobPanelViews({
                                       revision={revision}
                                       filePath={filePath}
                                       defaultPageSize={defaultPageSize}
+                                      telemetryRecorder={telemetryRecorder}
                                   />
                               </PanelContent>
                           ),

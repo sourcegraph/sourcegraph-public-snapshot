@@ -1,4 +1,4 @@
-import { type FC, useMemo } from 'react'
+import { type FC, useMemo, useEffect } from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
 
@@ -65,6 +65,8 @@ export const BatchChangeRepoPage: FC<BatchChangeRepoPageProps> = ({
         }
         return true
     }, [isSourcegraphDotCom, authenticatedUser])
+
+    useEffect(() => props.telemetryRecorder.recordEvent('repo.batchChanges', 'view'), [props.telemetryRecorder])
 
     return (
         <Page>

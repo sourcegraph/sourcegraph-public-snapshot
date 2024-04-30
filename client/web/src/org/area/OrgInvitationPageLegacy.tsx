@@ -52,6 +52,7 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
 
         public componentDidMount(): void {
             EVENT_LOGGER.logViewEvent('OrgInvitation')
+            this.props.telemetryRecorder.recordEvent('org.invitation', 'view')
 
             const orgChanges = this.componentUpdates.pipe(
                 distinctUntilKeyChanged('org'),
@@ -75,6 +76,7 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
                                     responseType,
                                 }).pipe(
                                     tap(() => EVENT_LOGGER.log('OrgInvitationRespondedTo')),
+                                    tap(() => this.props.telemetryRecorder.recordEvent('org.invitation', 'responded')),
                                     tap(() =>
                                         this.props.onDidRespondToInvitation(
                                             responseType === OrganizationInvitationResponseType.ACCEPT

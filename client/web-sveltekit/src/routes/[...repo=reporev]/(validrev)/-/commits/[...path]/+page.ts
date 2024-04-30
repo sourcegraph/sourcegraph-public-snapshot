@@ -12,6 +12,7 @@ const PAGE_SIZE = 20
 export const load: PageLoad = ({ parent, params }) => {
     const client = getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
+    const path = params.path ?? ''
     const resolvedRevision = resolveRevision(parent, revision)
 
     const commitsQuery = infinityQuery({
@@ -22,6 +23,7 @@ export const load: PageLoad = ({ parent, params }) => {
                 repoName,
                 revision,
                 first: PAGE_SIZE,
+                path,
                 afterCursor: null as string | null,
             }))
         ),
@@ -59,5 +61,6 @@ export const load: PageLoad = ({ parent, params }) => {
 
     return {
         commitsQuery,
+        path,
     }
 }

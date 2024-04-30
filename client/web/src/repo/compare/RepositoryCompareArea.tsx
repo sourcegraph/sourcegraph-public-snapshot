@@ -3,6 +3,7 @@ import type { FC } from 'react'
 import classNames from 'classnames'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -13,14 +14,14 @@ import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 
 import styles from './RepositoryCompareArea.module.scss'
 
-interface RepositoryCompareAreaProps extends BreadcrumbSetters {
+interface RepositoryCompareAreaProps extends BreadcrumbSetters, TelemetryV2Props {
     repo?: RepositoryFields
 }
 
 /**
  * Properties passed to all page components in the repository compare area.
  */
-export interface RepositoryCompareAreaPageProps {
+export interface RepositoryCompareAreaPageProps extends TelemetryV2Props {
     /** The repository being compared. */
     repo: RepositoryFields
 
@@ -37,7 +38,7 @@ const BREADCRUMB = { key: 'compare', element: <>Compare</> }
  * Renders pages related to a repository comparison.
  */
 export const RepositoryCompareArea: FC<RepositoryCompareAreaProps> = props => {
-    const { repo, useBreadcrumb } = props
+    const { repo, useBreadcrumb, telemetryRecorder } = props
 
     const { '*': splat } = useParams<{ '*': string }>()
     const location = useLocation()
@@ -62,6 +63,7 @@ export const RepositoryCompareArea: FC<RepositoryCompareAreaProps> = props => {
         repo,
         base: { repoID: repo.id, repoName: repo.name, revision: spec?.base },
         head: { repoID: repo.id, repoName: repo.name, revision: spec?.head },
+        telemetryRecorder,
     }
 
     return (

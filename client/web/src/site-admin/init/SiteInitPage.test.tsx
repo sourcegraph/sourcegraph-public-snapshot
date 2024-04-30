@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SiteInitPage } from './SiteInitPage'
@@ -24,6 +25,7 @@ describe('SiteInitPage', () => {
                     authPasswordPolicy: {},
                     authMinPasswordLength: 12,
                 }}
+                telemetryRecorder={noOpTelemetryRecorder}
             />,
             { route: '/init', path: '/init', extraRoutes: [{ path: '/search', element: null }] }
         )
@@ -41,6 +43,7 @@ describe('SiteInitPage', () => {
                         authPasswordPolicy: {},
                         authMinPasswordLength: 12,
                     }}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             ).asFragment()
         ).toMatchSnapshot())
@@ -55,6 +58,7 @@ describe('SiteInitPage', () => {
                         authPasswordPolicy: {},
                         authMinPasswordLength: 12,
                     }}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             ).asFragment()
         ).toMatchSnapshot())

@@ -251,7 +251,12 @@ export const routes: RouteObject[] = [
         path: PageRoutes.SearchConsole,
         element: (
             <LegacyRoute
-                render={props => <SearchConsolePageOrRedirect {...props} />}
+                render={props => (
+                    <SearchConsolePageOrRedirect
+                        {...props}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    />
+                )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),
@@ -465,7 +470,7 @@ function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Eleme
 function SearchPageOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element {
     const { isCodeSearchEnabled } = props.licenseFeatures
     if (!isCodeSearchEnabled) {
-        return <SearchUpsellPage />
+        return <SearchUpsellPage telemetryRecorder={props.platformContext.telemetryRecorder} />
     }
     return <SearchPageWrapper {...props} />
 }

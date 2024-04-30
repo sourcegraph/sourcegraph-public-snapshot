@@ -5,6 +5,7 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, tap } from 'rxjs/operators'
 
 import { asError, logger } from '@sourcegraph/common'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Link, Label, H2, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
@@ -31,10 +32,12 @@ interface State {
     email: string
 }
 
+interface Props extends TelemetryV2Props {}
+
 /**
  * A page with a form to create a user account.
  */
-export class SiteAdminCreateUserPage extends React.Component<{}, State> {
+export class SiteAdminCreateUserPage extends React.Component<Props, State> {
     public state: State = {
         loading: false,
         username: '',
@@ -46,6 +49,7 @@ export class SiteAdminCreateUserPage extends React.Component<{}, State> {
 
     public componentDidMount(): void {
         EVENT_LOGGER.logViewEvent('SiteAdminCreateUser')
+        this.props.telemetryRecorder.recordEvent('admin.users.create', 'view')
 
         this.subscriptions.add(
             this.submits
