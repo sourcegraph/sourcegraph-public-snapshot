@@ -32,18 +32,18 @@ git status
 # Git and GitHub config
 BRANCH_NAME="wolfi-auto-update/${BUILDKITE_BRANCH}"
 TIMESTAMP=$(TZ=UTC date "+%Y-%m-%d %H:%M:%S UTC")
-PR_TITLE="Auto-update package lockfiles for Wolfi base images"
+PR_TITLE="Auto-update package lockfiles for Sourcegraph base images"
 # PR_REVIEWER="sourcegraph/security"
 PR_LABELS="SSDLC,security-auto-update,security-auto-update/images"
-PR_BODY="Automatically generated PR to update package lockfiles for Wolfi base images.
+PR_BODY="Automatically generated PR to update package lockfiles for Sourcegraph base images.
 
 Built from Buildkite run [#${BUILDKITE_BUILD_NUMBER}](https://buildkite.com/sourcegraph/sourcegraph/builds/${BUILDKITE_BUILD_NUMBER}).
 ## Test Plan
 - CI build verifies image functionality"
 
 # Ensure git author details are correct
-git config --global user.email \"buildkite@sourcegraph.com\"
-git config --global user.name \"Buildkite\"
+git config --local user.email \"buildkite@sourcegraph.com\"
+git config --local user.name \"Buildkite\"
 
 # Commit changes to dev/oci-deps.bzl
 # Delete branch if it exists; catch status code if not
@@ -55,6 +55,8 @@ echo "Git add lockfiles"
 git add wolfi-images/*.lock.json
 echo "Committing changes"
 git commit -m "Auto-update package lockfiles for Wolfi base images at ${TIMESTAMP}"
+echo "Git log"
+git log -n 1
 echo "Pushing changes"
 git push --force -u origin "${BRANCH_NAME}"
 echo "Successfully commited changes and pushed to branch ${BRANCH_NAME}"

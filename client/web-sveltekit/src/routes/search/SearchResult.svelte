@@ -33,7 +33,7 @@
     .header {
         display: flex;
         align-items: center;
-        padding: 0.5rem;
+        padding: 0.5rem 0.75rem;
         position: sticky;
         top: 0;
         background-color: var(--body-bg);

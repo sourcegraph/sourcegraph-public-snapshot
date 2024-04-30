@@ -1,4 +1,15 @@
-export enum ViewMode {
+export enum FileViewMode {
+    CodeFile = 2 ** 1,
+    BinaryFile = 2 ** 2,
+    AtRevision = 2 ** 3,
+    Diff = 2 ** 4,
+}
+
+export function isFileViewMode(viewMode: FileViewMode, mode: FileViewMode): boolean {
+    return (viewMode & mode) != 0
+}
+
+export enum CodeViewMode {
     Default = 'default',
     Code = 'code',
     Blame = 'blame',
@@ -10,14 +21,14 @@ export enum ViewMode {
  * @param rawViewMode The raw view mode value.
  * @returns The ViewMode enum value.
  */
-export function toViewMode(rawViewMode: string | null | undefined): ViewMode {
+export function toCodeViewMode(rawViewMode: string | null | undefined): CodeViewMode {
     switch (rawViewMode?.toLowerCase()) {
         case 'code':
         case 'raw':
-            return ViewMode.Code
+            return CodeViewMode.Code
         case 'blame':
-            return ViewMode.Blame
+            return CodeViewMode.Blame
         default:
-            return ViewMode.Default
+            return CodeViewMode.Default
     }
 }

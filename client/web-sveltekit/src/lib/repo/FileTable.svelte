@@ -3,7 +3,7 @@
 
     import Icon from '$lib/Icon.svelte'
     import type { TreeEntryWithCommitInfo } from './FileTable.gql'
-    import { replaceRevisionInURL } from '$lib/web'
+    import { replaceRevisionInURL } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
     import type { TreeEntryFields } from './api/tree'
 

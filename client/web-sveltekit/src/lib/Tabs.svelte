@@ -2,6 +2,7 @@
     export interface Tab {
         id: string
         title: string
+        icon?: string
     }
 
     export interface TabsContext {
@@ -17,6 +18,8 @@
     import { createEventDispatcher, setContext } from 'svelte'
     import { derived, writable, type Readable, type Writable, type Unsubscriber } from 'svelte/store'
     import * as uuid from 'uuid'
+
+    import Icon from './Icon.svelte'
 
     /**
      * The index of the tab that should be selected by default.
@@ -52,7 +55,7 @@
     })
 
     function selectTab(event: MouseEvent) {
-        const index = (event.target as HTMLElement).id.match(/\d+$/)?.[0]
+        const index = (event.target as HTMLElement).closest('[role="tab"]')?.id.match(/\d+$/)?.[0]
         if (index) {
             $selectedTab = $selectedTab === +index && toggable ? null : +index
             dispatch('select', $selectedTab)
@@ -70,8 +73,10 @@
                 tabindex={$selectedTab === index ? 0 : -1}
                 role="tab"
                 on:click={selectTab}
-                data-tab-title={tab.title}
-                data-tab>{tab.title}</button
+                data-tab
+                >{#if tab.icon}<Icon svgPath={tab.icon} aria-hidden inline /> {/if}<span data-tab-title={tab.title}
+                    >{tab.title}</span
+                ></button
             >
         {/each}
     </div>
@@ -86,45 +91,50 @@
     }
 
     .tabs-header {
+        --icon-fill-color: var(--header-icon-color);
+
         display: flex;
+        align-items: stretch;
         justify-content: var(--align-tabs, center);
         gap: var(--tabs-gap, 0);
     }
 
-    button {
+    [role='tab'] {
+        all: unset;
+
         cursor: pointer;
-        border: none;
-        background: none;
-        align-items: center;
-        letter-spacing: normal;
-        margin: 0;
-        min-height: 2rem;
-        padding: 0.5rem;
-        border-radius: 0.125rem;
-        color: var(--body-color);
-        text-transform: none;
-        display: inline-flex;
-        flex-direction: column;
-        justify-content: center;
+        color: var(--text-body);
+        padding: 0.5rem 0.75rem;
         white-space: nowrap;
+
         border-bottom: 2px solid transparent;
 
-        &[aria-selected='true'],
         &:hover {
-            color: var(--body-color);
-            background-color: var(--color-bg-2);
+            border-color: var(--border-color-2);
         }
 
         &[aria-selected='true'] {
-            font-weight: 500;
+            border-color: var(--brand-secondary);
+            font-weight: 700;
+            color: var(--text-title);
+
+            &:hover {
+                border-color: var(--brand-secondary);
+            }
         }
 
-        &::before {
-            content: attr(data-tab-title);
-            display: block;
-            font-weight: 500;
-            height: 0;
-            visibility: hidden;
+        span {
+            display: inline-block;
+
+            // Hidden rendering of the bold tab title to prevent
+            // shifting when the tab is selected.
+            &::before {
+                content: attr(data-tab-title);
+                display: block;
+                font-weight: 700;
+                height: 0;
+                visibility: hidden;
+            }
         }
     }
 </style>

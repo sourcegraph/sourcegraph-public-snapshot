@@ -39,13 +39,10 @@
 
     .interpunct {
         margin: 0 0.5rem;
-        color: var(--text-muted);
+        color: var(--text-disabled);
     }
 
     .path {
         color: var(--text-body);
-        .file-name {
-            font-weight: 600;
-        }
     }
 </style>
