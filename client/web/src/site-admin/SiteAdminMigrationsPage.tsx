@@ -92,6 +92,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
             () =>
                 timer(0, REFRESH_INTERVAL_MS, undefined).pipe(
                     concatMap(() =>
+                        // Exclude ExcludeDeprecatedBeforeFirstVersion: true
                         fetchMigrations(true).pipe(
                             catchError((error): [ErrorLike] => [asError(error)]),
                             repeat({ delay: REFRESH_INTERVAL_MS })
