@@ -94,6 +94,11 @@
         flex-direction: column;
         height: 100%;
         overflow: hidden;
+
+        :global([data-scroller]) {
+            display: flex;
+            flex-direction: column;
+        }
     }
 
     form {

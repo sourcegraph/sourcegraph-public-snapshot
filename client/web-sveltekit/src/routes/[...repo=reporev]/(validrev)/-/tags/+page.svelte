@@ -94,6 +94,11 @@
         flex-direction: column;
         height: 100%;
         overflow: hidden;
+
+        :global([data-scroller]) {
+            display: flex;
+            flex-direction: column;
+        }
     }
 
     form {
@@ -105,14 +110,14 @@
         }
     }
 
-    div,
     form,
+    div,
     :global([data-scroller]) {
         padding: 1rem;
     }
 
-    div,
     form,
+    div,
     table {
         align-self: center;
         max-width: var(--viewport-xl);
@@ -120,7 +125,6 @@
     }
 
     table {
-        width: 100%;
         border-spacing: 0;
     }
 
