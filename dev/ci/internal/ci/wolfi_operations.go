@@ -94,7 +94,7 @@ func buildRepoIndex(packageKeys []string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":card_index_dividers: Build and sign repository index",
 			bk.Cmd("./dev/ci/scripts/wolfi/build-repo-index.sh"),
-			// We want to run on the bazel queue, so we have a pretty minimal agent.
+			// This script is lightweight, so fine to run on the small queue
 			bk.Agent("queue", AspectWorkflows.QueueSmall),
 			// Depend on all previous package building steps
 			bk.DependsOn(packageKeys...),
