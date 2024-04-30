@@ -299,10 +299,11 @@ func wolfiBaseImageLockAndCreatePR() *operations.Set {
 
 	ops.Append(
 		func(pipeline *bk.Pipeline) {
-			pipeline.AddStep(":whale::hash: Lock Base Image Packages",
+			pipeline.AddStep(":whale::hash: Updating Base Image Packages",
 				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-lockfiles.sh"),
-				bk.Agent("queue", AspectWorkflows.QueueSmall),
+				bk.Agent("queue", AspectWorkflows.QueueDefault),
 				bk.Key("updateBaseImageHashes"),
+				bk.DependsOn("bazel-prechecks"),
 			)
 		},
 	)
