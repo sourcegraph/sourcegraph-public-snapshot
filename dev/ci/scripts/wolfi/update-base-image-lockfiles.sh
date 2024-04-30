@@ -42,8 +42,8 @@ Built from Buildkite run [#${BUILDKITE_BUILD_NUMBER}](https://buildkite.com/sour
 - CI build verifies image functionality"
 
 # Ensure git author details are correct
-git config --global user.email \"buildkite@sourcegraph.com\"
-git config --global user.name \"Buildkite\"
+git config --local user.email \"buildkite@sourcegraph.com\"
+git config --local user.name \"Buildkite\"
 
 # Commit changes to dev/oci-deps.bzl
 # Delete branch if it exists; catch status code if not
@@ -55,6 +55,8 @@ echo "Git add lockfiles"
 git add wolfi-images/*.lock.json
 echo "Committing changes"
 git commit -m "Auto-update package lockfiles for Wolfi base images at ${TIMESTAMP}"
+echo "Git log"
+git log -n 1
 echo "Pushing changes"
 git push --force -u origin "${BRANCH_NAME}"
 echo "Successfully commited changes and pushed to branch ${BRANCH_NAME}"
