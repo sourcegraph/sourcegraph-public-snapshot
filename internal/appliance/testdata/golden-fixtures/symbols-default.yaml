@@ -1,57 +1,108 @@
 resources:
 - apiVersion: apps/v1
-  kind: Deployment
+  kind: StatefulSet
   metadata:
     annotations:
       appliance.sourcegraph.com/configHash: bd6ab558ec98ed6b2607b80469bb9f209b485fa44a6dd5beaf18c37011340afc
     creationTimestamp: "2024-04-19T00:00:00Z"
     generation: 1
     labels:
-      app.kubernetes.io/component: blobstore
+      app.kubernetes.io/component: symbols
       app.kubernetes.io/name: sourcegraph
       app.kubernetes.io/version: 5.3.9104
       deploy: sourcegraph
-    name: blobstore
+    name: symbols
     namespace: NORMALIZED_FOR_TESTING
     resourceVersion: NORMALIZED_FOR_TESTING
     uid: NORMALIZED_FOR_TESTING
   spec:
     minReadySeconds: 10
-    progressDeadlineSeconds: 600
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
+    podManagementPolicy: OrderedReady
     replicas: 1
     revisionHistoryLimit: 10
     selector:
       matchLabels:
-        app: blobstore
-    strategy:
-      rollingUpdate:
-        maxSurge: 25%
-        maxUnavailable: 25%
-      type: RollingUpdate
+        app: symbols
+    serviceName: symbols
     template:
       metadata:
         annotations:
-          kubectl.kubernetes.io/default-container: blobstore
+          kubectl.kubernetes.io/default-container: symbols
         creationTimestamp: null
         labels:
-          app: blobstore
+          app: symbols
           deploy: sourcegraph
-        name: blobstore
+        name: symbols
       spec:
         containers:
-        - image: index.docker.io/sourcegraph/blobstore:5.3.2@sha256:d625be1eefe61cc42f94498e3c588bf212c4159c8b20c519db84eae4ff715efa
+        - env:
+          - name: REDIS_CACHE_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                key: endpoint
+                name: redis-cache
+          - name: REDIS_STORE_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                key: endpoint
+                name: redis-store
+          - name: SYMBOLS_CACHE_SIZE_MB
+            value: "11059"
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: SYMBOLS_CACHE_DIR
+            value: /mnt/cache/$(POD_NAME)
+          - name: TMPDIR
+            value: /mnt/tmp
+          - name: OTEL_AGENT_HOST
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.hostIP
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: http://$(OTEL_AGENT_HOST):4317
+          image: index.docker.io/sourcegraph/symbols:5.3.2@sha256:dd7f923bdbd5dbd231b749a7483110d40d59159084477b9fff84afaf58aad98e
           imagePullPolicy: IfNotPresent
-          name: blobstore
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: symbols
           ports:
-          - containerPort: 9000
-            name: blobstore
+          - containerPort: 3184
+            name: http
             protocol: TCP
+          - containerPort: 6060
+            name: debug
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 1
           resources:
             limits:
-              cpu: "1"
-              memory: 500M
+              cpu: "2"
+              memory: 2G
             requests:
-              cpu: "1"
+              cpu: 500m
               memory: 500M
           securityContext:
             allowPrivilegeEscalation: false
@@ -61,10 +112,10 @@ resources:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: FallbackToLogsOnError
           volumeMounts:
-          - mountPath: /blobstore
-            name: blobstore
-          - mountPath: /data
-            name: blobstore-data
+          - mountPath: /mnt/cache
+            name: cache
+          - mountPath: /mnt/tmp
+            name: tmp
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
@@ -73,21 +124,40 @@ resources:
           fsGroupChangePolicy: OnRootMismatch
           runAsGroup: 101
           runAsUser: 100
+        serviceAccount: symbols
+        serviceAccountName: symbols
         terminationGracePeriodSeconds: 30
         volumes:
         - emptyDir: {}
-          name: blobstore
-        - name: blobstore-data
-          persistentVolumeClaim:
-            claimName: blobstore
-  status: {}
+          name: tmp
+    updateStrategy:
+      type: RollingUpdate
+    volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        creationTimestamp: null
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 12Gi
+        storageClassName: sourcegraph
+        volumeMode: Filesystem
+      status:
+        phase: Pending
+  status:
+    availableReplicas: 0
+    replicas: 0
 - apiVersion: v1
   data:
     spec: |
       spec:
         requestedVersion: "5.3.9104"
 
-        blobstore: {}
+        blobstore:
+          disabled: true
 
         codeInsights:
           disabled: true
@@ -131,8 +201,7 @@ resources:
         searcher:
           disabled: true
 
-        symbols:
-          disabled: true
+        symbols: {}
 
         syntectServer:
           disabled: true
@@ -150,40 +219,30 @@ resources:
     resourceVersion: NORMALIZED_FOR_TESTING
     uid: NORMALIZED_FOR_TESTING
 - apiVersion: v1
-  kind: PersistentVolumeClaim
+  kind: ServiceAccount
   metadata:
     annotations:
       appliance.sourcegraph.com/configHash: bd6ab558ec98ed6b2607b80469bb9f209b485fa44a6dd5beaf18c37011340afc
     creationTimestamp: "2024-04-19T00:00:00Z"
-    finalizers:
-    - kubernetes.io/pvc-protection
     labels:
       deploy: sourcegraph
-    name: blobstore
+    name: symbols
     namespace: NORMALIZED_FOR_TESTING
     resourceVersion: NORMALIZED_FOR_TESTING
     uid: NORMALIZED_FOR_TESTING
-  spec:
-    accessModes:
-    - ReadWriteOnce
-    resources:
-      requests:
-        storage: 100Gi
-    storageClassName: sourcegraph
-    volumeMode: Filesystem
-  status:
-    phase: Pending
 - apiVersion: v1
   kind: Service
   metadata:
     annotations:
       appliance.sourcegraph.com/configHash: bd6ab558ec98ed6b2607b80469bb9f209b485fa44a6dd5beaf18c37011340afc
+      prometheus.io/port: "6060"
+      sourcegraph.prometheus/scrape: "true"
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
-      app: blobstore
-      app.kubernetes.io/component: blobstore
+      app: symbols
+      app.kubernetes.io/component: symbols
       deploy: sourcegraph
-    name: blobstore
+    name: symbols
     namespace: NORMALIZED_FOR_TESTING
     resourceVersion: NORMALIZED_FOR_TESTING
     uid: NORMALIZED_FOR_TESTING
@@ -196,12 +255,16 @@ resources:
     - IPv4
     ipFamilyPolicy: SingleStack
     ports:
-    - name: blobstore
-      port: 9000
+    - name: http
+      port: 3184
       protocol: TCP
-      targetPort: blobstore
+      targetPort: http
+    - name: debug
+      port: 6060
+      protocol: TCP
+      targetPort: debug
     selector:
-      app: blobstore
+      app: symbols
     sessionAffinity: None
     type: ClusterIP
   status:
