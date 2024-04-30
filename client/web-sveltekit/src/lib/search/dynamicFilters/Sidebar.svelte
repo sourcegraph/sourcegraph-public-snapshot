@@ -37,8 +37,8 @@
     import LanguageIcon from '$lib/LanguageIcon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import Tooltip from '$lib/Tooltip.svelte'
     import Button from '$lib/wildcard/Button.svelte'
 
@@ -87,6 +87,10 @@
         SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.SelectSearchFilter, { kind }, { kind })
     }
 
+    function handleShowChart(items: SectionItem[]): void {
+        console.log(items)
+    }
+
     onMount(() => {
         window.addEventListener('keydown', handleResetKeydown)
         return () => window.removeEventListener('keydown', handleResetKeydown)
@@ -118,6 +122,7 @@
             title="By repository"
             filterPlaceholder="Filter repositories"
             onFilterSelect={handleFilterSelect}
+            showChart={handleShowChart}
         >
             <svelte:fragment slot="label" let:label>
                 <Tooltip tooltip={label} placement="right">

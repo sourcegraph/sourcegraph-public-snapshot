@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { mdiClose } from '@mdi/js'
+    import { mdiChartBar, mdiClose } from '@mdi/js'
 
     import { page } from '$app/stores'
     import Icon from '$lib/Icon.svelte'
@@ -13,6 +13,7 @@
     export let filterPlaceholder: string = ''
     export let showAll: boolean = false
     export let onFilterSelect: (kind: SectionItem['kind']) => void = () => {}
+    export let showChart: ((items: SectionItem[]) => void) | undefined = undefined
 
     let filterText = ''
     $: processedFilterText = filterText.trim().toLowerCase()
@@ -28,7 +29,14 @@
 
 {#if items.length > 0}
     <article>
-        <header><h4>{title}</h4></header>
+        <header>
+            <h4>{title}</h4>
+            {#if showChart}
+                <Button variant="icon" on:click={() => showChart(items)}>
+                    <Icon svgPath={mdiChartBar} inline --icon-fill-color="var(--text-muted)" />
+                </Button>
+            {/if}
+        </header>
         {#if items.length > showCount}
             <input bind:this={filterInputRef} bind:value={filterText} placeholder={filterPlaceholder} />
         {/if}
@@ -87,6 +95,11 @@
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+    }
+
+    header {
+        display: flex;
+        justify-content: space-between;
     }
 
     input {
