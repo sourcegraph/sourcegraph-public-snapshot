@@ -111,7 +111,6 @@
         margin: 0;
         min-height: 2rem;
         padding: 0.5rem 0.75rem;
-        border-radius: 0.125rem;
         color: var(--text-body);
         text-transform: none;
         display: inline-flex;
