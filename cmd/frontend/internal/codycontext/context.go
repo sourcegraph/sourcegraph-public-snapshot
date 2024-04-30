@@ -251,9 +251,9 @@ func getKeywordContextExcludeFilePathsQuery() string {
 		"\\.min\\.js$",
 		"\\.map$",
 		"\\.tsbuildinfo$",
-		"/umd/",
-		"/amd/",
-		"/cjs/",
+		"(\\/|^)umd\\/",
+		"(\\/|^)amd\\/",
+		"(\\/|^)cjs\\/",
 	}
 
 	filters := []string{}
