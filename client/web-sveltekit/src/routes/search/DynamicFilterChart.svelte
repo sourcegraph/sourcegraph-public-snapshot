@@ -5,12 +5,10 @@
     import type { SectionItem } from '$lib/search/dynamicFilters'
     import Tooltip from '$lib/Tooltip.svelte'
 
-    export let label: string
+    export let title: string
     export let items: SectionItem[]
 
-    $: items = items.slice(0, 20)
-
-    const padding = { top: 20, right: 15, bottom: 20, left: 25 }
+    const padding = { top: 30, right: 20, bottom: 50, left: 30 }
 
     let width: number
     let height: number
@@ -24,7 +22,7 @@
         .range([padding.left, width - padding.right])
 
     $: yScale = scaleLinear()
-        .domain([0, Math.max.apply(null, yTicks)])
+        .domain([0, yMax])
         .range([height - padding.bottom, padding.top])
 
     $: innerWidth = width - (padding.left + padding.right)
@@ -32,12 +30,13 @@
 </script>
 
 <div class="chart" bind:clientWidth={width} bind:clientHeight={height}>
+    <h2>{title}</h2>
     <svg>
         <!-- y axis -->
         <g class="axis y-axis">
             {#each yTicks as tick}
-                <g class="tick tick-{tick}" transform="translate(0, {yScale(tick)})">
-                    <line x2="100%" />
+                <g class="tick tick-{tick}" transform="translate({padding.left}, {yScale(tick)})">
+                    <line x="0" x2="100%" />
                     <text y="-4">{tick}</text>
                 </g>
             {/each}
@@ -59,12 +58,12 @@
 </div>
 
 <style>
-    h2 {
-        text-align: center;
-    }
-
     .chart {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
         width: 100%;
+        height: 100%;
         max-width: 800px;
         margin: 0 auto;
     }
@@ -87,7 +86,7 @@
     }
 
     .tick text {
-        text-anchor: start;
+        text-anchor: end;
     }
 
     .tick.tick-0 line {

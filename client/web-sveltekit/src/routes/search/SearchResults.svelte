@@ -17,7 +17,7 @@
     import { mdiClose, mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
     import { onMount, tick } from 'svelte'
-    import { writable, type Readable, type Writable } from 'svelte/store'
+    import { writable } from 'svelte/store'
 
     import { beforeNavigate, goto } from '$app/navigation'
     import { limitHit } from '$lib/branded'
@@ -86,7 +86,8 @@
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
     $: previewResult = writable(cacheEntry?.preview ?? null)
-    let chartProps: Writable<ChartProps | undefined> = writable(undefined)
+    let chartProps: ChartProps | undefined = undefined
+    $: chartItems = chartProps?.items
 
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
@@ -103,8 +104,8 @@
             previewResult.set(result)
         },
         queryState,
-        setChart(props: Readable<ChartProps> | undefined): void {
-            props?.subscribe(p => chartProps.set(p))
+        setChart(props: ChartProps | undefined): void {
+            chartProps = props
         },
     })
 
@@ -174,20 +175,21 @@
         </Panel>
         <PanelResizeHandle />
         <Panel id="search-results-content" order={2} minSize={35}>
-            {#if $chartProps !== undefined}
+            {#if chartProps}
                 <div class="chart-view">
                     <div class="chart-view-header">
-                        <h2>{$chartProps.label}</h2>
                         <Button
                             variant="icon"
                             on:click={() => {
-                                chartProps.set(undefined)
+                                chartProps = undefined
                             }}
                         >
                             <Icon svgPath={mdiClose} />
                         </Button>
                     </div>
-                    <DynamicFilterChart items={$chartProps.items} />
+                    <div class="chart-view-chart">
+                        <DynamicFilterChart title={chartProps.title} items={$chartItems?.slice(0, 20) ?? []} />
+                    </div>
                 </div>
             {:else}
                 <div class="results">
@@ -290,13 +292,14 @@
     }
 
     .chart-view {
-        display: flex;
-
         &-header {
             display: flex;
             flex-direction: column;
             align-items: flex-end;
             padding: 0.5rem;
+        }
+        &-chart {
+            padding: 0 2rem;
         }
     }
 </style>

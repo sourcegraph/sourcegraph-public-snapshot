@@ -27,7 +27,7 @@
 
 <script lang="ts">
     import { onMount } from 'svelte'
-    import type { Readable } from 'svelte/store'
+    import { derived } from 'svelte/store'
 
     import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 
@@ -43,7 +43,7 @@
     import Tooltip from '$lib/Tooltip.svelte'
     import Button from '$lib/wildcard/Button.svelte'
 
-    import { getSearchResultsContext, type ChartProps } from '../../../routes/search/searchResultsContext'
+    import { getSearchResultsContext } from '../../../routes/search/searchResultsContext'
 
     import HelpFooter from './HelpFooter.svelte'
     import {
@@ -91,9 +91,6 @@
     }
 
     const setChart = getSearchResultsContext().setChart
-    function handleShowChart(props: Readable<ChartProps>): void {
-        setChart(props)
-    }
 
     onMount(() => {
         window.addEventListener('keydown', handleResetKeydown)
@@ -126,6 +123,12 @@
             title="By repository"
             filterPlaceholder="Filter repositories"
             onFilterSelect={handleFilterSelect}
+            showChart={items => {
+                setChart({
+                    title: 'Grouped by repository',
+                    items,
+                })
+            }}
         >
             <svelte:fragment slot="label" let:label>
                 <Tooltip tooltip={label} placement="right">
@@ -141,6 +144,12 @@
             title="By language"
             filterPlaceholder="Filter languages"
             onFilterSelect={handleFilterSelect}
+            showChart={items => {
+                setChart({
+                    title: 'Grouped by language',
+                    items,
+                })
+            }}
         >
             <svelte:fragment slot="label" let:label>
                 <LanguageIcon class="icon" language={label} inline />&nbsp;
