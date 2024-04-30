@@ -34,9 +34,9 @@ func (r *schemaResolver) OutOfBandMigrationByID(ctx context.Context, id graphql.
 }
 
 // OutOfBandMigrations resolves all registered single out-of-band migrations.
-// If filterDeprecatedBeforeFirstVersion is set to true, migrations deprecated before the init version of sourcegraph will be filtered out.
+// If ExcludeDeprecatedBeforeFirstVersion is set to true, migrations deprecated before the init version of sourcegraph will be filtered out.
 func (r *schemaResolver) OutOfBandMigrations(ctx context.Context, args *struct {
-	FilterDeprecatedBeforeFirstVersion *bool
+	ExcludeDeprecatedBeforeFirstVersion *bool
 }) ([]*outOfBandMigrationResolver, error) {
 	// 🚨 SECURITY: Only site admins may view out-of-band migrations
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -48,7 +48,7 @@ func (r *schemaResolver) OutOfBandMigrations(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if args.FilterDeprecatedBeforeFirstVersion != nil && *args.FilterDeprecatedBeforeFirstVersion {
+	if args.ExcludeDeprecatedBeforeFirstVersion != nil && *args.ExcludeDeprecatedBeforeFirstVersion {
 		rawFirstVersion, ok, err := upgradestore.New(r.db).GetFirstServiceVersion(ctx)
 		if err != nil {
 			return nil, err
@@ -69,6 +69,7 @@ func (r *schemaResolver) OutOfBandMigrations(ctx context.Context, args *struct {
 				// If the migration is deprecated before the first version of sourcegraph, don't append it to the list.
 				if oobmigration.CompareVersions(firstVersion, *migration.Deprecated) != oobmigration.VersionOrderAfter {
 					filtered = append(filtered, migration)
+					continue
 				}
 			}
 			migrations = filtered

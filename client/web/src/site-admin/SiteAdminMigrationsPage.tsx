@@ -29,14 +29,14 @@ import { PageTitle } from '../components/PageTitle'
 import type { OutOfBandMigrationFields } from '../graphql-operations'
 
 import {
-    fetchRelevantOutOfBandMigrations as defaultFetchRelevantMigrations,
+    fetchOutOfBandMigrations as defaultFetchMigrations,
     fetchSiteUpdateCheck as defaultFetchSiteUpdateCheck,
 } from './backend'
 
 import styles from './SiteAdminMigrationsPage.module.scss'
 
 export interface SiteAdminMigrationsPageProps extends TelemetryProps {
-    fetchRelevantMigrations?: typeof defaultFetchRelevantMigrations
+    fetchMigrations?: typeof defaultFetchMigrations
     fetchSiteUpdateCheck?: () => Observable<{ productVersion: string }>
     now?: () => Date
 }
@@ -81,7 +81,7 @@ const DOWNGRADE_RANGE = 1
 export const SiteAdminMigrationsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminMigrationsPageProps>
 > = ({
-    fetchRelevantMigrations = defaultFetchRelevantMigrations,
+    fetchMigrations = defaultFetchMigrations,
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
     now,
     telemetryService,
@@ -91,14 +91,14 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
             () =>
                 timer(0, REFRESH_INTERVAL_MS, undefined).pipe(
                     concatMap(() =>
-                        fetchRelevantMigrations().pipe(
+                        fetchMigrations(true).pipe(
                             catchError((error): [ErrorLike] => [asError(error)]),
                             repeat({ delay: REFRESH_INTERVAL_MS })
                         )
                     ),
                     takeWhile(() => true, true)
                 ),
-            [fetchRelevantMigrations]
+            [fetchMigrations]
         )
     )
 
@@ -127,8 +127,6 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
         [migrationsOrError]
     )
 
-    // TODO: we currently just display ll migrations here. We should filter out migrations which have a deprecated value before the firstVersion of the Sourcegraph instance.
-    // Should add flag to oobmigrations call in graphqlbackend/oobmigrations.go such that the resolver does not return deprecated migrations
     return (
         <div className="site-admin-migrations-page">
             {isErrorLike(migrationsOrError) ? (

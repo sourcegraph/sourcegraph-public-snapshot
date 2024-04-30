@@ -3,11 +3,12 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
@@ -510,8 +511,8 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) ([]*schemaDr
 
 // isRequiredOutOfBandMigration returns true if an OOB migration will be deprecated in the latest version and has not progressed to completion.
 func isRequiredOutOfBandMigration(currentVersion, latestVersion oobmigration.Version, m oobmigration.Migration) bool {
-	// If current version is dev, no deprecated migrations are required.
-	if currentVersion.Dev && m.Deprecated != nil {
+	// If current version is dev, no migrations are required.
+	if currentVersion.Dev {
 		return false
 	}
 

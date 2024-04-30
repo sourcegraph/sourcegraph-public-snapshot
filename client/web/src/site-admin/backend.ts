@@ -657,13 +657,18 @@ export const SET_AUTO_UPGRADE = gql`
 `
 
 /**
- * Fetches all out-of-band migrations.
+ * Fetches out-of-band migrations.
+ *
+ * If excludeDeprecatedBeforeFirstVersion is true, exclude migrations which have not been deprecated,
+ * or were not deprecated before the Sourcegraph init version.
  */
-export function fetchAllOutOfBandMigrations(): Observable<OutOfBandMigrationFields[]> {
+export function fetchOutOfBandMigrations(
+    excludeDeprecatedBeforeFirstVersion?: boolean
+): Observable<OutOfBandMigrationFields[]> {
     return requestGraphQL<AllOutOfBandMigrationsResult, AllOutOfBandMigrationsVariables>(
         gql`
-            query AllOutOfBandMigrations {
-                outOfBandMigrations {
+            query OutOfBandMigrations($excludeDeprecatedBeforeFirstVersion: Boolean = false) {
+                outOfBandMigrations(ExcludeDeprecatedBeforeFirstVersion: $excludeDeprecatedBeforeFirstVersion) {
                     ...OutOfBandMigrationFields
                 }
             }
@@ -685,43 +690,8 @@ export function fetchAllOutOfBandMigrations(): Observable<OutOfBandMigrationFiel
                     created
                 }
             }
-        `
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.outOfBandMigrations)
-    )
-}
-
-/**
- * Fetches out-of-band migrations which have not been deprecated or were not deprecated before the Sourcegraph init version.
- */
-export function fetchRelevantOutOfBandMigrations(): Observable<OutOfBandMigrationFields[]> {
-    return requestGraphQL<RelevantOutOfBandMigrationsResult, RelevantOutOfBandMigrationsVariables>(
-        gql`
-            query RelevantOutOfBandMigrations {
-                outOfBandMigrations(FilterDeprecatedBeforeFirstVersion: true) {
-                    ...OutOfBandMigrationFields
-                }
-            }
-
-            fragment OutOfBandMigrationFields on OutOfBandMigration {
-                id
-                team
-                component
-                description
-                introduced
-                deprecated
-                progress
-                created
-                lastUpdated
-                nonDestructive
-                applyReverse
-                errors {
-                    message
-                    created
-                }
-            }
-        `
+        `,
+        { excludeDeprecatedBeforeFirstVersion }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.outOfBandMigrations)
