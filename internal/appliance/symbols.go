@@ -36,18 +36,6 @@ func (r *Reconciler) reconcileSymbols(ctx context.Context, sg *Sourcegraph, owne
 func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
 	name := "symbols"
 	cfg := sg.Spec.Symbols
-	if cfg.StorageSize == "" {
-		cfg.StorageSize = "12Gi"
-	}
-	if cfg.Replicas == 0 {
-		cfg.Replicas = 1
-	}
-
-	// TODO DRY out across all services
-	storageClassName := sg.Spec.StorageClass.Name
-	if storageClassName == "" {
-		storageClassName = "sourcegraph"
-	}
 
 	ctr := container.NewContainer(name, cfg, corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
@@ -128,7 +116,7 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *Source
 	sset := statefulset.NewStatefulSet(name, sg.Namespace, sg.Spec.RequestedVersion)
 	sset.Spec.Template = podTemplate.Template
 	sset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
-		pvc.NewPersistentVolumeClaimSpecOnly(storageSize, storageClassName),
+		pvc.NewPersistentVolumeClaimSpecOnly(storageSize, sg.Spec.StorageClass.Name),
 	}
 
 	return reconcileObject(ctx, r, sg.Spec.Symbols, &sset, &appsv1.StatefulSet{}, sg, owner)
