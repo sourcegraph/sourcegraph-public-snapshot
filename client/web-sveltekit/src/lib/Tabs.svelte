@@ -121,7 +121,6 @@
         gap: 0.5rem;
 
         border-bottom: 2px solid transparent;
-        font-size: 0.9375rem;
         font-weight: 500;
 
         &:hover {
