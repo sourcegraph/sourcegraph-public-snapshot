@@ -2239,11 +2239,6 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "useEmbeddedUI": {
-              "type": "boolean",
-              "default": false,
-              "description": "Whether or not to direct users to manage their Cody Pro subscriptions on accounts.sourcegraph.com."
-            },
             "stripePublishableKey": {
               "type": "string",
               "default": null,
