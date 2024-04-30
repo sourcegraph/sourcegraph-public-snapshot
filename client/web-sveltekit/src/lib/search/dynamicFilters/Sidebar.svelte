@@ -27,6 +27,7 @@
 
 <script lang="ts">
     import { onMount } from 'svelte'
+    import type { Readable } from 'svelte/store'
 
     import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 
@@ -41,6 +42,8 @@
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import Tooltip from '$lib/Tooltip.svelte'
     import Button from '$lib/wildcard/Button.svelte'
+
+    import { getSearchResultsContext } from '../../../routes/search/searchResultsContext'
 
     import HelpFooter from './HelpFooter.svelte'
     import {
@@ -87,8 +90,9 @@
         SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.SelectSearchFilter, { kind }, { kind })
     }
 
-    function handleShowChart(items: SectionItem[]): void {
-        console.log(items)
+    const setChart = getSearchResultsContext().setChart
+    function handleShowChart(items: Readable<SectionItem[]>): void {
+        setChart(items)
     }
 
     onMount(() => {

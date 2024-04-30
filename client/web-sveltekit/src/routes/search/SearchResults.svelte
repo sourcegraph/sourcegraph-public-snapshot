@@ -14,18 +14,22 @@
 </script>
 
 <script lang="ts">
-    import { mdiCloseOctagonOutline } from '@mdi/js'
+    import { mdiClose, mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
     import { onMount, tick } from 'svelte'
-    import { writable } from 'svelte/store'
+    import { writable, type Readable } from 'svelte/store'
 
     import { beforeNavigate, goto } from '$app/navigation'
     import { limitHit } from '$lib/branded'
+    import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
-    import type { URLQueryFilter } from '$lib/search/dynamicFilters'
+    import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
+    import type { SectionItem, URLQueryFilter } from '$lib/search/dynamicFilters'
+    import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
+    import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
+    import type { QueryState } from '$lib/search/state'
     import {
         type AggregateStreamingSearchResults,
         type PathMatch,
@@ -33,15 +37,13 @@
         type SymbolMatch,
         type ContentMatch,
     } from '$lib/shared'
-    import type { QueryState } from '$lib/search/state'
-    import Icon from '$lib/Icon.svelte'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
+    import Button from '$lib/wildcard/Button.svelte'
     import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
     import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
     import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
-    import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
-    import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
 
+    import DynamicFilterChart from './DynamicFilterChart.svelte'
     import PreviewPanel from './PreviewPanel.svelte'
     import SearchAlert from './SearchAlert.svelte'
     import { getSearchResultComponent } from './searchResultFactory'
@@ -84,6 +86,7 @@
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
     $: previewResult = writable(cacheEntry?.preview ?? null)
+    let chartItems: Readable<SectionItem[]> | undefined = undefined
 
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
@@ -100,6 +103,9 @@
             previewResult.set(result)
         },
         queryState,
+        setChart(items: Readable<SectionItem[]> | undefined): void {
+            chartItems = items
+        },
     })
 
     beforeNavigate(() => {
@@ -168,36 +174,45 @@
         </Panel>
         <PanelResizeHandle />
         <Panel id="search-results-content" order={2} minSize={35}>
-            <div class="results">
-                <aside class="actions">
-                    <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
-                </aside>
-                <div class="result-list" bind:this={resultContainer}>
-                    {#if $stream.alert}
-                        <div class="message-container">
-                            <SearchAlert alert={$stream.alert} />
-                        </div>
-                    {/if}
-                    <ol on:click={handleSearchResultClick} on:copy={handleResultCopy}>
-                        {#each resultsToShow as result, i}
-                            {@const component = getSearchResultComponent(result)}
-                            {#if i === resultsToShow.length - 1}
-                                <li use:observeIntersection on:intersecting={loadMore}>
-                                    <svelte:component this={component} {result} />
-                                </li>
-                            {:else}
-                                <li><svelte:component this={component} {result} /></li>
-                            {/if}
-                        {/each}
-                    </ol>
-                    {#if resultsToShow.length === 0 && state !== 'loading'}
-                        <div class="message-container">
-                            <Icon svgPath={mdiCloseOctagonOutline} />
-                            <p>No results found</p>
-                        </div>
-                    {/if}
+            {#if $chartItems}
+                <div class="chart-view">
+                    <Button variant="icon" on:click={() => (chartItems = undefined)}><Icon svgPath={mdiClose} /></Button
+                    >
+                    <DynamicFilterChart items={$chartItems} />
                 </div>
-            </div>
+            {:else}
+                <div class="results">
+                    <aside class="actions">
+                        <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
+                    </aside>
+
+                    <div class="result-list" bind:this={resultContainer}>
+                        {#if $stream.alert}
+                            <div class="message-container">
+                                <SearchAlert alert={$stream.alert} />
+                            </div>
+                        {/if}
+                        <ol on:click={handleSearchResultClick} on:copy={handleResultCopy}>
+                            {#each resultsToShow as result, i}
+                                {@const component = getSearchResultComponent(result)}
+                                {#if i === resultsToShow.length - 1}
+                                    <li use:observeIntersection on:intersecting={loadMore}>
+                                        <svelte:component this={component} {result} />
+                                    </li>
+                                {:else}
+                                    <li><svelte:component this={component} {result} /></li>
+                                {/if}
+                            {/each}
+                        </ol>
+                        {#if resultsToShow.length === 0 && state !== 'loading'}
+                            <div class="message-container">
+                                <Icon svgPath={mdiCloseOctagonOutline} />
+                                <p>No results found</p>
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+            {/if}
         </Panel>
 
         {#if $previewResult}

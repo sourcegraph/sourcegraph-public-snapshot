@@ -1,5 +1,6 @@
 <script lang="ts">
     import { mdiChartBar, mdiClose } from '@mdi/js'
+    import { writable, type Readable } from 'svelte/store'
 
     import { page } from '$app/stores'
     import Icon from '$lib/Icon.svelte'
@@ -13,7 +14,10 @@
     export let filterPlaceholder: string = ''
     export let showAll: boolean = false
     export let onFilterSelect: (kind: SectionItem['kind']) => void = () => {}
-    export let showChart: ((items: SectionItem[]) => void) | undefined = undefined
+    export let showChart: ((items: Readable<SectionItem[]>) => void) | undefined = undefined
+
+    const itemReader = writable(items)
+    $: itemReader.set(items)
 
     let filterText = ''
     $: processedFilterText = filterText.trim().toLowerCase()
@@ -32,7 +36,7 @@
         <header>
             <h4>{title}</h4>
             {#if showChart}
-                <Button variant="icon" on:click={() => showChart(items)}>
+                <Button variant="icon" on:click={() => showChart(itemReader)}>
                     <Icon svgPath={mdiChartBar} inline --icon-fill-color="var(--text-muted)" />
                 </Button>
             {/if}
