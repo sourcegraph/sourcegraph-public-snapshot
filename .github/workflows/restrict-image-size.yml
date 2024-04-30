@@ -1,0 +1,26 @@
+name: Restrict Doc Image Sizes
+on: [pull_request]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get all test, doc and src files that have changed
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: doc/**.{jpg,png}
+
+      - name: Check image sizes
+        run: |
+          IFS=' ' read -ra FILES <<< "${{ steps.changed-files.outputs.all_changed_files }}"
+          for file in "${FILES[@]}"; do
+            size=$(stat -c %s "$file")
+            if [ $size -gt 100000 ]; then
+              echo "File $file exceeds 100 KB. Please see https://docs.sourcegraph.com/dev/how-to/documentation_implementation#adding-images-to-the-documentation."
+              exit 1
+            fi
+          done
+        shell: bash
