@@ -8,6 +8,7 @@ import { parse as _parseVersion, type SemVer } from 'semver'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     LoadingSpinner,
@@ -35,7 +36,7 @@ import {
 
 import styles from './SiteAdminMigrationsPage.module.scss'
 
-export interface SiteAdminMigrationsPageProps extends TelemetryProps {
+export interface SiteAdminMigrationsPageProps extends TelemetryProps, TelemetryV2Props {
     fetchMigrations?: typeof defaultFetchMigrations
     fetchSiteUpdateCheck?: () => Observable<{ productVersion: string }>
     now?: () => Date
