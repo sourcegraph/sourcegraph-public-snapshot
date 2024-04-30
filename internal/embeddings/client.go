@@ -25,16 +25,8 @@ func defaultEndpoints() *endpoint.Map {
 	})
 }
 
-var defaultDoer = func() httpcli.Doer {
-	d, err := httpcli.NewInternalClientFactory("embeddings").Doer()
-	if err != nil {
-		panic(err)
-	}
-	return d
-}()
-
 func NewDefaultClient() Client {
-	return NewClient(defaultEndpoints(), defaultDoer)
+	return NewClient(defaultEndpoints(), httpcli.InternalDoer)
 }
 
 func NewClient(endpoints *endpoint.Map, doer httpcli.Doer) Client {
