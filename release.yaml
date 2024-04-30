@@ -288,38 +288,22 @@ promoteToPublic:
           echo "Posting slack notification for release"
           tag="{{tag}}"
           changelog_version="${tag//./}"
-          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --post-data '{
-            "type": "mrkdwn",
-            "text": "*Sourcegraph {{tag}} has been published*\n\n• <https://sourcegraph.com/docs/CHANGELOG#${changelog_version} | Changelog>\n• <https://github.com/sourcegraph/sourcegraph/releases/tag/{{version}} | GitHub release>"
-          }' "$SLACK_WEBHOOK_URL")
-          exit_code=$?
+          webhooks=("$SLACK_WEBHOOK_URL" "$SLACK_WEBHOOK_URL_CLOUD_OPS")
+          for webhook in "${webhooks[@]}"
+          do
+            body=$(wget --content-on-error -O- --header="Content-Type: application/json" --post-data '{
+              "type": "mrkdwn",
+              "text": "*Sourcegraph {{tag}} has been published*\n\n• <https://sourcegraph.com/docs/CHANGELOG#${changelog_version} | Changelog>\n• <https://github.com/sourcegraph/sourcegraph/releases/tag/{{version}} | GitHub release>"
+            }' "$webhook")
+            exit_code=$?
 
-          if [ $exit_code != 0 ]; then
-            echo "❌ Unable to post message to slack, got:"
-            echo "--- raw body ---"
-            echo $body
-            echo "--- raw body ---"
-            exit $exit_code
-          else
-            echo "Posted to slack."
-          fi
-      - name: 'Slack notification (#team-cloud-ops)'
-        cmd: |
-          echo "Posting slack notification for cloud ops"
-          tag="{{tag}}"
-          changelog_version="${tag//./}"
-          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --post-data '{
-            "type": "mrkdwn",
-            "text": "*Sourcegraph {{tag}} has been published*\n\n• <https://sourcegraph.com/docs/CHANGELOG#${changelog_version} | Changelog>\n• <https://github.com/sourcegraph/sourcegraph/releases/tag/{{version}} | GitHub release>"
-          }' "$SLACK_WEBHOOK_URL_CLOUD_OPS")
-          exit_code=$?
-
-          if [ $exit_code != 0 ]; then
-            echo "❌ Unable to post message to slack, got:"
-            echo "--- raw body ---"
-            echo $body
-            echo "--- raw body ---"
-            exit $exit_code
-          else
-            echo "Posted to slack."
-          fi
+            if [ $exit_code != 0 ]; then
+              echo "❌ Unable to post message to slack, got:"
+              echo "--- raw body ---"
+              echo $body
+              echo "--- raw body ---"
+              exit $exit_code
+            else
+              echo "Posted to slack."
+            fi
+          done
