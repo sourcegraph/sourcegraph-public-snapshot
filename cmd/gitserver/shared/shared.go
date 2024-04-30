@@ -162,7 +162,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	handler = actor.HTTPMiddleware(logger, handler)
 	handler = requestclient.InternalHTTPMiddleware(handler)
 	handler = requestinteraction.HTTPMiddleware(handler)
-	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
+	handler = trace.HTTPMiddleware(logger, handler)
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, gitserver, config), handler)
 
