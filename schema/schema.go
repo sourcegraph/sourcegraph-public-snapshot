@@ -639,6 +639,14 @@ type CodyGateway struct {
 	// BigQueryTable description: The table in the dataset to pull BigQuery Cody Gateway related events from.
 	BigQueryTable string `json:"bigQueryTable,omitempty"`
 }
+type CodyProConfig struct {
+	// SamsBackendOrigin description: Origin of the SAMS backend. (Must match the SAMS OIDC registration in auth.providers.)
+	SamsBackendOrigin string `json:"samsBackendOrigin,omitempty"`
+	// SscBackendOrigin description: Origin of the Self-serve Cody backend.
+	SscBackendOrigin string `json:"sscBackendOrigin,omitempty"`
+	// StripePublishableKey description: Stripe Publishable Key for use in Stripe Checkout, Stripe Elements. This is not considered a secret.
+	StripePublishableKey string `json:"stripePublishableKey,omitempty"`
+}
 
 // Completions description: Configuration for the completions service.
 type Completions struct {
@@ -724,7 +732,8 @@ type DequeueCacheConfig struct {
 // Dotcom description: Configuration options for Sourcegraph.com only.
 type Dotcom struct {
 	// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
-	CodyGateway *CodyGateway `json:"codyGateway,omitempty"`
+	CodyGateway   *CodyGateway   `json:"codyGateway,omitempty"`
+	CodyProConfig *CodyProConfig `json:"codyProConfig,omitempty"`
 	// MinimumExternalAccountAge description: The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.
 	MinimumExternalAccountAge int `json:"minimumExternalAccountAge,omitempty"`
 	// MinimumExternalAccountAgeExemptList description: A list of email addresses that are allowed to be exempted from the minimumExternalAccountAge requirement.

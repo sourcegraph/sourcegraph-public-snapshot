@@ -433,7 +433,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 	if tr := trace.FromContext(r.Context()); tr.IsRecording() {
 		tr.SetError(err)
 		tr.SetAttributes(attribute.String("error-id", errorID))
-		traceURL = trace.URL(trace.ID(r.Context()), conf.DefaultClient())
+		traceURL = trace.URL(trace.ID(r.Context()))
 	}
 	logFields := []log.Field{
 		log.String("method", r.Method),

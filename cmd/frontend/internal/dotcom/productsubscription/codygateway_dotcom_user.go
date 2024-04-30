@@ -390,6 +390,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"fireworks/" + fireworks.Llama213bCode,
 			"fireworks/" + fireworks.StarcoderTwo15b,
 			"fireworks/" + fireworks.StarcoderTwo7b,
+			"fireworks/" + fireworks.Mixtral8x7bFineTunedModel,
 		}
 	default:
 		return []string{}
