@@ -41,7 +41,7 @@
     span {
         z-index: 1;
         color: var(--text-muted);
-        font-size: calc(var(--size) * 0.6);
+        font-size: calc(var(--size) * 0.5);
         font-weight: 500;
     }
 
@@ -49,7 +49,6 @@
     div {
         --min-size: 1.25rem;
         --size: var(--avatar-size, var(--icon-inline-size, var(--min-size)));
-        --avatar-size: 1.5rem;
 
         min-width: var(--min-size);
         min-height: var(--min-size);

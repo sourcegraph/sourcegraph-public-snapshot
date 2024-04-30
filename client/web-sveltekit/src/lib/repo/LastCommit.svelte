@@ -47,6 +47,7 @@
         flex-flow: row nowrap;
         align-items: center;
         margin-right: 0.5rem;
+        --avatar-size: 1.5rem;
     }
 
     .display-name {

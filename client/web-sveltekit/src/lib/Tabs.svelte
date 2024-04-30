@@ -89,6 +89,7 @@
         display: flex;
         justify-content: var(--align-tabs, center);
         gap: var(--tabs-gap, 0);
+        border-bottom: 1px solid var(--border-color);
     }
 
     button {
@@ -99,7 +100,7 @@
         letter-spacing: normal;
         margin: 0;
         min-height: 2rem;
-        padding: 0.5rem 0.75rem;
+        padding: 0.75rem;
         border-radius: 0.125rem;
         color: var(--text-body);
         text-transform: none;
