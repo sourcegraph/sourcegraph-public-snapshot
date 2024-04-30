@@ -9,6 +9,7 @@ import { catchError, map } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, type ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -41,18 +42,20 @@ import { UserSelect } from './user-select/UserSelect'
 
 import styles from './SiteAdminFeatureFlagConfigurationPage.module.scss'
 
-export interface SiteAdminFeatureFlagConfigurationProps extends TelemetryProps {
+export interface SiteAdminFeatureFlagConfigurationProps extends TelemetryProps, TelemetryV2Props {
     fetchFeatureFlags?: typeof defaultFetchFeatureFlags
     productVersion?: string
 }
 
 export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
     React.PropsWithChildren<SiteAdminFeatureFlagConfigurationProps>
-> = ({ fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version }) => {
+> = ({ fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version, telemetryRecorder }) => {
     const { name = '' } = useParams<{ name: string }>()
     const navigate = useNavigate()
     const productGitVersion = parseProductReference(productVersion)
     const isCreateFeatureFlag = name === 'new'
+
+    useEffect(() => telemetryRecorder.recordEvent('admin.featureFlagConfiguration', 'view'), [telemetryRecorder])
 
     // Load the initial feature flag, unless we are creating a new feature flag.
     const featureFlagOrError = useObservable(

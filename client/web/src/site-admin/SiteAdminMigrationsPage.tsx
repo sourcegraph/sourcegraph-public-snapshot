@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { mdiAlertCircle, mdiAlert, mdiArrowLeftBold, mdiArrowRightBold } from '@mdi/js'
 import classNames from 'classnames'
@@ -85,8 +85,12 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
     fetchMigrations = defaultFetchMigrations,
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
     now,
-    telemetryService,
+    telemetryRecorder,
 }) => {
+    useEffect(() => {
+        telemetryRecorder.recordEvent('admin.migrations', 'view')
+    }, [telemetryRecorder])
+
     const migrationsOrError = useObservable(
         useMemo(
             () =>

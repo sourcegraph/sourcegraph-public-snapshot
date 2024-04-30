@@ -3,7 +3,7 @@ resources:
   kind: Deployment
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: ec8df597cb447c262ad15de9e72b1f836e1b631c928fcc06914500caa58f8cc3
+      appliance.sourcegraph.com/configHash: 2f021d876cf221dde4ceda68a06356aaf5a8ab038e83b5ab776381470a4a0dbb
     creationTimestamp: "2024-04-19T00:00:00Z"
     generation: 1
     labels:
@@ -24,7 +24,10 @@ resources:
       matchLabels:
         app: blobstore
     strategy:
-      type: Recreate
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
     template:
       metadata:
         annotations:
@@ -150,7 +153,7 @@ resources:
   kind: PersistentVolumeClaim
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: ec8df597cb447c262ad15de9e72b1f836e1b631c928fcc06914500caa58f8cc3
+      appliance.sourcegraph.com/configHash: 2f021d876cf221dde4ceda68a06356aaf5a8ab038e83b5ab776381470a4a0dbb
     creationTimestamp: "2024-04-19T00:00:00Z"
     finalizers:
     - kubernetes.io/pvc-protection
@@ -166,6 +169,7 @@ resources:
     resources:
       requests:
         storage: 100Gi
+    storageClassName: sourcegraph
     volumeMode: Filesystem
   status:
     phase: Pending
@@ -173,10 +177,11 @@ resources:
   kind: Service
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: ec8df597cb447c262ad15de9e72b1f836e1b631c928fcc06914500caa58f8cc3
+      appliance.sourcegraph.com/configHash: 2f021d876cf221dde4ceda68a06356aaf5a8ab038e83b5ab776381470a4a0dbb
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
       app: blobstore
+      app.kubernetes.io/component: blobstore
       deploy: sourcegraph
     name: blobstore
     namespace: NORMALIZED_FOR_TESTING

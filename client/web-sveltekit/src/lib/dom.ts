@@ -409,3 +409,15 @@ export const overflow: Action<HTMLElement, { class: string; measureClass?: strin
         },
     }
 }
+
+/**
+ * This action scrolls the associated element into view when it is mounted and the argument is true.
+ *
+ * @param node The element to scroll into view.
+ * @param scroll Whether to scroll the element into view.
+ */
+export const scrollIntoViewOnMount: Action<HTMLElement, boolean> = (node: HTMLElement, scroll: boolean) => {
+    if (scroll) {
+        window.requestAnimationFrame(() => node.scrollIntoView({ block: 'center' }))
+    }
+}

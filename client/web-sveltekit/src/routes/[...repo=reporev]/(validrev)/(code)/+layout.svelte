@@ -1,9 +1,28 @@
+<script context="module" lang="ts">
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+
+    // Not ideal solution, [TODO] Improve Tabs component API in order
+    // to expose more info about nature of switch tab / close tab actions
+    function trackHistoryPanelTabAction(selectedTab: number | null, nextSelectedTab: number | null) {
+        if (nextSelectedTab === 0) {
+            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.ShowHistoryPanel)
+            return
+        }
+
+        if (nextSelectedTab === null && selectedTab == 0) {
+            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.HideHistoryPanel)
+            return
+        }
+    }
+</script>
+
 <script lang="ts">
+    import { mdiHistory, mdiListBoxOutline } from '@mdi/js'
     import { tick } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
     import { page } from '$app/stores'
-    import { isErrorLike } from '$lib/common'
+    import { isErrorLike, SourcegraphURL } from '$lib/common'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
     import HistoryPanel, { type Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
@@ -23,6 +42,11 @@
     import type { GitHistory_HistoryConnection, RepoPage_ReferencesLocationConnection } from './layout.gql'
     import RepositoryRevPicker from './RepositoryRevPicker.svelte'
     import ReferencePanel from './ReferencePanel.svelte'
+
+    enum TabPanels {
+        History,
+        References,
+    }
 
     interface Capture {
         selectedTab: number | null
@@ -51,6 +75,8 @@
     }
 
     async function selectTab(event: { detail: number | null }) {
+        trackHistoryPanelTabAction(selectedTab, event.detail)
+
         if (event.detail === null) {
             const url = new URL($page.url)
             url.searchParams.delete('rev')
@@ -91,15 +117,25 @@
     $: sidebarWidth = `max(320px, ${$sidebarSize * 100}%)`
 
     // The observable query to fetch references (due to infinite scrolling)
-    $: referenceQuery = data.references
+    $: sgURL = SourcegraphURL.from($page.url)
+    $: selectedLine = sgURL.lineRange
+    $: referenceQuery =
+        sgURL.viewState === 'references' && selectedLine?.line ? data.getReferenceStore(selectedLine) : null
     $: references = $referenceQuery?.data?.repository?.commit?.blob?.lsif?.references ?? null
     $: referencesLoading = ((referenceQuery && !references) || $referenceQuery?.fetching) ?? false
 
-    afterNavigate(() => {
-        if (!!data.references) {
-            references = null
-            selectedTab = 1
-        } else if (selectedTab === 1) {
+    afterNavigate(async () => {
+        // We need to wait for referenceQuery to be updated before checking its state
+        await tick()
+
+        // todo(fkling): Figure out a proper way to represent bottom panel state
+        if (sgURL.viewState === 'references') {
+            selectedTab = TabPanels.References
+        } else if ($page.url.searchParams.has('rev')) {
+            // The file view/history panel use the 'rev' parameter to specify the commit to load
+            selectedTab = TabPanels.History
+        } else if (selectedTab === TabPanels.References) {
+            // Close references panel when navigating to a URL that doesn't have the 'references' view state
             selectedTab = null
         }
     })
@@ -140,7 +176,7 @@
         <slot />
         <div class="bottom-panel" class:open={selectedTab !== null}>
             <Tabs selected={selectedTab} toggable on:select={selectTab}>
-                <TabPanel title="History">
+                <TabPanel title="History" icon={mdiHistory}>
                     {#key $page.params.path}
                         <HistoryPanel
                             bind:this={historyPanel}
@@ -151,7 +187,7 @@
                         />
                     {/key}
                 </TabPanel>
-                <TabPanel title="References">
+                <TabPanel title="References" icon={mdiListBoxOutline}>
                     <ReferencePanel
                         connection={references}
                         loading={referencesLoading}
@@ -228,16 +264,13 @@
         flex-flow: row nowrap;
         justify-content: space-between;
         overflow: hidden;
-
+        border-top: 1px solid var(--border-color);
         box-shadow: var(--bottom-panel-shadow);
         background-color: var(--code-bg);
-
-        :global([data-tab-header]) {
-            border-bottom: 1px solid var(--border-color);
-        }
+        padding: 0 0.25rem;
 
         &.open {
-            height: 30vh;
+            height: 32vh;
             // Disable flex layout so that tabs simply fill the available space
             display: block;
 

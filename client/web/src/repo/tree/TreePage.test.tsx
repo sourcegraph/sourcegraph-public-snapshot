@@ -66,6 +66,7 @@ describe('TreePage', () => {
             telemetryRecorder: noOpTelemetryRecorder,
         },
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        telemetryRecorder: noOpTelemetryRecorder,
         codeIntelligenceEnabled: false,
         batchChangesExecutionEnabled: false,
         batchChangesEnabled: false,

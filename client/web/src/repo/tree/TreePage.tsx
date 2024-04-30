@@ -26,7 +26,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import {
@@ -83,6 +83,7 @@ export interface Props
     extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         TelemetryProps,
+        TelemetryV2Props,
         CodeIntelligenceProps,
         BatchChangesProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
@@ -141,10 +142,12 @@ export const TreePage: FC<Props> = ({
     useEffect(() => {
         if (isRoot) {
             props.telemetryService.logViewEvent('Repository')
+            props.telemetryRecorder.recordEvent('repo', 'view')
         } else {
             props.telemetryService.logViewEvent('Tree')
+            props.telemetryRecorder.recordEvent('repo.tree', 'view')
         }
-    }, [isRoot, props.telemetryService])
+    }, [isRoot, props.telemetryService, props.telemetryRecorder])
 
     useBreadcrumb(
         useMemo(() => {
@@ -163,12 +166,11 @@ export const TreePage: FC<Props> = ({
                         filePath={filePath}
                         isDir={true}
                         telemetryService={props.telemetryService}
-                        // TODO (dadlerj): update to use a real telemetry recorder
-                        telemetryRecorder={noOpTelemetryRecorder}
+                        telemetryRecorder={props.telemetryRecorder}
                     />
                 ),
             }
-        }, [isRoot, filePath, repoName, revision, props.telemetryService])
+        }, [isRoot, filePath, repoName, revision, props.telemetryService, props.telemetryRecorder])
     )
 
     const treeOrError = useObservable(
@@ -331,7 +333,10 @@ export const TreePage: FC<Props> = ({
                                 variant="secondary"
                                 outline={true}
                                 as={Link}
-                                onClick={() => props.telemetryService.log('repoPage:ownershipPage:clicked')}
+                                onClick={() => {
+                                    props.telemetryService.log('repoPage:ownershipPage:clicked')
+                                    props.telemetryRecorder.recordEvent('repo.ownershipButton', 'click')
+                                }}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiAccount} />{' '}
                                 <span className={styles.text}>Ownership</span>
@@ -364,8 +369,7 @@ export const TreePage: FC<Props> = ({
                 <TryCodyWidget
                     className="mb-2"
                     telemetryService={props.telemetryService}
-                    // TODO (dadlerj): update to use a real telemetry recorder
-                    telemetryRecorder={noOpTelemetryRecorder}
+                    telemetryRecorder={props.telemetryRecorder}
                     type="repo"
                     authenticatedUser={authenticatedUser}
                     context={context}

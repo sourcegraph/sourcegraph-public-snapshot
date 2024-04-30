@@ -157,7 +157,10 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     </div>
                 }
             >
-                <LazySetupWizard telemetryService={props.telemetryService} />
+                <LazySetupWizard
+                    telemetryService={props.telemetryService}
+                    telemetryRecorder={props.platformContext.telemetryRecorder}
+                />
             </Suspense>
         )
     }
@@ -244,6 +247,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                             showFeedbackModal={showFeedbackModal}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             telemetryService={props.telemetryService}
+                            telemetryRecorder={props.platformContext.telemetryRecorder}
                         />
                     ) : (
                         <GlobalNavbar

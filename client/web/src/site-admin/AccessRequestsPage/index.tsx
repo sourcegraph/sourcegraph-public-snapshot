@@ -7,6 +7,8 @@ import { capitalize } from 'lodash'
 
 import { pluralize } from '@sourcegraph/common'
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Card, Text, Alert, PageSwitcher, Link, Select, Button, Badge, Tooltip } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -27,7 +29,6 @@ import {
     type GetAccessRequestsResult,
 } from '../../graphql-operations'
 import { useURLSyncedString } from '../../hooks/useUrlSyncedString'
-import { eventLogger } from '../../tracking/eventLogger'
 import { AccountCreatedAlert } from '../components/AccountCreatedAlert'
 import { SiteAdminPageTitle } from '../components/SiteAdminPageTitle'
 import { type IColumn, Table } from '../UserManagement/components/Table'
@@ -183,10 +184,13 @@ const AccessRequestStatusPicker: React.FunctionComponent<{
 
 const FIRST_COUNT = 25
 
-export const AccessRequestsPage: React.FunctionComponent = () => {
+interface Props extends TelemetryV2Props {}
+
+export const AccessRequestsPage: React.FunctionComponent<Props> = ({ telemetryRecorder }) => {
     useEffect(() => {
-        eventLogger.logPageView('AccessRequestsPage')
-    }, [])
+        EVENT_LOGGER.logPageView('AccessRequestsPage')
+        telemetryRecorder.recordEvent('admin.accessRequests', 'view')
+    }, [telemetryRecorder])
     const [error, setError] = useState<Error | null>(null)
 
     const [status, setStatus] = useURLSyncedString('status', AccessRequestStatus.PENDING)
@@ -219,7 +223,8 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
             if (!confirm('Are you sure you want to reject the selected access request?')) {
                 return
             }
-            eventLogger.log('AccessRequestRejected', { id })
+            EVENT_LOGGER.log('AccessRequestRejected', { id })
+            telemetryRecorder.recordEvent('admin.accessRequest', 'reject')
             rejectAccessRequest({
                 variables: {
                     id,
@@ -232,7 +237,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                     console.error(error)
                 })
         },
-        [refetch, rejectAccessRequest]
+        [refetch, rejectAccessRequest, telemetryRecorder]
     )
 
     const [lastApprovedUser, setLastApprovedUser] = useState<{
@@ -256,7 +261,8 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
             if (!confirm('Are you sure you want to approve the selected access request?')) {
                 return
             }
-            eventLogger.log('AccessRequestApproved', { id })
+            EVENT_LOGGER.log('AccessRequestApproved', { id })
+            telemetryRecorder.recordEvent('admin.accessRequest', 'approve')
             async function createUserAndApproveRequest(): Promise<void> {
                 const username = await generateUsername(name)
                 const { data } = await createUser({
@@ -289,7 +295,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 console.error(error)
             })
         },
-        [generateUsername, createUser, approveAccessRequest, refetch]
+        [generateUsername, createUser, approveAccessRequest, refetch, telemetryRecorder]
     )
 
     const hasRemainingSeats = useHasRemainingSeats()

@@ -14,11 +14,10 @@
 <script lang="ts">
     import { mdiClose, mdiSourceBranch, mdiTagOutline, mdiSourceCommit } from '@mdi/js'
 
-    import { replaceRevisionInURL } from '@sourcegraph/shared/src/util/url'
-
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
+    import { replaceRevisionInURL } from '$lib/shared'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
@@ -79,7 +78,7 @@
                         variant="secondary"
                         on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
                     >
-                        <Icon svgPath={mdiClose} size={16} />
+                        <Icon svgPath={mdiClose} --icon-size="16px" />
                     </Button>
                 </Tooltip>
             </span>
@@ -197,7 +196,7 @@
         :global([data-tab-header]) {
             border-bottom: 1px solid var(--border-color-2);
             margin: -0.75rem -0.75rem 0 -0.75rem;
-            padding: 0.75rem 0.75rem 0 0.75rem;
+            padding: 0 0.5rem;
         }
 
         :global([data-tab]) {

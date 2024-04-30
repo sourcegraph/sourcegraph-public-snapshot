@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Icon, Link, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -23,11 +24,11 @@ import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 
 import styles from './RepoRevisionSidebarCommits.module.scss'
 
-interface CommitNodeProps {
+interface CommitNodeProps extends TelemetryV2Props {
     node: GitCommitFields
 }
 
-const CommitNode: FC<CommitNodeProps> = ({ node }) => {
+const CommitNode: FC<CommitNodeProps> = ({ node, telemetryRecorder }) => {
     const location = useLocation()
 
     return (
@@ -46,12 +47,13 @@ const CommitNode: FC<CommitNodeProps> = ({ node }) => {
                         <Icon aria-hidden={true} svgPath={mdiFile} />
                     </Link>
                 }
+                telemetryRecorder={telemetryRecorder}
             />
         </li>
     )
 }
 
-interface Props extends Partial<RevisionSpec>, FileSpec {
+interface Props extends Partial<RevisionSpec>, FileSpec, TelemetryV2Props {
     repoID: Scalars['ID']
     defaultPageSize?: number
 }
@@ -100,7 +102,7 @@ export const RepoRevisionSidebarCommits: FC<Props> = props => {
         <ConnectionContainer>
             {error && <ErrorAlert error={error} />}
             {connection?.nodes.map(node => (
-                <CommitNode key={node.id} node={node} />
+                <CommitNode key={node.id} node={node} telemetryRecorder={props.telemetryRecorder} />
             ))}
             {loading && <ConnectionLoading />}
             {!loading && connection && (
