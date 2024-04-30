@@ -8,9 +8,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
-	"github.com/sourcegraph/sourcegraph/internal/ssc"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"

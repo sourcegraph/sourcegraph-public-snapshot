@@ -8,11 +8,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
