@@ -18,21 +18,25 @@
 
     export let svgPath: string
     export let inline: boolean = false
-    export let size: number = 24
 </script>
 
-<svg class:icon-inline={inline} height={size} width={size} viewBox="0 0 24 24" data-icon {...$$restProps}>
+<svg class:icon-inline={inline} viewBox="0 0 24 24" data-icon {...$$restProps}>
     <path d={svgPath} />
 </svg>
 
 <style lang="scss">
     :root {
         --icon-size: 1.5rem;
+        --icon-inline-size: #{(16 / 14)}em;
     }
 
     svg {
         width: var(--icon-size);
         height: var(--icon-size);
+        &.icon-inline {
+            width: var(--icon-inline-size);
+            height: var(--icon-inline-size);
+        }
         color: var(--icon-fill-color, var(--color, inherit));
         fill: currentColor;
     }

@@ -215,7 +215,7 @@
         </Alert>
     {:else if fileNotFound}
         <div class="circle">
-            <Icon svgPath={mdiMapSearch} size={80} />
+            <Icon svgPath={mdiMapSearch} --icon-size="80px" />
         </div>
         <h2>File not found</h2>
     {:else if isBinary}
