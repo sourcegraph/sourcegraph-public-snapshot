@@ -287,6 +287,8 @@ type SearcherSpec struct {
 
 // SymbolsSpec defines the desired state of the Symbols service.
 type SymbolsSpec struct {
+	config.StandardConfig
+
 	// Replicas defines the number of Symbols pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
@@ -295,12 +297,11 @@ type SymbolsSpec struct {
 	// Default: 12Gi
 	StorageSize string `json:"storageSize,omitempty"`
 
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
 	// Env defines environment variables for Symbols.
 	Env map[string]string `json:"env,omitempty"`
 }
+
+func (SymbolsSpec) PrometheusPort() *int { return ptr.To(6060) }
 
 // SyntectServerSpec defines the desired state of the Syntect server service.
 type SyntectServerSpec struct {

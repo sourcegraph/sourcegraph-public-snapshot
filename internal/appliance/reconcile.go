@@ -83,6 +83,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err := r.reconcileRepoUpdater(ctx, &sourcegraph, &applianceSpec); err != nil {
 		return ctrl.Result{}, errors.Newf("failed to reconcile repo updater: %w", err)
 	}
+	if err := r.reconcileSymbols(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile symbols service: %w", err)
+	}
 
 	// Set the current version annotation in case migration logic depends on it.
 	applianceSpec.Annotations[annotationKeyCurrentVersion] = sourcegraph.Spec.RequestedVersion

@@ -56,7 +56,7 @@
                 <tbody>
                     {#each plaintextLines as line, index}
                         <tr>
-                            <td class="line" data-line={startLine + index} />
+                            <td class="line" data-line={startLine + index + 1} />
                             <td class="code">{line}</td>
                         </tr>
                     {/each}
