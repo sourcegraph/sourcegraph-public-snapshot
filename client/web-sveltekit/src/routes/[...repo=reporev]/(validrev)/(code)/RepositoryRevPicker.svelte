@@ -196,7 +196,7 @@
         :global([data-tab-header]) {
             border-bottom: 1px solid var(--border-color-2);
             margin: -0.75rem -0.75rem 0 -0.75rem;
-            padding: 0.75rem 0.75rem 0 0.75rem;
+            padding: 0 0.5rem;
         }
 
         :global([data-tab]) {

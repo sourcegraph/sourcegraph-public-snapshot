@@ -267,13 +267,10 @@
         border-top: 1px solid var(--border-color);
         box-shadow: var(--bottom-panel-shadow);
         background-color: var(--code-bg);
-
-        :global([data-tab-header]) {
-            border-bottom: 1px solid var(--border-color);
-        }
+        padding: 0 0.25rem;
 
         &.open {
-            height: 30vh;
+            height: 32vh;
             // Disable flex layout so that tabs simply fill the available space
             display: block;
 
