@@ -6,7 +6,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/ssc"
 )

@@ -13,11 +13,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/completions",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
+        "//cmd/frontend/internal/cody",
         "//internal/accesstoken",
         "//internal/actor",
         "//internal/auth",
         "//internal/authz",
-        "//internal/cody",
         "//internal/completions/client",
         "//internal/completions/client/anthropic",
         "//internal/completions/client/fireworks",
