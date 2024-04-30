@@ -9,12 +9,12 @@
 <script lang="ts">
     import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
+    import CodeExcerpt from '$lib/CodeExcerpt.svelte'
     import { pluralize, SourcegraphURL } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import RepoStars from '$lib/repo/RepoStars.svelte'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
-    import CodeExcerpt from '$lib/CodeExcerpt.svelte'
     import { rankContentMatch } from '$lib/search/results'
     import { getFileMatchUrl, type ContentMatch, rankByLine, rankPassthrough } from '$lib/shared'
     import { settings } from '$lib/stores'
@@ -96,7 +96,7 @@
                     -->
                     {#await highlightedHTMLRows}
                         <CodeExcerpt
-                            startLine={group.startLine + 1}
+                            startLine={group.startLine}
                             matches={group.matches}
                             plaintextLines={group.plaintextLines}
                             --background-color="transparent"
