@@ -25,17 +25,15 @@
 </svg>
 
 <style lang="scss">
-    :root {
-        --icon-size: 1.5rem;
-        --icon-inline-size: #{(16 / 14)}em;
-    }
+    $iconSize: var(--icon-size, 1.5rem);
+    $iconInlineSize: var(--icon-inline-size, #{(16 / 14)}em);
 
     svg {
-        width: var(--icon-size);
-        height: var(--icon-size);
+        width: $iconSize;
+        height: $iconSize;
         &.icon-inline {
-            width: var(--icon-inline-size);
-            height: var(--icon-inline-size);
+            width: $iconInlineSize;
+            height: $iconInlineSize;
         }
         color: var(--icon-fill-color, var(--color, inherit));
         fill: currentColor;
