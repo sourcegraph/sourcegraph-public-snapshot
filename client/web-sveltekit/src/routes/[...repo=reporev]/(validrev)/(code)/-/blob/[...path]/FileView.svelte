@@ -84,14 +84,14 @@
     $: showFileModeSwitcher = blob && !isBinary && !embedded
     $: showCodeView = !isBinary && !isFormatted
     $: codeIntelAPI =
-        disableCodeIntel || showCodeView
-            ? null
-            : createCodeIntelAPI({
+        showCodeView && !disableCodeIntel
+            ? createCodeIntelAPI({
                   settings: setting => (isErrorLike($settings?.final) ? undefined : $settings?.final?.[setting]),
                   requestGraphQL(options) {
                       return from(graphQLClient.query(options.request, options.variables).then(toGraphQLResult))
                   },
               })
+            : null
 
     function viewModeURL(viewMode: CodeViewMode) {
         switch (viewMode) {
