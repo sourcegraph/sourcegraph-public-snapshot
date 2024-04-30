@@ -16,11 +16,11 @@ fi
 # See https://github.com/sourcegraph/sourcegraph/issues/61696
 while read -r registry; do
   PROMOTION_REGISTRIES+=("$registry")
-done <<< $ADDITIONAL_PROD_REGISTRIES
+done <<< "$ADDITIONAL_PROD_REGISTRIES"
 
 # Set IFS to space and read into an array
 IFS=' ' read -r -a PROMOTION_REGISTRIES <<< "$ADDITIONAL_PROD_REGISTRIES"
-PROMOTION_REGISTRIES=("$PUBLIC_REGISTRY" ${PROMOTION_REGISTRIES[@]} )
+PROMOTION_REGISTRIES=("$PUBLIC_REGISTRY" "${PROMOTION_REGISTRIES[@]}" )
 
 echo -e "## Release: image promotions" > ./annotations/image_promotions.md
 echo -e "\n| Name | From | To |\n|---|---|---|" >> ./annotations/image_promotions.md
