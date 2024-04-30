@@ -18,7 +18,7 @@ It's usually on the right edge of your IDE.
 
 Click the `+` sign, then Data Source, and then find PostgreSQL.
 
-![](./images/intellij-database-create-data-source.png)
+![](https://storage.googleapis.com/sourcegraph-assets/docs/images/dev/how-to/intellij-database-create-data-source.png)
 
 ## 3. Credentials and Database
 
@@ -26,7 +26,7 @@ Enter the credentials as you see them in the [`sg.config.yaml`](/sg.config.yaml)
 
 Also enter `sourcegraph` as the database name (or the override that you're using).
 
-![](./images/intellij-database-config.png)
+![](https://storage.googleapis.com/sourcegraph-assets/docs/images/dev/how-to/intellij-database-config.png)
 
 Below the connection settings you can click on "Test Connection" to make sure that your drivers are working.
 IntelliJ may prompt you to download the drivers then.
@@ -38,7 +38,7 @@ IntelliJ may prompt you to download the drivers then.
 In the `Schema` tab of the connection settings, select the `sourcegraph` database, and its `public` schema. Extend
 the `sourcegraph` database if you don't see the `public` schema.
 
-![](./images/intellij-database-select-schema.png)
+![](https://storage.googleapis.com/sourcegraph-assets/docs/images/dev/how-to/intellij-database-select-schema.png)
 
 Click on Ok to wrap it up.
 
@@ -46,10 +46,10 @@ Click on Ok to wrap it up.
 
 Open the datasource on the right, and drill down to a table. You can double-click a table to see its content.
 
-![](./images/intellij-database-select-table.png)
+![](https://storage.googleapis.com/sourcegraph-assets/docs/images/dev/how-to/intellij-database-select-table.png)
 
 ## Query
 
 By click `+` and then Query Console or Shift+CMD+L (on Mac), you can get a regular SQL query editor.
 
-![](./images/intellij-database-query.png)
+![](https://storage.googleapis.com/sourcegraph-assets/docs/images/dev/how-to/intellij-database-query.png)
