@@ -312,7 +312,7 @@ sg msp pg connect -write-access %[1]s %[2]s`, s.Service.ID, env.ID)
 		}
 
 		md.Headingf(4, "%s Architecture Diagram", env.ID)
-		md.Paragraphf("!"+markdown.Linkf("Architecture Diagram", "./%s-%s.svg", s.Service.ID, env.ID))
+		md.Paragraphf("!" + markdown.Linkf("Architecture Diagram", "./%s-%s.svg", s.Service.ID, env.ID))
 
 		md.Headingf(4, terraformCloudSectionHeading)
 
