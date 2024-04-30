@@ -23,7 +23,7 @@
         async restore(snapshot) {
             if (snapshot?.count && get(navigating)?.type === 'popstate') {
                 await branchesQuery?.restore(result => {
-                    const count = result.data?.repository?.gitRefs?.nodes?.length
+                    const count = result.data?.repository?.branches?.nodes?.length
                     return !!count && count < snapshot.count
                 })
             }
