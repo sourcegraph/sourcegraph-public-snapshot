@@ -94,6 +94,7 @@ go_test(
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/cody",
+        "//cmd/frontend/internal/ssc",
         "//internal/accesstoken",
         "//internal/actor",
         "//internal/audit/audittest",
@@ -111,7 +112,6 @@ go_test(
         "//internal/rbac",
         "//internal/redispool",
         "//internal/slack",
-        "//internal/ssc",
         "//internal/timeutil",
         "//internal/types",
         "//lib/errors",
