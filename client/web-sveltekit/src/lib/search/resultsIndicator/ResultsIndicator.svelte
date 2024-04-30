@@ -72,15 +72,11 @@
         min-width: 200px;
         max-width: fit-content;
 
-        padding: 0.25rem;
-
         .messages {
             display: flex;
             flex-flow: column nowrap;
             justify-content: center;
             align-items: flex-start;
-            margin-right: 0.75rem;
-            margin-left: 0.5rem;
             row-gap: 0.25rem;
         }
 
