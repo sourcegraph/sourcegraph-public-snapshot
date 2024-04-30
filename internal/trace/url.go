@@ -6,6 +6,8 @@ func URL(traceID string) string {
 	if traceID == "" {
 		return ""
 	}
+	urlRendererMu.Lock()
+	defer urlRendererMu.Unlock()
 	if urlRenderer == nil {
 		return "<internal/trace.urlRenderer not configured>"
 	}
