@@ -96,6 +96,7 @@
         border-radius: var(--border-radius);
         color: var(--text-muted);
         margin: calc(var(--border-width) * -1);
+        user-select: none;
 
         &:focus-visible {
             box-shadow: 0 0 0 2px var(--primary-2);

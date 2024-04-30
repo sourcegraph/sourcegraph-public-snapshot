@@ -33,8 +33,8 @@
     // the cache. It may make sense to pass loaders into this function
     // rather than adding a dependency on the blob page.
     import {
-        BlobPageQuery,
-        BlobSyntaxHighlightQuery,
+        BlobFileViewBlobQuery,
+        BlobFileViewHighlightedFileQuery,
     } from '../[...repo=reporev]/(validrev)/(code)/-/blob/[...path]/page.gql'
 
     import { getSearchResultsContext } from './searchResultsContext'
@@ -53,7 +53,7 @@
 
     $: blobStore = toReadable(
         client
-            .query(BlobPageQuery, {
+            .query(BlobFileViewBlobQuery, {
                 repoName: result.repository,
                 revspec: result.commit ?? '',
                 path: result.path,
@@ -63,7 +63,7 @@
 
     $: highlightStore = toReadable(
         client
-            .query(BlobSyntaxHighlightQuery, {
+            .query(BlobFileViewHighlightedFileQuery, {
                 repoName: result.repository,
                 revspec: result.commit ?? '',
                 path: result.path,

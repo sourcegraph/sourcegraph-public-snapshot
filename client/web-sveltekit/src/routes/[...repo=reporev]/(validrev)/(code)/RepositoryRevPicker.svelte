@@ -14,11 +14,10 @@
 <script lang="ts">
     import { mdiClose, mdiSourceBranch, mdiTagOutline, mdiSourceCommit } from '@mdi/js'
 
-    import { replaceRevisionInURL } from '@sourcegraph/shared/src/util/url'
-
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
+    import { replaceRevisionInURL } from '$lib/shared'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
