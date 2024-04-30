@@ -120,6 +120,10 @@
         padding: 0.5rem 1rem;
         white-space: nowrap;
 
+        :global([data-avatar]) {
+            vertical-align: middle;
+        }
+
         &.subject {
             white-space: normal;
         }

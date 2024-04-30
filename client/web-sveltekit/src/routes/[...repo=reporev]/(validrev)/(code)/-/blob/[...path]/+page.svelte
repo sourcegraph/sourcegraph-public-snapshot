@@ -3,7 +3,7 @@
 <script lang="ts">
     import { onMount } from 'svelte'
 
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
 
     import type { PageData, Snapshot } from './$types'
     import DiffView from './DiffView.svelte'
@@ -43,5 +43,9 @@
 {#if data.type === 'DiffView'}
     <DiffView {data} />
 {:else}
-    <FileView bind:this={fileView} {data} {embedded} {disableCodeIntel} />
+    <FileView bind:this={fileView} {data} {embedded} {disableCodeIntel}>
+        <svelte:fragment slot="actions">
+            <slot name="actions" />
+        </svelte:fragment>
+    </FileView>
 {/if}

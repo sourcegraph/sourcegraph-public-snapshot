@@ -68,6 +68,8 @@
     $: highlightsLoader.set(data.highlights)
 
     $: if (!$blobLoader.pending) {
+        // Only update highlights and position after the file content has been loaded.
+        // While the file content is loading we show the previous file content.
         blob = $blobLoader.value ?? null
         highlights = $highlightsLoader.pending ? null : $highlightsLoader.value ?? null
         selectedPosition = data.lineOrPosition

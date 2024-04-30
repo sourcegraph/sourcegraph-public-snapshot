@@ -16,7 +16,7 @@
     $: hunks = $commit.value?.diff.fileDiffs.nodes.at(0)?.hunks
 </script>
 
-<FileHeader type="blob" repoName={data.repoName} path={data.filePath}>
+<FileHeader type="blob" repoName={data.repoName} revision={data.revision} path={data.filePath}>
     {#if $commit.value?.blob}
         <FileIcon slot="icon" file={$commit.value.blob} inline />
     {/if}

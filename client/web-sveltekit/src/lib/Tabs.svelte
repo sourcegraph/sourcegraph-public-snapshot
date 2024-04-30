@@ -109,14 +109,18 @@
 
         border-bottom: 2px solid transparent;
 
+        &:hover {
+            border-color: var(--border-color-2);
+        }
+
         &[aria-selected='true'] {
             border-color: var(--brand-secondary);
             font-weight: 700;
             color: var(--text-title);
-        }
 
-        &:hover {
-            border-color: var(--border-color-2);
+            &:hover {
+                border-color: var(--brand-secondary);
+            }
         }
 
         span {
