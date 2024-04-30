@@ -26,12 +26,11 @@
         </a>
     </div>
     <div class="commit-date">
-       {commitDate}
+        {commitDate}
     </div>
 </div>
 
 <style lang="scss">
-
     .last-commit {
         display: flex;
         flex-flow: row nowrap;
@@ -68,5 +67,4 @@
     .commit-date {
         color: var(--text-muted);
     }
-
 </style>
