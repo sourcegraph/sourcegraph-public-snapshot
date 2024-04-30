@@ -227,7 +227,7 @@ require (
 	golang.org/x/sys v0.19.0
 	golang.org/x/time v0.5.0
 	golang.org/x/tools v0.18.0
-	gonum.org/v1/gonum v0.13.0
+	gonum.org/v1/gonum v0.14.0
 	google.golang.org/api v0.169.0
 	google.golang.org/genproto v0.0.0-20240213162025-012b6fc9bca9 // indirect
 	google.golang.org/protobuf v1.33.0
@@ -244,8 +244,9 @@ require (
 )
 
 require (
-	cdr.dev/slog v1.4.2-0.20221206192828-e4803b10ae17
+	cdr.dev/slog v1.6.1
 	chainguard.dev/apko v0.14.0
+	cloud.google.com/go/artifactregistry v1.14.8
 	connectrpc.com/connect v1.16.1
 	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.5.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.2
@@ -301,11 +302,11 @@ require (
 	go.opentelemetry.io/collector/config/configtls v0.92.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.46.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240311132316-a219d84964c2
+	oss.terrastruct.com/d2 v0.6.5
 	sigs.k8s.io/controller-runtime v0.17.3
 )
 
 require (
-	cloud.google.com/go/artifactregistry v1.14.8 // indirect
 	cloud.google.com/go/cloudsqlconn v1.5.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.4-0.20230617002413-005d2dfb6b68 // indirect
 	cloud.google.com/go/longrunning v0.5.5 // indirect
@@ -321,19 +322,19 @@ require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/alexflint/go-arg v1.4.2 // indirect
 	github.com/alexflint/go-scalar v1.0.0 // indirect
-	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
-	github.com/apache/arrow/go/v12 v12.0.0 // indirect
-	github.com/apache/thrift v0.16.0 // indirect
+	github.com/apache/arrow/go/v14 v14.0.2 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.0.22 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.1.25 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.5 // indirect
+	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/bazelbuild/buildtools v0.0.0-20231115204819-d4c9dccdfbb1 // indirect
 	github.com/bufbuild/connect-go v1.9.0 // indirect
 	github.com/bufbuild/connect-opentelemetry-go v0.4.0 // indirect
 	github.com/bufbuild/protocompile v0.5.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
+	github.com/charmbracelet/lipgloss v0.7.1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
 	github.com/containerd/log v0.1.0 // indirect
@@ -378,13 +379,10 @@ require (
 	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
 	github.com/jackc/pgx/v5 v5.5.4 // indirect
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
-	github.com/klauspost/asmfmt v1.3.2 // indirect
 	github.com/knadh/koanf/v2 v2.0.1 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/matryer/is v1.2.0 // indirect
 	github.com/mazznoer/csscolorparser v0.1.3 // indirect
-	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
-	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
@@ -424,6 +422,7 @@ require (
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/tools/go/vcs v0.1.0-deprecated // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
+	gonum.org/v1/plot v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240311132316-a219d84964c2 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	k8s.io/apiextensions-apiserver v0.29.2 // indirect
@@ -519,7 +518,7 @@ require (
 	github.com/golang/glog v1.2.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/pprof v0.0.0-20230705174524-200ffdc848b8 // indirect
+	github.com/google/pprof v0.0.0-20231205033806-a5a03c77bf08 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.2
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/gopherjs/gopherwasm v1.1.0 // indirect
@@ -574,7 +573,7 @@ require (
 	github.com/mostynb/go-grpc-compression v1.2.2 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/muesli/reflow v0.3.0 // indirect
-	github.com/muesli/termenv v0.12.0 // indirect
+	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/mwitkow/go-proto-validators v0.3.2 // indirect
 	github.com/nightlyone/lockfile v1.0.0 // indirect

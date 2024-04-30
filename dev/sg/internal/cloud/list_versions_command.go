@@ -45,7 +45,7 @@ var ListVersionsEphemeralCommand = cli.Command{
 // DockerImage is a type alias around the Google artifact registry Docker Image type
 type DockerImage artifactregistrypb.DockerImage
 
-// ArtifactRegistry is a wrapped around the Google Artifact Registry client
+// ArtifactRegistry is wrapper around the Google Artifact Registry client
 type ArtifactRegistry struct {
 	Project        string
 	Location       string
@@ -159,7 +159,7 @@ func listTagsCloudEphemeral(ctx *cli.Context) error {
 				std.Out.Writef(" %-50s %-20s %s", "Name", "Upload time", "URI")
 				std.Out.Writef("- %-50s %-20s %s", image.Name, image.UploadTime.AsTime().Format(time.DateTime), image.Uri)
 				count++
-				if limit >= 0 && count >= limit {
+				if limit >= 1 && count >= limit {
 					break
 				}
 			}
@@ -175,7 +175,7 @@ func listTagsCloudEphemeral(ctx *cli.Context) error {
 				tag := tag[:min(50, len(tag))]
 				std.Out.Writef("%-50s %-20s %-5d", tag, image.UploadTime.AsTime().Format(time.DateTime), len(images))
 				count++
-				if limit >= 0 && count >= limit {
+				if limit >= 1 && count >= limit {
 					break
 				}
 			}
