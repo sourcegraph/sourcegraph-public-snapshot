@@ -15,7 +15,7 @@ aspectRC="/tmp/aspect-generated.bazelrc"
 rosetta bazelrc >"$aspectRC"
 export BAZELRC="$aspectRC"
 
-echo "~~~ Running sg wolfi lock"
+echo "~~~ :lock: Run sg wolfi lock"
 
 buildkite-agent artifact download sg . --step bazel-prechecks
 chmod +x ./sg
@@ -23,7 +23,7 @@ chmod +x ./sg
 # Update hashes for all base images
 ./sg wolfi lock
 
-echo "~~~ Committing changes and opening PR"
+echo "~~~ :github: Commit changes and open PR"
 
 # Print git status
 echo "Running git status"
