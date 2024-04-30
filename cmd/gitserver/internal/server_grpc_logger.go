@@ -6,15 +6,16 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"google.golang.org/grpc/status"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // loggingGRPCServer is a wrapper around the provided GitserverServiceServer
@@ -175,8 +176,6 @@ func execRequestToLogFields(req *proto.ExecRequest) []log.Field {
 		//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 		log.String("ensureRevision", string(req.GetEnsureRevision())),
 		log.Strings("args", byteSlicesToStrings(req.GetArgs())),
-		log.Bool("noTimeout", req.GetNoTimeout()),
-
 		// 🚨SECURITY: We don't log the stdin field because it could 1) contain sensitive data 2) be very large.
 	}
 }

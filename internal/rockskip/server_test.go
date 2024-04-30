@@ -219,26 +219,8 @@ func (g SubprocessGit) Close() error {
 	return g.catFileCmd.Wait()
 }
 
-func (g SubprocessGit) LogReverseEach(ctx context.Context, repo string, givenCommit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) (returnError error) {
-	log := exec.Command("git", gitdomain.LogReverseArgs(n, givenCommit)...)
-	log.Dir = g.gitDir
-	output, err := log.StdoutPipe()
-	if err != nil {
-		return err
-	}
-
-	err = log.Start()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err = log.Wait()
-		if err != nil {
-			returnError = err
-		}
-	}()
-
-	return gitdomain.ParseLogReverseEach(output, onLogEntry)
+func (g SubprocessGit) CommitDiffFiles(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]*gitdomain.PathStatus, error) {
+	return g.gs.CommitDiffFiles(ctx, repo, commit)
 }
 
 func (g *SubprocessGit) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {

@@ -2308,3 +2308,120 @@ func TestRevList(t *testing.T) {
 		require.Contains(t, err.Error(), "exit status 128")
 	})
 }
+
+func TestParseLogReverseEach(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []byte
+		expected []*gitdomain.PathStatus
+		err      error
+	}{
+		{
+			name:     "empty input",
+			input:    []byte{},
+			expected: []*gitdomain.PathStatus{},
+		},
+		{
+			name:  "invalid input",
+			input: []byte("invalid input"),
+			err:   errors.New(`unexpected byte 'i'`),
+		},
+		{
+			name:  "single added file",
+			input: []byte(":100644 000000 abcdefabcdefabcdefabcdefabcdefabcdef1234 deadbeefdeadbeefdeadbeefdeadbeefdeadbeef A\x00file.txt\x00"),
+			expected: []*gitdomain.PathStatus{
+				{Path: "file.txt", Status: gitdomain.AddedAMD},
+			},
+		},
+		{
+			name:  "single modified file",
+			input: []byte(":100644 100644 abcdefabcdefabcdefabcdefabcdefabcdef1234 deadbeefdeadbeefdeadbeefdeadbeefdeadbeef M\x00file.txt\x00"),
+			expected: []*gitdomain.PathStatus{
+				{Path: "file.txt", Status: gitdomain.ModifiedAMD},
+			},
+		},
+		{
+			name:  "single deleted file",
+			input: []byte(":100644 000000 abcdefabcdefabcdefabcdefabcdefabcdef1234 deadbeefdeadbeefdeadbeefdeadbeefdeadbeef D\x00file.txt\x00"),
+			expected: []*gitdomain.PathStatus{
+				{Path: "file.txt", Status: gitdomain.DeletedAMD},
+			},
+		},
+		{
+			name:  "submodule to file",
+			input: []byte(":160000 100644 abcdefabcdefabcdefabcdefabcdefabcdef1234 deadbeefdeadbeefdeadbeefdeadbeefdeadbeef T\x00file.txt\x00"),
+			expected: []*gitdomain.PathStatus{
+				{Path: "file.txt", Status: gitdomain.AddedAMD},
+			},
+		},
+		{
+			name:  "file to submodule",
+			input: []byte(":100644 160000 abcdefabcdefabcdefabcdefabcdefabcdef1234 deadbeefdeadbeefdeadbeefdeadbeefdeadbeef T\x00file.txt\x00"),
+			expected: []*gitdomain.PathStatus{
+				{Path: "file.txt", Status: gitdomain.DeletedAMD},
+			},
+		},
+		{
+			name:  "invalid status",
+			input: []byte(":100644 100644 abcdefabcdefabcdefabcdefabcdefabcdef1234 deadbeefdeadbeefdeadbeefdeadbeefdeadbeef X\x00file.txt\x00"),
+			err:   errors.New(`unexpected status 'X' indicates a bug in git`),
+		},
+		{
+			name:  "multiple files",
+			input: []byte(":100644 000000 abcdefabcdefabcdefabcdefabcdefabcdef1234 deadbeefdeadbeefdeadbeefdeadbeefdeadbeef A\x00file1.txt\x00:100644 100644 abcdefabcdefabcdefabcdefabcdefabcdef1234 deadbeefdeadbeefdeadbeefdeadbeefdeadbeef M\x00file2.txt\x00:100644 000000 abcdefabcdefabcdefabcdefabcdefabcdef1234 deadbeefdeadbeefdeadbeefdeadbeefdeadbeef D\x00file3.txt\x00"),
+			expected: []*gitdomain.PathStatus{
+				{Path: "file1.txt", Status: gitdomain.AddedAMD},
+				{Path: "file2.txt", Status: gitdomain.ModifiedAMD},
+				{Path: "file3.txt", Status: gitdomain.DeletedAMD},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actual, err := parseLogReverseEach(test.input)
+			if test.err != nil {
+				require.Error(t, err)
+				require.EqualError(t, err, test.err.Error())
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, test.expected, actual)
+			}
+		})
+	}
+}
+
+func TestCommitDiffFiles(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	t.Run("valid commit", func(t *testing.T) {
+		gitCommands := []string{
+			"touch file1",
+			"git add file1",
+			"git commit -m commit1",
+		}
+		repo := MakeGitRepository(t, gitCommands...)
+
+		client := NewTestClient(t)
+		files, err := client.CommitDiffFiles(context.Background(), repo, "HEAD")
+		require.NoError(t, err)
+		require.Equal(t, []*gitdomain.PathStatus{{Path: "file1", Status: gitdomain.AddedAMD}}, files)
+	})
+
+	t.Run("invalid commit", func(t *testing.T) {
+		repo := MakeGitRepository(t)
+		client := NewTestClient(t)
+		_, err := client.CommitDiffFiles(context.Background(), repo, NonExistentCommitID)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "exit status 128")
+	})
+
+	t.Run("unsafe commit", func(t *testing.T) {
+		repo := MakeGitRepository(t)
+		client := NewTestClient(t)
+		_, err := client.CommitDiffFiles(context.Background(), repo, api.CommitID("-max-count=2"))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "invalid git revision spec")
+	})
+}

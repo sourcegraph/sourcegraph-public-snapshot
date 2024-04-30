@@ -161,13 +161,6 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 		return err
 	}
 
-	if req.GetNoTimeout() {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 24*time.Hour)
-		defer cancel()
-
-	}
-
 	w := streamio.NewWriter(func(p []byte) error {
 		return ss.Send(&proto.ExecResponse{
 			Data: p,

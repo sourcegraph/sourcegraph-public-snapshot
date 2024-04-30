@@ -678,31 +678,133 @@ func decodeOID(sha string) (gitdomain.OID, error) {
 	return oid, nil
 }
 
-func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) (err error) {
-	ctx, _, endObservation := c.operations.logReverseEach.With(ctx, &err, observation.Args{
+func (c *clientImplementor) CommitDiffFiles(ctx context.Context, repo api.RepoName, commit api.CommitID) (_ []*gitdomain.PathStatus, err error) {
+	ctx, _, endObservation := c.operations.commitDiffFiles.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
-			api.RepoName(repo).Attr(),
-			attribute.String("commit", commit),
+			repo.Attr(),
+			attribute.String("commit", string(commit)),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	command := c.gitCommand(api.RepoName(repo), gitdomain.LogReverseArgs(n, commit)...)
-
-	// We run a single `git log` command and stream the output while the repo is being processed, which
-	// can take much longer than 1 minute (the default timeout).
-	command.DisableTimeout()
-	stdout, err := command.StdoutReader(ctx)
-	if err != nil {
-		return err
+	if err := checkSpecArgSafety(string(commit)); err != nil {
+		return nil, err
 	}
-	defer stdout.Close()
 
-	return errors.Wrap(gitdomain.ParseLogReverseEach(stdout, onLogEntry), "ParseLogReverseEach")
+	command := c.gitCommand(api.RepoName(repo),
+		"log",
+		"--pretty=",
+		"--raw",
+		"-z",
+		"-m",
+		// --no-abbrev speeds up git log a lot
+		"--no-abbrev",
+		"--no-renames",
+		"--first-parent",
+		"--reverse",
+		"--ignore-submodules",
+		"--max-count=1",
+		string(commit),
+	)
+
+	stdout, err := command.Output(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseLogReverseEach(stdout)
+}
+
+func parseLogReverseEach(stdout []byte) ([]*gitdomain.PathStatus, error) {
+	pathStatuses := []*gitdomain.PathStatus{}
+
+	reader := bufio.NewReader(bytes.NewReader(stdout))
+
+	for {
+		// :100644 100644 abc... def... M NULL file.txt NULL
+		// ^ 0                          ^ 97   ^ 99
+
+		// A ':' indicates a path and its status is next
+		buf, err := reader.Peek(1)
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+		if buf[0] != ':' {
+			return nil, errors.Newf("unexpected byte %q", buf[0])
+		}
+
+		// Read the status from index 97 and skip to the path at index 99
+		buf = make([]byte, 99)
+		read, err := io.ReadFull(reader, buf)
+		if read != 99 {
+			return nil, errors.Newf("read %d bytes, expected 99", read)
+		} else if err != nil {
+			return nil, err
+		}
+
+		// Read the path
+		path, err := reader.ReadBytes(0)
+		if err != nil {
+			return nil, err
+		}
+		path = path[:len(path)-1] // Drop the trailing NULL byte
+
+		// Inspect the status
+		var status gitdomain.StatusAMD
+		statusByte := buf[97]
+		switch statusByte {
+		case 'A':
+			status = gitdomain.AddedAMD
+		case 'M':
+			status = gitdomain.ModifiedAMD
+		case 'D':
+			status = gitdomain.DeletedAMD
+		case 'T':
+			// Type changed. Check if it changed from a file to a submodule or vice versa,
+			// treating submodules as empty.
+
+			isSubmodule := func(mode string) bool {
+				// Submodules are mode "160000". https://stackoverflow.com/questions/737673/how-to-read-the-mode-field-of-git-ls-trees-output#comment3519596_737877
+				return mode == "160000"
+			}
+
+			oldMode := string(buf[1:7])
+			newMode := string(buf[8:14])
+
+			if isSubmodule(oldMode) && !isSubmodule(newMode) {
+				// It changed from a submodule to a file, so consider it added.
+				status = gitdomain.AddedAMD
+				break
+			}
+
+			if !isSubmodule(oldMode) && isSubmodule(newMode) {
+				// It changed from a file to a submodule, so consider it deleted.
+				status = gitdomain.DeletedAMD
+				break
+			}
+
+			// Otherwise, it remained the same, so ignore the type change.
+			continue
+		case 'C':
+			// Copied
+			return nil, errors.Newf("unexpected status 'C' given --no-renames was specified")
+		case 'R':
+			// Renamed
+			return nil, errors.Newf("unexpected status 'R' given --no-renames was specified")
+		case 'X':
+			return nil, errors.Newf("unexpected status 'X' indicates a bug in git")
+		default:
+			fmt.Printf("path %q: unrecognized diff status %q, skipping\n", path, string(statusByte))
+			continue
+		}
+
+		pathStatuses = append(pathStatuses, &gitdomain.PathStatus{Path: string(path), Status: status})
+	}
+
+	return pathStatuses, nil
 }
 
 // StreamBlameFile returns Git blame information about a file.

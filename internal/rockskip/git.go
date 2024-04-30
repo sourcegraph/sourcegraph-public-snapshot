@@ -11,7 +11,7 @@ import (
 )
 
 type GitserverClient interface {
-	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(logEntry gitdomain.LogEntry) error) error
+	CommitDiffFiles(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]*gitdomain.PathStatus, error)
 	RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error
 }
 

@@ -33,6 +33,9 @@ type MockClient struct {
 	// CheckPerforceCredentialsFunc is an instance of a mock function object
 	// controlling the behavior of the method CheckPerforceCredentials.
 	CheckPerforceCredentialsFunc *ClientCheckPerforceCredentialsFunc
+	// CommitDiffFilesFunc is an instance of a mock function object
+	// controlling the behavior of the method CommitDiffFiles.
+	CommitDiffFilesFunc *ClientCommitDiffFilesFunc
 	// CommitGraphFunc is an instance of a mock function object controlling
 	// the behavior of the method CommitGraph.
 	CommitGraphFunc *ClientCommitGraphFunc
@@ -93,9 +96,6 @@ type MockClient struct {
 	// ListRefsFunc is an instance of a mock function object controlling the
 	// behavior of the method ListRefs.
 	ListRefsFunc *ClientListRefsFunc
-	// LogReverseEachFunc is an instance of a mock function object
-	// controlling the behavior of the method LogReverseEach.
-	LogReverseEachFunc *ClientLogReverseEachFunc
 	// LsFilesFunc is an instance of a mock function object controlling the
 	// behavior of the method LsFiles.
 	LsFilesFunc *ClientLsFilesFunc
@@ -171,6 +171,11 @@ func NewMockClient() *MockClient {
 		},
 		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
 			defaultHook: func(context.Context, protocol.PerforceConnectionDetails) (r0 error) {
+				return
+			},
+		},
+		CommitDiffFilesFunc: &ClientCommitDiffFilesFunc{
+			defaultHook: func(context.Context, api.RepoName, api.CommitID) (r0 []*gitdomain.PathStatus, r1 error) {
 				return
 			},
 		},
@@ -271,11 +276,6 @@ func NewMockClient() *MockClient {
 		},
 		ListRefsFunc: &ClientListRefsFunc{
 			defaultHook: func(context.Context, api.RepoName, ListRefsOpts) (r0 []gitdomain.Ref, r1 error) {
-				return
-			},
-		},
-		LogReverseEachFunc: &ClientLogReverseEachFunc{
-			defaultHook: func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) (r0 error) {
 				return
 			},
 		},
@@ -396,6 +396,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.CheckPerforceCredentials")
 			},
 		},
+		CommitDiffFilesFunc: &ClientCommitDiffFilesFunc{
+			defaultHook: func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error) {
+				panic("unexpected invocation of MockClient.CommitDiffFiles")
+			},
+		},
 		CommitGraphFunc: &ClientCommitGraphFunc{
 			defaultHook: func(context.Context, api.RepoName, CommitGraphOptions) (*gitdomain.CommitGraph, error) {
 				panic("unexpected invocation of MockClient.CommitGraph")
@@ -494,11 +499,6 @@ func NewStrictMockClient() *MockClient {
 		ListRefsFunc: &ClientListRefsFunc{
 			defaultHook: func(context.Context, api.RepoName, ListRefsOpts) ([]gitdomain.Ref, error) {
 				panic("unexpected invocation of MockClient.ListRefs")
-			},
-		},
-		LogReverseEachFunc: &ClientLogReverseEachFunc{
-			defaultHook: func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-				panic("unexpected invocation of MockClient.LogReverseEach")
 			},
 		},
 		LsFilesFunc: &ClientLsFilesFunc{
@@ -612,6 +612,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
 			defaultHook: i.CheckPerforceCredentials,
 		},
+		CommitDiffFilesFunc: &ClientCommitDiffFilesFunc{
+			defaultHook: i.CommitDiffFiles,
+		},
 		CommitGraphFunc: &ClientCommitGraphFunc{
 			defaultHook: i.CommitGraph,
 		},
@@ -671,9 +674,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		ListRefsFunc: &ClientListRefsFunc{
 			defaultHook: i.ListRefs,
-		},
-		LogReverseEachFunc: &ClientLogReverseEachFunc{
-			defaultHook: i.LogReverseEach,
 		},
 		LsFilesFunc: &ClientLsFilesFunc{
 			defaultHook: i.LsFiles,
@@ -1054,6 +1054,117 @@ func (c ClientCheckPerforceCredentialsFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientCheckPerforceCredentialsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// ClientCommitDiffFilesFunc describes the behavior when the CommitDiffFiles
+// method of the parent MockClient instance is invoked.
+type ClientCommitDiffFilesFunc struct {
+	defaultHook func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error)
+	hooks       []func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error)
+	history     []ClientCommitDiffFilesFuncCall
+	mutex       sync.Mutex
+}
+
+// CommitDiffFiles delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockClient) CommitDiffFiles(v0 context.Context, v1 api.RepoName, v2 api.CommitID) ([]*gitdomain.PathStatus, error) {
+	r0, r1 := m.CommitDiffFilesFunc.nextHook()(v0, v1, v2)
+	m.CommitDiffFilesFunc.appendCall(ClientCommitDiffFilesFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CommitDiffFiles
+// method of the parent MockClient instance is invoked and the hook queue is
+// empty.
+func (f *ClientCommitDiffFilesFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CommitDiffFiles method of the parent MockClient instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientCommitDiffFilesFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientCommitDiffFilesFunc) SetDefaultReturn(r0 []*gitdomain.PathStatus, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientCommitDiffFilesFunc) PushReturn(r0 []*gitdomain.PathStatus, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientCommitDiffFilesFunc) nextHook() func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientCommitDiffFilesFunc) appendCall(r0 ClientCommitDiffFilesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientCommitDiffFilesFuncCall objects
+// describing the invocations of this function.
+func (f *ClientCommitDiffFilesFunc) History() []ClientCommitDiffFilesFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientCommitDiffFilesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientCommitDiffFilesFuncCall is an object that describes an invocation
+// of method CommitDiffFiles on an instance of MockClient.
+type ClientCommitDiffFilesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.CommitID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*gitdomain.PathStatus
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientCommitDiffFilesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientCommitDiffFilesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ClientCommitGraphFunc describes the behavior when the CommitGraph method
@@ -3268,120 +3379,6 @@ func (c ClientListRefsFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientListRefsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientLogReverseEachFunc describes the behavior when the LogReverseEach
-// method of the parent MockClient instance is invoked.
-type ClientLogReverseEachFunc struct {
-	defaultHook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error
-	hooks       []func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error
-	history     []ClientLogReverseEachFuncCall
-	mutex       sync.Mutex
-}
-
-// LogReverseEach delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockClient) LogReverseEach(v0 context.Context, v1 string, v2 string, v3 int, v4 func(entry gitdomain.LogEntry) error) error {
-	r0 := m.LogReverseEachFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.LogReverseEachFunc.appendCall(ClientLogReverseEachFuncCall{v0, v1, v2, v3, v4, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the LogReverseEach
-// method of the parent MockClient instance is invoked and the hook queue is
-// empty.
-func (f *ClientLogReverseEachFunc) SetDefaultHook(hook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// LogReverseEach method of the parent MockClient instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientLogReverseEachFunc) PushHook(hook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientLogReverseEachFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientLogReverseEachFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-		return r0
-	})
-}
-
-func (f *ClientLogReverseEachFunc) nextHook() func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientLogReverseEachFunc) appendCall(r0 ClientLogReverseEachFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientLogReverseEachFuncCall objects
-// describing the invocations of this function.
-func (f *ClientLogReverseEachFunc) History() []ClientLogReverseEachFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientLogReverseEachFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientLogReverseEachFuncCall is an object that describes an invocation of
-// method LogReverseEach on an instance of MockClient.
-type ClientLogReverseEachFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 func(entry gitdomain.LogEntry) error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientLogReverseEachFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientLogReverseEachFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // ClientLsFilesFunc describes the behavior when the LsFiles method of the

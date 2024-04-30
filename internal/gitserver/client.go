@@ -491,8 +491,9 @@ type Client interface {
 	// ContributorCount returns the number of commits grouped by contributor
 	ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error)
 
-	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
-	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
+	// CommitDiffFiles returns the file paths touched in the commit and the type
+	// of change for each path (Added, Modified, Deleted only).
+	CommitDiffFiles(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]*gitdomain.PathStatus, error)
 
 	// RevList makes a git rev-list call and returns up to count commits. if nextCursor
 	// is non-empty, it is used as the starting point for the next call, use it to iterate
@@ -646,9 +647,8 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 	}
 
 	req := &proto.ExecRequest{
-		Repo:      string(c.repo),
-		Args:      stringsToByteSlices(c.args[1:]),
-		NoTimeout: c.noTimeout,
+		Repo: string(c.repo),
+		Args: stringsToByteSlices(c.args[1:]),
 	}
 
 	stream, err := client.Exec(ctx, req)

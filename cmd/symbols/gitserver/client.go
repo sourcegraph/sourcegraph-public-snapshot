@@ -30,8 +30,9 @@ type GitserverClient interface {
 	// (If you just need to check a file's existence, use Stat, not a file reader.)
 	NewFileReader(ctx context.Context, repoCommitPath types.RepoCommitPath) (io.ReadCloser, error)
 
-	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
-	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
+	// CommitDiffFiles returns the file paths touched in the commit and the type
+	// of change for each path (Added, Modified, Deleted only).
+	CommitDiffFiles(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]*gitdomain.PathStatus, error)
 
 	// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided
 	// onCommit function for each.
@@ -97,8 +98,8 @@ func (c *gitserverClient) NewFileReader(ctx context.Context, repoCommitPath type
 	return c.innerClient.NewFileReader(ctx, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path)
 }
 
-func (c *gitserverClient) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
-	return c.innerClient.LogReverseEach(ctx, repo, commit, n, onLogEntry)
+func (c *gitserverClient) CommitDiffFiles(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]*gitdomain.PathStatus, error) {
+	return c.innerClient.CommitDiffFiles(ctx, repo, commit)
 }
 
 const revListPageSize = 100

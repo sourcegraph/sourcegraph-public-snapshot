@@ -22,15 +22,15 @@ import (
 // github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver) used for unit
 // testing.
 type MockGitserverClient struct {
+	// CommitDiffFilesFunc is an instance of a mock function object
+	// controlling the behavior of the method CommitDiffFiles.
+	CommitDiffFilesFunc *GitserverClientCommitDiffFilesFunc
 	// FetchTarFunc is an instance of a mock function object controlling the
 	// behavior of the method FetchTar.
 	FetchTarFunc *GitserverClientFetchTarFunc
 	// GitDiffFunc is an instance of a mock function object controlling the
 	// behavior of the method GitDiff.
 	GitDiffFunc *GitserverClientGitDiffFunc
-	// LogReverseEachFunc is an instance of a mock function object
-	// controlling the behavior of the method LogReverseEach.
-	LogReverseEachFunc *GitserverClientLogReverseEachFunc
 	// NewFileReaderFunc is an instance of a mock function object
 	// controlling the behavior of the method NewFileReader.
 	NewFileReaderFunc *GitserverClientNewFileReaderFunc
@@ -44,6 +44,11 @@ type MockGitserverClient struct {
 // overwritten.
 func NewMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
+		CommitDiffFilesFunc: &GitserverClientCommitDiffFilesFunc{
+			defaultHook: func(context.Context, api.RepoName, api.CommitID) (r0 []*gitdomain.PathStatus, r1 error) {
+				return
+			},
+		},
 		FetchTarFunc: &GitserverClientFetchTarFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, []string) (r0 io.ReadCloser, r1 error) {
 				return
@@ -51,11 +56,6 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		GitDiffFunc: &GitserverClientGitDiffFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (r0 gitserver.Changes, r1 error) {
-				return
-			},
-		},
-		LogReverseEachFunc: &GitserverClientLogReverseEachFunc{
-			defaultHook: func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) (r0 error) {
 				return
 			},
 		},
@@ -76,6 +76,11 @@ func NewMockGitserverClient() *MockGitserverClient {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
+		CommitDiffFilesFunc: &GitserverClientCommitDiffFilesFunc{
+			defaultHook: func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error) {
+				panic("unexpected invocation of MockGitserverClient.CommitDiffFiles")
+			},
+		},
 		FetchTarFunc: &GitserverClientFetchTarFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, []string) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockGitserverClient.FetchTar")
@@ -84,11 +89,6 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 		GitDiffFunc: &GitserverClientGitDiffFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (gitserver.Changes, error) {
 				panic("unexpected invocation of MockGitserverClient.GitDiff")
-			},
-		},
-		LogReverseEachFunc: &GitserverClientLogReverseEachFunc{
-			defaultHook: func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-				panic("unexpected invocation of MockGitserverClient.LogReverseEach")
 			},
 		},
 		NewFileReaderFunc: &GitserverClientNewFileReaderFunc{
@@ -109,14 +109,14 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 // overwritten.
 func NewMockGitserverClientFrom(i gitserver.GitserverClient) *MockGitserverClient {
 	return &MockGitserverClient{
+		CommitDiffFilesFunc: &GitserverClientCommitDiffFilesFunc{
+			defaultHook: i.CommitDiffFiles,
+		},
 		FetchTarFunc: &GitserverClientFetchTarFunc{
 			defaultHook: i.FetchTar,
 		},
 		GitDiffFunc: &GitserverClientGitDiffFunc{
 			defaultHook: i.GitDiff,
-		},
-		LogReverseEachFunc: &GitserverClientLogReverseEachFunc{
-			defaultHook: i.LogReverseEach,
 		},
 		NewFileReaderFunc: &GitserverClientNewFileReaderFunc{
 			defaultHook: i.NewFileReader,
@@ -125,6 +125,119 @@ func NewMockGitserverClientFrom(i gitserver.GitserverClient) *MockGitserverClien
 			defaultHook: i.RevList,
 		},
 	}
+}
+
+// GitserverClientCommitDiffFilesFunc describes the behavior when the
+// CommitDiffFiles method of the parent MockGitserverClient instance is
+// invoked.
+type GitserverClientCommitDiffFilesFunc struct {
+	defaultHook func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error)
+	hooks       []func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error)
+	history     []GitserverClientCommitDiffFilesFuncCall
+	mutex       sync.Mutex
+}
+
+// CommitDiffFiles delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverClient) CommitDiffFiles(v0 context.Context, v1 api.RepoName, v2 api.CommitID) ([]*gitdomain.PathStatus, error) {
+	r0, r1 := m.CommitDiffFilesFunc.nextHook()(v0, v1, v2)
+	m.CommitDiffFilesFunc.appendCall(GitserverClientCommitDiffFilesFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CommitDiffFiles
+// method of the parent MockGitserverClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverClientCommitDiffFilesFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CommitDiffFiles method of the parent MockGitserverClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverClientCommitDiffFilesFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientCommitDiffFilesFunc) SetDefaultReturn(r0 []*gitdomain.PathStatus, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientCommitDiffFilesFunc) PushReturn(r0 []*gitdomain.PathStatus, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientCommitDiffFilesFunc) nextHook() func(context.Context, api.RepoName, api.CommitID) ([]*gitdomain.PathStatus, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientCommitDiffFilesFunc) appendCall(r0 GitserverClientCommitDiffFilesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientCommitDiffFilesFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverClientCommitDiffFilesFunc) History() []GitserverClientCommitDiffFilesFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientCommitDiffFilesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientCommitDiffFilesFuncCall is an object that describes an
+// invocation of method CommitDiffFiles on an instance of
+// MockGitserverClient.
+type GitserverClientCommitDiffFilesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.CommitID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*gitdomain.PathStatus
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientCommitDiffFilesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientCommitDiffFilesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitserverClientFetchTarFunc describes the behavior when the FetchTar
@@ -353,122 +466,6 @@ func (c GitserverClientGitDiffFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverClientGitDiffFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverClientLogReverseEachFunc describes the behavior when the
-// LogReverseEach method of the parent MockGitserverClient instance is
-// invoked.
-type GitserverClientLogReverseEachFunc struct {
-	defaultHook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error
-	hooks       []func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error
-	history     []GitserverClientLogReverseEachFuncCall
-	mutex       sync.Mutex
-}
-
-// LogReverseEach delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) LogReverseEach(v0 context.Context, v1 string, v2 string, v3 int, v4 func(entry gitdomain.LogEntry) error) error {
-	r0 := m.LogReverseEachFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.LogReverseEachFunc.appendCall(GitserverClientLogReverseEachFuncCall{v0, v1, v2, v3, v4, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the LogReverseEach
-// method of the parent MockGitserverClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverClientLogReverseEachFunc) SetDefaultHook(hook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// LogReverseEach method of the parent MockGitserverClient instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *GitserverClientLogReverseEachFunc) PushHook(hook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientLogReverseEachFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientLogReverseEachFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-		return r0
-	})
-}
-
-func (f *GitserverClientLogReverseEachFunc) nextHook() func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientLogReverseEachFunc) appendCall(r0 GitserverClientLogReverseEachFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientLogReverseEachFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverClientLogReverseEachFunc) History() []GitserverClientLogReverseEachFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientLogReverseEachFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientLogReverseEachFuncCall is an object that describes an
-// invocation of method LogReverseEach on an instance of
-// MockGitserverClient.
-type GitserverClientLogReverseEachFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 func(entry gitdomain.LogEntry) error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientLogReverseEachFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientLogReverseEachFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // GitserverClientNewFileReaderFunc describes the behavior when the
