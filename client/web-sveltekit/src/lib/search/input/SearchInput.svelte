@@ -156,14 +156,10 @@
 
     registerHotkey({
         keys: { key: '/' },
+        // Allows `/` symbol to populate input's value
+        // when input is focused
         allowDefault: true,
         handler: () => {
-            // If input already has focus, pass `/` symbol to the
-            // input element value
-            if (editor && editor.hasFocus) {
-                return true
-            }
-
             // If the search input doesn't have focus, focus it
             // and disallow `/` symbol populate the input value
             focus()
