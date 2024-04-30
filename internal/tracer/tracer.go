@@ -140,7 +140,7 @@ func setupTraceURL(c ConfigurationSource) {
 		cachedURLTemplateMu  sync.Mutex
 	)
 
-	trace.Init(func(traceID string) string {
+	trace.RegisterURLRenderer(func(traceID string) string {
 		tracing := c.Config().ObservabilityTracing
 		if tracing == nil || tracing.UrlTemplate == "" {
 			return ""
