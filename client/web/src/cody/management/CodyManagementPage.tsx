@@ -75,9 +75,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const subscription = data?.currentUser?.codySubscription
 
-    const navigate = useNavigate()
-    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
-
     useEffect(() => {
         if (!!data && !data?.currentUser) {
             navigate('/sign-in?returnTo=/cody/manage')
