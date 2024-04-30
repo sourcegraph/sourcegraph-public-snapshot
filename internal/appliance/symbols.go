@@ -118,7 +118,7 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *Source
 		{Name: "tmp", MountPath: "/mnt/tmp"},
 	}
 
-	podTemplate := pod.NewPodTemplate(name)
+	podTemplate := pod.NewPodTemplate(name, cfg)
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
 	podTemplate.Template.Spec.ServiceAccountName = name
 	podTemplate.Template.Spec.Volumes = []corev1.Volume{

@@ -26,6 +26,8 @@ By embedding StandardConfig, you'll get various features for almost-free:
   `reconcileObject()`. This frees the developer from writing any upsert/delete
   logic at all, usually.
 - Container resources
+- Node selectors, tolerations, and affinities.
+- Image pull secrets for use with private image registries.
 - Service account annotations
   - This is an extremely common customization need, e.g. to enable GKE
     workload-identity bindings.
