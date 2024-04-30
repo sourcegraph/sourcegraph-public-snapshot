@@ -38,7 +38,8 @@ function isContentField(event: KeyboardEvent): boolean {
         return (
             target.getAttribute('contenteditable') === 'true' ||
             // textarea and input are from the HTML standard, textbox is from svelte
-            ['textarea', 'input', 'textbox'].includes(target.getAttribute('role') ?? '')
+            ['textarea', 'input', 'textbox'].includes(target.getAttribute('role') ?? '') ||
+            ['INPUT', 'TEXTAREA'].includes(target.tagName)
         )
     }
     return false
@@ -53,7 +54,7 @@ function wrapHandler(handler: KeyHandler, allowDefault: boolean = false, ignoreI
         }
 
         if (!(ignoreInputFields && isContentField(keyboardEvent))) {
-            handler(keyboardEvent, hotkeysEvent)
+            return handler(keyboardEvent, hotkeysEvent) ?? allowDefault
         }
 
         // Returning false stops the event and prevents default browser events on macOS.
