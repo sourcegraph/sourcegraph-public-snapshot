@@ -36,6 +36,7 @@ import (
 )
 
 func TestContextResolver(t *testing.T) {
+	t.Skip("This test was flaky in https://buildkite.com/sourcegraph/sourcegraph/builds/271491 and has been disabled ")
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
