@@ -2,9 +2,10 @@ package ssc
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -75,13 +76,27 @@ func (p *APIProxyHandler) buildProxyRequest(sourceReq *http.Request, token strin
 	// Source: ".api/ssc/proxy/" + "teams/current/members"
 	// Proxy :    "cody/api/v1/" + "teams/current/members"
 	sourceURLPath := strings.TrimPrefix(sourceReq.URL.Path, p.URLPrefix)
-	sscURL := fmt.Sprintf(
-		"%s/cody/api/v1/%s?%s",
+	sourceURLPath = path.Clean(sourceURLPath)
+	// Don't allow this sort of URL traversal, since we want to
+	// enforce that the URL contains the SSC prefix.
+	sourceURLPath = strings.Replace(sourceURLPath, "../", "", -1)
+
+	sscURLPath, err := url.JoinPath(
 		p.CodyProConfig.SscBackendOrigin,
-		sourceURLPath,
-		sourceReq.URL.Query().Encode())
-	p.Logger.Info("Building proxy request", log.String("method", sourceReq.Method), log.String("url", sscURL))
-	proxyReq, err := http.NewRequest(sourceReq.Method, sscURL, bodyReader)
+		"cody/api/v1",
+		sourceURLPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "building proxy URL")
+	}
+
+	sscURL, err := url.Parse(sscURLPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing generated proxy URL")
+	}
+	sscURL.RawQuery = sourceReq.URL.Query().Encode()
+
+	p.Logger.Info("Building proxy request", log.String("method", sourceReq.Method), log.String("url", sscURL.String()))
+	proxyReq, err := http.NewRequest(sourceReq.Method, sscURL.String(), bodyReader)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request")
 	}
@@ -174,7 +189,7 @@ func (p *APIProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Copy the incomming request and send it to the SSC backend.
+	// Copy the incoming request and send it to the SSC backend.
 	proxyRequest, err := p.buildProxyRequest(r, samsToken.AccessToken)
 	if err != nil {
 		p.Logger.Error("building SSC proxy request", log.Error(err))

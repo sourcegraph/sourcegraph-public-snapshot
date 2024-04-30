@@ -129,27 +129,28 @@ func TestSSCAPIProxy(t *testing.T) {
 				// where the HTTP handler is registered.
 				{
 					"/users/settings",
-					// BUG? The double slash here isn't great, but we kinda need the incomming URL
-					// to match the APIProxy.URLPrefix value anyways. So we don't care?
-					"/cody/api/v1//users/settings", "",
+					"/cody/api/v1/users/settings", "",
 				},
 				{
 					"users/settings",
 					// BUG? A quirk of how this test runs. We prefix the input string with
 					// "https://sourcegraph.com", so "sourcegraph.comuser/settings" comes
 					// out looking weird...
-					"/cody/api/v1//settings", "",
+					"/cody/api/v1/settings", "",
 				},
 
 				// URL path schenanigans. We escape the incomming URL so that the proxied request
 				// always has the required route prefix.
 				{
+					// The source URL path is cleaned, so the "folder1/folder2" gets removed.
 					testURLPrefix + "folder1/folder2/../../some-other-folder",
-					"/cody/api/v1/folder1/folder2/../../some-other-folder", "",
+					"/cody/api/v1/some-other-folder", "",
 				},
 				{
+					// But the cleaning is only applied to the user-controlled URL path.
+					// So we will always have the SSC-side URL prefix.
 					testURLPrefix + "../../../../some-unknown-parent-folder",
-					"/cody/api/v1/../../../../some-unknown-parent-folder", "",
+					"/cody/api/v1/some-unknown-parent-folder", "",
 				},
 			}
 			for i, test := range tests {
