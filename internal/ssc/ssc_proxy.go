@@ -76,10 +76,9 @@ func (p *APIProxyHandler) buildProxyRequest(sourceReq *http.Request, token strin
 	// Source: ".api/ssc/proxy/" + "teams/current/members"
 	// Proxy :    "cody/api/v1/" + "teams/current/members"
 	sourceURLPath := strings.TrimPrefix(sourceReq.URL.Path, p.URLPrefix)
+	sourceURLPath = "/" + sourceURLPath // Force the path to be rooted.
+	// nosemgrep: resolving the supplied path, to concatenate with the SSC API URL prefix below.
 	sourceURLPath = path.Clean(sourceURLPath)
-	// Don't allow this sort of URL traversal, since we want to
-	// enforce that the URL contains the SSC prefix.
-	sourceURLPath = strings.Replace(sourceURLPath, "../", "", -1)
 
 	sscURLPath, err := url.JoinPath(
 		p.CodyProConfig.SscBackendOrigin,

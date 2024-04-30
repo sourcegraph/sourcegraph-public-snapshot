@@ -152,6 +152,12 @@ func TestSSCAPIProxy(t *testing.T) {
 					testURLPrefix + "../../../../some-unknown-parent-folder",
 					"/cody/api/v1/some-unknown-parent-folder", "",
 				},
+				{
+					// Another instance of URL canonicalization, and it not
+					// escaping the "/cody/api/v1" prefix.
+					testURLPrefix + "legit/../../../not-legit",
+					"/cody/api/v1/not-legit", "",
+				},
 			}
 			for i, test := range tests {
 				inURL := "https://sourcegraph.com" + test.ReqURLPath
