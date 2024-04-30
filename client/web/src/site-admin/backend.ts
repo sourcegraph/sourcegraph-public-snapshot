@@ -25,10 +25,8 @@ import type {
     OrganizationsResult,
     OrganizationsVariables,
     OutOfBandMigrationFields,
-    AllOutOfBandMigrationsResult,
-    AllOutOfBandMigrationsVariables,
-    RelevantOutOfBandMigrationsResult,
-    RelevantOutOfBandMigrationsVariables,
+    OutOfBandMigrationsResult,
+    OutOfBandMigrationsVariables,
     RandomizeUserPasswordResult,
     ReloadSiteResult,
     ReloadSiteVariables,
@@ -665,7 +663,7 @@ export const SET_AUTO_UPGRADE = gql`
 export function fetchOutOfBandMigrations(
     excludeDeprecatedBeforeFirstVersion?: boolean
 ): Observable<OutOfBandMigrationFields[]> {
-    return requestGraphQL<AllOutOfBandMigrationsResult, AllOutOfBandMigrationsVariables>(
+    return requestGraphQL<OutOfBandMigrationsResult, OutOfBandMigrationsVariables>(
         gql`
             query OutOfBandMigrations($excludeDeprecatedBeforeFirstVersion: Boolean = false) {
                 outOfBandMigrations(ExcludeDeprecatedBeforeFirstVersion: $excludeDeprecatedBeforeFirstVersion) {
