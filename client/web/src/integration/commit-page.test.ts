@@ -14,6 +14,7 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import type { WebGraphQlOperations } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
+import { createCodyContextFiltersResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 
@@ -23,6 +24,7 @@ describe('RepositoryCommitPage', () => {
     const commitDate = subDays(new Date(), 7).toISOString()
     const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ...commonWebGraphQlResults,
+        ContextFilters: () => createCodyContextFiltersResult(),
         RepositoryCommit: () => ({
             node: {
                 __typename: 'Repository',

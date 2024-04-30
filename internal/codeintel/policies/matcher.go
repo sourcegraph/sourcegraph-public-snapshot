@@ -243,13 +243,9 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 					continue policyLoop
 				}
 
-				// Don't capture loop variable pointers
-				localPolicyID := policyID
-				commitDate := commitDate
-
 				context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
 					Name:           branchName,
-					PolicyID:       &localPolicyID,
+					PolicyID:       &policyID,
 					PolicyDuration: policyDuration,
 					CommittedAt:    commitDate,
 				})
@@ -279,10 +275,9 @@ func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContex
 				continue
 			}
 
-			id := policy.ID // avoid a reference to the loop variable
 			context.commitMap[policy.Pattern] = append(context.commitMap[policy.Pattern], PolicyMatch{
 				Name:           string(commit.ID),
-				PolicyID:       &id,
+				PolicyID:       &policy.ID,
 				PolicyDuration: policyDuration,
 				CommittedAt:    commit.Committer.Date,
 			})
