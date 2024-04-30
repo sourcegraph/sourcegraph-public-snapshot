@@ -1,6 +1,8 @@
 package cloud
 
 import (
+	"os"
+
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
@@ -13,20 +15,24 @@ var StatusEphemeralCommand = cli.Command{
 	Name:        "status",
 	Usage:       "sg could status",
 	Description: "get the status of the ephemeral cloud instance for this branch or instance with the provided slug",
-	Action:      getCloudEphemeral,
+	Action:      wipAction(statusCloudEphemeral),
 	Flags: []cli.Flag{
-		&cli.BoolFlag{
+		&cli.StringFlag{
 			Name:  "name",
 			Usage: "name of the instance to get the status of",
+		},
+		&cli.BoolFlag{
+			Name:  "json",
+			Usage: "print the instance details in JSON",
+		},
+		&cli.BoolFlag{
+			Name:  "raw",
+			Usage: "print all of the instance details",
 		},
 	},
 }
 
-func getCloudEphemeral(ctx *cli.Context) error {
-	// while we work on this command we print a notice and ask to continue
-	if err := printWIPNotice(ctx); err != nil {
-		return err
-	}
+func statusCloudEphemeral(ctx *cli.Context) error {
 	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
 		return err
@@ -45,6 +51,7 @@ func getCloudEphemeral(ctx *cli.Context) error {
 		}
 		name = currentBranch
 	}
+	name = sanitizeInstanceName(name)
 
 	cloudEmoji := "☁️"
 	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Getting status of ephemeral instance %q", name))
@@ -53,7 +60,20 @@ func getCloudEphemeral(ctx *cli.Context) error {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "getting status of %q failed", name))
 		return err
 	}
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleBold, "Ephemeral instance %q status retrieved", name))
 
-	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleWhiteOnPurple, "Details of ephemeral instance %q:\n%s", inst))
+	var printer Printer
+
+	switch {
+	case ctx.Bool("json"):
+		printer = newJSONInstancePrinter(os.Stdout)
+	case ctx.Bool("raw"):
+		printer = newRawInstancePrinter(os.Stdout)
+	default:
+		printer = newDefaultTerminalInstancePrinter()
+	}
+
+	std.Out.Write("Ephemeral instance details:")
+	printer.Print(inst)
 	return nil
 }

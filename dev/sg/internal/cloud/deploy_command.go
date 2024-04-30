@@ -27,7 +27,7 @@ var DeployEphemeralCommand = cli.Command{
 	Name:        "deploy",
 	Usage:       "sg could deploy --branch <branch> --tag <tag>",
 	Description: "Deploy the specified branch or tag to an ephemeral Sourcegraph Cloud environment",
-	Action:      deployCloudEphemeral,
+	Action:      wipAction(deployCloudEphemeral),
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "name",
@@ -106,6 +106,19 @@ func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildk
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %d created. Build progress can be viewed at %s", pointers.DerefZero(build.Number), pointers.DerefZero(build.WebURL)))
 
 	return build, nil
+}
+
+func wipAction(actionFn cli.ActionFunc) cli.ActionFunc {
+	if actionFn == nil {
+		return nil
+	}
+	return func(ctx *cli.Context) error {
+		if err := printWIPNotice(ctx); err != nil {
+			return err
+		}
+
+		return actionFn(ctx)
+	}
 }
 
 func printWIPNotice(ctx *cli.Context) error {

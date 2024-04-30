@@ -51,7 +51,7 @@ type DeploymentSpec struct {
 
 func NewDeploymentSpec(name, version string) *DeploymentSpec {
 	return &DeploymentSpec{
-		Name:    name,
+		Name:    sanitizeInstanceName(name),
 		Version: version,
 		InstanceFeatures: map[string]string{
 			"ephemeral": "true", // need to have this to make the instance ephemeral
@@ -157,4 +157,9 @@ func (c *Client) CreateInstance(ctx context.Context, spec *DeploymentSpec) (*Ins
 
 func (c *Client) DeleteInstance(ctx context.Context, name string) error {
 	return nil
+}
+
+func sanitizeInstanceName(name string) string {
+	name = strings.ToLower(name)
+	return strings.ReplaceAll(name, "/", "-")
 }

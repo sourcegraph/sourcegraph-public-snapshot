@@ -1,22 +1,23 @@
 package cloud
 
 import (
+	"fmt"
+
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
-	//"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var DeleteEphemeralCommand = cli.Command{
 	Name:        "delete",
 	Usage:       "sg could delete <name/slug>",
 	Description: "delete ephemeral cloud instance identified either by the current branch or provided as a cli arg",
-	Action:      deleteCloudEphemeral,
+	Action:      wipAction(deleteCloudEphemeral),
 	Flags: []cli.Flag{
-		&cli.BoolFlag{
+		&cli.StringFlag{
 			Name:  "name",
 			Usage: "name or slug of the cloud ephemeral instance to delete",
 		},
@@ -24,10 +25,6 @@ var DeleteEphemeralCommand = cli.Command{
 }
 
 func deleteCloudEphemeral(ctx *cli.Context) error {
-	// while we work on this command we print a notice and ask to continue
-	if err := printWIPNotice(ctx); err != nil {
-		return err
-	}
 	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
 		return err
@@ -46,6 +43,17 @@ func deleteCloudEphemeral(ctx *cli.Context) error {
 		}
 		name = currentBranch
 	}
+	name = sanitizeInstanceName(name)
+
+	var answ string
+	_, err = std.PromptAndScan(std.Out, fmt.Sprintf("Are you sure you want to delete ephemeral instance %q? (yes/no)", name), &answ)
+	if err != nil {
+		return err
+	}
+
+	if oneOfEquals(answ, "no", "n") {
+		return ErrUserCancelled
+	}
 
 	cloudEmoji := "☁️"
 	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Deleting ephemeral instance %q", name))
@@ -55,6 +63,6 @@ func deleteCloudEphemeral(ctx *cli.Context) error {
 		return err
 	}
 
-	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleWhiteOnPurple, "Ephemeral instance %q deleted", name))
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleBold, "Ephemeral instance %q deleted", name))
 	return nil
 }
