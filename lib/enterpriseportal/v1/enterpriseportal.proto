@@ -3,7 +3,6 @@ syntax = "proto3";
 package enterpriseportal.v1;
 
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/field_mask.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/v1";
 
@@ -60,19 +59,13 @@ message EnterpriseSubscriptionLicense {
 }
 
 message GetSubscriptionRequest {
-	// Field mask specifies the subscription fields to be returned. If provided,
-  // clients should only expect the specified fields to be returned.
-	//
-	// If not provided, a default subset of all fields will be returned.
-  google.protobuf.FieldMask field_mask = 1;
-
   // Query specifies the lookup strategy for this get request.
   oneof query {
     // Look up a subscription using its UUID-format identifier.
-    string id = 2;
+    string id = 1;
     // Look up a subscription using an associated access token representing
     // this subscription.
-    string access_token = 3;
+    string access_token = 2;
   }
 }
 
@@ -93,17 +86,11 @@ message ListSubscriptionsRequest {
   // See pagination concepts from https://cloud.google.com/apis/design/design_patterns#list_pagination
   string page_token = 2;
 
-	// Field mask specifies the subscription fields to be returned. If provided,
-  // clients should only expect the specified fields to be returned.
-	//
-	// If not provided, a default subset of all fields will be returned.
-  google.protobuf.FieldMask field_mask = 3;
-
   // Query defines the lookup strategy for this list request.
   oneof query {
     // Returns only product subscriptions whose license key contains this
     // substring.
-    string license_key_substring = 4;
+    string license_key_substring = 3;
   }
 }
 
