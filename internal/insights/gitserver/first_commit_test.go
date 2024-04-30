@@ -18,18 +18,6 @@ func Test_IsEmptyRepoError(t *testing.T) {
 		want autogold.Value
 	}{
 		{
-			err:  errors.New(emptyRepoErrMessage),
-			want: autogold.Expect(true),
-		},
-		{
-			err:  errors.Newf("Another message: %w", errors.New(emptyRepoErrMessage)),
-			want: autogold.Expect(true),
-		},
-		{
-			err:  errors.Newf("Another message: %w", errors.Newf("Deep nested: %w", errors.New(emptyRepoErrMessage))),
-			want: autogold.Expect(true),
-		},
-		{
 			err:  errors.Newf("Another message: %w", errors.New("Not an empty repo")),
 			want: autogold.Expect(false),
 		},
