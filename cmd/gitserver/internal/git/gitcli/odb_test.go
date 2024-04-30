@@ -382,4 +382,11 @@ func TestGitCLIBackend_GetBehindAhead(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, &gitdomain.BehindAhead{Behind: 0, Ahead: 0}, behindAhead)
 	})
+
+	t.Run("invalid object id", func(t *testing.T) {
+		_, err := backend.GetBehindAhead(ctx, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", right)
+		require.Error(t, err)
+		var e *gitdomain.RevisionNotFoundError
+		require.True(t, errors.As(err, &e))
+	})
 }

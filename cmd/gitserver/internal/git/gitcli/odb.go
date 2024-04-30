@@ -205,15 +205,16 @@ func (g *gitCLIBackend) GetBehindAhead(ctx context.Context, left, right string) 
 
 	out, err := io.ReadAll(rc)
 	if err != nil {
-		var cmdFailedErr *CommandFailedError
-		if errors.As(err, &cmdFailedErr) {
-			if cmdFailedErr.ExitStatus == 128 && bytes.Contains(cmdFailedErr.Stderr, []byte("fatal: ambiguous argument")) {
-				// If the error is due to an unknown or ambiguous revision, return a sentinel error.
-				e := &gitdomain.RevisionNotFoundError{
+		var e *CommandFailedError
+		if errors.As(err, &e) {
+			switch {
+			case e.ExitStatus == 128 && bytes.Contains(e.Stderr, []byte("fatal: ambiguous argument")):
+				fallthrough
+			case e.ExitStatus == 128 && bytes.Contains(e.Stderr, []byte("fatal: Invalid symmetric difference expression")):
+				return nil, &gitdomain.RevisionNotFoundError{
 					Repo: g.repoName,
 					Spec: fmt.Sprintf("%s...%s", left, right),
 				}
-				return nil, e
 			}
 		}
 
@@ -223,7 +224,7 @@ func (g *gitCLIBackend) GetBehindAhead(ctx context.Context, left, right string) 
 	behindAhead := strings.Split(strings.TrimSuffix(string(out), "\n"), "\t")
 	b, err := strconv.ParseUint(behindAhead[0], 10, 0)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to parse behindahead output %q", out)
 	}
 	a, err := strconv.ParseUint(behindAhead[1], 10, 0)
 	if err != nil {
