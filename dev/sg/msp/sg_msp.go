@@ -13,6 +13,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/maps"
 
+	notionmarkdown "github.com/sourcegraph/notionreposync/markdown"
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
@@ -472,14 +473,6 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 							Handbook:                true,
 						}
 
-						// Reset directory to ensure we don't have lingering references
-						{
-							dir := filepath.Join(handbookPath, operationdocs.HandbookDirectory)
-							_ = os.RemoveAll(dir)
-							_ = os.Mkdir(dir, os.ModePerm)
-							std.Out.Writef("Reset destination directory %q.", dir)
-						}
-
 						var serviceSpecs []*spec.Spec
 						for _, s := range services {
 							svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
@@ -496,24 +489,22 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 							if err != nil {
 								return errors.Wrap(err, s)
 							}
-							pagePath := filepath.Join(handbookPath,
-								operationdocs.ServiceHandbookPath(s))
-							if err := os.WriteFile(pagePath, []byte(doc), 0o644); err != nil {
+
+							if err := notionmarkdown.NewProcessor().Process(doc); err != nil {
 								return errors.Wrap(err, s)
 							}
-							std.Out.WriteNoticef("[%s]\tWrote %q", s, pagePath)
+
+							std.Out.WriteNoticef("[%s]\tWrote %q", s, "TODO")
 						}
 
-						indexDoc := operationdocs.RenderIndexPage(serviceSpecs, opts)
-						indexPath := filepath.Join(handbookPath,
-							operationdocs.IndexPathHandbookPath())
-						if err := os.WriteFile(indexPath, []byte(indexDoc), 0o644); err != nil {
-							return errors.Wrap(err, "index page")
+						doc := operationdocs.RenderIndexPage(serviceSpecs, opts)
+						if err := notionmarkdown.NewProcessor().Process(doc); err != nil {
+							return errors.Wrap(err, "apply index page")
 						}
-						std.Out.WriteNoticef("[index]\tWrote %q", indexPath)
+
+						std.Out.WriteNoticef("[index]\tWrote %q", "TODO")
 
 						std.Out.WriteSuccessf("All pages generated!")
-						std.Out.WriteSuggestionf("Make sure to commit the generated changes and open a pull request in github.com/sourcegraph/handbook.")
 						return nil
 					},
 				},

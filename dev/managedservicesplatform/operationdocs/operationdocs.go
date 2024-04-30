@@ -8,12 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/exp/maps"
+
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/internal/markdown"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/terraform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"golang.org/x/exp/maps"
 )
 
 type Options struct {
@@ -64,8 +65,8 @@ func Render(s spec.Spec, opts Options) (string, error) {
 	mspURL := "https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/"
 	coreServicesURL := "https://handbook.sourcegraph.com/departments/engineering/teams/core-services/"
 	if opts.Handbook {
-		mspURL = relativePathToMSPPage
-		coreServicesURL = relativePathToCoreServicesPage
+		mspURL = mspNotionPageURL
+		coreServicesURL = coreServicesNotionPageURL
 	}
 
 	md.Paragraphf(`This document describes operational guidance for %s infrastructure.

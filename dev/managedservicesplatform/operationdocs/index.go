@@ -1,7 +1,7 @@
 package operationdocs
 
 import (
-	"path/filepath"
+	"fmt"
 	"slices"
 	"sort"
 
@@ -11,30 +11,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 )
 
-// HandbookDirectory designates where in sourcegraph/handbook operation docs should go.
-//
-// Place under top-level 'engineering/managed-services' since it's too much work
-// to find the appropriate team-specific content tree, and they change frequently.
-const HandbookDirectory = "content/departments/engineering/managed-services"
-
-// ServiceHandbookPath designates where in sourcegraph/handbook the contents
-// of operationdocs.Render should go.
-func ServiceHandbookPath(service string) string {
-	return filepath.Join(HandbookDirectory, service+".md")
+// IndexNotionPageID designates where in Notion the contents of
+// operationdocs.RenderIndexPage should go.
+func IndexNotionPageID() string {
+	return "TODO"
 }
 
-// ServiceHandbookPath designates where in sourcegraph/handbook the contents
-// of operationdocs.RenderIndexPage should go.
-func IndexPathHandbookPath() string {
-	return filepath.Join(HandbookDirectory, "index.md")
-}
-
-// Relative paths to pages we want to link to in handbook mode, expecting that
-// the index page and service-specific pages be housed in HandbookPath.
-const (
-	relativePathToMSPPage          = "../teams/core-services/managed-services/platform.md"
-	relativePathToCoreServicesPage = "../teams/core-services/index.md"
+var (
+	mspNotionPageURL          = notionHandbookLink("TODO")
+	coreServicesNotionPageURL = notionHandbookLink("TODO")
 )
+
+func notionHandbookLink(pageID string) string {
+	return fmt.Sprintf("https://sourcegraph.notion.site/%s", pageID)
+}
 
 // RenderIndexPage renders an index page for use at HandbookPath, assuming that
 // operationdocs.Render contents are stored
@@ -50,12 +40,12 @@ func RenderIndexPage(services []*spec.Spec, opts Options) string {
 This includes information about each service, configured environments, Entitle requests, common tasks, monitoring, custom documentation provided by service operators, and so on.
 In addition to service-specific guidance, %s is also available.`,
 		len(services),
-		markdown.Link("Managed Services Platform (MSP)", relativePathToMSPPage),
+		markdown.Link("Managed Services Platform (MSP)", mspNotionPageURL),
 		specSet(services).countEnvironments(),
 		generalGuidanceLink)
 
 	md.Paragraphf(`MSP is owned by %s, but individual teams are responsible for the services they operate on the platform.`,
-		markdown.Link("Core Services", relativePathToCoreServicesPage))
+		markdown.Link("Core Services", coreServicesNotionPageURL))
 
 	md.Paragraphf("Services are defined in %s, though service source code may live elsewhere.",
 		markdown.Link(markdown.Code("sourcegraph/managed-services"), "https://github.com/sourcegraph/managed-services"))
