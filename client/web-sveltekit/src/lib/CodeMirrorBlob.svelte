@@ -345,7 +345,7 @@
 
 <style lang="scss">
     .root {
-        --blame-decoration-width: 400px;
+        --blame-decoration-width: 300px;
         --blame-recency-width: 4px;
 
         height: 100%;
