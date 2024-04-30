@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/maps"
@@ -152,7 +153,44 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 	return std.Out.WriteMarkdown(summary.String())
 }
 
+type toolingLockfileChecker struct {
+	version    string
+	categories map[spec.EnvironmentCategory]*sync.Once
+}
+
+// checkCategoryVersion performs warning checks for the given environment category's
+// tooling version.
+//
+// Requires UseManagedServicesRepo.
+func (c *toolingLockfileChecker) checkCategoryVersion(out *std.Output, category spec.EnvironmentCategory) {
+	var categoryOnce *sync.Once
+	if o, ok := c.categories[category]; ok {
+		categoryOnce = o
+	} else {
+		categoryOnce = &sync.Once{}
+		c.categories[category] = categoryOnce
+	}
+
+	categoryOnce.Do(func() {
+		lockedSgVersion, err := msprepo.ToolingLockfileVersion(category)
+		if err != nil {
+			out.WriteWarningf("Unable to determine locked 'sg' version for category %q: %s",
+				category, err.Error())
+		} else if lockedSgVersion != c.version {
+			out.WriteWarningf(`Lockfile for category %q declares 'sg' version %q, you are using %q - generated outputs may differ from what is expected.
+If there is a diff in the generated output, try running the following:`,
+				category, lockedSgVersion, c.version)
+			_ = out.WriteCode("bash", fmt.Sprintf(
+				"sg update -release %q &&\n  SG_SKIP_AUTO_UPDATE=true sg msp generate -all -category %q",
+				lockedSgVersion, string(category)))
+		}
+	})
+}
+
 type generateTerraformOptions struct {
+	// tooling is used to validate the current tooling version matches what
+	// is expected, and warn the user if there is a mismatch.
+	tooling *toolingLockfileChecker
 	// targetEnv generates the specified env only, otherwise generates all
 	targetEnv string
 	// targetCategory generates the specified category only
@@ -188,6 +226,10 @@ func generateTerraform(service *spec.Spec, opts generateTerraformOptions) error 
 			continue
 		}
 
+		// Check tooling version and emit warnings
+		opts.tooling.checkCategoryVersion(std.Out, env.Category)
+
+		// Then, start our actual work
 		pending := std.Out.Pending(output.StylePending.Linef(
 			"[%s] Preparing Terraform for %q environment %q", serviceID, env.Category, env.ID))
 		renderer := managedservicesplatform.Renderer{
@@ -262,7 +304,8 @@ func generateTerraform(service *spec.Spec, opts generateTerraformOptions) error 
 		}
 
 		pending.Complete(output.Styledf(output.StyleSuccess,
-			"[%s] Infrastructure assets generated in %q!", serviceID, renderer.OutputDir))
+			"[%s] Category %q environment %q infrastructure assets generated!",
+			serviceID, env.Category, env.ID))
 	}
 
 	return nil
