@@ -12,7 +12,7 @@ and has `env` keys like `PGPASSWORD` and `PGPORT`.
 
 It's usually on the right edge of your IDE.
 
-![](./images/intellij-database-database-plugin.png)
+![](https://storage.googleapis.com/sourcegraph-assets/docs/images/dev/how-to/intellij-database-database-plugin.png)
 
 ## 2. Create a new PostgreSQL connection
 
@@ -31,7 +31,7 @@ Also enter `sourcegraph` as the database name (or the override that you're using
 Below the connection settings you can click on "Test Connection" to make sure that your drivers are working.
 IntelliJ may prompt you to download the drivers then.
 
-![](./images/intellij-database-test-connection.png)
+![](https://storage.googleapis.com/sourcegraph-assets/docs/images/dev/how-to/intellij-database-test-connection.png)
 
 ## 4. Select the sourcegraph public schemas
 
