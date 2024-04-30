@@ -9,6 +9,11 @@ import (
 
 // NewDeployment creates a new k8s Deployment with some default values set.
 func NewDeployment(name, namespace, version string) appsv1.Deployment {
+	// Note that we don't set a default spec.replicas because the default is 1
+	// anyway, and if this field is explicitly set but also managed by an HPA,
+	// configuration changes will cause downscale events. Even when the HPA
+	// subsequently scales back out, there may have been a period of service
+	// disruption as requests saturate the single replica.
 	return appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -22,7 +27,6 @@ func NewDeployment(name, namespace, version string) appsv1.Deployment {
 		},
 		Spec: appsv1.DeploymentSpec{
 			MinReadySeconds:      int32(10),
-			Replicas:             pointers.Ptr[int32](1),
 			RevisionHistoryLimit: pointers.Ptr[int32](10),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{

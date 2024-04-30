@@ -156,7 +156,15 @@
 
     registerHotkey({
         keys: { key: '/' },
-        handler: focus,
+        // Allows `/` symbol to populate input's value
+        // when input is focused
+        allowDefault: true,
+        handler: () => {
+            // If the search input doesn't have focus, focus it
+            // and disallow `/` symbol populate the input value
+            focus()
+            return false
+        },
     })
 
     $: regularExpressionEnabled = $queryState.patternType === SearchPatternType.regexp
