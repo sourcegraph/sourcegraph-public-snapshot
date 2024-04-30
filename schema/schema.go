@@ -640,14 +640,12 @@ type CodyGateway struct {
 	BigQueryTable string `json:"bigQueryTable,omitempty"`
 }
 type CodyProConfig struct {
-	// SamsBackendOrigin description: Origin of the SAMS backend. expected to be idential to the SAMS auth provider configuration.
+	// SamsBackendOrigin description: Origin of the SAMS backend. (Must match the SAMS OIDC registration in auth.providers.)
 	SamsBackendOrigin string `json:"samsBackendOrigin,omitempty"`
-	// SscBackendOrigin description: Origin of the Self-serve Cody backend
+	// SscBackendOrigin description: Origin of the Self-serve Cody backend.
 	SscBackendOrigin string `json:"sscBackendOrigin,omitempty"`
-	// StripePublishableKey description: Stripe publishable key for use in Stripe Checkout, Stripe Elements. This is not considered a secret.
+	// StripePublishableKey description: Stripe Publishable Key for use in Stripe Checkout, Stripe Elements. This is not considered a secret.
 	StripePublishableKey string `json:"stripePublishableKey,omitempty"`
-	// UseEmbeddedUI description: Whether or not to direct users to manage Cody Pro subscriptions on accounts.sourcegraph.com
-	UseEmbeddedUI bool `json:"useEmbeddedUI,omitempty"`
 }
 
 // Completions description: Configuration for the completions service.
