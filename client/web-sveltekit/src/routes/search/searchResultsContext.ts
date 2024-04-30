@@ -10,7 +10,12 @@ interface SearchResultsContext {
     setExpanded(match: SearchMatch, expanded: boolean): void
     setPreview(result: PathMatch | ContentMatch | SymbolMatch | null): void
     queryState: QueryStateStore
-    setChart(items: Readable<SectionItem[]> | undefined): void
+    setChart(props: Readable<ChartProps>): void
+}
+
+export interface ChartProps {
+    label: string
+    items: SectionItem[]
 }
 
 const CONTEXT_KEY = {}

@@ -43,7 +43,7 @@
     import Tooltip from '$lib/Tooltip.svelte'
     import Button from '$lib/wildcard/Button.svelte'
 
-    import { getSearchResultsContext } from '../../../routes/search/searchResultsContext'
+    import { getSearchResultsContext, type ChartProps } from '../../../routes/search/searchResultsContext'
 
     import HelpFooter from './HelpFooter.svelte'
     import {
@@ -91,8 +91,8 @@
     }
 
     const setChart = getSearchResultsContext().setChart
-    function handleShowChart(items: Readable<SectionItem[]>): void {
-        setChart(items)
+    function handleShowChart(props: Readable<ChartProps>): void {
+        setChart(props)
     }
 
     onMount(() => {
@@ -126,7 +126,6 @@
             title="By repository"
             filterPlaceholder="Filter repositories"
             onFilterSelect={handleFilterSelect}
-            showChart={handleShowChart}
         >
             <svelte:fragment slot="label" let:label>
                 <Tooltip tooltip={label} placement="right">

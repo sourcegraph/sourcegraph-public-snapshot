@@ -17,14 +17,14 @@
     import { mdiClose, mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
     import { onMount, tick } from 'svelte'
-    import { writable, type Readable } from 'svelte/store'
+    import { writable, type Readable, type Writable } from 'svelte/store'
 
     import { beforeNavigate, goto } from '$app/navigation'
     import { limitHit } from '$lib/branded'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
-    import type { SectionItem, URLQueryFilter } from '$lib/search/dynamicFilters'
+    import type { URLQueryFilter } from '$lib/search/dynamicFilters'
     import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
@@ -47,7 +47,7 @@
     import PreviewPanel from './PreviewPanel.svelte'
     import SearchAlert from './SearchAlert.svelte'
     import { getSearchResultComponent } from './searchResultFactory'
-    import { setSearchResultsContext } from './searchResultsContext'
+    import { setSearchResultsContext, type ChartProps } from './searchResultsContext'
     import StreamingProgress from './StreamingProgress.svelte'
 
     export let stream: Observable<AggregateStreamingSearchResults>
@@ -86,7 +86,7 @@
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
     $: previewResult = writable(cacheEntry?.preview ?? null)
-    let chartItems: Readable<SectionItem[]> | undefined = undefined
+    let chartProps: Writable<ChartProps | undefined> = writable(undefined)
 
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
@@ -103,8 +103,8 @@
             previewResult.set(result)
         },
         queryState,
-        setChart(items: Readable<SectionItem[]> | undefined): void {
-            chartItems = items
+        setChart(props: Readable<ChartProps> | undefined): void {
+            props?.subscribe(p => chartProps.set(p))
         },
     })
 
@@ -174,11 +174,20 @@
         </Panel>
         <PanelResizeHandle />
         <Panel id="search-results-content" order={2} minSize={35}>
-            {#if $chartItems}
+            {#if $chartProps !== undefined}
                 <div class="chart-view">
-                    <Button variant="icon" on:click={() => (chartItems = undefined)}><Icon svgPath={mdiClose} /></Button
-                    >
-                    <DynamicFilterChart items={$chartItems} />
+                    <div class="chart-view-header">
+                        <h2>{$chartProps.label}</h2>
+                        <Button
+                            variant="icon"
+                            on:click={() => {
+                                chartProps.set(undefined)
+                            }}
+                        >
+                            <Icon svgPath={mdiClose} />
+                        </Button>
+                    </div>
+                    <DynamicFilterChart items={$chartProps.items} />
                 </div>
             {:else}
                 <div class="results">
@@ -277,6 +286,17 @@
             margin: auto;
             color: var(--text-muted);
             margin: 2rem;
+        }
+    }
+
+    .chart-view {
+        display: flex;
+
+        &-header {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            padding: 0.5rem;
         }
     }
 </style>

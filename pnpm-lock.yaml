@@ -1551,6 +1551,9 @@ importers:
       copy-to-clipboard:
         specifier: ^3.3.1
         version: 3.3.1
+      d3-array:
+        specifier: ^3.2.4
+        version: 3.2.4
       highlight.js:
         specifier: ^10.0.0
         version: 10.7.3
@@ -1630,6 +1633,9 @@ importers:
       '@types/cookie':
         specifier: ^0.5.1
         version: 0.5.1
+      '@types/d3-array':
+        specifier: ^3.2.1
+        version: 3.2.1
       '@types/highlight.js':
         specifier: ^9.12.4
         version: 9.12.4
@@ -10803,6 +10809,10 @@ packages:
       '@types/node': 20.8.0
     dev: true
 
+  /@types/d3-array@3.2.1:
+    resolution: {integrity: sha512-Y2Jn2idRrLzUfAKV2LyRImR+y4oa2AntrgID95SHJxuMUrkNXmanDSed71sRNZysveJVt1hLLemQZIady0FpEg==}
+    dev: true
+
   /@types/d3-color@1.4.1:
     resolution: {integrity: sha512-xkPLi+gbgUU9ED6QX4g6jqYL2KCB0/3AlM+ncMGqn49OgH0gFMY/ITGqPF8HwEiLzJaC+2L0I+gNwBgABv1Pvg==}
     dev: false
@@ -14309,6 +14319,13 @@ packages:
 
   /d3-array@2.12.1:
     resolution: {integrity: sha512-B0ErZK/66mHtEsR1TkPEEkwdy+WDesimkM5gpZr5Dsg54BiTA5RXtYW5qTLIAcekaS9xfZrzBLF/OAkB3Qn1YQ==}
+    dependencies:
+      internmap: 1.0.1
+    dev: false
+
+  /d3-array@3.2.4:
+    resolution: {integrity: sha512-tdQAmyA18i4J7wprpYq8ClcxZy3SC31QMeByyCFyRt7BVHdREQZ5lpzoe5mFEYZUWe+oq8HBvk9JjpibyEV4Jg==}
+    engines: {node: '>=12'}
     dependencies:
       internmap: 1.0.1
     dev: false
