@@ -774,22 +774,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1Orbcj0KYG7fCPz1GsPei3n1sY88=",
+        "checksum": "Q1EHxLiPF/RPB+iyuLdfnuJrClBI8=",
         "control": {
-          "checksum": "sha1-Orbcj0KYG7fCPz1GsPei3n1sY88=",
-          "range": "bytes=700-1135"
+          "checksum": "sha1-EHxLiPF/RPB+iyuLdfnuJrClBI8=",
+          "range": "bytes=698-1141"
         },
         "data": {
-          "checksum": "sha256-jFoDHbGtFJRr7sf+/2PlhKbw5PJBX/Ww6/LKIvTY0O0=",
-          "range": "bytes=1136-16782419"
+          "checksum": "sha256-6uQ2G7IO+CGyLXqGdy4GyrD6omhVjAMGtbOAQ7sQvzs=",
+          "range": "bytes=1142-17230695"
         },
         "name": "git",
         "signature": {
-          "checksum": "sha1-pz9/c6n1awUybxiKxsR1jYNtYZY=",
-          "range": "bytes=0-699"
+          "checksum": "sha1-5uyatnjZoM1HlRB/1cXY7dhv7wc=",
+          "range": "bytes=0-697"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/git-2.44.0-r0.apk",
-        "version": "2.44.0-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/git-2.45.0-r0.apk",
+        "version": "2.45.0-r0"
       },
       {
         "architecture": "x86_64",
@@ -907,22 +907,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1Qw/3QqSUVfXMObQRB1Q/OR2E2Pk=",
+        "checksum": "Q1/q4iRR0kFQhST5iHlgi2w4Zt3TM=",
         "control": {
-          "checksum": "sha1-Qw/3QqSUVfXMObQRB1Q/OR2E2Pk=",
-          "range": "bytes=660-1019"
+          "checksum": "sha1-/q4iRR0kFQhST5iHlgi2w4Zt3TM=",
+          "range": "bytes=705-1075"
         },
         "data": {
-          "checksum": "sha256-Acu4swCJY4zVqLGpjN7PJzQ6juyZajEZ/xlJeahCk4k=",
-          "range": "bytes=1020-173298"
+          "checksum": "sha256-PB4kZxW7fNTAR5P4/fGxCQXlgQzxjFC+vUy52A/URps=",
+          "range": "bytes=1076-169676"
         },
         "name": "mailcap",
         "signature": {
-          "checksum": "sha1-fFIHN05okWjQyXdVrXiU2HpqEC4=",
-          "range": "bytes=0-659"
+          "checksum": "sha1-tL83mkJEkF1dOLrC/pdpyKifJNc=",
+          "range": "bytes=0-704"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/mailcap-2.1.54-r0.apk",
-        "version": "2.1.54-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/mailcap-2.1.54-r1.apk",
+        "version": "2.1.54-r1"
       },
       {
         "architecture": "x86_64",
@@ -964,22 +964,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1oX1h9TIDGTLETKClCLgkwAXqXmI=",
+        "checksum": "Q15+obuVfVP8vIn8IdzZyK8hYO7ik=",
         "control": {
-          "checksum": "sha1-oX1h9TIDGTLETKClCLgkwAXqXmI=",
-          "range": "bytes=703-1059"
+          "checksum": "sha1-5+obuVfVP8vIn8IdzZyK8hYO7ik=",
+          "range": "bytes=697-1055"
         },
         "data": {
-          "checksum": "sha256-LVvxvpznc+qM19GIABlreJ29G1v5sGdqLUBL+BQGHvc=",
-          "range": "bytes=1060-9195881"
+          "checksum": "sha256-rJt8M8/D+h5NjRD1DuJbdNkP4OnhyziJItwHMIXYMTM=",
+          "range": "bytes=1056-8896207"
         },
         "name": "npm",
         "signature": {
-          "checksum": "sha1-zqCBoJe1we9P1scmx/TrFXSBmVk=",
-          "range": "bytes=0-702"
+          "checksum": "sha1-l9TjTolPjWndOxHnQQPJKSwP1qQ=",
+          "range": "bytes=0-696"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/npm-10.5.2-r0.apk",
-        "version": "10.5.2-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/npm-10.6.0-r0.apk",
+        "version": "10.6.0-r0"
       },
       {
         "architecture": "x86_64",

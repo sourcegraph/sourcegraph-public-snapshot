@@ -774,22 +774,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1Qw/3QqSUVfXMObQRB1Q/OR2E2Pk=",
+        "checksum": "Q1/q4iRR0kFQhST5iHlgi2w4Zt3TM=",
         "control": {
-          "checksum": "sha1-Qw/3QqSUVfXMObQRB1Q/OR2E2Pk=",
-          "range": "bytes=660-1019"
+          "checksum": "sha1-/q4iRR0kFQhST5iHlgi2w4Zt3TM=",
+          "range": "bytes=705-1075"
         },
         "data": {
-          "checksum": "sha256-Acu4swCJY4zVqLGpjN7PJzQ6juyZajEZ/xlJeahCk4k=",
-          "range": "bytes=1020-173298"
+          "checksum": "sha256-PB4kZxW7fNTAR5P4/fGxCQXlgQzxjFC+vUy52A/URps=",
+          "range": "bytes=1076-169676"
         },
         "name": "mailcap",
         "signature": {
-          "checksum": "sha1-fFIHN05okWjQyXdVrXiU2HpqEC4=",
-          "range": "bytes=0-659"
+          "checksum": "sha1-tL83mkJEkF1dOLrC/pdpyKifJNc=",
+          "range": "bytes=0-704"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/mailcap-2.1.54-r0.apk",
-        "version": "2.1.54-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/mailcap-2.1.54-r1.apk",
+        "version": "2.1.54-r1"
       },
       {
         "architecture": "x86_64",

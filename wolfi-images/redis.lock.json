@@ -736,22 +736,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1Qw/3QqSUVfXMObQRB1Q/OR2E2Pk=",
+        "checksum": "Q1/q4iRR0kFQhST5iHlgi2w4Zt3TM=",
         "control": {
-          "checksum": "sha1-Qw/3QqSUVfXMObQRB1Q/OR2E2Pk=",
-          "range": "bytes=660-1019"
+          "checksum": "sha1-/q4iRR0kFQhST5iHlgi2w4Zt3TM=",
+          "range": "bytes=705-1075"
         },
         "data": {
-          "checksum": "sha256-Acu4swCJY4zVqLGpjN7PJzQ6juyZajEZ/xlJeahCk4k=",
-          "range": "bytes=1020-173298"
+          "checksum": "sha256-PB4kZxW7fNTAR5P4/fGxCQXlgQzxjFC+vUy52A/URps=",
+          "range": "bytes=1076-169676"
         },
         "name": "mailcap",
         "signature": {
-          "checksum": "sha1-fFIHN05okWjQyXdVrXiU2HpqEC4=",
-          "range": "bytes=0-659"
+          "checksum": "sha1-tL83mkJEkF1dOLrC/pdpyKifJNc=",
+          "range": "bytes=0-704"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/mailcap-2.1.54-r0.apk",
-        "version": "2.1.54-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/mailcap-2.1.54-r1.apk",
+        "version": "2.1.54-r1"
       },
       {
         "architecture": "x86_64",
@@ -793,22 +793,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1rCafcQ7IynpQj60X+daVyjn0W14=",
+        "checksum": "Q1q7Ljv/xCPRBWPKJnlbLeS40ahj0=",
         "control": {
-          "checksum": "sha1-rCafcQ7IynpQj60X+daVyjn0W14=",
-          "range": "bytes=702-1265"
+          "checksum": "sha1-q7Ljv/xCPRBWPKJnlbLeS40ahj0=",
+          "range": "bytes=704-1279"
         },
         "data": {
-          "checksum": "sha256-rJP0/i6ZLdqfq2RtGXCVDZpuLpVpDafoKAz79+rnDTw=",
-          "range": "bytes=1266-2075835"
+          "checksum": "sha256-Lrk6cGl2NYmLRFKgGuAmBgc/RPao4219lXbH5zyC1Ro=",
+          "range": "bytes=1280-2043444"
         },
         "name": "bash",
         "signature": {
-          "checksum": "sha1-lHwzJAuRM+tLR42naP59XMspXvw=",
-          "range": "bytes=0-701"
+          "checksum": "sha1-QsoeahC4nNKQnLss4vaFdSu7JHY=",
+          "range": "bytes=0-703"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/bash-5.2.21-r1.apk",
-        "version": "5.2.21-r1"
+        "url": "https://packages.wolfi.dev/os/x86_64/bash-5.2.21-r2.apk",
+        "version": "5.2.21-r2"
       },
       {
         "architecture": "x86_64",
