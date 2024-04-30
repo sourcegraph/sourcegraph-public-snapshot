@@ -422,7 +422,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => (
-                    <CodyIgnoreProvider isSourcegraphDotCom={props.isSourcegraphDotCom} isRepositoryRelatedPage={true}>
+                    <CodyIgnoreProvider isSourcegraphDotCom={props.isSourcegraphDotCom}>
                         <CodySidebarStoreProvider
                             authenticatedUser={props.authenticatedUser}
                             telemetryRecorder={props.platformContext.telemetryRecorder}

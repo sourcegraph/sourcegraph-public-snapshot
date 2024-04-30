@@ -1,16 +1,15 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useMemo, useContext, useEffect, useState } from 'react'
 
-import { useLocation } from 'react-router-dom'
+import { type ApolloClient, type ApolloQueryResult, useApolloClient } from '@apollo/client'
 
-import { useQuery, gql } from '@sourcegraph/http-client'
+import { useQuery, gql, getDocumentNode } from '@sourcegraph/http-client'
 
-import {
+import type {
     CodyIgnoreContentResult,
     CodyIgnoreContentVariables,
     ContextFiltersResult,
     ContextFiltersVariables,
 } from '../graphql-operations'
-import { parseBrowserRepoURL } from '../util/url'
 
 import { isCodyEnabled } from './isCodyEnabled'
 
@@ -18,8 +17,6 @@ interface CodyIgnoreFns {
     isRepoIgnored(repoName: string): boolean
     isFileIgnored(repoName: string, filePath: string): boolean
 }
-
-type CodyIgnoreHook = (isRepositoryRelatedPage?: boolean) => CodyIgnoreFns
 
 // alwaysTrue is exported only for testing purposes.
 export const alwaysTrue = (): true => true
@@ -34,6 +31,10 @@ export const alwaysFalse = (): false => false
 const defaultCodyIgnoreFns = { isRepoIgnored: alwaysFalse, isFileIgnored: alwaysFalse }
 const CodyIgnoreContext = createContext<CodyIgnoreFns>(defaultCodyIgnoreFns)
 
+export function useCodyIgnore(): CodyIgnoreFns {
+    return useContext(CodyIgnoreContext)
+}
+
 /**
  * CodyIgnoreProvider provides {@link CodyIgnoreFns} based on the {@link isSourcegraphDotCom} prop.
  *
@@ -43,24 +44,64 @@ const CodyIgnoreContext = createContext<CodyIgnoreFns>(defaultCodyIgnoreFns)
  *
  * If Cody is not enabled, {@link defaultCodyIgnoreFns} are used.
  */
-export const CodyIgnoreProvider: React.FC<
-    React.PropsWithChildren<{ isSourcegraphDotCom: boolean; isRepositoryRelatedPage?: boolean }>
-> = ({ isSourcegraphDotCom, isRepositoryRelatedPage, children }) => {
-    const getCodyIgnoreFns = useCallback(() => {
-        if (!isCodyEnabled() || (isSourcegraphDotCom && !window.context?.experimentalFeatures.codyContextIgnore)) {
-            return () => defaultCodyIgnoreFns
+export const CodyIgnoreProvider: React.FC<React.PropsWithChildren<{ isSourcegraphDotCom: boolean }>> = ({
+    isSourcegraphDotCom,
+    children,
+}) => {
+    // Cody is not enabled, return default ignore fns.
+    if (!isCodyEnabled()) {
+        return <CodyIgnoreContext.Provider value={defaultCodyIgnoreFns}>{children}</CodyIgnoreContext.Provider>
+    }
+
+    if (isSourcegraphDotCom) {
+        // Cody Ignore is an experimental feature on dotcom. If the feature is not enabled, return default ignore fns.
+        if (!window.context?.experimentalFeatures.codyContextIgnore) {
+            return <CodyIgnoreContext.Provider value={defaultCodyIgnoreFns}>{children}</CodyIgnoreContext.Provider>
         }
-        return isSourcegraphDotCom ? useCodyIgnoreFileFromRepo : useCodyContextFiltersFromSiteConfig
-    }, [isSourcegraphDotCom])
-    return (
-        <CodyIgnoreContext.Provider value={getCodyIgnoreFns()(isRepositoryRelatedPage)}>
-            {children}
-        </CodyIgnoreContext.Provider>
-    )
+
+        return <DotcomProvider>{children}</DotcomProvider>
+    }
+
+    return <EnterpriseProvider>{children}</EnterpriseProvider>
 }
 
-export function useCodyIgnore(): CodyIgnoreFns {
-    return useContext(CodyIgnoreContext)
+/**
+ * DotcomProvider provides {@link CodyIgnoreFns} as {@link CodyIgnoreContext} value
+ * based on the {@link CODY_IGNORE_FILE_PATH} content for the given repo.
+ *
+ * Rules defined in {@link CODY_IGNORE_FILE_PATH} apply only to a given repo, thus:
+ * - {@link CodyIgnoreFns.isRepoIgnored} always returns `false`
+ * - {@link CodyIgnoreFns.isFileIgnored} returns whether the file path matches ignore rules if
+ * {@link CODY_IGNORE_FILE_PATH} exists in the repo, and `false` if it doesn't exist.
+ */
+const DotcomProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
+    const client = useApolloClient()
+    const [isFileIgnoredByRepo, setIsFileIgnoredByRepo] = useState<Record<string, CodyIgnoreFns['isFileIgnored']>>({})
+
+    const fetchCodyIgnoreContent = useMemo(() => createCodyIgnoreContentFetcher(client), [client])
+
+    const isFileIgnored: CodyIgnoreFns['isFileIgnored'] = useCallback(
+        (repoName, filePath) => {
+            // If ignore fn is defined for the repo, use it.
+            const fn = isFileIgnoredByRepo[repoName]
+            if (fn) {
+                return fn(repoName, filePath)
+            }
+
+            // If ignore fn is not defined for the repo, fetch the ignore file content and update the state.
+            void fetchCodyIgnoreContent(repoName).then(fn =>
+                setIsFileIgnoredByRepo(state => ({ ...state, [repoName]: fn }))
+            )
+
+            // Ignore file as we don't have the ignore file content yet.
+            return true
+        },
+        [isFileIgnoredByRepo, setIsFileIgnoredByRepo, fetchCodyIgnoreContent]
+    )
+
+    const fns = useMemo(() => ({ isRepoIgnored: alwaysFalse, isFileIgnored }), [isFileIgnored])
+
+    return <CodyIgnoreContext.Provider value={fns}>{children}</CodyIgnoreContext.Provider>
 }
 
 const CODY_IGNORE_CONTENT = gql`
@@ -80,48 +121,57 @@ const CODY_IGNORE_CONTENT = gql`
 const CODY_IGNORE_FILE_PATH = '.cody/ignore'
 
 /**
- * useCodyIgnoreFileFromRepo is a custom hook that fetches the current repository {@link CODY_IGNORE_FILE_PATH} content,
- * parses it following `gitignore` spec, and returns {@link CodyIgnoreFns} based on the file content.
+ * createCodyIgnoreContentFetcher creates a function that fetches {@link CODY_IGNORE_FILE_PATH} content for a given repo.
  *
- * By design only file-level ignores are supported as the ignore rules defined in {@link CODY_IGNORE_FILE_PATH} apply
- * only to the current repository, thus:
- * - {@link CodyIgnoreFns.isRepoIgnored} always returns `false`
- * - {@link CodyIgnoreFns.isFileIgnored} returns whether the file path matches ignore rules if {@link CODY_IGNORE_FILE_PATH}
- * exists in the repository, and `false` if it doesn't exist.
+ * If an error occurs when fetching the content, the function returns {@link alwaysTrue} function.
+ *
+ * If the content is fetched successfully, the function returns:
+ * - if the ignore file exists - {@link CodyIgnoreFns.isFileIgnored} function based on the ignore rules from the content
+ * - if the ignore file doesn't exist - {@link alwaysFalse} function.
+ *
+ * Function caches promises to avoid fetching the content for the same repo multiple times.
  */
-const useCodyIgnoreFileFromRepo: CodyIgnoreHook = isRepositoryRelatedPage => {
-    const location = useLocation()
-    // If the current page is repository-related, we can safely parse the repo name from the URL.
-    const repoName = isRepositoryRelatedPage
-        ? parseBrowserRepoURL(location.pathname + location.search + location.hash).repoName
-        : ''
-    const { data } = useQuery<CodyIgnoreContentResult, CodyIgnoreContentVariables>(CODY_IGNORE_CONTENT, {
-        skip: !repoName,
-        variables: { repoName, repoRev: 'HEAD', filePath: CODY_IGNORE_FILE_PATH },
-    })
-    const [fns, setFns] = useState<CodyIgnoreFns>({
-        isRepoIgnored: alwaysFalse,
-        isFileIgnored: alwaysFalse,
-    })
+function createCodyIgnoreContentFetcher(
+    client: ApolloClient<unknown>
+): (repoName: string) => Promise<CodyIgnoreFns['isFileIgnored']> {
+    const cache = new Map<string, Promise<ApolloQueryResult<CodyIgnoreContentResult>>>()
 
-    const content = data?.repository?.commit?.blob?.content
-    useEffect(() => {
-        // To dynamically import ignore parsing library, we need to call this function in `useEffect`.
-        void (async () => {
-            if (content) {
-                const ignore = (await import('ignore')).default
-                setFns({
-                    isRepoIgnored: alwaysFalse,
-                    isFileIgnored: (_repoName: string, filePath) => ignore().add(content).ignores(filePath),
-                })
-                return
-            }
+    return async (repoName: string) => {
+        let promise = cache.get(repoName)
+        if (!promise) {
+            promise = client.query<CodyIgnoreContentResult, CodyIgnoreContentVariables>({
+                query: getDocumentNode(CODY_IGNORE_CONTENT),
+                variables: { repoName, repoRev: 'HEAD', filePath: CODY_IGNORE_FILE_PATH },
+            })
+            cache.set(repoName, promise)
+        }
 
-            setFns({ isRepoIgnored: alwaysFalse, isFileIgnored: alwaysFalse })
-        })()
-    }, [content])
+        const { error, data } = await promise
 
-    return fns
+        if (error) {
+            // Error when fetching ignore file, ignore everything.
+            return alwaysTrue
+        }
+
+        const content = data?.repository?.commit?.blob?.content
+        if (content) {
+            const ignore = (await import('ignore')).default
+            return (_repoName: string, filePath: string) => ignore().add(content).ignores(filePath)
+        }
+
+        // Ignore file doesn't exist for a given repo, allow everything.
+        return alwaysFalse
+    }
+}
+
+interface CodyContextFilters {
+    include?: CodyContextFilterItem[]
+    exclude?: CodyContextFilterItem[]
+}
+
+interface CodyContextFilterItem {
+    // Regex following RE2 syntax
+    repoNamePattern: string
 }
 
 const CODY_CONTEXT_FILTERS_QUERY = gql`
@@ -134,36 +184,20 @@ const CODY_CONTEXT_FILTERS_QUERY = gql`
     }
 `
 
-interface CodyContextFilters {
-    include?: CodyContextFilterItem[]
-    exclude?: CodyContextFilterItem[]
-}
-
-interface CodyContextFilterItem {
-    // Regex following RE2 syntax
-    repoNamePattern: string
-}
-
 /**
- * useCodyContextFiltersFromSiteConfig is a custom hook that fetches {@link CodyContextFilters} from the site config
- * and returns {@link CodyIgnoreFns} based on the filters value.
- *
- * If the site config query is loading or returned an error, filters are {@link CodyIgnoreFns} are set to ignore everything.
- *
- * If {@link CodyContextFilters} are not defined in the site config, {@link CodyIgnoreFns} are set to allow everything.
- *
- * If {@link CodyContextFilters} are defined, {@link CodyIgnoreFns} are set based on the filters value.
- *
+ * EnterpriseProvider fetches {@link CodyContextFilters} from the site config and provides {@link CodyIgnoreFns} as
+ * {@link CodyIgnoreContext} value based on the filters from the site config:
+ * - If the query hasn't yet started, filters are {@link CodyIgnoreFns} are set to ignore everything.
+ * - If the site config query is loading or returned an error, filters are {@link CodyIgnoreFns} are set to ignore everything.
+ * - If {@link CodyContextFilters} are not defined in the site config, {@link CodyIgnoreFns} are set to allow everything.
+ * - If {@link CodyContextFilters} are defined, {@link CodyIgnoreFns} are set based on the filters value.
  */
-const useCodyContextFiltersFromSiteConfig: CodyIgnoreHook = () => {
+const EnterpriseProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
     const { data, error, loading } = useQuery<ContextFiltersResult, ContextFiltersVariables>(
         CODY_CONTEXT_FILTERS_QUERY,
         {}
     )
-    const [fns, setFns] = useState<CodyIgnoreFns>({
-        isRepoIgnored: alwaysFalse,
-        isFileIgnored: alwaysFalse,
-    })
+    const [fns, setFns] = useState<CodyIgnoreFns>({ isRepoIgnored: alwaysTrue, isFileIgnored: alwaysTrue })
 
     useEffect(() => {
         // To dynamically import RE2 regex parsing library, we need to call this function in `useEffect`.
@@ -186,7 +220,7 @@ const useCodyContextFiltersFromSiteConfig: CodyIgnoreHook = () => {
         })()
     }, [loading, error, data])
 
-    return fns
+    return <CodyIgnoreContext.Provider value={fns}>{children}</CodyIgnoreContext.Provider>
 }
 
 /**
