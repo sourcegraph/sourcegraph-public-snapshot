@@ -12,13 +12,6 @@ jobs:
         uses: tj-actions/changed-files@5e85e31a0187e8df23b438284aa04f21b55f1510
         with:
           files: doc/**/*.{jpg,png}
-      - name: List all changed files
-        env:
-          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
-        run: |
-          for file in ${ALL_CHANGED_FILES}; do
-            echo "$file was changed"
-          done
       - name: Check image sizes
         run: |
           IFS=' ' read -ra FILES <<< "${{ steps.changed-files.outputs.all_changed_files }}"
