@@ -2242,17 +2242,20 @@
             "stripePublishableKey": {
               "type": "string",
               "default": null,
-              "description": "Stripe publishable key for use in Stripe Checkout, Stripe Elements. This is not considered a secret."
+              "description": "Stripe Publishable Key for use in Stripe Checkout, Stripe Elements. This is not considered a secret.",
+              "examples": ["pk_test_...", "pk_live_..."]
             },
             "samsBackendOrigin": {
               "type": "string",
               "default": "",
-              "description": "Origin of the SAMS backend. (Must match the SAMS OIDC registration in auth.providers.)"
+              "description": "Origin of the SAMS backend. (Must match the SAMS OIDC registration in auth.providers.)",
+              "examples": ["https://accounts.sourcegraph.com"]
             },
             "sscBackendOrigin": {
               "type": "string",
               "default": "",
-              "description": "Origin of the Self-serve Cody backend."
+              "description": "Origin of the Self-serve Cody backend.",
+              "examples": ["https://accounts.sourcegraph.com"]
             }
           }
         }
