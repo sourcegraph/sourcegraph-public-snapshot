@@ -18,6 +18,7 @@ go_library(
         "//dev/build-tracker/config",
         "//dev/build-tracker/notify",
         "//internal/goroutine",
+        "//internal/testutil",
         "//internal/version",
         "//lib/background",
         "//lib/errors",
