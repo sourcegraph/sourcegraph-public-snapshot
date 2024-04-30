@@ -7,7 +7,7 @@ func URL(traceID string) string {
 		return ""
 	}
 	if urlRenderer == nil {
-		return "<url renderer not configured see trace.Init>"
+		return "<internal/trace.urlRenderer not configured>"
 	}
 
 	return urlRenderer(traceID)
