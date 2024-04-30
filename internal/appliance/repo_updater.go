@@ -98,7 +98,7 @@ func (r *Reconciler) reconcileRepoUpdaterDeployment(ctx context.Context, sg *Sou
 		TimeoutSeconds:   5,
 	}
 
-	podTemplate := pod.NewPodTemplate(name)
+	podTemplate := pod.NewPodTemplate(name, cfg)
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
 
 	dep := deployment.NewDeployment(name, sg.Namespace, sg.Spec.RequestedVersion)
