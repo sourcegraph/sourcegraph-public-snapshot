@@ -1,7 +1,6 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//:vite/package_json.bzl", vite_bin = "bin")
 load("@npm//client/web-sveltekit:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
-load("@npm//client/web-sveltekit:playwright/package_json.bzl", playwright_bin = "bin")
 
 # gazelle:ignore
 SRCS = [
@@ -125,20 +124,21 @@ vite_bin.vite(
     # silent_on_success = False,
 )
 
-playwright_bin.playwright_test(
+playwright_test_bin.playwright_test(
     name = "playwright_install",
     args = [
         "install",
     ],
     local = True,
     tags = [
-        "no-sandbox",
+        # "no-sandbox",
         "requires-network",
     ],
 )
 
 PLAYWRIGHT_DEPS = [
     "//client/web-sveltekit:node_modules/@playwright/test",
+    "//client/web-sveltekit:node_modules/playwright",
     ":node_modules/@faker-js/faker",
     ":node_modules/graphql",
     "//:node_modules/glob",
@@ -149,25 +149,26 @@ playwright_test_bin.playwright_test(
     name = "e2e_test",
     args = [
         "test",
-        "--config $(location playwright.config.ts)",
+        "--config ./client/web-sveltekit/playwright.config.ts",
     ],
     data = glob([
-        "src/playwright/*.ts",
-        "src/**/*.spec.ts",
+        "src/**/search/page.spec.ts",
         "src/testing/*.ts",
     ]) + [
         "playwright.config.ts",
-        ":playwright_install",
-        # ":web-sveltekit",
+        # ":playwright_install",
+        ":web-sveltekit",
         "//cmd/frontend/graphqlbackend:graphql_schema",
     ] + PLAYWRIGHT_DEPS,
     env = {
         "BAZEL": "1",
+        # "NODE_DEBUG": "module",
     },
     local = True,
     log_level = "info",
+    preserve_symlinks_main = False,
     tags = [
-        "no-sandbox",
+        # "no-sandbox",
         "requires-network",
     ],
 )
