@@ -228,6 +228,8 @@ ts_project(
         "src/cody/management/CodyManagementPage.tsx",
         "src/cody/management/SubscriptionStats.tsx",
         "src/cody/management/UseCodyInEditorSection.tsx",
+        "src/cody/management/subscription/new/CodyProCheckoutForm.tsx",
+        "src/cody/management/subscription/new/NewCodyProSubscriptionPage.tsx",
         "src/cody/onboarding/CodyOnboarding.tsx",
         "src/cody/onboarding/EditorStep.tsx",
         "src/cody/onboarding/PurposeStep.tsx",

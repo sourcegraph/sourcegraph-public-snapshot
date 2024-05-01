@@ -9,6 +9,7 @@ import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
 import { isSearchJobsEnabled } from './search-jobs/utility'
+import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
@@ -68,6 +69,10 @@ const CodyManagementPage = lazyComponent(() => import('./cody/management/CodyMan
 const CodySwitchAccountPage = lazyComponent(
     () => import('./cody/switch-account/CodySwitchAccountPage'),
     'CodySwitchAccountPage'
+)
+const NewCodyProSubscriptionPage = lazyComponent(
+    () => import('./cody/management/subscription/new/NewCodyProSubscriptionPage'),
+    'NewCodyProSubscriptionPage'
 )
 const CodySubscriptionPage = lazyComponent(
     () => import('./cody/subscription/CodySubscriptionPage'),
@@ -416,6 +421,23 @@ export const routes: RouteObject[] = [
                     <CodyManagementPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
                 )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.CodyNewProSubscription,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <NewCodyProSubscriptionPage
+                        authenticatedUser={props.authenticatedUser}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    />
+                )}
+                condition={({ isSourcegraphDotCom }) => {
+                    const [embeddedUiEnabled] = useFeatureFlag('cody-enable-embedded-cody-pro-ui', false)
+                    return isSourcegraphDotCom && embeddedUiEnabled
+                }}
             />
         ),
     },
