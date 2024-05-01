@@ -75,15 +75,17 @@
     }
     $: fileLoadingError = !$blobLoader.pending && $blobLoader.error
     $: fileNotFound = !$blobLoader.pending && !blob
-    $: codeViewMode = toCodeViewMode($page.url.searchParams.get('view'))
-    $: isFormatted = !!blob?.richHTML
-    $: showBlame = codeViewMode === CodeViewMode.Blame
-    $: showFormatted = isFormatted && codeViewMode === CodeViewMode.Default && !showBlame
-    $: isBinary = blob?.binary ?? false
-    $: showFileModeSwitcher = blob && !isBinary && !embedded
-    $: showCodeView = !isBinary && !isFormatted
+
+    $: fileViewModeFromURL = toCodeViewMode($page.url.searchParams.get('view'))
+    $: isRichFile = !!blob?.richHTML
+    $: isBinaryFile = blob?.binary ?? false
+
+    $: showFileModeSwitcher = blob && !isBinaryFile && !embedded
+    $: showFormattedView = isRichFile && fileViewModeFromURL === CodeViewMode.Default
+    $: showBlameView = fileViewModeFromURL === CodeViewMode.Blame
+
     $: codeIntelAPI =
-        showCodeView && !disableCodeIntel
+        !isBinaryFile && !showFormattedView && !disableCodeIntel
             ? createCodeIntelAPI({
                   settings: setting => (isErrorLike($settings?.final) ? undefined : $settings?.final?.[setting]),
                   requestGraphQL(options) {
@@ -96,7 +98,7 @@
         switch (viewMode) {
             case CodeViewMode.Code: {
                 const url = SourcegraphURL.from($page.url)
-                if (isFormatted) {
+                if (isRichFile) {
                     url.setSearchParameter('view', 'raw')
                 } else {
                     url.deleteSearchParameter('view')
@@ -152,7 +154,7 @@
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
             {#await data.externalServiceType then externalServiceType}
-                {#if externalServiceType && !isBinary}
+                {#if externalServiceType && !isBinaryFile}
                     <OpenInEditor {externalServiceType} />
                 {/if}
             {/await}
@@ -167,7 +169,7 @@
             </MenuLink>
             <MenuButton
                 on:click={() => lineWrap.update(wrap => !wrap)}
-                disabled={codeViewMode === CodeViewMode.Default && isFormatted}
+                disabled={fileViewModeFromURL === CodeViewMode.Default && isRichFile}
             >
                 <Icon svgPath={$lineWrap ? mdiWrap : mdiWrapDisabled} inline />
                 {$lineWrap ? 'Disable' : 'Enable'} wrapping long lines
@@ -190,15 +192,15 @@
     <div class="file-info">
         <FileViewModeSwitcher
             aria-label="View mode"
-            value={codeViewMode}
-            options={isFormatted
+            value={fileViewModeFromURL}
+            options={isRichFile
                 ? [CodeViewMode.Default, CodeViewMode.Code, CodeViewMode.Blame]
                 : [CodeViewMode.Default, CodeViewMode.Blame]}
             on:preload={event => preloadData(viewModeURL(event.detail))}
             on:change={onViewModeChange}
         >
             <svelte:fragment slot="label" let:value>
-                {value === CodeViewMode.Default ? (isFormatted ? 'Formatted' : 'Code') : capitalize(value)}
+                {value === CodeViewMode.Default ? (isRichFile ? 'Formatted' : 'Code') : capitalize(value)}
             </svelte:fragment>
         </FileViewModeSwitcher>
         {#if blob}
@@ -210,7 +212,11 @@
     </div>
 {/if}
 
-<div class="content" class:loading={$blobLoader.pending} class:center={fileLoadingError || fileNotFound || isBinary}>
+<div
+    class="content"
+    class:loading={$blobLoader.pending}
+    class:center={fileLoadingError || fileNotFound || isBinaryFile}
+>
     {#if fileLoadingError}
         <Alert variant="danger">
             Unable to load file data: {fileLoadingError.message}
@@ -220,17 +226,17 @@
             <Icon svgPath={mdiMapSearch} --icon-size="80px" />
         </div>
         <h2>File not found</h2>
-    {:else if isBinary}
+    {:else if isBinaryFile}
         <Alert variant="info">
             This is a binary file and cannot be displayed.
             <br />
             <a href="{repoURL}/-/raw/{filePath}" target="_blank" download>Download file</a>
         </Alert>
-    {:else if blob && showFormatted}
+    {:else if blob && showFormattedView}
         <div class={`rich ${markdownStyles.markdown}`}>
             {@html blob.richHTML}
         </div>
-    {:else if blob && showCodeView}
+    {:else if blob}
         <!--
             This ensures that a new CodeMirror instance is created when the file changes.
             This makes the CodeMirror behavior more predictable and avoids issues with
@@ -250,7 +256,7 @@
                     filePath,
                 }}
                 highlights={highlights?.lsif ?? ''}
-                {showBlame}
+                showBlame={showBlameView}
                 blameData={$blameData}
                 wrapLines={$lineWrap}
                 selectedLines={selectedPosition?.line ? selectedPosition : null}
