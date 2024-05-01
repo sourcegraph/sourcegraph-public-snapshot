@@ -110,7 +110,7 @@
         letter-spacing: normal;
         margin: 0;
         min-height: 2rem;
-        padding: 0.5rem 0.75rem;
+        padding: 0.25rem 0.75rem;
         color: var(--text-body);
         text-transform: none;
         display: inline-flex;

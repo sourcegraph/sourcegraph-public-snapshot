@@ -27,6 +27,7 @@ go_library(
         "@com_github_buildkite_go_buildkite_v3//buildkite",
         "@com_github_gorilla_mux//:mux",
         "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_exp//maps",
     ],
 )
 
@@ -51,6 +52,7 @@ go_test(
         "//dev/build-tracker/notify",
         "//dev/team",
         "//internal/goroutine",
+        "//lib/pointers",
         "@com_github_buildkite_go_buildkite_v3//buildkite",
         "@com_github_gorilla_mux//:mux",
         "@com_github_sourcegraph_log//logtest",

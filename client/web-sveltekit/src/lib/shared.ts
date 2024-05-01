@@ -92,11 +92,3 @@ export function displayRepoName(repoName: string): string {
     }
     return parts.join('/')
 }
-
-/**
- * Splits the repository name into the dir and base components.
- */
-export function splitPath(path: string): [string, string] {
-    const components = path.split('/')
-    return [components.slice(0, -1).join('/'), components.at(-1) ?? '']
-}

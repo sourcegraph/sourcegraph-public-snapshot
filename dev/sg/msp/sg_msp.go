@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/diagram"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
@@ -486,6 +487,29 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 							if err != nil {
 								return errors.Wrapf(err, "load service %q", s)
 							}
+
+							// Generate architecture diagrams
+							for _, e := range svc.ListEnvironmentIDs() {
+								diagram, err := diagram.New()
+								if err != nil {
+									return errors.Wrap(err, s)
+								}
+
+								err = diagram.Generate(svc, e)
+								if err != nil {
+									return errors.Wrap(err, s)
+								}
+								svg, err := diagram.Render()
+								if err != nil {
+									return errors.Wrap(err, s)
+								}
+								diagramPath := filepath.Join(handbookPath,
+									operationdocs.EnvironmentHandbookPathDiagram(s, e))
+								if err := os.WriteFile(diagramPath, []byte(svg), 0o644); err != nil {
+									return errors.Wrap(err, s)
+								}
+							}
+
 							serviceSpecs = append(serviceSpecs, svc)
 							collectedAlerts, err := collectAlertPolicies(svc)
 							opts.AlertPolicies = collectedAlerts

@@ -7,10 +7,12 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/gorilla/mux"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/log"
 
@@ -228,13 +230,12 @@ func (s *Server) triggerMetricsPipeline(b *build.Build) error {
 		return nil
 	}
 
-	var prNumber int
+	repo := strings.TrimSuffix(*b.Pipeline.Repository, ".git")
 	var prBase string
-	var repo string
+	var prNumber int
 	if b.PullRequest != nil {
-		prNumber, _ = strconv.Atoi(*b.Pipeline.ID)
+		prNumber, _ = strconv.Atoi(*b.PullRequest.ID)
 		prBase = *b.PullRequest.Base
-		repo = *b.PullRequest.Repository
 	}
 
 	devxServiceCommit, err := getDevxServiceLatestCommit(s.config.GithubToken)
@@ -242,7 +243,7 @@ func (s *Server) triggerMetricsPipeline(b *build.Build) error {
 		return err
 	}
 
-	triggered, response, err := s.bkClient.Builds.Create("sourcegraph", "devx-build-metrics", &buildkite.CreateBuild{
+	args := &buildkite.CreateBuild{
 		Commit:  devxServiceCommit,
 		Branch:  "main",
 		Message: b.GetMessage(),
@@ -253,20 +254,23 @@ func (s *Server) triggerMetricsPipeline(b *build.Build) error {
 			"DEVX_TRIGGERED_FROM_BUILD_ID":      pointers.DerefZero(b.ID),
 			"DEVX_TRIGGERED_FROM_BUILD_NUMBER":  strconv.Itoa(pointers.DerefZero(b.Number)),
 			"DEVX_TRIGGERED_FROM_PIPELINE_SLUG": pointers.DerefZero(b.Pipeline.Slug),
-			"DEVX_TRIGGERED_FROM_PR_NUMBER":     strconv.Itoa(prNumber),
-			"DEVX_TRIGGERED_FROM_PR_URL":        fmt.Sprintf("%s/pull/%d", repo, prNumber),
 			"DEVX_TRIGGERED_FROM_COMMIT":        b.GetCommit(),
 			"DEVX_TRIGGERED_FROM_COMMIT_URL":    fmt.Sprintf("%s/commit/%s", repo, b.GetCommit()),
 			"DEVX_TRIGGERED_FROM_BRANCH":        b.GetBranch(),
 			"DEVX_TRIGGERED_FROM_BRANCH_URL":    fmt.Sprintf("%s/tree/%s", repo, b.GetBranch()),
-			"DEVX_TRIGGERED_FROM_BASE_BRANCH":   prBase,
 		},
 		MetaData: map[string]string{},
-		// is this problematic if the pipeline repo is different to these values?
-		PullRequestID:         int64(prNumber),
-		PullRequestBaseBranch: prBase,
-		PullRequestRepository: repo,
-	})
+	}
+
+	if prNumber != 0 {
+		maps.Copy(args.Env, map[string]string{
+			"DEVX_TRIGGERED_FROM_PR_NUMBER":   strconv.Itoa(prNumber),
+			"DEVX_TRIGGERED_FROM_PR_URL":      fmt.Sprintf("%s/pull/%d", repo, prNumber),
+			"DEVX_TRIGGERED_FROM_BASE_BRANCH": prBase,
+		})
+	}
+
+	triggered, response, err := s.bkClient.Builds.Create("sourcegraph", "devx-build-metrics", args)
 	if err != nil {
 		return errors.Wrap(err, "error triggering job")
 	}

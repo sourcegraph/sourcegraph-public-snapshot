@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "appliance.go",
         "blobstore.go",
+        "defaults.go",
         "grpc.go",
         "kubernetes.go",
         "reconcile.go",
