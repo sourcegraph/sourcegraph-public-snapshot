@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-    import { mdiFile, mdiNull, mdiShape } from '@mdi/js'
+    import { mdiFileCodeOutline, mdiNull, mdiShape } from '@mdi/js'
 
     import { SymbolKind } from '$lib/graphql-types'
 
@@ -31,7 +31,7 @@
     ])
 
     const SymbolKindSymbols = new Map([
-        [SymbolKind.FILE, mdiFile],
+        [SymbolKind.FILE, mdiFileCodeOutline],
         [SymbolKind.NULL, mdiNull],
     ])
 
@@ -74,10 +74,6 @@
 </script>
 
 <script lang="ts">
-    // import Icon from '$lib/Icon.svelte'
-    // import { settings } from '$lib/stores'
-
-    import Icon from '$lib/Icon.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
 
     import { humanReadableSymbolKind } from './symbolUtils'
@@ -100,7 +96,7 @@
                 >{AbbreviatedSymbolKinds.get(symbolKind)}</text
             >
         {:else}
-            <path transform="scale(.75) translate(4, 4)" d={SymbolKindSymbols.get(symbolKind) ?? mdiShape} />
+            <path transform="scale(.66) translate(6, 6)" d={SymbolKindSymbols.get(symbolKind) ?? mdiShape} />
         {/if}
     </svg>
 </Tooltip>
@@ -111,17 +107,18 @@
     svg {
         --color: var(--text-muted);
         &.module {
-            --color: #237332;
+            --color: var(--oc-teal-8);
         }
         &.class {
-            --color: #f76707;
+            --color: var(--oc-orange-8);
         }
         &.function {
-            --color: #0b70db;
+            --color: var(--oc-violet-8);
         }
         &.variable {
-            --color: #005766;
+            --color: var(--oc-blue-8);
         }
+
         width: $size;
         height: $size;
         box-sizing: border-box;
