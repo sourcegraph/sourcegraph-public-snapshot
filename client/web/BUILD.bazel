@@ -2102,6 +2102,10 @@ ESBUILD_CONFIG_DEPS = [
 
     # HACKS: bundle-time css import
     "//:node_modules/open-color",
+
+    # Stripe dependency for Sourcegraph.com
+    ":node_modules/@stripe/stripe-js",
+    ":node_modules/@stripe/react-stripe-js",
 ]
 
 # Bundled data which was replaced with *.d.ts files at ts compiletime
