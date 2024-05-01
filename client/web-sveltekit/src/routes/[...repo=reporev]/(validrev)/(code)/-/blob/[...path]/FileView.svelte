@@ -270,7 +270,6 @@
     .content {
         overflow: auto;
         flex: 1;
-        background-color: var(--color-bg-1);
 
         &.center {
             display: flex;
@@ -280,7 +279,6 @@
     }
 
     .file-info {
-        background: var(--color-bg-1);
         padding: 0.5rem;
         color: var(--text-muted);
         display: flex;

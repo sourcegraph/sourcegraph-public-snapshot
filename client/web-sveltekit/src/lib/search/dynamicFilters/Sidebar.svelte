@@ -195,7 +195,7 @@
     .scroll-container {
         padding-top: 1rem;
         height: 100%;
-        background-color: var(--sidebar-bg);
+        background-color: var(--color-bg-1);
         overflow-y: auto;
 
         display: flex;

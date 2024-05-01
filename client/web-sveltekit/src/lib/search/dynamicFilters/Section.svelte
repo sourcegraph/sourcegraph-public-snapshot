@@ -153,10 +153,15 @@
             flex: 1;
             text-overflow: ellipsis;
             overflow: hidden;
+            color: var(--text-body);
         }
 
         &:hover {
             background-color: var(--secondary-2);
+
+            .label {
+                color: var(--text-title);
+            }
         }
 
         &.selected {

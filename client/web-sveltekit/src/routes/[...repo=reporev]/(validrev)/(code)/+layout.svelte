@@ -208,7 +208,6 @@
     section {
         display: flex;
         flex: 1;
-        background-color: var(--code-bg);
         overflow: hidden;
     }
 
@@ -266,7 +265,7 @@
         overflow: hidden;
         border-top: 1px solid var(--border-color);
         box-shadow: var(--bottom-panel-shadow);
-        background-color: var(--code-bg);
+        background-color: var(--color-bg-1);
         padding: 0 0.25rem;
 
         &.open {
