@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/build"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/config"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -38,17 +39,30 @@ type Server struct {
 	store        *build.Store
 	config       *config.Config
 	notifyClient notify.NotificationClient
+	bkClient     *buildkite.Client
 	http         *http.Server
 }
 
 // NewServer creatse a new server to listen for Buildkite webhook events.
 func NewServer(addr string, logger log.Logger, c config.Config) *Server {
 	logger = logger.Scoped("server")
+
+	if testutil.IsTest && c.BuildkiteToken == "" {
+		// buildkite.NewTokenConfig will complain even though we don't care
+		c.BuildkiteToken = " "
+	}
+
+	bk, err := buildkite.NewTokenConfig(c.BuildkiteToken, false)
+	if err != nil {
+		panic(err)
+	}
+
 	server := &Server{
 		logger:       logger,
 		store:        build.NewBuildStore(logger),
 		config:       &c,
 		notifyClient: notify.NewClient(logger, c.SlackToken, c.SlackChannel),
+		bkClient:     buildkite.NewClient(bk.Client()),
 	}
 
 	// Register routes the the server will be responding too
@@ -214,13 +228,6 @@ func (s *Server) triggerMetricsPipeline(b *build.Build) error {
 		return nil
 	}
 
-	bk, err := buildkite.NewTokenConfig(s.config.BuildkiteToken, false)
-	if err != nil {
-		return err
-	}
-
-	client := buildkite.NewClient(bk.Client())
-
 	var prNumber int
 	var prBase string
 	var repo string
@@ -230,9 +237,14 @@ func (s *Server) triggerMetricsPipeline(b *build.Build) error {
 		repo = *b.PullRequest.Repository
 	}
 
-	triggered, response, err := client.Builds.Create("sourcegraph", "devx-build-metrics", &buildkite.CreateBuild{
-		Commit:  b.GetCommit(),
-		Branch:  b.GetBranch(),
+	devxServiceCommit, err := getDevxServiceLatestCommit(s.config.GithubToken)
+	if err != nil {
+		return err
+	}
+
+	triggered, response, err := s.bkClient.Builds.Create("sourcegraph", "devx-build-metrics", &buildkite.CreateBuild{
+		Commit:  devxServiceCommit,
+		Branch:  "main",
 		Message: b.GetMessage(),
 		Author:  b.GetCommitAuthor(),
 		// TODO: do we need to clone b.Env?
@@ -241,8 +253,16 @@ func (s *Server) triggerMetricsPipeline(b *build.Build) error {
 			"DEVX_TRIGGERED_FROM_BUILD_ID":      pointers.DerefZero(b.ID),
 			"DEVX_TRIGGERED_FROM_BUILD_NUMBER":  strconv.Itoa(pointers.DerefZero(b.Number)),
 			"DEVX_TRIGGERED_FROM_PIPELINE_SLUG": pointers.DerefZero(b.Pipeline.Slug),
+			"DEVX_TRIGGERED_FROM_PR_NUMBER":     strconv.Itoa(prNumber),
+			"DEVX_TRIGGERED_FROM_PR_URL":        fmt.Sprintf("%s/pull/%d", repo, prNumber),
+			"DEVX_TRIGGERED_FROM_COMMIT":        b.GetCommit(),
+			"DEVX_TRIGGERED_FROM_COMMIT_URL":    fmt.Sprintf("%s/commit/%s", repo, b.GetCommit()),
+			"DEVX_TRIGGERED_FROM_BRANCH":        b.GetBranch(),
+			"DEVX_TRIGGERED_FROM_BRANCH_URL":    fmt.Sprintf("%s/tree/%s", repo, b.GetBranch()),
+			"DEVX_TRIGGERED_FROM_BASE_BRANCH":   prBase,
 		},
-		MetaData:              map[string]string{},
+		MetaData: map[string]string{},
+		// is this problematic if the pipeline repo is different to these values?
 		PullRequestID:         int64(prNumber),
 		PullRequestBaseBranch: prBase,
 		PullRequestRepository: repo,
@@ -329,6 +349,39 @@ func determineBuildStatusNotification(logger log.Logger, b *build.Build) *notify
 		info.BuildStatus = string(build.BuildPassed)
 	}
 	return &info
+}
+
+func getDevxServiceLatestCommit(token string) (string, error) {
+	req, err := http.NewRequest(http.MethodGet, "https://api.github.com/repos/sourcegraph/devx-service/branches/main", nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Authorization", "Bearer "+token)
+	req.Header.Add("Accept", "application/vnd.github+json")
+	// I d as the docs command https://docs.github.com/en/rest/branches/branches#get-a-branch
+	req.Header.Add("X-GitHub-Api-Version", "2022-11-28")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.Newf("unexpected response from GitHub: %d", resp.StatusCode)
+	}
+
+	var respData struct {
+		Commit struct {
+			SHA string `json:"sha"`
+		} `json:"commit"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
+		return "", err
+	}
+
+	return respData.Commit.SHA, nil
 }
 
 func main() {
