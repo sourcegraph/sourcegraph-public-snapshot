@@ -81,6 +81,7 @@
 
         span {
             color: var(--text-muted);
+            padding: 0.125rem 0;
         }
     }
 </style>
