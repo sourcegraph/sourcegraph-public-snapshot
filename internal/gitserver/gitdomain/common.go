@@ -445,7 +445,7 @@ type BehindAhead struct {
 	Ahead  uint32 `json:"Ahead,omitempty"`
 }
 
-func BehindAheadFromProto(p *proto.GetBehindAheadResponse) *BehindAhead {
+func BehindAheadFromProto(p *proto.BehindAheadResponse) *BehindAhead {
 	if p == nil {
 		return nil
 	}
@@ -456,11 +456,11 @@ func BehindAheadFromProto(p *proto.GetBehindAheadResponse) *BehindAhead {
 	}
 }
 
-func (b *BehindAhead) ToProto() *proto.GetBehindAheadResponse {
+func (b *BehindAhead) ToProto() *proto.BehindAheadResponse {
 	if b == nil {
 		return nil
 	}
-	return &proto.GetBehindAheadResponse{
+	return &proto.BehindAheadResponse{
 		Behind: b.Behind,
 		Ahead:  b.Ahead,
 	}

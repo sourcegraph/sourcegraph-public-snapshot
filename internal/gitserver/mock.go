@@ -23,6 +23,9 @@ type MockGitserverServiceClient struct {
 	// ArchiveFunc is an instance of a mock function object controlling the
 	// behavior of the method Archive.
 	ArchiveFunc *GitserverServiceClientArchiveFunc
+	// BehindAheadFunc is an instance of a mock function object controlling
+	// the behavior of the method BehindAhead.
+	BehindAheadFunc *GitserverServiceClientBehindAheadFunc
 	// BlameFunc is an instance of a mock function object controlling the
 	// behavior of the method Blame.
 	BlameFunc *GitserverServiceClientBlameFunc
@@ -48,9 +51,6 @@ type MockGitserverServiceClient struct {
 	// FirstEverCommitFunc is an instance of a mock function object
 	// controlling the behavior of the method FirstEverCommit.
 	FirstEverCommitFunc *GitserverServiceClientFirstEverCommitFunc
-	// GetBehindAheadFunc is an instance of a mock function object
-	// controlling the behavior of the method GetBehindAhead.
-	GetBehindAheadFunc *GitserverServiceClientGetBehindAheadFunc
 	// GetCommitFunc is an instance of a mock function object controlling
 	// the behavior of the method GetCommit.
 	GetCommitFunc *GitserverServiceClientGetCommitFunc
@@ -120,6 +120,11 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 				return
 			},
 		},
+		BehindAheadFunc: &GitserverServiceClientBehindAheadFunc{
+			defaultHook: func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (r0 *v1.BehindAheadResponse, r1 error) {
+				return
+			},
+		},
 		BlameFunc: &GitserverServiceClientBlameFunc{
 			defaultHook: func(context.Context, *v1.BlameRequest, ...grpc.CallOption) (r0 v1.GitserverService_BlameClient, r1 error) {
 				return
@@ -157,11 +162,6 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 		},
 		FirstEverCommitFunc: &GitserverServiceClientFirstEverCommitFunc{
 			defaultHook: func(context.Context, *v1.FirstEverCommitRequest, ...grpc.CallOption) (r0 *v1.FirstEverCommitResponse, r1 error) {
-				return
-			},
-		},
-		GetBehindAheadFunc: &GitserverServiceClientGetBehindAheadFunc{
-			defaultHook: func(context.Context, *v1.GetBehindAheadRequest, ...grpc.CallOption) (r0 *v1.GetBehindAheadResponse, r1 error) {
 				return
 			},
 		},
@@ -273,6 +273,11 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.Archive")
 			},
 		},
+		BehindAheadFunc: &GitserverServiceClientBehindAheadFunc{
+			defaultHook: func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.BehindAhead")
+			},
+		},
 		BlameFunc: &GitserverServiceClientBlameFunc{
 			defaultHook: func(context.Context, *v1.BlameRequest, ...grpc.CallOption) (v1.GitserverService_BlameClient, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.Blame")
@@ -311,11 +316,6 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 		FirstEverCommitFunc: &GitserverServiceClientFirstEverCommitFunc{
 			defaultHook: func(context.Context, *v1.FirstEverCommitRequest, ...grpc.CallOption) (*v1.FirstEverCommitResponse, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.FirstEverCommit")
-			},
-		},
-		GetBehindAheadFunc: &GitserverServiceClientGetBehindAheadFunc{
-			defaultHook: func(context.Context, *v1.GetBehindAheadRequest, ...grpc.CallOption) (*v1.GetBehindAheadResponse, error) {
-				panic("unexpected invocation of MockGitserverServiceClient.GetBehindAhead")
 			},
 		},
 		GetCommitFunc: &GitserverServiceClientGetCommitFunc{
@@ -424,6 +424,9 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		ArchiveFunc: &GitserverServiceClientArchiveFunc{
 			defaultHook: i.Archive,
 		},
+		BehindAheadFunc: &GitserverServiceClientBehindAheadFunc{
+			defaultHook: i.BehindAhead,
+		},
 		BlameFunc: &GitserverServiceClientBlameFunc{
 			defaultHook: i.Blame,
 		},
@@ -447,9 +450,6 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		},
 		FirstEverCommitFunc: &GitserverServiceClientFirstEverCommitFunc{
 			defaultHook: i.FirstEverCommit,
-		},
-		GetBehindAheadFunc: &GitserverServiceClientGetBehindAheadFunc{
-			defaultHook: i.GetBehindAhead,
 		},
 		GetCommitFunc: &GitserverServiceClientGetCommitFunc{
 			defaultHook: i.GetCommit,
@@ -627,6 +627,127 @@ func (c GitserverServiceClientArchiveFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientArchiveFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverServiceClientBehindAheadFunc describes the behavior when the
+// BehindAhead method of the parent MockGitserverServiceClient instance is
+// invoked.
+type GitserverServiceClientBehindAheadFunc struct {
+	defaultHook func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error)
+	hooks       []func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error)
+	history     []GitserverServiceClientBehindAheadFuncCall
+	mutex       sync.Mutex
+}
+
+// BehindAhead delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) BehindAhead(v0 context.Context, v1 *v1.BehindAheadRequest, v2 ...grpc.CallOption) (*v1.BehindAheadResponse, error) {
+	r0, r1 := m.BehindAheadFunc.nextHook()(v0, v1, v2...)
+	m.BehindAheadFunc.appendCall(GitserverServiceClientBehindAheadFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the BehindAhead method
+// of the parent MockGitserverServiceClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverServiceClientBehindAheadFunc) SetDefaultHook(hook func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BehindAhead method of the parent MockGitserverServiceClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverServiceClientBehindAheadFunc) PushHook(hook func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientBehindAheadFunc) SetDefaultReturn(r0 *v1.BehindAheadResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientBehindAheadFunc) PushReturn(r0 *v1.BehindAheadResponse, r1 error) {
+	f.PushHook(func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientBehindAheadFunc) nextHook() func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientBehindAheadFunc) appendCall(r0 GitserverServiceClientBehindAheadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverServiceClientBehindAheadFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverServiceClientBehindAheadFunc) History() []GitserverServiceClientBehindAheadFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientBehindAheadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientBehindAheadFuncCall is an object that describes an
+// invocation of method BehindAhead on an instance of
+// MockGitserverServiceClient.
+type GitserverServiceClientBehindAheadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.BehindAheadRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.BehindAheadResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientBehindAheadFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientBehindAheadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -1590,128 +1711,6 @@ func (c GitserverServiceClientFirstEverCommitFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientFirstEverCommitFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverServiceClientGetBehindAheadFunc describes the behavior when the
-// GetBehindAhead method of the parent MockGitserverServiceClient instance
-// is invoked.
-type GitserverServiceClientGetBehindAheadFunc struct {
-	defaultHook func(context.Context, *v1.GetBehindAheadRequest, ...grpc.CallOption) (*v1.GetBehindAheadResponse, error)
-	hooks       []func(context.Context, *v1.GetBehindAheadRequest, ...grpc.CallOption) (*v1.GetBehindAheadResponse, error)
-	history     []GitserverServiceClientGetBehindAheadFuncCall
-	mutex       sync.Mutex
-}
-
-// GetBehindAhead delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockGitserverServiceClient) GetBehindAhead(v0 context.Context, v1 *v1.GetBehindAheadRequest, v2 ...grpc.CallOption) (*v1.GetBehindAheadResponse, error) {
-	r0, r1 := m.GetBehindAheadFunc.nextHook()(v0, v1, v2...)
-	m.GetBehindAheadFunc.appendCall(GitserverServiceClientGetBehindAheadFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetBehindAhead
-// method of the parent MockGitserverServiceClient instance is invoked and
-// the hook queue is empty.
-func (f *GitserverServiceClientGetBehindAheadFunc) SetDefaultHook(hook func(context.Context, *v1.GetBehindAheadRequest, ...grpc.CallOption) (*v1.GetBehindAheadResponse, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetBehindAhead method of the parent MockGitserverServiceClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitserverServiceClientGetBehindAheadFunc) PushHook(hook func(context.Context, *v1.GetBehindAheadRequest, ...grpc.CallOption) (*v1.GetBehindAheadResponse, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverServiceClientGetBehindAheadFunc) SetDefaultReturn(r0 *v1.GetBehindAheadResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, *v1.GetBehindAheadRequest, ...grpc.CallOption) (*v1.GetBehindAheadResponse, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverServiceClientGetBehindAheadFunc) PushReturn(r0 *v1.GetBehindAheadResponse, r1 error) {
-	f.PushHook(func(context.Context, *v1.GetBehindAheadRequest, ...grpc.CallOption) (*v1.GetBehindAheadResponse, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverServiceClientGetBehindAheadFunc) nextHook() func(context.Context, *v1.GetBehindAheadRequest, ...grpc.CallOption) (*v1.GetBehindAheadResponse, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverServiceClientGetBehindAheadFunc) appendCall(r0 GitserverServiceClientGetBehindAheadFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// GitserverServiceClientGetBehindAheadFuncCall objects describing the
-// invocations of this function.
-func (f *GitserverServiceClientGetBehindAheadFunc) History() []GitserverServiceClientGetBehindAheadFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverServiceClientGetBehindAheadFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverServiceClientGetBehindAheadFuncCall is an object that describes
-// an invocation of method GetBehindAhead on an instance of
-// MockGitserverServiceClient.
-type GitserverServiceClientGetBehindAheadFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *v1.GetBehindAheadRequest
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []grpc.CallOption
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *v1.GetBehindAheadResponse
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitserverServiceClientGetBehindAheadFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverServiceClientGetBehindAheadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

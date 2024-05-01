@@ -484,9 +484,9 @@ type Client interface {
 	// exists.
 	GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (*gitdomain.Commit, error)
 
-	// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+	// BehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 	// revspecs).
-	GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error)
+	BehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error)
 
 	// ContributorCount returns the number of commits grouped by contributor
 	ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error)

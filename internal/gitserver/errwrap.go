@@ -324,8 +324,8 @@ func (r *errorTranslatingClient) FirstEverCommit(ctx context.Context, in *proto.
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
-func (r *errorTranslatingClient) GetBehindAhead(ctx context.Context, in *proto.GetBehindAheadRequest, opts ...grpc.CallOption) (*proto.GetBehindAheadResponse, error) {
-	res, err := r.base.GetBehindAhead(ctx, in, opts...)
+func (r *errorTranslatingClient) BehindAhead(ctx context.Context, in *proto.BehindAheadRequest, opts ...grpc.CallOption) (*proto.BehindAheadResponse, error) {
+	res, err := r.base.BehindAhead(ctx, in, opts...)
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 

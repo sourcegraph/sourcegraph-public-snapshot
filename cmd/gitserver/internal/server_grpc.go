@@ -1384,8 +1384,9 @@ func (gs *grpcServer) FirstEverCommit(ctx context.Context, request *proto.FirstE
 				Spec: revisionErr.Spec,
 			})
 			if err != nil {
-		log.String("base", string(req.GetBase())),
-		log.String("head", string(req.GetHead())),
+				return nil, err
+			}
+
 			return nil, s.Err()
 		}
 
@@ -1398,12 +1399,12 @@ func (gs *grpcServer) FirstEverCommit(ctx context.Context, request *proto.FirstE
 	}, nil
 }
 
-func (gs *grpcServer) GetBehindAhead(ctx context.Context, req *proto.GetBehindAheadRequest) (*proto.GetBehindAheadResponse, error) {
+func (gs *grpcServer) BehindAhead(ctx context.Context, req *proto.BehindAheadRequest) (*proto.BehindAheadResponse, error) {
 	accesslog.Record(
 		ctx,
 		req.GetRepoName(),
-		log.String("left", string(req.GetBase())),
-		log.String("right", string(req.GetHead())),
+		log.String("left", string(req.GetLeft())),
+		log.String("right", string(req.GetRight())),
 	)
 
 	if req.GetRepoName() == "" {
@@ -1419,7 +1420,7 @@ func (gs *grpcServer) GetBehindAhead(ctx context.Context, req *proto.GetBehindAh
 
 	backend := gs.getBackendFunc(repoDir, repoName)
 
-	behindAhead, err := backend.GetBehindAhead(ctx, string(req.GetBase()), string(req.GetHead()))
+	behindAhead, err := backend.BehindAhead(ctx, string(req.GetLeft()), string(req.GetRight()))
 	if err != nil {
 		if gitdomain.IsRevisionNotFoundError(err) {
 			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
@@ -1436,10 +1437,7 @@ func (gs *grpcServer) GetBehindAhead(ctx context.Context, req *proto.GetBehindAh
 		return nil, err
 	}
 
-	return &proto.GetBehindAheadResponse{
-		Behind: behindAhead.Behind,
-		Ahead:  behindAhead.Ahead,
-	}, nil
+	return behindAhead.ToProto(), nil
 }
 
 // checkRepoExists checks if a given repository is cloned on disk, and returns an

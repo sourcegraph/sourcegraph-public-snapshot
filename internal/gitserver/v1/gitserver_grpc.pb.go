@@ -183,7 +183,7 @@ const (
 	GitserverService_RawDiff_FullMethodName                     = "/gitserver.v1.GitserverService/RawDiff"
 	GitserverService_ContributorCounts_FullMethodName           = "/gitserver.v1.GitserverService/ContributorCounts"
 	GitserverService_FirstEverCommit_FullMethodName             = "/gitserver.v1.GitserverService/FirstEverCommit"
-	GitserverService_GetBehindAhead_FullMethodName              = "/gitserver.v1.GitserverService/GetBehindAhead"
+	GitserverService_BehindAhead_FullMethodName                 = "/gitserver.v1.GitserverService/BehindAhead"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -318,11 +318,28 @@ type GitserverServiceClient interface {
 	// If the given repository is empty, an error with a RevisionNotFoundPayload is
 	// returned.
 	FirstEverCommit(ctx context.Context, in *FirstEverCommitRequest, opts ...grpc.CallOption) (*FirstEverCommitResponse, error)
-	// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+	// BehindAhead returns the behind/ahead commit counts information for the symmetric difference left...right (both Git
 	// revspecs).
+	//
+	// Behind is the number of commits that are solely reachable in "left" but not "right".
+	// Ahead is the number of commits that are solely reachable in "right" but not "left".
+	//
+	//	 For the example, given the graph below, BehindAhead("A", "B") would return {Behind: 3, Ahead: 2}.
+	//
+	//		     y---b---b  branch B
+	//		    / \ /
+	//		   /   .
+	//		  /   / \
+	//		 o---x---a---a---a  branch A
+	//
+	// If either left or right are the empty string (""), the HEAD commit is implicitly used.
+	//
 	// If one of the two given revspecs does not exist, an error with a RevisionNotFoundPayload is
 	// is returned.
-	GetBehindAhead(ctx context.Context, in *GetBehindAheadRequest, opts ...grpc.CallOption) (*GetBehindAheadResponse, error)
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
+	BehindAhead(ctx context.Context, in *BehindAheadRequest, opts ...grpc.CallOption) (*BehindAheadResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -771,9 +788,9 @@ func (c *gitserverServiceClient) FirstEverCommit(ctx context.Context, in *FirstE
 	return out, nil
 }
 
-func (c *gitserverServiceClient) GetBehindAhead(ctx context.Context, in *GetBehindAheadRequest, opts ...grpc.CallOption) (*GetBehindAheadResponse, error) {
-	out := new(GetBehindAheadResponse)
-	err := c.cc.Invoke(ctx, GitserverService_GetBehindAhead_FullMethodName, in, out, opts...)
+func (c *gitserverServiceClient) BehindAhead(ctx context.Context, in *BehindAheadRequest, opts ...grpc.CallOption) (*BehindAheadResponse, error) {
+	out := new(BehindAheadResponse)
+	err := c.cc.Invoke(ctx, GitserverService_BehindAhead_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -912,11 +929,28 @@ type GitserverServiceServer interface {
 	// If the given repository is empty, an error with a RevisionNotFoundPayload is
 	// returned.
 	FirstEverCommit(context.Context, *FirstEverCommitRequest) (*FirstEverCommitResponse, error)
-	// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+	// BehindAhead returns the behind/ahead commit counts information for the symmetric difference left...right (both Git
 	// revspecs).
+	//
+	// Behind is the number of commits that are solely reachable in "left" but not "right".
+	// Ahead is the number of commits that are solely reachable in "right" but not "left".
+	//
+	//	 For the example, given the graph below, BehindAhead("A", "B") would return {Behind: 3, Ahead: 2}.
+	//
+	//		     y---b---b  branch B
+	//		    / \ /
+	//		   /   .
+	//		  /   / \
+	//		 o---x---a---a---a  branch A
+	//
+	// If either left or right are the empty string (""), the HEAD commit is implicitly used.
+	//
 	// If one of the two given revspecs does not exist, an error with a RevisionNotFoundPayload is
 	// is returned.
-	GetBehindAhead(context.Context, *GetBehindAheadRequest) (*GetBehindAheadResponse, error)
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
+	BehindAhead(context.Context, *BehindAheadRequest) (*BehindAheadResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -1008,8 +1042,8 @@ func (UnimplementedGitserverServiceServer) ContributorCounts(context.Context, *C
 func (UnimplementedGitserverServiceServer) FirstEverCommit(context.Context, *FirstEverCommitRequest) (*FirstEverCommitResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FirstEverCommit not implemented")
 }
-func (UnimplementedGitserverServiceServer) GetBehindAhead(context.Context, *GetBehindAheadRequest) (*GetBehindAheadResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetBehindAhead not implemented")
+func (UnimplementedGitserverServiceServer) BehindAhead(context.Context, *BehindAheadRequest) (*BehindAheadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BehindAhead not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1557,20 +1591,20 @@ func _GitserverService_FirstEverCommit_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GitserverService_GetBehindAhead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetBehindAheadRequest)
+func _GitserverService_BehindAhead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BehindAheadRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GitserverServiceServer).GetBehindAhead(ctx, in)
+		return srv.(GitserverServiceServer).BehindAhead(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GitserverService_GetBehindAhead_FullMethodName,
+		FullMethod: GitserverService_BehindAhead_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GitserverServiceServer).GetBehindAhead(ctx, req.(*GetBehindAheadRequest))
+		return srv.(GitserverServiceServer).BehindAhead(ctx, req.(*BehindAheadRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1663,8 +1697,8 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GitserverService_FirstEverCommit_Handler,
 		},
 		{
-			MethodName: "GetBehindAhead",
-			Handler:    _GitserverService_GetBehindAhead_Handler,
+			MethodName: "BehindAhead",
+			Handler:    _GitserverService_BehindAhead_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

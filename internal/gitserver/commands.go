@@ -1155,10 +1155,10 @@ func revListArgs(count int, givenCommit string) []string {
 	}
 }
 
-// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+// BehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
-func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (_ *gitdomain.BehindAhead, err error) {
-	ctx, _, endObservation := c.operations.getBehindAhead.With(ctx, &err, observation.Args{
+func (c *clientImplementor) BehindAhead(ctx context.Context, repo api.RepoName, left, right string) (_ *gitdomain.BehindAhead, err error) {
+	ctx, _, endObservation := c.operations.behindAhead.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
