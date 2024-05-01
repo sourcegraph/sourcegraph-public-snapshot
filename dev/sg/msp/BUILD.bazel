@@ -28,7 +28,6 @@ go_library(
         "//dev/sg/msp/example",
         "//dev/sg/msp/repo",
         "//dev/sg/msp/schema",
-        "//lib/cliutil/completions",
         "//lib/errors",
         "//lib/output",
         "//lib/pointers",
