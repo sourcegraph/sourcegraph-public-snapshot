@@ -278,13 +278,31 @@
         }
     }
 
+    .revision-info,
     .file-info {
-        padding: 0.5rem;
-        color: var(--text-muted);
         display: flex;
-        gap: 1rem;
         align-items: baseline;
-        border-bottom: 1px solid var(--border-color);
+        gap: 1rem;
+        padding: 0.5rem;
+
+        background: var(--color-bg-1);
+        color: var(--text-muted);
+    }
+
+    .revision-info {
+        justify-content: space-between;
+        // Increasing the padding makes the switch between the file view and the diff view
+        // less jarring (the code view switcher increases the height of the info bar).
+        padding: 0.75rem;
+
+        // This is used to avoid having the whitespace being underlined on hover
+        a {
+            text-decoration: none;
+
+            &:hover span {
+                text-decoration: underline;
+            }
+        }
     }
 
     .loading {
