@@ -63,10 +63,6 @@ test --build_event_binary_file=build_event_log.bin
 test --build_event_binary_file_path_conversion=false
 test --build_event_binary_file_upload_mode=wait_for_upload_complete
 test --build_event_publish_all_actions=true
-common --build_event_binary_file=build_event_log.bin
-common --build_event_binary_file_path_conversion=false
-common --build_event_binary_file_upload_mode=wait_for_upload_complete
-common --build_event_publish_all_actions=true
 
 # These likely perform faster locally than the overhead of pulling/pushing from/to the remote cache,
 # as well as being able to reduce how much we push to the cache
