@@ -9,7 +9,9 @@ import (
 )
 
 // resetNotionPage resets the given Notion page to the given title and removes
-// all its children.
+// all its children. For now, we reset the entire page and start from scratch
+// each time. This will break Notion block links but it can't be helped, Notion
+// is hard to work with.
 func resetNotionPage(ctx context.Context, client *notionapi.Client, pageID, pageTitle string) error {
 	blocks, err := listPageBlocks(ctx, client, pageID)
 	if err != nil {
@@ -54,6 +56,8 @@ func listPageBlocks(ctx context.Context, client *notionapi.Client, pageID string
 }
 
 func deleteBlocks(ctx context.Context, client *notionapi.Client, blocks notionapi.Blocks) error {
+	// WARNING: this cannot be paralellized, the Notion API will complain about
+	// a page-save-conflict.
 	for _, block := range blocks {
 		_, err := client.Block.Delete(ctx, block.GetID())
 		if err != nil {

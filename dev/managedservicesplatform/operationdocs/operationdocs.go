@@ -29,9 +29,9 @@ type Options struct {
 	AlertPolicies map[string]terraform.AlertPolicy
 }
 
-// AddDocumentComment adds a comment to the markdown document with details about
+// AddDocumentNote adds a note to the markdown document with details about
 // how this documentation was generated.
-func (o Options) AddDocumentComment(md *markdown.Builder) {
+func (o Options) AddDocumentNote(md *markdown.Builder) {
 	generatedFromComment := fmt.Sprintf("Generated from: https://github.com/sourcegraph/managed-services/tree/%s",
 		o.ManagedServicesRevision)
 	if o.ManagedServicesRevision == "" {
@@ -39,16 +39,14 @@ func (o Options) AddDocumentComment(md *markdown.Builder) {
 	}
 
 	if o.GenerateCommand != "" {
-		md.Commentf(`Generated documentation; DO NOT EDIT. Regenerate using this command: '%s'
-
+		generatedFromComment = fmt.Sprintf(`Generated documentation; DO NOT EDIT. Regenerate using this command: %s
 Last updated: %s
 %s`,
-			o.GenerateCommand,
+			markdown.Code(o.GenerateCommand),
 			time.Now().UTC().String(),
 			generatedFromComment)
-	} else {
-		md.Commentf(generatedFromComment)
 	}
+	md.Admonitionf(markdown.AdmonitionNote, generatedFromComment)
 }
 
 // Render creates a Markdown string with operational guidance for a MSP specification
@@ -58,7 +56,7 @@ func Render(s spec.Spec, opts Options) (string, error) {
 
 	md.Headingf(1, "%s infrastructure operations", s.Service.GetName())
 
-	opts.AddDocumentComment(md)
+	opts.AddDocumentNote(md)
 
 	md.Paragraphf(`This document describes operational guidance for %s infrastructure.
 This service is operated on the %s.`,

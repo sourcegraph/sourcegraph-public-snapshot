@@ -1739,8 +1739,8 @@ github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-2023121823
 github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20231218231056-4749baca142f/go.mod h1:4/c4ky2tQDgGw/mdej89IAqBKVKwIWfEI+It7eIIsiY=
 github.com/sourcegraph/mountinfo v0.0.0-20240201124957-b314c0befab1 h1:nBb4Cp27e5UH4Imc53cDcI+6WT6Hm5NR0TIguAqbjUI=
 github.com/sourcegraph/mountinfo v0.0.0-20240201124957-b314c0befab1/go.mod h1:ghoEiutaNVERt2cu5q/bU3HOo29AHGSPrRZE1sOaA0w=
-github.com/sourcegraph/notionreposync v0.0.0-20240430085813-a1173977cd2c h1:RzVdaMqPb7q/AWhzN9MEm4UlYcJx4g3lW5phTt4mXn0=
-github.com/sourcegraph/notionreposync v0.0.0-20240430085813-a1173977cd2c/go.mod h1:p8BpoweXljSzz6OAlra0Q+CuzoFfCsm+/J1ZiNmQxrE=
+github.com/sourcegraph/notionreposync v0.0.0-20240501230344-6a971a1b57d2 h1:b1fD056dmV9EKL7LjFDJiYhRAX2c0KW1dsYrXquxcTY=
+github.com/sourcegraph/notionreposync v0.0.0-20240501230344-6a971a1b57d2/go.mod h1:p8BpoweXljSzz6OAlra0Q+CuzoFfCsm+/J1ZiNmQxrE=
 github.com/sourcegraph/run v0.12.0 h1:3A8w5e8HIYPfafHekvmdmmh42RHKGVhmiTZAPJclg7I=
 github.com/sourcegraph/run v0.12.0/go.mod h1:PwaP936BTnAJC1cqR5rSbG5kOs/EWStTK3lqvMX5GUA=
 github.com/sourcegraph/scip v0.3.3 h1:3EOkChYOntwHl0pPSAju7rj0oRuujh8owC4vjGDEr0s=

@@ -1,8 +1,7 @@
 # MSP Testbed infrastructure operations
 
-<!--
-Generated from: unknown revision of https://github.com/sourcegraph/managed-services
--->
+> [!NOTE]
+> Generated from: unknown revision of https://github.com/sourcegraph/managed-services
 
 This document describes operational guidance for MSP Testbed infrastructure.
 This service is operated on the [Managed Services Platform (MSP)](https://sourcegraph.notion.site/712a0389f54c4d3a90d069aa2d979a59).

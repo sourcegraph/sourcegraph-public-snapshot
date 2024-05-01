@@ -34,7 +34,7 @@ func RenderIndexPage(services []*spec.Spec, opts Options) []byte {
 
 	md.Headingf(1, "Managed Services infrastructure")
 
-	opts.AddDocumentComment(md)
+	opts.AddDocumentNote(md)
 
 	generalGuidanceLink, generalGuidance := markdown.HeadingLinkf("General guidance")
 	md.Paragraphf(`These pages contain generated operational guidance for the infrastructure of the %d %s services (across %d environments) currently in operation at Sourcegraph.

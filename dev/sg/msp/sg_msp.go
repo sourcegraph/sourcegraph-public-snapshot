@@ -35,6 +35,7 @@ import (
 	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -453,7 +454,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 							},
 						},
 					},
-					Action: func(c *cli.Context) error {
+					Action: func(c *cli.Context) (err error) {
 						handbookPath := c.String("handbook-path")
 						if err := isHandbookRepo(handbookPath); err != nil {
 							return errors.Wrapf(err, "expecting github.com/sourcegraph/handbook at %q", handbookPath)
@@ -499,26 +500,30 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 						}
 						notionClient := notionapi.NewClient(notionapi.Token(notionToken))
 
-						var serviceSpecs []*spec.Spec
+						var generatedServices []*spec.Spec
 						for _, s := range services {
+							pending := std.Out.Pending(output.StylePending.Linef(
+								"[%s] Generating operations handbook page", s))
+
 							svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
 							if err != nil {
 								return errors.Wrapf(err, "load service %q", s)
 							}
 							if svc.Service.NotionPageID == nil {
-								std.Out.WriteSkippedf("[%s]\tNo 'notionPageID' set, skipping", s)
+								pending.Complete(output.StyleGrey.Linef("[%s] No 'notionPageID' set, skipping", s))
 								continue
 							}
-							serviceSpecs = append(serviceSpecs, svc)
 
-							std.Out.Writef("[%s]\tGenerating operations handbook page", s)
+							generatedServices = append(generatedServices, svc)
 
+							pending.Updatef("[%s] Collecting alert policies", s)
 							collectedAlerts, err := collectAlertPolicies(svc)
 							if err != nil {
 								return errors.Wrapf(err, "%s: CollectAlertPolicies", s)
 							}
 
 							// Generate architecture diagrams
+							pending.Updatef("[%s] Generating diagrams", s)
 							for _, e := range svc.ListEnvironmentIDs() {
 								diagram, err := diagram.New()
 								if err != nil {
@@ -539,16 +544,15 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 								// }
 							}
 
+							pending.Updatef("[%s] Rendering Markdown", s)
 							opts.AlertPolicies = collectedAlerts
 							doc, err := operationdocs.Render(*svc, opts)
 							if err != nil {
 								return errors.Wrap(err, s)
 							}
 
-							// For now, we reset the entire page and start from
-							// scratch each time. This will break Notion block
-							// links but it can't be helped, Notion is hard to
-							// work with.
+							pending.Updatef("[%s] Preparing target Notion page %s",
+								s, operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
 							if err := resetNotionPage(
 								c.Context,
 								notionClient,
@@ -559,20 +563,21 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 									s, operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
 							}
 
+							pending.Updatef("[%s] Rendering target Notion page %s",
+								s, operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
 							blockUpdater := notion.NewPageBlockUpdater(notionClient, *svc.Service.NotionPageID)
 							if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
 								ProcessMarkdown([]byte(doc)); err != nil {
 								return errors.Wrap(err, s)
 							}
 
-							std.Out.WriteNoticef("[%s]\tWrote %q",
-								s, operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
+							pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess,
+								"[%s] Wrote %q",
+								s, operationdocs.NotionHandbookURL(*svc.Service.NotionPageID)))
 						}
 
-						// For now, we reset the entire page and start from
-						// scratch each time. This will break Notion block
-						// links but it can't be helped, Notion is hard to
-						// work with.
+						pending := std.Out.Pending(output.StylePending.Linef(
+							"[index] Generating operations handbook page"))
 						if err := resetNotionPage(
 							c.Context,
 							notionClient,
@@ -583,13 +588,13 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 								operationdocs.NotionHandbookURL(operationdocs.IndexNotionPageID()))
 						}
 						blockUpdater := notion.NewPageBlockUpdater(notionClient, operationdocs.IndexNotionPageID())
-						doc := operationdocs.RenderIndexPage(serviceSpecs, opts)
+						doc := operationdocs.RenderIndexPage(generatedServices, opts)
 						if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
 							ProcessMarkdown([]byte(doc)); err != nil {
 							return errors.Wrap(err, "apply index page")
 						}
-
-						std.Out.WriteNoticef("[index]\tWrote %q", "TODO")
+						pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess,
+							"[index] Wrote %q", operationdocs.NotionHandbookURL(operationdocs.IndexNotionPageID())))
 
 						std.Out.WriteSuccessf("All pages generated!")
 						return nil
