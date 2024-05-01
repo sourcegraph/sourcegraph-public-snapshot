@@ -33,6 +33,9 @@ type MockClient struct {
 	// BehindAheadFunc is an instance of a mock function object controlling
 	// the behavior of the method BehindAhead.
 	BehindAheadFunc *ClientBehindAheadFunc
+	// ChangedFilesFunc is an instance of a mock function object controlling
+	// the behavior of the method ChangedFiles.
+	ChangedFilesFunc *ClientChangedFilesFunc
 	// CheckPerforceCredentialsFunc is an instance of a mock function object
 	// controlling the behavior of the method CheckPerforceCredentials.
 	CheckPerforceCredentialsFunc *ClientCheckPerforceCredentialsFunc
@@ -165,6 +168,11 @@ func NewMockClient() *MockClient {
 		},
 		BehindAheadFunc: &ClientBehindAheadFunc{
 			defaultHook: func(context.Context, api.RepoName, string, string) (r0 *gitdomain.BehindAhead, r1 error) {
+				return
+			},
+		},
+		ChangedFilesFunc: &ClientChangedFilesFunc{
+			defaultHook: func(context.Context, api.RepoName, string, string) (r0 ChangedFilesIterator, r1 error) {
 				return
 			},
 		},
@@ -380,6 +388,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.BehindAhead")
 			},
 		},
+		ChangedFilesFunc: &ClientChangedFilesFunc{
+			defaultHook: func(context.Context, api.RepoName, string, string) (ChangedFilesIterator, error) {
+				panic("unexpected invocation of MockClient.ChangedFiles")
+			},
+		},
 		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
 			defaultHook: func(context.Context, protocol.PerforceConnectionDetails) error {
 				panic("unexpected invocation of MockClient.CheckPerforceCredentials")
@@ -585,6 +598,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		BehindAheadFunc: &ClientBehindAheadFunc{
 			defaultHook: i.BehindAhead,
+		},
+		ChangedFilesFunc: &ClientChangedFilesFunc{
+			defaultHook: i.ChangedFiles,
 		},
 		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
 			defaultHook: i.CheckPerforceCredentials,
@@ -1027,6 +1043,119 @@ func (c ClientBehindAheadFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientBehindAheadFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientChangedFilesFunc describes the behavior when the ChangedFiles
+// method of the parent MockClient instance is invoked.
+type ClientChangedFilesFunc struct {
+	defaultHook func(context.Context, api.RepoName, string, string) (ChangedFilesIterator, error)
+	hooks       []func(context.Context, api.RepoName, string, string) (ChangedFilesIterator, error)
+	history     []ClientChangedFilesFuncCall
+	mutex       sync.Mutex
+}
+
+// ChangedFiles delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockClient) ChangedFiles(v0 context.Context, v1 api.RepoName, v2 string, v3 string) (ChangedFilesIterator, error) {
+	r0, r1 := m.ChangedFilesFunc.nextHook()(v0, v1, v2, v3)
+	m.ChangedFilesFunc.appendCall(ClientChangedFilesFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ChangedFiles method
+// of the parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientChangedFilesFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string) (ChangedFilesIterator, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ChangedFiles method of the parent MockClient instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientChangedFilesFunc) PushHook(hook func(context.Context, api.RepoName, string, string) (ChangedFilesIterator, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientChangedFilesFunc) SetDefaultReturn(r0 ChangedFilesIterator, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, string) (ChangedFilesIterator, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientChangedFilesFunc) PushReturn(r0 ChangedFilesIterator, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, string, string) (ChangedFilesIterator, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientChangedFilesFunc) nextHook() func(context.Context, api.RepoName, string, string) (ChangedFilesIterator, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientChangedFilesFunc) appendCall(r0 ClientChangedFilesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientChangedFilesFuncCall objects
+// describing the invocations of this function.
+func (f *ClientChangedFilesFunc) History() []ClientChangedFilesFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientChangedFilesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientChangedFilesFuncCall is an object that describes an invocation of
+// method ChangedFiles on an instance of MockClient.
+type ClientChangedFilesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 ChangedFilesIterator
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientChangedFilesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientChangedFilesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -6,17 +6,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"google.golang.org/grpc/codes"
-
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
-
 	"github.com/sourcegraph/log"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // loggingGRPCServer is a wrapper around the provided GitserverServiceServer
