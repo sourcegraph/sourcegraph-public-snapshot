@@ -7,7 +7,7 @@ type StandardComponent interface {
 	GetPodTemplateConfig() PodTemplateConfig
 	GetResources() map[string]corev1.ResourceRequirements
 	GetServiceAccountAnnotations() map[string]string
-	PrometheusPort() *int
+	GetPrometheusPort() *int
 }
 
 type Disableable interface {
@@ -17,6 +17,7 @@ type Disableable interface {
 type StandardConfig struct {
 	Disabled                  bool                                   `json:"disabled,omitempty"`
 	PodTemplateConfig         PodTemplateConfig                      `json:"podTemplateConfig,omitempty"`
+	PrometheusPort            *int                                   `json:"prometheusPort,omitempty"`
 	Resources                 map[string]corev1.ResourceRequirements `json:"resources,omitempty"`
 	ServiceAccountAnnotations map[string]string                      `json:"serviceAccountAnnotations,omitempty"`
 }
@@ -32,6 +33,7 @@ type PodTemplateConfig struct {
 
 func (c StandardConfig) IsDisabled() bool                                     { return c.Disabled }
 func (c StandardConfig) GetPodTemplateConfig() PodTemplateConfig              { return c.PodTemplateConfig }
+func (c StandardConfig) GetPrometheusPort() *int                              { return c.PrometheusPort }
 func (c StandardConfig) GetResources() map[string]corev1.ResourceRequirements { return c.Resources }
 func (c StandardConfig) GetServiceAccountAnnotations() map[string]string {
 	return c.ServiceAccountAnnotations

@@ -3,7 +3,7 @@ resources:
   kind: Deployment
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: 2f021d876cf221dde4ceda68a06356aaf5a8ab038e83b5ab776381470a4a0dbb
+      appliance.sourcegraph.com/configHash: d33e42f7a0651e109c1a55ae881f9e3000e194cb5257dad1714cf26d5a370b3c
     creationTimestamp: "2024-04-19T00:00:00Z"
     generation: 1
     labels:
@@ -153,7 +153,7 @@ resources:
   kind: PersistentVolumeClaim
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: 2f021d876cf221dde4ceda68a06356aaf5a8ab038e83b5ab776381470a4a0dbb
+      appliance.sourcegraph.com/configHash: d33e42f7a0651e109c1a55ae881f9e3000e194cb5257dad1714cf26d5a370b3c
     creationTimestamp: "2024-04-19T00:00:00Z"
     finalizers:
     - kubernetes.io/pvc-protection
@@ -177,7 +177,7 @@ resources:
   kind: Service
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: 2f021d876cf221dde4ceda68a06356aaf5a8ab038e83b5ab776381470a4a0dbb
+      appliance.sourcegraph.com/configHash: d33e42f7a0651e109c1a55ae881f9e3000e194cb5257dad1714cf26d5a370b3c
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
       app: blobstore
