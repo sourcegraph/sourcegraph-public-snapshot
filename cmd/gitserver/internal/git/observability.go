@@ -39,14 +39,14 @@ type observableBackend struct {
 	backend    GitBackend
 }
 
-func (b *observableBackend) GetBehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error) {
+func (b *observableBackend) BehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error) {
 	ctx, _, endObservation := b.operations.getBehindAhead.With(ctx, nil, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	concurrentOps.WithLabelValues("GetBehindAhead").Inc()
-	defer concurrentOps.WithLabelValues("GetBehindAhead").Dec()
+	concurrentOps.WithLabelValues("BehindAhead").Inc()
+	defer concurrentOps.WithLabelValues("BehindAhead").Dec()
 
-	return b.backend.GetBehindAhead(ctx, left, right)
+	return b.backend.BehindAhead(ctx, left, right)
 }
 
 func (b *observableBackend) Config() GitConfigBackend {

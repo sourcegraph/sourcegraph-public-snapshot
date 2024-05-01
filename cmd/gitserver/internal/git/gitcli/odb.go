@@ -189,12 +189,20 @@ func (g *gitCLIBackend) getBlobOID(ctx context.Context, commit api.CommitID, pat
 	return api.CommitID(fields[2]), nil
 }
 
-func (g *gitCLIBackend) GetBehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error) {
+func (g *gitCLIBackend) BehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error) {
 	if err := checkSpecArgSafety(left); err != nil {
 		return nil, err
 	}
 	if err := checkSpecArgSafety(right); err != nil {
 		return nil, err
+	}
+
+	if left == "" {
+		left = "HEAD"
+	}
+
+	if right == "" {
+		right = "HEAD"
 	}
 
 	rc, err := g.NewCommand(ctx, WithArguments("rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right)))
@@ -228,7 +236,7 @@ func (g *gitCLIBackend) GetBehindAhead(ctx context.Context, left, right string) 
 	}
 	a, err := strconv.ParseUint(behindAhead[1], 10, 0)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to parse behindahead output %q", out)
 	}
 	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
