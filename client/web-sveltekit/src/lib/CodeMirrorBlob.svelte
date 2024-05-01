@@ -43,7 +43,7 @@
             overflow: 'auto',
         },
         '.cm-content': {
-            padding: 0,
+            padding: '0.5rem 0',
             '&:focus-visible': {
                 outline: 'none',
                 boxShadow: 'none',
@@ -56,7 +56,7 @@
             backgroundColor: 'transparent',
         },
         '.cm-gutters': {
-            'background-color': 'var(--code-bg)',
+            'background-color': 'var(--body-bg)',
             border: 'none',
             color: 'var(--line-number-color)',
         },

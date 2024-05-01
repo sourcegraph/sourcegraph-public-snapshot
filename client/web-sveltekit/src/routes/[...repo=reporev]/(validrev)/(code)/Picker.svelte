@@ -149,6 +149,7 @@
         padding: 0 0 0.5rem 0;
         list-style: none;
         overflow: auto;
+        color: var(--text-body);
     }
 
     .suggestions-list-item {
@@ -163,6 +164,7 @@
         &:hover,
         &[data-highlighted] {
             background: var(--color-bg-2);
+            color: var(--text-title);
         }
     }
 

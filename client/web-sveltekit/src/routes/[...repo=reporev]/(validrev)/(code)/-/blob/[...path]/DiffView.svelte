@@ -52,7 +52,6 @@
     .content {
         overflow: auto;
         flex: 1;
-        background-color: var(--color-bg-1);
 
         &.center {
             align-items: center;

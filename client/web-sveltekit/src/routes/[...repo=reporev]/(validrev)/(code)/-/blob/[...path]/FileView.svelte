@@ -278,7 +278,6 @@
     .content {
         overflow: auto;
         flex: 1;
-        background-color: var(--color-bg-1);
 
         &.center {
             display: flex;
@@ -293,8 +292,6 @@
         align-items: baseline;
         gap: 1rem;
         padding: 0.5rem;
-
-        background: var(--color-bg-1);
         color: var(--text-muted);
     }
 

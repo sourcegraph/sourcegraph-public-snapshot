@@ -16,6 +16,10 @@ body {
     --font-size-base: 0.9375rem;
     --code-font-size: 13px;
     --border-radius: 4px;
+
+    input::placeholder {
+        color: var(--text-muted);
+    }
 }
 
 // Theme Light
@@ -35,6 +39,8 @@ body {
         0 1px 1px 0 rgba(0, 0, 0, 0.03), 0 0 1px 0 rgba(0, 0, 0, 0.04);
     --bottom-panel-shadow: 0 -37px 10 0 rgba(1, 6, 12, 0), 0 -24px 10 0 rgba(1, 6, 12, 0.01),
         0 -13px 8px 0 rgba(1, 6, 12, 0.02), 0 -6px 6px 0 rgba(1, 6, 12, 0.03), 0 -1px 3px 0 rgba(1, 6, 12, 0.04);
+    --popover-shadow: 0 174px 49px 0 rgba(0, 0, 0, 0), 0 112px 45px 0 rgba(0, 0, 0, 0.01),
+        0 63px 38px 0 rgba(0, 0, 0, 0.02), 0 28px 28px 0 rgba(0, 0, 0, 0.03), 0 7px 15px 0 rgba(0, 0, 0, 0.04);
 }
 
 // Theme Dark
@@ -56,4 +62,6 @@ body {
         0 2px 1px 0 rgba(15, 2, 24, 0.16), 0 1px 1px 0 rgba(15, 2, 24, 0.27), 0 0 1px 0 rgba(15, 2, 24, 0.31);
     --bottom-panel-shadow: 0 -37px 10 0 rgba(1, 6, 12, 0.01), 0 -24px 10 0 rgba(1, 6, 12, 0.05),
         0 -13px 8px 0 rgba(1, 6, 12, 0.16), 0 -6px 6px 0 rgba(1, 6, 12, 0.27), 0 -1px 3px 0 rgba(1, 6, 12, 0.31);
+    --popover-shadow: 0 174px 49px 0 rgba(0, 0, 0, 0.01), 0 112px 45px 0 rgba(0, 0, 0, 0.05),
+        0 63px 38px 0 rgba(0, 0, 0, 0.16), 0 28px 28px 0 rgba(0, 0, 0, 0.27), 0 7px 15px 0 rgba(0, 0, 0, 0.31);
 }
