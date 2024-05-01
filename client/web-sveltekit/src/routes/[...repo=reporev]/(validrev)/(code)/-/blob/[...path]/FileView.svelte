@@ -278,6 +278,7 @@
     .content {
         overflow: auto;
         flex: 1;
+        background-color: var(--code-bg);
 
         &.center {
             display: flex;
@@ -293,6 +294,7 @@
         gap: 1rem;
         padding: 0.5rem;
         color: var(--text-muted);
+        background-color: var(--code-bg);
     }
 
     .revision-info {

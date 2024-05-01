@@ -210,6 +210,7 @@
         display: flex;
         flex: 1;
         overflow: hidden;
+        background-color: var(--code-bg);
     }
 
     header {
