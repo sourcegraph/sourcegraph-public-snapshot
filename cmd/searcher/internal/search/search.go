@@ -22,6 +22,8 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -43,11 +45,9 @@ type Service struct {
 
 	Indexed zoekt.Streamer
 
-	// GitDiffSymbols returns the stdout of running "git diff -z --name-status
-	// --no-renames commitA commitB" against repo.
-	//
-	// TODO Git client should be exposing a better API here.
-	GitDiffSymbols func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
+	// GitChangedFiles returns an iterator that yields list of changed files that have changed in between commitA and commitB in the given
+	// repo.
+	GitChangedFiles func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (gitserver.ChangedFilesIterator, error)
 
 	// MaxTotalPathsLength is the maximum sum of lengths of all paths in a
 	// single call to git archive. This mainly needs to be less than ARG_MAX
