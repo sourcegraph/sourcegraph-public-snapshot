@@ -81,9 +81,6 @@ func (c *cachedSearcher) List(ctx context.Context, q zoektquery.Q, opts *zoekt.L
 
 // isTrueQuery returns true if q will always match all shards.
 func isTrueQuery(q zoektquery.Q) bool {
-	// the query is probably wrapped to avoid extra RPC work.
-	q = zoektquery.RPCUnwrap(q)
-
 	v, ok := q.(*zoektquery.Const)
 	return ok && v.Value
 }

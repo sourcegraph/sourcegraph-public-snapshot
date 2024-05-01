@@ -1,10 +1,11 @@
-package httpapi
+package completions
 
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
 	"github.com/gomodule/redigo/redis"
 

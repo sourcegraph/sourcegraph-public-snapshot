@@ -7,11 +7,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/completions/resolvers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
-	"github.com/sourcegraph/sourcegraph/internal/completions/httpapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -28,11 +28,11 @@ func Init(
 	logger := log.Scoped("completions")
 
 	enterpriseServices.NewChatCompletionsStreamHandler = func() http.Handler {
-		completionsHandler := httpapi.NewChatCompletionsStreamHandler(logger, db)
+		completionsHandler := completions.NewChatCompletionsStreamHandler(logger, db)
 		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, completionsHandler)
 	}
 	enterpriseServices.NewCodeCompletionsHandler = func() http.Handler {
-		codeCompletionsHandler := httpapi.NewCodeCompletionsHandler(logger, db, guardrails.NewAttributionTest(observationCtx, conf))
+		codeCompletionsHandler := completions.NewCodeCompletionsHandler(logger, db, guardrails.NewAttributionTest(observationCtx, conf))
 		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, codeCompletionsHandler)
 	}
 	enterpriseServices.CompletionsResolver = resolvers.NewCompletionsResolver(db, observationCtx.Logger)

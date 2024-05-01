@@ -78,7 +78,7 @@
                         variant="secondary"
                         on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
                     >
-                        <Icon svgPath={mdiClose} size={16} />
+                        <Icon svgPath={mdiClose} --icon-size="16px" />
                     </Button>
                 </Tooltip>
             </span>
@@ -189,6 +189,7 @@
         padding: 0.75rem;
         min-width: 35rem;
         max-width: 40rem;
+        width: 640px;
 
         --tabs-gap: 0.25rem;
         --align-tabs: flex-start;

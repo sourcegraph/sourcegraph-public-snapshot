@@ -576,3 +576,22 @@
     :why: Internal sourcegraph library
     :versions: []
     :when: 2024-04-22 13:42:26.498522000 Z
+- - :permit
+  - FreeType
+  - &5
+    :who:
+    :why:
+    :versions: []
+    :when: 2024-04-29 15:13:39.206315000 Z
+- - :license
+  - github.com/golang/freetype
+  - FreeType
+  - *5
+- - :license
+  - gonum.org/v1/plot
+  - BSD-3-Clause
+  - *5
+- - :license
+  - oss.terrastruct.com/util-go
+  - ISC
+  - *5

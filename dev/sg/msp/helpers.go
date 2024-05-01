@@ -355,7 +355,7 @@ func generateCloudDeployDocstring(projectID, serviceID, gcpRegion, cloudDeployFi
 		projectID, serviceID, gcpRegion, cloudDeployFilename)
 }
 
-func CollectAlertPolicies(svc *spec.Spec) (map[string]terraform.AlertPolicy, error) {
+func collectAlertPolicies(svc *spec.Spec) (map[string]terraform.AlertPolicy, error) {
 	// Deduplicate alerts across environments into a single map
 	collectedAlerts := make(map[string]terraform.AlertPolicy)
 	for _, env := range svc.ListEnvironmentIDs() {

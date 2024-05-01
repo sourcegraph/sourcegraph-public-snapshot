@@ -95,6 +95,12 @@ type GitBackend interface {
 	// No new usages of it should be introduced and once the migration is done we will
 	// remove this method.
 	Exec(ctx context.Context, args ...string) (io.ReadCloser, error)
+
+	// FirstEverCommit returns the first commit ever made to the repository.
+	//
+	// If the repository is empty, a RevisionNotFoundError is returned (as the
+	// "HEAD" ref does not exist).
+	FirstEverCommit(ctx context.Context) (api.CommitID, error)
 }
 
 type GitDiffComparisonType int

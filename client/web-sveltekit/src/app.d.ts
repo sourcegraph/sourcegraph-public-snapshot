@@ -4,7 +4,11 @@
 
 declare global {
     namespace App {
-        interface PageData {}
+        interface PageData {
+            // Used by the repository pages to control the history panel
+            enableInlineDiff?: boolean
+            enableViewAtCommit?: boolean
+        }
     }
 }
 

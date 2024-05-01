@@ -53,7 +53,6 @@
     </form>
     <Scroller bind:this={scroller} margin={600} on:more={tagsQuery.fetchMore}>
         {#if !$tagsQuery.restoring && tagsConnection}
-            <!-- TODO: Search input to filter tags by name -->
             <table>
                 <tbody>
                     {#each tagsConnection.nodes as tag (tag)}
@@ -95,36 +94,43 @@
         flex-direction: column;
         height: 100%;
         overflow: hidden;
+
+        :global([data-scroller]) {
+            display: flex;
+            flex-direction: column;
+        }
     }
 
     form {
-        align-self: stretch;
-
         display: flex;
         gap: 1rem;
-        max-width: var(--viewport-xl);
-        width: 100%;
-
-        margin: 1rem auto;
 
         :global([data-input-container]) {
             flex: 1;
         }
     }
 
+    form,
+    div,
+    :global([data-scroller]) {
+        padding: 1rem;
+    }
+
+    form,
     div,
     table {
+        align-self: center;
         max-width: var(--viewport-xl);
-        margin: 0 auto;
+        width: 100%;
     }
 
     table {
-        width: 100%;
         border-spacing: 0;
     }
 
     .footer {
         color: var(--text-muted);
-        padding: 1rem;
+        // Unset `div` width: 100% to allow the footer to be centered
+        width: initial;
     }
 </style>

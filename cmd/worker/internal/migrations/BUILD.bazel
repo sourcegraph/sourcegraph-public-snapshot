@@ -17,6 +17,7 @@ go_library(
         "//internal/observation",
         "//internal/oobmigration",
         "//internal/version",
+        "//internal/version/upgradestore",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
     ],

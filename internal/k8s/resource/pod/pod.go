@@ -4,12 +4,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // NewPodTemplate creates a new k8s PodTemplate with some default values set.
-func NewPodTemplate(name string) corev1.PodTemplate {
-	return corev1.PodTemplate{
+func NewPodTemplate(name string, cfg config.StandardComponent) corev1.PodTemplate {
+	template := corev1.PodTemplate{
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: name,
@@ -31,6 +32,15 @@ func NewPodTemplate(name string) corev1.PodTemplate {
 			},
 		},
 	}
+
+	if cfg != nil {
+		template.Template.Spec.Affinity = cfg.GetPodTemplateConfig().Affinity
+		template.Template.Spec.ImagePullSecrets = cfg.GetPodTemplateConfig().ImagePullSecrets
+		template.Template.Spec.NodeSelector = cfg.GetPodTemplateConfig().NodeSelector
+		template.Template.Spec.Tolerations = cfg.GetPodTemplateConfig().Tolerations
+	}
+
+	return template
 }
 
 func NewVolumeEmptyDir(name string) corev1.Volume {

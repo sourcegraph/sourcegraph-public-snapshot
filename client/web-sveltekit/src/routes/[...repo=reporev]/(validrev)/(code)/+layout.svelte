@@ -183,7 +183,8 @@
                             history={commitHistory}
                             loading={$commitHistoryQuery?.fetching ?? true}
                             fetchMore={commitHistoryQuery.fetchMore}
-                            enableInlineDiffs={$page.route.id?.includes('/blob/') ?? false}
+                            enableInlineDiff={$page.data.enableInlineDiff}
+                            enableViewAtCommit={$page.data.enableViewAtCommit}
                         />
                     {/key}
                 </TabPanel>

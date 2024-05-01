@@ -7,6 +7,7 @@ const DefaultChannel = "#william-buildchecker-webhook-test"
 type Config struct {
 	BuildkiteWebhookToken string
 	BuildkiteToken        string
+	GithubToken           string
 	SlackToken            string
 	SlackChannel          string
 	Production            bool
@@ -19,6 +20,7 @@ func (c *Config) Load(env *runtime.Env) {
 	c.SlackToken = env.Get("SLACK_TOKEN", "", "")
 	c.SlackChannel = env.Get("SLACK_CHANNEL", DefaultChannel, "")
 	c.Production = env.GetBool("BUILDTRACKER_PRODUCTION", "false", "")
+	c.GithubToken = env.Get("GITHUB_TOKEN", "", "")
 
 	if c.Production {
 		c.DebugPassword = env.Get("BUILDTRACKER_DEBUG_PASSWORD", "", "")

@@ -8,8 +8,8 @@ go_library(
         "ssc_proxy.go",
         "types.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/ssc",
-    visibility = ["//:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc",
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/actor",
         "//internal/conf",

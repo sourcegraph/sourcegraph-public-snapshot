@@ -187,3 +187,39 @@ func (g *gitCLIBackend) getBlobOID(ctx context.Context, commit api.CommitID, pat
 	}
 	return api.CommitID(fields[2]), nil
 }
+
+func (g *gitCLIBackend) FirstEverCommit(ctx context.Context) (api.CommitID, error) {
+	rc, err := g.NewCommand(ctx, WithArguments("rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"))
+	if err != nil {
+		return "", err
+	}
+	defer rc.Close()
+
+	out, err := io.ReadAll(rc)
+	if err != nil {
+		var cmdFailedErr *CommandFailedError
+		if errors.As(err, &cmdFailedErr) {
+			if cmdFailedErr.ExitStatus == 129 && bytes.Contains(cmdFailedErr.Stderr, []byte(revListUsageString)) {
+				// If the error is due to an empty repository, return a sentinel error.
+				e := &gitdomain.RevisionNotFoundError{
+					Repo: g.repoName,
+					Spec: "HEAD",
+				}
+				return "", e
+			}
+		}
+
+		return "", errors.Wrap(err, "git rev-list command failed")
+	}
+
+	lines := bytes.TrimSpace(out)
+	tokens := bytes.SplitN(lines, []byte("\n"), 2)
+	if len(tokens) == 0 {
+		return "", errors.New("FirstEverCommit returned no revisions")
+	}
+	first := tokens[0]
+	id := api.CommitID(bytes.TrimSpace(first))
+	return id, nil
+}
+
+const revListUsageString = `usage: git rev-list [<options>] <commit>... [--] [<path>...]`

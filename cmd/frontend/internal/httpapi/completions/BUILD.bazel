@@ -1,8 +1,8 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
 
 go_library(
-    name = "httpapi",
+    name = "completions",
     srcs = [
         "chat.go",
         "codecompletion.go",
@@ -10,14 +10,14 @@ go_library(
         "limiter.go",
         "observability.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/completions/httpapi",
-    visibility = ["//:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/completions",
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
+        "//cmd/frontend/internal/cody",
         "//internal/accesstoken",
         "//internal/actor",
         "//internal/auth",
         "//internal/authz",
-        "//internal/cody",
         "//internal/completions/client",
         "//internal/completions/client/anthropic",
         "//internal/completions/client/fireworks",
@@ -47,9 +47,9 @@ go_library(
 )
 
 go_test(
-    name = "httpapi_test",
+    name = "completions_test",
     srcs = ["handler_test.go"],
-    embed = [":httpapi"],
+    embed = [":completions"],
     deps = [
         "//internal/completions/types",
         "//internal/conf",

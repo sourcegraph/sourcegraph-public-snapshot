@@ -177,6 +177,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
+				Concurrency:          4,
 			}
 
 			addJob(
