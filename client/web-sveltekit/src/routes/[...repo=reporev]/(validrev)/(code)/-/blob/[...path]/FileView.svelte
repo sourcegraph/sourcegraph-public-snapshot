@@ -284,8 +284,7 @@
         align-items: baseline;
         gap: 1rem;
         padding: 0.5rem;
-
-        background: var(--color-bg-1);
+        border-bottom: 1px solid var(--border-color);
         color: var(--text-muted);
     }
 
