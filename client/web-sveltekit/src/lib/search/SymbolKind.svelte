@@ -40,8 +40,9 @@
 
 <script lang="ts">
     import Icon from '$lib/Icon.svelte'
-    import Tooltip from '$lib/Tooltip.svelte'
     import { settings } from '$lib/stores'
+    import Tooltip from '$lib/Tooltip.svelte'
+
     import { getSymbolIconPath, humanReadableSymbolKind } from './symbolUtils'
 
     export let symbolKind: SymbolKind | string
