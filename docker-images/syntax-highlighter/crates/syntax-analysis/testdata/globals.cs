@@ -45,6 +45,25 @@ namespace Longer.Namespace
             public override string ToString() => $"({X}, {Y})";
         }
 
+        [Flags]
+        public struct Point
+        {
+            public Point(double x, double y)
+            {
+                X = x;
+                Y = y;
+            }
+
+            public double X { get; }
+            public double Y { get; }
+
+            [Flags]
+            public int Sum()
+            {
+                return X + Y;
+            };
+        }
+
         delegate int MyDelegate();
 
         public event ChangedEventHandler Changed;
@@ -75,12 +94,13 @@ namespace Longer.Namespace
             FullPackage = Errors | Comptime | BuildSystem | CoolCommunity
         }
 
-        public static void Syntax() {}
+        public static void Syntax() { }
     }
 }
 
 namespace OneClass
 {
+    [Flags]
     public class TheClass
     {
         public Clickable ClickAction { get; set; }

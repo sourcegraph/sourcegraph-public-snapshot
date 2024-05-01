@@ -2,6 +2,7 @@
 
 bruh = 10
 
+
 class Bruh(object):
     a: int
 
@@ -10,10 +11,12 @@ class Bruh(object):
 
     def dab():
         print("yay!")
+
         def more():
             print("a function in a function!!")
             pass
         more()
+
 
 if 1 == 1:
     should_show_ifs = False
@@ -43,18 +46,23 @@ class SomeAsyncStuffs:
     async def __anext__(self):
         pass
 
+
 def does_nothing(f):
     return f
 
+
 def does_nothingwrapper(*args):
     return does_nothing
+
 
 @does_nothing
 def has_a_name():
     pass
 
+
 @does_nothing
 def func02(): pass
+
 
 @does_nothing
 class ClassWithDecorators(object):
@@ -67,7 +75,6 @@ class ClassWithDecorators(object):
         print("hi from %s" % cls.__name__)
 
     @does_nothingwrapper(1, 2, 3)
-
     @   staticmethod
     @does_nothing
     def prints_something():
@@ -77,4 +84,5 @@ class ClassWithDecorators(object):
 foo, bar, baz = 1, 2, 3
 
 # semi-colons haha
-foo = 1; bar = foo
+foo = 1
+bar = foo
