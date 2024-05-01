@@ -1,6 +1,7 @@
 import type { Meta, StoryFn } from '@storybook/react'
 
 import type { Progress } from '@sourcegraph/shared/src/search/stream'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
@@ -73,6 +74,7 @@ export const Popover: StoryFn = () => {
                     query=""
                     progress={progress}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                     onSearchAgain={() => {}}
                 />
             )}
@@ -116,6 +118,7 @@ export const ShouldCloseAllInfo: StoryFn = () => {
                     query=""
                     progress={progress}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                     onSearchAgain={() => {}}
                 />
             )}
@@ -151,6 +154,7 @@ export const ShouldOpenOneInfo: StoryFn = () => {
                     query=""
                     progress={progress}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                     onSearchAgain={() => {}}
                 />
             )}

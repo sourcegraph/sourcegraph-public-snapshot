@@ -15,6 +15,7 @@ import {
 } from '@sourcegraph/shared/src/search'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -524,14 +525,17 @@ const FilterInfoList = ({ filters, onClick, onExampleClick }: FilterInfoListProp
     </ul>
 )
 
-export interface SearchReferenceProps extends TelemetryProps, Pick<SearchQueryState, 'setQueryState'> {
+export interface SearchReferenceProps
+    extends TelemetryProps,
+        TelemetryV2Props,
+        Pick<SearchQueryState, 'setQueryState'> {
     filter: string
 }
 
 const SearchReference = React.memo(function SearchReference(props: SearchReferenceProps) {
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
 
-    const { setQueryState, telemetryService } = props
+    const { setQueryState, telemetryService, telemetryRecorder } = props
     const filter = props.filter.trim()
     const hasFilter = filter.length > 0
 
@@ -563,16 +567,21 @@ const SearchReference = React.memo(function SearchReference(props: SearchReferen
     )
     const updateQueryWithOperator = useCallback(
         (info: OperatorInfo) => {
+            telemetryRecorder.recordEvent('search.reference.operator', 'click')
+
             setQueryState(({ query }) => ({ query: query + ` ${info.operator} ` }))
         },
-        [setQueryState]
+        [setQueryState, telemetryRecorder]
     )
     const updateQueryWithExample = useCallback(
         (example: string) => {
             telemetryService.log(hasFilter ? 'SearchReferenceSearchedAndClicked' : 'SearchReferenceFilterClicked')
+            telemetryRecorder.recordEvent('search.reference.filter', 'click', {
+                metadata: { hasFilter: hasFilter ? 1 : 0 },
+            })
             setQueryState(({ query }) => ({ query: query.trimEnd() + ' ' + example }))
         },
-        [setQueryState, hasFilter, telemetryService]
+        [setQueryState, hasFilter, telemetryService, telemetryRecorder]
     )
 
     const filterList = (

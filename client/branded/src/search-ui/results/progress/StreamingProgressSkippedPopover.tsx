@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
 import { useMutation, gql, useQuery } from '@sourcegraph/http-client'
 import type { Skipped, Progress } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -98,7 +99,7 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
     )
 }
 
-interface StreamingProgressSkippedPopoverProps extends TelemetryProps {
+interface StreamingProgressSkippedPopoverProps extends TelemetryProps, TelemetryV2Props {
     query: string
     progress: Progress
     isSearchJobsEnabled?: boolean
@@ -106,7 +107,7 @@ interface StreamingProgressSkippedPopoverProps extends TelemetryProps {
 }
 
 export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopoverProps> = props => {
-    const { query, progress, isSearchJobsEnabled, onSearchAgain, telemetryService } = props
+    const { query, progress, isSearchJobsEnabled, onSearchAgain, telemetryService, telemetryRecorder } = props
 
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
 
@@ -167,7 +168,11 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
             {isSearchJobsEnabled && (
                 <>
                     <hr className="mx-3 mt-3" />
-                    <ExhaustiveSearchMessage query={query} telemetryService={telemetryService} />
+                    <ExhaustiveSearchMessage
+                        query={query}
+                        telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
+                    />
                 </>
             )}
         </>
@@ -334,12 +339,12 @@ const CREATE_SEARCH_JOB = gql`
     }
 `
 
-interface ExhaustiveSearchMessageProps extends TelemetryProps {
+interface ExhaustiveSearchMessageProps extends TelemetryProps, TelemetryV2Props {
     query: string
 }
 
 export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props => {
-    const { query, telemetryService } = props
+    const { query, telemetryService, telemetryRecorder } = props
     const navigate = useNavigate()
     const [createSearchJob, { loading, error }] = useMutation(CREATE_SEARCH_JOB)
     const { error: validationError, loading: validationLoading } = useQuery(VALIDATE_SEARCH_JOB, {
@@ -350,13 +355,17 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
         const validState = validationError ? 'invalid' : 'valid'
         if (!validationLoading) {
             telemetryService.log('SearchJobsSearchFormShown', { validState }, { validState })
+            telemetryRecorder.recordEvent('search.exhaustiveJobs', 'view', {
+                metadata: { validState: validState ? 1 : 0 },
+            })
         }
-    }, [telemetryService, validationError, validationLoading])
+    }, [telemetryService, telemetryRecorder, validationError, validationLoading])
 
     const handleCreateSearchJobClick = async (): Promise<void> => {
         await createSearchJob({ variables: { query } })
 
         telemetryService.log('SearchJobsCreateClick', {}, {})
+        telemetryRecorder.recordEvent('search.exhaustiveJobs.create', 'click')
         navigate('/search-jobs')
     }
 

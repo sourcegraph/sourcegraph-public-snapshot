@@ -7,8 +7,9 @@ import { SourcegraphURL } from '@sourcegraph/common'
 import type { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { type ContentMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
+import { V2CodyCopyPageTypes, codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
 import { CodeExcerpt } from './CodeExcerpt'
 import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from './codeLinkNavigation'
@@ -16,7 +17,7 @@ import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from '.
 import styles from './FileMatchChildren.module.scss'
 import resultStyles from './ResultContainer.module.scss'
 
-interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
+interface FileMatchProps extends SettingsCascadeProps, TelemetryProps, TelemetryV2Props {
     result: ContentMatch
     grouped: MatchGroup[]
     /* Clicking on a match opens the link in a new tab */
@@ -24,7 +25,7 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
 }
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
-    const { result, grouped, telemetryService } = props
+    const { result, grouped, telemetryService, telemetryRecorder } = props
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
         const match = group.matches[0]
@@ -47,7 +48,8 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
     const logEventOnCopy = useCallback(() => {
         telemetryService.log(...codeCopiedEvent('search-result'))
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('code', 'copy', { metadata: { page: V2CodyCopyPageTypes['search-result'] } })
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <div data-testid="file-match-children" data-selectable-search-results-group="true">

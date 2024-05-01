@@ -4,6 +4,7 @@ import { act } from 'react-dom/test-utils'
 import { spy, assert, useFakeTimers } from 'sinon'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import {
@@ -18,6 +19,7 @@ import { SearchContextDropdown, type SearchContextDropdownProps } from './Search
 describe('SearchContextDropdown', () => {
     const defaultProps: SearchContextDropdownProps = {
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        telemetryRecorder: noOpTelemetryRecorder,
         query: '',
         showSearchContextManagement: false,
         fetchSearchContexts: mockFetchSearchContexts,

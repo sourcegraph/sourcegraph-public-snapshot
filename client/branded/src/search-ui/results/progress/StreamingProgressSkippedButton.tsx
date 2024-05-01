@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState, type FC } from 'react'
 import { mdiAlertCircle, mdiChevronDown, mdiInformationOutline } from '@mdi/js'
 
 import type { Progress } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
 
@@ -12,7 +13,7 @@ import { getProgressText } from './utils'
 
 import styles from './StreamingProgressSkippedButton.module.scss'
 
-interface StreamingProgressSkippedButtonProps extends TelemetryProps {
+interface StreamingProgressSkippedButtonProps extends TelemetryProps, TelemetryV2Props {
     query: string
     progress: Progress
     isSearchJobsEnabled?: boolean
@@ -20,7 +21,7 @@ interface StreamingProgressSkippedButtonProps extends TelemetryProps {
 }
 
 export const StreamingProgressSkippedButton: FC<StreamingProgressSkippedButtonProps> = props => {
-    const { query, progress, isSearchJobsEnabled, onSearchAgain, telemetryService } = props
+    const { query, progress, isSearchJobsEnabled, onSearchAgain, telemetryService, telemetryRecorder } = props
     const [isOpen, setIsOpen] = useState(false)
 
     const skippedWithWarningOrError = useMemo(
@@ -69,6 +70,7 @@ export const StreamingProgressSkippedButton: FC<StreamingProgressSkippedButtonPr
                     isSearchJobsEnabled={isSearchJobsEnabled}
                     onSearchAgain={onSearchAgainWithPopupClose}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             </PopoverContent>
         </Popover>
