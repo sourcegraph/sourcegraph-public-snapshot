@@ -1,15 +1,16 @@
-package httpapi
+package completions
 
 import (
 	"context"
 	"net/http"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 // Trace is a convenience helper around instrumenting our handlers and

@@ -1,12 +1,12 @@
-package httpapi
+package completions
 
 import (
 	"context"
 
 	"net/http"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 
 	"github.com/sourcegraph/log"
