@@ -65,6 +65,11 @@
         align-items: center;
         gap: 0.75rem;
         padding: 0.375rem 0.75rem;
+        border-radius: var(--border-radius);
+
+        &:hover {
+            background-color: var(--color-bg-2);
+        }
 
         .messages {
             display: flex;
