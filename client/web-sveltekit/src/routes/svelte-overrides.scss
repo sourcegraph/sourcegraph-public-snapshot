@@ -25,6 +25,8 @@ body {
 
 .theme-light {
     // Colors
+    --color-bg-1: var(--white);
+    --text-body: var(--gray-08);
     --search-result-header-bg: #eef2f5;
     --line-number-color: var(--gray-06);
     --code-selection-bg: rgba(231, 238, 250, 0.8);
@@ -36,12 +38,15 @@ body {
         0 1px 1px 0 rgba(0, 0, 0, 0.03), 0 0 1px 0 rgba(0, 0, 0, 0.04);
     --bottom-panel-shadow: 0 -37px 10 0 rgba(1, 6, 12, 0), 0 -24px 10 0 rgba(1, 6, 12, 0.01),
         0 -13px 8px 0 rgba(1, 6, 12, 0.02), 0 -6px 6px 0 rgba(1, 6, 12, 0.03), 0 -1px 3px 0 rgba(1, 6, 12, 0.04);
+    --popover-shadow: 0px 174px 49px 0px rgba(0, 0, 0, 0.00), 0px 112px 45px 0px rgba(0, 0, 0, 0.01), 0px 63px 38px 0px rgba(0, 0, 0, 0.02), 0px 28px 28px 0px rgba(0, 0, 0, 0.03), 0px 7px 15px 0px rgba(0, 0, 0, 0.04);
 }
 
 // Theme Dark
 
 .theme-dark {
     // Colors
+    --color-bg-1: var(--gray-12);
+    --text-body: var(--gray-05);
     // TODO: `search-result-header-bg` needs to be converted to something that works in the design system colors.
     --search-result-header-bg: #1a1e2b;
     --line-number-color: var(--gray-07);
@@ -55,4 +60,5 @@ body {
         0 2px 1px 0 rgba(15, 2, 24, 0.16), 0 1px 1px 0 rgba(15, 2, 24, 0.27), 0 0 1px 0 rgba(15, 2, 24, 0.31);
     --bottom-panel-shadow: 0 -37px 10 0 rgba(1, 6, 12, 0.01), 0 -24px 10 0 rgba(1, 6, 12, 0.05),
         0 -13px 8px 0 rgba(1, 6, 12, 0.16), 0 -6px 6px 0 rgba(1, 6, 12, 0.27), 0 -1px 3px 0 rgba(1, 6, 12, 0.31);
+    --popover-shadow: 0px 174px 49px 0px rgba(0, 0, 0, 0.01), 0px 112px 45px 0px rgba(0, 0, 0, 0.05), 0px 63px 38px 0px rgba(0, 0, 0, 0.16), 0px 28px 28px 0px rgba(0, 0, 0, 0.27), 0px 7px 15px 0px rgba(0, 0, 0, 0.31);
 }

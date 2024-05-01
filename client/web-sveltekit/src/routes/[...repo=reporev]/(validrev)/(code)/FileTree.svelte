@@ -147,23 +147,27 @@
             border-radius: var(--border-radius);
 
             &:hover {
-                background-color: var(--color-bg-2);
+                background-color: var(--color-bg-3);
             }
         }
 
         :global(.treeitem.selected) > :global(.label) {
-            background-color: var(--color-bg-2);
+            background-color: var(--color-bg-3);
         }
     }
 
     a {
-        color: var(--body-color);
+        color: var(--text-body);
         flex: 1;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
         text-decoration: none;
         padding: 0.1rem 0;
+
+        &:hover {
+            color: var(--text-title);
+        }
     }
 
     .note {

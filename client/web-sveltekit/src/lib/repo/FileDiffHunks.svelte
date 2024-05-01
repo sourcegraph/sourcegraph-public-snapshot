@@ -68,7 +68,6 @@
     }
 
     td {
-        background-color: var(--code-bg);
 
         &.num {
             min-width: 2.5rem;

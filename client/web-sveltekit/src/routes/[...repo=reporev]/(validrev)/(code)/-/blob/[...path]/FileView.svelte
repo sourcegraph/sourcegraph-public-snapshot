@@ -284,6 +284,7 @@
         display: flex;
         gap: 1rem;
         align-items: baseline;
+        border-bottom: 1px solid var(--border-color);
     }
 
     .loading {

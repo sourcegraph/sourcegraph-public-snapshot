@@ -62,7 +62,6 @@
     }
 
     .body:not(:empty) {
-        background-color: var(--code-bg);
         border-bottom: 1px solid var(--border-color);
     }
 </style>
