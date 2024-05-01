@@ -202,7 +202,7 @@ pub fn generate_tags<W: std::io::Write>(
                 fatal: false,
             }.write(buf_writer);
             return None;
-        }
+        },
     };
 
     let mut scope_deduplicator = HashMap::new();
@@ -253,7 +253,7 @@ pub fn ctags_runner<R: Read, W: Write>(
                     Err(error) => Reply::Error {
                         message: error.to_string(),
                         fatal: false,
-                    }.write(output),
+                    }.write(output)
                 };
             }
         }
