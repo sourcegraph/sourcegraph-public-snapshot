@@ -202,7 +202,6 @@ go_library(
         "code_monitors.graphql",
         "codeintel.autoindexing.graphql",
         "codeintel.codenav.graphql",
-        "codeintel.graphql",
         "codeintel.policies.graphql",
         "codeintel.ranking.graphql",
         "cody_context.graphql",
