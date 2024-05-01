@@ -86,10 +86,10 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 	}
 
 	// we conditionally use this in multiple locations
-	// if vpcNode != "" we can generate it when needed
+	// if vpcNode == "" we can generate it when needed
 	var vpcNode string
 	createVPCNode := func(g *d2graph.Graph) error {
-		graph, vpcNode, err = newVPCNode(g, env)
+		graph, vpcNode, err = newVPCNode(g)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate vpc")
 		}
@@ -100,7 +100,7 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 		return nil
 	}
 
-	graph, sentryNode, err := newSentryNode(graph, env)
+	graph, sentryNode, err := newSentryNode(graph)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate sentry")
 	}
@@ -109,7 +109,7 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 		return errors.Wrap(err, "failed to add connection from cloudrun to sentry")
 	}
 
-	graph, monitoringNode, err := newMonitoringNode(graph, env)
+	graph, monitoringNode, err := newMonitoringNode(graph)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate monitoring")
 	}
@@ -120,7 +120,7 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 
 	if env.Category != spec.EnvironmentCategoryTest && env.Alerting != nil && pointers.DerefZero(env.Alerting.Opsgenie) {
 		var opsgenieNode string
-		graph, opsgenieNode, err = newOpsgenieNode(graph, env)
+		graph, opsgenieNode, err = newOpsgenieNode(graph)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate opsgenie")
 		}
@@ -132,7 +132,7 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 
 	if env.EnvironmentServiceSpec != nil {
 		var traceNode string
-		graph, traceNode, err = newTraceNode(graph, env)
+		graph, traceNode, err = newTraceNode(graph)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate trace")
 		}
@@ -144,7 +144,7 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 
 	if env.Resources != nil && env.Resources.Redis != nil {
 		var redisNode string
-		graph, redisNode, err = newRedisNode(graph, env)
+		graph, redisNode, err = newRedisNode(graph)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate redis")
 		}
@@ -210,7 +210,7 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 		}
 
 		var ipNode string
-		graph, ipNode, err = newExternalIPAddressNode(graph, env)
+		graph, ipNode, err = newExternalIPAddressNode(graph)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate external ip")
 		}
@@ -225,7 +225,7 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 		destination := ipNode
 		if env.Domain.Cloudflare != nil && env.Domain.Cloudflare.ShouldProxy() {
 			var cloudflareNode string
-			graph, cloudflareNode, err = newCloudflareNode(graph, env)
+			graph, cloudflareNode, err = newCloudflareNode(graph)
 			if err != nil {
 				return errors.Wrap(err, "failed to generate cloudflare")
 			}
@@ -238,7 +238,7 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 		}
 
 		var internetNode string
-		graph, internetNode, err = newInternetNode(graph, env)
+		graph, internetNode, err = newInternetNode(graph)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate cloudrun")
 		}
