@@ -513,7 +513,6 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      export GCFLAGS='all=-N -l'
       mkdir -p .bin
       export GOBIN="${PWD}/.bin"
       go install -gcflags="$GCFLAGS" github.com/sourcegraph/zoekt/cmd/zoekt-archive-index
