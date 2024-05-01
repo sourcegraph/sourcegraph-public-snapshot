@@ -18,6 +18,10 @@ var (
 const emptyRepoErrMessage = `git command [rev-list --reverse --date-order --max-parents=0 HEAD] failed (output: ""): exit status 129`
 
 func isFirstCommitEmptyRepoError(err error) bool {
+	if gitdomain.IsRevisionNotFoundError(err) {
+		return true
+	}
+
 	if strings.Contains(err.Error(), emptyRepoErrMessage) {
 		return true
 	}
