@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-    import { mdiFileEyeOutline, mdiMapSearch, mdiWrap, mdiWrapDisabled } from '@mdi/js'
+    import { mdiClose, mdiFileEyeOutline, mdiMapSearch, mdiWrap, mdiWrapDisabled } from '@mdi/js'
     import { capitalize } from 'lodash'
     import { from } from 'rxjs'
     import { writable } from 'svelte/store'
@@ -27,7 +27,6 @@
     import markdownStyles from '$lib/wildcard/Markdown.module.scss'
 
     import type { PageData } from './$types'
-    import CloseDiffViewAction from './CloseViewAction.svelte'
     import { FileViewGitBlob, FileViewHighlightedFile } from './FileView.gql'
     import FileViewModeSwitcher from './FileViewModeSwitcher.svelte'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
@@ -147,9 +146,6 @@
 {:else if revisionOverride}
     <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
         <FileIcon slot="icon" file={blob} inline />
-        <svelte:fragment slot="actions">
-            <CloseDiffViewAction label="Close commit" />
-        </svelte:fragment>
     </FileHeader>
 {:else}
     <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
@@ -180,12 +176,18 @@
     </FileHeader>
 {/if}
 
-<div class="file-info">
-    {#if revisionOverride}
+{#if revisionOverride}
+    <div class="revision-info">
         <Badge variant="link">
             <a href={revisionOverride.canonicalURL}>{revisionOverride.abbreviatedOID}</a>
         </Badge>
-    {:else if showFileModeSwitcher}
+        <a href={SourcegraphURL.from($page.url).deleteSearchParameter('rev').toString()}>
+            <Icon svgPath={mdiClose} inline />
+            <span>Close commit</span>
+        </a>
+    </div>
+{:else if showFileModeSwitcher}
+    <div class="file-info">
         <FileViewModeSwitcher
             aria-label="View mode"
             value={codeViewMode}
@@ -205,8 +207,8 @@
                 {pluralize('line', blob.totalLines)} · {formatBytes(blob.byteSize)}
             </code>
         {/if}
-    {/if}
-</div>
+    </div>
+{/if}
 
 <div class="content" class:loading={$blobLoader.pending} class:center={fileLoadingError || fileNotFound || isBinary}>
     {#if fileLoadingError}
@@ -279,13 +281,31 @@
         }
     }
 
+    .revision-info,
     .file-info {
-        background: var(--color-bg-1);
-        padding: 0.5rem;
-        color: var(--text-muted);
         display: flex;
-        gap: 1rem;
         align-items: baseline;
+        gap: 1rem;
+        padding: 0.5rem;
+
+        background: var(--color-bg-1);
+        color: var(--text-muted);
+    }
+
+    .revision-info {
+        justify-content: space-between;
+        // Increasing the padding makes the switch between the file view and the diff view
+        // less jarring (the code view switcher increases the height of the info bar).
+        padding: 0.75rem;
+
+        // This is used to avoid having the whitespace being underlined on hover
+        a {
+            text-decoration: none;
+
+            &:hover span {
+                text-decoration: underline;
+            }
+        }
     }
 
     .loading {
