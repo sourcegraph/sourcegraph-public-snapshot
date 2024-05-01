@@ -153,6 +153,7 @@
 
         :global(.treeitem.selected) > :global(.label) {
             background-color: var(--color-bg-3);
+            color: var(--text-title)
         }
     }
 
@@ -164,6 +165,10 @@
         white-space: nowrap;
         text-decoration: none;
         padding: 0.1rem 0;
+
+        :global(.treeitem.selected) & {
+            color: var(--text-title);
+        }
 
         &:hover {
             color: var(--text-title);
