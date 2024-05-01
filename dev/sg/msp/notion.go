@@ -27,19 +27,21 @@ func resetNotionPage(ctx context.Context, client *notionapi.Client, pageID, page
 func listPageBlocks(ctx context.Context, client *notionapi.Client, pageID string) (notionapi.Blocks, error) {
 	var blocks notionapi.Blocks
 	var cursor notionapi.Cursor
+	var pages int
 	for {
 		resp, err := client.Block.GetChildren(ctx, notionapi.BlockID(pageID), &notionapi.Pagination{
 			StartCursor: cursor,
 			PageSize:    100,
 		})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "page %d: failed to get children", pages)
 		}
 		blocks = append(blocks, resp.Results...)
 
 		if !resp.HasMore {
 			break
 		}
+		pages += 1
 		cursor = notionapi.Cursor(resp.NextCursor)
 	}
 	return blocks, nil
@@ -60,10 +62,12 @@ func setPageTitle(ctx context.Context, client *notionapi.Client, pageID string, 
 		notionapi.PageID(pageID),
 		&notionapi.PageUpdateRequest{
 			Properties: notionapi.Properties{
-				"Title": notionapi.TitleProperty{
-					Title: []notionapi.RichText{
-						{Text: &notionapi.Text{Content: title}},
-					},
+				"title": notionapi.TitleProperty{
+					Type: notionapi.PropertyTypeTitle,
+					Title: []notionapi.RichText{{
+						Type: notionapi.ObjectTypeText,
+						Text: &notionapi.Text{Content: title},
+					}},
 				},
 			},
 		}); err != nil {

@@ -2,7 +2,6 @@
 package msp
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -475,24 +474,28 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 							GenerateCommand:         strings.Join(os.Args, " "),
 						}
 
-						sec, err := secrets.FromContext(c.Context)
-						if err != nil {
-							return err
-						}
-						notionToken, err := sec.GetExternal(c.Context,
-							secrets.ExternalSecret{
-								Project: "sourcegraph-local-dev",
-								Name:    "TODO",
-							},
-							func(ctx context.Context) (string, error) {
-								v, ok := os.LookupEnv("NOTION_API_TOKEN")
-								if !ok {
-									return "", errors.New("environment variable NOTION_API_TOKEN not set")
-								}
-								return v, nil
-							})
-						if err != nil {
-							return errors.Wrap(err, "failed to get Notion token from gcloud secrets")
+						// sec, err := secrets.FromContext(c.Context)
+						// if err != nil {
+						// 	return err
+						// }
+						// notionToken, err := sec.GetExternal(c.Context,
+						// 	secrets.ExternalSecret{
+						// 		Project: "sourcegraph-local-dev",
+						// 		Name:    "TODO",
+						// 	},
+						// 	func(ctx context.Context) (string, error) {
+						// 		v, ok := os.LookupEnv("NOTION_API_TOKEN")
+						// 		if !ok {
+						// 			return "", errors.New("environment variable NOTION_API_TOKEN not set")
+						// 		}
+						// 		return v, nil
+						// 	})
+						// if err != nil {
+						// 	return errors.Wrap(err, "failed to get Notion token from gcloud secrets")
+						// }
+						notionToken := os.Getenv("NOTION_API_TOKEN")
+						if notionToken == "" {
+							return errors.New("environment variable NOTION_API_TOKEN not set")
 						}
 						notionClient := notionapi.NewClient(notionapi.Token(notionToken))
 
@@ -507,6 +510,9 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 								continue
 							}
 							serviceSpecs = append(serviceSpecs, svc)
+
+							std.Out.Writef("[%s]\tGenerating operations handbook page", s)
+
 							collectedAlerts, err := CollectAlertPolicies(svc)
 							opts.AlertPolicies = collectedAlerts
 							if err != nil {
@@ -527,7 +533,8 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 								*svc.Service.NotionPageID,
 								fmt.Sprintf("%s infrastructure operations", svc.Service.GetName()),
 							); err != nil {
-								return errors.Wrap(err, s)
+								return errors.Wrapf(err, "%s: reset page %s",
+									s, operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
 							}
 
 							blockUpdater := notion.NewPageBlockUpdater(notionClient, *svc.Service.NotionPageID)
@@ -550,7 +557,8 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 							operationdocs.IndexNotionPageID(),
 							"Managed Services infrastructure",
 						); err != nil {
-							return err
+							return errors.Wrapf(err, "index: reset page %s",
+								operationdocs.NotionHandbookURL(operationdocs.IndexNotionPageID()))
 						}
 						blockUpdater := notion.NewPageBlockUpdater(notionClient, operationdocs.IndexNotionPageID())
 						doc := operationdocs.RenderIndexPage(serviceSpecs, opts)
