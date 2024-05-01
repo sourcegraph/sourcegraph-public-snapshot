@@ -76,12 +76,11 @@
             flex-flow: column nowrap;
             justify-content: center;
             align-items: flex-start;
-            row-gap: 0.125rem;
+            row-gap: 0.25rem;
         }
 
         span {
             color: var(--text-muted);
-            padding: 0.125rem 0;
         }
     }
 </style>

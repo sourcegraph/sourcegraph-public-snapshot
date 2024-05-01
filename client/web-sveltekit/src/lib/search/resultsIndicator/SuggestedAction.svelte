@@ -58,7 +58,6 @@
         column-gap: 0.5rem;
         color: var(--text-muted);
         white-space: nowrap;
-        padding: 0.125rem 0;
         font-size: var(--font-size-tiny);
 
         .info-badge {
