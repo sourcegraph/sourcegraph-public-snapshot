@@ -7,16 +7,28 @@ import (
 	"context"
 	"time"
 
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 // constString effectively requires strings to be statically defined constants.
-type ConstString string
+//
+// 🚨 DO NOT EXPORT - this is intentionally unexported to avoid casting that
+// may expose unsafe strings.
+type constString string
+
+// SafeMetadataKey is an escape hatch for constructing keys for EventMetadata from
+// variable strings for known string enums. Where possible, prefer to use a
+// constant string.
+//
+// 🚨 SECURITY: Use with care, as variable strings can accidentally contain data
+// sensitive to standalone Sourcegraph instances.
+func SafeMetadataKey(key string) constString { return constString(key) }
 
 // EventMetadata is secure, PII-free metadata that can be attached to events.
 // Keys must be const strings, to avoid the accidental addition of sensitive
 // metadata.
-type EventMetadata map[ConstString]float64
+type EventMetadata map[constString]float64
 
 // Bool returns 1 for true and 0 for false, for use in EventMetadata's
 // restricted int64 values.
@@ -91,8 +103,14 @@ func NewEventRecorder(store EventsStore) *EventRecorder {
 }
 
 // Record records a single telemetry event with the context's Sourcegraph
-// actor. Parameters are optional.
+// actor. Parameters are optional - everything else is required.
 func (r *EventRecorder) Record(ctx context.Context, feature eventFeature, action eventAction, parameters *EventParameters) error {
+	if ctx == nil {
+		return errors.New("context is required")
+	}
+	if err := telemetrygatewayv1.ValidateEventFeatureAction(string(feature), string(action)); err != nil {
+		return errors.Wrap(err, "invalid event feature or action")
+	}
 	return r.store.StoreEvents(ctx, []*telemetrygatewayv1.Event{
 		newTelemetryGatewayEvent(ctx, time.Now(), telemetrygatewayv1.DefaultEventIDFunc, feature, action, parameters),
 	})

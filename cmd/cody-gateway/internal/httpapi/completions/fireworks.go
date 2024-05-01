@@ -125,7 +125,7 @@ func (f *FireworksHandlerMethods) validateRequest(_ context.Context, _ log.Logge
 	return nil
 }
 
-func (f *FireworksHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger, _ fireworksRequest) (*flaggingResult, error) {
+func (f *FireworksHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, req fireworksRequest) (*flaggingResult, error) {
 	// TODO[#61278]: Add missing request validation for all LLM providers in Cody Gateway.
 	return nil, nil
 }

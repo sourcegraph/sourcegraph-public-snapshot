@@ -737,10 +737,19 @@ func (s *EnvironmentResourcesSpec) Validate() []error {
 }
 
 type EnvironmentResourceRedisSpec struct {
-	// Defaults to STANDARD_HA.
-	Tier *string `yaml:"tier,omitempty"`
-	// Defaults to 1.
+	// MemoryGB defaults to 1.
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
+	// HighAvailability is disabled by default. Enabling it toggles regional
+	// replicas for the Redis instance without adding read replicas for ~double
+	// the price. It should be enabled for our most critical services, but as
+	// Redis is fairly affordable, if you run into Redis stability issues there
+	// is no blocker to enabling this.
+	//
+	//  - https://cloud.google.com/memorystore/docs/redis/high-availability-for-memorystore-for-redis
+	//  - https://cloud.google.com/memorystore/docs/redis/pricing#instance_pricing_with_no_read_replicas
+	//
+	// Also see: https://sourcegraph.notion.site/655e89d164b24727803f5e5a603226d8
+	HighAvailability *bool `yaml:"highAvailability,omitempty"`
 }
 
 func (EnvironmentResourceRedisSpec) ResourceKind() string { return "Redis" }
@@ -748,13 +757,23 @@ func (EnvironmentResourceRedisSpec) ResourceKind() string { return "Redis" }
 type EnvironmentResourcePostgreSQLSpec struct {
 	// Databases to provision - required.
 	Databases []string `yaml:"databases"`
-	// Defaults to 1. Must be 1, or an even number between 2 and 96.
+	// CPU defaults to 1. Must be 1, or an even number between 2 and 96.
 	CPU *int `yaml:"cpu,omitempty"`
-	// Defaults to 4 (to meet CloudSQL minimum). You must request 0.9 to 6.5 GB
-	// per vCPU.
+	// MemoryGB defaults to 4 (to meet CloudSQL minimum). You must request 0.9
+	// to 6.5 GB per vCPU.
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
-	// Defaults to whatever CloudSQL provides. Must be between 14 and 262143.
+	// MaxConnections defaults to whatever CloudSQL provides. Must be between
+	// 14 and 262143.
 	MaxConnections *int `yaml:"maxConnections,omitempty"`
+	// HighAvailability is disabled by default. Enabling it provisions Cloud SQL
+	// HA configuration for ~double the price and additional point-in-time-recovery
+	// backup expenses, and should only be enabled for our most critical services.
+	//
+	//  - https://cloud.google.com/sql/docs/postgres/high-availability
+	//  - https://cloud.google.com/sql/pricing
+	//
+	// Also see: https://sourcegraph.notion.site/655e89d164b24727803f5e5a603226d8
+	HighAvailability *bool `yaml:"highAvailability,omitempty"`
 }
 
 func (EnvironmentResourcePostgreSQLSpec) ResourceKind() string { return "PostgreSQL instance" }

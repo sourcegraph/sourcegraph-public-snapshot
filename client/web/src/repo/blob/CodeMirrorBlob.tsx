@@ -37,10 +37,11 @@ import { useLocalStorage } from '@sourcegraph/wildcard'
 import { CodeMirrorEditor } from '../../cody/components/CodeMirrorEditor'
 import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
+import { useCodyIgnore } from '../../cody/useCodyIgnore'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { requestGraphQLAdapter } from '../../platform/context'
-import type { BlameHunkData } from '../blame/useBlameHunks'
+import type { BlameHunkData } from '../blame/shared'
 import type { HoverThresholdProps } from '../RepoContainer'
 
 import { BlameDecoration } from './BlameDecoration'
@@ -215,6 +216,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         staticHighlightRanges,
         'data-testid': dataTestId,
         telemetryService,
+        telemetryRecorder,
     } = props
 
     const apolloClient = useApolloClient()
@@ -335,6 +337,9 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         useMemo(() => EditorView.darkTheme.of(!isLightTheme), [isLightTheme])
     )
 
+    const { isFileIgnored } = useCodyIgnore()
+    const isCodyEnabledForFile = isCodyEnabled() && !isFileIgnored(blobInfo.repoName, blobInfo.filePath)
+
     const extensions = useMemo(
         () => [
             staticExtensions,
@@ -347,7 +352,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             scipSnapshot(blobInfo.content, blobInfo.snapshotData),
             openCodeGraphExtension,
             codeFoldingExtension(),
-            isCodyEnabled()
+            isCodyEnabledForFile
                 ? codyWidgetExtension(
                       // TODO: replace with real telemetryRecorder
                       noOpTelemetryRecorder,
@@ -389,7 +394,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             staticHighlightRanges,
             navigate,
             blobInfo,
-            isCodyEnabled,
+            isCodyEnabledForFile,
             openCodeGraphExtension,
             codeIntelExtension,
             editorRef.current,
@@ -499,7 +504,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
     const logEventOnCopy = useCallback(() => {
         telemetryService.log(...codeCopiedEvent('blob-view'))
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('repo.blob.code', 'copy')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <>

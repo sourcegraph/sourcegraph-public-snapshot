@@ -482,7 +482,7 @@ The breakdown of known client flakes by type with resolution tips:
 #### Visual regression flakes
 
 _Problem:_ Percy’s pixel sensitivity is too high, and we cannot relax it further which means that SVG rendering can be flaky.
-_Solution:_ Snapshot these pages in Chromatic or hide flaky elements from Percy using the `.percy-hide` class name.
+_Solution:_ Hide flaky elements from Percy using the `.percy-hide` class name.
 
 _Problem:_ UI depends on the date and time, which are not appropriately mocked.
 _Solution:_ Mock the date and time properly in your integration test or Storybook story.

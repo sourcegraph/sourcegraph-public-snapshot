@@ -33,14 +33,8 @@ describe('SuggestedAction.svelte', () => {
             state: 'complete',
         })
 
-        const title = document.getElementsByClassName('info-badge')
-        expect(title).toHaveLength(1)
-
-        const interpunct = document.getElementsByClassName('separator')
-        expect(interpunct).toHaveLength(1)
-
-        const action = document.getElementsByClassName('action-badge')
-        expect(action).toHaveLength(1)
+        const infoBadge = document.getElementsByClassName('info-badge')
+        expect(infoBadge).toHaveLength(1)
     })
 
     test('renders title only when there is no suggested items', async () => {
@@ -100,5 +94,35 @@ describe('SuggestedAction.svelte', () => {
         const infoBadge = document.getElementsByClassName('info-badge error-text')
         expect(infoBadge).toHaveLength(1)
         expect(infoBadge[0].textContent).toBe('Error badge')
+    })
+
+    test('render error when error is true', async () => {
+        renderSuggestedAction({
+            progress: {
+                matchCount: 750,
+                durationMs: 25000,
+                skipped: [
+                    {
+                        reason: 'error is the reason',
+                        title: '500 error',
+                        message: 'error is the message',
+                        severity: 'error',
+                    },
+                    {
+                        reason: 'display',
+                        title: 'Display limit hit',
+                        message: 'you hit the display limit',
+                        severity: 'info',
+                    },
+                ],
+                done: true,
+            },
+            severity: 'error',
+            state: 'error',
+        })
+
+        const errorText = document.getElementsByClassName('error-text')
+        expect(errorText).toHaveLength(1)
+        expect(errorText[0].textContent).toBe('500 error')
     })
 })

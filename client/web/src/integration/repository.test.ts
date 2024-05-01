@@ -31,11 +31,12 @@ import {
     createFileNamesResult,
     createResolveCloningRepoRevisionResult,
     createFileTreeEntriesResult,
+    createCodyContextFiltersResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants, removeContextFromQuery } from './utils'
 
-export const getCommonRepositoryGraphQlResults = (
+const getCommonRepositoryGraphQlResults = (
     repositoryName: string,
     repositoryUrl: string,
     fileEntries: string[] = []
@@ -48,6 +49,7 @@ export const getCommonRepositoryGraphQlResults = (
     TreeEntries: () => createTreeEntriesResult(repositoryUrl, fileEntries),
     FileTreeEntries: () => createFileTreeEntriesResult(repositoryUrl, fileEntries),
     Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
+    ContextFilters: () => createCodyContextFiltersResult(),
 })
 
 const now = new Date()
@@ -733,6 +735,7 @@ describe('Repository', () => {
                         },
                     },
                 }),
+                ContextFilters: () => createCodyContextFiltersResult(),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph/-/commits')
             await driver.page.waitForSelector('[data-testid="commits-page"]', { visible: true })
@@ -861,20 +864,27 @@ describe('Repository', () => {
                     ...commonWebGraphQlResults,
                     ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, []),
                     RepositoryGitBranchesOverview: () => ({
+                        __typename: 'Query',
                         node: {
+                            __typename: 'Repository',
                             defaultBranch: {
+                                __typename: 'GitRef',
                                 id: 'QmV3b2Q=',
                                 displayName: 'main',
                                 name: 'refs/heads/main',
                                 abbrevName: 'main',
                                 url: `/${repositoryName}/-/branches/${'1'.repeat(40)}`,
                                 target: {
+                                    __typename: 'GitObject',
                                     commit: {
+                                        __typename: 'GitCommit',
                                         author: {
                                             __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 displayName: 'John Doe',
                                                 user: {
+                                                    __typename: 'User',
                                                     username: 'johndoe',
                                                 },
                                             },
@@ -883,12 +893,14 @@ describe('Repository', () => {
                                         committer: {
                                             __typename: 'Signature',
                                             person: {
+                                                __typename: 'Person',
                                                 displayName: 'John Doe',
                                                 user: null,
                                             },
                                             date: subDays(new Date(), 1).toISOString(),
                                         },
                                         behindAhead: {
+                                            __typename: 'BehindAheadCounts',
                                             behind: 0,
                                             ahead: 0,
                                         },
@@ -896,21 +908,27 @@ describe('Repository', () => {
                                 },
                             },
                             gitRefs: {
-                                pageInfo: { hasNextPage: false },
+                                __typename: 'GitRefConnection',
+                                pageInfo: { __typename: 'PageInfo', hasNextPage: false },
                                 nodes: [
                                     {
+                                        __typename: 'GitRef',
                                         id: 'BranchId1',
                                         displayName: 'integration-tests-trigramming',
                                         name: 'refs/heads/integration-tests-trigramming',
                                         abbrevName: 'integration-tests-trigramming',
                                         url: `/${repositoryName}/-/branches/${'1'.repeat(40)}`,
                                         target: {
+                                            __typename: 'GitObject',
                                             commit: {
+                                                __typename: 'GitCommit',
                                                 author: {
                                                     __typename: 'Signature',
                                                     person: {
+                                                        __typename: 'Person',
                                                         displayName: 'John Doe',
                                                         user: {
+                                                            __typename: 'User',
                                                             username: 'johndoe',
                                                         },
                                                     },
@@ -919,14 +937,17 @@ describe('Repository', () => {
                                                 committer: {
                                                     __typename: 'Signature',
                                                     person: {
+                                                        __typename: 'Person',
                                                         displayName: 'John Doe',
                                                         user: {
+                                                            __typename: 'User',
                                                             username: 'johndoe',
                                                         },
                                                     },
                                                     date: subDays(new Date(), 1).toISOString(),
                                                 },
                                                 behindAhead: {
+                                                    __typename: 'BehindAheadCounts',
                                                     behind: 12633,
                                                     ahead: 1,
                                                 },
@@ -934,18 +955,23 @@ describe('Repository', () => {
                                         },
                                     },
                                     {
+                                        __typename: 'GitRef',
                                         id: 'BranchId2',
                                         displayName: 'integration-tests-quadgramming',
                                         name: 'refs/heads/integration-tests-quadgramming',
                                         abbrevName: 'integration-tests-quadgramming',
                                         url: `/${repositoryName}/-/branches/${'1'.repeat(40)}`,
                                         target: {
+                                            __typename: 'GitObject',
                                             commit: {
+                                                __typename: 'GitCommit',
                                                 author: {
                                                     __typename: 'Signature',
                                                     person: {
+                                                        __typename: 'Person',
                                                         displayName: 'Alice',
                                                         user: {
+                                                            __typename: 'User',
                                                             username: 'alice',
                                                         },
                                                     },
@@ -954,14 +980,17 @@ describe('Repository', () => {
                                                 committer: {
                                                     __typename: 'Signature',
                                                     person: {
+                                                        __typename: 'Person',
                                                         displayName: 'Alice',
                                                         user: {
+                                                            __typename: 'User',
                                                             username: 'alice',
                                                         },
                                                     },
                                                     date: subDays(new Date(), 1).toISOString(),
                                                 },
                                                 behindAhead: {
+                                                    __typename: 'BehindAheadCounts',
                                                     behind: 12633,
                                                     ahead: 1,
                                                 },

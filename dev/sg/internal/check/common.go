@@ -20,9 +20,12 @@ import (
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 // checkPostgresConnection succeeds connecting to the default user database works, regardless
@@ -349,6 +352,69 @@ func Caddy(_ context.Context) error {
 		return nil
 	}
 	return errors.New("doesn't look like certificate is trusted")
+}
+
+const devPrivateDefaultBranch = "master"
+
+var NoDevPrivateCheck = false
+
+// TODO: use or merge this check with the `dev-private` check in `sg setup`
+func DevPrivate(ctx context.Context) error {
+	if NoDevPrivateCheck {
+		return nil
+	}
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to determine repository root location: %s", err))
+		return exit.NewEmptyExitErr(1)
+	}
+
+	devPrivatePath := filepath.Join(repoRoot, "..", "dev-private")
+	exists, err := pathExists(devPrivatePath)
+	if err != nil {
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to check whether dev-private repository exists: %s", err))
+		return exit.NewEmptyExitErr(1)
+	}
+	if !exists {
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: dev-private repository not found!"))
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "It's expected to exist at: %s", devPrivatePath))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "See the documentation for how to get set up: https://sourcegraph.com/docs/dev/setup/quickstart#run-sg-setup"))
+
+		std.Out.Write("")
+		return exit.NewEmptyExitErr(1)
+	}
+
+	// dev-private exists, let's see if there are any changes
+	update := std.Out.Pending(output.Styled(output.StylePending, "Checking for dev-private changes..."))
+	shouldUpdate, err := shouldUpdateDevPrivate(ctx, devPrivatePath, devPrivateDefaultBranch)
+	if shouldUpdate {
+		update.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "We found some changes in dev-private that you're missing out on! If you want the new changes, 'cd ../dev-private' and then do a 'git stash' and a 'git pull'!"))
+	}
+	if err != nil {
+		update.Close()
+		std.Out.WriteWarningf("WARNING: Encountered some trouble while checking if there are remote changes in dev-private!")
+		std.Out.Write("")
+		std.Out.Write(err.Error())
+		std.Out.Write("")
+	} else {
+		update.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done checking dev-private changes"))
+	}
+
+	return nil
+}
+
+func shouldUpdateDevPrivate(ctx context.Context, path, branch string) (bool, error) {
+	// git fetch so that we check whether there are any remote changes
+	if err := run.Bash(ctx, fmt.Sprintf("git fetch origin %s", branch)).Dir(path).Run().Wait(); err != nil {
+		return false, err
+	}
+	// Now we check if there are any changes. If the output is empty, we're not missing out on anything.
+	outputStr, err := run.Bash(ctx, fmt.Sprintf("git diff --shortstat origin/%s", branch)).Dir(path).Run().String()
+	if err != nil {
+		return false, err
+	}
+	return len(outputStr) > 0, err
+
 }
 
 func pathExists(path string) (bool, error) {

@@ -68,14 +68,14 @@ mod test {
             fn $tags_name() {
                 let filename = $filename;
 
-                let mut buffer = vec![0u8; 1024];
-                let mut buf_writer = BufWriter::new(&mut buffer);
+                let mut buf_writer = BufWriter::new(Vec::new());
 
                 let ctags_name = format!("tags_snapshot_{filename}");
                 let contents = include_str!(concat!("../testdata/", $filename));
 
                 generate_tags(&mut buf_writer, filename.to_string(), contents);
-                insta::assert_snapshot!(ctags_name, String::from_utf8_lossy(buf_writer.buffer()));
+                let output = buf_writer.into_inner().unwrap();
+                insta::assert_snapshot!(ctags_name, String::from_utf8_lossy(&output));
             }
         };
         (All, $tags_name:tt, $scip_name:tt, $filename:tt) => {

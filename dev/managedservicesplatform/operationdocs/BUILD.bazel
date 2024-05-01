@@ -12,6 +12,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dev/managedservicesplatform/operationdocs/internal/markdown",
+        "//dev/managedservicesplatform/operationdocs/terraform",
         "//dev/managedservicesplatform/spec",
         "//lib/errors",
         "//lib/pointers",
@@ -29,6 +30,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":operationdocs"],
     deps = [
+        "//dev/managedservicesplatform/operationdocs/terraform",
         "//dev/managedservicesplatform/spec",
         "//lib/pointers",
         "@com_github_hexops_autogold_v2//:autogold",

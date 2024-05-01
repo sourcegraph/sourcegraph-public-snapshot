@@ -5,6 +5,10 @@
     import { type TabsContext, KEY } from './Tabs.svelte'
 
     export let title: string
+    /**
+     * SVG path for the icon to display in the tab header.
+     */
+    export let icon: string | undefined = undefined
 
     const context = getContext<TabsContext>(KEY)
     const id = uuid.v4()
@@ -13,6 +17,7 @@
         context.register({
             id: tabId,
             title,
+            icon,
         })
     )
     $: selectedId = context.selectedTabID
@@ -20,7 +25,13 @@
 </script>
 
 {#if selected}
-    <div id="{context.id}-panel-{id}" aria-labelledby={tabId} role="tabpanel" tabindex={selected ? 0 : -1}>
+    <div
+        id="{context.id}-panel-{id}"
+        aria-labelledby={tabId}
+        role="tabpanel"
+        tabindex={selected ? 0 : -1}
+        data-tab-panel={title}
+    >
         <slot />
     </div>
 {/if}
@@ -29,5 +40,6 @@
     div {
         flex: 1;
         min-height: 0;
+        overflow: hidden;
     }
 </style>

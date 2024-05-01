@@ -6,9 +6,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/ssc"
 )
 
 // newSSCRefreshCodyRateLimitHandler returns an http.Handler to trigger cody's rate limit refresh for a user

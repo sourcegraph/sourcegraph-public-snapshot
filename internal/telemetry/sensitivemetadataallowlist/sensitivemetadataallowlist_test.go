@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
-	v1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	v1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 func TestIsAllowed(t *testing.T) {

@@ -4,6 +4,8 @@ import classNames from 'classnames'
 import { groupBy, sortBy, startCase, sumBy } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Card,
     H2,
@@ -20,7 +22,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import type { CodeIntelStatisticsResult, CodeIntelStatisticsVariables } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
@@ -34,8 +35,9 @@ import { CODEINTEL_STATISTICS } from './queries'
 
 import styles from './index.module.scss'
 
-export const AnalyticsCodeIntelPage: React.FC = () => {
-    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'CodeIntel' })
+interface Props extends TelemetryV2Props {}
+export const AnalyticsCodeIntelPage: React.FC<Props> = ({ telemetryRecorder }) => {
+    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'CodeIntel', telemetryRecorder })
     const { data, error, loading } = useQuery<CodeIntelStatisticsResult, CodeIntelStatisticsVariables>(
         CODEINTEL_STATISTICS,
         {
@@ -46,8 +48,9 @@ export const AnalyticsCodeIntelPage: React.FC = () => {
         }
     )
     useEffect(() => {
-        eventLogger.logPageView('AdminAnalyticsCodeIntel')
-    }, [])
+        EVENT_LOGGER.logPageView('AdminAnalyticsCodeIntel')
+        telemetryRecorder.recordEvent('admin.analytics.codeIntel', 'view')
+    }, [telemetryRecorder])
 
     type Kind = 'inApp' | 'codeHost' | 'crossRepo' | 'precise'
 
@@ -182,6 +185,7 @@ export const AnalyticsCodeIntelPage: React.FC = () => {
                         'Compiler-accurate code navigation takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant additional time savings.',
                 },
             ],
+            telemetryRecorder,
         }
 
         return [stats, legends, calculatorProps]
@@ -193,6 +197,7 @@ export const AnalyticsCodeIntelPage: React.FC = () => {
         kindToMinPerItem.crossRepo,
         kindToMinPerItem.inApp,
         kindToMinPerItem.precise,
+        telemetryRecorder,
     ])
 
     if (error) {

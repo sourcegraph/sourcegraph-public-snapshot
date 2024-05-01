@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	telemetry "github.com/sourcegraph/sourcegraph/internal/telemetry"
-	v1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	v1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 // MockEventsStore is a mock implementation of the EventsStore interface

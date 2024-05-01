@@ -24,6 +24,20 @@ function isElement(t: any): t is Element {
 }
 
 /**
+ * This is an internal function to check if an Element has attributes that indicate it is a content field.
+ * It's exported for testing only.
+ * @param target Element
+ */
+function isContentElement(target: Element): boolean {
+    return (
+        target.getAttribute('contenteditable') === 'true' ||
+        // textarea and input are from the HTML standard, textbox is from svelte
+        ['textarea', 'input', 'textbox'].includes(target.getAttribute('role') ?? '') ||
+        ['INPUT', 'TEXTAREA'].includes(target.tagName)
+    )
+}
+
+/**
  * This function determines if the field that's focussed by the KeyboardEvent is some kind of input.
  * The implementation makes some assumptions about how the UI sets up content fields, which are also
  * specific to Svelte. It may need adjustment in the future.
@@ -35,11 +49,7 @@ function isContentField(event: KeyboardEvent): boolean {
     }
     const target = event.target
     if (isElement(target)) {
-        return (
-            target.getAttribute('contenteditable') === 'true' ||
-            // textarea and input are from the HTML standard, textbox is from svelte
-            ['textarea', 'input', 'textbox'].includes(target.getAttribute('role') ?? '')
-        )
+        return isContentElement(target)
     }
     return false
 }
@@ -53,7 +63,7 @@ function wrapHandler(handler: KeyHandler, allowDefault: boolean = false, ignoreI
         }
 
         if (!(ignoreInputFields && isContentField(keyboardEvent))) {
-            handler(keyboardEvent, hotkeysEvent)
+            return handler(keyboardEvent, hotkeysEvent) ?? allowDefault
         }
 
         // Returning false stops the event and prevents default browser events on macOS.
@@ -163,4 +173,9 @@ export function registerHotkey({ keys, handler, allowDefault, ignoreInputFields 
             }
         },
     }
+}
+
+export const exportedForTesting = {
+    isContentElement,
+    wrapHandler,
 }

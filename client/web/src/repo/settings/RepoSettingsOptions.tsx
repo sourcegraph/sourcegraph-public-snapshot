@@ -3,6 +3,7 @@ import { type FC, useCallback, useEffect, useState } from 'react'
 import { noop } from 'lodash'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Container, ErrorAlert, H3, LoadingSpinner, renderError, Text } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../components/CopyableText'
@@ -16,7 +17,6 @@ import type {
     SiteExternalServiceConfigVariables,
 } from '../../graphql-operations'
 import { SITE_EXTERNAL_SERVICE_CONFIG } from '../../site-admin/backend'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { EXCLUDE_REPO_FROM_EXTERNAL_SERVICES, FETCH_SETTINGS_AREA_REPOSITORY_GQL } from './backend'
 import { ExternalServiceEntry } from './components/ExternalServiceEntry'
@@ -30,8 +30,9 @@ interface Props {
 
 export const RepoSettingsOptions: FC<Props> = ({ repo }) => {
     useEffect(() => {
-        eventLogger.logViewEvent('RepoSettings')
-    })
+        EVENT_LOGGER.logViewEvent('RepoSettings')
+        // No need to use v2 telemetry here. This event is duplicative with 'repo.settings.mirror', 'view'
+    }, [])
 
     const { data, error, loading } = useQuery<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
         FETCH_SETTINGS_AREA_REPOSITORY_GQL,

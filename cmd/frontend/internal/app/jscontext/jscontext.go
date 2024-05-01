@@ -16,11 +16,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -255,6 +256,8 @@ type JSContext struct {
 	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
 
 	RunningOnMacOS bool `json:"runningOnMacOS"`
+
+	SvelteKit sveltekit.JSContext `json:"svelteKit"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -446,6 +449,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
 
 		RunningOnMacOS: runningOnMacOS,
+
+		SvelteKit: sveltekit.GetJSContext(req.Context()),
 	}
 
 	// If the license a Sourcegraph instance is running under does not support Code Search features

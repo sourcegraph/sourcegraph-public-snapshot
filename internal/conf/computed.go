@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
@@ -916,8 +915,8 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		return nil
 	}
 
-	// Only allow embeddings on dotcom
-	if !dotcom.SourcegraphDotComMode() {
+	// Only allow embeddings as part of evaluating context quality.
+	if !ForceAllowEmbeddings() {
 		return nil
 	}
 
@@ -1060,59 +1059,6 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		MaxFileSizeBytes:         maxFileSizeLimit,
 	}
 
-	// Default values should match the documented defaults in site.schema.json.
-	computedQdrantConfig := conftypes.QdrantConfig{
-		Enabled: false,
-		QdrantHNSWConfig: conftypes.QdrantHNSWConfig{
-			EfConstruct:       nil,
-			FullScanThreshold: nil,
-			M:                 nil,
-			OnDisk:            true,
-			PayloadM:          nil,
-		},
-		QdrantOptimizersConfig: conftypes.QdrantOptimizersConfig{
-			IndexingThreshold: 0,
-			MemmapThreshold:   100,
-		},
-		QdrantQuantizationConfig: conftypes.QdrantQuantizationConfig{
-			Enabled:  true,
-			Quantile: 0.98,
-		},
-	}
-	if embeddingsConfig.Qdrant != nil {
-		qc := embeddingsConfig.Qdrant
-		computedQdrantConfig.Enabled = qc.Enabled
-
-		if qc.Hnsw != nil {
-			computedQdrantConfig.QdrantHNSWConfig.EfConstruct = toUint64(qc.Hnsw.EfConstruct)
-			computedQdrantConfig.QdrantHNSWConfig.FullScanThreshold = toUint64(qc.Hnsw.FullScanThreshold)
-			computedQdrantConfig.QdrantHNSWConfig.M = toUint64(qc.Hnsw.M)
-			computedQdrantConfig.QdrantHNSWConfig.PayloadM = toUint64(qc.Hnsw.PayloadM)
-			if qc.Hnsw.OnDisk != nil {
-				computedQdrantConfig.QdrantHNSWConfig.OnDisk = *qc.Hnsw.OnDisk
-			}
-		}
-
-		if qc.Optimizers != nil {
-			if qc.Optimizers.IndexingThreshold != nil {
-				computedQdrantConfig.QdrantOptimizersConfig.IndexingThreshold = uint64(*qc.Optimizers.IndexingThreshold)
-			}
-			if qc.Optimizers.MemmapThreshold != nil {
-				computedQdrantConfig.QdrantOptimizersConfig.MemmapThreshold = uint64(*qc.Optimizers.MemmapThreshold)
-			}
-		}
-
-		if qc.Quantization != nil {
-			if qc.Quantization.Enabled != nil {
-				computedQdrantConfig.QdrantQuantizationConfig.Enabled = *qc.Quantization.Enabled
-			}
-
-			if qc.Quantization.Quantile != nil {
-				computedQdrantConfig.QdrantQuantizationConfig.Quantile = float32(*qc.Quantization.Quantile)
-			}
-		}
-	}
-
 	computedConfig := &conftypes.EmbeddingsConfig{
 		Provider:    conftypes.EmbeddingsProviderName(embeddingsConfig.Provider),
 		AccessToken: embeddingsConfig.AccessToken,
@@ -1126,7 +1072,6 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		MaxTextEmbeddingsPerRepo:               embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		PolicyRepositoryMatchLimit:             embeddingsConfig.PolicyRepositoryMatchLimit,
 		ExcludeChunkOnError:                    pointers.Deref(embeddingsConfig.ExcludeChunkOnError, true),
-		Qdrant:                                 computedQdrantConfig,
 		PerCommunityUserEmbeddingsMonthlyLimit: embeddingsConfig.PerCommunityUserEmbeddingsMonthlyLimit,
 		PerProUserEmbeddingsMonthlyLimit:       embeddingsConfig.PerProUserEmbeddingsMonthlyLimit,
 	}

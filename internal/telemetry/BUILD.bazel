@@ -14,9 +14,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/telemetry",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/telemetrygateway/v1:telemetrygateway",
+        "//internal/telemetrygateway/event",
         "//internal/trace",
         "//internal/version",
+        "//lib/errors",
+        "//lib/telemetrygateway/v1:telemetrygateway",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_google_protobuf//types/known/structpb",
     ],

@@ -1910,8 +1910,9 @@ type Query {
 
     """
     Retrieve all registered out-of-band migrations.
+    Optionally filter deprecated before first version out-of-band-migrations.
     """
-    outOfBandMigrations: [OutOfBandMigration!]!
+    outOfBandMigrations(ExcludeDeprecatedBeforeFirstVersion: Boolean): [OutOfBandMigration!]!
 
     """
     Retrieve the list of defined feature flags
@@ -2146,6 +2147,13 @@ type Query {
     Site-admin only.
     """
     gitservers: GitserverInstanceConnection!
+
+    """
+    Returns information pertaining to all indexed search instances associated with this Sourcegraph instance.
+
+    Site-admin only.
+    """
+    indexedSearchInstances: IndexedSearchInstanceConnection!
 }
 
 """
@@ -2189,6 +2197,39 @@ type GitserverInstance implements Node {
     The total amount of storage space on the gitserver instance, in bytes.
     """
     totalDiskSpaceBytes: BigInt!
+}
+
+"""
+A list of indexed search instances.
+"""
+type IndexedSearchInstanceConnection {
+    """
+    A list of instances.
+    """
+    nodes: [IndexedSearchInstance!]!
+    """
+    The total count of instances in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+IndexedSearchInstance contains information about a indexed search instance.
+"""
+type IndexedSearchInstance implements Node {
+    """
+    The unique identifier of the instance.
+    """
+    id: ID!
+
+    """
+    The address of the instance.
+    """
+    address: String!
 }
 
 """
@@ -3841,16 +3882,6 @@ type Repository implements Node & GenericSearchResultInterface {
         other Git refs.
         """
         type: GitRefType
-        """
-        Ordering for Git refs in the list.
-        """
-        orderBy: GitRefOrder
-        """
-        Ordering is an expensive operation that doesn't scale for lots of
-        references. If this is true we fallback on not ordering. This should
-        never be false in interactive API requests.
-        """
-        interactive: Boolean = true
     ): GitRefConnection!
     """
     The repository's Git branches.
@@ -3864,16 +3895,6 @@ type Repository implements Node & GenericSearchResultInterface {
         Return Git branches whose names match the query.
         """
         query: String
-        """
-        Ordering for Git branches in the list.
-        """
-        orderBy: GitRefOrder
-        """
-        Ordering is an expensive operation that doesn't scale for lots of
-        references. If this is true we fallback on not ordering. This should
-        never be false in interactive API requests.
-        """
-        interactive: Boolean = true
     ): GitRefConnection!
     """
     The repository's Git tags.
@@ -5051,16 +5072,6 @@ enum GitRefType {
     A Git ref that is neither a branch nor tag.
     """
     GIT_REF_OTHER
-}
-
-"""
-Ordering options for Git refs.
-"""
-enum GitRefOrder {
-    """
-    By the authored or committed at date, whichever is more recent.
-    """
-    AUTHORED_OR_COMMITTED_AT
 }
 
 """

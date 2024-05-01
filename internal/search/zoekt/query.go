@@ -52,27 +52,23 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 			and = append(and, &zoekt.Not{Child: filter})
 		}
 	} else {
-		filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
-		filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
+		// By default, convert the language filters to file regexp patterns. Note: these
+		// are always case-insensitive, to match broadly on extensions like file.C.
+		langFilters, err := toFileFilters(
+			mapSlice(langInclude, query.LangToFileRegexp),
+			mapSlice(langExclude, query.LangToFileRegexp),
+			false)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, langFilters...)
 	}
 
-	// zoekt also uses regular expressions for file paths
-	// TODO PathPatternsAreCaseSensitive
-	// TODO whitespace in file path patterns?
-	for _, i := range filesInclude {
-		q, err := zoektquery.FileRe(i, isCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, q)
+	fileFilters, err := toFileFilters(filesInclude, filesExclude, isCaseSensitive)
+	if err != nil {
+		return nil, err
 	}
-	if len(filesExclude) > 0 {
-		q, err := zoektquery.FileRe(query.UnionRegExps(filesExclude), isCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoekt.Not{Child: q})
-	}
+	and = append(and, fileFilters...)
 
 	var repoHasFilters []zoekt.Q
 	for _, filter := range b.RepoHasFileContent() {
@@ -88,6 +84,27 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 func toLangFilter(lang string) zoekt.Q {
 	lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
 	return &zoekt.Language{Language: lang}
+}
+
+// toFileFilters converts a list of file regexp patterns to Zoekt file filters.
+func toFileFilters(filesInclude []string, filesExclude []string, isCaseSensitive bool) ([]zoekt.Q, error) {
+	var filters []zoekt.Q
+	// TODO whitespace in file path patterns?
+	for _, i := range filesInclude {
+		q, err := zoektquery.FileRe(i, isCaseSensitive)
+		if err != nil {
+			return nil, err
+		}
+		filters = append(filters, q)
+	}
+	if len(filesExclude) > 0 {
+		q, err := zoektquery.FileRe(query.UnionRegExps(filesExclude), isCaseSensitive)
+		if err != nil {
+			return nil, err
+		}
+		filters = append(filters, &zoekt.Not{Child: q})
+	}
+	return filters, nil
 }
 
 func QueryForFileContentArgs(opt query.RepoHasFileContentArgs, caseSensitive bool) zoekt.Q {

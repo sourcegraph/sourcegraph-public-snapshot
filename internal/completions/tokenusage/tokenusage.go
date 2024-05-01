@@ -35,7 +35,7 @@ const (
 )
 
 func (m *Manager) TokenizeAndCalculateUsage(inputMessages []types.Message, outputText, model, feature string, provider Provider) error {
-	tokenizer, err := tokenizer.NewTokenizer(model)
+	tokenizer, err := tokenizer.NewCL100kBaseTokenizer()
 	if err != nil {
 		return errors.Newf("failed to create tokenizer: %w", err)
 	}

@@ -4,6 +4,7 @@ import { EMPTY, NEVER, of } from 'rxjs'
 
 import { SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
 import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     HIGHLIGHTED_FILE_LINES_LONG_REQUEST,
@@ -45,7 +46,12 @@ const defaultProps: StreamingSearchResultsProps = {
         subjects: null,
         final: null,
     },
-    platformContext: { settings: NEVER, requestGraphQL: () => EMPTY, sourcegraphURL: 'https://sourcegraph.com' } as any,
+    platformContext: {
+        settings: NEVER,
+        requestGraphQL: () => EMPTY,
+        sourcegraphURL: 'https://sourcegraph.com',
+        telemetryRecorder: noOpTelemetryRecorder,
+    } as any,
 
     streamSearch: () => of(streamingSearchResult),
 
@@ -147,7 +153,7 @@ export const ProgressWithWarning: StoryFn = () => {
             matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
             skipped: [
                 {
-                    reason: 'excluded-fork',
+                    reason: 'repository-fork',
                     message: '10k forked repositories excluded',
                     severity: 'info',
                     title: '10k forked repositories excluded',

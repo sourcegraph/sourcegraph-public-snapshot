@@ -21,7 +21,6 @@ import (
 
 // If you want to build these images use CandidateNoTest / CandidatesNoTest
 var legacyDockerImages = []string{
-	"dind",
 	"executor-vm",
 
 	// See RFC 793, those images will be dropped in 5.1.x.
@@ -201,6 +200,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.WolfiBaseRebuild:
 		// If this is a Wolfi base image rebuild, run script to re-lock packages
 		// for all Wolfi base images and open a PR
+		ops.Merge(
+			BazelOpsSet(buildOptions,
+				CoreTestOperationsOptions{
+					IsMainBranch: buildOptions.Branch == "main",
+				}),
+		)
 		ops.Merge(wolfiBaseImageLockAndCreatePR())
 
 	// Use CandidateNoTest if you want to build legacy Docker Images
@@ -300,7 +305,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Core tests
 		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
-			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun, runtype.CloudEphemeral),

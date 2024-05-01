@@ -1,8 +1,8 @@
 <script lang="ts" generics="T extends string">
+    import { createEventDispatcher } from 'svelte'
     import type { AriaAttributes } from 'svelte/elements'
 
     import { nextSibling, previousSibling, uniqueID } from '$lib/dom'
-    import { createEventDispatcher } from 'svelte'
 
     type $$Props = {
         value: T
@@ -13,7 +13,7 @@
     export let options: T[]
 
     const id = uniqueID()
-    const dispatch = createEventDispatcher<{ change: T }>()
+    const dispatch = createEventDispatcher<{ change: T; preload: T }>()
 
     // Keyboard interaction was modeled after https://www.w3.org/WAI/ARIA/apg/patterns/radio
 
@@ -21,6 +21,11 @@
         const target = event.currentTarget as HTMLElement
         value = target.dataset.value as T
         dispatch('change', value)
+    }
+
+    function handlePreload(event: Event) {
+        const target = event.currentTarget as HTMLElement
+        dispatch('preload', target.dataset.value as T)
     }
 
     function handleKeydown(event: KeyboardEvent) {
@@ -61,6 +66,8 @@
             data-value={option}
             on:mousedown={handleMousedown}
             on:keydown={handleKeydown}
+            on:mouseover={handlePreload}
+            on:focus={handlePreload}
         >
             <span id="{id}-{option}-label">
                 <slot name="label" value={option}>{option}</slot>
@@ -75,7 +82,6 @@
         --border-width: 1px;
 
         display: inline-flex;
-        gap: 0.5rem;
         background-color: var(--secondary-4);
         border-radius: var(--border-radius);
         align-items: center;
@@ -85,10 +91,11 @@
     [role='radio'] {
         border: var(--border-width) solid transparent;
         cursor: pointer;
-        padding: 0.25rem 0.5rem;
+        padding: 0.25rem 0.75rem;
         border-radius: var(--border-radius);
-        color: var(--text-muted);
+        color: var(--text-body);
         margin: calc(var(--border-width) * -1);
+        user-select: none;
 
         &:focus-visible {
             box-shadow: 0 0 0 2px var(--primary-2);

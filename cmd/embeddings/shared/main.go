@@ -79,7 +79,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	handler := NewHandler(logger, indexGetter.Get, getQueryEmbedding)
 	handler = handlePanic(logger, handler)
 	handler = featureflag.Middleware(db.FeatureFlags(), handler)
-	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
+	handler = trace.HTTPMiddleware(logger, handler)
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = actor.HTTPMiddleware(logger, handler)
 	server := httpserver.NewFromAddr(addr, &http.Server{
@@ -177,7 +177,7 @@ func mustInitializeFrontendDB(observationCtx *observation.Context) *sql.DB {
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
 func setAuthzProviders(ctx context.Context, db database.DB) {
-	for range time.NewTicker(providers.RefreshInterval()).C {
+	for range time.NewTicker(providers.RefreshInterval(conf.Get())).C {
 		allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}

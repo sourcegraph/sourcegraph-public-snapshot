@@ -8,6 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -15,10 +17,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+)
+
+var (
+	searchRunning = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_search_running",
+		Help: "number of gitserver.Search running concurrently.",
+	})
+	searchDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_gitserver_search_duration_seconds",
+		Help:    "gitserver.Search duration in seconds.",
+		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	}, []string{"error"})
+	searchLatency = promauto.NewHistogram(prometheus.HistogramOpts{
+		Name:    "src_gitserver_search_latency_seconds",
+		Help:    "gitserver.Search latency (time until first result is sent) in seconds.",
+		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	})
 )
 
 func searchWithObservability(ctx context.Context, logger log.Logger, repoDir common.GitDir, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
@@ -58,7 +76,7 @@ func searchWithObservability(ctx context.Context, logger log.Logger, repoDir com
 			}
 			if traceID := trace.ID(ctx); traceID != "" {
 				ev.AddField("traceID", traceID)
-				ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
+				ev.AddField("trace", trace.URL(traceID))
 			}
 			if honey.Enabled() {
 				_ = ev.Send()
@@ -103,7 +121,7 @@ func doSearch(ctx context.Context, logger log.Logger, repoDir common.GitDir, arg
 		}
 	})
 
-	// Create a callback that detects whether we've hit a limit
+	// Create a recvCallback that detects whether we've hit a limit
 	// and stops sending when we have.
 	var sentCount atomic.Int64
 	var hitLimit atomic.Bool

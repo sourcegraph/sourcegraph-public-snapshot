@@ -22,8 +22,6 @@
                 return avatar.displayName || avatar.name || ''
             case 'Team':
                 return avatar.displayName || ''
-            default:
-                return ''
         }
     }
 
@@ -32,9 +30,9 @@
 </script>
 
 {#if avatarURL}
-    <img src={avatarURL} role="presentation" aria-hidden="true" alt="Avatar of {name}" />
+    <img src={avatarURL} role="presentation" aria-hidden="true" alt="Avatar of {name}" data-avatar />
 {:else}
-    <div>
+    <div data-avatar>
         <span>{getInitials(name)}</span>
     </div>
 {/if}
@@ -44,12 +42,12 @@
         z-index: 1;
         color: var(--text-muted);
         font-size: calc(var(--size) * 0.5);
-        font-weight: 300;
+        font-weight: 500;
     }
 
     img,
     div {
-        --min-size: 1rem;
+        --min-size: 1.25rem;
         --size: var(--avatar-size, var(--icon-inline-size, var(--min-size)));
 
         min-width: var(--min-size);

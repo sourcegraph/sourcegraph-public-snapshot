@@ -3,7 +3,7 @@
 package:
   name: p4-fusion
   version: 1.12
-  epoch: 9
+  epoch: 12
   description: "A fast Perforce to Git conversion tool"
   target-architecture:
     - x86_64
@@ -83,4 +83,10 @@ pipeline:
   # Copy p4-fusion binary
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/local/bin/
-      cp p4-fusion-src/build/p4-fusion/p4-fusion ${{targets.destdir}}/usr/local/bin/p4-fusion-binary
+      cp p4-fusion-src/build/p4-fusion/p4-fusion ${{targets.destdir}}/usr/local/bin/p4-fusion
+
+update:
+  enabled: true
+  github:
+    identifier: salesforce/p4-fusion
+    strip-prefix: "v"
