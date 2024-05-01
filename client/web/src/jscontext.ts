@@ -305,8 +305,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Configuration for Cody Pro-tier functionality, if applicable. */
     frontendCodyProConfig?: {
-        stripePublishableKey: string,
-    },
+        stripePublishableKey: string
+    }
 }
 
 export interface BrandAssets {

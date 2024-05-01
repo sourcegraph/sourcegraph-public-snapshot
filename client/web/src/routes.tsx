@@ -6,10 +6,10 @@ import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settin
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
+import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
 import { isSearchJobsEnabled } from './search-jobs/utility'
-import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')

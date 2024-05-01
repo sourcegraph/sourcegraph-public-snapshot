@@ -1,15 +1,16 @@
-import { useState, useEffect, FunctionComponent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
 
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
-
 import * as stripeJs from '@stripe/stripe-js'
+import { useSearchParams } from 'react-router-dom'
+
+import { H3, Text } from '@sourcegraph/wildcard'
 
 /**
  * CodyProCheckoutForm is essentially an iframe that the Stripe Elements library will
  * render an iframe into, that will host a Stripe Checkout-hosted form.
  */
-export const CodyProCheckoutForm: FunctionComponent<{
+export const CodyProCheckoutForm: React.FunctionComponent<{
     stripeHandle: Promise<stripeJs.Stripe | null>
     customerEmail: string | undefined
 }> = ({ stripeHandle, customerEmail }) => {
@@ -31,14 +32,14 @@ export const CodyProCheckoutForm: FunctionComponent<{
     }, [customerEmail, showPromoCodeField])
 
     const embeddedCheckoutOpts /* unexported EmbeddedCheckoutProviderProps.options */ = {
-        clientSecret: clientSecret,
+        clientSecret,
     }
     return (
         <div id="checkout">
             {errorDetails && (
                 <div>
-                    <h3>Awe snap!</h3>
-                    <p>There was an error creating the checkout session: {errorDetails}</p>
+                    <H3>Awe snap!</H3>
+                    <Text>There was an error creating the checkout session: {errorDetails}</Text>
                 </div>
             )}
 
@@ -82,8 +83,8 @@ async function createCheckoutSession(
             body: JSON.stringify({
                 interval: billingInterval,
                 seats: 1,
-                customerEmail: customerEmail,
-                showPromoCodeField: showPromoCodeField,
+                customerEmail,
+                showPromoCodeField,
 
                 // URL the user is redirected to when the checkout process is complete.
                 //
@@ -91,7 +92,7 @@ async function createCheckoutSession(
                 // and Sourcegraph.com, immediately loading the Dashboard page isn't
                 // going to show the right data reliably. We will need to instead show
                 // some intersitular or welcome prompt, to give various things to sync.
-                returnUrl: `${origin}/cody/manage?session_id={CHECKOUT_SESSION_ID}`
+                returnUrl: `${origin}/cody/manage?session_id={CHECKOUT_SESSION_ID}`,
             }),
         })
 
@@ -104,7 +105,7 @@ async function createCheckoutSession(
             // server to have properly redcated any sensive information.
             setErrorDetails(respBody)
         }
-    } catch (ex) {
-        setErrorDetails(`unhandled exception: ${JSON.stringify(ex)}`)
+    } catch (error) {
+        setErrorDetails(`unhandled exception: ${JSON.stringify(error)}`)
     }
 }
