@@ -1384,8 +1384,8 @@ func (gs *grpcServer) FirstEverCommit(ctx context.Context, request *proto.FirstE
 				Spec: revisionErr.Spec,
 			})
 			if err != nil {
-				return nil, err
-			}
+		log.String("base", string(req.GetBase())),
+		log.String("head", string(req.GetHead())),
 			return nil, s.Err()
 		}
 
