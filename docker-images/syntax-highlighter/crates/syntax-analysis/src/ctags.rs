@@ -201,7 +201,7 @@ pub fn generate_tags<W: std::io::Write>(
                 message: err.to_string(),
                 fatal: false,
             }.write(buf_writer);
-            return None;
+            return None
         },
     };
 
