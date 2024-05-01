@@ -7,7 +7,6 @@ expression: dumped
   bruh = 10
 //^^^^ definition(Variable) scip-ctags bruh.
   
-  
   class Bruh(object):
 //      ^^^^ definition(Class) scip-ctags Bruh#
       a: int
@@ -20,12 +19,10 @@ expression: dumped
       def dab():
 //        ^^^ definition(Method) scip-ctags Bruh#dab().
           print("yay!")
-  
           def more():
               print("a function in a function!!")
               pass
           more()
-  
   
   if 1 == 1:
       should_show_ifs = False
@@ -61,27 +58,22 @@ expression: dumped
 //              ^^^^^^^^^ definition(Method) scip-ctags SomeAsyncStuffs#__anext__().
           pass
   
-  
   def does_nothing(f):
 //    ^^^^^^^^^^^^ definition(Function) scip-ctags does_nothing().
       return f
   
-  
   def does_nothingwrapper(*args):
 //    ^^^^^^^^^^^^^^^^^^^ definition(Function) scip-ctags does_nothingwrapper().
       return does_nothing
-  
   
   @does_nothing
   def has_a_name():
 //    ^^^^^^^^^^ definition(Function) scip-ctags has_a_name().
       pass
   
-  
   @does_nothing
   def func02(): pass
 //    ^^^^^^ definition(Function) scip-ctags func02().
-  
   
   @does_nothing
   class ClassWithDecorators(object):
@@ -97,6 +89,7 @@ expression: dumped
           print("hi from %s" % cls.__name__)
   
       @does_nothingwrapper(1, 2, 3)
+  
       @   staticmethod
       @does_nothing
       def prints_something():
@@ -110,7 +103,6 @@ expression: dumped
 //          ^^^ definition(Variable) scip-ctags baz.
   
   # semi-colons haha
-  foo = 1
+  foo = 1; bar = foo
 //^^^ definition(Variable) scip-ctags foo.
-  bar = foo
-//^^^ definition(Variable) scip-ctags bar.
+//         ^^^ definition(Variable) scip-ctags bar.
