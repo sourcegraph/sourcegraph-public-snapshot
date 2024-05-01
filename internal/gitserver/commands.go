@@ -1769,7 +1769,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 }
 
 // FirstEverCommit returns the first commit ever made to the repository.
-func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoName) (_ *gitdomain.Commit, err error) {
+func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoName) (commit *gitdomain.Commit, err error) {
 	ctx, _, endObservation := c.operations.firstEverCommit.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
@@ -1778,20 +1778,19 @@ func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoNa
 	})
 	defer endObservation(1, observation.Args{})
 
-	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.Output(ctx)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
+		return nil, err
 	}
-	lines := bytes.TrimSpace(out)
-	tokens := bytes.SplitN(lines, []byte("\n"), 2)
-	if len(tokens) == 0 {
-		return nil, errors.New("FirstEverCommit returned no revisions")
+
+	result, err := client.FirstEverCommit(ctx, &proto.FirstEverCommitRequest{
+		RepoName: string(repo),
+	})
+	if err != nil {
+		return nil, err
 	}
-	first := tokens[0]
-	id := api.CommitID(bytes.TrimSpace(first))
-	return c.GetCommit(ctx, repo, id)
+
+	return gitdomain.CommitFromProto(result.GetCommit()), nil
 }
 
 const (
