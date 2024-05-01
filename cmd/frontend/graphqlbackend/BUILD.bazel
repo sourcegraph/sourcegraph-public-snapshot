@@ -375,7 +375,6 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_sourcegraph_zoekt//query",
-        "@com_github_sourcegraph_zoekt//stream",
         "@com_github_stretchr_testify//require",
         "@com_github_throttled_throttled_v2//:throttled",
         "@io_opentelemetry_go_otel//:otel",
