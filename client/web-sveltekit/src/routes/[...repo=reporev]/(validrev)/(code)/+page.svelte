@@ -32,11 +32,13 @@
     {/if}
 </h3>
 <div class="content">
-    {#if $readme.value}
-        <Readme file={$readme.value} />
-    {:else if !$readme.pending}
-        {data.resolvedRevision.repo.description}
-    {/if}
+    <div class="inner">
+        {#if $readme.value}
+            <Readme file={$readme.value} />
+        {:else if !$readme.pending}
+            {data.resolvedRevision.repo.description}
+        {/if}
+    </div>
 </div>
 
 <style lang="scss">
@@ -68,8 +70,15 @@
     }
 
     .content {
-        padding: 1rem;
         overflow: auto;
         flex: 1;
+
+        // We use an "inner" element to limit the width of the content while
+        // keeping the scrollbar on the outer element, at the edge of the
+        // viewport.
+        .inner {
+            max-width: var(--viewport-xl);
+            padding: 1rem;
+        }
     }
 </style>
