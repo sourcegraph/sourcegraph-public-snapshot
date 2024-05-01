@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/config"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestGetBuild(t *testing.T) {
@@ -214,24 +215,26 @@ func TestProcessEvent(t *testing.T) {
 		state := "done"
 		pipelineID := "pipeline"
 		pipeline := &buildkite.Pipeline{
-			ID:   &pipelineID,
-			Name: &pipelineID,
+			ID:         &pipelineID,
+			Name:       &pipelineID,
+			Repository: pointers.Ptr("banana"),
 		}
 		jobState := build.JobPassedState
 		if jobExitCode != 0 {
 			jobState = build.JobFailedState
 		}
 		job := buildkite.Job{Name: &name, ExitStatus: &jobExitCode, State: &jobState}
-		return &build.Event{Name: build.EventJobFinished, Build: buildkite.Build{State: &state, Number: &buildNumber, Pipeline: pipeline}, Job: job}
+		return &build.Event{Name: build.EventJobFinished, Build: buildkite.Build{State: &state, Number: &buildNumber, Pipeline: pipeline}, Job: job, Pipeline: *pipeline}
 	}
 	newBuildEvent := func(name string, buildNumber int, state string, branch string, jobExitCode int) *build.Event {
 		job := newJobEvent(name, buildNumber, jobExitCode)
 		pipelineID := "pipeline"
 		pipeline := &buildkite.Pipeline{
-			ID:   &pipelineID,
-			Name: &pipelineID,
+			ID:         &pipelineID,
+			Name:       &pipelineID,
+			Repository: pointers.Ptr("banana"),
 		}
-		return &build.Event{Name: build.EventBuildFinished, Build: buildkite.Build{State: &state, Branch: &branch, Number: &buildNumber, Pipeline: pipeline}, Job: job.Job}
+		return &build.Event{Name: build.EventBuildFinished, Build: buildkite.Build{State: &state, Branch: &branch, Number: &buildNumber, Pipeline: pipeline}, Job: job.Job, Pipeline: *pipeline}
 	}
 	t.Run("no send notification on unfinished builds", func(t *testing.T) {
 		server := NewServer(":8080", logger, config.Config{})
