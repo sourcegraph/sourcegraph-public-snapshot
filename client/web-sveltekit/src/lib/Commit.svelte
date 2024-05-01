@@ -54,7 +54,7 @@
             {/if}
         </span>
         <span>committed by <strong>{author.name}</strong> <Timestamp date={commitDate} /></span>
-        {#if expanded}
+        {#if expanded && commit.body}
             <pre>{commit.body}</pre>
         {/if}
     </div>
