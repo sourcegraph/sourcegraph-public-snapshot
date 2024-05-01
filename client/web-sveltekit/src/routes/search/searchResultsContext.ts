@@ -1,5 +1,7 @@
 import { getContext, setContext } from 'svelte'
+import type { Readable } from 'svelte/store'
 
+import type { SectionItem } from '$lib/search/dynamicFilters'
 import type { QueryStateStore } from '$lib/search/state'
 import type { ContentMatch, PathMatch, SearchMatch, SymbolMatch } from '$lib/shared'
 
@@ -8,6 +10,12 @@ interface SearchResultsContext {
     setExpanded(match: SearchMatch, expanded: boolean): void
     setPreview(result: PathMatch | ContentMatch | SymbolMatch | null): void
     queryState: QueryStateStore
+    setChart(props: ChartProps | undefined): void
+}
+
+export interface ChartProps {
+    title: string
+    items: Readable<SectionItem[]>
 }
 
 const CONTEXT_KEY = {}

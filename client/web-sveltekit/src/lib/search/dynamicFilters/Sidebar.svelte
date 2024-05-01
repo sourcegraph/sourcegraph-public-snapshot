@@ -27,6 +27,7 @@
 
 <script lang="ts">
     import { onMount } from 'svelte'
+    import { derived } from 'svelte/store'
 
     import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 
@@ -37,10 +38,12 @@
     import LanguageIcon from '$lib/LanguageIcon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import Tooltip from '$lib/Tooltip.svelte'
     import Button from '$lib/wildcard/Button.svelte'
+
+    import { getSearchResultsContext } from '../../../routes/search/searchResultsContext'
 
     import HelpFooter from './HelpFooter.svelte'
     import {
@@ -87,6 +90,8 @@
         SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.SelectSearchFilter, { kind }, { kind })
     }
 
+    const setChart = getSearchResultsContext().setChart
+
     onMount(() => {
         window.addEventListener('keydown', handleResetKeydown)
         return () => window.removeEventListener('keydown', handleResetKeydown)
@@ -118,6 +123,12 @@
             title="By repository"
             filterPlaceholder="Filter repositories"
             onFilterSelect={handleFilterSelect}
+            showChart={items => {
+                setChart({
+                    title: 'Grouped by repository',
+                    items,
+                })
+            }}
         >
             <svelte:fragment slot="label" let:label>
                 <Tooltip tooltip={label} placement="right">
@@ -133,6 +144,12 @@
             title="By language"
             filterPlaceholder="Filter languages"
             onFilterSelect={handleFilterSelect}
+            showChart={items => {
+                setChart({
+                    title: 'Grouped by language',
+                    items,
+                })
+            }}
         >
             <svelte:fragment slot="label" let:label>
                 <LanguageIcon class="icon" language={label} inline />&nbsp;
