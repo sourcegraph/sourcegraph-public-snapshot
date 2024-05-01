@@ -21,7 +21,7 @@ func newBigQueryNode(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.
 	}
 	graph, err = d2oracle.Set(graph, nil, key+".icon.near", nil, pointers.Ptr("top-center"))
 	if err != nil {
-		return graph, key, errors.Wrap(err, "failed to bigquery icon location")
+		return graph, key, errors.Wrap(err, "failed to set bigquery icon location")
 	}
 
 	for _, table := range env.Resources.BigQueryDataset.Tables {
@@ -35,7 +35,17 @@ func newBigQueryNode(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.
 }
 
 func newCloudflareNode(graph *d2graph.Graph) (*d2graph.Graph, string, error) {
-	return createWithLabelIcon(graph, "Cloudflare", "", assets.Cloudflare)
+	graph, key, err := createWithIcon(graph, "Cloudflare", assets.Cloudflare)
+	if err != nil {
+		return graph, key, errors.Wrap(err, "failed to create cloudflare")
+	}
+	// we set height manually as the cloudflare icon isn't square
+	// 64 is a manually chosen value that seems to work well
+	graph, err = d2oracle.Set(graph, nil, key+".height", nil, pointers.Ptr("64"))
+	if err != nil {
+		return graph, key, errors.Wrap(err, "couldn't set cloudflare height")
+	}
+	return graph, key, err
 }
 
 func newCloudRunNode(graph *d2graph.Graph, env *spec.EnvironmentSpec) (*d2graph.Graph, string, error) {
