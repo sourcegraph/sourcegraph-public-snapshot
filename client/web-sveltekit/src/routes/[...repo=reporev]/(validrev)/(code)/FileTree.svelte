@@ -139,6 +139,7 @@
 </div>
 
 <style lang="scss">
+
     div {
         overflow: auto;
 
@@ -153,7 +154,6 @@
 
         :global(.treeitem.selected) > :global(.label) {
             background-color: var(--color-bg-3);
-            color: var(--text-title)
         }
     }
 
