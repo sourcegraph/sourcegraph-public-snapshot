@@ -36,52 +36,67 @@
     $: done = progress.done || state === 'complete'
 </script>
 
-<div class="indicator">
-    <div>
-        {#if loading}
-            <LoadingSpinner --icon-size="18px" inline />
-        {:else}
-            <Icon
-                svgPath={icons[severity]}
-                --icon-size="18px"
-                --color={isError ? 'var(--danger)' : 'var(--text-title)'}
-            />
-        {/if}
+<div class="root">
+    <div class="indicator">
+        <div class="progress-message">
+            <div class="icon">
+                {#if loading}
+                    <LoadingSpinner --icon-size="18px" inline />
+                {:else}
+                    <Icon
+                        svgPath={icons[severity]}
+                        --icon-size="18px"
+                        --color={isError ? 'var(--danger)' : 'var(--text-title)'}
+                    />
+                {/if}
+            </div>
+
+            <ProgressMessage {state} {progress} {severity} />
+        </div>
+
+        <div class="messages">
+            {#if !done && takingTooLong}
+                <TimeoutMessage />
+            {:else if done}
+                <SuggestedAction {progress} {suggestedItems} {severity} {state} />
+            {:else}
+                <span>Running search...</span>
+            {/if}
+        </div>
     </div>
 
-    <div class="messages">
-        <ProgressMessage {state} {progress} {severity} />
-        {#if !done && takingTooLong}
-            <TimeoutMessage />
-        {:else if done}
-            <SuggestedAction {progress} {suggestedItems} {severity} {state} />
-        {:else}
-            <span>Running search...</span>
-        {/if}
-    </div>
     <Icon svgPath={mdiChevronDown} --icon-size="18px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
 </div>
 
 <style lang="scss">
+    .root {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
     .indicator {
         display: flex;
-        flex-flow: row nowrap;
-        justify-content: space-evenly;
+        flex-wrap: wrap;
         align-items: center;
-        gap: 0.5rem;
-        min-width: 200px;
-        max-width: fit-content;
+        column-gap: 0.5rem;
+        row-gap: 0.25rem;
 
-        padding: 0.25rem;
+        .progress-message {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .icon {
+            align-self: baseline;
+        }
 
         .messages {
             display: flex;
-            flex-flow: column nowrap;
-            justify-content: center;
-            align-items: flex-start;
-            margin-right: 0.75rem;
-            margin-left: 0.5rem;
-            row-gap: 0.25rem;
+            flex-flow: row nowrap;
+            align-items: baseline;
+            gap: 0.25rem;
         }
 
         span {

@@ -10,7 +10,6 @@
     export let state: 'error' | 'complete' | 'loading'
 
     const SEE_MORE = 'See more details'
-    const CENTER_DOT = '\u00B7' // AKA 'interpunct'
 
     interface ItemsBySeverity {
         items: Skipped[]
@@ -40,7 +39,6 @@
     {#if hasSkippedItems && mostSevere}
         <small class="info-badge" class:error-text={isError}>{capitalize(mostSevere?.title ?? mostSevere.title)}</small>
         {#if mostSevere.suggested}
-            <small>{CENTER_DOT}</small>
             <small>{capitalize(mostSevere?.suggested ? mostSevere.suggested.title : '')}</small>
             <small class="code-font">{mostSevere.suggested?.queryExpression}</small>
         {/if}

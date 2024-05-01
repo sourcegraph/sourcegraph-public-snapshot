@@ -237,12 +237,11 @@
         flex-direction: column;
 
         .actions {
-            border-bottom: 1px solid var(--border-color);
-            padding: 0.5rem 0;
-            padding-left: 0.25rem;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
-            flex-shrink: 0;
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .result-list {
@@ -258,10 +257,9 @@
         .message-container {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            margin: auto;
-            color: var(--text-muted);
             margin: 2rem;
+            align-items: center;
+            color: var(--text-muted);
         }
     }
 </style>
