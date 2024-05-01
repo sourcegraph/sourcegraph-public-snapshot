@@ -68,6 +68,9 @@ internal:
             else
               echo "Build created, see:"
               echo $body | jq .web_url
+              cat << EOF | buildkite-agent annotate --style info
+              This is a Release build
+              EOF
             fi
   finalize:
     steps:
@@ -218,6 +221,9 @@ promoteToPublic:
           else
             echo "Build created, see:"
             echo $body | jq .web_url
+            cat << EOF | buildkite-agent annotate --style info
+            This is a Release build
+            EOF
           fi
   finalize:
     steps:
