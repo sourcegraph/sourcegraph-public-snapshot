@@ -93,7 +93,7 @@ type GitBackend interface {
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
-	// remove this method. q
+	// remove this method.
 	Exec(ctx context.Context, args ...string) (io.ReadCloser, error)
 
 	// FirstEverCommit returns the first commit ever made to the repository.
