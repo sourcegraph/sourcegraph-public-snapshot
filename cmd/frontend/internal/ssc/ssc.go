@@ -113,13 +113,52 @@ func (c *client) FetchSubscriptionBySAMSAccountID(ctx context.Context, samsAccou
 	}
 }
 
-func GetSAMSHostName() string {
-	sgconf := conf.Get().SiteConfig()
+// getSSCBaseURL returns the base URL for the SSC backend's REST API for
+// service-to-service requests.
+func getSSCBaseURL() string {
+	config := conf.Get()
+
+	// Prefer the newer "dotcom.codyProConfig.sscBackendOrigin" config setting if available.
+	// This allows for local development (not hard-coding the https scheme).
+	if dotcomConfig := config.Dotcom; dotcomConfig != nil {
+		if codyProConfig := dotcomConfig.CodyProConfig; codyProConfig != nil {
+			return fmt.Sprintf("%s/cody/api", codyProConfig.SscBackendOrigin)
+		}
+	}
+
+	// Fall back to original logic, using the "ssc.apiBaseUrl" setting.
+	// (To be removed when the codyProConfig changes are in production.)
+	siteConfig := config.SiteConfig()
+	baseURL := siteConfig.SscApiBaseUrl
+	if baseURL == "" {
+		baseURL = "https://accounts.sourcegraph.com/cody/api"
+	}
+
+	return baseURL
+}
+
+// GetSAMSServiceID returns the ServiceID of the currently registered SAMS identity provider.
+// This is found in the site configuration, and must match the auth.providers configuration
+// exactly.
+func GetSAMSServiceID() string {
+	config := conf.Get()
+
+	// Prefer the newer "dotcom.codyProConfig.samsBackendOrigin" config setting if available.
+	// This allows for local development (not hard-coding the https scheme).
+	if dotcomConfig := config.Dotcom; dotcomConfig != nil {
+		if codyProConfig := dotcomConfig.CodyProConfig; codyProConfig != nil {
+			return codyProConfig.SamsBackendOrigin
+		}
+	}
+
+	// Fallback to the original logic, using the "ssc.samsHostName" setting.
+	// (To be removed when the codyProConfig changes are in production.)
+	sgconf := config.SiteConfig()
 	if sgconf.SscSamsHostName == "" {
 		// If unset, default to the production hostname.
-		return "accounts.sourcegraph.com"
+		return "https://accounts.sourcegraph.com"
 	}
-	return sgconf.SscSamsHostName
+	return fmt.Sprintf("https://%s", sgconf.SscSamsHostName)
 }
 
 // NewClient returns a new SSC API client. It is important to avoid creating new
@@ -130,8 +169,6 @@ func GetSAMSHostName() string {
 // If no SAMS authorization provider is configured, this function will not panic,
 // but instead will return an error on every call.
 func NewClient() (Client, error) {
-	sgconf := conf.Get().SiteConfig()
-
 	// Fetch the SAMS configuration data.
 	var samsConfig *clientcredentials.Config
 	for _, provider := range conf.Get().AuthProviders {
@@ -140,7 +177,7 @@ func NewClient() (Client, error) {
 			continue
 		}
 
-		if strings.Contains(oidcInfo.Issuer, GetSAMSHostName()) {
+		if oidcInfo.Issuer == GetSAMSServiceID() {
 			samsConfig = &clientcredentials.Config{
 				ClientID:     oidcInfo.ClientID,
 				ClientSecret: oidcInfo.ClientSecret,
@@ -155,17 +192,12 @@ func NewClient() (Client, error) {
 		return &client{}, errors.New("no SAMS authorization provider configured")
 	}
 
-	baseURL := sgconf.SscApiBaseUrl
-	if baseURL == "" {
-		baseURL = "https://accounts.sourcegraph.com/cody/api"
-	}
-
 	// We want this tokenSource to be long lived, so we benefit from reusing existing
 	// SAMS tokens if repeated requests are made within the token's lifetime. (Under
 	// the hood it returns an oauth2.ReuseTokenSource.)
 	tokenSource := samsConfig.TokenSource(context.Background())
 	return &client{
-		baseURL:         baseURL,
+		baseURL:         getSSCBaseURL(),
 		samsTokenSource: tokenSource,
 	}, nil
 }

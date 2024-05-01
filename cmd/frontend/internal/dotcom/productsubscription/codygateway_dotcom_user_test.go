@@ -2,7 +2,6 @@ package productsubscription_test
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -313,7 +312,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		AccountSpec: extsvc.AccountSpec{
 			AccountID:   "123",
 			ServiceType: "openidconnect",
-			ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+			ServiceID:   ssc.GetSAMSServiceID(),
 		},
 	})
 	require.NoError(t, err)
@@ -328,7 +327,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		AccountSpec: extsvc.AccountSpec{
 			AccountID:   "456",
 			ServiceType: "openidconnect",
-			ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+			ServiceID:   ssc.GetSAMSServiceID(),
 		},
 	})
 	require.NoError(t, err)
@@ -343,7 +342,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		AccountSpec: extsvc.AccountSpec{
 			AccountID:   "789",
 			ServiceType: "openidconnect",
-			ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+			ServiceID:   ssc.GetSAMSServiceID(),
 		},
 	})
 	require.NoError(t, err)
@@ -358,7 +357,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		AccountSpec: extsvc.AccountSpec{
 			AccountID:   "abc",
 			ServiceType: "openidconnect",
-			ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+			ServiceID:   ssc.GetSAMSServiceID(),
 		},
 	})
 	require.NoError(t, err)
