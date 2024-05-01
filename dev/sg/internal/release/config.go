@@ -389,7 +389,7 @@ func (r *releaseRunner) PromoteFinalize(ctx context.Context) error {
 
 func (r *releaseRunner) runSteps(ctx context.Context, steps []cmdManifest) error {
 	for _, step := range steps {
-		if step.SkipInDevelopment && r.isDevelopment {
+		if r.isDevelopment && step.SkipInDevelopment {
 			announce2("step", "Skipping step %q, this is a development release", step.Name)
 			continue
 		}
