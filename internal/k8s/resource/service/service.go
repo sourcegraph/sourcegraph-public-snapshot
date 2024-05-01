@@ -30,7 +30,7 @@ func NewService(name, namespace string, cfg config.StandardComponent) corev1.Ser
 	}
 
 	if cfg != nil {
-		if promPort := cfg.PrometheusPort(); promPort != nil {
+		if promPort := cfg.GetPrometheusPort(); promPort != nil {
 			annotations := map[string]string{
 				"prometheus.io/port":            fmt.Sprintf("%d", *promPort),
 				"sourcegraph.prometheus/scrape": "true",
