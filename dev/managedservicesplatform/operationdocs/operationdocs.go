@@ -24,8 +24,6 @@ type Options struct {
 	// GenerateCommand is the command used to generate this documentation -
 	// it will be included in the generated output in a "DO NOT EDIT" comment.
 	GenerateCommand string
-	// Handbook indicates we are generating output for sourcegraph/handbook.
-	Handbook bool
 	// AlertPolicies is a deduplicated map of alert policies defined for all
 	// environments of a service
 	AlertPolicies map[string]terraform.AlertPolicy
@@ -62,23 +60,16 @@ func Render(s spec.Spec, opts Options) (string, error) {
 
 	opts.AddDocumentComment(md)
 
-	mspURL := "https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/"
-	coreServicesURL := "https://handbook.sourcegraph.com/departments/engineering/teams/core-services/"
-	if opts.Handbook {
-		mspURL = mspNotionPageURL
-		coreServicesURL = coreServicesNotionPageURL
-	}
-
 	md.Paragraphf(`This document describes operational guidance for %s infrastructure.
 This service is operated on the %s.`,
 		s.Service.GetName(),
-		markdown.Link("Managed Services Platform (MSP)", mspURL))
+		markdown.Link("Managed Services Platform (MSP)", mspNotionPageURL))
 
 	md.Admonitionf(markdown.AdmonitionImportant, "If this is your first time here, you must follow the %s as well to clone the service definitions repository and set up the prerequisite tooling.",
 		markdown.Link("sourcegraph/managed-services 'Tooling setup' guide", "https://github.com/sourcegraph/managed-services/blob/main/README.md"))
 
 	md.Paragraphf("If you need assistance with MSP infrastructure, reach out to the %s team in #discuss-core-services.",
-		markdown.Link("Core Services", coreServicesURL))
+		markdown.Link("Core Services", coreServicesNotionPageURL))
 
 	type environmentHeader struct {
 		environmentID string

@@ -13,22 +13,23 @@ import (
 
 // IndexNotionPageID designates where in Notion the contents of
 // operationdocs.RenderIndexPage should go.
-func IndexNotionPageID() string {
-	return "TODO"
-}
+// https://www.notion.so/sourcegraph/Managed-Services-0d0b709881674eee9dca4202de9f93b1
+func IndexNotionPageID() string { return "0d0b709881674eee9dca4202de9f93b1" }
 
 var (
-	mspNotionPageURL          = notionHandbookLink("TODO")
-	coreServicesNotionPageURL = notionHandbookLink("TODO")
+	// https://www.notion.so/sourcegraph/Sourcegraph-Managed-Services-Platform-MSP-712a0389f54c4d3a90d069aa2d979a59
+	mspNotionPageURL = NotionHandbookURL("712a0389f54c4d3a90d069aa2d979a59")
+	// https://www.notion.so/sourcegraph/Core-Services-team-ed8af5ecf15545b292816ebba261a93c
+	coreServicesNotionPageURL = NotionHandbookURL("ed8af5ecf15545b292816ebba261a93c")
 )
 
-func notionHandbookLink(pageID string) string {
+func NotionHandbookURL(pageID string) string {
 	return fmt.Sprintf("https://sourcegraph.notion.site/%s", pageID)
 }
 
 // RenderIndexPage renders an index page for use at HandbookPath, assuming that
 // operationdocs.Render contents are stored
-func RenderIndexPage(services []*spec.Spec, opts Options) string {
+func RenderIndexPage(services []*spec.Spec, opts Options) []byte {
 	md := markdown.NewBuilder()
 
 	md.Headingf(1, "Managed Services infrastructure")
@@ -59,9 +60,10 @@ In addition to service-specific guidance, %s is also available.`,
 		md.Headingf(2, o)
 		md.Paragraphf("Managed Services Platform services owned by %s:", markdown.Code(o))
 		md.List(mapTo(byOwner[o], func(s *spec.Spec) string {
-			// TODO: See Service.Description docstring
-			// title := fmt.Sprintf("%s - %s", s.Service.GetName(), s.Service.Description)
-			return markdown.Linkf(s.Service.GetName(), "./%s.md", s.Service.ID)
+			if s.Service.NotionPageID != nil {
+				return markdown.Linkf(s.Service.GetName(), NotionHandbookURL(*s.Service.NotionPageID))
+			}
+			return fmt.Sprintf("%s (no Notion page provided in service specification for generated docs)", s.Service.GetName())
 		}))
 	}
 
@@ -105,7 +107,7 @@ For more details, also see [creating and configuring services](https://github.co
 		markdown.Code("msp"),
 		markdown.Code("Managed Services Platform Operators"))
 
-	return md.String()
+	return []byte(md.String())
 }
 
 func collectByOwner(services []*spec.Spec) ([]string, map[string]specSet) {

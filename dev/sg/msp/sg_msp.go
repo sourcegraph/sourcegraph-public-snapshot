@@ -2,6 +2,7 @@
 package msp
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,10 +11,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jomei/notionapi"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/maps"
 
 	notionmarkdown "github.com/sourcegraph/notionreposync/markdown"
+	"github.com/sourcegraph/notionreposync/notion"
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
@@ -470,14 +473,38 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 						opts := operationdocs.Options{
 							ManagedServicesRevision: repoRev,
 							GenerateCommand:         strings.Join(os.Args, " "),
-							Handbook:                true,
 						}
+
+						sec, err := secrets.FromContext(c.Context)
+						if err != nil {
+							return err
+						}
+						notionToken, err := sec.GetExternal(c.Context,
+							secrets.ExternalSecret{
+								Project: "sourcegraph-local-dev",
+								Name:    "TODO",
+							},
+							func(ctx context.Context) (string, error) {
+								v, ok := os.LookupEnv("NOTION_API_TOKEN")
+								if !ok {
+									return "", errors.New("environment variable NOTION_API_TOKEN not set")
+								}
+								return v, nil
+							})
+						if err != nil {
+							return errors.Wrap(err, "failed to get Notion token from gcloud secrets")
+						}
+						notionClient := notionapi.NewClient(notionapi.Token(notionToken))
 
 						var serviceSpecs []*spec.Spec
 						for _, s := range services {
 							svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
 							if err != nil {
 								return errors.Wrapf(err, "load service %q", s)
+							}
+							if svc.Service.NotionPageID == nil {
+								std.Out.WriteSkippedf("[%s]\tNo 'notionPageID' set, skipping", s)
+								continue
 							}
 							serviceSpecs = append(serviceSpecs, svc)
 							collectedAlerts, err := CollectAlertPolicies(svc)
@@ -490,15 +517,45 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 								return errors.Wrap(err, s)
 							}
 
-							if err := notionmarkdown.NewProcessor().Process(doc); err != nil {
+							// For now, we reset the entire page and start from
+							// scratch each time. This will break Notion block
+							// links but it can't be helped, Notion is hard to
+							// work with.
+							if err := resetNotionPage(
+								c.Context,
+								notionClient,
+								*svc.Service.NotionPageID,
+								fmt.Sprintf("%s infrastructure operations", svc.Service.GetName()),
+							); err != nil {
 								return errors.Wrap(err, s)
 							}
 
-							std.Out.WriteNoticef("[%s]\tWrote %q", s, "TODO")
+							blockUpdater := notion.NewPageBlockUpdater(notionClient, *svc.Service.NotionPageID)
+							if err := notionmarkdown.NewProcessor(c.Context, blockUpdater).
+								ProcessMarkdown([]byte(doc)); err != nil {
+								return errors.Wrap(err, s)
+							}
+
+							std.Out.WriteNoticef("[%s]\tWrote %q",
+								s, operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
 						}
 
+						// For now, we reset the entire page and start from
+						// scratch each time. This will break Notion block
+						// links but it can't be helped, Notion is hard to
+						// work with.
+						if err := resetNotionPage(
+							c.Context,
+							notionClient,
+							operationdocs.IndexNotionPageID(),
+							"Managed Services infrastructure",
+						); err != nil {
+							return err
+						}
+						blockUpdater := notion.NewPageBlockUpdater(notionClient, operationdocs.IndexNotionPageID())
 						doc := operationdocs.RenderIndexPage(serviceSpecs, opts)
-						if err := notionmarkdown.NewProcessor().Process(doc); err != nil {
+						if err := notionmarkdown.NewProcessor(c.Context, blockUpdater).
+							ProcessMarkdown([]byte(doc)); err != nil {
 							return errors.Wrap(err, "apply index page")
 						}
 
