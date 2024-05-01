@@ -60,7 +60,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, errors.New("failed to get sourcegraph spec from configmap")
 	}
 
-	var sourcegraph Sourcegraph
+	sourcegraph := newDefaultConfig()
 	if err := yaml.Unmarshal([]byte(data), &sourcegraph); err != nil {
 		return reconcile.Result{}, err
 	}

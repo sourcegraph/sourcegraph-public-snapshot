@@ -4,7 +4,7 @@ Sourcegraph uses a number of secret formats to store authentication tokens and k
 
 |                  Token Name                  |                                   Description                                    |            Type            |    Regular Expression     |                         |
 | -------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------- | ------------------------- | ----------------------- |
-| Sourcegraph Access Token (v3)                | Token used to access the Sourcegraph GraphQL API                                 | User-generated             | `sgp_(?:[a-fA-F0-9]{16} \ | local)_[a-fA-F0-9]{40}` |
+| Sourcegraph Access Token (v3)                | Token used to access the Sourcegraph GraphQL API                                 | User-generated             | `sgp_(?:[a-fA-F0-9]{16}\|local)_[a-fA-F0-9]{40}` |
 | Sourcegraph Access Token (v2, deprecated)    | Token used to access the Sourcegraph GraphQL API                                 | User-generated             | `sgp_[a-fA-F0-9]{40}`     |                         |
 | Sourcegraph Access Token (v1, deprecated)    | Token used to access the Sourcegraph GraphQL API                                 | User-generated             | `[a-fA-F0-9]{40}`         |                         |
 | Sourcegraph Dotcom User Gateway Access Token | Token used to grant sourcegraph.com users access to Cody                         | Backend (not user-visible) | `sgd_[a-fA-F0-9]{64}`     |                         |

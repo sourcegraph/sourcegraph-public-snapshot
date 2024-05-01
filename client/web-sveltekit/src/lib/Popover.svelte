@@ -97,6 +97,6 @@
         border: 1px solid var(--dropdown-border-color);
         border-radius: var(--popover-border-radius);
         color: var(--body-color);
-        box-shadow: var(--dropdown-shadow);
+        box-shadow: var(--popover-shadow);
     }
 </style>

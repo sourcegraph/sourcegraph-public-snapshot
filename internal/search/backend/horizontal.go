@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
-	"github.com/sourcegraph/zoekt/stream"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -64,7 +63,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	pl := pool.New().WithErrors()
 	for endpoint, client := range clients {
 		pl.Go(func() error {
-			err := client.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
+			err := client.StreamSearch(ctx, q, opts, zoekt.SenderFunc(func(sr *zoekt.SearchResult) {
 				// This shouldn't happen, but skip event if sr is nil.
 				if sr == nil {
 					return

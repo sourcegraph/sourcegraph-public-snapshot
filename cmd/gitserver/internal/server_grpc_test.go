@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/log/logtest"
@@ -902,6 +903,90 @@ func TestGRPCServer_ContributorCounts(t *testing.T) {
 		}, res, cmpopts.IgnoreUnexported(v1.ContributorCountsResponse{}, v1.ContributorCount{}, v1.GitSignature{})); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
 		}
+	})
+}
+
+func TestGRPCServer_FirstCommitEver(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &grpcServer{}
+		_, err := gs.FirstEverCommit(ctx, &v1.FirstEverCommitRequest{RepoName: ""})
+		require.ErrorContains(t, err, "repo must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("checks for uncloned repo", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
+		_, err := gs.FirstEverCommit(ctx, &v1.FirstEverCommitRequest{RepoName: "therepo"})
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		require.Contains(t, err.Error(), "repo not found")
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
+	})
+
+	t.Run("e2e", func(t *testing.T) {
+		expectedCommit := &gitdomain.Commit{
+			ID: "f0e8d8b3d070c1c89f4e634c1d9e7f7d7d6a3f9a",
+			Author: gitdomain.Signature{
+				Name:  "John Doe",
+				Email: "john@example.com",
+				Date:  time.Date(2023, 4, 1, 12, 0, 0, 0, time.UTC),
+			},
+			Committer: &gitdomain.Signature{
+				Name:  "Jane Smith",
+				Email: "jane@example.com",
+				Date:  time.Date(2023, 4, 1, 12, 5, 0, 0, time.UTC),
+			},
+			Message: "Initial commit",
+			Parents: []api.CommitID{},
+		}
+
+		fs := gitserverfs.NewMockFS()
+
+		// First, check to see that the commit is returned correctly.
+
+		// Repo is cloned, proceed!
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
+		b := git.NewMockGitBackend()
+		b.FirstEverCommitFunc.PushReturn(expectedCommit.ID, nil)
+		b.GetCommitFunc.PushReturn(&git.GitCommitWithFiles{Commit: expectedCommit}, nil)
+		gs := &grpcServer{
+			svc: NewMockService(),
+			fs:  fs,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				return b
+			},
+		}
+
+		cli := spawnServer(t, gs)
+		rawResponse, err := cli.FirstEverCommit(ctx, &v1.FirstEverCommitRequest{
+			RepoName: "therepo",
+		})
+
+		actualResponse := rawResponse.GetCommit()
+		if diff := cmp.Diff(expectedCommit.ToProto(), actualResponse, protocmp.Transform()); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+
+		require.NoError(t, err)
+
+		// Second, check to see that the correct error is returned if the repository is empty
+
+		b.FirstEverCommitFunc.PushReturn("", &gitdomain.RevisionNotFoundError{Repo: "therepo", Spec: "HEAD"})
+		_, err = cli.FirstEverCommit(ctx, &v1.FirstEverCommitRequest{
+			RepoName: "therepo",
+		})
+
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RevisionNotFoundPayload{})
 	})
 }
 

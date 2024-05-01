@@ -36,7 +36,7 @@
         padding: 0.5rem 0.75rem;
         position: sticky;
         top: 0;
-        background-color: var(--body-bg);
+        background-color: var(--search-result-header-bg);
         border-bottom: 1px solid var(--border-color);
     }
 
@@ -62,7 +62,6 @@
     }
 
     .body:not(:empty) {
-        background-color: var(--code-bg);
         border-bottom: 1px solid var(--border-color);
     }
 </style>
