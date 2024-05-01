@@ -117,6 +117,8 @@ func validateRequirementOnly(only []string) error {
 type cmdManifest struct {
 	Name string `yaml:"name"`
 	Cmd  string `yaml:"cmd"`
+
+	SkipInDevelopment bool `yaml:"skipInDevelopment"`
 }
 
 type input struct {
@@ -355,6 +357,11 @@ func (r *releaseRunner) Test(ctx context.Context) error {
 }
 
 func (r *releaseRunner) Promote(ctx context.Context) error {
+	if r.isDevelopment {
+		announce2("promote", "Skipping promote, this is a development release")
+		return nil
+	}
+
 	if err := r.checkRequirements(ctx, stagePromoteCreate); err != nil {
 		return err
 	}
@@ -363,6 +370,11 @@ func (r *releaseRunner) Promote(ctx context.Context) error {
 }
 
 func (r *releaseRunner) PromoteFinalize(ctx context.Context) error {
+	if r.isDevelopment {
+		announce2("promote", "Skipping promote finalize, this is a development release")
+		return nil
+	}
+
 	if err := r.checkRequirements(ctx, stagePromoteFinalize); err != nil {
 		return err
 	}
@@ -377,6 +389,11 @@ func (r *releaseRunner) PromoteFinalize(ctx context.Context) error {
 
 func (r *releaseRunner) runSteps(ctx context.Context, steps []cmdManifest) error {
 	for _, step := range steps {
+		if step.SkipInDevelopment && r.isDevelopment {
+			announce2("step", "Skipping step %q, this is a development release", step.Name)
+			continue
+		}
+
 		cmd := interpolate(step.Cmd, r.vars)
 		if r.pretend {
 			announce2("step", "Pretending to run step %q", step.Name)
