@@ -103,9 +103,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 		anonymousId, _ := cookie.AnonymousUID(r)
 		newUserCreated, actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, &hubspot.ContactProperties{
 			AnonymousUserID:        anonymousId,
-			FirstSourceURL:         getCookie("sourcegraphSourceUrl"),
 			LastSourceURL:          getCookie("sourcegraphRecentSourceUrl"),
-			OriginalReferrer:       getCookie("originalReferrer"),
 			LastReferrer:           getCookie("sg_referrer"),
 			SignupSessionSourceURL: getCookie("sourcegraphSignupSourceUrl"),
 			SignupSessionReferrer:  getCookie("sourcegraphSignupReferrer"),
