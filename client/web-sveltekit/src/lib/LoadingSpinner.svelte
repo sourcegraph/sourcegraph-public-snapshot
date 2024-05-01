@@ -8,8 +8,6 @@
 </div>
 
 <style lang="scss">
-    $size: var(--size, 1rem);
-
     .center {
         display: flex;
         flex-direction: column;
@@ -28,12 +26,11 @@
             --loading-spinner-inner-color: var(--white);
         }
 
-        width: $size;
-        height: $size;
+        width: var(--size, 1rem);
+        height: var(--size, 1rem);
         &.inline {
-            $inlineSize: #{(16 / 14)}em;
-            width: $inlineSize;
-            height: $inlineSize;
+            width: #{(16 / 14)}em;
+            height: #{(16 / 14)}em;
 
             vertical-align: bottom;
             display: inline-flex;
