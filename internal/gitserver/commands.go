@@ -418,26 +418,6 @@ func (i *changedFilesIterator) Close() {
 	})
 }
 
-// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
-func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ []byte, err error) {
-	ctx, _, endObservation := c.operations.diffSymbols.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("commitA", string(commitA)),
-			attribute.String("commitB", string(commitB)),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	command := c.gitCommand(repo, "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
-	out, err := command.Output(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to run git diff on %s between %s and %s", repo, commitA, commitB)
-	}
-	return out, nil
-}
-
 // ReadDir reads the contents of the named directory at commit.
 func (c *clientImplementor) ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) (_ []fs.FileInfo, err error) {
 	ctx, _, endObservation := c.operations.readDir.With(ctx, &err, observation.Args{

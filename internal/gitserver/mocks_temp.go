@@ -57,9 +57,6 @@ type MockClient struct {
 	// DiffFunc is an instance of a mock function object controlling the
 	// behavior of the method Diff.
 	DiffFunc *ClientDiffFunc
-	// DiffSymbolsFunc is an instance of a mock function object controlling
-	// the behavior of the method DiffSymbols.
-	DiffSymbolsFunc *ClientDiffSymbolsFunc
 	// FirstEverCommitFunc is an instance of a mock function object
 	// controlling the behavior of the method FirstEverCommit.
 	FirstEverCommitFunc *ClientFirstEverCommitFunc
@@ -208,11 +205,6 @@ func NewMockClient() *MockClient {
 		},
 		DiffFunc: &ClientDiffFunc{
 			defaultHook: func(context.Context, api.RepoName, DiffOptions) (r0 *DiffFileIterator, r1 error) {
-				return
-			},
-		},
-		DiffSymbolsFunc: &ClientDiffSymbolsFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (r0 []byte, r1 error) {
 				return
 			},
 		},
@@ -428,11 +420,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.Diff")
 			},
 		},
-		DiffSymbolsFunc: &ClientDiffSymbolsFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error) {
-				panic("unexpected invocation of MockClient.DiffSymbols")
-			},
-		},
 		FirstEverCommitFunc: &ClientFirstEverCommitFunc{
 			defaultHook: func(context.Context, api.RepoName) (*gitdomain.Commit, error) {
 				panic("unexpected invocation of MockClient.FirstEverCommit")
@@ -622,9 +609,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		DiffFunc: &ClientDiffFunc{
 			defaultHook: i.Diff,
-		},
-		DiffSymbolsFunc: &ClientDiffSymbolsFunc{
-			defaultHook: i.DiffSymbols,
 		},
 		FirstEverCommitFunc: &ClientFirstEverCommitFunc{
 			defaultHook: i.FirstEverCommit,
@@ -1931,119 +1915,6 @@ func (c ClientDiffFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientDiffFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientDiffSymbolsFunc describes the behavior when the DiffSymbols method
-// of the parent MockClient instance is invoked.
-type ClientDiffSymbolsFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error)
-	history     []ClientDiffSymbolsFuncCall
-	mutex       sync.Mutex
-}
-
-// DiffSymbols delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockClient) DiffSymbols(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 api.CommitID) ([]byte, error) {
-	r0, r1 := m.DiffSymbolsFunc.nextHook()(v0, v1, v2, v3)
-	m.DiffSymbolsFunc.appendCall(ClientDiffSymbolsFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the DiffSymbols method
-// of the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientDiffSymbolsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DiffSymbols method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientDiffSymbolsFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientDiffSymbolsFunc) SetDefaultReturn(r0 []byte, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientDiffSymbolsFunc) PushReturn(r0 []byte, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientDiffSymbolsFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientDiffSymbolsFunc) appendCall(r0 ClientDiffSymbolsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientDiffSymbolsFuncCall objects
-// describing the invocations of this function.
-func (f *ClientDiffSymbolsFunc) History() []ClientDiffSymbolsFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientDiffSymbolsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientDiffSymbolsFuncCall is an object that describes an invocation of
-// method DiffSymbols on an instance of MockClient.
-type ClientDiffSymbolsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.CommitID
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 api.CommitID
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []byte
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientDiffSymbolsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientDiffSymbolsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
