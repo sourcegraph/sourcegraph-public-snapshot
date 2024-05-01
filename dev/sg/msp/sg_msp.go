@@ -14,7 +14,6 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/maps"
 
-	notionmarkdown "github.com/sourcegraph/notionreposync/markdown"
 	"github.com/sourcegraph/notionreposync/notion"
 	"github.com/sourcegraph/run"
 
@@ -514,7 +513,10 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 
 							std.Out.Writef("[%s]\tGenerating operations handbook page", s)
 
-							collectedAlerts, err := CollectAlertPolicies(svc)
+							collectedAlerts, err := collectAlertPolicies(svc)
+							if err != nil {
+								return errors.Wrapf(err, "%s: CollectAlertPolicies", s)
+							}
 
 							// Generate architecture diagrams
 							for _, e := range svc.ListEnvironmentIDs() {
@@ -527,7 +529,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 								if err != nil {
 									return errors.Wrap(err, s)
 								}
-								_, err := diagram.Render()
+								_, err = diagram.Render()
 								if err != nil {
 									return errors.Wrap(err, s)
 								}
@@ -537,11 +539,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 								// }
 							}
 
-							collectedAlerts, err := collectAlertPolicies(svc)
 							opts.AlertPolicies = collectedAlerts
-							if err != nil {
-								return errors.Wrapf(err, "%s: CollectAlertPolicies", s)
-							}
 							doc, err := operationdocs.Render(*svc, opts)
 							if err != nil {
 								return errors.Wrap(err, s)
@@ -562,7 +560,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 							}
 
 							blockUpdater := notion.NewPageBlockUpdater(notionClient, *svc.Service.NotionPageID)
-							if err := notionmarkdown.NewProcessor(c.Context, blockUpdater).
+							if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
 								ProcessMarkdown([]byte(doc)); err != nil {
 								return errors.Wrap(err, s)
 							}
@@ -586,7 +584,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 						}
 						blockUpdater := notion.NewPageBlockUpdater(notionClient, operationdocs.IndexNotionPageID())
 						doc := operationdocs.RenderIndexPage(serviceSpecs, opts)
-						if err := notionmarkdown.NewProcessor(c.Context, blockUpdater).
+						if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
 							ProcessMarkdown([]byte(doc)); err != nil {
 							return errors.Wrap(err, "apply index page")
 						}

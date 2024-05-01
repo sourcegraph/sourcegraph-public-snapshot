@@ -36,7 +36,13 @@ func listPageBlocks(ctx context.Context, client *notionapi.Client, pageID string
 		if err != nil {
 			return nil, errors.Wrapf(err, "page %d: failed to get children", pages)
 		}
-		blocks = append(blocks, resp.Results...)
+		for _, b := range resp.Results {
+			// Don't treat child pages as blocks on this page, they are different
+			// pages.
+			if b.GetType() != notionapi.BlockTypeChildPage {
+				blocks = append(blocks, b)
+			}
+		}
 
 		if !resp.HasMore {
 			break

@@ -1,10 +1,14 @@
 package operationdocs
 
 import (
+	"context"
 	"testing"
 
 	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/notionreposync/renderer/renderertest"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/terraform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
@@ -227,6 +231,13 @@ Some additional operations!`),
 			doc, err := Render(tc.spec, tc.opts)
 			require.NoError(t, err)
 			autogold.ExpectFile(t, autogold.Raw(doc))
+
+			t.Run("renderable by Notion converter", func(t *testing.T) {
+				blocks := renderertest.MockBlockUpdater{}
+				assert.NoError(t, NewNotionConverter(context.Background(), &blocks).
+					ProcessMarkdown([]byte(doc)))
+				assert.NotEmpty(t, blocks.GetAddedBlocks())
+			})
 		})
 	}
 }

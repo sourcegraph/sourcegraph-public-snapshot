@@ -83,29 +83,27 @@ This service is operated on the %s.`,
 	serviceDirURL := fmt.Sprintf("https://github.com/sourcegraph/managed-services/blob/main/services/%s", s.Service.ID)
 	serviceConfigURL := fmt.Sprintf("%s/service.yaml", serviceDirURL)
 
-	md.Table(
-		[]string{"Property", "Details"},
-		[][]string{
-			{"Service ID", fmt.Sprintf("%s (%s)",
-				markdown.Code(s.Service.ID), markdown.Link("specification", serviceConfigURL))},
-			// TODO: See service.Description docstring
-			// {"Description", s.Service.Description},
-			{"Owners", strings.Join(mapTo(s.Service.Owners, markdown.Bold), ", ")},
-			{"Service kind", fmt.Sprintf("Cloud Run %s", string(serviceKind))},
-			{"Environments", strings.Join(mapTo(s.Environments, func(e spec.EnvironmentSpec) string {
-				l, h := markdown.HeadingLinkf(e.ID)
-				environmentHeaders = append(environmentHeaders, environmentHeader{
-					environmentID: e.ID,
-					header:        h,
-					link:          l,
-				})
-				return l
-			}), ", ")},
-			{"Docker image", markdown.Code(s.Build.Image)},
-			{"Source code", markdown.Linkf(
-				fmt.Sprintf("%s - %s", markdown.Code(s.Build.Source.Repo), markdown.Code(s.Build.Source.Dir)),
-				"https://%s/tree/HEAD/%s", s.Build.Source.Repo, path.Clean(s.Build.Source.Dir))},
-		})
+	md.List([]any{
+		"Service ID: " + fmt.Sprintf("%s (%s)",
+			markdown.Code(s.Service.ID), markdown.Link("specification", serviceConfigURL)),
+		// TODO: See service.Description docstring
+		// {"Description", s.Service.Description},
+		"Owners: " + strings.Join(mapTo(s.Service.Owners, markdown.Bold), ", "),
+		"Service kind: " + fmt.Sprintf("Cloud Run %s", string(serviceKind)),
+		"Environments:", mapTo(s.Environments, func(e spec.EnvironmentSpec) string {
+			l, h := markdown.HeadingLinkf(e.ID)
+			environmentHeaders = append(environmentHeaders, environmentHeader{
+				environmentID: e.ID,
+				header:        h,
+				link:          l,
+			})
+			return l
+		}),
+		"Docker image: " + markdown.Code(s.Build.Image),
+		"Source code: " + markdown.Linkf(
+			fmt.Sprintf("%s - %s", markdown.Code(s.Build.Source.Repo), markdown.Code(s.Build.Source.Dir)),
+			"https://%s/tree/HEAD/%s", s.Build.Source.Repo, path.Clean(s.Build.Source.Dir)),
+	})
 
 	if len(s.README) > 0 {
 		md.Commentf("Automatically generated from the service README: %s", fmt.Sprintf("%s/README.md", serviceDirURL))
@@ -125,12 +123,13 @@ This service is operated on the %s.`,
 	if s.Rollout != nil {
 		md.Headingf(2, "Rollouts")
 		region := "us-central1"
-		var rolloutDetails [][]string
+		var rolloutDetails []string
 		// Get final stage to generate pipeline url
 		finalStageEnv := s.Rollout.Stages[len(s.Rollout.Stages)-1].EnvironmentID
 		finalStageProject := s.GetEnvironment(finalStageEnv).ProjectID
-		rolloutDetails = append(rolloutDetails, []string{"Delivery pipeline", markdown.Linkf(fmt.Sprintf("`%s-%s-rollout`", s.Service.ID, region),
-			"https://console.cloud.google.com/deploy/delivery-pipelines/%[1]s/%[2]s-%[1]s-rollout?project=%[3]s", region, s.Service.ID, finalStageProject)})
+		rolloutDetails = append(rolloutDetails,
+			"Delivery pipeline: "+markdown.Linkf(fmt.Sprintf("`%s-%s-rollout`", s.Service.ID, region),
+				"https://console.cloud.google.com/deploy/delivery-pipelines/%[1]s/%[2]s-%[1]s-rollout?project=%[3]s", region, s.Service.ID, finalStageProject))
 
 		var stages []string
 		for _, stage := range s.Rollout.Stages {
@@ -139,9 +138,9 @@ This service is operated on the %s.`,
 			})
 			stages = append(stages, environmentHeaders[envIndex].link)
 		}
-		rolloutDetails = append(rolloutDetails, []string{"Stages", strings.Join(stages, " -> ")})
+		rolloutDetails = append(rolloutDetails, "Stages: "+strings.Join(stages, " -> "))
 
-		md.Table([]string{"Property", "Details"}, rolloutDetails)
+		md.List(rolloutDetails)
 		md.Paragraphf("Changes to %[1]s are continuously delivered to the first stage (%[2]s) of the delivery pipeline.", *s.Service.Name, stages[0])
 		if len(stages) > 1 {
 			md.Paragraphf("Promotion of a release to the next stage in the pipeline must be done manually using the GCP Delivery pipeline UI.")
@@ -170,41 +169,38 @@ This service is operated on the %s.`,
 
 		sentryLink := markdown.Linkf("Sentry "+markdown.Codef("%s-%s", s.Service.ID, env.ID), "https://sourcegraph.sentry.io/projects/%s-%s/", s.Service.ID, env.ID)
 		slackChannelName := fmt.Sprintf("alerts-%s-%s", s.Service.ID, env.ID)
-		overview := [][]string{
-			{"Project ID", markdown.Linkf(markdown.Code(env.ProjectID), cloudRunURL)},
-			{"Category", markdown.Bold(string(env.Category))},
-			{"Deployment type", fmt.Sprintf("`%s`", env.Deploy.Type)},
-			{"Resources", strings.Join(mapTo(env.Resources.List(), func(k string) string {
+		overview := []any{
+			"Project ID: " + markdown.Linkf(markdown.Code(env.ProjectID), cloudRunURL),
+			"Category: " + markdown.Bold(string(env.Category)),
+			"Deployment type: " + fmt.Sprintf("`%s`", env.Deploy.Type),
+			"Resources: ", mapTo(env.Resources.List(), func(k string) string {
 				l, h := markdown.HeadingLinkf("%s %s", env.ID, k)
 				resourceHeadings[k] = h
 				return l
-			}), ", ")},
-			{"Slack notifications", markdown.Linkf("#"+slackChannelName, "https://sourcegraph.slack.com/archives/"+slackChannelName)},
-			{"Alert policies",
+			}),
+			"Slack notifications: " + markdown.Linkf("#"+slackChannelName, "https://sourcegraph.slack.com/archives/"+slackChannelName),
+			"Alert policies: " +
 				fmt.Sprintf("%s, %s",
 					markdown.Linkf("GCP Monitoring alert policies list", "https://console.cloud.google.com/monitoring/alerting/policies?project=%s", env.ProjectID),
-					AlertPolicyDashboardURL(env.ProjectID))},
-			{"Errors", sentryLink},
+					AlertPolicyDashboardURL(env.ProjectID)),
+			"Errors: " + sentryLink,
 		}
 		if env.EnvironmentServiceSpec != nil {
 			if domain := env.Domain.GetDNSName(); domain != "" {
-				overview = append(overview, []string{"Domain", markdown.Link(domain, "https://"+domain)})
+				overview = append(overview, "Domain: "+markdown.Link(domain, "https://"+domain))
 				if env.Domain.Cloudflare != nil && env.Domain.Cloudflare.ShouldProxy() {
-					overview = append(overview, []string{"Cloudflare WAF", "✅"})
+					overview = append(overview, "Cloudflare WAF: ✅")
 				}
 			}
 			if env.Authentication != nil {
 				if pointers.DerefZero(env.Authentication.Sourcegraph) {
-					overview = append(overview, []string{"Authentication", "sourcegraph.com GSuite users"})
+					overview = append(overview, "Authentication: sourcegraph.com GSuite users")
 				} else {
-					overview = append(overview, []string{"Authentication", "Restricted"})
+					overview = append(overview, "Authentication: Restricted")
 				}
 			}
 		}
-		md.Table(
-			[]string{"Property", "Details"},
-			overview,
-		)
+		md.List(overview)
 
 		entitleIntro := `MSP infrastructure access needs to be requested using Entitle for time-bound privileges.`
 		if env.Category == spec.EnvironmentCategoryTest {
@@ -212,9 +208,9 @@ This service is operated on the %s.`,
 		}
 		md.Paragraphf(entitleIntro)
 
-		md.Table([]string{"Access", "Entitle request template"}, [][]string{
-			{"GCP project read access", entitleReaderLinksByCategory[env.Category]},
-			{"GCP project write access", entitleEditorLinksByCategory[env.Category]},
+		md.List([]string{
+			"GCP project read access: " + entitleReaderLinksByCategory[env.Category],
+			"GCP project write access: " + entitleEditorLinksByCategory[env.Category],
 		})
 
 		terraformCloudSectionLink, terraformCloudSectionHeading := markdown.HeadingLinkf("%s Terraform Cloud", env.ID)
@@ -228,16 +224,13 @@ This service is operated on the %s.`,
 			s.Service.GetName(), env.ID,
 			markdown.Link("Google Cloud Run", "https://cloud.google.com/run"))
 
-		md.Table(
-			[]string{"Property", "Details"},
-			[][]string{
-				{"Console", markdown.Linkf(
-					fmt.Sprintf("Cloud Run %s", string(serviceKind)), cloudRunURL)},
-				{"Service logs", markdown.Link("GCP logging", ServiceLogsURL(serviceKind, env.ProjectID))},
-				{"Service traces", markdown.Linkf("Cloud Trace", "https://console.cloud.google.com/traces/list?project=%s", env.ProjectID)},
-				{"Service errors", sentryLink},
-			},
-		)
+		md.List([]string{
+			"Console: " + markdown.Linkf(
+				fmt.Sprintf("Cloud Run %s", string(serviceKind)), cloudRunURL),
+			"Service logs: " + markdown.Link("GCP logging", ServiceLogsURL(serviceKind, env.ProjectID)),
+			"Service traces: " + markdown.Linkf("Cloud Trace", "https://console.cloud.google.com/traces/list?project=%s", env.ProjectID),
+			"Service errors: " + sentryLink,
+		})
 
 		md.Paragraphf("You can also use %s to quickly open a link to your service logs:", markdown.Code("sg msp"))
 		md.CodeBlockf("bash", `sg msp logs %s %s`, s.Service.ID, env.ID)
@@ -246,27 +239,21 @@ This service is operated on the %s.`,
 		if env.Resources != nil {
 			if redis := env.Resources.Redis; redis != nil {
 				md.Headingf(4, resourceHeadings[redis.ResourceKind()])
-				md.Table(
-					[]string{"Property", "Details"},
-					[][]string{
-						{"Console", markdown.Linkf("Memorystore Redis instances",
-							"https://console.cloud.google.com/memorystore/redis/instances?project=%s", env.ProjectID)},
-					},
-				)
+				md.List([]string{
+					"Console: " + markdown.Linkf("Memorystore Redis instances",
+						"https://console.cloud.google.com/memorystore/redis/instances?project=%s", env.ProjectID),
+				})
 
 				// TODO: More details
 			}
 
 			if pg := env.Resources.PostgreSQL; pg != nil {
 				md.Headingf(4, resourceHeadings[pg.ResourceKind()])
-				md.Table(
-					[]string{"Property", "Details"},
-					[][]string{
-						{"Console", markdown.Linkf("Cloud SQL instances",
-							"https://console.cloud.google.com/sql/instances?project=%s", env.ProjectID)},
-						{"Databases", strings.Join(mapTo(pg.Databases, markdown.Code), ", ")},
-					},
-				)
+				md.List([]string{
+					"Console: " + markdown.Linkf("Cloud SQL instances",
+						"https://console.cloud.google.com/sql/instances?project=%s", env.ProjectID),
+					"Databases: " + strings.Join(mapTo(pg.Databases, markdown.Code), ", "),
+				})
 
 				md.Admonitionf(markdown.AdmonitionNote, "The %s is required for BOTH read-only and write access to the database.",
 					entitleEditorLinksByCategory[env.Category])
@@ -286,19 +273,15 @@ sg msp pg connect -write-access %[1]s %[2]s`, s.Service.ID, env.ID)
 
 			if bq := env.Resources.BigQueryDataset; bq != nil {
 				md.Headingf(4, resourceHeadings[bq.ResourceKind()])
-				md.Table(
-					[]string{"Property", "Details"},
-					[][]string{
-						{"Dataset Project", markdown.Code(pointers.Deref(bq.ProjectID, env.ProjectID))},
-						{"Dataset ID", markdown.Code(bq.GetDatasetID(s.Service.ID))},
-						{"Tables", strings.Join(mapTo(bq.Tables, func(t string) string {
-							return markdown.Linkf(markdown.Code(t),
-								"https://github.com/sourcegraph/managed-services/blob/main/services/%s/%s.bigquerytable.json",
-								s.Service.ID, t)
-						}), ", ")},
-					},
-				)
-
+				md.List([]any{
+					"Dataset Project: " + markdown.Code(pointers.Deref(bq.ProjectID, env.ProjectID)),
+					"Dataset ID: " + markdown.Code(bq.GetDatasetID(s.Service.ID)),
+					"Tables:", mapTo(bq.Tables, func(t string) string {
+						return markdown.Linkf(markdown.Code(t),
+							"https://github.com/sourcegraph/managed-services/blob/main/services/%s/%s.bigquerytable.json",
+							s.Service.ID, t)
+					}),
+				})
 				// TODO: more details
 			}
 		}
