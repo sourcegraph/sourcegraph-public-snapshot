@@ -39,6 +39,7 @@
         margin-right: 0.5rem;
         white-space: nowrap;
         max-width: 400px;
+        font-size: var(--font-size-small);
     }
 
     .avatar {
