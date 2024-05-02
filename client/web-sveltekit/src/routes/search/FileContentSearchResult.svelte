@@ -135,7 +135,7 @@
         text-align: left;
         border: none;
         padding: 0.25rem 0.5rem;
-        background-color: var(--body-bg);
+        background-color: var(--code-bg);
         color: var(--text-muted);
         cursor: pointer;
 
@@ -146,11 +146,13 @@
 
         &:hover {
             background-color: var(--color-bg-2);
+            color: var(--text-title);
         }
     }
 
     .code {
         border-bottom: 1px solid var(--border-color);
+        background-color: var(--code-bg);
 
         &:last-child {
             border-bottom: none;
