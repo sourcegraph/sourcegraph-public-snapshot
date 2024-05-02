@@ -170,7 +170,7 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
                 <BrandLogo variant="symbol" isLightTheme={props.isLightTheme} disableSymbolSpin={true} />
                 <div>
                     <H2>Sourcegraph setup: permissions & security</H2>
-                    <Text>Connect external identity providers to access private repositories.</Text>
+                    <Text>Connect external identities to your account to access private repositories.</Text>
                 </div>
             </div>
             <hr />
