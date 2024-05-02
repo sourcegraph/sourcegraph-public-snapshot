@@ -829,18 +829,22 @@ func (s *GitHubSource) listAffiliatedPage(ctx context.Context, first int, result
 // all of the internal repositories belonging to these organizations by using
 // a search query. This leads to much fewer requests to the GitHub API.
 func (s *GitHubSource) listInternal(ctx context.Context, results chan *githubResult) {
-	orgs := []string{}
+	// If the user is using a GitHub App, we iterate over the repos the app has access to.
+	// GitHub App installations belong to a single user/org, so we can't iterate
+	// over a list of orgs.
 	if s.config.GitHubAppDetails != nil {
 		page := 1
 		for {
-			installs, hasNextPage, err := s.v3Client.GetAppInstallations(ctx, page)
+			repos, hasNextPage, _, err := s.v3Client.ListInstallationRepositories(ctx, page)
 			if err != nil {
 				results <- &githubResult{err: err}
 				return
 			}
 
-			for _, install := range installs {
-				orgs = append(orgs, *install.Account.Login)
+			for _, repo := range repos {
+				if repo.Visibility == github.VisibilityInternal {
+					results <- &githubResult{repo: repo}
+				}
 			}
 
 			if !hasNextPage {
@@ -849,25 +853,21 @@ func (s *GitHubSource) listInternal(ctx context.Context, results chan *githubRes
 
 			page += 1
 		}
-	} else {
-		allOrgs, err := fetchAll(func(page int) (items []*github.Org, hasNext bool, cost int, err error) {
-			return s.v3Client.GetAuthenticatedUserOrgs(ctx, page)
-		})
-		if err != nil {
-			results <- &githubResult{err: err}
-			return
-		}
+	}
 
-		for _, org := range allOrgs {
-			orgs = append(orgs, org.Login)
-		}
+	orgs, err := fetchAll(func(page int) (items []*github.Org, hasNext bool, cost int, err error) {
+		return s.v3Client.GetAuthenticatedUserOrgs(ctx, page)
+	})
+	if err != nil {
+		results <- &githubResult{err: err}
+		return
 	}
 
 	var sb strings.Builder
 
 	for _, org := range orgs {
 		sb.WriteString("org:")
-		sb.WriteString(org)
+		sb.WriteString(org.Login)
 		sb.WriteString(" ")
 	}
 	sb.WriteString("is:internal")
