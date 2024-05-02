@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -714,6 +715,15 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 		}, opt.Attrs()...),
 	})
 
+	// First, verify that the actor has access to the given path.
+	hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, actor.FromContext(ctx), repo, path)
+	if err != nil {
+		return nil, err
+	}
+	if !hasAccess {
+		return nil, fs.ErrNotExist
+	}
+
 	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
 		endObservation(1, observation.Args{})
@@ -1098,30 +1108,51 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, ba
 	return api.CommitID(res.GetMergeBaseCommitSha()), nil
 }
 
-// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
-func (c *clientImplementor) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) (err error) {
+func (c *clientImplementor) RevList(ctx context.Context, repo api.RepoName, commit string, count int) (_ []api.CommitID, nextCursor string, err error) {
 	ctx, _, endObservation := c.operations.revList.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
-			attribute.String("repo", repo),
+			repo.Attr(),
 			attribute.String("commit", commit),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
-	command := c.gitCommand(api.RepoName(repo), RevListArgs(commit)...)
-	command.DisableTimeout()
-	stdout, err := command.StdoutReader(ctx)
-	if err != nil {
-		return err
-	}
-	defer stdout.Close()
+	command := c.gitCommand(repo, revListArgs(count, commit)...)
 
-	return gitdomain.RevListEach(stdout, onCommit)
+	stdout, err := command.Output(ctx)
+	if err != nil {
+		return nil, "", err
+	}
+
+	commits := make([]api.CommitID, 0, count+1)
+
+	lr := byteutils.NewLineReader(stdout)
+	for lr.Scan() {
+		line := lr.Line()
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		commit := api.CommitID(line)
+		commits = append(commits, commit)
+	}
+
+	if len(commits) > count {
+		nextCursor = string(commits[len(commits)-1])
+		commits = commits[:count]
+	}
+
+	return commits, nextCursor, nil
 }
 
-func RevListArgs(givenCommit string) []string {
-	return []string{"rev-list", "--first-parent", givenCommit}
+func revListArgs(count int, givenCommit string) []string {
+	return []string{
+		"rev-list",
+		"--first-parent",
+		fmt.Sprintf("--max-count=%d", count+1),
+		givenCommit,
+	}
 }
 
 // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
@@ -1170,6 +1201,14 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 			attribute.String("name", name),
 		},
 	})
+
+	// First, verify the actor can see the path.
+	a := actor.FromContext(ctx)
+	if hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, repo, name); err != nil {
+		return nil, err
+	} else if !hasAccess {
+		return nil, os.ErrNotExist
+	}
 
 	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
@@ -1322,15 +1361,36 @@ func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id
 		return nil, err
 	}
 
+	subRepoEnabled := false
+	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
+		subRepoEnabled, err = authz.SubRepoEnabledForRepo(ctx, c.subRepoPermsChecker, repo)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to check sub repo permissions")
+		}
+	}
+
 	res, err := client.GetCommit(ctx, &proto.GetCommitRequest{
-		RepoName: string(repo),
-		Commit:   string(id),
+		RepoName:             string(repo),
+		Commit:               string(id),
+		IncludeModifiedFiles: subRepoEnabled,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return gitdomain.CommitFromProto(res.GetCommit()), nil
+	commit := gitdomain.CommitFromProto(res.GetCommit())
+
+	if subRepoEnabled {
+		ok, err := hasAccessToCommit(ctx, &wrappedCommit{Commit: commit, files: byteSlicesToStrings(res.GetModifiedFiles())}, repo, c.subRepoPermsChecker)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to check sub repo permissions")
+		}
+		if !ok {
+			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(id)}
+		}
+	}
+
+	return commit, nil
 }
 
 // Commits returns all commits matching the options.
@@ -1731,7 +1791,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 }
 
 // FirstEverCommit returns the first commit ever made to the repository.
-func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoName) (_ *gitdomain.Commit, err error) {
+func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoName) (commit *gitdomain.Commit, err error) {
 	ctx, _, endObservation := c.operations.firstEverCommit.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
@@ -1740,20 +1800,19 @@ func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoNa
 	})
 	defer endObservation(1, observation.Args{})
 
-	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.Output(ctx)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
+		return nil, err
 	}
-	lines := bytes.TrimSpace(out)
-	tokens := bytes.SplitN(lines, []byte("\n"), 2)
-	if len(tokens) == 0 {
-		return nil, errors.New("FirstEverCommit returned no revisions")
+
+	result, err := client.FirstEverCommit(ctx, &proto.FirstEverCommitRequest{
+		RepoName: string(repo),
+	})
+	if err != nil {
+		return nil, err
 	}
-	first := tokens[0]
-	id := api.CommitID(bytes.TrimSpace(first))
-	return c.GetCommit(ctx, repo, id)
+
+	return gitdomain.CommitFromProto(result.GetCommit()), nil
 }
 
 const (
@@ -1858,6 +1917,14 @@ func (c *clientImplementor) ArchiveReader(ctx context.Context, repo api.RepoName
 			options.Attrs()...,
 		),
 	})
+
+	if authz.SubRepoEnabled(c.subRepoPermsChecker) && !actor.FromContext(ctx).IsInternal() {
+		if enabled, err := authz.SubRepoEnabledForRepo(ctx, c.subRepoPermsChecker, repo); err != nil {
+			return nil, errors.Wrap(err, "sub-repo permissions check")
+		} else if enabled {
+			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
+		}
+	}
 
 	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches"
 	codeintelinit "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/completions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/compute"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/contentlibrary"
@@ -44,6 +45,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -73,6 +75,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"contentLibrary": contentlibrary.Init,
 	"search":         search.Init,
 	"telemetry":      telemetry.Init,
+	"codycontext":    codycontext.Init,
 }
 
 func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
@@ -136,7 +139,7 @@ func SwitchableSiteConfig() conftypes.WatchableSiteConfig {
 
 	go func() {
 		<-AutoUpgradeDone
-		conf.EnsureHTTPClientIsConfigured()
+		httpcli.Configure(confClient)
 		switchable.WatchableSiteConfig = confClient
 		for _, watcher := range switchable.watchers {
 			confClient.Watch(watcher)

@@ -12,6 +12,12 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
+# We're transitioning to GAR because of DockerHub new rate limiting affecting GCP
+# See https://github.com/sourcegraph/sourcegraph/issues/61696
+# Set IFS to space and read into an array
+IFS=' ' read -r -a PROMOTION_REGISTRIES <<< "$ADDITIONAL_PROD_REGISTRIES"
+PROMOTION_REGISTRIES=("$PUBLIC_REGISTRY" "${PROMOTION_REGISTRIES[@]}" )
+
 echo -e "## Release: image promotions" > ./annotations/image_promotions.md
 echo -e "\n| Name | From | To |\n|---|---|---|" >> ./annotations/image_promotions.md
 for name in "${@:1}"; do
@@ -21,13 +27,13 @@ for name in "${@:1}"; do
   docker pull "${INTERNAL_REGISTRY}/${name}:${VERSION}"
 
   # Push it on the classic public registry (DockerHub)
-  docker tag "${INTERNAL_REGISTRY}/${name}:${VERSION}" "${PUBLIC_REGISTRY}/${name}:${VERSION}"
-  docker push "${PUBLIC_REGISTRY}/${name}:${VERSION}"
+  pushed=""
+  for registry in "${PROMOTION_REGISTRIES[@]}"; do
+    target="${registry}/${name}:${VERSION}"
+    docker tag "${INTERNAL_REGISTRY}/${name}:${VERSION}" "$target"
+    docker push "$target"
+    pushed="$pushed \`$target\`"
+  done
 
-  # We're transitioning to GAR because of DockerHub new rate limiting affecting GCP
-  # See https://github.com/sourcegraph/sourcegraph/issues/61696
-  docker tag "${INTERNAL_REGISTRY}/${name}:${VERSION}" "${ADDITIONAL_PROD_REGISTRY}/${name}:${VERSION}"
-  docker push "${ADDITIONAL_PROD_REGISTRY}/${name}:${VERSION}"
-
-  echo -e "| ${name} | \`${INTERNAL_REGISTRY}/${name}:${VERSION}\` | \`${PUBLIC_REGISTRY}/${name}:${VERSION}\` \`${ADDITIONAL_PROD_REGISTRY}/${name}:${VERSION}\` |" >>./annotations/image_promotions.md
+  echo -e "| ${name} | \`${INTERNAL_REGISTRY}/${name}:${VERSION}\` | ${pushed} |" >>./annotations/image_promotions.md
 done

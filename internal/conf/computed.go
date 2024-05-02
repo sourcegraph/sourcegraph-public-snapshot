@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
@@ -175,6 +174,48 @@ func BatchChangesRestrictedToAdmins() bool {
 		return *restricted
 	}
 	return false
+}
+
+func init() {
+	ContributeValidator(func(querier conftypes.SiteConfigQuerier) (problems Problems) {
+		cm := querier.SiteConfig().CodeMonitors
+		if cm == nil {
+			return nil
+		}
+		if cm.Concurrency < 0 {
+			problems = append(problems, NewSiteProblem("codeMonitors.concurrency must be greater than zero"))
+		}
+		if cm.PollInterval != "" {
+			if _, err := time.ParseDuration(cm.PollInterval); err != nil {
+				problems = append(problems, NewSiteProblem("codeMonitors.pollInterval must be parseable as a duration"))
+			}
+		}
+		return problems
+	})
+}
+
+type ComputedCodeMonitors struct {
+	Concurrency  int
+	PollInterval time.Duration
+}
+
+func CodeMonitors() ComputedCodeMonitors {
+	// Start with default values and override if set
+	res := ComputedCodeMonitors{
+		Concurrency:  4,
+		PollInterval: 5 * time.Minute,
+	}
+	if cm := Get().CodeMonitors; cm != nil {
+		if cm.Concurrency != 0 {
+			res.Concurrency = cm.Concurrency
+		}
+		if cm.PollInterval != "" {
+			// ignore err since it's validated above
+			dur, _ := time.ParseDuration(cm.PollInterval)
+			res.PollInterval = dur
+		}
+	}
+	return res
 }
 
 // CodyEnabled returns whether Cody is enabled on this instance.
@@ -916,8 +957,8 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		return nil
 	}
 
-	// Only allow embeddings on dotcom
-	if !dotcom.SourcegraphDotComMode() {
+	// Only allow embeddings as part of evaluating context quality.
+	if !ForceAllowEmbeddings() {
 		return nil
 	}
 

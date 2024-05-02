@@ -31,7 +31,6 @@ go_test(
     srcs = [
         "environment_test.go",
         "privatenetworking_test.go",
-        "projectid_test.go",
         "service_test.go",
     ],
     embed = [":spec"],

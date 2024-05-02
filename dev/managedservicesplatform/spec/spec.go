@@ -35,7 +35,7 @@ type Spec struct {
 	// README is the contents of the README.md file adjacent to the service
 	// specification. May be a zero-length byte slice if a README file is not
 	// present, or nil if this spec was not opened with 'spec.Open(...)'.
-	README []byte
+	README []byte `yaml:"-"`
 }
 
 var ErrServiceDoesNotExist = errors.New("service does not exist")

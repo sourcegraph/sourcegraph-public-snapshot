@@ -29,7 +29,7 @@ go_library(
         "//cmd/gitserver/internal/git",
         "//internal/actor",
         "//internal/api",
-        "//internal/conf",
+        "//internal/bytesize",
         "//internal/gitserver/gitdomain",
         "//internal/honey",
         "//internal/lazyregexp",

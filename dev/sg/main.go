@@ -51,9 +51,13 @@ func main() {
 	}
 }
 
+// Values to be stamped at build time.
 var (
-	BuildCommit = "dev"
+	BuildCommit = "dev"     // git commit hash of build
+	ReleaseName = "unknown" // human-friendlier name for the release, e.g. '2024-04-24-16-44-3623ecb2'
+)
 
+var (
 	// configFile is the path to use with sgconf.Get - it must not be used before flag
 	// initialization.
 	configFile string
@@ -87,7 +91,7 @@ const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/n
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
 	Description: "Learn more: https://sourcegraph.com/docs/dev/background-information/sg",
-	Version:     BuildCommit,
+	Version:     ReleaseName, // use friendly name as version
 	Compiled:    time.Now(),
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
@@ -182,7 +186,7 @@ var sg = &cli.App{
 			}
 
 			// Ensure analytics are persisted
-			interrupt.Register(func() { analytics.Persist(cmd.Context) })
+			interrupt.Register(func() { _ = analytics.Persist(cmd.Context) })
 
 			// Add analytics to each command
 			addAnalyticsHooks([]string{"sg"}, cmd.App.Commands)
@@ -255,7 +259,7 @@ var sg = &cli.App{
 			// Wait for background jobs to finish up, iff not in autocomplete mode
 			background.Wait(cmd.Context, std.Out)
 			// Persist analytics
-			analytics.Persist(cmd.Context)
+			_ = analytics.Persist(cmd.Context)
 		}
 
 		return nil
@@ -375,7 +379,7 @@ func watchConfig(ctx context.Context) (<-chan *sgconf.Config, error) {
 
 	// start file watcher on configuration files
 	paths := []string{configFile}
-	if !disableOverwrite {
+	if !disableOverwrite && exists(configOverwriteFile) {
 		paths = append(paths, configOverwriteFile)
 	}
 	updates, err := run.WatchPaths(ctx, paths)
@@ -412,4 +416,9 @@ func watchConfig(ctx context.Context) (<-chan *sgconf.Config, error) {
 	}()
 
 	return output, err
+}
+
+func exists(file string) bool {
+	_, err := os.Stat(file)
+	return !os.IsNotExist(err)
 }

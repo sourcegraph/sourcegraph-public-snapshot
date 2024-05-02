@@ -2,13 +2,18 @@ package codycontext
 
 import (
 	"context"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewEnterpriseFilter(t *testing.T) {
@@ -516,19 +521,56 @@ func TestNewEnterpriseFilter(t *testing.T) {
 		},
 	}
 
+	newFF := func(v bool) *featureflag.FeatureFlag {
+		return &featureflag.FeatureFlag{
+			Name:      "cody-context-filters-enabled",
+			Bool:      &featureflag.FeatureFlagBool{Value: v},
+			Rollout:   nil,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			DeletedAt: nil,
+		}
+	}
+	featureFlagValues := []*featureflag.FeatureFlag{newFF(true), newFF(false), nil}
+
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					CodyContextFilters: tt.ccf,
-				},
+		for _, ff := range featureFlagValues {
+			name := tt.name
+			if ff != nil {
+				name = name + fmt.Sprintf(" (%q feature flag value: %t)", ff.Name, ff.Bool.Value)
+			}
+			t.Run(name, func(t *testing.T) {
+				conf.Mock(&conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						CodyContextFilters: tt.ccf,
+					},
+				})
+
+				featureFlags := dbmocks.NewMockFeatureFlagStore()
+				if ff != nil {
+					featureFlags.GetFeatureFlagFunc.SetDefaultReturn(ff, nil)
+				}
+				db := dbmocks.NewMockDB()
+				db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+
+				f := newEnterpriseFilter(logtest.Scoped(t), db)
+				allowedRepos, matcher, _ := f.getMatcher(context.Background(), tt.repos)
+				filtered := make([]FileChunkContext, 0, len(tt.chunks))
+				for _, chunk := range tt.chunks {
+					if matcher(chunk.RepoID, chunk.Path) {
+						filtered = append(filtered, chunk)
+					}
+				}
+
+				if ff != nil && ff.Bool.Value {
+					require.Equal(t, tt.wantRepos, allowedRepos)
+					require.Equal(t, tt.wantChunks, filtered)
+				} else {
+					// If feature flag is not set or is set to false, the Cody context filters are disabled.
+					require.Equal(t, tt.repos, tt.repos)
+					require.Equal(t, tt.wantChunks, tt.wantChunks)
+				}
 			})
-
-			f := newEnterpriseFilter(logtest.Scoped(t))
-			allowedRepos, filter, _ := f.GetFilter(context.Background(), tt.repos)
-
-			require.Equal(t, tt.wantRepos, allowedRepos)
-			require.Equal(t, tt.wantChunks, filter(tt.chunks))
-		})
+		}
 	}
 }

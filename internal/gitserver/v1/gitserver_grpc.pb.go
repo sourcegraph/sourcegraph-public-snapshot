@@ -182,6 +182,7 @@ const (
 	GitserverService_RevAtTime_FullMethodName                   = "/gitserver.v1.GitserverService/RevAtTime"
 	GitserverService_RawDiff_FullMethodName                     = "/gitserver.v1.GitserverService/RawDiff"
 	GitserverService_ContributorCounts_FullMethodName           = "/gitserver.v1.GitserverService/ContributorCounts"
+	GitserverService_FirstEverCommit_FullMethodName             = "/gitserver.v1.GitserverService/FirstEverCommit"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -226,10 +227,7 @@ type GitserverServiceClient interface {
 	MergeBase(ctx context.Context, in *MergeBaseRequest, opts ...grpc.CallOption) (*MergeBaseResponse, error)
 	// Blame runs a blame operation on the specified file. It returns a stream of
 	// hunks as they are found. The --incremental flag is used on the git CLI
-	// level to achieve this behavior. The endpoint will verify that the user is
-	// allowed to blame the given file if subrepo permissions are enabled for the
-	// repo. If access is denied, an error with a UnauthorizedPayload in the
-	// details is returned.
+	// level to achieve this behavior.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -242,21 +240,11 @@ type GitserverServiceClient interface {
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	DefaultBranch(ctx context.Context, in *DefaultBranchRequest, opts ...grpc.CallOption) (*DefaultBranchResponse, error)
 	// ReadFile gets a file from the repo ODB and streams the contents back.
-	// The endpoint will verify that the user is allowed to view the given file
-	// if subrepo permissions are enabled for the repo. If access is denied, an
-	// error with a UnauthorizedPayload in the details is returned. If the path
-	// points to a submodule, no error is returned and an empty file is streamed
-	// back.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error)
 	// GetCommit gets a commit from the repo ODB.
-	// The endpoint will verify that the user is allowed to view the given commit.
-	//
-	// If subrepo permissions are enabled for the repo. If access is denied, an
-	// error with a RevisionNotFoundPayload is returned, to not leak existence of
-	// the commit.
 	//
 	// If the commit is not found, an error with a RevisionNotFoundPayload is
 	// returned.
@@ -324,6 +312,11 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ContributorCounts(ctx context.Context, in *ContributorCountsRequest, opts ...grpc.CallOption) (*ContributorCountsResponse, error)
+	// FirstEverCommit returns the first commit ever made to the repository.
+	//
+	// If the given repository is empty, an error with a RevisionNotFoundPayload is
+	// returned.
+	FirstEverCommit(ctx context.Context, in *FirstEverCommitRequest, opts ...grpc.CallOption) (*FirstEverCommitResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -763,6 +756,15 @@ func (c *gitserverServiceClient) ContributorCounts(ctx context.Context, in *Cont
 	return out, nil
 }
 
+func (c *gitserverServiceClient) FirstEverCommit(ctx context.Context, in *FirstEverCommitRequest, opts ...grpc.CallOption) (*FirstEverCommitResponse, error) {
+	out := new(FirstEverCommitResponse)
+	err := c.cc.Invoke(ctx, GitserverService_FirstEverCommit_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -805,10 +807,7 @@ type GitserverServiceServer interface {
 	MergeBase(context.Context, *MergeBaseRequest) (*MergeBaseResponse, error)
 	// Blame runs a blame operation on the specified file. It returns a stream of
 	// hunks as they are found. The --incremental flag is used on the git CLI
-	// level to achieve this behavior. The endpoint will verify that the user is
-	// allowed to blame the given file if subrepo permissions are enabled for the
-	// repo. If access is denied, an error with a UnauthorizedPayload in the
-	// details is returned.
+	// level to achieve this behavior.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -821,21 +820,11 @@ type GitserverServiceServer interface {
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	DefaultBranch(context.Context, *DefaultBranchRequest) (*DefaultBranchResponse, error)
 	// ReadFile gets a file from the repo ODB and streams the contents back.
-	// The endpoint will verify that the user is allowed to view the given file
-	// if subrepo permissions are enabled for the repo. If access is denied, an
-	// error with a UnauthorizedPayload in the details is returned. If the path
-	// points to a submodule, no error is returned and an empty file is streamed
-	// back.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error
 	// GetCommit gets a commit from the repo ODB.
-	// The endpoint will verify that the user is allowed to view the given commit.
-	//
-	// If subrepo permissions are enabled for the repo. If access is denied, an
-	// error with a RevisionNotFoundPayload is returned, to not leak existence of
-	// the commit.
 	//
 	// If the commit is not found, an error with a RevisionNotFoundPayload is
 	// returned.
@@ -903,6 +892,11 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ContributorCounts(context.Context, *ContributorCountsRequest) (*ContributorCountsResponse, error)
+	// FirstEverCommit returns the first commit ever made to the repository.
+	//
+	// If the given repository is empty, an error with a RevisionNotFoundPayload is
+	// returned.
+	FirstEverCommit(context.Context, *FirstEverCommitRequest) (*FirstEverCommitResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -990,6 +984,9 @@ func (UnimplementedGitserverServiceServer) RawDiff(*RawDiffRequest, GitserverSer
 }
 func (UnimplementedGitserverServiceServer) ContributorCounts(context.Context, *ContributorCountsRequest) (*ContributorCountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContributorCounts not implemented")
+}
+func (UnimplementedGitserverServiceServer) FirstEverCommit(context.Context, *FirstEverCommitRequest) (*FirstEverCommitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FirstEverCommit not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1519,6 +1516,24 @@ func _GitserverService_ContributorCounts_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GitserverService_FirstEverCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FirstEverCommitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).FirstEverCommit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_FirstEverCommit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).FirstEverCommit(ctx, req.(*FirstEverCommitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1601,6 +1616,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ContributorCounts",
 			Handler:    _GitserverService_ContributorCounts_Handler,
+		},
+		{
+			MethodName: "FirstEverCommit",
+			Handler:    _GitserverService_FirstEverCommit_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

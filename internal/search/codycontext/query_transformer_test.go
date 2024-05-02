@@ -27,6 +27,11 @@ func TestTransformPattern(t *testing.T) {
 		"computing",
 		"own", // key terms should not be removed, even if they are common
 		"!?",  // punctuation-only token should be removed
+		"grf::causal_forest",
+		"indexData.scoreFile",
+		"resource->GetServer()",
+		"foo-bar",
+		"bas>quz",
 	}
 	wantPatterns := []string{
 		"comput",
@@ -36,6 +41,14 @@ func TestTransformPattern(t *testing.T) {
 		"elaps",
 		"timer",
 		"own",
+		"grf",
+		"causal_forest",
+		"indexdata",
+		"scorefil",
+		"resourc",
+		"getserv",
+		"foo-bar",
+		"bas>quz",
 	}
 
 	gotPatterns := transformPatterns(patterns)
@@ -72,6 +85,11 @@ func TestQueryStringToKeywordQuery(t *testing.T) {
 			query:        "context:global the who",
 			wantQuery:    autogold.Expect("context:global"),
 			wantPatterns: autogold.Expect([]string{}),
+		},
+		{
+			query:        "context:global grf::causal_forest",
+			wantQuery:    autogold.Expect("context:global (grf OR causal_forest)"),
+			wantPatterns: autogold.Expect([]string{"grf", "causal_forest"}),
 		},
 		{
 			query:     `outer content:"inner {with} (special) ^characters$ and keywords like file or repo"`,

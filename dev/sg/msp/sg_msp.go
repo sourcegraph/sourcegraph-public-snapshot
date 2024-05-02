@@ -8,6 +8,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/maps"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/diagram"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
@@ -30,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/example"
 	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
-	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -40,19 +41,13 @@ import (
 var Command = &cli.Command{
 	Name:    "managed-services-platform",
 	Aliases: []string{"msp"},
-	Usage:   "EXPERIMENTAL: Generate and manage services deployed on the Sourcegraph Managed Services Platform",
-	Description: `WARNING: MSP is currently still an experimental project.
-To learm more, refer to go/rfc-msp and go/msp (https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform)`,
-	UsageText: `
-# Create a service specification
-sg msp init $SERVICE
+	Usage:   "Generate and manage services deployed on the Sourcegraph Managed Services Platform (MSP)",
+	Description: `To learm more about MSP, refer to go/msp (https://sourcegraph.notion.site/712a0389f54c4d3a90d069aa2d979a59).
 
-# Provision Terraform Cloud workspaces
-sg msp tfc sync $SERVICE $ENVIRONMENT
+MSP infrastructure manifests are managed in https://github.com/sourcegraph/managed-services - many commands expect you to be operating within a local copy of this repository.
+Refer to https://github.com/sourcegraph/managed-services/blob/main/README.md#tooling-setup for more information.
 
-# Generate Terraform manifests
-sg msp generate $SERVICE $ENVIRONMENT
-`,
+Please reach out to #discuss-core-services for assistance if you have any questions!`,
 	Category: category.Company,
 	Subcommands: []*cli.Command{
 		{
@@ -197,6 +192,10 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 			Name:      "init-env",
 			ArgsUsage: "<service ID> <env ID>",
 			Usage:     "Add an environment to an existing Managed Services Platform service",
+			Description: fmt.Sprintf(`Templates a new environment to be added to an existing Managed Services Platform service.
+If your service does not exist yet, use 'sg msp init' to get started.
+
+%s`, msprepo.DescribeServicesOptions()),
 			Flags: []cli.Flag{
 				&cli.IntFlag{
 					Name:  "project-id-suffix-length",
@@ -204,11 +203,8 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 					Value: spec.DefaultSuffixLength,
 				},
 			},
-			Before: msprepo.UseManagedServicesRepo,
-			BashComplete: completions.CompleteArgs(func() (options []string) {
-				ss, _ := msprepo.ListServices()
-				return ss
-			}),
+			Before:       msprepo.UseManagedServicesRepo,
+			BashComplete: msprepo.ServicesCompletions(),
 			Action: func(c *cli.Context) error {
 				svc, err := useServiceArgument(c, false) // we're expecting a potential second argument
 				if err != nil {
@@ -264,18 +260,25 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 		{
 			Name:      "generate",
 			Aliases:   []string{"gen"},
-			ArgsUsage: "<service ID>",
+			ArgsUsage: "<service ID> <env ID>",
 			Usage:     "Generate Terraform assets for a Managed Services Platform service spec",
-			Description: `Optionally use '-all' to sync all environments for a service.
+			Description: fmt.Sprintf(`Optionally use '-all' to sync all environments for a service.
 
-Supports completions on services and environments.`,
+This command supports completions on services and environments.
+
+%s`, msprepo.DescribeServicesOptions()),
 			UsageText: `
 # generate single env for a single service
 sg msp generate <service> <env>
+
 # generate all envs for a single service
 sg msp generate -all <service>
+
 # generate all envs across all services
 sg msp generate -all
+
+# generate all test envs across all services
+sg msp generate -all -category=test
 			`,
 			Before: msprepo.UseManagedServicesRepo,
 			Flags: []cli.Flag{
@@ -283,6 +286,10 @@ sg msp generate -all
 					Name:  "all",
 					Usage: "Generate infrastructure stacks for all services, or all envs for a service if service ID is provided",
 					Value: false,
+				},
+				&cli.StringFlag{
+					Name:  "category",
+					Usage: "Filter generated environments by category (one of 'test', 'internal', 'external') - must be used with '-all'",
 				},
 				&cli.BoolFlag{
 					Name:  "stable",
@@ -293,12 +300,27 @@ sg msp generate -all
 			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 			Action: func(c *cli.Context) error {
 				var (
-					generateAll    = c.Bool("all")
-					stableGenerate = c.Bool("stable")
+					generateAll      = c.Bool("all")
+					generateCategory = spec.EnvironmentCategory(c.String("category"))
+					stableGenerate   = c.Bool("stable")
 				)
 
 				if stableGenerate {
 					std.Out.WriteSuggestionf("Using stable generate - tfvars will not be updated.")
+				}
+
+				if generateCategory != "" {
+					if !generateAll {
+						return errors.New("'-category' must be used with '-all'")
+					}
+					if err := generateCategory.Validate(); err != nil {
+						return errors.Wrap(err, "invalid value for '-category'")
+					}
+				}
+
+				toolingChecker := &toolingLockfileChecker{
+					version:    c.App.Version,
+					categories: make(map[spec.EnvironmentCategory]*sync.Once),
 				}
 
 				// Generate a specific service environment if '-all' is not provided
@@ -309,6 +331,7 @@ sg msp generate -all
 						return err
 					}
 					return generateTerraform(svc, generateTerraformOptions{
+						tooling:        toolingChecker,
 						targetEnv:      env.ID,
 						stableGenerate: stableGenerate,
 					})
@@ -322,7 +345,9 @@ sg msp generate -all
 						return err
 					}
 					return generateTerraform(svc, generateTerraformOptions{
+						tooling:        toolingChecker,
 						stableGenerate: stableGenerate,
+						targetCategory: generateCategory,
 					})
 				}
 
@@ -340,7 +365,9 @@ sg msp generate -all
 						return err
 					}
 					if err := generateTerraform(s, generateTerraformOptions{
+						tooling:        toolingChecker,
 						stableGenerate: stableGenerate,
+						targetCategory: generateCategory,
 					}); err != nil {
 						return errors.Wrap(err, serviceID)
 					}
@@ -349,14 +376,18 @@ sg msp generate -all
 			},
 		},
 		{
-			Name:    "operations",
-			Aliases: []string{"ops"},
-			Usage:   "Generate operational reference for a service",
-			Before:  msprepo.UseManagedServicesRepo,
-			BashComplete: completions.CompleteArgs(func() (options []string) {
-				ss, _ := msprepo.ListServices()
-				return ss
-			}),
+			Name:      "operations",
+			Aliases:   []string{"ops"},
+			Usage:     "Generate operational reference for a service",
+			ArgsUsage: `<service ID>`,
+			UsageText: "sg msp ops [command options] <service ID>",
+			Description: fmt.Sprintf(`Directly view operational reference documentation for a service - also available in go/msp-ops.
+
+This command supports completions on services and environments.
+
+%s`, msprepo.DescribeServicesOptions()),
+			Before:       msprepo.UseManagedServicesRepo,
+			BashComplete: msprepo.ServicesCompletions(),
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
 					Name:  "pretty",
@@ -375,7 +406,7 @@ sg msp generate -all
 					return errors.Wrap(err, "msprepo.GitRevision")
 				}
 
-				collectedAlerts, err := CollectAlertPolicies(svc)
+				collectedAlerts, err := collectAlertPolicies(svc)
 				if err != nil {
 					return errors.Wrap(err, "CollectAlertPolicies")
 				}
@@ -456,8 +487,31 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 							if err != nil {
 								return errors.Wrapf(err, "load service %q", s)
 							}
+
+							// Generate architecture diagrams
+							for _, e := range svc.ListEnvironmentIDs() {
+								diagram, err := diagram.New()
+								if err != nil {
+									return errors.Wrap(err, s)
+								}
+
+								err = diagram.Generate(svc, e)
+								if err != nil {
+									return errors.Wrap(err, s)
+								}
+								svg, err := diagram.Render()
+								if err != nil {
+									return errors.Wrap(err, s)
+								}
+								diagramPath := filepath.Join(handbookPath,
+									operationdocs.EnvironmentHandbookPathDiagram(s, e))
+								if err := os.WriteFile(diagramPath, []byte(svg), 0o644); err != nil {
+									return errors.Wrap(err, s)
+								}
+							}
+
 							serviceSpecs = append(serviceSpecs, svc)
-							collectedAlerts, err := CollectAlertPolicies(svc)
+							collectedAlerts, err := collectAlertPolicies(svc)
 							opts.AlertPolicies = collectedAlerts
 							if err != nil {
 								return errors.Wrapf(err, "%s: CollectAlertPolicies", s)
@@ -490,8 +544,14 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 			},
 		},
 		{
-			Name:   "logs",
-			Usage:  "Quick links for logs of various MSP components",
+			Name:      "logs",
+			Usage:     "Quick links for logs of various MSP components",
+			ArgsUsage: "<service ID> <environment ID>",
+			Description: fmt.Sprintf(`View logs of various MSP infrastructure components for a specified service environment and component.
+
+This command supports completions on services and environments.
+
+%s`, msprepo.DescribeServicesOptions()),
 			Before: msprepo.UseManagedServicesRepo,
 			Flags: []cli.Flag{
 				&cli.StringFlag{
@@ -526,7 +586,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 				{
 					Name:  "connect",
 					Usage: "Connect to the PostgreSQL instance",
-					Description: `
+					Description: fmt.Sprintf(`
 This command runs 'cloud-sql-proxy' authenticated against the specified MSP
 service environment, and provides 'psql' commands for interacting with the
 database through the proxy.
@@ -536,7 +596,12 @@ install 'cloud-sql-proxy'.
 
 By default, you will only have 'SELECT' privileges through the connection - for
 full access, use the '-write-access' flag.
-`,
+
+You may need Entitle grants to use this command - see go/msp-ops for more details.
+
+This command supports completions on services and environments.
+
+%s`, msprepo.DescribeServicesOptions()),
 					ArgsUsage: "<service ID> <environment ID>",
 					Flags: []cli.Flag{
 						&cli.IntFlag{
@@ -649,9 +714,15 @@ full access, use the '-write-access' flag.
 			Before:  msprepo.UseManagedServicesRepo,
 			Subcommands: []*cli.Command{
 				{
-					Name:        "view",
-					Usage:       "View MSP Terraform Cloud workspaces",
-					Description: "You may need to request access to the workspaces - see https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/#terraform-cloud",
+					Name:  "view",
+					Usage: "View MSP Terraform Cloud workspaces",
+					Description: fmt.Sprintf(`View Terraform Cloud workspaces for a given service or service environment.
+
+You may need to request access to the workspaces via Entitle - refer to go/msp-ops for more details.
+
+This command supports completions on services and environments.
+
+%s`, msprepo.DescribeServicesOptions()),
 					UsageText: `
 # View all workspaces for all MSP services
 sg msp tfc view
@@ -693,9 +764,11 @@ sg msp tfc view <service> <environment>
 				{
 					Name:  "sync",
 					Usage: "Create or update all required Terraform Cloud workspaces for an environment",
-					Description: `Optionally use '-all' to sync all environments for a service.
+					Description: fmt.Sprintf(`Optionally use '-all' to sync all environments for a service.
 
-Supports completions on services and environments.`,
+This command supports completions on services and environments.
+
+%s`, msprepo.DescribeServicesOptions()),
 					ArgsUsage: "<service ID> [environment ID]",
 					Flags: []cli.Flag{
 						&cli.BoolFlag{

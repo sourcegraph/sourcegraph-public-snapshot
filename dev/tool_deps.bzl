@@ -4,6 +4,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file"
 
 DOCSITE_VERSION = "1.9.4"
 SRC_CLI_VERSION = "5.3.0"
+KUBEBUILDER_ASSETS_VERSION = "1.28.0"
 CTAGS_VERSION = "6.0.0.2783f009"
 PACKER_VERSION = "1.8.3"
 P4_FUSION_VERSION = "v1.13.2-sg.04a293a"
@@ -22,6 +23,14 @@ SRC_CLI_BUILDFILE = """
 filegroup(
     name = "src-cli-{}",
     srcs = ["src"],
+    visibility = ["//visibility:public"],
+)
+"""
+
+KUBEBUILDER_ASSETS_BUILDFILE = """
+filegroup(
+    name = "kubebuilder-assets",
+    srcs = glob(["*"]),
     visibility = ["//visibility:public"],
 )
 """
@@ -100,6 +109,31 @@ def tool_deps():
         build_file_content = SRC_CLI_BUILDFILE.format("darwin-arm64"),
         sha256 = "d2100e9dce86036c405490b89ab0dec40ee427884dead883c4ba69cc474caf45",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_arm64.tar.gz".format(SRC_CLI_VERSION),
+    )
+
+    # Needed for internal/appliance tests
+    http_archive(
+        name = "kubebuilder-assets-darwin-arm64",
+        build_file_content = KUBEBUILDER_ASSETS_BUILDFILE,
+        sha256 = "c87c6b3c0aec4233e68a12dc9690bcbe2f8d6cd72c23e670602b17b2d7118325",
+        urls = ["https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-{}-darwin-arm64.tar.gz".format(KUBEBUILDER_ASSETS_VERSION)],
+        strip_prefix = "kubebuilder/bin",
+    )
+
+    http_archive(
+        name = "kubebuilder-assets-darwin-amd64",
+        build_file_content = KUBEBUILDER_ASSETS_BUILDFILE,
+        sha256 = "a02e33a3981712c8d2702520f95357bd6c7d03d24b83a4f8ac1c89a9ba4d78c1",
+        urls = ["https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-{}-darwin-amd64.tar.gz".format(KUBEBUILDER_ASSETS_VERSION)],
+        strip_prefix = "kubebuilder/bin",
+    )
+
+    http_archive(
+        name = "kubebuilder-assets-linux-amd64",
+        build_file_content = KUBEBUILDER_ASSETS_BUILDFILE,
+        sha256 = "8c816871604cbe119ca9dd8072b576552ae369b96eebc3cdaaf50edd7e3c0c7b",
+        urls = ["https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-{}-linux-amd64.tar.gz".format(KUBEBUILDER_ASSETS_VERSION)],
+        strip_prefix = "kubebuilder/bin",
     )
 
     # universal-ctags

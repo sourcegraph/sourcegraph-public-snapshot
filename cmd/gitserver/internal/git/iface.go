@@ -95,6 +95,32 @@ type GitBackend interface {
 	// No new usages of it should be introduced and once the migration is done we will
 	// remove this method.
 	Exec(ctx context.Context, args ...string) (io.ReadCloser, error)
+
+	// FirstEverCommit returns the first commit ever made to the repository.
+	//
+	// If the repository is empty, a RevisionNotFoundError is returned (as the
+	// "HEAD" ref does not exist).
+	FirstEverCommit(ctx context.Context) (api.CommitID, error)
+
+	// BehindAhead returns the behind/ahead commit counts information for the symmetric difference left...right (both Git
+	// revspecs).
+	//
+	// Behind is the number of commits that are solely reachable in "left" but not "right".
+	// Ahead is the number of commits that are solely reachable in "right" but not "left".
+	//
+	//  For the example, given the graph below, BehindAhead("A", "B") would return {Behind: 3, Ahead: 2}.
+	//
+	//	     y---b---b  branch B
+	//	    / \ /
+	//	   /   .
+	//	  /   / \
+	//	 o---x---a---a---a  branch A
+	//
+	// If either left or right are the empty string (""), the HEAD commit is implicitly used.
+	//
+	// If one of the two given revspecs does not exist, a RevisionNotFoundError
+	// is returned.
+	BehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error)
 }
 
 type GitDiffComparisonType int

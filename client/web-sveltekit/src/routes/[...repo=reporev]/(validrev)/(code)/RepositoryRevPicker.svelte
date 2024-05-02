@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-    import type { RepositoryGitRefs, RepositoryGitCommits } from './RepositoryRevPicker.gql'
+    import type { RepositoryGitRefs, RevPickerGitCommit } from './RepositoryRevPicker.gql'
 
     export type RepositoryBranches = RepositoryGitRefs['gitRefs']
     export type RepositoryBranch = RepositoryBranches['nodes'][number]
@@ -7,21 +7,21 @@
     export type RepositoryTags = RepositoryGitRefs['gitRefs']
     export type RepositoryTag = RepositoryTags['nodes'][number]
 
-    export type RepositoryCommits = NonNullable<RepositoryGitCommits['commit']>['ancestors']
-    export type RepositoryGitCommit = RepositoryCommits['nodes'][number]
+    export type RepositoryCommits = { nodes: RevPickerGitCommit[] }
+    export type RepositoryGitCommit = RevPickerGitCommit
 </script>
 
 <script lang="ts">
     import { mdiClose, mdiSourceBranch, mdiTagOutline, mdiSourceCommit } from '@mdi/js'
-    import { Button, Badge } from '$lib/wildcard'
-    import Popover from '$lib/Popover.svelte'
-    import Icon from '$lib/Icon.svelte'
-    import Tabs from '$lib/Tabs.svelte'
-    import TabPanel from '$lib/TabPanel.svelte'
-    import Tooltip from '$lib/Tooltip.svelte'
 
     import { goto } from '$app/navigation'
-    import { replaceRevisionInURL } from '@sourcegraph/shared/src/util/url'
+    import Icon from '$lib/Icon.svelte'
+    import Popover from '$lib/Popover.svelte'
+    import { replaceRevisionInURL } from '$lib/shared'
+    import TabPanel from '$lib/TabPanel.svelte'
+    import Tabs from '$lib/Tabs.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
+    import { Button, Badge } from '$lib/wildcard'
 
     import type { ResolvedRevision } from '../../+layout'
 
@@ -60,8 +60,8 @@
     }
 </script>
 
-<Popover let:registerTrigger let:toggle placement="right-start">
-    <div class="button-group" class:is-on-specific-rev={isOnSpecificRev}>
+<Popover let:registerTrigger let:registerTarget let:toggle placement="right-start">
+    <div use:registerTarget class="button-group" class:is-on-specific-rev={isOnSpecificRev}>
         <Button variant="secondary" size="sm">
             <svelte:fragment slot="custom" let:buttonClass>
                 <button use:registerTrigger class={`${buttonClass} revision-trigger`} on:click={() => toggle()}>
@@ -78,7 +78,7 @@
                         variant="secondary"
                         on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
                     >
-                        <Icon svgPath={mdiClose} size={16} />
+                        <Icon svgPath={mdiClose} --icon-size="16px" />
                     </Button>
                 </Tooltip>
             </span>
@@ -189,6 +189,7 @@
         padding: 0.75rem;
         min-width: 35rem;
         max-width: 40rem;
+        width: 640px;
 
         --tabs-gap: 0.25rem;
         --align-tabs: flex-start;
@@ -196,7 +197,7 @@
         :global([data-tab-header]) {
             border-bottom: 1px solid var(--border-color-2);
             margin: -0.75rem -0.75rem 0 -0.75rem;
-            padding: 0.75rem 0.75rem 0 0.75rem;
+            padding: 0 0.5rem;
         }
 
         :global([data-tab]) {

@@ -52,7 +52,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
     const { codehostId } = useParams()
 
     useEffect(() => {
-        telemetryRecorder.recordEvent('setup-wizard.code-host-edit', 'view')
+        telemetryRecorder.recordEvent('setupWizard.addRemoteRepos.edit', 'view')
     }, [telemetryRecorder])
 
     const { data, loading, error, refetch } = useQuery<GetExternalServiceByIdResult, GetExternalServiceByIdVariables>(
@@ -170,6 +170,7 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
                 externalServiceId={codeHostId}
                 telemetryService={telemetryService}
                 onSubmit={handleSubmit}
+                telemetryRecorder={telemetryRecorder}
             >
                 {children}
             </GithubConnectView>

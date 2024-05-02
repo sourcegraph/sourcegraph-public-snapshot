@@ -5,6 +5,7 @@ import { type Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader, Button, Icon, Text, ButtonLink, Tooltip } from '@sourcegraph/wildcard'
 
@@ -25,7 +26,10 @@ import {
 } from '../../../settings/tokens/AccessTokenNode'
 import type { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
-interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>, TelemetryProps {
+interface Props
+    extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>,
+        TelemetryProps,
+        TelemetryV2Props {
     /**
      * The newly created token, if any. This component must call onDidPresentNewToken
      * when it is finished presenting the token secret to the user.
@@ -48,10 +52,12 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
     user,
     newToken,
     onDidPresentNewToken,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsTokens')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('settings.tokens', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     useEffect(
         () => () => {

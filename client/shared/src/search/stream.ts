@@ -287,7 +287,7 @@ export interface Filter {
 export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
 export type AlertKind = SmartSearchAlertKind | 'unowned-results'
 
-interface Alert {
+export interface Alert {
     title: string
     description?: string | null
     kind?: AlertKind | null

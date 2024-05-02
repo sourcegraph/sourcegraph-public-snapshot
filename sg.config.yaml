@@ -510,11 +510,14 @@ commands:
         -listen "127.0.0.1:$ZOEKT_LISTEN_PORT" \
         -cpu_fraction 0.25
     install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
       mkdir -p .bin
       export GOBIN="${PWD}/.bin"
-      go install github.com/sourcegraph/zoekt/cmd/zoekt-archive-index
-      go install github.com/sourcegraph/zoekt/cmd/zoekt-git-index
-      go install github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver
+      go install -gcflags="$GCFLAGS" github.com/sourcegraph/zoekt/cmd/zoekt-archive-index
+      go install -gcflags="$GCFLAGS" github.com/sourcegraph/zoekt/cmd/zoekt-git-index
+      go install -gcflags="$GCFLAGS" github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
       CTAGS_COMMAND: dev/universal-ctags-dev
@@ -539,8 +542,11 @@ commands:
 
   zoekt-web-template: &zoekt_webserver_template
     install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
       mkdir -p .bin
-      env GOBIN="${PWD}/.bin" go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
+      env GOBIN="${PWD}/.bin" go install -gcflags="$GCFLAGS" github.com/sourcegraph/zoekt/cmd/zoekt-webserver
     checkBinary: .bin/zoekt-webserver
     env:
       JAEGER_DISABLED: true

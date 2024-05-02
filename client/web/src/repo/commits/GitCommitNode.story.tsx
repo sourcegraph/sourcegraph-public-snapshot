@@ -1,6 +1,7 @@
 import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { Card } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
@@ -86,6 +87,7 @@ export const FullCustomizable: StoryFn = args => (
                     showSHAAndParentsRow={args.showSHAAndParentsRow}
                     hideExpandCommitMessageBody={args.hideExpandCommitMessageBody}
                     preferAbsoluteTimestamps={args.preferAbsoluteTimestamps}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </Card>
         )}
@@ -128,6 +130,7 @@ export const Compact: StoryFn = () => (
                     expandCommitMessageBody={false}
                     showSHAAndParentsRow={false}
                     hideExpandCommitMessageBody={false}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </Card>
         )}
@@ -144,6 +147,7 @@ export const CommitMessageExpand: StoryFn = () => (
                     expandCommitMessageBody={true}
                     showSHAAndParentsRow={false}
                     hideExpandCommitMessageBody={false}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </Card>
         )}
@@ -162,6 +166,7 @@ export const SHAAndParentShown: StoryFn = () => (
                     expandCommitMessageBody={false}
                     showSHAAndParentsRow={true}
                     hideExpandCommitMessageBody={false}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </Card>
         )}
@@ -180,6 +185,7 @@ export const ExpandCommitMessageButtonHidden: StoryFn = () => (
                     expandCommitMessageBody={false}
                     showSHAAndParentsRow={false}
                     hideExpandCommitMessageBody={true}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </Card>
         )}
@@ -259,6 +265,7 @@ export const PerforceChangelist: StoryFn = () => (
                     expandCommitMessageBody={false}
                     showSHAAndParentsRow={false}
                     hideExpandCommitMessageBody={true}
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </Card>
         )}

@@ -3,7 +3,6 @@
 
 export { parseSearchURL, type ParsedSearchURL } from '@sourcegraph/web/src/search/index'
 export { createSuggestionsSource } from '@sourcegraph/web/src/search/input/suggestions'
-export { replaceRevisionInURL } from '@sourcegraph/web/src/util/url'
 
 export { syntaxHighlight } from '@sourcegraph/web/src/repo/blob/codemirror/highlight'
 export { linkify } from '@sourcegraph/web/src/repo/blob/codemirror/links'
@@ -29,6 +28,7 @@ export {
     type SelectedLineRange,
     setSelectedLines,
 } from '@sourcegraph/web/src/repo/blob/codemirror/linenumbers'
+export { hideEmptyLastLine } from '@sourcegraph/web/src/repo/blob/codemirror/eof'
 export { isValidLineRange } from '@sourcegraph/web/src/repo/blob/codemirror/utils'
 export { blobPropsFacet } from '@sourcegraph/web/src/repo/blob/codemirror'
 export { defaultSearchModeFromSettings, defaultPatternTypeFromSettings } from '@sourcegraph/web/src/util/settings'

@@ -94,7 +94,7 @@ func buildRepoIndex(packageKeys []string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":card_index_dividers: Build and sign repository index",
 			bk.Cmd("./dev/ci/scripts/wolfi/build-repo-index.sh"),
-			// We want to run on the bazel queue, so we have a pretty minimal agent.
+			// This script is lightweight, so fine to run on the small queue
 			bk.Agent("queue", AspectWorkflows.QueueSmall),
 			// Depend on all previous package building steps
 			bk.DependsOn(packageKeys...),
@@ -269,7 +269,7 @@ func getPackagesFromBaseImageConfig(configFile string) ([]string, error) {
 }
 
 // addWolfiOps adds operations to rebuild modified Wolfi packages and base images.
-func addWolfiOps(c Config) (packageOps, baseImageOps, apkoOps *operations.Set) {
+func addWolfiOps(c Config) (packageOps, apkoOps *operations.Set) {
 	// Rebuild Wolfi packages that have config changes
 	var updatedPackages []string
 	if c.Diff.Has(changed.WolfiPackages) {
@@ -287,16 +287,10 @@ func addWolfiOps(c Config) (packageOps, baseImageOps, apkoOps *operations.Set) {
 	imagesToRebuild = sortUniq(imagesToRebuild)
 
 	if len(imagesToRebuild) > 0 {
-		baseImageOps, _ = WolfiBaseImagesOperations(
-			imagesToRebuild,
-			c.Version,
-			(len(updatedPackages) > 0),
-		)
-
 		apkoOps = WolfiCheckApkoLocks()
 	}
 
-	return packageOps, baseImageOps, apkoOps
+	return packageOps, apkoOps
 }
 
 // wolfiBaseImageLockAndCreatePR updates base image hashes and creates a PR in GitHub
@@ -305,10 +299,13 @@ func wolfiBaseImageLockAndCreatePR() *operations.Set {
 
 	ops.Append(
 		func(pipeline *bk.Pipeline) {
-			pipeline.AddStep(":whale::hash: Lock Base Image Packages",
+			pipeline.AddStep(":whale::hash: Update Base Image Packages",
 				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-lockfiles.sh"),
-				bk.Agent("queue", AspectWorkflows.QueueSmall),
+				bk.Agent("queue", AspectWorkflows.QueueDefault),
+				bk.Agent("queue", AspectWorkflows.QueueDefault),
 				bk.Key("updateBaseImageHashes"),
+				bk.DependsOn("bazel-prechecks"),
+				bk.DependsOn("bazel-prechecks"),
 			)
 		},
 	)
@@ -332,7 +329,7 @@ func WolfiCheckApkoLocks() *operations.Set {
 						MultiJobContext: "apko-check-lock",
 					},
 				}),
-				bk.Agent("queue", AspectWorkflows.QueueSmall),
+				bk.Agent("queue", AspectWorkflows.QueueDefault),
 				bk.Key("apko-check-lock"),
 				bk.SoftFail(222),
 			)

@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -77,7 +76,7 @@ func searchWithObservability(ctx context.Context, logger log.Logger, repoDir com
 			}
 			if traceID := trace.ID(ctx); traceID != "" {
 				ev.AddField("traceID", traceID)
-				ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
+				ev.AddField("trace", trace.URL(traceID))
 			}
 			if honey.Enabled() {
 				_ = ev.Send()
@@ -122,7 +121,7 @@ func doSearch(ctx context.Context, logger log.Logger, repoDir common.GitDir, arg
 		}
 	})
 
-	// Create a callback that detects whether we've hit a limit
+	// Create a recvCallback that detects whether we've hit a limit
 	// and stops sending when we have.
 	var sentCount atomic.Int64
 	var hitLimit atomic.Bool

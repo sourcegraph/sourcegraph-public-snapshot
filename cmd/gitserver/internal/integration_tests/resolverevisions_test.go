@@ -111,7 +111,9 @@ func TestClient_ResolveRevision(t *testing.T) {
 	})
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s, &server.GRPCServerConfig{
+		ExhaustiveRequestLoggingEnabled: true,
+	}))
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, http.NotFoundHandler())
 	srv := httptest.NewServer(handler)

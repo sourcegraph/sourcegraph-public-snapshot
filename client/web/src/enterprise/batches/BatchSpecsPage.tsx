@@ -1,4 +1,4 @@
-import React, { type FC, useCallback, useMemo } from 'react'
+import React, { type FC, useCallback, useMemo, useEffect } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
@@ -25,24 +25,27 @@ export interface BatchSpecsPageProps extends TelemetryV2Props {
     now?: () => Date
 }
 
-export const BatchSpecsPage: FC<BatchSpecsPageProps> = props => (
-    <>
-        <PageTitle title="Batch specs" />
-        <PageHeader
-            headingElement="h2"
-            path={[{ text: 'Batch specs' }]}
-            description="All batch specs that currently exist."
-            className="mb-3"
-        />
-        <Container>
-            <BatchSpecList
-                queryBatchSpecs={props.queryBatchSpecs}
-                now={props.now}
-                telemetryRecorder={props.telemetryRecorder}
+export const BatchSpecsPage: FC<BatchSpecsPageProps> = props => {
+    useEffect(() => props.telemetryRecorder.recordEvent('admin.batchSpecs', 'view'), [props.telemetryRecorder])
+    return (
+        <>
+            <PageTitle title="Batch specs" />
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Batch specs' }]}
+                description="All batch specs that currently exist."
+                className="mb-3"
             />
-        </Container>
-    </>
-)
+            <Container>
+                <BatchSpecList
+                    queryBatchSpecs={props.queryBatchSpecs}
+                    now={props.now}
+                    telemetryRecorder={props.telemetryRecorder}
+                />
+            </Container>
+        </>
+    )
+}
 
 export interface BatchChangeBatchSpecListProps extends Omit<BatchSpecListProps, 'queryBatchSpecs'> {
     batchChangeID: Scalars['ID']

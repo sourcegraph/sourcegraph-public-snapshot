@@ -1,7 +1,13 @@
-query TagsPage_TagsQuery($repoName: String!, $first: Int!, $withBehindAhead: Boolean!, $revspec: String = "") {
+query TagsPage_TagsQuery(
+    $repoName: String!
+    $first: Int!
+    $withBehindAhead: Boolean!
+    $revspec: String = ""
+    $query: String = ""
+) {
     repository(name: $repoName) {
         id
-        gitRefs(first: $first, type: GIT_TAG) {
+        gitRefs(first: $first, type: GIT_TAG, query: $query) {
             ...GitTagsConnection
         }
     }
@@ -11,6 +17,9 @@ fragment GitTagsConnection on GitRefConnection {
     nodes {
         id
         ...GitReference_Ref
+    }
+    pageInfo {
+        hasNextPage
     }
     totalCount
 }

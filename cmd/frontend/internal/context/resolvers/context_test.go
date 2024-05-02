@@ -7,14 +7,14 @@ import (
 	"io/fs"
 	"os"
 	"sort"
-	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/zoekt"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	codycontext "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -26,10 +26,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
-	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -112,16 +111,12 @@ func TestContextResolver(t *testing.T) {
 		"repo1": {
 			"testcode1.go":  []byte("testcode1"),
 			"ignore_me1.go": []byte("secret"),
-			"ignore_me1.md": []byte("secret"),
-			"testtext1.md":  []byte("testtext1"),
-			".cody/ignore":  []byte("ignore_me1.go\nignore_me1.md"),
+			".cody/ignore":  []byte("ignore_me1.go"),
 		},
 		"repo2": {
 			"testcode2.go":  []byte("testcode2"),
 			"ignore_me2.go": []byte("secret"),
-			"ignore_me2.md": []byte("secret"),
-			"testtext2.md":  []byte("testtext2"),
-			".cody/ignore":  []byte("ignore_me2.go\nignore_me2.md"),
+			".cody/ignore":  []byte("ignore_me2.go"),
 		},
 	}
 
@@ -140,78 +135,52 @@ func TestContextResolver(t *testing.T) {
 	mockEmbeddingsClient := embeddings.NewMockClient()
 	mockEmbeddingsClient.SearchFunc.SetDefaultReturn(nil, errors.New("embeddings should be disabled"))
 
-	lineRange := func(start, end int) result.ChunkMatches {
-		return result.ChunkMatches{{
-			Ranges: result.Ranges{{
-				Start: result.Location{Line: start},
-				End:   result.Location{Line: end},
+	lineRange := func(start, end uint32) []zoekt.ChunkMatch {
+		return []zoekt.ChunkMatch{{
+			Ranges: []zoekt.Range{{
+				Start: zoekt.Location{LineNumber: start},
+				End:   zoekt.Location{LineNumber: end},
 			}},
 		}}
 	}
+	mockZoektStreamer := &backend.FakeStreamer{
+		Results: []*zoekt.SearchResult{{
+			Files: []zoekt.FileMatch{{
+				FileName:     "ignore_me1.go",
+				RepositoryID: uint32(repo1.ID),
+				ChunkMatches: lineRange(0, 4),
+			}, {
+				FileName:     "ignore_me2.go",
+				RepositoryID: uint32(repo2.ID),
+				ChunkMatches: lineRange(0, 4),
+			}, {
+				FileName:     "testcode1.go",
+				RepositoryID: uint32(repo1.ID),
+				ChunkMatches: lineRange(0, 4),
+			}, {
+				FileName:     "testcode2.go",
+				RepositoryID: uint32(repo2.ID),
+				ChunkMatches: lineRange(0, 4),
+			}},
+		}},
+		Repos: []*zoekt.RepoListEntry{{
+			Repository: zoekt.Repository{
+				ID:       uint32(repo1.ID),
+				Name:     string(repo1.Name),
+				Branches: []zoekt.RepositoryBranch{{Name: "HEAD"}},
+			}}, {
+			Repository: zoekt.Repository{
+				ID:       uint32(repo2.ID),
+				Name:     string(repo2.Name),
+				Branches: []zoekt.RepositoryBranch{{Name: "HEAD"}},
+			}},
+		},
+	}
 
-	mockSearchClient := client.NewMockSearchClient()
-	mockSearchClient.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, query string, _ search.Mode, _ search.Protocol, _ *int32) (*search.Inputs, error) {
-		return &search.Inputs{OriginalQuery: query}, nil
-	})
-	mockSearchClient.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, inputs *search.Inputs) (*search.Alert, error) {
-		if strings.Contains(inputs.OriginalQuery, "-file") {
-			stream.Send(streaming.SearchEvent{
-				Results: result.Matches{&result.FileMatch{
-					File: result.File{
-						Path: "ignore_me1.go",
-						Repo: types.MinimalRepo{ID: repo1.ID, Name: repo1.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}, &result.FileMatch{
-					File: result.File{
-						Path: "ignore_me2.go",
-						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}, &result.FileMatch{
-					File: result.File{
-						Path: "testcode1.go",
-						Repo: types.MinimalRepo{ID: repo1.ID, Name: repo1.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}, &result.FileMatch{
-					File: result.File{
-						Path: "testcode2.go",
-						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}},
-			})
-		} else {
-			stream.Send(streaming.SearchEvent{
-				Results: result.Matches{&result.FileMatch{
-					File: result.File{
-						Path: "ignore_me1.md",
-						Repo: types.MinimalRepo{ID: repo1.ID, Name: repo1.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}, &result.FileMatch{
-					File: result.File{
-						Path: "ignore_me2.md",
-						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}, &result.FileMatch{
-					File: result.File{
-						Path: "testtext1.md",
-						Repo: types.MinimalRepo{ID: repo1.ID, Name: repo2.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}, &result.FileMatch{
-					File: result.File{
-						Path: "testtext2.md",
-						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
-					},
-					ChunkMatches: lineRange(0, 4),
-				}},
-			})
-		}
-		return nil, nil
+	searchClient := client.Mocked(job.RuntimeClients{
+		Logger: logger,
+		DB:     db,
+		Zoekt:  mockZoektStreamer,
 	})
 
 	tests := []struct {
@@ -224,26 +193,36 @@ func TestContextResolver(t *testing.T) {
 			dotComMode: true,
 			// .cody/ignore files are respected in dotcom mode
 			// Cody context filters in site config are not applied
-			want: []string{"testcode1.go", "testcode2.go", "testtext1.md", "testtext2.md"},
+			// Results are duplicated because the Cody search job calls the Zoekt streamer twice and appends the results
+			want: []string{"testcode1.go", "testcode1.go", "testcode2.go", "testcode2.go"},
 		},
 		{
 			name:       "enterprise mode",
 			dotComMode: false,
 			// "repo2" results are excluded according to the site config
 			// .cody/ignore files don't have any effect for enterprise
-			want: []string{"testcode1.go", "testtext1.md", "ignore_me1.go", "ignore_me1.md"},
+			// Each result is duplicated because the Cody search job calls the Zoekt streamer twice and appends the results
+			want: []string{"testcode1.go", "testcode1.go", "ignore_me1.go", "ignore_me1.go"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// TODO (taras-yemets): remove feature flag mocking after `CodyContextFilters` support is added to the IDE clients (see: https://github.com/sourcegraph/sourcegraph/pull/62231)
+			t.Cleanup(func() {
+				db.FeatureFlags().DeleteFeatureFlag(ctx, "cody-context-filters-enabled")
+			})
+			if !tt.dotComMode {
+				db.FeatureFlags().CreateBool(ctx, "cody-context-filters-enabled", true)
+			}
+
 			dotcom.MockSourcegraphDotComMode(t, tt.dotComMode)
 			observationCtx := observation.TestContextTB(t)
 			contextClient := codycontext.NewCodyContextClient(
 				observationCtx,
 				db,
 				mockEmbeddingsClient,
-				mockSearchClient,
+				searchClient,
 				mockGitserver,
 			)
 
@@ -271,7 +250,6 @@ func TestContextResolver(t *testing.T) {
 			require.Equal(t, expected, paths)
 		})
 	}
-
 }
 
 type fakeFileInfo struct {

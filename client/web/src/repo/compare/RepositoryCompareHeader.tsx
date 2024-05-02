@@ -16,7 +16,7 @@ interface RepositoryCompareHeaderProps extends RepositoryCompareAreaPageProps {
 
 export const RepositoryCompareHeader: React.FunctionComponent<
     React.PropsWithChildren<RepositoryCompareHeaderProps>
-> = ({ base, head, className, repo }) => (
+> = ({ base, head, className, repo, telemetryRecorder }) => (
     <div className={classNames(styles.repositoryCompareHeader, className)}>
         <PageHeader
             description={
@@ -38,9 +38,21 @@ export const RepositoryCompareHeader: React.FunctionComponent<
             </PageHeader.Heading>
         </PageHeader>
         <div className="d-flex align-items-center">
-            <RepositoryComparePopover id="base-popover" type="base" comparison={{ base, head }} repo={repo} />
+            <RepositoryComparePopover
+                id="base-popover"
+                type="base"
+                comparison={{ base, head }}
+                repo={repo}
+                telemetryRecorder={telemetryRecorder}
+            />
             <Icon className="mx-2" aria-hidden={true} svgPath={mdiDotsHorizontal} />
-            <RepositoryComparePopover id="head-popover" type="head" comparison={{ base, head }} repo={repo} />
+            <RepositoryComparePopover
+                id="head-popover"
+                type="head"
+                comparison={{ base, head }}
+                repo={repo}
+                telemetryRecorder={telemetryRecorder}
+            />
         </div>
     </div>
 )

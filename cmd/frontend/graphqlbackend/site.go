@@ -3,11 +3,12 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
@@ -15,11 +16,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -374,7 +375,7 @@ type upgradeReadinessResolver struct {
 
 var devSchemaFactory = schemas.NewExpectedSchemaFactory(
 	"Local file",
-	[]schemas.NamedRegexp{{Regexp: lazyregexp.New(`^dev$`)}},
+	[]schemas.NamedRegexp{{Regexp: lazyregexp.New(`^(dev|0\.0\.0\+dev)$`)}},
 	func(filename, _ string) string { return filename },
 	schemas.ReadSchemaFromFile,
 )
@@ -420,7 +421,7 @@ func (r *upgradeReadinessResolver) init(ctx context.Context) (_ *runner.Runner, 
 			}
 
 			if v.Dev {
-				return runner, "dev", schemaNames, nil
+				return runner, "0.0.0+dev", schemaNames, nil
 			}
 
 			return runner, v.GitTagWithPatch(patch), schemaNames, nil
@@ -508,16 +509,33 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) ([]*schemaDr
 	return resolvers, nil
 }
 
-// isRequiredOutOfBandMigration returns true if a OOB migration is deprecated not
-// after the given version and not yet completed.
-func isRequiredOutOfBandMigration(version oobmigration.Version, m oobmigration.Migration) bool {
-	if m.Deprecated == nil {
+// isRequiredOutOfBandMigration returns true if an OOB migration will be deprecated in the latest version and has not progressed to completion.
+func isRequiredOutOfBandMigration(currentVersion, latestVersion oobmigration.Version, m oobmigration.Migration) bool {
+	// If current version is dev, no migrations are required.
+	if currentVersion.Dev {
 		return false
 	}
-	return oobmigration.CompareVersions(*m.Deprecated, version) != oobmigration.VersionOrderAfter && m.Progress < 1
+
+	// If the migration is not marked as deprecated, or was deprecated before the current product version, it is not required.
+	if m.Deprecated == nil || oobmigration.CompareVersions(*m.Deprecated, currentVersion) == oobmigration.VersionOrderBefore {
+		return false
+	}
+
+	// The version the migration is marked as deprecated is not after the latest release version, and is incomplete.
+	return oobmigration.CompareVersions(*m.Deprecated, latestVersion) != oobmigration.VersionOrderAfter && m.Progress < 1
 }
 
 func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
+	// Get the current version by initializing the resolver
+	_, version, _, err := r.init(ctx)
+	if err != nil {
+		return nil, err
+	}
+	currentVersion, _, ok := oobmigration.NewVersionAndPatchFromString(version)
+	if !ok {
+		return nil, errors.Errorf("invalid current version %s", r.version)
+	}
+
 	updateStatus := updatecheck.Last()
 	if updateStatus == nil {
 		return nil, errors.New("no latest update version available (reload in a few seconds)")
@@ -525,7 +543,9 @@ func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Conte
 	if !updateStatus.HasUpdate() {
 		return nil, nil
 	}
-	version, _, ok := oobmigration.NewVersionAndPatchFromString(updateStatus.UpdateVersion)
+
+	// The latest sourcegraph version available, returned from the updateCheck
+	latestVersion, _, ok := oobmigration.NewVersionAndPatchFromString(updateStatus.UpdateVersion)
 	if !ok {
 		return nil, errors.Errorf("invalid latest update version %q", updateStatus.UpdateVersion)
 	}
@@ -537,7 +557,7 @@ func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Conte
 
 	var requiredMigrations []*outOfBandMigrationResolver
 	for _, m := range migrations {
-		if isRequiredOutOfBandMigration(version, m) {
+		if isRequiredOutOfBandMigration(currentVersion, latestVersion, m) {
 			requiredMigrations = append(requiredMigrations, &outOfBandMigrationResolver{m})
 		}
 	}

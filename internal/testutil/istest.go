@@ -11,5 +11,5 @@ var IsTest = func() bool {
 	return strings.HasSuffix(filepath.Base(path), "_test") || // Test binary build by Bazel
 		filepath.Ext(path) == ".test" ||
 		strings.Contains(path, "/T/___") || // Test path used by GoLand
-		filepath.Base(path) == "__debug_bin" // Debug binary used by VSCode
+		strings.HasPrefix(filepath.Base(path), "__debug_bin") // Debug binary used by VSCode
 }()
