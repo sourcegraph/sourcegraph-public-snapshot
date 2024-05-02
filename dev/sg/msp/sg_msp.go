@@ -439,7 +439,7 @@ This command supports completions on services and environments.
 					Flags: []cli.Flag{
 						&cli.IntFlag{
 							Name:  "concurrency",
-							Value: 10,
+							Value: 3,
 							Usage: "Maximum number of concurrent updates to Notion pages",
 						},
 					},
