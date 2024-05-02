@@ -556,7 +556,8 @@ This command supports completions on services and environments.
 									diagramFileName := fmt.Sprintf("%s-%s.svg", s, e)
 									// https://github.com/sourcegraph/managed-services/blob/notion-docs/services/sams/diagrams/sams-prod.svg
 									externalDiagramURL := fmt.Sprintf("https://raw.githubusercontent.com/sourcegraph/managed-services/blob/%s/services/%s/diagrams/%s",
-										"notion-docs", s, diagramFileName)
+										"notion-docs", // TODO replace with 'main'
+										s, diagramFileName)
 									replacements[diagramFileName] = externalDiagramURL
 								}
 
