@@ -234,7 +234,7 @@ Some additional operations!`),
 
 			t.Run("renderable by Notion converter", func(t *testing.T) {
 				blocks := renderertest.MockBlockUpdater{}
-				assert.NoError(t, NewNotionConverter(context.Background(), &blocks).
+				assert.NoError(t, NewNotionConverter(context.Background(), &blocks, nil).
 					ProcessMarkdown([]byte(doc)))
 				assert.NotEmpty(t, blocks.GetAddedBlocks())
 			})

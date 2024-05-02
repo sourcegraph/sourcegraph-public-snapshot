@@ -277,8 +277,14 @@ sg msp pg connect -write-access %[1]s %[2]s`, s.Service.ID, env.ID)
 			}
 		}
 
-		md.Headingf(3, "%s Architecture Diagram", env.ID)
-		md.Paragraphf(markdown.Imagef("Architecture Diagram", "%s-%s.svg", s.Service.ID, env.ID))
+		md.Headingf(3, "%s Architecture diagram", env.ID)
+		// Notion does not allow upload of files via API:
+		// https://developers.notion.com/docs/working-with-files-and-media#uploading-files-and-media-via-the-notion-api
+		//
+		// For now, render it alongside service manifests and ask users to go
+		// there instead.
+		md.Paragraphf("View the %s for this environment.",
+			markdown.Linkf("generated architecture diagram", "%s-%s.svg", s.Service.ID, env.ID))
 
 		md.Headingf(3, terraformCloudSectionHeading)
 
