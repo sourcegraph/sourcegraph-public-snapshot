@@ -96,12 +96,16 @@ func newCompletionsHandler(
 		// Enterprise customers may define instance-wide Cody context filters (aka Cody Ignore) in the site config.
 		// To ensure Cody clients respect these restrictions, we enforce the minimum supported client version.
 		isDotcom := dotcom.SourcegraphDotComMode()
+		fmt.Println("!!!!! isDotcom: ", isDotcom)
+		checked := false
 		if !isDotcom {
+			checked = true
 			if err := checkClientCodyIgnoreCompatibility(r); err != nil {
 				http.Error(w, err.Error(), err.statusCode)
 				return
 			}
 		}
+		fmt.Println("!!!!! checked compatibility: ", checked)
 
 		var requestParams types.CodyCompletionRequestParameters
 		if err := json.NewDecoder(r.Body).Decode(&requestParams); err != nil {
