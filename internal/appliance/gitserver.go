@@ -63,6 +63,8 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *Sour
 		{Name: "rpc", ContainerPort: 3178},
 	}
 
+	ctr.Args = []string{"run"}
+
 	ctr.LivenessProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			TCPSocket: &corev1.TCPSocketAction{
@@ -79,7 +81,7 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *Sour
 	}
 
 	podVolumes := []corev1.Volume{
-		pod.NewVolumeEmptyDir("repos"),
+		{Name: "repos"},
 		pod.NewVolumeEmptyDir("tmpdir"),
 	}
 
