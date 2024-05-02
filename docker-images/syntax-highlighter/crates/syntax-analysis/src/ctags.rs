@@ -200,9 +200,10 @@ pub fn generate_tags<W: std::io::Write>(
             Reply::Error {
                 message: err.to_string(),
                 fatal: false,
-            }.write(buf_writer);
-            return None
-        },
+            }
+            .write(buf_writer);
+            return None;
+        }
     };
 
     let mut scope_deduplicator = HashMap::new();
@@ -253,14 +254,16 @@ pub fn ctags_runner<R: Read, W: Write>(
                     Err(error) => Reply::Error {
                         message: error.to_string(),
                         fatal: false,
-                    }.write(output)
+                    }
+                    .write(output),
                 };
             }
         }
 
         Reply::Completed {
             command: "generate-tags".to_string(),
-        }.write(output);
+        }
+        .write(output);
 
         output.flush().unwrap();
     }
