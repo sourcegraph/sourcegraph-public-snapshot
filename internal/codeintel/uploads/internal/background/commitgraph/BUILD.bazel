@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//internal/actor",
         "//internal/api",
+        "//internal/codeintel/uploads/internal/commitgraph",
         "//internal/codeintel/uploads/internal/store",
         "//internal/database/locker",
         "//internal/env",

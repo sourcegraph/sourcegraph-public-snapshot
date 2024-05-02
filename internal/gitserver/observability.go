@@ -46,7 +46,6 @@ type operations struct {
 	perforceGetChangelist    *observation.Operation
 	createCommitFromPatch    *observation.Operation
 	getObject                *observation.Operation
-	commitGraph              *observation.Operation
 	commitsUniqueToBranch    *observation.Operation
 	getDefaultBranch         *observation.Operation
 	listDirectoryChildren    *observation.Operation
@@ -136,7 +135,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		perforceGetChangelist:    op("PerforceGetChangelist"),
 		createCommitFromPatch:    op("CreateCommitFromPatch"),
 		getObject:                op("GetObject"),
-		commitGraph:              op("CommitGraph"),
 		commitsUniqueToBranch:    op("CommitsUniqueToBranch"),
 		getDefaultBranch:         op("GetDefaultBranch"),
 		listDirectoryChildren:    op("ListDirectoryChildren"),

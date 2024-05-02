@@ -6,19 +6,28 @@ go_library(
     srcs = [
         "commit_graph.go",
         "commit_graph_view.go",
+        "git_commit_graph.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph",
     visibility = ["//:__subpackages__"],
-    deps = ["//internal/gitserver/gitdomain"],
+    deps = [
+        "//internal/api",
+        "//internal/gitserver/gitdomain",
+    ],
 )
 
 go_test(
     name = "commitgraph_test",
     timeout = "short",
-    srcs = ["commit_graph_test.go"],
+    srcs = [
+        "commit_graph_test.go",
+        "git_commit_graph_test.go",
+    ],
     data = glob(["testdata/**"]),
     embed = [":commitgraph"],
     deps = [
+        "//internal/api",
+        "//internal/byteutils",
         "//internal/gitserver/gitdomain",
         "@com_github_google_go_cmp//cmp",
     ],
