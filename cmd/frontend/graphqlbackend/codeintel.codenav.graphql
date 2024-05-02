@@ -120,6 +120,8 @@ type CodeGraphData {
     forall sym in symbols.
         exists occ in occurrences such that
             sym.name == occ.symbol && occ.roles.contains(Definition)
+
+    These map 1-1 with the symbols in scipDocument.data
     """
     symbols: SymbolInformationConnection
 
