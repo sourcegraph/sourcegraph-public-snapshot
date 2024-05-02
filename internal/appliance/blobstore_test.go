@@ -12,7 +12,7 @@ func (suite *ApplianceTestSuite) TestDeployBlobstore() {
 		name string
 	}{
 		{
-			name: "blobstore-default",
+			name: "blobstore/default",
 		},
 	} {
 		suite.Run(tc.name, func() {

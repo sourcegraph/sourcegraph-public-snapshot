@@ -28,7 +28,9 @@ func (suite *ApplianceTestSuite) makeGoldenAssertions(namespace, goldenFileName 
 	obtainedBytes, err := yaml.Marshal(obtainedResources)
 	require.NoError(err)
 	if len(os.Args) > 0 && os.Args[len(os.Args)-1] == "appliance-update-golden-files" {
-		err := os.WriteFile(goldenFilePath, obtainedBytes, 0600)
+		err := os.MkdirAll(filepath.Dir(goldenFilePath), 0700)
+		require.NoError(err)
+		err = os.WriteFile(goldenFilePath, obtainedBytes, 0600)
 		require.NoError(err)
 	}
 
