@@ -9,17 +9,11 @@ import { Button, ErrorAlert, H2, LoadingSpinner, Modal, Text } from '@sourcegrap
 import type { AuthenticatedUser } from '../auth'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
-import type {
-    AuthzProvidersResult,
-    AuthzProvidersVariables,
-    UserExternalAccountsWithAccountDataVariables,
-} from '../graphql-operations'
+import type { UserExternalAccountsWithAccountDataVariables } from '../graphql-operations'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ExternalAccountsSignIn } from '../user/settings/auth/ExternalAccountsSignIn'
 import type { UserExternalAccount, UserExternalAccountsResult } from '../user/settings/auth/UserSettingsSecurityPage'
 import { USER_EXTERNAL_ACCOUNTS } from '../user/settings/backend'
-
-import { AUTHZ_PROVIDERS } from './backend'
 
 import styles from './ExternalAccountsModal.module.scss'
 
@@ -62,30 +56,25 @@ const shouldShowExternalAccountsModal = (
     return false
 }
 
+// Checks if any of the provided userExternalAccounts match the
+// provided authProvider.
+function userAccountConnected(authProvider: AuthProvider, userExternalAccounts: UserExternalAccount[]): boolean {
+    return (
+        userExternalAccounts.find(
+            userExternalAccount =>
+                userExternalAccount.serviceType === authProvider.serviceType &&
+                userExternalAccount.serviceID === authProvider.serviceID
+        ) !== undefined
+    )
+}
+
 function filterAuthProviders(
     authProviders: AuthProvider[],
-    authzProviders: AuthzProvidersResult['authzProviders'],
     userExternalAccounts: UserExternalAccount[]
 ): AuthProvider[] {
-    const filteredProviders = authProviders.filter(provider => {
-        if (
-            authzProviders.find(
-                authzProvider =>
-                    authzProvider.serviceID === provider.serviceID && authzProvider.serviceType === provider.serviceType
-            ) &&
-            !userExternalAccounts.find(
-                userExternalAccount =>
-                    userExternalAccount.serviceType === provider.serviceType &&
-                    userExternalAccount.serviceID === provider.serviceID
-            )
-        ) {
-            return true
-        }
-
-        return false
-    })
-
-    return filteredProviders
+    return authProviders.filter(
+        provider => provider.requiredForAuthz && !userAccountConnected(provider, userExternalAccounts)
+    )
 }
 
 export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModalProps> = props => {
@@ -117,8 +106,6 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
         onCompleted: res => setUserExternalAccounts({ fetched: res.user.externalAccounts.nodes, lastRemoved: '' }),
     })
 
-    const { data: authzProvidersData } = useQuery<AuthzProvidersResult, AuthzProvidersVariables>(AUTHZ_PROVIDERS, {})
-
     const [error, setError] = useState<ErrorLike>()
 
     const handleError = (error: ErrorLike): [] => {
@@ -129,18 +116,14 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
     const [isModalOpen, setIsModalOpen] = useState(false)
 
     useEffect(() => {
-        if (authzProvidersData?.authzProviders && userExternalAccounts.fetched) {
-            const filteredProviders = filterAuthProviders(
-                props.context.authProviders,
-                authzProvidersData.authzProviders,
-                userExternalAccounts.fetched
-            )
+        if (userExternalAccounts.fetched) {
+            const filteredProviders = filterAuthProviders(props.context.authProviders, userExternalAccounts.fetched)
             setAuthzProviders(filteredProviders)
             if (filteredProviders.length > 0) {
                 setIsModalOpen(true)
             }
         }
-    }, [authzProvidersData, props.context.authProviders, userExternalAccounts])
+    }, [props.context.authProviders, userExternalAccounts])
 
     const onAccountRemoval = (removeId: string, name: string): void => {
         // keep every account that doesn't match removeId
