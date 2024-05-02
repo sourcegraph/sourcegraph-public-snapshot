@@ -282,6 +282,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     context={window.context}
                     authenticatedUser={props.authenticatedUser}
                     isLightTheme={theme === Theme.Light}
+                    telemetryRecorder={props.platformContext.telemetryRecorder}
                 />
             )}
             {showDeveloperDialog && <LazyDeveloperDialog />}

@@ -4,6 +4,7 @@ import type { ErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import type { SeenAuthProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, ErrorAlert, H2, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -17,7 +18,7 @@ import { USER_EXTERNAL_ACCOUNTS } from '../user/settings/backend'
 
 import styles from './ExternalAccountsModal.module.scss'
 
-export interface ExternalAccountsModalProps {
+export interface ExternalAccountsModalProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
     isLightTheme: boolean
     context: Pick<SourcegraphContext, 'authProviders'>
@@ -37,8 +38,12 @@ const shouldShowExternalAccountsModal = (
             continue
         }
 
+        if (seenAuthProviders === undefined) {
+            return false
+        }
+
         // Do this after checking for isBuiltin
-        if (!seenAuthProviders) {
+        if (seenAuthProviders.length === 0) {
             return true
         }
 
@@ -73,37 +78,36 @@ function filterAuthProviders(
     userExternalAccounts: UserExternalAccount[]
 ): AuthProvider[] {
     return authProviders.filter(
-        provider => provider.requiredForAuthz && !userAccountConnected(provider, userExternalAccounts)
+        provider =>
+            !provider.isBuiltin && provider.requiredForAuthz && !userAccountConnected(provider, userExternalAccounts)
     )
 }
 
 export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModalProps> = props => {
     const [enableExternalAccountsModal] = useFeatureFlag('external-accounts-modal')
 
-    const [seenAuthzProviders, setSeenAuthzProviders] = useTemporarySetting('user.seenAuthProviders')
-
-    const externalAccountsModalVisible = shouldShowExternalAccountsModal(
-        props.context.authProviders,
-        seenAuthzProviders
-    )
+    const [seenAuthzProviders, setSeenAuthzProviders] = useTemporarySetting('user.seenAuthProviders', [])
 
     const [userExternalAccounts, setUserExternalAccounts] = useState<{
+        loading: boolean
         fetched?: UserExternalAccount[]
         lastRemoved?: string
     }>({
+        loading: true,
         fetched: [],
         lastRemoved: '',
     })
 
     const [authzProviders, setAuthzProviders] = useState<AuthProvider[]>([])
 
-    const { loading: userAccountsLoading, refetch: userAccountsRefetch } = useQuery<
+    const { refetch: userAccountsRefetch } = useQuery<
         UserExternalAccountsResult,
         UserExternalAccountsWithAccountDataVariables
     >(USER_EXTERNAL_ACCOUNTS, {
         variables: { username: props.authenticatedUser.username },
-        skip: !enableExternalAccountsModal && !externalAccountsModalVisible,
-        onCompleted: res => setUserExternalAccounts({ fetched: res.user.externalAccounts.nodes, lastRemoved: '' }),
+        skip: !enableExternalAccountsModal,
+        onCompleted: res =>
+            setUserExternalAccounts({ loading: false, fetched: res.user.externalAccounts.nodes, lastRemoved: '' }),
     })
 
     const [error, setError] = useState<ErrorLike>()
@@ -116,18 +120,26 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
     const [isModalOpen, setIsModalOpen] = useState(false)
 
     useEffect(() => {
-        if (userExternalAccounts.fetched) {
+        const externalAccountsModalVisible = shouldShowExternalAccountsModal(
+            props.context.authProviders,
+            seenAuthzProviders
+        )
+
+        if (!userExternalAccounts.loading && userExternalAccounts.fetched) {
             const filteredProviders = filterAuthProviders(props.context.authProviders, userExternalAccounts.fetched)
             setAuthzProviders(filteredProviders)
             if (filteredProviders.length > 0) {
-                setIsModalOpen(true)
+                setIsModalOpen(externalAccountsModalVisible)
+            } else {
+                setIsModalOpen(false)
             }
         }
-    }, [props.context.authProviders, userExternalAccounts])
+    }, [seenAuthzProviders, props.context.authProviders, userExternalAccounts])
 
     const onAccountRemoval = (removeId: string, name: string): void => {
         // keep every account that doesn't match removeId
         setUserExternalAccounts({
+            loading: false,
             fetched: userExternalAccounts.fetched?.filter(({ id }) => id !== removeId),
             lastRemoved: name,
         })
@@ -162,11 +174,11 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
                 </div>
             </div>
             <hr />
-            {userAccountsLoading && <LoadingSpinner />}
+            {userExternalAccounts.loading && <LoadingSpinner />}
             {error && <ErrorAlert className="mb-3" error={error} />}
             {userExternalAccounts.fetched && (
                 <ExternalAccountsSignIn
-                    telemetryRecorder={window.context.telemetryRecorder}
+                    telemetryRecorder={props.telemetryRecorder}
                     onDidAdd={onAccountAdd}
                     onDidError={handleError}
                     onDidRemove={onAccountRemoval}
