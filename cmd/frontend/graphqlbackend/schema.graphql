@@ -6188,7 +6188,7 @@ type HighlightedFile {
     lineRanges(ranges: [HighlightLineRange!]!): [[String!]!]!
 }
 
-enum Provenance {
+enum CodeGraphDataProvenance {
     """
     Based on a compiler, a type-checker or a similar data source
     which doesn't have false positives.
@@ -6210,22 +6210,7 @@ enum Provenance {
     SearchBased,
 }
 
-interface WithProvenance {
-    """
-    Coarse-grained information about the data source.
-    """
-    provenance: Provenance!
-    """
-    Opaque fine-grained information describing the data source.
-
-    Provided only for debugging.
-
-    This field should be ignored when checking structural equality.
-    """
-    dataSource: String
-}
-
-type AssociatedSCIPDocument implements WithProvenance {
+type AssociatedSCIPDocument {
     """
     Base64 encoded SCIP payload.
 
@@ -6249,7 +6234,7 @@ type AssociatedSCIPDocument implements WithProvenance {
     """
     Coarse-grained information about the data source.
     """
-    provenance: Provenance!
+    provenance: CodeGraphDataProvenance!
     """
     Opaque fine-grained information describing the data source.
 

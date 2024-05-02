@@ -64,7 +64,7 @@ extend type GitBlob {
 }
 
 input CodeGraphDataFilter {
-    provenance: ProvenanceComparator
+    provenance: CodeGraphDataProvenanceComparator
     # EXTENSION: We can add filters for tool name (if there are overlay-style
     # indexers) and build identifier (e.g. Linux vs Windows) here.
 }
@@ -452,7 +452,7 @@ extend type Query {
 
 input SymbolComparator {
     name: SymbolNameComparator!
-    provenance: ProvenanceComparator!
+    provenance: CodeGraphDataProvenanceComparator!
 }
 
 # Implementation note: In the future, we may want to extend this
@@ -462,15 +462,15 @@ input SymbolNameComparator {
     equals: String
 }
 
-input ProvenanceComparator {
-    equals: Provenance
+input CodeGraphDataProvenanceComparator {
+    equals: CodeGraphDataProvenance
 }
 
 """
 Type representing useful information about a symbol in code,
 based on 'SymbolInformation' in SCIP.
 """
-type SymbolInformation implements WithProvenance {
+type SymbolInformation {
     """
     Symbol name using syntax specified by the SCIP schema.
     https://github.com/sourcegraph/scip/blob/main/scip.proto#L147-L188
@@ -497,7 +497,7 @@ type SymbolInformation implements WithProvenance {
     """
     Coarse-grained information about the data source.
     """
-    provenance: Provenance!
+    provenance: CodeGraphDataProvenance!
 
     """
     Opaque fine-grained information describing the data source.
@@ -569,7 +569,7 @@ input UsagesFilter {
     repository: RepositoryFilter
     path: PathFilter
     kind: SymbolUsageKindComparator
-    provenance: ProvenanceComparator
+    provenance: CodeGraphDataProvenanceComparator
 }
 
 input RepositoryFilter {
