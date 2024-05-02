@@ -20,6 +20,7 @@ describe('SignInPage', () => {
             serviceID: '',
             clientID: '1234',
             noSignIn: false,
+            requiredForAuthz: false,
         },
         {
             serviceType: 'github',
@@ -29,6 +30,7 @@ describe('SignInPage', () => {
             serviceID: 'https://github.com',
             clientID: '1234',
             noSignIn: false,
+            requiredForAuthz: false,
         },
         {
             serviceType: 'gitlab',
@@ -38,6 +40,7 @@ describe('SignInPage', () => {
             serviceID: 'https://gitlab.com',
             clientID: '1234',
             noSignIn: false,
+            requiredForAuthz: false,
         },
         {
             serviceType: 'gitlab',
@@ -47,6 +50,7 @@ describe('SignInPage', () => {
             serviceID: 'https://gitlab.com',
             clientID: '1234',
             noSignIn: true,
+            requiredForAuthz: false,
         },
     ]
 
@@ -166,6 +170,7 @@ describe('SignInPage', () => {
                 serviceID: '',
                 clientID: '',
                 noSignIn: false,
+                requiredForAuthz: false,
             },
         ]
 
@@ -197,6 +202,7 @@ describe('SignInPage', () => {
                 serviceID: '',
                 clientID: '',
                 noSignIn: false,
+                requiredForAuthz: false,
             },
         ]
         it('does not render the Gerrit provider', () => {
