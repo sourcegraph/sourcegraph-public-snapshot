@@ -24,6 +24,7 @@ describe('SignUpPage', () => {
             serviceID: '',
             clientID: '',
             noSignIn: false,
+            requiredForAuthz: false,
         },
         {
             serviceType: 'github',
@@ -33,6 +34,7 @@ describe('SignUpPage', () => {
             serviceID: 'https://github.com',
             clientID: '1234',
             noSignIn: false,
+            requiredForAuthz: false,
         },
     ]
 
