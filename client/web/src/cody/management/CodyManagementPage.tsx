@@ -21,8 +21,8 @@ import {
 import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
-import { useCodyPaymentsUrl } from '../subscription/CodySubscriptionPage'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
+import { manageSubscriptionRedirectURL } from '../util'
 
 import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
@@ -52,8 +52,9 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         telemetryRecorder.recordEvent('cody.management', 'view')
     }, [utm_source, telemetryRecorder])
 
-    // The cody_client_user URL query param is added by the VS Code extension.
-    // We redirect them to a "switch account" screen if they are logged into their IDE as a different user account than their browser.
+    // The cody_client_user URL query param is added by the VS Code & Jetbrains
+    // extensions. We redirect them to a "switch account" screen if they are
+    // logged into their IDE as a different user account than their browser.
     const codyClientUser = parameters.get('cody_client_user')
     const accountSwitchRequired = !!codyClientUser && authenticatedUser && authenticatedUser.username !== codyClientUser
     useEffect(() => {
@@ -73,9 +74,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     const [selectedEditorStep, setSelectedEditorStep] = React.useState<EditorStep | null>(null)
 
     const subscription = data?.currentUser?.codySubscription
-
-    const codyPaymentsUrl = useCodyPaymentsUrl()
-    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
 
     useEffect(() => {
         if (!!data && !data?.currentUser) {

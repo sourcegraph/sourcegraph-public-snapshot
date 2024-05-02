@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
-use crate::highlighting::tree_sitter::include_scip_query;
 use once_cell::sync::OnceCell;
 use regex::Regex;
 use scip::types::Descriptor;
 use tree_sitter::{Language, Parser, Query};
 use tree_sitter_all_languages::ParserId;
+
+use crate::highlighting::tree_sitter::include_scip_query;
 
 #[derive(Debug)]
 pub struct Transform {

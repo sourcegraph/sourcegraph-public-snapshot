@@ -177,7 +177,6 @@ oci_image(
         ":tar_postgres_optimize",
         ":tar_postgres_reindex",
         ":tar_prom-wrapper",
-        "//cmd/gitserver:tar_p4_fusion_wrappers",
         "//monitoring:generate_grafana_config_tar",
         "tar_image_test_scripts",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),

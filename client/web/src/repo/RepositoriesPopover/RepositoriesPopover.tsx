@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useDebounce } from '@sourcegraph/wildcard'
@@ -49,7 +50,7 @@ export const REPOSITORIES_FOR_POPOVER = gql`
     }
 `
 
-export interface RepositoriesPopoverProps extends TelemetryProps {
+export interface RepositoriesPopoverProps extends TelemetryProps, TelemetryV2Props {
     /**
      * The current repository (shown as selected in the list), if any.
      */
@@ -64,6 +65,7 @@ export const BATCH_COUNT = 10
 export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildren<RepositoriesPopoverProps>> = ({
     currentRepo,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
@@ -71,7 +73,8 @@ export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildre
     useEffect(() => {
         EVENT_LOGGER.logViewEvent('RepositoriesPopover')
         telemetryService.log('RepositoriesPopover')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('reposPopover', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     const { connection, loading, error, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoriesForPopoverResult,

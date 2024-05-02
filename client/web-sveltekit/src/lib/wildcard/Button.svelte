@@ -27,7 +27,7 @@
 
 <slot name="custom" {buttonClass}>
     <!-- $$restProps holds all the additional props that are passed to the component -->
-    <button class={buttonClass} {...$$restProps} on:click|preventDefault>
+    <button class={buttonClass} type="button" {...$$restProps} on:click>
         <slot />
     </button>
 </slot>

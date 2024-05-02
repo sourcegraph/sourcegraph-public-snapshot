@@ -1,3 +1,23 @@
+use core::{cmp::Ordering, ops::Range};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Write,
+    ops::{Index, IndexMut},
+    slice::Iter,
+};
+
+use anyhow::{Context, Result};
+use id_arena::{Arena, Id};
+use if_chain::if_chain;
+use itertools::Itertools;
+use protobuf::Enum;
+use scip::{
+    symbol::format_symbol,
+    types::{Occurrence, Symbol},
+};
+use string_interner::{symbol::SymbolU32, StringInterner};
+use tree_sitter::Node;
+
 /// This module contains logic to understand the binding structure of
 /// a given source file. We emit information about references and
 /// definitions of _local_ bindings. A local binding is a binding that
@@ -11,23 +31,6 @@
 /// [query syntax]: https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax
 use crate::languages::LocalConfiguration;
 use crate::tree_sitter_ext::NodeExt;
-use anyhow::{Context, Result};
-use core::cmp::Ordering;
-use core::ops::Range;
-use id_arena::{Arena, Id};
-use if_chain::if_chain;
-use itertools::Itertools;
-use protobuf::Enum;
-use scip::{
-    symbol::format_symbol,
-    types::{Occurrence, Symbol},
-};
-use std::collections::{HashMap, HashSet};
-use std::fmt::Write;
-use std::ops::{Index, IndexMut};
-use std::slice::Iter;
-use string_interner::{symbol::SymbolU32, StringInterner};
-use tree_sitter::Node;
 
 // Missing features at this point
 // a) Namespacing
@@ -750,12 +753,14 @@ impl<'a> LocalResolver<'a> {
 
 #[cfg(test)]
 mod test {
-    use crate::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
     use scip::types::Document;
     use tree_sitter_all_languages::ParserId;
 
     use super::*;
-    use crate::languages::LocalConfiguration;
+    use crate::{
+        languages::LocalConfiguration,
+        snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions},
+    };
 
     fn snapshot_syntax_document(doc: &Document, source: &str) -> String {
         dump_document_with_config(

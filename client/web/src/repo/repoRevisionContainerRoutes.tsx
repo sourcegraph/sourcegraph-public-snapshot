@@ -28,12 +28,30 @@ export function createRepoRevisionContainerRoutes(
         {
             path: '/-/commits/*',
             render: ({ revision, repo, ...context }) =>
-                repo ? <RepositoryCommitsPage {...context} repo={repo} revision={revision} /> : <LoadingSpinner />,
+                repo ? (
+                    <RepositoryCommitsPage
+                        {...context}
+                        repo={repo}
+                        revision={revision}
+                        telemetryRecorder={context.platformContext.telemetryRecorder}
+                    />
+                ) : (
+                    <LoadingSpinner />
+                ),
         },
         {
             path: '/-/changelists/*',
             render: ({ revision, repo, ...context }) =>
-                repo ? <RepositoryCommitsPage {...context} repo={repo} revision={revision} /> : <LoadingSpinner />,
+                repo ? (
+                    <RepositoryCommitsPage
+                        {...context}
+                        repo={repo}
+                        revision={revision}
+                        telemetryRecorder={context.platformContext.telemetryRecorder}
+                    />
+                ) : (
+                    <LoadingSpinner />
+                ),
         },
     ]
 }

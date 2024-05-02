@@ -30,6 +30,7 @@ const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'S
 const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
 const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
 const CodySidebarStoreProvider = lazyComponent(() => import('./cody/sidebar/Provider'), 'CodySidebarStoreProvider')
+const CodyIgnoreProvider = lazyComponent(() => import('./cody/useCodyIgnore'), 'CodyIgnoreProvider')
 const GetCodyPage = lazyComponent(() => import('./get-cody/GetCodyPage'), 'GetCodyPage')
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 
@@ -251,7 +252,12 @@ export const routes: RouteObject[] = [
         path: PageRoutes.SearchConsole,
         element: (
             <LegacyRoute
-                render={props => <SearchConsolePageOrRedirect {...props} />}
+                render={props => (
+                    <SearchConsolePageOrRedirect
+                        {...props}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    />
+                )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),
@@ -379,11 +385,13 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => (
-                    <CodyChatPage
-                        {...props}
-                        context={window.context}
-                        telemetryRecorder={props.platformContext.telemetryRecorder}
-                    />
+                    <CodyIgnoreProvider isSourcegraphDotCom={props.isSourcegraphDotCom}>
+                        <CodyChatPage
+                            {...props}
+                            context={window.context}
+                            telemetryRecorder={props.platformContext.telemetryRecorder}
+                        />
+                    </CodyIgnoreProvider>
                 )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
             />
@@ -434,12 +442,14 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => (
-                    <CodySidebarStoreProvider
-                        authenticatedUser={props.authenticatedUser}
-                        telemetryRecorder={props.platformContext.telemetryRecorder}
-                    >
-                        <RepoContainer {...props} />
-                    </CodySidebarStoreProvider>
+                    <CodyIgnoreProvider isSourcegraphDotCom={props.isSourcegraphDotCom}>
+                        <CodySidebarStoreProvider
+                            authenticatedUser={props.authenticatedUser}
+                            telemetryRecorder={props.platformContext.telemetryRecorder}
+                        >
+                            <RepoContainer {...props} />
+                        </CodySidebarStoreProvider>
+                    </CodyIgnoreProvider>
                 )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
@@ -465,7 +475,7 @@ function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Eleme
 function SearchPageOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element {
     const { isCodeSearchEnabled } = props.licenseFeatures
     if (!isCodeSearchEnabled) {
-        return <SearchUpsellPage />
+        return <SearchUpsellPage telemetryRecorder={props.platformContext.telemetryRecorder} />
     }
     return <SearchPageWrapper {...props} />
 }

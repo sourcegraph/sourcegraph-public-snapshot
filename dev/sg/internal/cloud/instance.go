@@ -35,12 +35,10 @@ Environment  : %s
 Version      : %s
 Hostname     : %s
 AdminEmail   : %s
-
 CreatedAt    : %s
 Project      : %s
 Region       : %s
 DeletetAt    : %s
-
 Status       : %s
 `, i.ID, i.Name, i.InstanceType, i.Environment, i.Version, i.Hostname, i.AdminEmail,
 		i.CreatedAt, i.Project, i.Region, i.DeletedAt,

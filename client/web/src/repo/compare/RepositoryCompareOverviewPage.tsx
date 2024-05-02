@@ -6,6 +6,7 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 
 import { asError, createAggregateError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { LoadingSpinner, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -17,11 +18,14 @@ import type { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
 import { RepositoryCompareDiffPage } from './RepositoryCompareDiffPage'
 
-function queryRepositoryComparison(args: {
-    repo: Scalars['ID']
-    base: string | null
-    head: string | null
-}): Observable<RepositoryComparisonFields['comparison']['range']> {
+function queryRepositoryComparison(
+    args: {
+        repo: Scalars['ID']
+        base: string | null
+        head: string | null
+    },
+    telemetryRecorder: TelemetryRecorder
+): Observable<RepositoryComparisonFields['comparison']['range']> {
     return queryGraphQL<RepositoryComparisonResult>(
         gql`
             query RepositoryComparison($repo: ID!, $base: String, $head: String) {
@@ -63,6 +67,7 @@ function queryRepositoryComparison(args: {
                 throw createAggregateError(errors)
             }
             EVENT_LOGGER.log('RepositoryComparisonFetched')
+            telemetryRecorder.recordEvent('repo.compare', 'fetch')
             return repo.comparison.range
         })
     )
@@ -97,6 +102,7 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
 
     public componentDidMount(): void {
         EVENT_LOGGER.logViewEvent('RepositoryCompareOverview')
+        this.props.telemetryRecorder.recordEvent('repo.compare', 'view')
 
         this.subscriptions.add(
             this.componentUpdates
@@ -113,11 +119,14 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                         }
                         return merge(
                             of({ rangeOrError: undefined }),
-                            queryRepositoryComparison({
-                                repo: repo.id,
-                                base: base.revision || null,
-                                head: head.revision || null,
-                            }).pipe(
+                            queryRepositoryComparison(
+                                {
+                                    repo: repo.id,
+                                    base: base.revision || null,
+                                    head: head.revision || null,
+                                },
+                                this.props.telemetryRecorder
+                            ).pipe(
                                 catchError(error => [asError(error)]),
                                 map((rangeOrError): Pick<State, 'rangeOrError'> => ({ rangeOrError }))
                             )

@@ -24,24 +24,24 @@ import (
 func TestExportedEvents(t *testing.T) {
 	exportedEvents := []*telemetrygatewayv1.Event{{
 		Id:      "1",
-		Feature: "Feature",
-		Action:  "View",
+		Feature: "feature",
+		Action:  "view",
 		// Most recent event
 		Timestamp: timestamppb.New(time.Date(2022, 11, 3, 1, 0, 0, 0, time.UTC)),
 	}, {
 		Id:        "2",
-		Feature:   "Feature",
-		Action:    "Click",
+		Feature:   "feature",
+		Action:    "click",
 		Timestamp: timestamppb.New(time.Date(2022, 11, 3, 2, 0, 0, 0, time.UTC)),
 	}, {
 		Id:        "3",
-		Feature:   "Feature",
-		Action:    "Show",
+		Feature:   "feature",
+		Action:    "show",
 		Timestamp: timestamppb.New(time.Date(2022, 11, 3, 3, 0, 0, 0, time.UTC)),
 	}, {
 		Id:        "4",
-		Feature:   "Feature",
-		Action:    "Dance",
+		Feature:   "feature",
+		Action:    "dance",
 		Timestamp: timestamppb.New(time.Date(2022, 11, 3, 4, 0, 0, 0, time.UTC)),
 	}}
 	var exportedEventIDs []string

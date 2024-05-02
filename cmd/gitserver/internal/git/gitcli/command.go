@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/bytesize"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -302,7 +301,7 @@ func (rc *cmdReader) trace() {
 
 		if traceID := trace.ID(rc.ctx); traceID != "" {
 			ev.AddField("traceID", traceID)
-			ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
+			ev.AddField("trace", trace.URL(traceID))
 		}
 
 		if honey.Enabled() {
