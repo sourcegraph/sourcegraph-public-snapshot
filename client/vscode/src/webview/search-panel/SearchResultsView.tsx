@@ -340,6 +340,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                     fetchStreamSuggestions={fetchStreamSuggestions}
                     telemetryService={platformContext.telemetryService}
+                    telemetryRecorder={platformContext.telemetryRecorder}
                     platformContext={platformContext}
                     className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
                     containerClassName={styles.searchBoxContainer}
@@ -366,6 +367,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                                 onSearchAgain={onSearchAgain}
                                 showTrace={false}
                                 telemetryService={platformContext.telemetryService}
+                                telemetryRecorder={platformContext.telemetryRecorder}
                             />
                         }
                         allExpanded={allExpanded}
@@ -377,6 +379,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                         <StreamingSearchResultsList
                             settingsCascade={settingsCascade}
                             telemetryService={platformContext.telemetryService}
+                            telemetryRecorder={platformContext.telemetryRecorder}
                             allExpanded={allExpanded}
                             // Debt: dotcom prop used only for "run search" link
                             // for search examples. Fix on VSCE.

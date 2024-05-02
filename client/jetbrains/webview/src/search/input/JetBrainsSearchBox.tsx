@@ -10,6 +10,7 @@ import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
 import type { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { Search } from '../jetbrains-icons/Search'
@@ -90,6 +91,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                             fetchSearchContexts={props.fetchSearchContexts}
                             getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
                             telemetryService={props.telemetryService}
+                            telemetryRecorder={noOpTelemetryRecorder}
                             platformContext={props.platformContext}
                             query={queryState.query}
                             submitSearch={props.submitSearchOnSearchContextChange}

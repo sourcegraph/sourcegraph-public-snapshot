@@ -248,6 +248,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                             onSearchAgain={onSearchAgain}
                             isSearchJobsEnabled={isSearchJobsEnabled()}
                             telemetryService={props.telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                         />
                         {newFiltersEnabled && <SearchFiltersTabletButton />}
                     </>
@@ -316,6 +317,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                 {aggregationUIMode !== AggregationUIMode.SearchPage && (
                     <StreamingSearchResultsList
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         platformContext={platformContext}
                         settingsCascade={settingsCascade}
                         searchContextsEnabled={searchContextsEnabled}
