@@ -326,7 +326,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 	})
 }
 
-func TestGitCLIBackend_BehindAhead(t *testing.T) {
+func TestGitCLIBackend_GetBehindAhead(t *testing.T) {
 	ctx := context.Background()
 
 	// Prepare repo state:

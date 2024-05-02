@@ -40,7 +40,7 @@ type observableBackend struct {
 }
 
 func (b *observableBackend) BehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error) {
-	ctx, _, endObservation := b.operations.behindAhead.With(ctx, nil, observation.Args{})
+	ctx, _, endObservation := b.operations.getBehindAhead.With(ctx, nil, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	concurrentOps.WithLabelValues("BehindAhead").Inc()
@@ -408,7 +408,7 @@ type operations struct {
 	rawDiff           *observation.Operation
 	contributorCounts *observation.Operation
 	firstEverCommit   *observation.Operation
-	behindAhead       *observation.Operation
+	getBehindAhead    *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -455,7 +455,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		rawDiff:           op("raw-diff"),
 		contributorCounts: op("contributor-counts"),
 		firstEverCommit:   op("first-ever-commit"),
-		behindAhead:       op("behind-ahead"),
+		getBehindAhead:    op("get-behind-ahead"),
 	}
 }
 
