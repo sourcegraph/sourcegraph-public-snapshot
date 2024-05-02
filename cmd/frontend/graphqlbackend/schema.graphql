@@ -6233,8 +6233,19 @@ type AssociatedSCIPDocument implements WithProvenance {
     pre-generated bindings in the sourcegraph/scip repository or
     manually generating bindings using
     https://github.com/sourcegraph/scip/blob/main/scip.proto
+
+    'first' limits the number of bytes to be fetched. As a consequence,
+    a partial result may not be a well-formed Index. So users of this API
+    must either:
+    1. Use a resilient, streaming parser, that parses as many tag-length-value
+       triplets as possible before requesting more data.
+       An example of streaming parsing can be found here:
+       https://sourcegraph.com/github.com/sourcegraph/scip/-/blob/bindings/go/scip/parse.go
+    OR
+    2. Buffer all the strings, concatenate them, and parse the final result
+       with the provided generated bindings.
     """
-    data: String!
+    data(first: Int, after: String): BytesConnection!
     """
     Coarse-grained information about the data source.
     """
@@ -6247,6 +6258,11 @@ type AssociatedSCIPDocument implements WithProvenance {
     This field should be ignored when checking structural equality.
     """
     dataSource: String
+}
+
+type BytesConnection {
+    nodes: [String!]
+    hasNextPage: PageInfo!
 }
 
 """
