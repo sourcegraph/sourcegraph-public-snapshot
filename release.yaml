@@ -110,7 +110,6 @@ test:
           exit 1
         fi
     - name: 'check:migrator-schemas'
-      skipInDevelopment: true
       cmd: |
         set -eu
 
@@ -147,7 +146,6 @@ test:
           exit 1
         fi
     - name: 'db:migration:coherence_test'
-      skipInDevelopment: true
       cmd: |
         set -eu
 
