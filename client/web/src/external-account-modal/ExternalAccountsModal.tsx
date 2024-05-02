@@ -166,6 +166,7 @@ export const ExternalAccountsModal: React.FunctionComponent<ExternalAccountsModa
             {error && <ErrorAlert className="mb-3" error={error} />}
             {userExternalAccounts.fetched && (
                 <ExternalAccountsSignIn
+                    telemetryRecorder={window.context.telemetryRecorder}
                     onDidAdd={onAccountAdd}
                     onDidError={handleError}
                     onDidRemove={onAccountRemoval}
