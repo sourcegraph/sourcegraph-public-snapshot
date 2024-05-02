@@ -35,12 +35,12 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
         clientSecret,
     }
     return (
-        <div id="checkout">
+        <div>
             {errorDetails && (
-                <div>
+                <>
                     <H3>Awe snap!</H3>
                     <Text>There was an error creating the checkout session: {errorDetails}</Text>
-                </div>
+                </>
             )}
 
             {clientSecret && (

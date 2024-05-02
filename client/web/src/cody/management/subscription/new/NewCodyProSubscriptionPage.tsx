@@ -11,7 +11,7 @@ import { Navigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../../auth'
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
@@ -22,8 +22,6 @@ import { CodyProIcon } from '../../../components/CodyIcon'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
 
 import { CodyProCheckoutForm } from './CodyProCheckoutForm'
-
-import styles from './NewCodyProSubscriptionPage.module.scss'
 
 // NOTE: Call loadStripe outside a component’s render to avoid recreating the object.
 // We do it here, meaning that "stripe.js" will get loaded lazily, when the user
@@ -49,7 +47,7 @@ const AuthenticatedNewCodyProSubscriptionPage: React.FunctionComponent<NewCodyPr
         throw dataLoadError
     }
     if (data?.currentUser?.codySubscription?.plan === 'PRO') {
-        return <Navigate to="/cody/manage" replace={true} />
+        // DO NOT SUBMITreturn <Navigate to="/cody/manage" replace={true} />
     }
 
     const stripeElementsAppearance: stripeJs.Appearance = {
@@ -59,27 +57,25 @@ const AuthenticatedNewCodyProSubscriptionPage: React.FunctionComponent<NewCodyPr
         },
     }
     return (
-        <>
-            <Page className={classNames('d-flex flex-column')}>
-                <PageTitle title="New Subscription" />
-                <PageHeader className="mb-4 mt-4">
-                    <PageHeader.Heading as="h2" styleAs="h1">
-                        <div className="d-inline-flex align-items-center">
-                            <CodyProIcon className="mr-2" /> Give your team Cody Pro
-                        </div>
-                    </PageHeader.Heading>
-                </PageHeader>
+        <Page className={classNames('d-flex flex-column')}>
+            <PageTitle title="New Subscription" />
+            <PageHeader className="mb-4 mt-4">
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <div className="d-inline-flex align-items-center">
+                        <CodyProIcon className="mr-2" /> Give your team Cody Pro
+                    </div>
+                </PageHeader.Heading>
+            </PageHeader>
 
-                <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
-                    <Elements stripe={stripePromise} options={{ appearance: stripeElementsAppearance }}>
-                        <CodyProCheckoutForm
-                            stripeHandle={stripePromise}
-                            customerEmail={authenticatedUser?.emails[0].email || ''}
-                        />
-                    </Elements>
-                </div>
-            </Page>
-        </>
+            <Container>
+                <Elements stripe={stripePromise} options={{ appearance: stripeElementsAppearance }}>
+                    <CodyProCheckoutForm
+                        stripeHandle={stripePromise}
+                        customerEmail={authenticatedUser?.emails[0].email || ''}
+                    />
+                </Elements>
+            </Container>
+        </Page>
     )
 }
 
