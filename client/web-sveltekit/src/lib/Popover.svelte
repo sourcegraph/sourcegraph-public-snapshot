@@ -12,6 +12,7 @@
 
     let isOpen = false
     let trigger: HTMLElement | null
+    let target: HTMLElement | undefined
     let popoverContainer: HTMLElement | null
 
     function toggle(open?: boolean): void {
@@ -22,6 +23,10 @@
         if (event.detail !== trigger && !trigger?.contains(event.detail)) {
             isOpen = false
         }
+    }
+
+    const registerTarget: Action<HTMLElement> = node => {
+        target = node
     }
 
     const registerTrigger: Action<HTMLElement> = node => {
@@ -72,12 +77,12 @@
     }
 </script>
 
-<slot {toggle} {registerTrigger} />
+<slot {toggle} {registerTrigger} {registerTarget} />
 {#if trigger && isOpen}
     <div
         use:registerPopoverContainer
         use:portal
-        use:popover={{ reference: trigger, options: { placement, shift: { padding: 4 } } }}
+        use:popover={{ reference: target ?? trigger, options: { placement, offset: 3, shift: { padding: 4 } } }}
         use:onClickOutside
         on:click-outside={handleClickOutside}
     >
