@@ -30,7 +30,6 @@ type Instance struct {
 	Version      string `json:"version"`
 	URL          string `json:"hostname"`
 	AdminEmail   string `json:"adminEmail"`
-	Features     *InstanceFeatures
 
 	CreatedAt time.Time      `json:"createdAt"`
 	DeletedAt time.Time      `json:"deletedAt"`
