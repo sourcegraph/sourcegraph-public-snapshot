@@ -180,14 +180,6 @@ For example:
             flex-flow: row wrap;
             gap: 0.5rem 0.5rem;
             justify-content: flex-start;
-
-            small {
-                background-color: var(--subtle-bg);
-                border-radius: 1rem;
-                color: var(--primary);
-                font-family: var(--monospace-font-family);
-                padding: 0.15rem 0.35rem;
-            }
         }
     }
 

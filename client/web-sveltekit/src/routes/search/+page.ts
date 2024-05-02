@@ -19,8 +19,6 @@ import {
 } from '$lib/shared'
 
 import type { PageLoad } from './$types'
-import { getGraphQLClient } from '$lib/graphql'
-import { RepoPopoverQuery } from '../layout.gql'
 
 type SearchStreamCacheEntry = Observable<AggregateStreamingSearchResults>
 
