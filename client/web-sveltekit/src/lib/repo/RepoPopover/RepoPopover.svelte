@@ -63,7 +63,7 @@ For example:
         {#if repo.topics.length}
             <div class="tags">
                 {#each repo.topics as topic}
-                    <small>{topic}</small>
+                    <Badge variant="link" small pill>{topic}</Badge>
                 {/each}
             </div>
         {/if}
@@ -188,7 +188,6 @@ For example:
                 color: var(--primary);
                 font-family: var(--monospace-font-family);
                 padding: 0.15rem 0.35rem;
-                font-size: 10px;
             }
         }
     }
@@ -229,7 +228,6 @@ For example:
                 .commit-number {
                     color: var(--text-muted);
                     font-family: var(--monospace-font-family);
-                    font-size: 10px;
                 }
             }
 
