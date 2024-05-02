@@ -47,7 +47,7 @@ const AuthenticatedNewCodyProSubscriptionPage: React.FunctionComponent<NewCodyPr
         throw dataLoadError
     }
     if (data?.currentUser?.codySubscription?.plan === 'PRO') {
-        // DO NOT SUBMITreturn <Navigate to="/cody/manage" replace={true} />
+        return <Navigate to="/cody/manage" replace={true} />
     }
 
     const stripeElementsAppearance: stripeJs.Appearance = {

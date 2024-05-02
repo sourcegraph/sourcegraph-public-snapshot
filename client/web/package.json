@@ -46,8 +46,6 @@
     "@sourcegraph/schema": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
     "@sourcegraph/telemetry": "^0.11.0",
-    "@sourcegraph/wildcard": "workspace:*",
-    "@stripe/react-stripe-js": "^2.7.0",
-    "@stripe/stripe-js": "^3.3.0"
+    "@sourcegraph/wildcard": "workspace:*"
   }
 }
