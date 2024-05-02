@@ -10,7 +10,10 @@ query CommitPage_CommitQuery($repoName: String!, $revspec: String!) {
                 abbreviatedOID
                 canonicalURL
             }
-
+            externalURLs {
+                url
+                serviceKind
+            }
             ...Commit
         }
     }
