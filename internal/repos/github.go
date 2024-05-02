@@ -824,7 +824,7 @@ func (s *GitHubSource) listAffiliatedPage(ctx context.Context, first int, result
 	}
 }
 
-// Fetches a list of all internal repositories visible to the authenticated user.
+// fetchInternal fetches a list of all internal repositories visible to the authenticated user.
 // It first fetches a list of all organizations the user belongs to and then fetches
 // all of the internal repositories belonging to these organizations by using
 // a search query. This leads to much fewer requests to the GitHub API.
