@@ -34,7 +34,7 @@
 <div class="root">
     <div class="avatar">
         <Tooltip tooltip={authorAvatarTooltip}>
-            <Avatar avatar={author} --avatar-size="1.5rem" />
+            <Avatar avatar={author} />
         </Tooltip>
     </div>
     {#if committer && committer.name !== author.name}
