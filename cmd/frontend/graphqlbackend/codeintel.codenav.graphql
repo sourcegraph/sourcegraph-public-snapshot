@@ -65,6 +65,8 @@ extend type GitBlob {
 
 input CodeGraphDataFilter {
     provenance: ProvenanceComparator
+    # EXTENSION: We can add filters for tool name (if there are overlay-style
+    # indexers) and build identifier (e.g. Linux vs Windows) here.
 }
 
 """
@@ -98,6 +100,20 @@ type CodeGraphData {
     scipDocument: AssociatedSCIPDocument
 
     """
+    The commit associated with this code graph data.
+
+    In general, this will be an ancestor of the commit at which code
+    graph data was requested, as code graph data may not be available
+    at the exact commit for the blob.
+    """
+    commit: String!
+
+    """
+    Information about the tool which generated this code graph data
+    """
+    toolInfo: CodeGraphToolInfo
+
+    """
     List of symbols with definitions in this document.
 
     Invariant:
@@ -113,6 +129,14 @@ type CodeGraphData {
     """
     # TODO: Should this be paginated to gracefully handle large generated files?
     occurrences(filter: OccurrencesFilter): [Occurrence!]
+
+    # EXTENSION: We can add a build identifier here to return different
+    # Documents for (say) Linux vs Windows.
+
+type CodeGraphToolInfo {
+    name: String
+    version: String
+}
 }
 
 type Occurrence {
