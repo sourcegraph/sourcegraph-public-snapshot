@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added exhaustive logging for all gRPC requests sent to gitserver. This feature is off by default, and can be enabled by setting the `SRC_GITSERVER_EXHAUSTIVE_LOGGING_ENABLED` environment variable to `true`. [#61270](https://github.com/sourcegraph/sourcegraph/pull/61270)
 - Added exhaustive logging for all gRPC requests sent to gitserver service gitserver. This feature is off by default, and can be enabled by setting the `SRC_GITSERVER_EXHAUSTIVE_LOGGING_ENABLED` environment variable to `true`. [#61270](https://github.com/sourcegraph/sourcegraph/pull/61270)
 - Added exhaustive logging for all gRPC requests sent to the repository service in gitserver. This feature is off by default, and can be enabled by setting the `SRC_GITSERVER_EXHAUSTIVE_LOGGING_ENABLED` environment variable to `true`. [#62158](https://github.com/sourcegraph/sourcegraph/pull/62158)
+- Added an `internal` option for the `repositoryQuery` field for GitHub Enterprise code host connections. This will mirror all internal repositories on the code host. [#61924](https://github.com/sourcegraph/sourcegraph/pull/61924)
 
 ### Changed
 
