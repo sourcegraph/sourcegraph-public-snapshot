@@ -71,7 +71,7 @@ func (g *GitRepo) IsOutOfSync(ctx context.Context) (bool, error) {
 	return !g.HasRemoteCommit(ctx), nil
 }
 
-func (g *GitRepo) checkout(ctx context.Context, args... string) error {
+func (g *GitRepo) checkout(ctx context.Context, args ...string) error {
 	checkoutArgs := []string{"git", "checkout"}
 	checkoutArgs = append(checkoutArgs, args...)
 	err := run.Cmd(ctx, checkoutArgs...).Run().Wait()
