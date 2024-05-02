@@ -10,6 +10,9 @@ import (
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringalertpolicy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringnotificationchannel"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucket"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucketiammember"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucketobject"
 	opsgenieintegration "github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/apiintegration"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/dataopsgenieteam"
 	opsgenieservice "github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/service"
@@ -419,6 +422,31 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create dashboard")
 	}
+
+	// Create a public bucket for storing diagrams that we can reference in
+	// Notion, because Notion API makes it really hard to embed images.
+	diagramsBucket := storagebucket.NewStorageBucket(stack, id.TerraformID("diagrams_bucket"), &storagebucket.StorageBucketConfig{
+		Name:     pointers.Stringf("%s-diagrams", vars.ProjectID),
+		Location: pointers.Ptr("us-central1"),
+
+		StorageClass:             pointers.Ptr("STANDARD"),
+		UniformBucketLevelAccess: pointers.Ptr(true),
+		Versioning: &storagebucket.StorageBucketVersioning{
+			Enabled: pointers.Ptr(false),
+		},
+	})
+	_ = storagebucketiammember.NewStorageBucketIamMember(stack, id.TerraformID("diagrams_bucket_public"), &storagebucketiammember.StorageBucketIamMemberConfig{
+		Bucket: diagramsBucket.Id(),
+		Role:   pointers.Ptr("roles/storage.objectViewer"),
+		Member: pointers.Ptr("allUsers"),
+	})
+	diagramFilename := pointers.Stringf("%s-%s.svg", vars.Service.ID, vars.EnvironmentID)
+	_ = storagebucketobject.NewStorageBucketObject(stack, id.Group("skaffold").TerraformID("object"), &storagebucketobject.StorageBucketObjectConfig{
+		Name:        diagramFilename,
+		Bucket:      diagramsBucket.Name(),
+		Source:      diagramFilename,
+		ContentType: pointers.Ptr("image/svg+xml"),
+	})
 
 	return &CrossStackOutput{}, nil
 }

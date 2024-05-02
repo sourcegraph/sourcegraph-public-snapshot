@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/clouddeploy"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/diagram"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/terraform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
@@ -301,6 +302,28 @@ func generateTerraform(service *spec.Spec, opts generateTerraformOptions) error 
 				return errors.Wrap(err, "write Cloud Run custom target skaffold YAML archive")
 			}
 
+		}
+
+		// We must persist diagrams somewhere for reference in Notion, since
+		// Notion does not allow us to upload files via API.
+		// https://developers.notion.com/docs/working-with-files-and-media#uploading-files-and-media-via-the-notion-api
+		pending.Updatef("[%s] Generating architecture diagrams for environment %q...", serviceID, env.ID)
+		d, err := diagram.New()
+		if err != nil {
+			return errors.Wrap(err, "initialize architecture diagram")
+		}
+		if err = d.Generate(service, env.ID); err != nil {
+			return errors.Wrap(err, "generate architecture diagram")
+		}
+		svg, err := d.Render()
+		if err != nil {
+			return errors.Wrap(err, "render architecture diagram")
+		}
+		diagramFileName := fmt.Sprintf("%s-%s.svg", serviceID, env.ID)
+		diagramDir := filepath.Join(renderer.OutputDir, "stacks/monitoring")
+		_ = os.MkdirAll(diagramDir, os.ModePerm)
+		if err := os.WriteFile(filepath.Join(diagramDir, diagramFileName), svg, 0o644); err != nil {
+			return errors.Wrap(err, "write architecture diagram")
 		}
 
 		pending.Complete(output.Styledf(output.StyleSuccess,
