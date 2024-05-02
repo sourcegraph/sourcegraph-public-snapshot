@@ -17,6 +17,7 @@ go_library(
         "//internal/actor",
         "//internal/auth/providers",
         "//internal/auth/userpasswd",
+        "//internal/authz",
         "//internal/cody",
         "//internal/conf",
         "//internal/conf/deploy",
