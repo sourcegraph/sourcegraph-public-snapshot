@@ -32,8 +32,6 @@ func NotionHandbookURL(pageID string) string {
 func RenderIndexPage(services []*spec.Spec, opts Options) []byte {
 	md := markdown.NewBuilder()
 
-	md.Headingf(1, "Managed Services infrastructure")
-
 	opts.AddDocumentNote(md)
 
 	generalGuidanceLink, generalGuidance := markdown.HeadingLinkf("General guidance")
@@ -57,7 +55,7 @@ In addition to service-specific guidance, %s is also available.`,
 
 	owners, byOwner := collectByOwner(services)
 	for _, o := range owners {
-		md.Headingf(2, o)
+		md.Headingf(1, o)
 		md.Paragraphf("Managed Services Platform services owned by %s:", markdown.Code(o))
 		md.List(mapTo(byOwner[o], func(s *spec.Spec) string {
 			if s.Service.NotionPageID != nil {
@@ -67,9 +65,9 @@ In addition to service-specific guidance, %s is also available.`,
 		}))
 	}
 
-	md.Headingf(2, generalGuidance)
+	md.Headingf(1, generalGuidance)
 
-	md.Headingf(3, "Infrastructure access")
+	md.Headingf(2, "Infrastructure access")
 	md.Paragraphf(`For MSP service environments other than %[1]s, access needs to be requested through Entitle.
 Test environments are placed in the "Engineering Projects" GCP folder, which should have access granted to engineers by default.
 
@@ -94,7 +92,7 @@ The custom roles used for MSP infrastructure access are [configured in %[5]s](ht
 		markdown.Code("sourcegraph/infrastructure"),    // %[5]s
 	)
 
-	md.Headingf(3, "Terraform Cloud access")
+	md.Headingf(2, "Terraform Cloud access")
 	md.Paragraphf(`Terraform Cloud (TFC) workspaces for MSP [can be found using the %s workspace tag](https://app.terraform.io/app/sourcegraph/workspaces?tag=msp).
 
 To gain access to MSP project TFC workspaces, [log in to Terraform Cloud](https://app.terraform.io/app/sourcegraph) and _then_ [request membership to the %s TFC team via Entitle](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjM2MDAiLCJqdXN0aWZpY2F0aW9uIjoiRU5URVIgSlVTVElGSUNBVElPTiBIRVJFIiwicm9sZUlkcyI6W3siaWQiOiJiMzg3MzJjYy04OTUyLTQ2Y2QtYmIxZS1lZjI2ODUwNzIyNmIiLCJ0aHJvdWdoIjoiYjM4NzMyY2MtODk1Mi00NmNkLWJiMWUtZWYyNjg1MDcyMjZiIiwidHlwZSI6InJvbGUifV19).

@@ -5,6 +5,8 @@ import (
 	neturl "net/url"
 	"reflect"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/internal/markdown/headings"
 )
 
 // HeadingLink generates a link to a heading that has not been written yet.
@@ -12,7 +14,7 @@ import (
 // will point to nothing.
 func HeadingLinkf(title string, vars ...any) (link, heading string) {
 	heading = fmt.Sprintf(title, vars...)
-	id := sanitizeHeadingID(heading)
+	id := headings.SanitizeHeadingID(heading)
 	return Linkf(heading, "#%s", id), heading
 }
 
@@ -41,6 +43,14 @@ func Bold(v string) string {
 
 func Boldf(v string, vars ...any) string {
 	return Bold(fmt.Sprintf(v, vars...))
+}
+
+func Italics(v string) string {
+	return fmt.Sprintf("*%s*", v)
+}
+
+func Italicsf(v string, vars ...any) string {
+	return Italics(fmt.Sprintf(v, vars...))
 }
 
 // Link generates a Markdown link.

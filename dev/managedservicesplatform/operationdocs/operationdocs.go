@@ -32,16 +32,21 @@ type Options struct {
 // AddDocumentNote adds a note to the markdown document with details about
 // how this documentation was generated.
 func (o Options) AddDocumentNote(md *markdown.Builder) {
-	generatedFromComment := fmt.Sprintf("Generated from: https://github.com/sourcegraph/managed-services/tree/%s",
-		o.ManagedServicesRevision)
+	generatedFromComment := fmt.Sprintf("Generated from: %s",
+		markdown.Linkf(fmt.Sprintf("sourcegraph/managed-services@%s", o.ManagedServicesRevision),
+			"https://github.com/sourcegraph/managed-services/%s", o.ManagedServicesRevision))
 	if o.ManagedServicesRevision == "" {
-		generatedFromComment = "Generated from: unknown revision of https://github.com/sourcegraph/managed-services"
+		generatedFromComment = fmt.Sprintf("Generated from: unknown revision of %s",
+			markdown.Linkf("sourcegraph/managed-services", "https://github.com/sourcegraph/managed-services"))
 	}
 
 	if o.GenerateCommand != "" {
-		generatedFromComment = fmt.Sprintf(`Generated documentation; DO NOT EDIT. Regenerate using this command: %s
-Last updated: %s
-%s`,
+		generatedFromComment = fmt.Sprintf(`%s
+
+- Regenerate this page with this command: %s
+- Last updated: %s
+- %s`,
+			markdown.Bold("This is generated documentation; DO NOT EDIT."),
 			markdown.Code(o.GenerateCommand),
 			time.Now().UTC().String(),
 			generatedFromComment)
@@ -53,8 +58,6 @@ Last updated: %s
 // and runtime properties using OutputsClient.
 func Render(s spec.Spec, opts Options) (string, error) {
 	md := markdown.NewBuilder()
-
-	md.Headingf(1, "%s infrastructure operations", s.Service.GetName())
 
 	opts.AddDocumentNote(md)
 
@@ -76,7 +79,7 @@ This service is operated on the %s.`,
 	}
 	var environmentHeaders []environmentHeader
 
-	md.Headingf(2, "Service overview")
+	md.Headingf(1, "Service overview")
 	serviceKind := pointers.Deref(s.Service.Kind, spec.ServiceKindService)
 	serviceDirURL := fmt.Sprintf("https://github.com/sourcegraph/managed-services/blob/main/services/%s", s.Service.ID)
 	serviceConfigURL := fmt.Sprintf("%s/service.yaml", serviceDirURL)
@@ -104,22 +107,13 @@ This service is operated on the %s.`,
 	})
 
 	if len(s.README) > 0 {
-		md.Commentf("Automatically generated from the service README: %s", fmt.Sprintf("%s/README.md", serviceDirURL))
-
-		readme := string(s.README)
-		lines := strings.Split(readme, "\n")
-		for i, line := range lines {
-			// Increase all headers by 1 so that they fit nicely into the
-			// generated page.
-			if strings.HasPrefix(line, "##") {
-				lines[i] = "#" + line
-			}
-		}
-		md.Paragraphf(strings.Join(lines, "\n"))
+		md.Paragraphf(string(s.README))
+		md.Paragraphf(markdown.Italicsf("Automatically generated from the service README: %s",
+			fmt.Sprintf("%s/README.md", serviceDirURL)))
 	}
 
 	if s.Rollout != nil {
-		md.Headingf(2, "Rollouts")
+		md.Headingf(1, "Rollouts")
 		region := "us-central1"
 		var rolloutDetails []string
 		// Get final stage to generate pipeline url
@@ -145,9 +139,9 @@ This service is operated on the %s.`,
 		}
 	}
 
-	md.Headingf(2, "Environments")
+	md.Headingf(1, "Environments")
 	for _, section := range environmentHeaders {
-		md.Headingf(3, section.header)
+		md.Headingf(2, section.header)
 		env := s.GetEnvironment(section.environmentID)
 
 		var cloudRunURL string
@@ -214,7 +208,7 @@ This service is operated on the %s.`,
 		terraformCloudSectionLink, terraformCloudSectionHeading := markdown.HeadingLinkf("%s Terraform Cloud", env.ID)
 		md.Paragraphf("For Terraform Cloud access, see %s.", terraformCloudSectionLink)
 
-		_, cloudRunSectionLink := md.Headingf(4, "%s Cloud Run", env.ID)
+		_, cloudRunSectionLink := md.Headingf(3, "%s Cloud Run", env.ID)
 
 		// It's not immediately obvious to new users that Cloud Run is where
 		// their service "runs".
@@ -236,7 +230,7 @@ This service is operated on the %s.`,
 		// Individual resources - add them in the same order as (EnvironmentResourcesSpec).List()
 		if env.Resources != nil {
 			if redis := env.Resources.Redis; redis != nil {
-				md.Headingf(4, resourceHeadings[redis.ResourceKind()])
+				md.Headingf(3, resourceHeadings[redis.ResourceKind()])
 				md.List([]string{
 					"Console: " + markdown.Linkf("Memorystore Redis instances",
 						"https://console.cloud.google.com/memorystore/redis/instances?project=%s", env.ProjectID),
@@ -246,7 +240,7 @@ This service is operated on the %s.`,
 			}
 
 			if pg := env.Resources.PostgreSQL; pg != nil {
-				md.Headingf(4, resourceHeadings[pg.ResourceKind()])
+				md.Headingf(3, resourceHeadings[pg.ResourceKind()])
 				md.List([]string{
 					"Console: " + markdown.Linkf("Cloud SQL instances",
 						"https://console.cloud.google.com/sql/instances?project=%s", env.ProjectID),
@@ -270,7 +264,7 @@ sg msp pg connect -write-access %[1]s %[2]s`, s.Service.ID, env.ID)
 			}
 
 			if bq := env.Resources.BigQueryDataset; bq != nil {
-				md.Headingf(4, resourceHeadings[bq.ResourceKind()])
+				md.Headingf(3, resourceHeadings[bq.ResourceKind()])
 				md.List([]any{
 					"Dataset Project: " + markdown.Code(pointers.Deref(bq.ProjectID, env.ProjectID)),
 					"Dataset ID: " + markdown.Code(bq.GetDatasetID(s.Service.ID)),
@@ -284,10 +278,10 @@ sg msp pg connect -write-access %[1]s %[2]s`, s.Service.ID, env.ID)
 			}
 		}
 
-		md.Headingf(4, "%s Architecture Diagram", env.ID)
+		md.Headingf(3, "%s Architecture Diagram", env.ID)
 		md.Paragraphf("!" + markdown.Linkf("Architecture Diagram", "./%s-%s.svg", s.Service.ID, env.ID))
 
-		md.Headingf(4, terraformCloudSectionHeading)
+		md.Headingf(3, terraformCloudSectionHeading)
 
 		md.Paragraphf(`This service's configuration is defined in %s, and %s generates the required infrastructure configuration for this environment in Terraform.
 Terraform Cloud (TFC) workspaces specific to each service then provisions the required infrastructure from this configuration.
@@ -316,7 +310,7 @@ If you make your Entitle request, then log in, you will be removed from any team
 		md.CodeBlockf("bash", `sg msp tfc view %s %s`, s.Service.ID, env.ID)
 	}
 
-	md.Headingf(2, "Alert Policies")
+	md.Headingf(1, "Alert Policies")
 
 	md.Paragraphf("The following alert policies are defined for each of this service's environments.")
 
@@ -326,7 +320,7 @@ If you make your Entitle request, then log in, you will be removed from any team
 	slices.Sort(alertKeys)
 	for _, key := range alertKeys {
 		policy := opts.AlertPolicies[key]
-		md.Headingf(4, policy.DisplayName)
+		md.Headingf(2, policy.DisplayName)
 		// We need to remove the footer text we add to each alert policy description
 		b := []byte(policy.Documentation.Content)
 		lastParagraphIndex := bytes.LastIndex(b, []byte("\n\n"))

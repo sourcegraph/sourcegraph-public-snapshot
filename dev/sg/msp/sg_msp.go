@@ -12,8 +12,10 @@ import (
 
 	"github.com/jomei/notionapi"
 	"github.com/urfave/cli/v2"
+	"go.uber.org/atomic"
 	"golang.org/x/exp/maps"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/notionreposync/notion"
 	"github.com/sourcegraph/run"
 
@@ -429,37 +431,19 @@ This command supports completions on services and environments.
 			},
 			Subcommands: []*cli.Command{
 				{
-					Name:   "generate-handbook-pages",
-					Usage:  "Generate operations handbook pages for all services",
-					Hidden: true, // not meant for day-to-day use
-					Description: `By default, we expect the 'sourcegraph/handbook' repository to be checked out adjacent to the 'sourcegraph/managed-services' repository, i.e.:
-	/
-	├─ managed-services/ <-- current directory
-	├─ handbook/         <-- github.com/sourcegraph/handbook
-
-The '-handbook-path' flag can also be used to specify where sourcegraph/handbook is cloned.`,
-					Before: msprepo.UseManagedServicesRepo,
+					Name:        "generate-handbook-pages",
+					Usage:       "Generate operations handbook pages for all services",
+					Hidden:      true, // not meant for day-to-day use
+					Description: ``,
+					Before:      msprepo.UseManagedServicesRepo,
 					Flags: []cli.Flag{
-						&cli.StringFlag{
-							Name:  "handbook-path",
-							Usage: "Path to the directory in which sourcegraph/handbook is cloned",
-							Value: "../handbook",
-							Action: func(_ *cli.Context, v string) error {
-								// 'Required: true' will error out even if a default
-								// value is set, so do our own validation here.
-								if v == "" {
-									return errors.New("cannot be empty")
-								}
-								return nil
-							},
+						&cli.IntFlag{
+							Name:  "concurrency",
+							Value: 10,
+							Usage: "Maximum number of concurrent updates to Notion pages",
 						},
 					},
 					Action: func(c *cli.Context) (err error) {
-						handbookPath := c.String("handbook-path")
-						if err := isHandbookRepo(handbookPath); err != nil {
-							return errors.Wrapf(err, "expecting github.com/sourcegraph/handbook at %q", handbookPath)
-						}
-
 						services, err := msprepo.ListServices()
 						if err != nil {
 							return err
@@ -500,81 +484,124 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 						}
 						notionClient := notionapi.NewClient(notionapi.Token(notionToken))
 
-						var generatedServices []*spec.Spec
+						type task struct {
+							svc          *spec.Spec
+							noNotionPage bool
+						}
+						var tasks []task
+						var serviceSpecs []*spec.Spec
+						var statusBars []*output.StatusBar
 						for _, s := range services {
-							pending := std.Out.Pending(output.StylePending.Linef(
-								"[%s] Generating operations handbook page", s))
+							status := output.NewStatusBarWithLabel(s)
+							statusBars = append(statusBars, status)
 
 							svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
 							if err != nil {
 								return errors.Wrapf(err, "load service %q", s)
 							}
+							serviceSpecs = append(serviceSpecs, svc)
 							if svc.Service.NotionPageID == nil {
-								pending.Complete(output.StyleGrey.Linef("[%s] No 'notionPageID' set, skipping", s))
+								tasks = append(tasks, task{
+									svc:          svc,
+									noNotionPage: true,
+								})
 								continue
 							}
-
-							generatedServices = append(generatedServices, svc)
-
-							pending.Updatef("[%s] Collecting alert policies", s)
-							collectedAlerts, err := collectAlertPolicies(svc)
-							if err != nil {
-								return errors.Wrapf(err, "%s: CollectAlertPolicies", s)
-							}
-
-							// Generate architecture diagrams
-							pending.Updatef("[%s] Generating diagrams", s)
-							for _, e := range svc.ListEnvironmentIDs() {
-								diagram, err := diagram.New()
-								if err != nil {
-									return errors.Wrap(err, s)
-								}
-
-								err = diagram.Generate(svc, e)
-								if err != nil {
-									return errors.Wrap(err, s)
-								}
-								_, err = diagram.Render()
-								if err != nil {
-									return errors.Wrap(err, s)
-								}
-								// diagramPath := filepath.Join(handbookPath, "TODO")
-								// if err := os.WriteFile(diagramPath, []byte(svg), 0o644); err != nil {
-								// 	return errors.Wrap(err, s)
-								// }
-							}
-
-							pending.Updatef("[%s] Rendering Markdown", s)
-							opts.AlertPolicies = collectedAlerts
-							doc, err := operationdocs.Render(*svc, opts)
-							if err != nil {
-								return errors.Wrap(err, s)
-							}
-
-							pending.Updatef("[%s] Preparing target Notion page %s",
-								s, operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
-							if err := resetNotionPage(
-								c.Context,
-								notionClient,
-								*svc.Service.NotionPageID,
-								fmt.Sprintf("%s infrastructure operations", svc.Service.GetName()),
-							); err != nil {
-								return errors.Wrapf(err, "%s: reset page %s",
-									s, operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
-							}
-
-							pending.Updatef("[%s] Rendering target Notion page %s",
-								s, operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
-							blockUpdater := notion.NewPageBlockUpdater(notionClient, *svc.Service.NotionPageID)
-							if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
-								ProcessMarkdown([]byte(doc)); err != nil {
-								return errors.Wrap(err, s)
-							}
-
-							pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess,
-								"[%s] Wrote %q",
-								s, operationdocs.NotionHandbookURL(*svc.Service.NotionPageID)))
+							tasks = append(tasks, task{svc: svc})
 						}
+
+						concurrency := c.Int("concurrency")
+						completedCount := atomic.NewInt32(0)
+						prog := std.Out.ProgressWithStatusBars(
+							[]output.ProgressBar{{
+								Label: fmt.Sprintf("Generating service handbook pages (concurrency: %d)", concurrency),
+								Max:   float64(len(services)),
+							}},
+							statusBars,
+							nil)
+						wg := pool.New().WithErrors().WithMaxGoroutines(concurrency)
+						for i, t := range tasks {
+							if t.noNotionPage {
+								prog.SetValue(0, float64(completedCount.Inc()))
+								prog.StatusBarCompletef(i, "Skipped: no Notion page provided in service spec")
+								continue
+							}
+							svc := t.svc
+							s := svc.Service.ID
+
+							wg.Go(func() (err error) {
+								defer func() {
+									if err != nil {
+										prog.StatusBarFailf(i, err.Error())
+									}
+								}()
+
+								prog.StatusBarUpdatef(i, "Collecting alert policies")
+								collectedAlerts, err := collectAlertPolicies(svc)
+								if err != nil {
+									return errors.Wrapf(err, "%s: CollectAlertPolicies", s)
+								}
+
+								// Generate architecture diagrams
+								prog.StatusBarUpdatef(i, "Generating diagrams")
+								for _, e := range svc.ListEnvironmentIDs() {
+									diagram, err := diagram.New()
+									if err != nil {
+										return errors.Wrap(err, s)
+									}
+
+									err = diagram.Generate(svc, e)
+									if err != nil {
+										return errors.Wrap(err, s)
+									}
+									_, err = diagram.Render()
+									if err != nil {
+										return errors.Wrap(err, s)
+									}
+									// diagramPath := filepath.Join(handbookPath, "TODO")
+									// if err := os.WriteFile(diagramPath, []byte(svg), 0o644); err != nil {
+									// 	return errors.Wrap(err, s)
+									// }
+								}
+
+								prog.StatusBarUpdatef(i, "Rendering Markdown")
+								opts.AlertPolicies = collectedAlerts
+								doc, err := operationdocs.Render(*svc, opts)
+								if err != nil {
+									return errors.Wrap(err, s)
+								}
+
+								prog.StatusBarUpdatef(i, "Preparing target Notion page %s",
+									operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
+								if err := resetNotionPage(
+									c.Context,
+									notionClient,
+									*svc.Service.NotionPageID,
+									fmt.Sprintf("%s infrastructure operations", svc.Service.GetName()),
+								); err != nil {
+									return errors.Wrapf(err, "%s: reset page %s",
+										s, operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
+								}
+
+								prog.StatusBarUpdatef(i, "Rendering target Notion page %s",
+									operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
+								blockUpdater := notion.NewPageBlockUpdater(notionClient, *svc.Service.NotionPageID)
+								if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
+									ProcessMarkdown([]byte(doc)); err != nil {
+									return errors.Wrap(err, s)
+								}
+
+								prog.StatusBarCompletef(i, "Wrote %q",
+									operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
+								prog.SetValue(0, float64(completedCount.Inc()))
+								return nil
+							})
+						}
+						if err := wg.Wait(); err != nil {
+							prog.Close()
+							return errors.Wrap(err, "failed to generate some pages")
+						}
+						prog.Complete()
 
 						pending := std.Out.Pending(output.StylePending.Linef(
 							"[index] Generating operations handbook page"))
@@ -588,7 +615,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 								operationdocs.NotionHandbookURL(operationdocs.IndexNotionPageID()))
 						}
 						blockUpdater := notion.NewPageBlockUpdater(notionClient, operationdocs.IndexNotionPageID())
-						doc := operationdocs.RenderIndexPage(generatedServices, opts)
+						doc := operationdocs.RenderIndexPage(serviceSpecs, opts)
 						if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
 							ProcessMarkdown([]byte(doc)); err != nil {
 							return errors.Wrap(err, "apply index page")

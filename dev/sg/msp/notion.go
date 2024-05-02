@@ -81,7 +81,31 @@ func setPageTitle(ctx context.Context, client *notionapi.Client, pageID string, 
 				},
 			},
 		}); err != nil {
-		return err
+		return errors.Wrap(err, "failed to set page title")
+	}
+	if _, err := client.Block.AppendChildren(ctx, notionapi.BlockID(pageID), &notionapi.AppendBlockChildrenRequest{
+		Children: []notionapi.Block{
+			notionapi.DividerBlock{
+				BasicBlock: notionapi.BasicBlock{
+					Object: notionapi.ObjectTypeBlock,
+					Type:   notionapi.BlockTypeDivider,
+				},
+			},
+			notionapi.TableOfContentsBlock{
+				BasicBlock: notionapi.BasicBlock{
+					Object: notionapi.ObjectTypeBlock,
+					Type:   notionapi.BlockTypeTableOfContents,
+				},
+			},
+			notionapi.DividerBlock{
+				BasicBlock: notionapi.BasicBlock{
+					Object: notionapi.ObjectTypeBlock,
+					Type:   notionapi.BlockTypeDivider,
+				},
+			},
+		},
+	}); err != nil {
+		return errors.Wrap(err, "failed to add table of contents block")
 	}
 	return nil
 }

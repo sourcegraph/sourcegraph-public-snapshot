@@ -1,7 +1,6 @@
 package msp
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -309,32 +308,6 @@ func generateTerraform(service *spec.Spec, opts generateTerraformOptions) error 
 	}
 
 	return nil
-}
-
-func isHandbookRepo(relPath string) error {
-	path, err := filepath.Abs(relPath)
-	if err != nil {
-		return errors.Wrapf(err, "unable to infer absolute path of %q", relPath)
-	}
-
-	// https://sourcegraph.com/github.com/sourcegraph/handbook/-/blob/package.json?L2=
-	const handbookPackageName = "@sourcegraph/handbook.sourcegraph.com"
-
-	packageJSONData, err := os.ReadFile(filepath.Join(path, "package.json"))
-	if err != nil {
-		return errors.Wrap(err, "expected package.json")
-	}
-
-	var packageJSON struct {
-		Name string `json:"name"`
-	}
-	if err := json.Unmarshal(packageJSONData, &packageJSON); err != nil {
-		return errors.Wrap(err, "parse package.json")
-	}
-	if packageJSON.Name == handbookPackageName {
-		return nil
-	}
-	return errors.Newf("unexpected package %q", packageJSON.Name)
 }
 
 func generateCloudDeployDocstring(projectID, serviceID, gcpRegion, cloudDeployFilename string) string {
