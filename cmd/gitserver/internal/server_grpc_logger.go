@@ -952,6 +952,31 @@ func contributorCountsToLogFields(req *proto.ContributorCountsRequest) []log.Fie
 	}
 }
 
+func (l *loggingGRPCServer) FirstEverCommit(ctx context.Context, request *proto.FirstEverCommitRequest) (resp *proto.FirstEverCommitResponse, err error) {
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+			proto.GitserverService_FirstEverCommit_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			firstEverCommitRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.FirstEverCommit(ctx, request)
+}
+
+func firstEverCommitRequestToLogFields(req *proto.FirstEverCommitRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+	}
+}
+
 type loggingRepositoryServiceServer struct {
 	base   proto.GitserverRepositoryServiceServer
 	logger log.Logger

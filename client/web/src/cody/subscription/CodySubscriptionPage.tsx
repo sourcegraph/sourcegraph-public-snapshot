@@ -28,8 +28,8 @@ import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { EventName } from '../../util/constants'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
-import { useIsCodyPaymentsTestingMode } from '../featureFlags'
 import { isCodyEnabled } from '../isCodyEnabled'
+import { manageSubscriptionRedirectURL } from '../util'
 
 import { USER_CODY_PLAN } from './queries'
 
@@ -40,16 +40,6 @@ interface CodySubscriptionPageProps extends TelemetryV2Props {
     authenticatedUser?: AuthenticatedUser | null
 }
 
-export const useCodyPaymentsUrl = (): string => {
-    const isCodyPaymentsTestingMode = useIsCodyPaymentsTestingMode()
-
-    if (isCodyPaymentsTestingMode) {
-        return 'https://accounts.sgdev.org'
-    }
-
-    return 'https://accounts.sourcegraph.com'
-}
-
 export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({
     isSourcegraphDotCom,
     authenticatedUser,
@@ -58,10 +48,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     const parameters = useSearchParameters()
 
     const utm_source = parameters.get('utm_source')
-
-    const codyPaymentsUrl = useCodyPaymentsUrl()
-    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
-
     useEffect(() => {
         EVENT_LOGGER.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
         telemetryRecorder.recordEvent('cody.planSelection', 'view')

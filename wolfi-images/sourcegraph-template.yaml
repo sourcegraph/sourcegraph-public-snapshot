@@ -16,12 +16,9 @@ contents:
 
     # TODO: Dev tools - remove in future release
     - busybox
-    - curl=8.6.0-r0 # TODO(will): Remove pin after resolving git fetch bug
+    - curl
     - wget
     - bind-tools
-
-    # TODO(will): Remove explicit add of libcurl after resolving git fetch bug
-    - libcurl-openssl4=8.6.0-r0
 
 # Add sourcegraph user and group
 # NOTE: Adding other accounts in files where sourcegraph-template.yaml is included will overwrite these users

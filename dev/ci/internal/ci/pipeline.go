@@ -200,6 +200,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.WolfiBaseRebuild:
 		// If this is a Wolfi base image rebuild, run script to re-lock packages
 		// for all Wolfi base images and open a PR
+		ops.Merge(
+			BazelOpsSet(buildOptions,
+				CoreTestOperationsOptions{
+					IsMainBranch: buildOptions.Branch == "main",
+				}),
+		)
 		ops.Merge(wolfiBaseImageLockAndCreatePR())
 
 	// Use CandidateNoTest if you want to build legacy Docker Images

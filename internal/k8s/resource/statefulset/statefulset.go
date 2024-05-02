@@ -8,13 +8,16 @@ import (
 )
 
 // NewStatefulSet creates a new k8s StatefulSet with some default values set.
-func NewStatefulSet(name, namespace string) appsv1.StatefulSet {
+func NewStatefulSet(name, namespace, version string) appsv1.StatefulSet {
 	return appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"deploy": "sourcegraph",
+				"app.kubernetes.io/component": name,
+				"app.kubernetes.io/name":      "sourcegraph",
+				"app.kubernetes.io/version":   version,
+				"deploy":                      "sourcegraph",
 			},
 		},
 		Spec: appsv1.StatefulSetSpec{

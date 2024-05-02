@@ -3,7 +3,6 @@ package appliance
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 )
@@ -39,8 +38,6 @@ type BlobstoreSpec struct {
 	// Env defines environment variables for Blobstore.
 	Env map[string]string `json:"env,omitempty"`
 }
-
-func (BlobstoreSpec) PrometheusPort() *int { return nil }
 
 // CodeInsightsDBSpec defines the desired state of Code Insights database.
 type CodeInsightsDBSpec struct {
@@ -262,8 +259,6 @@ type RepoUpdaterSpec struct {
 	Env map[string]string `json:"env,omitempty"`
 }
 
-func (RepoUpdaterSpec) PrometheusPort() *int { return ptr.To(6060) }
-
 // SearcherSpec defines the desired state of the Searcher service.
 type SearcherSpec struct {
 	// Disabled defines if Code Intel is enabled or not.
@@ -287,6 +282,8 @@ type SearcherSpec struct {
 
 // SymbolsSpec defines the desired state of the Symbols service.
 type SymbolsSpec struct {
+	config.StandardConfig
+
 	// Replicas defines the number of Symbols pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
@@ -294,9 +291,6 @@ type SymbolsSpec struct {
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 12Gi
 	StorageSize string `json:"storageSize,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 
 	// Env defines environment variables for Symbols.
 	Env map[string]string `json:"env,omitempty"`

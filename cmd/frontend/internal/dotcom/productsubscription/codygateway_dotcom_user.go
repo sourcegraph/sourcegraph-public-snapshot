@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
@@ -390,6 +390,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"fireworks/" + fireworks.Llama213bCode,
 			"fireworks/" + fireworks.StarcoderTwo15b,
 			"fireworks/" + fireworks.StarcoderTwo7b,
+			"fireworks/" + fireworks.Mixtral8x7bFineTunedModel,
 		}
 	default:
 		return []string{}

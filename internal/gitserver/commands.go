@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -1107,30 +1108,51 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, ba
 	return api.CommitID(res.GetMergeBaseCommitSha()), nil
 }
 
-// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
-func (c *clientImplementor) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) (err error) {
+func (c *clientImplementor) RevList(ctx context.Context, repo api.RepoName, commit string, count int) (_ []api.CommitID, nextCursor string, err error) {
 	ctx, _, endObservation := c.operations.revList.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
-			attribute.String("repo", repo),
+			repo.Attr(),
 			attribute.String("commit", commit),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
-	command := c.gitCommand(api.RepoName(repo), RevListArgs(commit)...)
-	command.DisableTimeout()
-	stdout, err := command.StdoutReader(ctx)
-	if err != nil {
-		return err
-	}
-	defer stdout.Close()
+	command := c.gitCommand(repo, revListArgs(count, commit)...)
 
-	return gitdomain.RevListEach(stdout, onCommit)
+	stdout, err := command.Output(ctx)
+	if err != nil {
+		return nil, "", err
+	}
+
+	commits := make([]api.CommitID, 0, count+1)
+
+	lr := byteutils.NewLineReader(stdout)
+	for lr.Scan() {
+		line := lr.Line()
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		commit := api.CommitID(line)
+		commits = append(commits, commit)
+	}
+
+	if len(commits) > count {
+		nextCursor = string(commits[len(commits)-1])
+		commits = commits[:count]
+	}
+
+	return commits, nextCursor, nil
 }
 
-func RevListArgs(givenCommit string) []string {
-	return []string{"rev-list", "--first-parent", givenCommit}
+func revListArgs(count int, givenCommit string) []string {
+	return []string{
+		"rev-list",
+		"--first-parent",
+		fmt.Sprintf("--max-count=%d", count+1),
+		givenCommit,
+	}
 }
 
 // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
@@ -1769,7 +1791,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 }
 
 // FirstEverCommit returns the first commit ever made to the repository.
-func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoName) (_ *gitdomain.Commit, err error) {
+func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoName) (commit *gitdomain.Commit, err error) {
 	ctx, _, endObservation := c.operations.firstEverCommit.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
@@ -1778,20 +1800,19 @@ func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoNa
 	})
 	defer endObservation(1, observation.Args{})
 
-	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.Output(ctx)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
+		return nil, err
 	}
-	lines := bytes.TrimSpace(out)
-	tokens := bytes.SplitN(lines, []byte("\n"), 2)
-	if len(tokens) == 0 {
-		return nil, errors.New("FirstEverCommit returned no revisions")
+
+	result, err := client.FirstEverCommit(ctx, &proto.FirstEverCommitRequest{
+		RepoName: string(repo),
+	})
+	if err != nil {
+		return nil, err
 	}
-	first := tokens[0]
-	id := api.CommitID(bytes.TrimSpace(first))
-	return c.GetCommit(ctx, repo, id)
+
+	return gitdomain.CommitFromProto(result.GetCommit()), nil
 }
 
 const (

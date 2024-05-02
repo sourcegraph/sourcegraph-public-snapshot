@@ -215,6 +215,14 @@ service GitserverService {
   rpc ContributorCounts(ContributorCountsRequest) returns (ContributorCountsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+
+  // FirstEverCommit returns the first commit ever made to the repository.
+  //
+  // If the given repository is empty, an error with a RevisionNotFoundPayload is
+  // returned.
+  rpc FirstEverCommit(FirstEverCommitRequest) returns (FirstEverCommitResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message ContributorCountsRequest {
@@ -1018,4 +1026,17 @@ message MergeBaseRequest {
 // revspecs.
 message MergeBaseResponse {
   string merge_base_commit_sha = 1;
+}
+
+// FirstEverCommitRequest is a request to get the first ever commit in a repo.
+message FirstEverCommitRequest {
+  // repo_name is the name of the repo to get the first ever commit for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+}
+
+// FirstEverCommitResponse is the response from getting the first ever commit in
+// a repo.
+message FirstEverCommitResponse {
+  GitCommit commit = 1;
 }

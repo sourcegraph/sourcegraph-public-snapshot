@@ -34,7 +34,7 @@
 <div class="root">
     <div class="avatar">
         <Tooltip tooltip={authorAvatarTooltip}>
-            <Avatar avatar={author} --avatar-size="1.5rem" />
+            <Avatar avatar={author} />
         </Tooltip>
     </div>
     {#if committer && committer.name !== author.name}
@@ -54,7 +54,7 @@
             {/if}
         </span>
         <span>committed by <strong>{author.name}</strong> <Timestamp date={commitDate} /></span>
-        {#if expanded}
+        {#if expanded && commit.body}
             <pre>{commit.body}</pre>
         {/if}
     </div>

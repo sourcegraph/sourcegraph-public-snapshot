@@ -35,30 +35,11 @@ func (r *Reconciler) reconcileBlobstore(ctx context.Context, sg *Sourcegraph, ow
 
 func buildBlobstorePersistentVolumeClaim(sg *Sourcegraph) (corev1.PersistentVolumeClaim, error) {
 	storage := sg.Spec.Blobstore.StorageSize
-	if storage == "" {
-		storage = "100Gi"
-	}
-
 	if _, err := resource.ParseQuantity(storage); err != nil {
 		return corev1.PersistentVolumeClaim{}, errors.Errorf("invalid blobstore storage size: %s", storage)
 	}
 
-	storageClassName := sg.Spec.StorageClass.Name
-	if storageClassName == "" {
-		storageClassName = "sourcegraph"
-	}
-
-	p := pvc.NewPersistentVolumeClaim("blobstore", sg.Namespace)
-	p.Spec.Resources = corev1.VolumeResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceStorage: resource.MustParse(storage),
-		},
-	}
-
-	// set StorageClass name if a custom storage class is being sgeated.
-	if sg.Spec.StorageClass.Create {
-		p.Spec.StorageClassName = &storageClassName
-	}
+	p := pvc.NewPersistentVolumeClaim("blobstore", sg.Namespace, resource.MustParse(storage), sg.Spec.StorageClass.Name)
 
 	return p, nil
 }
@@ -148,7 +129,7 @@ func buildBlobstoreDeployment(sg *Sourcegraph) appsv1.Deployment {
 		},
 	}
 
-	podTemplate := pod.NewPodTemplate(name)
+	podTemplate := pod.NewPodTemplate(name, sg.Spec.Blobstore)
 	podTemplate.Template.Spec.Containers = []corev1.Container{defaultContainer}
 	podTemplate.Template.Spec.Volumes = podVolumes
 

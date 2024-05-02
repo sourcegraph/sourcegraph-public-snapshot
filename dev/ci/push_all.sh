@@ -76,9 +76,9 @@ prod_registries=(
   "$PROD_REGISTRY"
 )
 
-additional_prod_registry=${ADDITIONAL_PROD_REGISTRY:-""}
-if [ -n "$additional_prod_registry" ]; then
-  prod_registries+=("$additional_prod_registry")
+if [ -n "${ADDITIONAL_PROD_REGISTRIES}" ]; then
+  IFS=' ' read -r -a registries <<< "$ADDITIONAL_PROD_REGISTRIES"
+  prod_registries+=("${registries[@]}")
 fi
 
 date_fragment="$(date +%Y-%m-%d)"

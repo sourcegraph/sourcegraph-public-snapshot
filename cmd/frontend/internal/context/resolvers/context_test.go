@@ -208,6 +208,14 @@ func TestContextResolver(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// TODO (taras-yemets): remove feature flag mocking after `CodyContextFilters` support is added to the IDE clients (see: https://github.com/sourcegraph/sourcegraph/pull/62231)
+			t.Cleanup(func() {
+				db.FeatureFlags().DeleteFeatureFlag(ctx, "cody-context-filters-enabled")
+			})
+			if !tt.dotComMode {
+				db.FeatureFlags().CreateBool(ctx, "cody-context-filters-enabled", true)
+			}
+
 			dotcom.MockSourcegraphDotComMode(t, tt.dotComMode)
 			observationCtx := observation.TestContextTB(t)
 			contextClient := codycontext.NewCodyContextClient(
