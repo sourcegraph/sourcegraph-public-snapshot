@@ -16,16 +16,20 @@ var ListEphemeralCommand = cli.Command{
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:  "json",
-			Usage: "print instances in JSON format",
+			Usage: "print the instance details in JSON",
+		},
+		&cli.BoolFlag{
+			Name:  "raw",
+			Usage: "print all of the instance details",
+		},
+		&cli.BoolFlag{
+			Name:  "all",
+			Usage: "list all instances, not just those that attached to your GCP account",
 		},
 	},
 }
 
 func listCloudEphemeral(ctx *cli.Context) error {
-	// while we work on this command we print a notice and ask to continue
-	if err := printWIPNotice(ctx); err != nil {
-		return err
-	}
 	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
 		return err
@@ -36,14 +40,17 @@ func listCloudEphemeral(ctx *cli.Context) error {
 		return err
 	}
 
-	instances, err := cloudClient.ListInstances(ctx.Context)
+	instances, err := cloudClient.ListInstances(ctx.Context, ctx.Bool("all"))
 	if err != nil {
 		return errors.Wrapf(err, "failed to list instances %v", err)
 	}
 	var printer Printer
-	if ctx.Bool("json") {
-		printer = &jsonInstancePrinter{w: os.Stdout}
-	} else {
+	switch {
+	case ctx.Bool("json"):
+		printer = newJSONInstancePrinter(os.Stdout)
+	case ctx.Bool("raw"):
+		printer = newRawInstancePrinter(os.Stdout)
+	default:
 		printer = newDefaultTerminalInstancePrinter()
 	}
 

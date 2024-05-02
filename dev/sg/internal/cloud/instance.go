@@ -2,12 +2,17 @@ package cloud
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	cloudapiv1 "github.com/sourcegraph/cloud-api/go/cloudapi/v1"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+var ErrLeaseTimeNotSet error = errors.New("lease time not set")
 
 type Instance struct {
 	ID           string `json:"id"`
@@ -15,72 +20,179 @@ type Instance struct {
 	InstanceType string `json:"instanceType"`
 	Environment  string `json:"environment"`
 	Version      string `json:"version"`
-	Hostname     string `json:"hostname"`
+	URL          string `json:"hostname"`
 	AdminEmail   string `json:"adminEmail"`
+	Features     *InstanceFeatures
 
-	CreatedAt time.Time `json:"createdAt"`
-	DeletedAt time.Time `json:"deletedAt"`
+	CreatedAt time.Time      `json:"createdAt"`
+	DeletedAt time.Time      `json:"deletedAt"`
+	Lease     *InstanceLease `json:"lease"`
 
-	Project string `json:"project"`
-	Region  string `json:"region"`
-	Status  string `json:"status"`
+	Project string         `json:"project"`
+	Region  string         `json:"region"`
+	Status  InstanceStatus `json:"status"`
 }
 
 func (i *Instance) String() string {
-	// TODO(burmudar): use formatting spacing
 	return fmt.Sprintf(`ID           : %s
 Name         : %s
 InstanceType : %s
 Environment  : %s
 Version      : %s
-Hostname     : %s
+URL          : %s
 AdminEmail   : %s
 CreatedAt    : %s
+DeletetAt    : %s
+ExpiresAt    : %s
 Project      : %s
 Region       : %s
-DeletetAt    : %s
 Status       : %s
-`, i.ID, i.Name, i.InstanceType, i.Environment, i.Version, i.Hostname, i.AdminEmail,
-		i.CreatedAt, i.Project, i.Region, i.DeletedAt,
-		i.Status)
+ActionURL    : %s
+Error        : %s
+`, i.ID, i.Name, i.InstanceType, i.Environment, i.Version, i.URL, i.AdminEmail,
+		i.CreatedAt.Format(time.RFC3339), i.DeletedAt.Format(time.RFC3339), i.Lease, i.Project, i.Region,
+		i.Status.Status, i.Status.ActionURL, i.Status.Error)
 }
-func newInstance(src *cloudapiv1.Instance) *Instance {
+
+type InstanceStatus struct {
+	Status    string `json:"status"`
+	ActionURL string `json:"actionUrl"`
+	Error     string `json:"error"`
+}
+
+type InstanceFeatures struct {
+	features map[string]string
+}
+
+type InstanceLease struct {
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+}
+
+func (l *InstanceLease) String() string {
+	if l.ExpiresAt == nil {
+		return ""
+	}
+	return l.ExpiresAt.Format(time.RFC3339)
+}
+
+func newInstanceStatus(src *cloudapiv1.InstanceState) (*InstanceStatus, error) {
+	url, reason, err := parseStatusReason(src.GetReason())
+	if err != nil {
+		return nil, err
+	}
+
+	status := InstanceStatus{
+		ActionURL: url,
+	}
+	switch src.GetInstanceStatus() {
+	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED:
+		status.Status = "unspecified"
+	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_OK:
+		status.Status = "completed"
+	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_PROGRESSING:
+		status.Status = "in progress"
+	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_FAILED:
+		status.Status = "failed"
+		status.Error = reason
+	default:
+		status.Status = "unknown"
+	}
+
+	return &status, nil
+}
+
+func newInstance(src *cloudapiv1.Instance) (*Instance, error) {
 	details := src.GetInstanceDetails()
 	platform := src.GetPlatformDetails()
+	status, err := newInstanceStatus(src.GetInstanceState())
+	if err != nil {
+		return nil, err
+	}
+	features := newInstanceFeatures(details.GetInstanceFeatures())
+	expiresAt, err := features.GetEphemeralLeaseTime()
+	if err != nil && !errors.Is(err, ErrLeaseTimeNotSet) {
+		return nil, err
+	}
+	lease := &InstanceLease{ExpiresAt: expiresAt}
+
 	return &Instance{
 		ID:           src.GetId(),
 		Name:         details.Name,
 		InstanceType: EphemeralInstanceType,
 		Version:      details.Version,
-		Hostname:     pointers.DerefZero(details.Hostname),
+		URL:          pointers.DerefZero(details.Url),
 		AdminEmail:   pointers.DerefZero(details.AdminEmail),
 		CreatedAt:    platform.GetCreatedAt().AsTime(),
 		DeletedAt:    platform.GetDeletedAt().AsTime(),
 		Project:      platform.GetGcpProjectId(),
 		Region:       platform.GetGcpRegion(),
-		Status:       resolveStatus(src.GetInstanceState()),
-	}
+		Status:       *status,
+		Lease:        lease,
+	}, nil
 }
 
-func resolveStatus(i *cloudapiv1.InstanceState) string {
-	switch i.InstanceStatus {
-	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED:
-		return "unspecified"
-	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_OK:
-		return "ok"
-	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_PROGRESSING:
-		return "in progress"
-	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_FAILED:
-		return "failed"
-	default:
-		return "unknown"
+func parseStatusReason(reason string) (string, string, error) {
+	if reason == "" {
+		return "", "", nil
 	}
+	parts := strings.Split(reason, ",")
+	if len(parts) != 2 {
+		return "", "", errors.Newf("invalid status reason format: %q", reason)
+	}
+	keyValue := strings.Split(parts[0], ":")
+	if len(keyValue) != 2 {
+		return "", "", errors.Newf("invalid field value at pos 0 in reason: %q", reason)
+	}
+	url := keyValue[1]
+	keyValue = strings.Split(parts[1], ":")
+	if len(keyValue) != 2 {
+		return "", "", errors.Newf("invalid field value at pos 0 in reason: %q", reason)
+	}
+	status := keyValue[1]
+
+	return url, status, nil
 }
 
-func toInstances(items ...*cloudapiv1.Instance) []*Instance {
+func toInstances(items ...*cloudapiv1.Instance) ([]*Instance, error) {
 	converted := []*Instance{}
 	for _, item := range items {
-		converted = append(converted, newInstance(item))
+		inst, err := newInstance(item)
+		if err != nil {
+			return nil, err
+		}
+		converted = append(converted, inst)
 	}
-	return converted
+	return converted, nil
+}
+
+func newInstanceFeatures(src map[string]string) *InstanceFeatures {
+	return &InstanceFeatures{
+		features: src,
+	}
+}
+
+func (f *InstanceFeatures) IsEphemeralInstance() bool {
+	v, ok := f.features["ephemeral_instance"]
+	if !ok {
+		return false
+	}
+	val, err := strconv.ParseBool(v)
+	if err != nil {
+		return false
+	}
+
+	return val
+}
+
+func (f *InstanceFeatures) GetEphemeralLeaseTime() (*time.Time, error) {
+	seconds, ok := f.features["ephemeral_instance_lease_time"]
+	if !ok {
+		return nil, ErrLeaseTimeNotSet
+	}
+	secondsInt, err := strconv.ParseInt(seconds, 10, 64)
+	if err != nil {
+		return nil, errors.Newf("failed to convert 'ephemeral_instance_lease_time' value %q to int64: %v", seconds, err)
+	}
+	leaseTime := time.Unix(secondsInt, 0)
+	return &leaseTime, nil
 }

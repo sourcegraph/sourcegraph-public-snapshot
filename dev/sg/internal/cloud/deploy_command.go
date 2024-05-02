@@ -166,7 +166,7 @@ func createDeploymentForVersion(ctx context.Context, name, version string) error
 	}
 
 	pending.Writef("Deploy instance details: \n%s", inst.String())
-	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Deployment %q created for version %q - access at: %s", name, version, inst.Hostname))
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Deployment %q created for version %q - access at: %s", name, version, inst.URL))
 	return nil
 }
 
