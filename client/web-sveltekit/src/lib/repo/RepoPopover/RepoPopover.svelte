@@ -78,7 +78,6 @@ For example:
             <div class="commit-info">
                 <div class="commit">
                     <small class="subject">{commit.subject}</small>
-                    <small>{CENTER_DOT}</small>
                     <small class="commit-number"
                         ><a href={commit.canonicalURL} target="_blank">
                             {commit.abbreviatedOID}
