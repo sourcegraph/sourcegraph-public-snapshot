@@ -269,6 +269,8 @@
         box-shadow: var(--bottom-panel-shadow);
         background-color: var(--color-bg-1);
         color: var(--text-body);
+        // Applying z-index to the bottom panel allows its shadow to cascade correctly
+        z-index: 1;
 
         &.open {
             height: 32vh;
