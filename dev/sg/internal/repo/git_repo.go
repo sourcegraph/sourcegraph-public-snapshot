@@ -76,6 +76,11 @@ func (g *GitRepo) Checkout(ctx context.Context) error {
 	return err
 }
 
+func (g *GitRepo) CheckoutNewBranch(ctx context.Context) error {
+	err := run.Cmd(ctx, "git", "checkout", "-b", g.Branch).Run().Wait()
+	return err
+}
+
 // ListChangedFiles lists the files that have changed since the last commit
 func (g *GitRepo) ListChangedFiles(ctx context.Context) ([]string, error) {
 	files, err := run.Cmd(ctx, "git diff --name-only").Run().Lines()
