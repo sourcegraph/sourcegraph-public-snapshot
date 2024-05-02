@@ -204,6 +204,7 @@ This service is operated on the %s.`,
 		}
 		md.List(overview)
 
+		md.Headingf(3, "%s environment Entitle requests", env.ID)
 		entitleIntro := `MSP infrastructure access needs to be requested using Entitle for time-bound privileges.`
 		if env.Category == spec.EnvironmentCategoryTest {
 			entitleIntro += " Test environments may have less stringent requirements."
