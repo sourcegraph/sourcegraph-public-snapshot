@@ -56,14 +56,8 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *Sour
 	// TODO: https://github.com/sourcegraph/sourcegraph/issues/62076
 	ctr.Image = "index.docker.io/sourcegraph/gitserver:5.3.2@sha256:6c6042cf3e5f3f16de9b82e3d4ab1647f8bb924cd315245bd7a3162f5489e8c4"
 
-	ctr.Env = []corev1.EnvVar{
-		container.NewEnvVarSecretKeyRef("REDIS_CACHE_ENDPOINT", "redis-cache", "endpoint"),
-		container.NewEnvVarSecretKeyRef("REDIS_STORE_ENDPOINT", "redis-store", "endpoint"),
-
-		// OTEL_AGENT_HOST must be defined before OTEL_EXPORTER_OTLP_ENDPOINT to substitute the node IP on which the DaemonSet pod instance runs in the latter variable
-		container.NewEnvVarFieldRef("OTEL_AGENT_HOST", "status.hostIP"),
-		{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://$(OTEL_AGENT_HOST):4317"},
-	}
+	ctr.Env = append(ctr.Env, container.EnvVarsRedis()...)
+	ctr.Env = append(ctr.Env, container.EnvVarsOtel()...)
 
 	ctr.Ports = []corev1.ContainerPort{
 		{Name: "rpc", ContainerPort: 3178},
