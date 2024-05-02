@@ -5,14 +5,14 @@
     import { onMount } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
-    import { Alert } from '$lib/wildcard'
     import Icon from '$lib/Icon.svelte'
     import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntryFields } from '$lib/repo/api/tree'
+    import FileIcon from '$lib/repo/FileIcon.svelte'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
+    import { replaceRevisionInURL } from '$lib/shared'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import { createForwardStore } from '$lib/utils'
-    import { replaceRevisionInURL } from '$lib/web'
-    import FileIcon from '$lib/repo/FileIcon.svelte'
+    import { Alert } from '$lib/wildcard'
 
     export let repoName: string
     export let treeProvider: FileTreeProvider
@@ -147,23 +147,27 @@
             border-radius: var(--border-radius);
 
             &:hover {
-                background-color: var(--color-bg-2);
+                background-color: var(--color-bg-3);
             }
         }
 
         :global(.treeitem.selected) > :global(.label) {
-            background-color: var(--color-bg-2);
+            background-color: var(--color-bg-3);
         }
     }
 
     a {
-        color: var(--body-color);
+        color: var(--text-body);
         flex: 1;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
         text-decoration: none;
         padding: 0.1rem 0;
+
+        &:hover {
+            color: var(--text-title);
+        }
     }
 
     .note {

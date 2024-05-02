@@ -46,14 +46,5 @@
       ".*_pb\\.go$": "ignore protobuff generated code",
       "dev/buildchecker/slack\\.go$": "ignore false positive"
     }
-  },
-  "exportloopref": {
-    "exclude_files": {
-      "lib/batches/env/var\\.go$": "false positive",
-      "rules_go.*/.*": "ignore rules_go working directory",
-      "external/.*": "no need to vet third party code",
-      ".*_generated\\.go$": "ignore generated code",
-      ".*_pb\\.go$": "ignore protobuff generated code"
-    }
   }
 }

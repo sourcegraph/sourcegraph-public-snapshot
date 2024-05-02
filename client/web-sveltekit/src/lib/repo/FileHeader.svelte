@@ -26,7 +26,6 @@
             index < all.length - 1 || type === 'tree' ? TREE_ROUTE_ID : BLOB_ROUTE_ID,
             {
                 repo: revision ? `${repoName}@${revision}` : repoName,
-                validrev: revision,
                 path: all.slice(0, index + 1).join('/'),
             }
         ),
@@ -96,7 +95,6 @@
         display: flex;
         align-items: baseline;
         padding: 0.25rem 0.5rem;
-        border-bottom: 1px solid var(--border-color);
         background-color: var(--color-bg-1);
         box-shadow: var(--fileheader-shadow);
         z-index: 1;
@@ -124,6 +122,10 @@
 
         a {
             color: var(--text-body);
+
+            &:hover {
+                color: var(--text-title);
+            }
         }
 
         .slash {

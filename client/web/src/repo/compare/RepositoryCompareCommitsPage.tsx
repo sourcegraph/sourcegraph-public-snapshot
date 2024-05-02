@@ -105,7 +105,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
                     <CardHeader>Commits</CardHeader>
                     <FilteredConnection<
                         GitCommitFields,
-                        Pick<GitCommitNodeProps, 'className' | 'compact' | 'wrapperElement'>
+                        Pick<GitCommitNodeProps, 'className' | 'compact' | 'wrapperElement' | 'telemetryRecorder'>
                     >
                         listClassName="list-group list-group-flush"
                         noun="commit"
@@ -117,6 +117,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
                             className: 'list-group-item',
                             compact: true,
                             wrapperElement: 'li',
+                            telemetryRecorder: this.props.telemetryRecorder,
                         }}
                         defaultFirst={50}
                         hideSearch={true}

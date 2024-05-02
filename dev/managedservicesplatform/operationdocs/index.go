@@ -23,6 +23,10 @@ func ServiceHandbookPath(service string) string {
 	return filepath.Join(HandbookDirectory, service+".md")
 }
 
+func EnvironmentHandbookPathDiagram(service, env string) string {
+	return filepath.Join(HandbookDirectory, service+"-"+env+".svg")
+}
+
 // ServiceHandbookPath designates where in sourcegraph/handbook the contents
 // of operationdocs.RenderIndexPage should go.
 func IndexPathHandbookPath() string {

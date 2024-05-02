@@ -43,7 +43,7 @@
             overflow: 'auto',
         },
         '.cm-content': {
-            padding: 0,
+            padding: '0.5rem 0',
             '&:focus-visible': {
                 outline: 'none',
                 boxShadow: 'none',
@@ -56,12 +56,23 @@
             backgroundColor: 'transparent',
         },
         '.cm-gutters': {
-            'background-color': 'transparent',
+            'background-color': 'var(--body-bg)',
             border: 'none',
             color: 'var(--line-number-color)',
         },
+        '.cm-gutterElement': {
+            lineHeight: '1.54',
+            minWidth: '40px !important',
+
+            '&:hover': {
+                color: 'var(--text-body)',
+            },
+        },
+        '.cm-lineNumbers .cm-gutterElement': {
+            padding: '0 1.5ex',
+        },
         '.cm-line': {
-            paddingLeft: '1ex',
+            lineHeight: '1.54',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
@@ -336,7 +347,7 @@
 
 <style lang="scss">
     .root {
-        --blame-decoration-width: 400px;
+        --blame-decoration-width: 300px;
         --blame-recency-width: 4px;
 
         height: 100%;

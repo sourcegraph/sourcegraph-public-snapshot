@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "calendar.go",
         "config.go",
+        "cut.go",
         "cve.go",
         "release.go",
     ],
@@ -14,6 +15,8 @@ go_library(
     deps = [
         "//dev/sg/internal/bk",
         "//dev/sg/internal/category",
+        "//dev/sg/internal/execute",
+        "//dev/sg/internal/repo",
         "//dev/sg/internal/std",
         "//internal/jsonc",
         "//lib/errors",

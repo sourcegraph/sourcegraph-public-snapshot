@@ -27,19 +27,6 @@ pkg_tar(
     srcs = [":gitserver"],
 )
 
-pkg_tar(
-    name = "tar_p4_fusion_wrappers",
-    srcs = [
-        "p4-fusion-wrapper-detect-kill.sh",
-        "process-stats-watcher.sh",
-    ],
-    remap_paths = {
-        "/p4-fusion-wrapper-detect-kill.sh": "/usr/local/bin/p4-fusion",
-        "/process-stats-watcher.sh": "/usr/local/bin/process-stats-watcher.sh",
-    },
-    visibility = ["//visibility:public"],
-)
-
 oci_image(
     name = "image",
     base = ":base_image",
@@ -50,7 +37,6 @@ oci_image(
     ],
     tars = [
         ":tar_gitserver",
-        ":tar_p4_fusion_wrappers",
     ],
     user = "sourcegraph",
     workdir = "/",

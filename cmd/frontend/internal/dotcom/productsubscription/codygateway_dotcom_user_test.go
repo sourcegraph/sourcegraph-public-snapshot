@@ -2,7 +2,6 @@ package productsubscription_test
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -13,19 +12,19 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/dotcom/productsubscription"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/audit/audittest"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
-	"github.com/sourcegraph/sourcegraph/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -313,7 +312,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		AccountSpec: extsvc.AccountSpec{
 			AccountID:   "123",
 			ServiceType: "openidconnect",
-			ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+			ServiceID:   ssc.GetSAMSServiceID(),
 		},
 	})
 	require.NoError(t, err)
@@ -328,7 +327,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		AccountSpec: extsvc.AccountSpec{
 			AccountID:   "456",
 			ServiceType: "openidconnect",
-			ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+			ServiceID:   ssc.GetSAMSServiceID(),
 		},
 	})
 	require.NoError(t, err)
@@ -343,7 +342,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		AccountSpec: extsvc.AccountSpec{
 			AccountID:   "789",
 			ServiceType: "openidconnect",
-			ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+			ServiceID:   ssc.GetSAMSServiceID(),
 		},
 	})
 	require.NoError(t, err)
@@ -358,7 +357,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		AccountSpec: extsvc.AccountSpec{
 			AccountID:   "abc",
 			ServiceType: "openidconnect",
-			ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+			ServiceID:   ssc.GetSAMSServiceID(),
 		},
 	})
 	require.NoError(t, err)

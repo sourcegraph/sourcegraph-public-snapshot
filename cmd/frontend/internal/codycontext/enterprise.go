@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -44,14 +45,18 @@ type filtersConfig struct {
 type enterpriseRepoFilter struct {
 	mu            sync.RWMutex
 	logger        log.Logger
+	db            database.DB
 	fc            filtersConfig
 	isConfigValid bool
 }
 
-// newEnterpriseFilter creates a new RepoContentFilter that filters out
+// newEnterpriseFilter creates a new repoContentFilter that filters out
 // content based on the Cody context filters value in the site config.
-func newEnterpriseFilter(logger log.Logger) RepoContentFilter {
-	f := &enterpriseRepoFilter{logger: logger.Scoped("filter")}
+func newEnterpriseFilter(logger log.Logger, db database.DB) repoContentFilter {
+	f := &enterpriseRepoFilter{
+		logger: logger.Scoped("filter"),
+		db:     db,
+	}
 	f.configure()
 	conf.Watch(func() {
 		f.configure()
@@ -65,11 +70,21 @@ func (f *enterpriseRepoFilter) getFiltersConfig() (_ filtersConfig, ok bool) {
 	return f.fc, f.isConfigValid
 }
 
-// GetFilter returns the list of repos that can be filtered based on the Cody context filter value in the site config.
-func (f *enterpriseRepoFilter) GetMatcher(_ context.Context, repos []types.RepoIDName) ([]types.RepoIDName, FileMatcher, error) {
+// getMatcher returns the list of repos that can be filtered based on the Cody context filter value in the site config.
+func (f *enterpriseRepoFilter) getMatcher(ctx context.Context, repos []types.RepoIDName) ([]types.RepoIDName, fileMatcher, error) {
+	// TODO: remove this check after `CodyContextFilters` support is added to the IDE clients.
+	enabled, err := checkFeatureFlagEnabled(ctx, f.db)
+	if err != nil {
+		return []types.RepoIDName{}, func(api.RepoID, string) bool { return false }, err
+	}
+	if !enabled {
+		// Cody context filters are not enabled, so allow everything.
+		return repos, func(api.RepoID, string) bool { return true }, nil
+	}
+
 	fc, ok := f.getFiltersConfig()
 	if !ok {
-		// our configuration is invalid, so filter everything out
+		// our configuration is invalid, so filter everything out.
 		return []types.RepoIDName{}, func(api.RepoID, string) bool { return false }, errors.New("Cody context filters configuration is invalid. Please contact your admin.")
 	}
 

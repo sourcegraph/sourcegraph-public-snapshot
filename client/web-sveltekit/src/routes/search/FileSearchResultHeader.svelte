@@ -1,6 +1,6 @@
 <script lang="ts">
     import { highlightRanges } from '$lib/dom'
-    import { splitPath, getFileMatchUrl, type ContentMatch, type PathMatch, type SymbolMatch } from '$lib/shared'
+    import { getFileMatchUrl, type ContentMatch, type PathMatch, type SymbolMatch } from '$lib/shared'
 
     import CopyPathButton from './CopyPathButton.svelte'
     import RepoRev from './RepoRev.svelte'
@@ -8,7 +8,6 @@
     export let result: ContentMatch | PathMatch | SymbolMatch
 
     $: fileURL = getFileMatchUrl(result)
-    $: [fileBase, fileName] = splitPath(result.path)
     $: rev = result.branches?.[0]
 
     $: matches =
@@ -22,7 +21,7 @@
 <span class="root">
     {#key result}
         <a class="path" href={fileURL} use:highlightRanges={{ ranges: matches }}>
-            {#if fileBase}{fileBase}/{/if}<span class="file-name">{fileName}</span>
+            {result.path}
         </a>
     {/key}
     <CopyPathButton path={result.path} />
@@ -39,13 +38,10 @@
 
     .interpunct {
         margin: 0 0.5rem;
-        color: var(--text-muted);
+        color: var(--text-disabled);
     }
 
     .path {
         color: var(--text-body);
-        .file-name {
-            font-weight: 600;
-        }
     }
 </style>

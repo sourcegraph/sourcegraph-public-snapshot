@@ -38,7 +38,7 @@ commandTests:
   - name: "coursier is runnable"
     command: "coursier"
   - name: "p4-fusion is runnable"
-    command: "p4-fusion-binary"
+    command: "p4-fusion"
     args:
     expectedOutput: ["--noBaseCommit"]
     exitCode: 1
@@ -56,16 +56,3 @@ fileExistenceTests:
   shouldExist: true
   uid: 100
   gid: 101
-# p4-fusion wrappers
-- name: '/usr/local/bin/p4-fusion'
-  path: '/usr/local/bin/p4-fusion'
-  shouldExist: true
-  uid: 0
-  gid: 0
-  permissions: '-r-xr-xr-x'
-- name: '/usr/local/bin/process-stats-watcher.sh'
-  path: '/usr/local/bin/process-stats-watcher.sh'
-  shouldExist: true
-  uid: 0
-  gid: 0
-  permissions: '-r-xr-xr-x'

@@ -311,6 +311,9 @@ sg msp pg connect -write-access %[1]s %[2]s`, s.Service.ID, env.ID)
 			}
 		}
 
+		md.Headingf(4, "%s Architecture Diagram", env.ID)
+		md.Paragraphf("!" + markdown.Linkf("Architecture Diagram", "./%s-%s.svg", s.Service.ID, env.ID))
+
 		md.Headingf(4, terraformCloudSectionHeading)
 
 		md.Paragraphf(`This service's configuration is defined in %s, and %s generates the required infrastructure configuration for this environment in Terraform.
@@ -340,7 +343,7 @@ If you make your Entitle request, then log in, you will be removed from any team
 		md.CodeBlockf("bash", `sg msp tfc view %s %s`, s.Service.ID, env.ID)
 	}
 
-	md.Headingf(3, "Alert Policies")
+	md.Headingf(2, "Alert Policies")
 
 	md.Paragraphf("The following alert policies are defined for each of this service's environments.")
 

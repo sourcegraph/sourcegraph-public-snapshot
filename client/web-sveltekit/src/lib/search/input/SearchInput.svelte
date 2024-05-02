@@ -113,6 +113,7 @@
 
 <script lang="ts">
     import { mdiClockOutline } from '@mdi/js'
+    import { registerHotkey } from '$lib/Hotkey'
 
     export let autoFocus = false
     export let size: 'normal' | 'compat' = 'normal'
@@ -150,6 +151,19 @@
         submitQuery: (query, view) => {
             void submitQuery($queryState.setQuery(query))
             view.contentDOM.blur()
+        },
+    })
+
+    registerHotkey({
+        keys: { key: '/' },
+        // Allows `/` symbol to populate input's value
+        // when input is focused
+        allowDefault: true,
+        handler: () => {
+            // If the search input doesn't have focus, focus it
+            // and disallow `/` symbol populate the input value
+            focus()
+            return false
         },
     })
 

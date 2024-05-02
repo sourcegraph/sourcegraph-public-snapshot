@@ -134,10 +134,12 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
     org,
     authenticatedUser,
     onOrganizationUpdate,
+    telemetryRecorder,
 }) => {
     React.useEffect(() => {
         EVENT_LOGGER.logViewEvent('OrgMembers')
-    }, [])
+        telemetryRecorder.recordEvent('org.members', 'view')
+    }, [telemetryRecorder])
 
     const navigate = useNavigate()
     const [onlyMemberRemovalAttempted, setOnlyMemberRemovalAttempted] = React.useState(false)
@@ -188,13 +190,14 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
 
     const onDidUpdate = React.useCallback(
         (didRemoveSelf: boolean) => {
+            telemetryRecorder.recordEvent('org.members', 'remove')
             if (didRemoveSelf) {
                 navigate('/user/settings')
             } else {
                 refetch()
             }
         },
-        [refetch, navigate]
+        [refetch, navigate, telemetryRecorder]
     )
 
     const totalCount = connection?.totalCount || 0
@@ -213,6 +216,7 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
                     authenticatedUser={authenticatedUser}
                     onOrganizationUpdate={onOrganizationUpdate}
                     onDidUpdateOrganizationMembers={refetch}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
             <Container className="mt-3">

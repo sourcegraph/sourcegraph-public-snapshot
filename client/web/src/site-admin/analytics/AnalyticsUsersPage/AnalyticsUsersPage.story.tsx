@@ -2,6 +2,7 @@ import type { MockedResponse } from '@apollo/client/testing'
 import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
@@ -695,6 +696,6 @@ const USER_ANALYTICS_QUERY_MOCK: MockedResponse<UsersStatisticsResult> = {
 
 export const AnalyticsUsersPageExample: StoryFn = () => (
     <MockedTestProvider mocks={[USER_ANALYTICS_QUERY_MOCK]}>
-        <AnalyticsUsersPage />
+        <AnalyticsUsersPage telemetryRecorder={noOpTelemetryRecorder} />
     </MockedTestProvider>
 )

@@ -8,6 +8,7 @@ import { capitalize } from 'lodash'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { useSettings } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, ButtonGroup, ErrorAlert, Link, Icon, Code, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
@@ -22,7 +23,7 @@ import { GitCommitNodeByline } from './GitCommitNodeByline'
 
 import styles from './GitCommitNode.module.scss'
 
-export interface GitCommitNodeProps {
+export interface GitCommitNodeProps extends TelemetryV2Props {
     node: GitCommitFields
 
     /** An optional additional CSS class name to apply to this element. */
@@ -86,6 +87,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     diffMode,
     onHandleDiffMode,
     wrapperElement: WrapperElement = 'div',
+    telemetryRecorder,
 }) => {
     const settings = useSettings()
 
@@ -102,12 +104,18 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
 
     const toggleShowCommitMessageBody = useCallback((): void => {
         EVENT_LOGGER.log('CommitBodyToggled')
+        telemetryRecorder.recordEvent('repo.commit.body', 'toggle')
         setShowCommitMessageBody(!showCommitMessageBody)
-    }, [showCommitMessageBody])
+    }, [showCommitMessageBody, telemetryRecorder])
 
     const copyToClipboard = useCallback(
         (oid: string): void => {
             EVENT_LOGGER.log(isPerforceDepot ? 'ChangelistIDCopiedToClipboard' : 'CommitSHACopiedToClipboard')
+            if (isPerforceDepot) {
+                telemetryRecorder.recordEvent('repo.commit.changelistID', 'copy')
+            } else {
+                telemetryRecorder.recordEvent('repo.commit.commitSHA', 'copy')
+            }
             copy(oid)
             setFlashCopiedToClipboardMessage(true)
             screenReaderAnnounce('Copied!')
@@ -116,7 +124,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                 setFlashCopiedToClipboardMessage(false)
             }, 1500)
         },
-        [isPerforceDepot]
+        [isPerforceDepot, telemetryRecorder]
     )
 
     if (extraCompact) {

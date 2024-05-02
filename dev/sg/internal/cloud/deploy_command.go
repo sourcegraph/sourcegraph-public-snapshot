@@ -1,6 +1,7 @@
 package cloud
 
 import (
+	"cmp"
 	"context"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/gitops"
 	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
@@ -28,24 +30,46 @@ var DeployEphemeralCommand = cli.Command{
 	Action:      deployCloudEphemeral,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
+			Name:        "name",
+			DefaultText: "the name of the ephemeral deployment. If not specified, the name will be derived from the branch name",
+		},
+		&cli.StringFlag{
 			Name:        "version",
 			DefaultText: "deploys an ephemeral cloud Sourcegraph environment with the specified version. The version MUST exist and implies that no build will be created",
 		},
+		&cli.StringFlag{
+			Name:        "tag",
+			DefaultText: "the git tag that should be deployed",
+		},
 		&cli.BoolFlag{
-			Name: "skip-wip-notice",
+			Name:        "skip-wip-notice",
+			DefaultText: "skips the EXPERIMENTAL notice prompt",
 		},
 	},
 }
 
-func determineVersion(build *buildkite.Build, tag string) string {
+func determineVersion(build *buildkite.Build, tag string) (string, error) {
+	if tag == "" {
+		t, err := gitops.GetLatestTag()
+		if err != nil {
+			if err != gitops.ErrNoTags {
+				return "", err
+				// if we get no tags then we use an empty string - this is how it is done in CI
+			}
+			t = ""
+		}
+		tag = t
+	}
+
 	return images.BranchImageTag(
 		time.Now(),
 		pointers.DerefZero(build.Commit),
 		pointers.DerefZero(build.Number),
 		pointers.DerefZero(build.Branch),
 		tag,
-	)
+	), nil
 }
+
 func oneOfEquals(value string, i ...string) bool {
 	for _, item := range i {
 		if value == item {
@@ -55,12 +79,12 @@ func oneOfEquals(value string, i ...string) bool {
 	return false
 }
 
-func getGcloudAccount(ctx context.Context) (string, error) {
+func getGCloudAccount(ctx context.Context) (string, error) {
 	return run.Cmd(ctx, "gcloud", "config", "get", "account").Run().String()
 }
 
 func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
-	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch is up to date with remote", currRepo.Branch, currRepo.Ref))
+	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote", currRepo.Branch))
 	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "branch is out of date with remote"))
 		return nil, err
@@ -88,10 +112,10 @@ func printWIPNotice(ctx *cli.Context) error {
 	if ctx.Bool("skip-wip-notice") {
 		return nil
 	}
-	notice := "This is command is still a work in progress and it is not recommend for general use! 🚨 Do you want to continue? (yes/no)"
+	notice := output.Line("🧪", output.StyleBold, "EXPERIMENTAL COMMAND - Do you want to continue? (yes/no)")
 
 	var answer string
-	if _, err := std.PromptAndScan(std.Out, notice, &answer); err != nil {
+	if _, err := std.FancyPromptAndScan(std.Out, notice, &answer); err != nil {
 		return err
 	}
 
@@ -102,23 +126,34 @@ func printWIPNotice(ctx *cli.Context) error {
 	return ErrUserCancelled
 }
 
-func listDeployedInstances(ctx context.Context) error {
-	cloudClient, err := NewClient(ctx, APIEndpoint)
+func createDeploymentForVersion(ctx context.Context, name, version string) error {
+	email, err := GetGCloudAccount(ctx)
+	if err != nil {
+		return err
+	}
+	if err := validateEmail(email); err != nil {
+		return err
+	}
+	cloudClient, err := NewClient(ctx, email, APIEndpoint)
 	if err != nil {
 		return err
 	}
 
-	// assigning it to a variable since it causes some font rendering issues in my editor on a line with more text
 	cloudEmoji := "☁️"
-	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Listing deployed instances"))
-	// Lets just list as a temporary sanity check that this works
-	inst, err := cloudClient.ListInstances(ctx)
+	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Creating deployment %q for version %q", name, version))
+
+	spec := NewDeploymentSpec(
+		name,
+		version,
+	)
+	inst, err := cloudClient.DeployVersion(ctx, spec)
 	if err != nil {
-		pending.Complete(output.Linef(output.EmojiWarning, output.StyleWarning, "failed to list deployed cloud ephemeral instances"))
-		return err
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "deployment failed: %v", err))
+		return errors.Wrapf(err, "failed to deploy version %v", version)
 	}
 
-	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Found %d instances\n", len(inst)))
+	pending.Writef("Deploy instance details: \n%s", inst.String())
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Deployment %q created for version %q - access at: %s", name, version, inst.Hostname))
 	return nil
 }
 
@@ -153,11 +188,12 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 			}
 			return err
 		}
-		_ = determineVersion(build, "")
+		version, err = determineVersion(build, ctx.String("tag"))
+		if err != nil {
+			return err
+		}
 	}
-	err = listDeployedInstances(ctx.Context)
-	// we could check if the version exists?
 
-	return err
-	// trigger cloud depoyment here
+	name := cmp.Or(ctx.String("name"), currRepo.Branch)
+	return createDeploymentForVersion(ctx.Context, name, version)
 }

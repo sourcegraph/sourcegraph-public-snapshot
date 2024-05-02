@@ -158,6 +158,7 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 			}
 			cp := *v
 			cp.CodeMonitorSearchWrapper = hook
+			cp.Concurrency = 1
 			return &cp
 		case *repos.ComputeExcludedJob, *jobutil.NoopJob:
 			// ComputeExcludedJob is fine for code monitor jobs, but should be

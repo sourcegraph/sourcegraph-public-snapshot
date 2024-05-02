@@ -267,6 +267,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         searchContextsEnabled={searchContextsEnabled}
                         isRepositoryRelatedPage={isRepositoryRelatedPage}
                         showKeywordSearchToggle={showKeywordSearchToggle}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
                     />
                 </div>
             )}

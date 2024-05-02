@@ -1,6 +1,8 @@
 <script lang="ts">
-    import Timestamp from '$lib/Timestamp.svelte'
     import { numberWithCommas } from '$lib/common'
+    import Timestamp from '$lib/Timestamp.svelte'
+    import { Badge } from '$lib/wildcard'
+
     import type { GitReference_Ref } from './GitReference.gql'
 
     export let ref: GitReference_Ref
@@ -13,19 +15,26 @@
 
 <tr>
     <td>
-        <a href={ref.url}><span class="ref px-1 py-0">{ref.displayName}</span></a>
+        <Badge variant="link"><a href={ref.url}>{ref.displayName}</a></Badge>
     </td>
     <td colspan={behind || ahead ? 1 : 2}>
         <a href={ref.url}>
             <small
-                >Updated {#if authorDate}<Timestamp date={authorDate} strict />{/if} by {authorName}</small
+                >Updated {#if authorDate}<span><Timestamp date={authorDate} strict /></span>{/if}
+                <span
+                    >by
+                    {authorName}</span
+                ></small
             ></a
         >
     </td>
     {#if ahead || behind}
         <td class="diff">
             <a href={ref.url}
-                ><small>{numberWithCommas(behind ?? 0)} behind, {numberWithCommas(ahead ?? 0)} ahead</small></a
+                ><small
+                    ><span>{numberWithCommas(behind ?? 0)} behind,</span>
+                    <span>{numberWithCommas(ahead ?? 0)} ahead</span></small
+                ></a
             >
         </td>
     {/if}
@@ -41,9 +50,8 @@
         border: none;
     }
 
-    .ref {
-        background-color: var(--subtle-bg);
-        border-radius: var(--border-radius);
+    span {
+        white-space: nowrap;
     }
 
     a {

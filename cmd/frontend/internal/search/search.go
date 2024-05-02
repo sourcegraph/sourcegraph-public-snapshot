@@ -22,7 +22,6 @@ import (
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -157,7 +156,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 	progress := &streamclient.ProgressAggregator{
 		Start:        start,
 		Limit:        limit,
-		Trace:        trace.URL(trace.ID(ctx), conf.DefaultClient()),
+		Trace:        trace.URL(trace.ID(ctx)),
 		DisplayLimit: displayFilter.MatchLimit,
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}

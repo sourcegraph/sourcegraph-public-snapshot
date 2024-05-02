@@ -72,7 +72,7 @@ resources:
   kind: PersistentVolumeClaim
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: ec8df597cb447c262ad15de9e72b1f836e1b631c928fcc06914500caa58f8cc3
+      appliance.sourcegraph.com/configHash: d33e42f7a0651e109c1a55ae881f9e3000e194cb5257dad1714cf26d5a370b3c
     creationTimestamp: "2024-04-19T00:00:00Z"
     deletionGracePeriodSeconds: 0
     deletionTimestamp: "2024-04-19T00:00:00Z"
@@ -90,6 +90,7 @@ resources:
     resources:
       requests:
         storage: 100Gi
+    storageClassName: sourcegraph
     volumeMode: Filesystem
   status:
     phase: Pending

@@ -4,6 +4,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 
 import { requestGraphQL } from '../../backend/graphql'
@@ -64,7 +65,11 @@ export const USER_EXTERNAL_ACCOUNTS = gql`
     }
 `
 
-export function updatePassword(args: UpdatePasswordVariables): Observable<void> {
+interface updatePasswordProps extends TelemetryV2Props {
+    args: UpdatePasswordVariables
+}
+
+export function updatePassword(props: updatePasswordProps): Observable<void> {
     return requestGraphQL<UpdatePasswordResult, UpdatePasswordVariables>(
         gql`
             mutation UpdatePassword($oldPassword: String!, $newPassword: String!) {
@@ -73,14 +78,16 @@ export function updatePassword(args: UpdatePasswordVariables): Observable<void> 
                 }
             }
         `,
-        args
+        props.args
     ).pipe(
         map(({ data, errors }) => {
             if (!data?.updatePassword) {
                 EVENT_LOGGER.log('UpdatePasswordFailed')
+                props.telemetryRecorder.recordEvent('settings.password', 'updateFail')
                 throw createAggregateError(errors)
             }
             EVENT_LOGGER.log('PasswordUpdated')
+            props.telemetryRecorder.recordEvent('settings.password', 'update')
         })
     )
 }
