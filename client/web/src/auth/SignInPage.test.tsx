@@ -240,6 +240,7 @@ describe('SignInPage', () => {
                 serviceID: 'https://github.com',
                 clientID: '1234',
                 noSignIn: false,
+                requiredForAuthz: false,
             },
         ]
 
@@ -256,6 +257,7 @@ describe('SignInPage', () => {
                 serviceID: 'https://github.com',
                 clientID: '1234',
                 noSignIn: false,
+                requiredForAuthz: false,
             },
         ]
 
