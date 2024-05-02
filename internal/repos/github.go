@@ -829,19 +829,45 @@ func (s *GitHubSource) listAffiliatedPage(ctx context.Context, first int, result
 // all of the internal repositories belonging to these organizations by using
 // a search query. This leads to much fewer requests to the GitHub API.
 func (s *GitHubSource) listInternal(ctx context.Context, results chan *githubResult) {
-	orgs, err := fetchAll(func(page int) (items []*github.Org, hasNext bool, cost int, err error) {
-		return s.v3Client.GetAuthenticatedUserOrgs(ctx, page)
-	})
-	if err != nil {
-		results <- &githubResult{err: err}
-		return
+	orgs := []string{}
+	if s.config.GitHubAppDetails != nil {
+		page := 1
+		for {
+			installs, hasNextPage, err := s.v3Client.GetAppInstallations(ctx, page)
+			if err != nil {
+				results <- &githubResult{err: err}
+				return
+			}
+
+			for _, install := range installs {
+				orgs = append(orgs, *install.Account.Login)
+			}
+
+			if !hasNextPage {
+				return
+			}
+
+			page += 1
+		}
+	} else {
+		allOrgs, err := fetchAll(func(page int) (items []*github.Org, hasNext bool, cost int, err error) {
+			return s.v3Client.GetAuthenticatedUserOrgs(ctx, page)
+		})
+		if err != nil {
+			results <- &githubResult{err: err}
+			return
+		}
+
+		for _, org := range allOrgs {
+			orgs = append(orgs, org.Login)
+		}
 	}
 
 	var sb strings.Builder
 
 	for _, org := range orgs {
 		sb.WriteString("org:")
-		sb.WriteString(org.Login)
+		sb.WriteString(org)
 		sb.WriteString(" ")
 	}
 	sb.WriteString("is:internal")
