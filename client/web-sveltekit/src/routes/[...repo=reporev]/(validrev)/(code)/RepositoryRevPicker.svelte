@@ -60,8 +60,8 @@
     }
 </script>
 
-<Popover let:registerTrigger let:toggle placement="right-start">
-    <div class="button-group" class:is-on-specific-rev={isOnSpecificRev}>
+<Popover let:registerTrigger let:registerTarget let:toggle placement="right-start">
+    <div use:registerTarget class="button-group" class:is-on-specific-rev={isOnSpecificRev}>
         <Button variant="secondary" size="sm">
             <svelte:fragment slot="custom" let:buttonClass>
                 <button use:registerTrigger class={`${buttonClass} revision-trigger`} on:click={() => toggle()}>
