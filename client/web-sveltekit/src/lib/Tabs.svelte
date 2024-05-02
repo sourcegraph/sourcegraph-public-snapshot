@@ -103,16 +103,11 @@
     [role='tab'] {
         all: unset;
 
-        margin: 0;
-        border: none;
         cursor: pointer;
-        background: none;
         align-items: center;
-        letter-spacing: normal;
         min-height: 2rem;
         padding: 0.25rem 0.75rem;
         color: var(--text-body);
-        text-transform: none;
         display: inline-flex;
         flex-flow: row nowrap;
         justify-content: center;
@@ -138,7 +133,6 @@
         &[aria-selected='true'] {
             font-weight: 500;
             color: var(--text-title);
-            border-color: var(--brand-secondary);
 
             &::after {
                 border-color: var(--brand-secondary);
