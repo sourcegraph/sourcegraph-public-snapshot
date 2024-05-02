@@ -56,6 +56,7 @@ function isContentField(event: KeyboardEvent): boolean {
 
 function wrapHandler(handler: KeyHandler, allowDefault: boolean = false, ignoreInputFields: boolean = true) {
     return (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => {
+        // "Pass through" ignored events to allow them being processed by the target element
         if (ignoreInputFields && isContentField(keyboardEvent)) {
             return true
         }
