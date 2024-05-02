@@ -1,0 +1,17 @@
+# GetTeamById returns a team by its identifier or UUID
+query GetTeamById($id: String!) {
+    team(id: $id) {
+        id
+        name
+        key
+    }
+}
+
+# MoveIssueToTeam moves issue between teams
+# - issueId: UUID or identifier of the issue to move
+# - teamId: UUID of the team to move the issue to
+mutation MoveIssueToTeam($issueId: String!, $teamId: String!) {
+    issueUpdate(id: $issueId, input: { teamId: $teamId }) {
+        lastSyncId
+    }
+}
