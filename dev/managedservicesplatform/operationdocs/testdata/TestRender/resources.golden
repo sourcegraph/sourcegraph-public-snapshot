@@ -82,7 +82,7 @@ sg msp pg connect -write-access msp-testbed test
 
 - Dataset Project: `msp-testbed-test-77589aae45d0`
 - Dataset ID: `msp_testbed`
-- Tables:
+- Tables: 
   - [`bar`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/bar.bigquerytable.json)
   - [`baz`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/baz.bigquerytable.json)
 

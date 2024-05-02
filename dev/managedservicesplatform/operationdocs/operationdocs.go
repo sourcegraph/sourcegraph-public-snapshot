@@ -167,11 +167,13 @@ This service is operated on the %s.`,
 			"Project ID: " + markdown.Linkf(markdown.Code(env.ProjectID), cloudRunURL),
 			"Category: " + markdown.Bold(string(env.Category)),
 			"Deployment type: " + fmt.Sprintf("`%s`", env.Deploy.Type),
-			"Resources: ", mapTo(env.Resources.List(), func(k string) string {
-				l, h := markdown.HeadingLinkf("%s %s", env.ID, k)
-				resourceHeadings[k] = h
-				return l
-			}),
+			"Resources: ", coalesceSlice(
+				mapTo(env.Resources.List(), func(k string) string {
+					l, h := markdown.HeadingLinkf("%s %s", env.ID, k)
+					resourceHeadings[k] = h
+					return l
+				}),
+				[]string{"none"}),
 			"Slack notifications: " + markdown.Linkf("#"+slackChannelName, "https://sourcegraph.slack.com/archives/"+slackChannelName),
 			"Alert policies: " +
 				fmt.Sprintf("%s, %s",
@@ -270,7 +272,7 @@ sg msp pg connect -write-access %[1]s %[2]s`, s.Service.ID, env.ID)
 				md.List([]any{
 					"Dataset Project: " + markdown.Code(pointers.Deref(bq.ProjectID, env.ProjectID)),
 					"Dataset ID: " + markdown.Code(bq.GetDatasetID(s.Service.ID)),
-					"Tables:", mapTo(bq.Tables, func(t string) string {
+					"Tables: ", mapTo(bq.Tables, func(t string) string {
 						return markdown.Linkf(markdown.Code(t),
 							"https://github.com/sourcegraph/managed-services/blob/main/services/%s/%s.bigquerytable.json",
 							s.Service.ID, t)
@@ -349,4 +351,11 @@ func mapTo[InputT any, OutputT any](input []InputT, mapFn func(InputT) OutputT) 
 		output = append(output, mapFn(i))
 	}
 	return output
+}
+
+func coalesceSlice[T any](a []T, b any) any {
+	if len(a) > 0 {
+		return a
+	}
+	return b
 }
