@@ -1,16 +1,28 @@
 <script lang="ts">
-    import { page } from '$app/stores'
     import { highlightRanges } from '$lib/dom'
+    import { getGraphQLClient } from '$lib/graphql'
     import Popover from '$lib/Popover.svelte'
     import RepoPopover from '$lib/repo/RepoPopover/RepoPopover.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { displayRepoName } from '$lib/shared'
 
+    import { RepoPopoverQuery } from '../layout.gql'
+
     export let repoName: string
     export let rev: string | undefined
     export let highlights: [number, number][] = []
 
-    $: repoPopoverData = $page.data.fetchRepoPopoverInfo(repoName)
+    const fetchPopoverInfo = async (repo: string) => {
+        const client = getGraphQLClient()
+        const popoverInfo = await client.query(RepoPopoverQuery, { repoName })
+        if (popoverInfo.data) {
+            return popoverInfo.data.repository
+        }
+        console.error('Failed to fetch popover info for', repo)
+        throw new Error('Failed to fetch popover info')
+    }
+
+    $: popoverInfo = fetchPopoverInfo(repoName)
     $: href = `/${repoName}${rev ? `@${rev}` : ''}`
     $: displayName = displayRepoName(repoName)
     $: if (displayName !== repoName) {
@@ -33,8 +45,10 @@
                 {/if}
             </a>
             <div slot="content">
-                {#await repoPopoverData then repoPopoverData}
-                    <RepoPopover repo={repoPopoverData} withHeader={true} />
+                {#await popoverInfo then popoverInfo}
+                    {#if popoverInfo !== null}
+                        <RepoPopover repo={popoverInfo} withHeader={true} />
+                    {/if}
                 {/await}
             </div>
         </Popover>

@@ -19,6 +19,8 @@ import {
 } from '$lib/shared'
 
 import type { PageLoad } from './$types'
+import { getGraphQLClient } from '$lib/graphql'
+import { RepoPopoverQuery } from '../layout.gql'
 
 type SearchStreamCacheEntry = Observable<AggregateStreamingSearchResults>
 
@@ -142,6 +144,7 @@ export const load: PageLoad = ({ url, depends }) => {
             searchStream,
             queryFilters,
             queryFromURL: query,
+            // fetchRepoPopoverData,
             queryOptions: {
                 query: withoutGlobalContext(query),
                 caseSensitive,
@@ -157,6 +160,16 @@ export const load: PageLoad = ({ url, depends }) => {
         },
     }
 }
+
+/* const fetchRepoPopoverData = async (repo: string) => {
+    let client = getGraphQLClient()
+    let result = await client.query(RepoPopoverQuery, { repoName: repo })
+
+    if (result.error || !result.data) {
+        throw new Error('Failed to fetch repo popover data')
+    }
+    return result.data.repository
+} */
 
 function withoutGlobalContext(query: string): string {
     // TODO: Validate search context

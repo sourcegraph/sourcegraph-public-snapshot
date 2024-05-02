@@ -39,7 +39,6 @@
         queryFromURL={data.queryFromURL}
         {queryState}
         selectedFilters={data.queryFilters}
-        fetchRepoPopoverData={data.fetchRepoPopoverInfo}
     />
 {:else}
     <SearchHome {queryState} />
