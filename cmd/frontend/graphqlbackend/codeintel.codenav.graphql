@@ -563,7 +563,31 @@ An empty filter allows all kinds of usages for all paths in all repositories.
 However, if the symbol used for lookup is a file-local symbol or a
 repository-local symbol, then usages will automatically be limited to the
 same file or same repository respectively.
+
+Filters are combined monoidally, i.e. all filters are applied. For example,
+
+```
+{and: [u1, u2], or: [u3, u4], not: u5}
+```
+
+would be equivalent to:
+
+```
+{and: [{and: [u1, u2]}, {or: [u3, u4]}, {not: u5}]}
+```
 """
+# Design Rationale:
+#
+# 1. The ref panel did separate queries for 'this repo' vs 'all other repos'
+#    https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/codeintel/searchBased.ts?L105:13-105:23#tab=references
+#    That requires `NOT` (at least for a `repo`).
+# 2. The ref panel has a way to specify paths for filtering. This requires AND.
+#    AND will not be part of the first implementation pass. However,
+#    it would allow fetching less data instead of post-filtering client-side.
+# 3. Currently, the ref panel has a setting for only showing precise results.
+#    Once syntactic is added, if we want to allow the user to specify either
+#    syntactic or precise (but not search-based), we'd need OR.
+#    OR will also not be needed for the first implementation pass.
 input UsagesFilter {
     and: [UsagesFilter!]
     or: [UsagesFilter!]
