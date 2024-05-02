@@ -6,23 +6,24 @@
     import Tooltip from '$lib/Tooltip.svelte'
     import { Button } from '$lib/wildcard'
 
-    export let path: string
+    export let value: string
+    export let label = 'Copy to clipboard'
 
     let recentlyCopied = false
     function handleCopyPath(): void {
-        copy(path)
+        copy(value)
         recentlyCopied = true
         setTimeout(() => {
             recentlyCopied = false
         }, 1000)
     }
 
-    $: tooltip = recentlyCopied ? 'Copied!' : 'Copy path to clipboard'
+    $: tooltip = recentlyCopied ? 'Copied!' : label
 </script>
 
-<span data-visible-on-focus class="copy-path-button">
+<span class="copy-path-button">
     <Tooltip {tooltip} placement="bottom">
-        <Button on:click={() => handleCopyPath()} variant="icon" size="sm" aria-label="Copy path to clipboard">
+        <Button on:click={handleCopyPath} variant="icon" size="sm" aria-label={label}>
             <Icon inline svgPath={mdiContentCopy} aria-hidden />
         </Button>
     </Tooltip>
@@ -30,6 +31,8 @@
 
 <style lang="scss">
     .copy-path-button {
+        display: contents;
+
         --color: var(--icon-color);
         &:hover {
             --color: var(--body-color);

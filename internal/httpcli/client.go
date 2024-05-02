@@ -209,9 +209,9 @@ var ExternalClient, _ = ExternalClientFactory.Client()
 // WARN: This client does not cache responses. To cache responses see ExternalClient instead.
 var UncachedExternalClient, _ = UncachedExternalClientFactory.Client()
 
-// InternalClientFactory is a httpcli.Factory with common options
+// internalClientFactory is a httpcli.Factory with common options
 // and middleware pre-set for communicating with internal services.
-var InternalClientFactory = NewInternalClientFactory("internal")
+var internalClientFactory = newInternalClientFactory("internal")
 
 var (
 	internalTimeout, _               = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_TIMEOUT", "0", "Timeout for internal HTTP requests"))
@@ -221,10 +221,10 @@ var (
 	internalRetryAfterMaxDuration, _ = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_AFTER_MAX_DURATION", "3s", "Max duration to wait in retry-after header before we won't auto-retry"))
 )
 
-// NewInternalClientFactory returns a httpcli.Factory with common options
+// newInternalClientFactory returns a httpcli.Factory with common options
 // and middleware pre-set for communicating with internal services. Additional
 // middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
-func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Factory {
+func newInternalClientFactory(subsystem string, middleware ...Middleware) *Factory {
 	mw := []Middleware{
 		ContextErrorMiddleware,
 	}
@@ -248,11 +248,11 @@ func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Facto
 
 // InternalDoer is a shared client for internal communication. This is a
 // convenience for existing uses of http.DefaultClient.
-var InternalDoer, _ = InternalClientFactory.Doer()
+var InternalDoer, _ = internalClientFactory.Doer()
 
 // InternalClient returns a shared client for internal communication. This is
 // a convenience for existing uses of http.DefaultClient.
-var InternalClient, _ = InternalClientFactory.Client()
+var InternalClient, _ = internalClientFactory.Client()
 
 // Doer returns a new Doer wrapped with the middleware stack
 // provided in the Factory constructor and with the given common
@@ -764,15 +764,13 @@ func extractRetryAfter(response *http.Response) (retryAfterHeader string, retryA
 			}
 
 			// If we weren't able to parse as seconds, try to parse as RFC1123.
+			after, err := time.Parse(time.RFC1123, retryAfterHeader)
 			if err != nil {
-				after, err := time.Parse(time.RFC1123, retryAfterHeader)
-				if err != nil {
-					// We don't know how to parse this header
-					return retryAfterHeader, nil
-				}
-				in := time.Until(after)
-				return retryAfterHeader, &in
+				// We don't know how to parse this header
+				return retryAfterHeader, nil
 			}
+			in := time.Until(after)
+			return retryAfterHeader, &in
 		}
 	}
 	return retryAfterHeader, nil

@@ -45,7 +45,7 @@
         overflow: hidden;
         display: flex;
         flex-wrap: wrap;
-        align-items: baseline;
+        align-items: center;
 
         // .title-inner
         overflow-wrap: anywhere;
@@ -62,6 +62,7 @@
     }
 
     .body:not(:empty) {
+        background-color: var(--code-bg);
         border-bottom: 1px solid var(--border-color);
     }
 </style>

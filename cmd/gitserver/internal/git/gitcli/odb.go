@@ -3,6 +3,7 @@ package gitcli
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -186,6 +187,58 @@ func (g *gitCLIBackend) getBlobOID(ctx context.Context, commit api.CommitID, pat
 		return "", errIsSubmodule
 	}
 	return api.CommitID(fields[2]), nil
+}
+
+func (g *gitCLIBackend) BehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error) {
+	if err := checkSpecArgSafety(left); err != nil {
+		return nil, err
+	}
+	if err := checkSpecArgSafety(right); err != nil {
+		return nil, err
+	}
+
+	if left == "" {
+		left = "HEAD"
+	}
+
+	if right == "" {
+		right = "HEAD"
+	}
+
+	rc, err := g.NewCommand(ctx, WithArguments("rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right)))
+	if err != nil {
+		return nil, errors.Wrap(err, "running git rev-list")
+	}
+	defer rc.Close()
+
+	out, err := io.ReadAll(rc)
+	if err != nil {
+		var e *CommandFailedError
+		if errors.As(err, &e) {
+			switch {
+			case e.ExitStatus == 128 && bytes.Contains(e.Stderr, []byte("fatal: ambiguous argument")):
+				fallthrough
+			case e.ExitStatus == 128 && bytes.Contains(e.Stderr, []byte("fatal: Invalid symmetric difference expression")):
+				return nil, &gitdomain.RevisionNotFoundError{
+					Repo: g.repoName,
+					Spec: fmt.Sprintf("%s...%s", left, right),
+				}
+			}
+		}
+
+		return nil, errors.Wrap(err, "reading git rev-list output")
+	}
+
+	behindAhead := strings.Split(strings.TrimSuffix(string(out), "\n"), "\t")
+	b, err := strconv.ParseUint(behindAhead[0], 10, 0)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse behindahead output %q", out)
+	}
+	a, err := strconv.ParseUint(behindAhead[1], 10, 0)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse behindahead output %q", out)
+	}
+	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
 func (g *gitCLIBackend) FirstEverCommit(ctx context.Context) (api.CommitID, error) {

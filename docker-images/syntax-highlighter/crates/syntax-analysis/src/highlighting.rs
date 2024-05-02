@@ -1,13 +1,17 @@
 pub mod syntect_html;
 pub mod syntect_scip;
 
+use std::{
+    fmt::{Debug, Display, Formatter},
+    path::Path,
+};
+
 use anyhow::anyhow;
 use protobuf::Message;
-use std::fmt::{Debug, Display, Formatter};
-use std::path::Path;
-use syntect::html::ClassStyle;
-
-use syntect::parsing::{SyntaxReference, SyntaxSet};
+use syntect::{
+    html::ClassStyle,
+    parsing::{SyntaxReference, SyntaxSet},
+};
 
 pub mod tree_sitter;
 use crate::highlighting::syntect_html::ClassedTableGenerator;

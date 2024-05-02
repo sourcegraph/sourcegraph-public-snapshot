@@ -106,4 +106,3 @@ expression: dumped
   foo = 1; bar = foo
 //^^^ definition(Variable) scip-ctags foo.
 //         ^^^ definition(Variable) scip-ctags bar.
-

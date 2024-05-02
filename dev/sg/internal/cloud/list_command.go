@@ -12,7 +12,7 @@ var ListEphemeralCommand = cli.Command{
 	Name:        "list",
 	Usage:       "sg could list",
 	Description: "list ephemeral cloud instances attached to your GCP account",
-	Action:      listCloudEphemeral,
+	Action:      wipAction(listCloudEphemeral),
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:  "json",
@@ -44,22 +44,8 @@ func listCloudEphemeral(ctx *cli.Context) error {
 	if ctx.Bool("json") {
 		printer = &jsonInstancePrinter{w: os.Stdout}
 	} else {
-		valueFunc := func(inst *Instance) []any {
-			name := inst.Name
-			if len(name) > 20 {
-				name = name[:20]
-			}
-
-			status := inst.Status
-			createdAt := inst.CreatedAt.String()
-
-			return []any{
-				name, status, createdAt,
-			}
-
-		}
-		printer = newTerminalInstancePrinter(valueFunc, "%-20s %-11s %s", "Name", "Status", "Created At")
+		printer = newDefaultTerminalInstancePrinter()
 	}
 
-	return printer.Print(instances)
+	return printer.Print(instances...)
 }

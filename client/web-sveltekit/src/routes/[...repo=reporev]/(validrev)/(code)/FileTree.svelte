@@ -165,6 +165,10 @@
         text-decoration: none;
         padding: 0.1rem 0;
 
+        :global(.treeitem.selected) & {
+            color: var(--text-title);
+        }
+
         &:hover {
             color: var(--text-title);
         }

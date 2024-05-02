@@ -36,10 +36,9 @@ pub fn get_locals(parser: ParserId, source: &str) -> Result<Vec<Occurrence>> {
 mod test {
     use std::{io::BufWriter, path::Path};
 
-    use crate::snapshot::dump_document;
     use tree_sitter_all_languages::ParserId;
 
-    use crate::ctags::generate_tags;
+    use crate::{ctags::generate_tags, snapshot::dump_document};
 
     macro_rules! generate_tags_and_snapshot {
         (Scip, $scip_name:tt, $filename:tt) => {
@@ -94,7 +93,12 @@ mod test {
     generate_tags_and_snapshot!(Scip, test_scip_python_comp, "python-repo-comp.py");
     generate_tags_and_snapshot!(All, test_tags_ruby, test_scip_ruby, "ruby-globals.rb");
     generate_tags_and_snapshot!(Scip, test_scip_java, "globals.java");
-    generate_tags_and_snapshot!(Scip, test_scip_typescript, "globals.ts");
+    generate_tags_and_snapshot!(
+        All,
+        test_tags_typescript,
+        test_scip_typescript,
+        "globals.ts"
+    );
     generate_tags_and_snapshot!(All, test_tags_csharp, test_scip_csharp, "globals.cs");
     generate_tags_and_snapshot!(Scip, test_scip_scala, "globals.scala");
     generate_tags_and_snapshot!(All, test_tags_kotlin, test_scip_kotlin, "globals.kt");

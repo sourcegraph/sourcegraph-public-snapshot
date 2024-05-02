@@ -56,7 +56,7 @@
             backgroundColor: 'transparent',
         },
         '.cm-gutters': {
-            'background-color': 'var(--body-bg)',
+            'background-color': 'var(--code-bg)',
             border: 'none',
             color: 'var(--line-number-color)',
         },

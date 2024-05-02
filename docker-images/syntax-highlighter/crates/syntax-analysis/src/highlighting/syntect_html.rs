@@ -1,4 +1,5 @@
 use std::fmt::Write;
+
 use syntect::{
     html::ClassStyle,
     parsing::{
@@ -234,8 +235,7 @@ impl<'a> fmt::Display for Escape<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::highlighting::test::SYNTAX_SET;
-    use crate::highlighting::{FileInfo, HighlightingBackend};
+    use crate::highlighting::{test::SYNTAX_SET, FileInfo, HighlightingBackend};
 
     fn test_css_table_highlight(
         file_info: &FileInfo<'_>,

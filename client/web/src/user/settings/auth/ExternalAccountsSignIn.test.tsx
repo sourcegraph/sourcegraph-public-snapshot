@@ -42,6 +42,7 @@ const mockAuthProviders: AuthProvider[] = [
         isBuiltin: false,
         authenticationURL: 'https://example.com',
         noSignIn: false,
+        requiredForAuthz: false,
     },
 ]
 

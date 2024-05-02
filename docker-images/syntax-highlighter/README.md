@@ -47,6 +47,12 @@ By default on startup, `syntect_server` will list all file types it supports. Th
 2. Use `cargo run --bin syntect_server` to run the server locally.
 3. You can change the `SRC_SYNTECT_SERVER` option in your `sg.config.yaml` to point to whatever port you're running on (usually 8000) and test against that without building the docker image.
 
+For formatting, run:
+
+```bash
+bazel run @rules_rust//:rustfmt
+```
+
 ### Testing syntect -> SCIP grammar mappings
 
 <!-- NOTE(id: only-flag) -->
