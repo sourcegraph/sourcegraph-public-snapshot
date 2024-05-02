@@ -48,6 +48,8 @@ var cloudCommand = &cli.Command{
 		&cloud.DeployEphemeralCommand,
 		&cloud.ListEphemeralCommand,
 		&cloud.ListVersionsEphemeralCommand,
+		&cloud.StatusEphemeralCommand,
+		&cloud.DeleteEphemeralCommand,
 	},
 }
 

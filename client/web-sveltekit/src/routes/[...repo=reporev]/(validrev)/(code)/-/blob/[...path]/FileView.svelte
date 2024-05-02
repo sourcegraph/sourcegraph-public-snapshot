@@ -279,6 +279,7 @@
         overflow: auto;
         flex: 1;
         background-color: var(--code-bg);
+        padding: 0.25rem 0;
 
         &.center {
             display: flex;
@@ -292,9 +293,14 @@
         display: flex;
         align-items: baseline;
         gap: 1rem;
-        padding: 0.5rem;
+        padding: 0.75rem 1rem;
         color: var(--text-muted);
         background-color: var(--code-bg);
+        box-shadow: var(--blame-header-shadow);
+
+        // Allows for its shadow to cascade over the code panel
+        z-index: 1;
+        border-top: 1px solid var(--border-color);
     }
 
     .revision-info {

@@ -5,6 +5,8 @@ load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("//wolfi-images:defs.bzl", "wolfi_base")
 
+exports_files(["rustfmt.toml"])
+
 rust_binary(
     name = "syntect_server",
     srcs = ["src/main.rs"],

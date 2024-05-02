@@ -1,6 +1,6 @@
-use anyhow::{Context, Result};
 use std::{fs::File, io::BufReader, path::PathBuf};
 
+use anyhow::{Context, Result};
 use protobuf::{CodedInputStream, Message};
 
 pub fn read_index_from_file(file: &PathBuf) -> Result<scip::types::Index> {
