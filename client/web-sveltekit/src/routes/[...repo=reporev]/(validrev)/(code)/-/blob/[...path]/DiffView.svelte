@@ -69,6 +69,8 @@
         color: var(--text-muted);
         background-color: var(--code-bg);
         box-shadow: var(--blame-header-shadow);
+
+        // Allows for its shadow to cascade over the code panel
         z-index: 1;
         border-top: 1px solid var(--border-color);
 
