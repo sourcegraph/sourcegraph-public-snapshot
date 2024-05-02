@@ -36,10 +36,9 @@ pub fn get_locals(parser: ParserId, source: &str) -> Result<Vec<Occurrence>> {
 mod test {
     use std::{io::BufWriter, path::Path};
 
-    use crate::snapshot::dump_document;
     use tree_sitter_all_languages::ParserId;
 
-    use crate::ctags::generate_tags;
+    use crate::{ctags::generate_tags, snapshot::dump_document};
 
     macro_rules! generate_tags_and_snapshot {
         (Scip, $scip_name:tt, $filename:tt) => {
