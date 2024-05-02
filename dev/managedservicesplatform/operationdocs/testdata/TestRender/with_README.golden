@@ -1,5 +1,5 @@
 > [!NOTE]
-> Generated from: unknown revision of https://github.com/sourcegraph/managed-services
+> Generated from: unknown revision of [sourcegraph/managed-services](https://github.com/sourcegraph/managed-services)
 
 This document describes operational guidance for MSP Testbed infrastructure.
 This service is operated on the [Managed Services Platform (MSP)](https://sourcegraph.notion.site/712a0389f54c4d3a90d069aa2d979a59).
@@ -19,15 +19,13 @@ If you need assistance with MSP infrastructure, reach out to the [Core Services]
 - Docker image: `us.gcr.io/sourcegraph-dev/msp-example`
 - Source code: [`github.com/sourcegraph/sourcegraph` - `cmd/msp-example`](https://github.com/sourcegraph/sourcegraph/tree/HEAD/cmd/msp-example)
 
-<!--
-Automatically generated from the service README: https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/README.md
--->
-
 This service does X, Y, Z. Refer to [here](sourcegraph.com) for more information.
 
 ## Additional operations
 
 Some additional operations!
+
+*Automatically generated from the service README: https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/README.md*
 
 # Environments
 

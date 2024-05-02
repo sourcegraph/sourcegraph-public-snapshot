@@ -8,9 +8,14 @@ import (
 	"github.com/sourcegraph/notionreposync/renderer"
 )
 
-type anchorLinkResolver struct{}
+type linkResolver struct {
+	replacements map[string]string
+}
 
-func (anchorLinkResolver) ResolveLink(link string) (string, error) {
+func (l linkResolver) ResolveLink(link string) (string, error) {
+	if replace, ok := l.replacements[link]; ok {
+		return replace, nil
+	}
 	if strings.HasPrefix(link, "#") {
 		// Notion rejects local anchor links, and making links to blocks by ID
 		// that we don't know yet is very hard. We can need to figure something
@@ -22,7 +27,7 @@ func (anchorLinkResolver) ResolveLink(link string) (string, error) {
 
 // NewNotionConverter creates preconfigured notionmarkdown.Processor for
 // operational docs.
-func NewNotionConverter(ctx context.Context, blocks renderer.BlockUpdater) notionmarkdown.Processor {
+func NewNotionConverter(ctx context.Context, blocks renderer.BlockUpdater, replacements map[string]string) notionmarkdown.Processor {
 	return notionmarkdown.NewProcessor(ctx, blocks,
-		renderer.WithLinkResolver(anchorLinkResolver{}))
+		renderer.WithLinkResolver(linkResolver{replacements}))
 }

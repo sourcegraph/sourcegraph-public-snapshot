@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jomei/notionapi"
+	"github.com/jomei/notionapi" // we use this for file uploads
 	"github.com/urfave/cli/v2"
 	"go.uber.org/atomic"
 	"golang.org/x/exp/maps"
@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/diagram"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
@@ -510,8 +509,9 @@ This command supports completions on services and environments.
 							tasks = append(tasks, task{svc: svc})
 						}
 
+						// Prepare nice progress bars to look at while slowly
+						// updating Notion pages
 						concurrency := c.Int("concurrency")
-						completedCount := atomic.NewInt32(0)
 						prog := std.Out.ProgressWithStatusBars(
 							[]output.ProgressBar{{
 								Label: fmt.Sprintf("Generating service handbook pages (concurrency: %d)", concurrency),
@@ -519,7 +519,10 @@ This command supports completions on services and environments.
 							}},
 							statusBars,
 							nil)
+
+						// Do work concurrently, counting how many tasks are done
 						wg := pool.New().WithErrors().WithMaxGoroutines(concurrency)
+						completedCount := atomic.NewInt32(0)
 						for i, t := range tasks {
 							if t.noNotionPage {
 								prog.SetValue(0, float64(completedCount.Inc()))
@@ -542,29 +545,22 @@ This command supports completions on services and environments.
 									return errors.Wrapf(err, "%s: CollectAlertPolicies", s)
 								}
 
-								// Generate architecture diagrams
-								prog.StatusBarUpdatef(i, "Generating diagrams")
+								// Generate replacement links for architecture
+								// diagrams
+								replacements := make(map[string]string)
 								for _, e := range svc.ListEnvironmentIDs() {
-									diagram, err := diagram.New()
-									if err != nil {
-										return errors.Wrap(err, s)
-									}
-
-									err = diagram.Generate(svc, e)
-									if err != nil {
-										return errors.Wrap(err, s)
-									}
-									_, err = diagram.Render()
-									if err != nil {
-										return errors.Wrap(err, s)
-									}
-									// diagramPath := filepath.Join(handbookPath, "TODO")
-									// if err := os.WriteFile(diagramPath, []byte(svg), 0o644); err != nil {
-									// 	return errors.Wrap(err, s)
-									// }
+									// We must persist diagrams somewhere for
+									// reference in Notion, since Notion does
+									// not allow us to upload files via API.
+									// https://developers.notion.com/docs/working-with-files-and-media#uploading-files-and-media-via-the-notion-api
+									diagramFileName := fmt.Sprintf("%s-%s.svg", s, e)
+									// https://github.com/sourcegraph/managed-services/blob/notion-docs/services/sams/diagrams/sams-prod.svg
+									externalDiagramURL := fmt.Sprintf("https://raw.githubusercontent.com/sourcegraph/managed-services/blob/%s/services/%s/diagrams/%s",
+										"notion-docs", s, diagramFileName)
+									replacements[diagramFileName] = externalDiagramURL
 								}
 
-								prog.StatusBarUpdatef(i, "Rendering Markdown")
+								prog.StatusBarUpdatef(i, "Rendering Markdown docs")
 								opts.AlertPolicies = collectedAlerts
 								doc, err := operationdocs.Render(*svc, opts)
 								if err != nil {
@@ -586,7 +582,7 @@ This command supports completions on services and environments.
 								prog.StatusBarUpdatef(i, "Rendering target Notion page %s",
 									operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
 								blockUpdater := notion.NewPageBlockUpdater(notionClient, *svc.Service.NotionPageID)
-								if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
+								if err := operationdocs.NewNotionConverter(c.Context, blockUpdater, replacements).
 									ProcessMarkdown([]byte(doc)); err != nil {
 									return errors.Wrap(err, s)
 								}
@@ -604,7 +600,7 @@ This command supports completions on services and environments.
 						prog.Complete()
 
 						pending := std.Out.Pending(output.StylePending.Linef(
-							"[index] Generating operations handbook page"))
+							"Generating MSP operations index page"))
 						if err := resetNotionPage(
 							c.Context,
 							notionClient,
@@ -616,12 +612,12 @@ This command supports completions on services and environments.
 						}
 						blockUpdater := notion.NewPageBlockUpdater(notionClient, operationdocs.IndexNotionPageID())
 						doc := operationdocs.RenderIndexPage(serviceSpecs, opts)
-						if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
+						if err := operationdocs.NewNotionConverter(c.Context, blockUpdater, nil).
 							ProcessMarkdown([]byte(doc)); err != nil {
 							return errors.Wrap(err, "apply index page")
 						}
-						pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess,
-							"[index] Wrote %q", operationdocs.NotionHandbookURL(operationdocs.IndexNotionPageID())))
+						pending.Complete(output.Linef(output.EmojiSuccess, output.StyleReset,
+							"Wrote index page %q", operationdocs.NotionHandbookURL(operationdocs.IndexNotionPageID())))
 
 						std.Out.WriteSuccessf("All pages generated!")
 						return nil

@@ -78,6 +78,16 @@ func Linkf(text, url string, vars ...any) string {
 	return Link(text, fmt.Sprintf(url, vars...))
 }
 
+// Image generates a Markdown image.
+func Image(text, url string) string {
+	return "!" + Link(text, url)
+}
+
+// Imagef generates a Markdown image. Format arguments only apply to the URL.
+func Imagef(text, url string, vars ...any) string {
+	return "!" + Image(text, fmt.Sprintf(url, vars...))
+}
+
 // List generates a Markdown list.
 // It supports arbitrary nesting of lists of string, and each sub-list will be indented.
 func List(lines any) string {

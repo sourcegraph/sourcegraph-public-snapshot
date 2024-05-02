@@ -1,5 +1,5 @@
 > [!NOTE]
-> Generated from: unknown revision of https://github.com/sourcegraph/managed-services
+> Generated from: unknown revision of [sourcegraph/managed-services](https://github.com/sourcegraph/managed-services)
 
 These pages contain generated operational guidance for the infrastructure of the 4 [Managed Services Platform (MSP)](https://sourcegraph.notion.site/712a0389f54c4d3a90d069aa2d979a59) services (across 6 environments) currently in operation at Sourcegraph.
 This includes information about each service, configured environments, Entitle requests, common tasks, monitoring, custom documentation provided by service operators, and so on.

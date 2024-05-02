@@ -42,7 +42,6 @@ func (o Options) AddDocumentNote(md *markdown.Builder) {
 
 	if o.GenerateCommand != "" {
 		generatedFromComment = fmt.Sprintf(`%s
-
 - Regenerate this page with this command: %s
 - Last updated: %s
 - %s`,
@@ -279,7 +278,7 @@ sg msp pg connect -write-access %[1]s %[2]s`, s.Service.ID, env.ID)
 		}
 
 		md.Headingf(3, "%s Architecture Diagram", env.ID)
-		md.Paragraphf("!" + markdown.Linkf("Architecture Diagram", "./%s-%s.svg", s.Service.ID, env.ID))
+		md.Paragraphf(markdown.Imagef("Architecture Diagram", "%s-%s.svg", s.Service.ID, env.ID))
 
 		md.Headingf(3, terraformCloudSectionHeading)
 
