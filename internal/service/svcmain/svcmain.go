@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
@@ -95,6 +96,7 @@ func run(
 			Logging: conf.NewLogsSinksSource(conf.DefaultClient()),
 			Tracing: tracer.ConfConfigurationSource{WatchableSiteConfig: conf.DefaultClient()},
 		}
+		httpcli.Configure(conf.DefaultClient())
 	}
 
 	if oobConfig.Logging != nil {
