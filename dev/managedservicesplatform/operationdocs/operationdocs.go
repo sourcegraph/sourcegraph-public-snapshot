@@ -42,12 +42,15 @@ func (o Options) AddDocumentNote(md *markdown.Builder) {
 
 	if o.GenerateCommand != "" {
 		generatedFromComment = fmt.Sprintf(`%s
-- Regenerate this page with this command: %s
-- Last updated: %s
-- %s`,
+
+Regenerate this page with this command: %s
+
+Last updated: %s
+
+%s`,
 			markdown.Bold("This is generated documentation; DO NOT EDIT."),
 			markdown.Code(o.GenerateCommand),
-			time.Now().UTC().String(),
+			time.Now().UTC().Format(time.RFC3339),
 			generatedFromComment)
 	}
 	md.Admonitionf(markdown.AdmonitionNote, generatedFromComment)
@@ -284,7 +287,7 @@ sg msp pg connect -write-access %[1]s %[2]s`, s.Service.ID, env.ID)
 		// For now, render it alongside service manifests and ask users to go
 		// there instead.
 		md.Paragraphf("View the %s for this environment.",
-			markdown.Linkf("generated architecture diagram", "%s-%s.svg", s.Service.ID, env.ID))
+			markdown.Linkf("generated architecture diagram", "%s.svg", env.ID))
 
 		md.Headingf(3, terraformCloudSectionHeading)
 

@@ -2,6 +2,7 @@
 package msp
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -458,28 +459,25 @@ This command supports completions on services and environments.
 							GenerateCommand:         strings.Join(os.Args, " "),
 						}
 
-						// sec, err := secrets.FromContext(c.Context)
-						// if err != nil {
-						// 	return err
-						// }
-						// notionToken, err := sec.GetExternal(c.Context,
-						// 	secrets.ExternalSecret{
-						// 		Project: "sourcegraph-local-dev",
-						// 		Name:    "TODO",
-						// 	},
-						// 	func(ctx context.Context) (string, error) {
-						// 		v, ok := os.LookupEnv("NOTION_API_TOKEN")
-						// 		if !ok {
-						// 			return "", errors.New("environment variable NOTION_API_TOKEN not set")
-						// 		}
-						// 		return v, nil
-						// 	})
-						// if err != nil {
-						// 	return errors.Wrap(err, "failed to get Notion token from gcloud secrets")
-						// }
-						notionToken := os.Getenv("NOTION_API_TOKEN")
-						if notionToken == "" {
-							return errors.New("environment variable NOTION_API_TOKEN not set")
+						sec, err := secrets.FromContext(c.Context)
+						if err != nil {
+							return err
+						}
+						notionToken, err := sec.GetExternal(c.Context,
+							secrets.ExternalSecret{
+								Project: "sourcegraph-secrets",
+								Name:    "CORE_SERVICES_NOTION_API_TOKEN",
+							},
+							func(ctx context.Context) (string, error) {
+								v, ok := os.LookupEnv("NOTION_API_TOKEN")
+								if !ok {
+									return "", errors.New("environment variable NOTION_API_TOKEN not set")
+								}
+								std.Out.WriteSuggestionf("Using NOTION_API_TOKEN from environment")
+								return v, nil
+							})
+						if err != nil {
+							return errors.Wrap(err, "failed to get Notion token from gcloud secrets")
 						}
 						notionClient := notionapi.NewClient(notionapi.Token(notionToken))
 
@@ -553,12 +551,14 @@ This command supports completions on services and environments.
 									// reference in Notion, since Notion does
 									// not allow us to upload files via API.
 									// https://developers.notion.com/docs/working-with-files-and-media#uploading-files-and-media-via-the-notion-api
-									diagramFileName := fmt.Sprintf("%s-%s.svg", s, e)
-									// https://github.com/sourcegraph/managed-services/blob/notion-docs/services/sams/diagrams/sams-prod.svg
-									externalDiagramURL := fmt.Sprintf("https://raw.githubusercontent.com/sourcegraph/managed-services/blob/%s/services/%s/diagrams/%s",
+									//
+									// We use a private repo so we can't render
+									// it in-line either, so we just use a link
+									// for now.
+									externalDiagramURL := fmt.Sprintf("https://github.com/sourcegraph/managed-services/blob/%s/services/%s/diagrams/%s",
 										"notion-docs", // TODO replace with 'main'
-										s, diagramFileName)
-									replacements[diagramFileName] = externalDiagramURL
+										s, fmt.Sprintf("%s.md", e))
+									replacements[fmt.Sprintf("%s.svg", e)] = externalDiagramURL
 								}
 
 								prog.StatusBarUpdatef(i, "Rendering Markdown docs")

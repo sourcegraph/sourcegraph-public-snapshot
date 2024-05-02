@@ -318,11 +318,25 @@ func generateTerraform(service *spec.Spec, opts generateTerraformOptions) error 
 		if err != nil {
 			return errors.Wrap(err, "render architecture diagram")
 		}
-		diagramFileName := fmt.Sprintf("%s-%s.svg", serviceID, env.ID)
+
 		diagramDir := filepath.Join(filepath.Dir(serviceSpecPath), "diagrams")
 		_ = os.MkdirAll(diagramDir, os.ModePerm)
+
+		diagramFileName := fmt.Sprintf("%s.svg", env.ID)
 		if err := os.WriteFile(filepath.Join(diagramDir, diagramFileName), svg, 0o644); err != nil {
 			return errors.Wrap(err, "write architecture diagram")
+		}
+
+		// GitHub file view for SVG sucks, so also generate a Markdown file
+		// with nothing but a view of the image, for easier viewing in GitHub
+		// and linking from Notion.
+		diagramViewFileName := fmt.Sprintf("%s.md", env.ID)
+		if err := os.WriteFile(
+			filepath.Join(diagramDir, diagramViewFileName),
+			[]byte(fmt.Sprintf("![architecture diagram](%s)\n", diagramFileName)),
+			0o644,
+		); err != nil {
+			return errors.Wrap(err, "write architecture diagram view")
 		}
 
 		pending.Complete(output.Styledf(output.StyleSuccess,

@@ -86,9 +86,9 @@ sg msp pg connect -write-access msp-testbed test
   - [`bar`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/bar.bigquerytable.json)
   - [`baz`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/baz.bigquerytable.json)
 
-### test Architecture Diagram
+### test Architecture diagram
 
-![Architecture Diagram](./msp-testbed-test.svg)
+View the [generated architecture diagram](test.svg) for this environment.
 
 ### test Terraform Cloud
 

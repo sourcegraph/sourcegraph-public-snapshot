@@ -60,9 +60,9 @@ You can also use `sg msp` to quickly open a link to your service logs:
 sg msp logs msp-testbed test
 ```
 
-### test Architecture Diagram
+### test Architecture diagram
 
-![Architecture Diagram](./msp-testbed-test.svg)
+View the [generated architecture diagram](test.svg) for this environment.
 
 ### test Terraform Cloud
 
