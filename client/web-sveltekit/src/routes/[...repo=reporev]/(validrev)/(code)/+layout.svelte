@@ -144,9 +144,6 @@
 <section>
     <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
         <header>
-            <h3>
-                <SidebarToggleButton />&nbsp; Files
-            </h3>
             <RepositoryRevPicker
                 repoURL={data.repoURL}
                 revision={data.revision}
@@ -218,7 +215,8 @@
         gap: 0.5rem;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.5rem;
+        padding: 1rem;
+        box-shadow: var(--sidebar-header-shadow);
     }
 
     .sidebar {
@@ -229,7 +227,6 @@
         display: none;
         overflow: hidden;
         background-color: var(--color-bg-1);
-        padding: 0.5rem;
         padding-bottom: 0;
         box-shadow: var(--sidebar-shadow);
         z-index: 1;

@@ -62,7 +62,7 @@
 
 <Popover let:registerTrigger let:toggle placement="right-start">
     <div class="button-group" class:is-on-specific-rev={isOnSpecificRev}>
-        <Button variant="secondary" size="sm">
+        <Button variant="secondary">
             <svelte:fragment slot="custom" let:buttonClass>
                 <button use:registerTrigger class={`${buttonClass} revision-trigger`} on:click={() => toggle()}>
                     @{revisionLabel}
@@ -154,6 +154,7 @@
     .button-group {
         display: flex;
         min-width: 0;
+        width: 100%;
 
         .reset-button-container {
             display: contents;
@@ -162,6 +163,7 @@
             :global(button) {
                 border-top-left-radius: 0;
                 border-bottom-left-radius: 0;
+                background-color: var(--secondary-4);
             }
 
             :global([data-icon]) {
@@ -176,6 +178,13 @@
             white-space: nowrap;
             text-overflow: ellipsis;
             overflow: hidden;
+            width: 100%;
+            display: flex;
+            align-items: flex-start;
+
+            // TODO: Update button styling across Wildcard 2.0 DS using properties below
+            background-color: var(--secondary-4);
+            color: var(--text-body);
         }
 
         &.is-on-specific-rev .revision-trigger {
