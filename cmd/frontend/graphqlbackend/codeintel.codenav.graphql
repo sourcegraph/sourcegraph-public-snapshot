@@ -87,7 +87,7 @@ Invariants:
 # 2. When a hover is triggered, attempt to look up occurrence in document or list
 #    of occurrences (or some other lookup structure constructed from those)
 #    based on the source range.
-# 3a. If one matching occurrence is found, use Occurrence.symbol and range to call
+# 3a. If one matching occurrence is found, use SCIPOccurrence.symbol and range to call
 #     usagesForSymbol.
 # 3b. If zero matching occurrences are found, use only range to call usagesForSymbol.
 # 3c. If more than one matching occurrence is found, use some more complex logic
@@ -121,14 +121,12 @@ type CodeGraphData {
         exists occ in occurrences such that
             sym.name == occ.symbol && occ.roles.contains(Definition)
     """
-    # TODO: Should this be paginated to gracefully handle large generated files?
-    symbols: [SymbolInformation!]
+    symbols: SymbolInformationConnection
 
     """
     Occurrences are guaranteed to be sorted by range.
     """
-    # TODO: Should this be paginated to gracefully handle large generated files?
-    occurrences(filter: OccurrencesFilter): [Occurrence!]
+    occurrences(filter: SCIPOccurrencesFilter): SCIPOccurrenceConnection
 
     # EXTENSION: We can add a build identifier here to return different
     # Documents for (say) Linux vs Windows.
@@ -139,9 +137,25 @@ type CodeGraphToolInfo {
     name: String
     version: String
 }
+
+type SymbolInformationConnection {
+    nodes: [SymbolInformation!]
+    pageInfo: PageInfo!
 }
 
-type Occurrence {
+type SCIPOccurrenceConnection {
+    """
+    A list of occurrences within a Document
+    """
+    nodes: [SCIPOccurrence!]
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+type SCIPOccurrence {
     """
     Symbol name using syntax specified by the SCIP schema.
     https://github.com/sourcegraph/scip/blob/main/scip.proto#L147-L188
@@ -155,7 +169,7 @@ type Occurrence {
     # EXTENSION: We can add diagnostics etc. here in the future if needed.
 }
 
-input OccurrencesFilter {
+input SCIPOccurrencesFilter {
     rangeFilter: RangeFilter
     rolesFilter: RolesFilter
     # EXTENSION: We can add a DiagnosticsFilter etc. here in the future if needed.
@@ -415,7 +429,7 @@ extend type Query {
         TODO: Specify behavior for various cases of overlap between LookupRange
         and actual occurrence range.
         """
-        range: LookupRange!,
+        range: RangeInput!,
 
         filter: UsagesFilter,
 
@@ -495,11 +509,11 @@ type SymbolInformation implements WithProvenance {
     dataSource: String
 }
 
-input LookupRange {
+input RangeInput {
     """
     Defaults to instance-wide search if the repo is not specified.
 
-    This field is necessary if LookupSymbol is a repository-local or
+    This field is necessary if SymbolComparator is a repository-local or
     file-local symbol. It is mandatory for cross-repository symbols
     due to implementation limitations.
     """
@@ -513,18 +527,18 @@ input LookupRange {
     """
     Defaults to repo-wide search if the path is not specified.
 
-    This field is necessary if LookupSymbol is a file-local symbol.
+    This field is necessary if SymbolComparator is a file-local symbol.
     It is mandatory for repository-local and cross-repo symbols
     due to implementation limitations.
     """
     path: String!
 
-    start: LookupPosition
+    start: PositionInput
 
-    end: LookupPosition
+    end: PositionInput
 }
 
-input LookupPosition {
+input PositionInput {
     """
     Zero-based count of newline (\n or \r\n) characters before this position.
     """
