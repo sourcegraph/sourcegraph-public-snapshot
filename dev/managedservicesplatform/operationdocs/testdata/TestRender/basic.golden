@@ -36,7 +36,9 @@ Changes to MSP Testbed are continuously delivered to the first stage ([test](#te
 - Resources: 
   - none
 - Slack notifications: [#alerts-msp-testbed-test](https://sourcegraph.slack.com/archives/alerts-msp-testbed-test)
-- Alert policies: [GCP Monitoring alert policies list](https://console.cloud.google.com/monitoring/alerting/policies?project=msp-testbed-test-77589aae45d0), [Dashboard](https://console.cloud.google.com/monitoring/dashboards?pageState=%28%22dashboards%22%3A%28%22t%22%3A%22All%22%29%2C%22dashboardList%22%3A%28%22f%22%3A%22%255B%257B_22k_22_3A_22Type_22_2C_22t_22_3A10_2C_22v_22_3A_22_5C_22Custom_5C_22_22_2C_22s_22_3Atrue_2C_22i_22_3A_22category_22%257D%255D%22%29%29&project=msp-testbed-test-77589aae45d0)
+- Alert policies: 
+  - [GCP Monitoring alert policies list](https://console.cloud.google.com/monitoring/alerting/policies?project=msp-testbed-test-77589aae45d0)
+  - [Dashboard](https://console.cloud.google.com/monitoring/dashboards?pageState=%28%22dashboards%22%3A%28%22t%22%3A%22All%22%29%2C%22dashboardList%22%3A%28%22f%22%3A%22%255B%257B_22k_22_3A_22Type_22_2C_22t_22_3A10_2C_22v_22_3A_22_5C_22Custom_5C_22_22_2C_22s_22_3Atrue_2C_22i_22_3A_22category_22%257D%255D%22%29%29&project=msp-testbed-test-77589aae45d0)
 - Errors: [Sentry `msp-testbed-test`](https://sourcegraph.sentry.io/projects/msp-testbed-test/)
 
 MSP infrastructure access needs to be requested using Entitle for time-bound privileges. Test environments may have less stringent requirements.
@@ -90,20 +92,22 @@ sg msp tfc view msp-testbed test
 
 # Alert Policies
 
-The following alert policies are defined for each of this service's environments.
+The following alert policies are defined for each of this service's environments. An overview dashboard is also available for each environment:
+
+- [Dashboard](https://console.cloud.google.com/monitoring/dashboards?pageState=%28%22dashboards%22%3A%28%22t%22%3A%22All%22%29%2C%22dashboardList%22%3A%28%22f%22%3A%22%255B%257B_22k_22_3A_22Type_22_2C_22t_22_3A10_2C_22v_22_3A_22_5C_22Custom_5C_22_22_2C_22s_22_3Atrue_2C_22i_22_3A_22category_22%257D%255D%22%29%29&project=msp-testbed-test-77589aae45d0) for "test" environment
 
 ## High Container CPU Utilization
 
-```md
-High CPU Usage - it may be neccessary to reduce load or increase CPU allocation
-```
+Severity: ⚠️ `WARNING`
 
-Severity: WARNING
+Description:
+
+> High CPU Usage - it may be neccessary to reduce load or increase CPU allocation
 
 ## High Container Memory Utilization
 
-```md
-High Memory Usage - it may be neccessary to reduce load or increase memory allocation
-```
+Severity: ⚠️ `WARNING`
 
-Severity: WARNING
+Description:
+
+> High Memory Usage - it may be neccessary to reduce load or increase memory allocation

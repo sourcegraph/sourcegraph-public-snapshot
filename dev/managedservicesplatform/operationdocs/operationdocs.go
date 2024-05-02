@@ -175,10 +175,10 @@ This service is operated on the %s.`,
 				}),
 				[]string{"none"}),
 			"Slack notifications: " + markdown.Linkf("#"+slackChannelName, "https://sourcegraph.slack.com/archives/"+slackChannelName),
-			"Alert policies: " +
-				fmt.Sprintf("%s, %s",
-					markdown.Linkf("GCP Monitoring alert policies list", "https://console.cloud.google.com/monitoring/alerting/policies?project=%s", env.ProjectID),
-					AlertPolicyDashboardURL(env.ProjectID)),
+			"Alert policies: ", []string{
+				markdown.Linkf("GCP Monitoring alert policies list", "https://console.cloud.google.com/monitoring/alerting/policies?project=%s", env.ProjectID),
+				AlertPolicyDashboardURL(env.ProjectID),
+			},
 			"Errors: " + sentryLink,
 		}
 		if env.EnvironmentServiceSpec != nil {
@@ -321,8 +321,10 @@ If you make your Entitle request, then log in, you will be removed from any team
 	}
 
 	md.Headingf(1, "Alert Policies")
-
-	md.Paragraphf("The following alert policies are defined for each of this service's environments.")
+	md.Paragraphf("The following alert policies are defined for each of this service's environments. An overview dashboard is also available for each environment:")
+	md.List(mapTo(s.Environments, func(env spec.EnvironmentSpec) string {
+		return fmt.Sprintf("%s for %q environment", AlertPolicyDashboardURL(env.ProjectID), env.ID)
+	}))
 
 	// Render alerts
 	// Sort the map keys to make order deterministic
@@ -337,9 +339,16 @@ If you make your Entitle request, then log in, you will be removed from any team
 		if lastParagraphIndex != -1 {
 			b = b[:lastParagraphIndex]
 		}
-
-		md.CodeBlock("md", string(b))
-		md.Paragraphf("Severity: %s", policy.Severity)
+		var emoji string
+		switch policy.Severity {
+		case "CRITICAL":
+			emoji = "🚨"
+		default:
+			emoji = "⚠️"
+		}
+		md.Paragraphf("Severity: %s %s", emoji, markdown.Code(policy.Severity))
+		md.Paragraphf("Description:")
+		md.Quotef(string(b))
 	}
 
 	return md.String(), nil
