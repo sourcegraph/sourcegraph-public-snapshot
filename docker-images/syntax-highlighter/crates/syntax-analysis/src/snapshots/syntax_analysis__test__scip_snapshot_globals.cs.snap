@@ -45,7 +45,7 @@ expression: dumped
           public struct Coords
 //                      ^^^^^^ definition(Struct) scip-ctags `Longer.Namespace`/Class#Coords#
           {
-              public Coords(double x, double y)
+              public Coords(double x, [Flags] double y)
 //                   ^^^^^^ definition(Constructor) scip-ctags `Longer.Namespace`/Class#Coords#Coords().
               {
                   X = x;
@@ -54,35 +54,14 @@ expression: dumped
   
               public double X { get; }
 //                          ^ definition(Property) scip-ctags `Longer.Namespace`/Class#Coords#X.
+  
+  
+              [Flags]
               public double Y { get; }
 //                          ^ definition(Property) scip-ctags `Longer.Namespace`/Class#Coords#Y.
   
               public override string ToString() => $"({X}, {Y})";
 //                                   ^^^^^^^^ definition(Method) scip-ctags `Longer.Namespace`/Class#Coords#ToString().
-          }
-  
-          [Flags]
-          public struct Point
-//                      ^^^^^ definition(Struct) scip-ctags `Longer.Namespace`/Class#Point#
-          {
-              public Point(double x, double y)
-//                   ^^^^^ definition(Constructor) scip-ctags `Longer.Namespace`/Class#Point#Point().
-              {
-                  X = x;
-                  Y = y;
-              }
-  
-              public double X { get; }
-//                          ^ definition(Property) scip-ctags `Longer.Namespace`/Class#Point#X.
-              public double Y { get; }
-//                          ^ definition(Property) scip-ctags `Longer.Namespace`/Class#Point#Y.
-  
-              [Flags]
-              public int Sum()
-//                       ^^^ definition(Method) scip-ctags `Longer.Namespace`/Class#Point#Sum().
-              {
-                  return X + Y;
-              };
           }
   
           delegate int MyDelegate();
@@ -145,8 +124,11 @@ expression: dumped
       public class TheClass
 //                 ^^^^^^^^ definition(Class) scip-ctags OneClass/TheClass#
       {
+          [Flags]
           public Clickable ClickAction { get; set; }
 //                         ^^^^^^^^^^^ definition(Property) scip-ctags OneClass/TheClass#ClickAction.
+  
+  
           public string Text { get; set; }
 //                      ^^^^ definition(Property) scip-ctags OneClass/TheClass#Text.
       }

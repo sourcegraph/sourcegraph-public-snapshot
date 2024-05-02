@@ -33,35 +33,19 @@ namespace Longer.Namespace
 
         public struct Coords
         {
-            public Coords(double x, double y)
+            public Coords(double x, [Flags] double y)
             {
                 X = x;
                 Y = y;
             }
 
             public double X { get; }
+
+
+            [Flags]
             public double Y { get; }
 
             public override string ToString() => $"({X}, {Y})";
-        }
-
-        [Flags]
-        public struct Point
-        {
-            public Point(double x, double y)
-            {
-                X = x;
-                Y = y;
-            }
-
-            public double X { get; }
-            public double Y { get; }
-
-            [Flags]
-            public int Sum()
-            {
-                return X + Y;
-            };
         }
 
         delegate int MyDelegate();
@@ -103,7 +87,10 @@ namespace OneClass
     [Flags]
     public class TheClass
     {
+        [Flags]
         public Clickable ClickAction { get; set; }
+
+
         public string Text { get; set; }
     }
 }
