@@ -49,11 +49,18 @@ extend type GitBlob {
     symbolInfo(line: Int!, character: Int!): SymbolInfo
 
     """
+    Return the code graph data associated with this blob.
+
+    If there are multiple tools (i.e. name and version pairs) which
+    have uploaded precise indexes for this blob, then this API will
+    return multiple results even if
+    filter == { provenance: { equals: Precise } }.
+
     If filter.provenance? is not provided, then the API will go through
     each provenance one by one in the order Precise -> Syntactic -> SearchBased
     and stop when some data is available.
     """
-    codeGraphData(filter: CodeGraphDataFilter): CodeGraphData
+    codeGraphData(filter: CodeGraphDataFilter): [CodeGraphData!]
 }
 
 input CodeGraphDataFilter {
