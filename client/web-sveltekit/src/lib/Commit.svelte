@@ -7,6 +7,7 @@
     import Icon from '$lib/Icon.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
+    import Badge from '$lib/wildcard/Badge.svelte'
 
     import type { Commit } from './Commit.gql'
 
@@ -47,7 +48,7 @@
     <div class="info">
         <span class="d-flex">
             <a class="subject" href={commit.canonicalURL}>{commit.subject}</a>
-            {#if !alwaysExpanded}
+            {#if !alwaysExpanded && commit.body}
                 <button type="button" on:click={() => (expanded = !expanded)}>
                     <Icon svgPath={mdiDotsHorizontal} inline />
                 </button>
@@ -60,7 +61,7 @@
     </div>
     {#if !alwaysExpanded}
         <div class="buttons">
-            <a href={commit.canonicalURL}>{commit.abbreviatedOID}</a>
+            <Badge variant="link"><a href={commit.canonicalURL}>{commit.abbreviatedOID}</a></Badge>
         </div>
     {/if}
 </div>
@@ -68,12 +69,12 @@
 <style lang="scss">
     .root {
         display: flex;
+        gap: 1rem;
     }
 
     .info {
         display: flex;
         flex-direction: column;
-        margin: 0 0.5rem;
         flex: 1;
         min-width: 0;
     }
@@ -94,7 +95,6 @@
         display: flex;
         width: 2.75rem;
         height: 2.75rem;
-        margin-right: 0.5rem;
         font-size: 1.5rem;
     }
 
@@ -119,12 +119,5 @@
 
     .buttons {
         align-self: center;
-
-        a {
-            display: inline-block;
-            padding: 0.125rem;
-            font-family: var(--code-font-family);
-            font-size: 0.75rem;
-        }
     }
 </style>
