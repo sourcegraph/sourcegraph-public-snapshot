@@ -959,13 +959,6 @@ def go_dependencies():
         version = "v0.5.0",
     )
     go_repository(
-        name = "com_github_charmbracelet_lipgloss",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/charmbracelet/lipgloss",
-        sum = "h1:17WMwi7N1b1rVWOjMT+rCh7sQkvDU75B2hbZpc5Kc1E=",
-        version = "v0.7.1",
-    )
-    go_repository(
         name = "com_github_chromedp_cdproto",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/chromedp/cdproto",
@@ -7156,8 +7149,8 @@ def go_dependencies():
         name = "dev_cdr_slog",
         build_file_proto_mode = "disable_global",
         importpath = "cdr.dev/slog",
-        sum = "h1:IQjWZD0x6//sfv5n+qEhbu3wBkmtBQY5DILXNvMaIv4=",
-        version = "v1.6.1",
+        sum = "h1:Jf+VOk2lif79HeTlnLaZ70zYTsuVSUEu/47U9VaG2Rw=",
+        version = "v1.4.2-0.20221206192828-e4803b10ae17",
     )
     go_repository(
         name = "dev_chainguard_apko",

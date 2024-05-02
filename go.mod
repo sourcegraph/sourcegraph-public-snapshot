@@ -244,7 +244,7 @@ require (
 )
 
 require (
-	cdr.dev/slog v1.6.1
+	cdr.dev/slog v1.4.2-0.20221206192828-e4803b10ae17
 	chainguard.dev/apko v0.14.0
 	cloud.google.com/go/artifactregistry v1.14.8
 	connectrpc.com/connect v1.16.1
@@ -334,7 +334,6 @@ require (
 	github.com/bufbuild/connect-opentelemetry-go v0.4.0 // indirect
 	github.com/bufbuild/protocompile v0.5.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/charmbracelet/lipgloss v0.7.1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
 	github.com/containerd/log v0.1.0 // indirect
