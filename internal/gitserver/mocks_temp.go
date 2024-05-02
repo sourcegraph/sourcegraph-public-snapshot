@@ -340,7 +340,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		RevListFunc: &ClientRevListFunc{
-			defaultHook: func(context.Context, string, string, func(commit string) (bool, error)) (r0 error) {
+			defaultHook: func(context.Context, api.RepoName, string, int) (r0 []api.CommitID, r1 string, r2 error) {
 				return
 			},
 		},
@@ -562,7 +562,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		RevListFunc: &ClientRevListFunc{
-			defaultHook: func(context.Context, string, string, func(commit string) (bool, error)) error {
+			defaultHook: func(context.Context, api.RepoName, string, int) ([]api.CommitID, string, error) {
 				panic("unexpected invocation of MockClient.RevList")
 			},
 		},
@@ -4743,23 +4743,23 @@ func (c ClientRevAtTimeFuncCall) Results() []interface{} {
 // ClientRevListFunc describes the behavior when the RevList method of the
 // parent MockClient instance is invoked.
 type ClientRevListFunc struct {
-	defaultHook func(context.Context, string, string, func(commit string) (bool, error)) error
-	hooks       []func(context.Context, string, string, func(commit string) (bool, error)) error
+	defaultHook func(context.Context, api.RepoName, string, int) ([]api.CommitID, string, error)
+	hooks       []func(context.Context, api.RepoName, string, int) ([]api.CommitID, string, error)
 	history     []ClientRevListFuncCall
 	mutex       sync.Mutex
 }
 
 // RevList delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) RevList(v0 context.Context, v1 string, v2 string, v3 func(commit string) (bool, error)) error {
-	r0 := m.RevListFunc.nextHook()(v0, v1, v2, v3)
-	m.RevListFunc.appendCall(ClientRevListFuncCall{v0, v1, v2, v3, r0})
-	return r0
+func (m *MockClient) RevList(v0 context.Context, v1 api.RepoName, v2 string, v3 int) ([]api.CommitID, string, error) {
+	r0, r1, r2 := m.RevListFunc.nextHook()(v0, v1, v2, v3)
+	m.RevListFunc.appendCall(ClientRevListFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the RevList method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientRevListFunc) SetDefaultHook(hook func(context.Context, string, string, func(commit string) (bool, error)) error) {
+func (f *ClientRevListFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, int) ([]api.CommitID, string, error)) {
 	f.defaultHook = hook
 }
 
@@ -4767,7 +4767,7 @@ func (f *ClientRevListFunc) SetDefaultHook(hook func(context.Context, string, st
 // RevList method of the parent MockClient instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *ClientRevListFunc) PushHook(hook func(context.Context, string, string, func(commit string) (bool, error)) error) {
+func (f *ClientRevListFunc) PushHook(hook func(context.Context, api.RepoName, string, int) ([]api.CommitID, string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4775,20 +4775,20 @@ func (f *ClientRevListFunc) PushHook(hook func(context.Context, string, string, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientRevListFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, string, func(commit string) (bool, error)) error {
-		return r0
+func (f *ClientRevListFunc) SetDefaultReturn(r0 []api.CommitID, r1 string, r2 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, int) ([]api.CommitID, string, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientRevListFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, string, func(commit string) (bool, error)) error {
-		return r0
+func (f *ClientRevListFunc) PushReturn(r0 []api.CommitID, r1 string, r2 error) {
+	f.PushHook(func(context.Context, api.RepoName, string, int) ([]api.CommitID, string, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *ClientRevListFunc) nextHook() func(context.Context, string, string, func(commit string) (bool, error)) error {
+func (f *ClientRevListFunc) nextHook() func(context.Context, api.RepoName, string, int) ([]api.CommitID, string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4826,16 +4826,22 @@ type ClientRevListFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 func(commit string) (bool, error)
+	Arg3 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 []api.CommitID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 string
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -4847,7 +4853,7 @@ func (c ClientRevListFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientRevListFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // ClientScopedFunc describes the behavior when the Scoped method of the

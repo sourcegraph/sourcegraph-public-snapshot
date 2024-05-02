@@ -65,13 +65,18 @@
         align-items: center;
         gap: 0.75rem;
         padding: 0.375rem 0.75rem;
+        border-radius: var(--border-radius);
+
+        &:hover {
+            background-color: var(--color-bg-2);
+        }
 
         .messages {
             display: flex;
             flex-flow: column nowrap;
             justify-content: center;
             align-items: flex-start;
-            row-gap: 0.125rem;
+            row-gap: 0.25rem;
         }
 
         span {
