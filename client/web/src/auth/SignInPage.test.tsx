@@ -225,31 +225,42 @@ describe('SignInPage', () => {
     })
 
     it('renders redirect when there is only 1 auth provider', () => {
-        const withGitHubProvider: SourcegraphContext['authProviders'] = [{
-            serviceType: 'github',
-            displayName: 'GitHub',
-            isBuiltin: false,
-            authenticationURL: 'http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch',
-            serviceID: 'https://github.com',
-            clientID: '1234',
-            noSignIn: false,
-        }]
+        const withGitHubProvider: SourcegraphContext['authProviders'] = [
+            {
+                serviceType: 'github',
+                displayName: 'GitHub',
+                isBuiltin: false,
+                authenticationURL: 'http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch',
+                serviceID: 'https://github.com',
+                clientID: '1234',
+                noSignIn: false,
+            },
+        ]
 
         expect(render('/sign-in', { authProviders: withGitHubProvider }).asFragment()).toMatchSnapshot()
     })
 
     it('does not render redirect when there is only 1 auth provider with request access enabled', () => {
-        const withGitHubProvider: SourcegraphContext['authProviders'] = [{
-            serviceType: 'github',
-            displayName: 'GitHub',
-            isBuiltin: false,
-            authenticationURL: 'http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch',
-            serviceID: 'https://github.com',
-            clientID: '1234',
-            noSignIn: false,
-        }]
+        const withGitHubProvider: SourcegraphContext['authProviders'] = [
+            {
+                serviceType: 'github',
+                displayName: 'GitHub',
+                isBuiltin: false,
+                authenticationURL: 'http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch',
+                serviceID: 'https://github.com',
+                clientID: '1234',
+                noSignIn: false,
+            },
+        ]
 
-        expect(render('/sign-in', { authProviders: withGitHubProvider, authAccessRequest: { enabled: true }, allowSignup: false, sourcegraphDotComMode: false }).asFragment()).toMatchSnapshot()
+        expect(
+            render('/sign-in', {
+                authProviders: withGitHubProvider,
+                authAccessRequest: { enabled: true },
+                allowSignup: false,
+                sourcegraphDotComMode: false,
+            }).asFragment()
+        ).toMatchSnapshot()
     })
 
     it('renders different prefix on provider buttons', () => {
