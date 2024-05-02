@@ -103,12 +103,12 @@
     [role='tab'] {
         all: unset;
 
-        cursor: pointer;
+        margin: 0;
         border: none;
+        cursor: pointer;
         background: none;
         align-items: center;
         letter-spacing: normal;
-        margin: 0;
         min-height: 2rem;
         padding: 0.25rem 0.75rem;
         color: var(--text-body);
@@ -118,9 +118,17 @@
         justify-content: center;
         white-space: nowrap;
         gap: 0.5rem;
+        position: relative;
 
-        border-bottom: 2px solid transparent;
-        font-weight: 500;
+        &::after {
+            content: '';
+            display: block;
+            position: absolute;
+            bottom: 0;
+            transform: translateY(50%);
+            width: 100%;
+            border-bottom: 2px solid transparent;
+        }
 
         &:hover {
             color: var(--text-title);
@@ -128,10 +136,11 @@
         }
 
         &[aria-selected='true'] {
-            border-color: var(--brand-secondary);
+            font-weight: 500;
             color: var(--text-title);
+            border-color: var(--brand-secondary);
 
-            &:hover {
+            &::after {
                 border-color: var(--brand-secondary);
             }
         }
@@ -144,7 +153,7 @@
             &::before {
                 content: attr(data-tab-title);
                 display: block;
-                font-weight: 700;
+                font-weight: 500;
                 height: 0;
                 visibility: hidden;
             }
