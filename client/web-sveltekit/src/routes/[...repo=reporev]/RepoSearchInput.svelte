@@ -23,7 +23,11 @@
 
     registerHotkey({
         keys: { key: '/' },
-        handler: () => open.set(true),
+        allowDefault: true,
+        handler: () => {
+            open.set(true)
+            return false
+        },
     })
 
     function handleSearchSubmit(state: QueryState): void {
