@@ -63,11 +63,16 @@
     .info {
         display: flex;
         justify-content: space-between;
-        padding: 0.5rem;
-
-        background: var(--color-bg-1);
-        color: var(--text-muted);
+        align-items: baseline;
         gap: 1rem;
+        padding: 0.5rem 1rem;
+        color: var(--text-muted);
+        background-color: var(--code-bg);
+        box-shadow: var(--blame-header-shadow);
+
+        // Allows for its shadow to cascade over the code panel
+        z-index: 1;
+        border-top: 1px solid var(--border-color);
 
         align-items: center;
 
