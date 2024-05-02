@@ -1,0 +1,25 @@
+---
+source: crates/syntax-analysis/src/lib.rs
+expression: "String::from_utf8_lossy(&output)"
+---
+{"_type":"tag","name":"MyClass","path":"globals.ts","language":"typescript","line":1,"kind":"class","scope":null}
+{"_type":"tag","name":"also_private_method","path":"globals.ts","language":"typescript","line":8,"kind":"method","scope":"MyClass"}
+{"_type":"tag","name":"#private_method","path":"globals.ts","language":"typescript","line":7,"kind":"method","scope":"MyClass"}
+{"_type":"tag","name":"public_method","path":"globals.ts","language":"typescript","line":6,"kind":"method","scope":"MyClass"}
+{"_type":"tag","name":"also_private_field","path":"globals.ts","language":"typescript","line":4,"kind":"property","scope":"MyClass"}
+{"_type":"tag","name":"#private_field","path":"globals.ts","language":"typescript","line":3,"kind":"property","scope":"MyClass"}
+{"_type":"tag","name":"public_field","path":"globals.ts","language":"typescript","line":2,"kind":"property","scope":"MyClass"}
+{"_type":"tag","name":"MyInterface","path":"globals.ts","language":"typescript","line":11,"kind":"interface","scope":null}
+{"_type":"tag","name":"sayBruh","path":"globals.ts","language":"typescript","line":13,"kind":"method","scope":"MyInterface"}
+{"_type":"tag","name":"bruh","path":"globals.ts","language":"typescript","line":12,"kind":"property","scope":"MyInterface"}
+{"_type":"tag","name":"MyEnum","path":"globals.ts","language":"typescript","line":16,"kind":"enum","scope":null}
+{"_type":"tag","name":"go","path":"globals.ts","language":"typescript","line":19,"kind":"property","scope":"MyEnum"}
+{"_type":"tag","name":"rust","path":"globals.ts","language":"typescript","line":18,"kind":"property","scope":"MyEnum"}
+{"_type":"tag","name":"zig","path":"globals.ts","language":"typescript","line":17,"kind":"property","scope":"MyEnum"}
+{"_type":"tag","name":"global1","path":"globals.ts","language":"typescript","line":22,"kind":"variable","scope":null}
+{"_type":"tag","name":"global2","path":"globals.ts","language":"typescript","line":23,"kind":"variable","scope":null}
+{"_type":"tag","name":"myObject","path":"globals.ts","language":"typescript","line":35,"kind":"variable","scope":null}
+{"_type":"tag","name":"myArrow","path":"globals.ts","language":"typescript","line":39,"kind":"function","scope":"myObject"}
+{"_type":"tag","name":"myMethod","path":"globals.ts","language":"typescript","line":38,"kind":"function","scope":"myObject"}
+{"_type":"tag","name":"myProperty","path":"globals.ts","language":"typescript","line":36,"kind":"property","scope":"myObject"}
+{"_type":"tag","name":"func","path":"globals.ts","language":"typescript","line":25,"kind":"function","scope":null}

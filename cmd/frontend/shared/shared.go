@@ -45,6 +45,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -138,7 +139,7 @@ func SwitchableSiteConfig() conftypes.WatchableSiteConfig {
 
 	go func() {
 		<-AutoUpgradeDone
-		conf.EnsureHTTPClientIsConfigured()
+		httpcli.Configure(confClient)
 		switchable.WatchableSiteConfig = confClient
 		for _, watcher := range switchable.watchers {
 			confClient.Watch(watcher)
