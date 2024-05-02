@@ -286,8 +286,12 @@ sg msp pg connect -write-access %[1]s %[2]s`, s.Service.ID, env.ID)
 		//
 		// For now, render it alongside service manifests and ask users to go
 		// there instead.
+		// We must persist diagrams somewhere for
+		externalDiagramURL := fmt.Sprintf("https://github.com/sourcegraph/managed-services/blob/%s/services/%s/diagrams/%s",
+			"notion-docs", // TODO replace with 'main'
+			s.Service.ID, fmt.Sprintf("%s.md", env.ID))
 		md.Paragraphf("View the %s for this environment.",
-			markdown.Linkf("generated architecture diagram", "%s.svg", env.ID))
+			markdown.Linkf("generated architecture diagram", externalDiagramURL))
 
 		md.Headingf(3, terraformCloudSectionHeading)
 

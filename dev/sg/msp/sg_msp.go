@@ -543,24 +543,6 @@ This command supports completions on services and environments.
 									return errors.Wrapf(err, "%s: CollectAlertPolicies", s)
 								}
 
-								// Generate replacement links for architecture
-								// diagrams
-								replacements := make(map[string]string)
-								for _, e := range svc.ListEnvironmentIDs() {
-									// We must persist diagrams somewhere for
-									// reference in Notion, since Notion does
-									// not allow us to upload files via API.
-									// https://developers.notion.com/docs/working-with-files-and-media#uploading-files-and-media-via-the-notion-api
-									//
-									// We use a private repo so we can't render
-									// it in-line either, so we just use a link
-									// for now.
-									externalDiagramURL := fmt.Sprintf("https://github.com/sourcegraph/managed-services/blob/%s/services/%s/diagrams/%s",
-										"notion-docs", // TODO replace with 'main'
-										s, fmt.Sprintf("%s.md", e))
-									replacements[fmt.Sprintf("%s.svg", e)] = externalDiagramURL
-								}
-
 								prog.StatusBarUpdatef(i, "Rendering Markdown docs")
 								opts.AlertPolicies = collectedAlerts
 								doc, err := operationdocs.Render(*svc, opts)
@@ -583,7 +565,7 @@ This command supports completions on services and environments.
 								prog.StatusBarUpdatef(i, "Rendering target Notion page %s",
 									operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
 								blockUpdater := notion.NewPageBlockUpdater(notionClient, *svc.Service.NotionPageID)
-								if err := operationdocs.NewNotionConverter(c.Context, blockUpdater, replacements).
+								if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
 									ProcessMarkdown([]byte(doc)); err != nil {
 									return errors.Wrap(err, s)
 								}
@@ -613,7 +595,7 @@ This command supports completions on services and environments.
 						}
 						blockUpdater := notion.NewPageBlockUpdater(notionClient, operationdocs.IndexNotionPageID())
 						doc := operationdocs.RenderIndexPage(serviceSpecs, opts)
-						if err := operationdocs.NewNotionConverter(c.Context, blockUpdater, nil).
+						if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
 							ProcessMarkdown([]byte(doc)); err != nil {
 							return errors.Wrap(err, "apply index page")
 						}

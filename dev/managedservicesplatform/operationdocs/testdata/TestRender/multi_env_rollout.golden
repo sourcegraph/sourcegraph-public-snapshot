@@ -65,7 +65,7 @@ sg msp logs msp-testbed test
 
 ### test Architecture diagram
 
-View the [generated architecture diagram](test.svg) for this environment.
+View the [generated architecture diagram](https://github.com/sourcegraph/managed-services/blob/notion-docs/services/msp-testbed/diagrams/test.md) for this environment.
 
 ### test Terraform Cloud
 
@@ -126,7 +126,7 @@ sg msp logs msp-testbed robert
 
 ### robert Architecture diagram
 
-View the [generated architecture diagram](robert.svg) for this environment.
+View the [generated architecture diagram](https://github.com/sourcegraph/managed-services/blob/notion-docs/services/msp-testbed/diagrams/robert.md) for this environment.
 
 ### robert Terraform Cloud
 
