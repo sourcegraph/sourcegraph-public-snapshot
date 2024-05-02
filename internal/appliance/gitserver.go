@@ -105,7 +105,7 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *Sour
 	sset := statefulset.NewStatefulSet(name, sg.Namespace, sg.Spec.RequestedVersion)
 	sset.Spec.Template = podTemplate.Template
 	sset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
-		pvc.NewPersistentVolumeClaimSpecOnly(storageSize, sg.Spec.StorageClass.Name),
+		pvc.NewPersistentVolumeClaim("repos", sg.Namespace, storageSize, sg.Spec.StorageClass.Name),
 	}
 
 	return reconcileObject(ctx, r, sg.Spec.GitServer, &sset, &appsv1.StatefulSet{}, sg, owner)

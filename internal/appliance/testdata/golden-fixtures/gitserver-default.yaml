@@ -38,7 +38,9 @@ resources:
         name: gitserver
       spec:
         containers:
-        - env:
+        - args:
+          - run
+          env:
           - name: REDIS_CACHE_ENDPOINT
             valueFrom:
               secretKeyRef:
@@ -113,6 +115,10 @@ resources:
       kind: PersistentVolumeClaim
       metadata:
         creationTimestamp: null
+        labels:
+          deploy: sourcegraph
+        name: repos
+        namespace: test-appliance-7a0613
       spec:
         accessModes:
         - ReadWriteOnce
