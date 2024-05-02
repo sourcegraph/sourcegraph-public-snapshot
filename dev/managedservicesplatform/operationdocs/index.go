@@ -53,9 +53,9 @@ In addition to service-specific guidance, %s is also available.`,
 		"This page may be out of date if a service or environment was recently added or updated - reach out to #discuss-core-services for help updating these pages, or use %s to view the generated documentation in your terminal.",
 		markdown.Code("sg msp operations $SERVICE_ID"))
 
-	md.Admonitionf(markdown.AdmonitionWarning,
-		"Due to Notion limitations, we currently recreate the contents of each page entirely on updates. This means you %s share links to sections within these pages, as the linked blocks will not persist - %s tracks future improvements to this mechanism.",
-		markdown.Bold("cannot"), markdown.Link("sourcegraph/notionreposync#7", "https://github.com/sourcegraph/notionreposync/issues/7"))
+	if opts.Notion {
+		addNotionWarning(md)
+	}
 
 	owners, byOwner := collectByOwner(services)
 	for _, o := range owners {

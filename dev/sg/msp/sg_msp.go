@@ -416,9 +416,8 @@ This command supports completions on services and environments.
 					return errors.Wrap(err, "CollectAlertPolicies")
 				}
 
-				doc, err := operationdocs.Render(*svc, operationdocs.Options{
+				doc, err := operationdocs.Render(*svc, collectedAlerts, operationdocs.Options{
 					ManagedServicesRevision: repoRev,
-					AlertPolicies:           collectedAlerts,
 				})
 				if err != nil {
 					return errors.Wrap(err, "operationdocs.Render")
@@ -432,9 +431,9 @@ This command supports completions on services and environments.
 			Subcommands: []*cli.Command{
 				{
 					Name:        "generate-handbook-pages",
-					Usage:       "Generate operations handbook pages for all services",
+					Usage:       "Generate operations handbook pages in Notion for all services",
 					Hidden:      true, // not meant for day-to-day use
-					Description: ``,
+					Description: `Requires NOTION_API_TOKEN or access to sourcegraph-secrets/CORE_SERVICES_NOTION_API_TOKEN.`,
 					Before:      msprepo.UseManagedServicesRepo,
 					Flags: []cli.Flag{
 						&cli.IntFlag{
@@ -453,10 +452,11 @@ This command supports completions on services and environments.
 						if err != nil {
 							return errors.Wrap(err, "msprepo.GitRevision")
 						}
-
 						opts := operationdocs.Options{
 							ManagedServicesRevision: repoRev,
 							GenerateCommand:         strings.Join(os.Args, " "),
+							// This command is for generating Notion pages.
+							Notion: true,
 						}
 
 						sec, err := secrets.FromContext(c.Context)
@@ -544,8 +544,7 @@ This command supports completions on services and environments.
 								}
 
 								prog.StatusBarUpdatef(i, "Rendering Markdown docs")
-								opts.AlertPolicies = collectedAlerts
-								doc, err := operationdocs.Render(*svc, opts)
+								doc, err := operationdocs.Render(*svc, collectedAlerts, opts)
 								if err != nil {
 									return errors.Wrap(err, s)
 								}

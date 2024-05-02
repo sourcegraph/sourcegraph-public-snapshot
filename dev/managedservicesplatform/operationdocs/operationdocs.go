@@ -24,9 +24,8 @@ type Options struct {
 	// GenerateCommand is the command used to generate this documentation -
 	// it will be included in the generated output in a "DO NOT EDIT" comment.
 	GenerateCommand string
-	// AlertPolicies is a deduplicated map of alert policies defined for all
-	// environments of a service
-	AlertPolicies map[string]terraform.AlertPolicy
+	// Notion indicates if we are generating for a Notion page.
+	Notion bool
 }
 
 // AddDocumentNote adds a note to the markdown document with details about
@@ -58,7 +57,10 @@ Last updated: %s
 
 // Render creates a Markdown string with operational guidance for a MSP specification
 // and runtime properties using OutputsClient.
-func Render(s spec.Spec, opts Options) (string, error) {
+//
+// AlertPolicies is a deduplicated map of alert policies defined for all
+// environments of a service.
+func Render(s spec.Spec, alertPolicies map[string]terraform.AlertPolicy, opts Options) (string, error) {
 	md := markdown.NewBuilder()
 
 	opts.AddDocumentNote(md)
@@ -73,6 +75,10 @@ This service is operated on the %s.`,
 
 	md.Paragraphf("If you need assistance with MSP infrastructure, reach out to the %s team in #discuss-core-services.",
 		markdown.Link("Core Services", coreServicesNotionPageURL))
+
+	if opts.Notion {
+		addNotionWarning(md)
+	}
 
 	type environmentHeader struct {
 		environmentID string
@@ -328,10 +334,10 @@ If you make your Entitle request, then log in, you will be removed from any team
 
 	// Render alerts
 	// Sort the map keys to make order deterministic
-	alertKeys := maps.Keys(opts.AlertPolicies)
+	alertKeys := maps.Keys(alertPolicies)
 	slices.Sort(alertKeys)
 	for _, key := range alertKeys {
-		policy := opts.AlertPolicies[key]
+		policy := alertPolicies[key]
 		md.Headingf(2, policy.DisplayName)
 		// We need to remove the footer text we add to each alert policy description
 		b := []byte(policy.Documentation.Content)
