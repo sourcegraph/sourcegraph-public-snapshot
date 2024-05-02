@@ -181,6 +181,7 @@
             width: 100%;
             display: flex;
             align-items: flex-start;
+            font-family: monospace;
 
             // TODO: Update button styling across Wildcard 2.0 DS using properties below
             background-color: var(--secondary-4);
