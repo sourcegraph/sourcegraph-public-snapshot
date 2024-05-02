@@ -132,6 +132,8 @@ type CodeGraphData {
 
     # EXTENSION: We can add a build identifier here to return different
     # Documents for (say) Linux vs Windows.
+    # EXTENSION: We can add a fileSymbolInfo field here to allow 'Find usages' for the document.
+}
 
 type CodeGraphToolInfo {
     name: String
@@ -150,13 +152,13 @@ type Occurrence {
     symbol: String
     range: Range!
     roles: [SymbolRole!]
-    # We can add diagnostics etc. here in the future if needed.
+    # EXTENSION: We can add diagnostics etc. here in the future if needed.
 }
 
 input OccurrencesFilter {
     rangeFilter: RangeFilter
     rolesFilter: RolesFilter
-    # We can add a DiagnosticsFilter etc. here in the future if needed.
+    # EXTENSION: We can add a DiagnosticsFilter etc. here in the future if needed.
 }
 
 input RangeFilter {
