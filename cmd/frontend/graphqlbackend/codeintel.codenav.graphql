@@ -659,7 +659,9 @@ type Usage {
     Instead of requesting `blob.content`, it may be more useful
     to ask for `surroundingBlobContent`.
     """
-    blob: GitBlob!
+    # Left as optional in case we support generated files in the future,
+    # which may not be represented by GitBlob.
+    blob: GitBlob
 
     """
     Instead of blob { content }, allows accessing a sub-span of the content
@@ -667,7 +669,7 @@ type Usage {
     or linesAfter is negative or exceeds the number of available lines,
     the value is interpreted as until the start/end of the file.
     """
-    surroundingBlobContent(surroundingLines: SurroundingLines = {linesBefore: 0, linesAfter: 0}): String!
+    surroundingContent(surroundingLines: SurroundingLines = {linesBefore: 0, linesAfter: 0}): String
 }
 
 input SurroundingLines {
