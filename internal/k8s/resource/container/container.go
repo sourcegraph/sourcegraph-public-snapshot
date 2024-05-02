@@ -24,8 +24,8 @@ func NewContainer(name string, cfg config.StandardComponent, defaultResources co
 	}
 
 	if cfg != nil {
-		if ctrResources, ok := cfg.GetResources()[name]; ok {
-			ctr.Resources = ctrResources
+		if ctrConfig, ok := cfg.GetContainerConfig()[name]; ok {
+			ctr.Resources = ctrConfig.Resources
 		}
 	}
 

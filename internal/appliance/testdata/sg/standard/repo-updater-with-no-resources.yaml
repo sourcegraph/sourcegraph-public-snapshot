@@ -41,8 +41,9 @@ spec:
     disabled: true
 
   repoUpdater:
-    resources:
-      repo-updater: null
+    containerConfig:
+      repo-updater:
+        resources: null
 
   searcher:
     disabled: true

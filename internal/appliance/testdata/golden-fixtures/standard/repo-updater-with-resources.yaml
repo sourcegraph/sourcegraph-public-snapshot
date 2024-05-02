@@ -3,7 +3,7 @@ resources:
   kind: Deployment
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: 5e6989e9456ca355fe6cbe036e73384b350ce5a5cd28d28265259642f78aefe0
+      appliance.sourcegraph.com/configHash: ef7e879dd6941a6e3549b796700a532ce0069f41b2a7ecd3dc6dfcce79811954
     creationTimestamp: "2024-04-19T00:00:00Z"
     generation: 1
     labels:
@@ -157,14 +157,15 @@ resources:
           disabled: true
 
         repoUpdater:
-          resources:
+          containerConfig:
             repo-updater:
-              requests:
-                cpu: 1500m
-                memory: 2Gi
-              limits:
-                cpu: "4"
-                memory: 4Gi
+              resources:
+                requests:
+                  cpu: 1500m
+                  memory: 2Gi
+                limits:
+                  cpu: "4"
+                  memory: 4Gi
 
         searcher:
           disabled: true
@@ -191,7 +192,7 @@ resources:
   kind: ServiceAccount
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: 5e6989e9456ca355fe6cbe036e73384b350ce5a5cd28d28265259642f78aefe0
+      appliance.sourcegraph.com/configHash: ef7e879dd6941a6e3549b796700a532ce0069f41b2a7ecd3dc6dfcce79811954
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
       deploy: sourcegraph
@@ -203,7 +204,7 @@ resources:
   kind: Service
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: 5e6989e9456ca355fe6cbe036e73384b350ce5a5cd28d28265259642f78aefe0
+      appliance.sourcegraph.com/configHash: ef7e879dd6941a6e3549b796700a532ce0069f41b2a7ecd3dc6dfcce79811954
       prometheus.io/port: "6060"
       sourcegraph.prometheus/scrape: "true"
     creationTimestamp: "2024-04-19T00:00:00Z"
