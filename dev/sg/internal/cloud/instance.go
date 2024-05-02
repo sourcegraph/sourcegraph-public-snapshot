@@ -14,6 +14,14 @@ import (
 
 var ErrLeaseTimeNotSet error = errors.New("lease time not set")
 
+// EphemeralInstanceType is the instance type for ephemeral instances. An instance is considered ephemeral if it
+// contains "ephemeral_instance": "true" in its Instance Features
+const EphemeralInstanceType = "ephemeral"
+
+// InternalInstanceType is the instance type for internal instances. An instance is considered internal if it it is
+// in the Dev cloud environment and does not contain "ephemeral_instance": "true" in its Instance Features
+const InternalInstanceType = "internal"
+
 type Instance struct {
 	ID           string `json:"id"`
 	Name         string `json:"name"`
@@ -31,6 +39,8 @@ type Instance struct {
 	Project string         `json:"project"`
 	Region  string         `json:"region"`
 	Status  InstanceStatus `json:"status"`
+	// contains various key value pairs that are specific to the instance type
+	features *InstanceFeatures
 }
 
 func (i *Instance) String() string {
@@ -52,6 +62,10 @@ Error        : %s
 `, i.ID, i.Name, i.InstanceType, i.Environment, i.Version, i.URL, i.AdminEmail,
 		i.CreatedAt.Format(time.RFC3339), i.DeletedAt.Format(time.RFC3339), i.Lease, i.Project, i.Region,
 		i.Status.Status, i.Status.ActionURL, i.Status.Error)
+}
+
+func (i *Instance) IsEphemeral() bool {
+	return i.InstanceType == EphemeralInstanceType
 }
 
 type InstanceStatus struct {
@@ -108,17 +122,22 @@ func newInstance(src *cloudapiv1.Instance) (*Instance, error) {
 	if err != nil {
 		return nil, err
 	}
-	features := newInstanceFeatures(details.GetInstanceFeatures())
+	features := newInstanceFeaturesFrom(details.GetInstanceFeatures())
 	expiresAt, err := features.GetEphemeralLeaseTime()
 	if err != nil && !errors.Is(err, ErrLeaseTimeNotSet) {
 		return nil, err
 	}
 	lease := &InstanceLease{ExpiresAt: expiresAt}
 
+	instanceType := InternalInstanceType
+	if features.IsEphemeralInstance() {
+		instanceType = EphemeralInstanceType
+	}
+
 	return &Instance{
 		ID:           src.GetId(),
 		Name:         details.Name,
-		InstanceType: EphemeralInstanceType,
+		InstanceType: instanceType,
 		Version:      details.Version,
 		URL:          pointers.DerefZero(details.Url),
 		AdminEmail:   pointers.DerefZero(details.AdminEmail),
@@ -128,6 +147,7 @@ func newInstance(src *cloudapiv1.Instance) (*Instance, error) {
 		Region:       platform.GetGcpRegion(),
 		Status:       *status,
 		Lease:        lease,
+		features:     features,
 	}, nil
 }
 
@@ -165,10 +185,13 @@ func toInstances(items ...*cloudapiv1.Instance) ([]*Instance, error) {
 	return converted, nil
 }
 
-func newInstanceFeatures(src map[string]string) *InstanceFeatures {
+func newInstanceFeaturesFrom(src map[string]string) *InstanceFeatures {
 	return &InstanceFeatures{
 		features: src,
 	}
+}
+func newInstanceFeatures() *InstanceFeatures {
+	return &InstanceFeatures{features: make(map[string]string)}
 }
 
 func (f *InstanceFeatures) IsEphemeralInstance() bool {
@@ -184,6 +207,10 @@ func (f *InstanceFeatures) IsEphemeralInstance() bool {
 	return val
 }
 
+func (f *InstanceFeatures) SetEphemeralInstance(v bool) {
+	f.features["ephemeral_instance"] = strconv.FormatBool(v)
+}
+
 func (f *InstanceFeatures) GetEphemeralLeaseTime() (*time.Time, error) {
 	seconds, ok := f.features["ephemeral_instance_lease_time"]
 	if !ok {
@@ -195,4 +222,8 @@ func (f *InstanceFeatures) GetEphemeralLeaseTime() (*time.Time, error) {
 	}
 	leaseTime := time.Unix(secondsInt, 0)
 	return &leaseTime, nil
+}
+
+func (f *InstanceFeatures) Value() map[string]string {
+	return f.features
 }

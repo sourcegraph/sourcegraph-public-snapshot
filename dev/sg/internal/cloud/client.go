@@ -24,10 +24,6 @@ const APIEndpoint = "https://cloud-ops-dev.sgdev.org/api"
 // DevEnvironment is the environment where Cloud allows ephemeral instance types
 const DevEnvironment = "dev"
 
-// EphemeralInstanceType is the instace type we should use when creating an instance with the cloud API.
-// It is set to internal because in cloud, internal instance types does not have metrics or security enabled.
-const EphemeralInstanceType = "internal"
-
 var _ EphemeralClient = &Client{}
 
 type EphemeralClient interface {
@@ -50,12 +46,12 @@ type DeploymentSpec struct {
 }
 
 func NewDeploymentSpec(name, version string) *DeploymentSpec {
+	features := newInstanceFeatures()
+	features.SetEphemeralInstance(true)
 	return &DeploymentSpec{
-		Name:    sanitizeInstanceName(name),
-		Version: version,
-		InstanceFeatures: map[string]string{
-			"ephemeral": "true", // need to have this to make the instance ephemeral
-		},
+		Name:             sanitizeInstanceName(name),
+		Version:          version,
+		InstanceFeatures: features.Value(),
 	}
 }
 
