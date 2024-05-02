@@ -112,6 +112,7 @@ expression: dumped
 //            ^^^^^^^^^^^ definition(EnumMember) scip-ctags `Longer.Namespace`/Class#ZigFeatureSet#FullPackage.
           }
   
+          [Flags]
           public static void Syntax() { }
 //                           ^^^^^^ definition(Method) scip-ctags `Longer.Namespace`/Class#Syntax().
       }

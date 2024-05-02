@@ -78,6 +78,7 @@ namespace Longer.Namespace
             FullPackage = Errors | Comptime | BuildSystem | CoolCommunity
         }
 
+        [Flags]
         public static void Syntax() { }
     }
 }

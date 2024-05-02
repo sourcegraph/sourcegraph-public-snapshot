@@ -21,7 +21,7 @@ expression: "String::from_utf8_lossy(&output)"
 {"_type":"tag","name":"Comptime","path":"globals.cs","language":"c_sharp","line":75,"kind":"enumMember","scope":"Longer.Namespace.Class.ZigFeatureSet"}
 {"_type":"tag","name":"Errors","path":"globals.cs","language":"c_sharp","line":74,"kind":"enumMember","scope":"Longer.Namespace.Class.ZigFeatureSet"}
 {"_type":"tag","name":"None","path":"globals.cs","language":"c_sharp","line":73,"kind":"enumMember","scope":"Longer.Namespace.Class.ZigFeatureSet"}
-{"_type":"tag","name":"Syntax","path":"globals.cs","language":"c_sharp","line":81,"kind":"method","scope":"Longer.Namespace.Class"}
+{"_type":"tag","name":"Syntax","path":"globals.cs","language":"c_sharp","line":82,"kind":"method","scope":"Longer.Namespace.Class"}
 {"_type":"tag","name":"SourcegraphSwag","path":"globals.cs","language":"c_sharp","line":68,"kind":"field","scope":"Longer.Namespace.Class"}
 {"_type":"tag","name":"LambdaFunction","path":"globals.cs","language":"c_sharp","line":58,"kind":"property","scope":"Longer.Namespace.Class"}
 {"_type":"tag","name":"PublicImplicitGetterSetter","path":"globals.cs","language":"c_sharp","line":56,"kind":"property","scope":"Longer.Namespace.Class"}
@@ -32,8 +32,8 @@ expression: "String::from_utf8_lossy(&output)"
 {"_type":"tag","name":"ImplicitGetterSetter","path":"globals.cs","language":"c_sharp","line":22,"kind":"property","scope":"Longer.Namespace.Class"}
 {"_type":"tag","name":"_val","path":"globals.cs","language":"c_sharp","line":20,"kind":"field","scope":"Longer.Namespace.Class"}
 {"_type":"tag","name":"ExplicitGetterSetter","path":"globals.cs","language":"c_sharp","line":9,"kind":"property","scope":"Longer.Namespace.Class"}
-{"_type":"tag","name":"OneClass","path":"globals.cs","language":"c_sharp","line":85,"kind":"namespace","scope":null}
-{"_type":"tag","name":"TheClass","path":"globals.cs","language":"c_sharp","line":88,"kind":"class","scope":"OneClass"}
-{"_type":"tag","name":"Text","path":"globals.cs","language":"c_sharp","line":94,"kind":"property","scope":"OneClass.TheClass"}
-{"_type":"tag","name":"ClickAction","path":"globals.cs","language":"c_sharp","line":91,"kind":"property","scope":"OneClass.TheClass"}
+{"_type":"tag","name":"OneClass","path":"globals.cs","language":"c_sharp","line":86,"kind":"namespace","scope":null}
+{"_type":"tag","name":"TheClass","path":"globals.cs","language":"c_sharp","line":89,"kind":"class","scope":"OneClass"}
+{"_type":"tag","name":"Text","path":"globals.cs","language":"c_sharp","line":95,"kind":"property","scope":"OneClass.TheClass"}
+{"_type":"tag","name":"ClickAction","path":"globals.cs","language":"c_sharp","line":92,"kind":"property","scope":"OneClass.TheClass"}
 {"_type":"tag","name":"SurprisinglyValid","path":"globals.cs","language":"c_sharp","line":3,"kind":"function","scope":null}
