@@ -62,6 +62,7 @@ go_test(
         "golden_test.go",
         "helpers_test.go",
         "repo_updater_test.go",
+        "standard_config_test.go",
         "symbols_test.go",
     ],
     data = [

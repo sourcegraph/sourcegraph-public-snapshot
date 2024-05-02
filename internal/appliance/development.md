@@ -43,6 +43,10 @@ these standard features may be incomplete. Write tests, and inspect your golden
 fixtures closely - did container resources propagate as expected? Do the
 prometheus annotations appear? Fix / add standard features as required.
 
+If adding or changing a standard feature, use the test suite in
+`standard_config_test.go`. You can pick any arbitrary service that happens to
+use this feature to test it.
+
 ### Reconciler
 
 `reconcile.go` is the entrypoint to start at. The aim is to write a function

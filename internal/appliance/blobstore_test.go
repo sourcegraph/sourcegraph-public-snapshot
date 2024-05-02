@@ -27,20 +27,3 @@ func (suite *ApplianceTestSuite) TestDeployBlobstore() {
 		})
 	}
 }
-
-// More complex test cases involving updates to the configmap can have their own
-// test blocks
-func (suite *ApplianceTestSuite) TestBlobstoreResourcesDeletedWhenDisabled() {
-	namespace := suite.createConfigMap("blobstore-default")
-	suite.Require().Eventually(func() bool {
-		return suite.getConfigMapReconcileEventCount(namespace) > 0
-	}, time.Second*10, time.Millisecond*200)
-
-	eventsSeenSoFar := suite.getConfigMapReconcileEventCount(namespace)
-	suite.updateConfigMap(namespace, "everything-disabled")
-	suite.Require().Eventually(func() bool {
-		return suite.getConfigMapReconcileEventCount(namespace) > eventsSeenSoFar
-	}, time.Second*10, time.Millisecond*200)
-
-	suite.makeGoldenAssertions(namespace, "blobstore-subsequent-disable")
-}
