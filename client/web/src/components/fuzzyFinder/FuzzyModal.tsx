@@ -34,6 +34,7 @@ import {
     TabPanels,
     TabPanel,
     TabList,
+    Badge,
     LoadingSpinner,
 } from '@sourcegraph/wildcard'
 
@@ -420,6 +421,14 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                     ) : (
                         <H3>Find files</H3>
                     )}
+                    <Badge
+                        variant="info"
+                        href="https://community.sourcegraph.com/"
+                        tooltip="Provide feedback on this experimental feature"
+                        className={styles.experimentalBadge}
+                    >
+                        Experimental
+                    </Badge>
                     <Button variant="icon" onClick={onClose} aria-label="Close" className={styles.closeButton}>
                         <Icon aria-hidden={true} svgPath={mdiClose} />
                     </Button>
