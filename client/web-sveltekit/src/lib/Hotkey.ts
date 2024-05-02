@@ -56,19 +56,17 @@ function isContentField(event: KeyboardEvent): boolean {
 
 function wrapHandler(handler: KeyHandler, allowDefault: boolean = false, ignoreInputFields: boolean = true) {
     return (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => {
+        if (ignoreInputFields && isContentField(keyboardEvent)) {
+            return true
+        }
+
         // When we use hotkeys.trigger, the event is null. That's why we need to check if the event and its function exist.
         if (!allowDefault && keyboardEvent?.preventDefault) {
             // Prevent the default refresh event under WINDOWS system
             keyboardEvent.preventDefault()
         }
 
-        if (!(ignoreInputFields && isContentField(keyboardEvent))) {
-            return handler(keyboardEvent, hotkeysEvent) ?? allowDefault
-        }
-
-        // Returning false stops the event and prevents default browser events on macOS.
-        // It doesn't work for all default though, e.g. command+t will still open a new tab.
-        return allowDefault
+        return handler(keyboardEvent, hotkeysEvent) ?? allowDefault
     }
 }
 
