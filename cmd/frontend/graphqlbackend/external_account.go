@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -63,7 +62,7 @@ func (r *externalAccountResolver) CodySubscription(ctx context.Context) (*CodySu
 		return nil, errors.New("this feature is only available on sourcegraph.com")
 	}
 
-	if r.account.ServiceType != "openidconnect" || r.account.ServiceID != fmt.Sprintf("https://%s", ssc.GetSAMSHostName()) {
+	if r.account.ServiceType != "openidconnect" || r.account.ServiceID != ssc.GetSAMSServiceID() {
 		return nil, nil
 	}
 

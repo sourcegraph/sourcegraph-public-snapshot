@@ -2,7 +2,6 @@ package cody
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -88,14 +87,10 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 // will return ("", nil). After we migrate all dotcom user accounts to SAMS, that
 // should no longer be possible.
 func getSAMSAccountIDsForUser(ctx context.Context, db database.DB, dotcomUserID int32) ([]string, error) {
-	// NOTE: We hard-code this to look for the SAMS-prod environment, meaning there isn't a way
-	// to test dotcom pulling subscription data from a local SAMS/SSC instance. To support that
-	// we'd need to make the SAMSHostname configurable. (Or somehow identify which OIDC provider
-	// is SAMS.)
 	oidcAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		UserID:      dotcomUserID,
 		ServiceType: "openidconnect",
-		ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+		ServiceID:   ssc.GetSAMSServiceID(),
 	})
 	if err != nil {
 		return []string{}, errors.Wrap(err, "listing external accounts")
@@ -137,7 +132,6 @@ func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (
 		// While developing the SSC backend, we only fetch subscription data for users based on a flag.
 		var subscription *ssc.Subscription
 		if samsAccountID != "" {
-
 			subscription, err = sscClient.FetchSubscriptionBySAMSAccountID(ctx, samsAccountID)
 			if err != nil {
 				return nil, errors.Wrap(err, "fetching subscription from SSC")

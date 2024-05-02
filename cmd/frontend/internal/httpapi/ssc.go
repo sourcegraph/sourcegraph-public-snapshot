@@ -27,7 +27,7 @@ func newSSCRefreshCodyRateLimitHandler(logger log.Logger, db database.DB) http.H
 		oidcAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 			AccountID:   samsAccountID,
 			ServiceType: "openidconnect",
-			ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+			ServiceID:   ssc.GetSAMSServiceID(),
 			LimitOffset: &database.LimitOffset{
 				Limit: 1,
 			},
