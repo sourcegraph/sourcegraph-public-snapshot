@@ -295,8 +295,8 @@
         padding: 0.75rem;
         color: var(--text-muted);
 
-        // Allows for its shadow to cascade over the code panel, file header and other right-hand side page elements (besides the page header)
-        z-index: 2;
+        // Allows for its shadow to cascade over the code panel
+        z-index: 1;
     }
 
     .revision-info {
