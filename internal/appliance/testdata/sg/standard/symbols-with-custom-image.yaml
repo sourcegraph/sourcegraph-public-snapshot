@@ -1,5 +1,6 @@
 spec:
   requestedVersion: "5.3.9104"
+  imageRepository: my-custom-image-repository.info/sourcegraph-images
 
   blobstore:
     disabled: true
@@ -41,15 +42,15 @@ spec:
     disabled: true
 
   repoUpdater:
-    containerConfig:
-      repo-updater:
-        bestEffortQOS: true
+    disabled: true
 
   searcher:
     disabled: true
 
   symbols:
-    disabled: true
+    containerConfig:
+      symbols:
+        image: some-image:some-tag
 
   syntectServer:
     disabled: true

@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/container"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/deployment"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pod"
@@ -95,19 +96,19 @@ func buildBlobstoreDeployment(sg *Sourcegraph) appsv1.Deployment {
 		},
 	}
 
-	defaultContainer := container.NewContainer(name, sg.Spec.Blobstore, corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1"),
-			corev1.ResourceMemory: resource.MustParse("500M"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1"),
-			corev1.ResourceMemory: resource.MustParse("500M"),
+	defaultContainer := container.NewContainer(name, sg.Spec.Blobstore, config.ContainerConfig{
+		Image: getDefaultImage(sg, name),
+		Resources: &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("1"),
+				corev1.ResourceMemory: resource.MustParse("500M"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("1"),
+				corev1.ResourceMemory: resource.MustParse("500M"),
+			},
 		},
 	})
-
-	// TODO: https://github.com/sourcegraph/sourcegraph/issues/62076
-	defaultContainer.Image = "index.docker.io/sourcegraph/blobstore:5.3.2@sha256:d625be1eefe61cc42f94498e3c588bf212c4159c8b20c519db84eae4ff715efa"
 
 	defaultContainer.Ports = containerPorts
 	defaultContainer.VolumeMounts = containerVolumeMounts

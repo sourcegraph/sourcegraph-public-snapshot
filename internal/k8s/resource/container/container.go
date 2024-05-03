@@ -1,6 +1,7 @@
 package container
 
 import (
+	"github.com/grafana/regexp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -8,13 +9,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
+var imageRegexp = regexp.MustCompile(`(.+)/([^:]+):(.+)`)
+
 // NewContainer creates a new k8s Container with some default values set.
-func NewContainer(name string, cfg config.StandardComponent, defaultResources corev1.ResourceRequirements) corev1.Container {
+func NewContainer(name string, cfg config.StandardComponent, defaults config.ContainerConfig) corev1.Container {
 	ctr := corev1.Container{
 		Name:                     name,
+		Image:                    defaults.Image,
 		ImagePullPolicy:          corev1.PullIfNotPresent,
 		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
-		Resources:                defaultResources,
+		Resources:                *defaults.Resources,
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser:                pointers.Ptr[int64](100),
 			RunAsGroup:               pointers.Ptr[int64](101),
@@ -25,7 +29,15 @@ func NewContainer(name string, cfg config.StandardComponent, defaultResources co
 
 	if cfg != nil {
 		if ctrConfig, ok := cfg.GetContainerConfig()[name]; ok {
-			ctr.Resources = ctrConfig.Resources
+			if ctrConfig.BestEffortQOS {
+				ctr.Resources = corev1.ResourceRequirements{}
+			} else if ctrConfig.Resources != nil {
+				ctr.Resources = *ctrConfig.Resources
+			}
+
+			if ctrConfig.Image != "" {
+				ctr.Image = imageRegexp.ReplaceAllString(ctr.Image, "$1/"+ctrConfig.Image)
+			}
 		}
 	}
 

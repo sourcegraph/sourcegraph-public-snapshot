@@ -23,7 +23,16 @@ type StandardConfig struct {
 }
 
 type ContainerConfig struct {
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	Image string `json:"image,omitempty"`
+
+	// Set BestEffortQOS=true to configure a container without resource limits
+	// or requests. This can be useful for local development.
+	// We need this flag to disambiguate between Resources being null because
+	// the admin is not overriding defaults, or because they do not want to
+	// configure resources.
+	// https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/
+	BestEffortQOS bool                         `json:"bestEffortQOS,omitempty"`
+	Resources     *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // Config that applies to all Pod templates produced by a Service. If this needs

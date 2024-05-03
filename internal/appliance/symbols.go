@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/container"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pod"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pvc"
@@ -37,14 +38,17 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *Source
 	name := "symbols"
 	cfg := sg.Spec.Symbols
 
-	ctr := container.NewContainer(name, cfg, corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("500m"),
-			corev1.ResourceMemory: resource.MustParse("500M"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("2"),
-			corev1.ResourceMemory: resource.MustParse("2G"),
+	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
+		Image: getDefaultImage(sg, name),
+		Resources: &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("500m"),
+				corev1.ResourceMemory: resource.MustParse("500M"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("2"),
+				corev1.ResourceMemory: resource.MustParse("2G"),
+			},
 		},
 	})
 
@@ -56,9 +60,6 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *Source
 	// Cache size is 90% of available attached storage
 	cacheSize := float64(storageSize.Value()) * 0.9
 	cacheSizeMB := int(math.Floor(cacheSize / 1024 / 1024))
-
-	// TODO: https://github.com/sourcegraph/sourcegraph/issues/62076
-	ctr.Image = "index.docker.io/sourcegraph/symbols:5.3.2@sha256:dd7f923bdbd5dbd231b749a7483110d40d59159084477b9fff84afaf58aad98e"
 
 	ctr.Env = container.EnvVarsRedis()
 	ctr.Env = append(
