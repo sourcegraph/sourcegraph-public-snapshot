@@ -273,7 +273,7 @@ func (rc *cmdReader) waitCmd() error {
 	return rc.err
 }
 
-const highMemoryUsageThreshold = 500 * bytesize.MiB
+// const highMemoryUsageThreshold = 500 * bytesize.MiB
 
 func (rc *cmdReader) trace() {
 	duration := time.Since(rc.cmdStart)
@@ -291,7 +291,9 @@ func (rc *cmdReader) trace() {
 	memUsage := rssToByteSize(sysUsage.Maxrss)
 
 	isSlow := duration > shortGitCommandSlow(rc.cmd.Unwrap().Args)
-	isHighMem := memUsage > highMemoryUsageThreshold
+	// TODO: Disabled until this also works on linux, this only works on macOS right now
+	// and causes noise.
+	isHighMem := false // memUsage > highMemoryUsageThreshold
 
 	if isHighMem {
 		highMemoryCounter.WithLabelValues(rc.subCmd).Inc()
