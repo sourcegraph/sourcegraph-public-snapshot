@@ -49,6 +49,11 @@ var releaseBaseFlags = []cli.Flag{
 		Value: false,
 		Usage: "Infer run configuration from last commit instead of flags.",
 	},
+	&cli.BoolFlag{
+		Name:    "development",
+		Aliases: []string{"d"},
+		Usage:   "Create a development release. This is a release that is not meant to be promoted to public, but is meant to be used by other developers to test their changes. It is not meant to be used by customers.",
+	},
 }
 
 // releaseRunFlags are the flags for the release run * subcommands. Version is optional here, because
@@ -68,11 +73,6 @@ var releaseCreatePromoteFlags = append(releaseBaseFlags, []cli.Flag{
 		Name:     "version",
 		Usage:    "Force version (required)",
 		Required: true,
-	},
-	&cli.BoolFlag{
-		Name:    "development",
-		Aliases: []string{"d"},
-		Usage:   "Create a development release. This is a release that is not meant to be promoted to public, but is meant to be used by other developers to test their changes. It is not meant to be used by customers.",
 	},
 }...)
 
