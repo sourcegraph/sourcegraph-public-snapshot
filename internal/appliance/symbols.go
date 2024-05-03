@@ -107,13 +107,14 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *Source
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
 	podTemplate.Template.Spec.ServiceAccountName = name
 	podTemplate.Template.Spec.Volumes = []corev1.Volume{
+		{Name: "cache"},
 		pod.NewVolumeEmptyDir("tmp"),
 	}
 
 	sset := statefulset.NewStatefulSet(name, sg.Namespace, sg.Spec.RequestedVersion)
 	sset.Spec.Template = podTemplate.Template
 	sset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
-		pvc.NewPersistentVolumeClaimSpecOnly(storageSize, sg.Spec.StorageClass.Name),
+		pvc.NewPersistentVolumeClaim("cache", sg.Namespace, storageSize, sg.Spec.StorageClass.Name),
 	}
 
 	return reconcileObject(ctx, r, sg.Spec.Symbols, &sset, &appsv1.StatefulSet{}, sg, owner)
