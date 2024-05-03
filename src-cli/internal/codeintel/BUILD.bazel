@@ -19,4 +19,7 @@ go_test(
         "sanitation_test.go",
     ],
     embed = [":codeintel"],
+    env = {
+        "GIT_DISCOVERY_ACROSS_FILESYSTEM": "1",
+    },
 )
