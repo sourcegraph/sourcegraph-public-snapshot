@@ -21,3 +21,10 @@ Here is the complete process:
     - Someone with `cody-admin` SSC superpowers needs to run this.
     - Go to https://accounts.sourcegraph.com/ and in Dev Tools → Application → Cookies → https://accounts.sourcegraph.com/, copy the value for the `accounts_session_v2` cookie.
     - Run `sourcegraph/sourcegraph/dev/plg-cody-pro-upgrade/main.go {SAMS_ID} {SESSION_COOKIE}`.
+
+## Troubleshooting
+
+- "401 Unauthorized" means that your session ID is wrong our you don't have the SSC superpowers needed.
+- A pair of "201 Created" and "200 OK" means the SSC account was created, and team membership was set.
+- A pair of "400 Bad Request" and "200 OK" means the SSC account already existed, the team membership was set.
+- A pair of "400 Bad Request" and "400 Bad Request" means that it was already all set.
