@@ -22,49 +22,49 @@ type externalTransport struct {
 	effective *http.Transport
 }
 
-var tlsExternalConfig struct {
+var tlsExternalConfigStore struct {
 	sync.RWMutex
 	*schema.TlsExternal
 }
 
-var outboundRequestLogLimit atomic.Int32
-var redactOutboundRequestHeaders atomic.Bool
+var outboundRequestLogLimitStore atomic.Int32
+var redactOutboundRequestHeadersStore atomic.Bool
 
-// SetTLSExternalConfig is called by the conf package whenever TLSExternalConfig changes.
+// setTLSExternalConfig is called by the conf package whenever TLSExternalConfig changes.
 // This is needed to avoid circular imports.
-func SetTLSExternalConfig(c *schema.TlsExternal) {
-	tlsExternalConfig.Lock()
-	tlsExternalConfig.TlsExternal = c
-	tlsExternalConfig.Unlock()
+func setTLSExternalConfig(c *schema.TlsExternal) {
+	tlsExternalConfigStore.Lock()
+	tlsExternalConfigStore.TlsExternal = c
+	tlsExternalConfigStore.Unlock()
 }
 
-// TLSExternalConfig returns the current value of the global TLS external config.
-func TLSExternalConfig() *schema.TlsExternal {
-	tlsExternalConfig.RLock()
-	defer tlsExternalConfig.RUnlock()
-	return tlsExternalConfig.TlsExternal
+// tlsExternalConfig returns the current value of the global TLS external config.
+func tlsExternalConfig() *schema.TlsExternal {
+	tlsExternalConfigStore.RLock()
+	defer tlsExternalConfigStore.RUnlock()
+	return tlsExternalConfigStore.TlsExternal
 }
 
-// SetOutboundRequestLogLimit is called by the conf package whenever OutboundRequestLogLimit changes.
+// setOutboundRequestLogLimit is called by the conf package whenever OutboundRequestLogLimit changes.
 // This is needed to avoid circular imports.
-func SetOutboundRequestLogLimit(i int32) {
-	outboundRequestLogLimit.Store(i)
+func setOutboundRequestLogLimit(i int32) {
+	outboundRequestLogLimitStore.Store(i)
 }
 
-// OutboundRequestLogLimit returns the current value of the global OutboundRequestLogLimit value.
-func OutboundRequestLogLimit() int32 {
-	return outboundRequestLogLimit.Load()
+// outboundRequestLogLimit returns the current value of the global OutboundRequestLogLimit value.
+func outboundRequestLogLimit() int32 {
+	return outboundRequestLogLimitStore.Load()
 }
 
-// SetRedactOutboundRequestHeaders is called by the conf package whenever the RedactOutboundRequestHeaders setting changes.
+// setRedactOutboundRequestHeaders is called by the conf package whenever the RedactOutboundRequestHeaders setting changes.
 // This is needed to avoid circular imports.
-func SetRedactOutboundRequestHeaders(b bool) {
-	redactOutboundRequestHeaders.Store(b)
+func setRedactOutboundRequestHeaders(b bool) {
+	redactOutboundRequestHeadersStore.Store(b)
 }
 
-// RedactOutboundRequestHeaders returns the current value of the global RedactOutboundRequestHeaders setting.
-func RedactOutboundRequestHeaders() bool {
-	return redactOutboundRequestHeaders.Load()
+// redactOutboundRequestHeaders returns the current value of the global redactOutboundRequestHeaders setting.
+func redactOutboundRequestHeaders() bool {
+	return redactOutboundRequestHeadersStore.Load()
 }
 
 func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {
@@ -72,7 +72,7 @@ func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	config, effective := t.config, t.effective
 	t.mu.RUnlock()
 
-	if current := TLSExternalConfig(); current == nil {
+	if current := tlsExternalConfig(); current == nil {
 		return t.base.RoundTrip(r)
 	} else if !reflect.DeepEqual(config, current) {
 		effective = t.update(r.Context(), current)
