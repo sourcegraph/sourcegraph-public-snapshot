@@ -296,8 +296,6 @@
 </form>
 
 <style lang="scss">
-    @use '$lib/breakpoints';
-
     form {
         isolation: isolate;
         width: 100%;
