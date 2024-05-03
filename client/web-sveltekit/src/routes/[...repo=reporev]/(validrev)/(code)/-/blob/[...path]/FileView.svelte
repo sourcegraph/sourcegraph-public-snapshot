@@ -32,9 +32,9 @@
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
     import { CodeViewMode, toCodeViewMode } from './util'
 
-    export let embedded: boolean
-    export let disableCodeIntel: boolean
     export let data: Extract<PageData, { type: 'FileView' }>
+    export let embedded: boolean = false
+    export let disableCodeIntel: boolean = false
 
     export function capture(): ScrollSnapshot | null {
         return cmblob?.getScrollSnapshot() ?? null
