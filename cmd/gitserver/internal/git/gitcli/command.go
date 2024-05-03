@@ -14,6 +14,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/procfs"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -175,6 +176,19 @@ func (g *gitCLIBackend) NewCommand(ctx context.Context, optFns ...CommandOptionF
 		tr:        tr,
 	}
 
+	if runtime.GOOS == "linux" {
+		fs, err := procfs.NewDefaultFS()
+		if err != nil {
+			logger.Warn("failed to get procfs", log.Error(err))
+		} else {
+			proc, err := fs.Proc(cmd.Process.Pid)
+			if err != nil {
+				logger.Warn("failed to get process from procfs", log.Error(err))
+			}
+			cr.proc = proc
+		}
+	}
+
 	return cr, nil
 }
 
@@ -211,20 +225,22 @@ func (e *CommandFailedError) Error() string {
 }
 
 type cmdReader struct {
-	stdout    io.Reader
-	ctx       context.Context
-	ctxCancel context.CancelFunc
-	subCmd    string
-	cmdStart  time.Time
-	cmd       wrexec.Cmder
-	stderr    *bytes.Buffer
-	logger    log.Logger
-	git       git.GitBackend
-	repoName  api.RepoName
-	mu        sync.Mutex
-	tr        trace.Trace
-	err       error
-	waitOnce  sync.Once
+	stdout     io.Reader
+	ctx        context.Context
+	ctxCancel  context.CancelFunc
+	subCmd     string
+	cmdStart   time.Time
+	cmd        wrexec.Cmder
+	stderr     *bytes.Buffer
+	logger     log.Logger
+	git        git.GitBackend
+	repoName   api.RepoName
+	mu         sync.Mutex
+	tr         trace.Trace
+	err        error
+	waitOnce   sync.Once
+	proc       procfs.Proc
+	lastStatus procfs.ProcStatus
 }
 
 func (rc *cmdReader) Read(p []byte) (n int, err error) {
@@ -255,6 +271,14 @@ func (rc *cmdReader) waitCmd() error {
 	// we synchronize all potential calls to Read and Close
 	// here, and memoize the error.
 	rc.waitOnce.Do(func() {
+		// If on linux, use proc to get the maximum memory usage of the process:
+		if runtime.GOOS == "linux" && rc.proc.PID != 0 {
+			var err error
+			rc.lastStatus, err = rc.proc.NewStatus()
+			if err != nil {
+				rc.logger.Warn("failed to get process status", log.Error(err))
+			}
+		}
 		rc.err = rc.cmd.Wait()
 
 		if rc.err != nil {
@@ -273,7 +297,7 @@ func (rc *cmdReader) waitCmd() error {
 	return rc.err
 }
 
-const highMemoryUsageThreshold = 500 * bytesize.MiB
+const highMemoryUsageThreshold = 15 * bytesize.MiB
 
 func (rc *cmdReader) trace() {
 	duration := time.Since(rc.cmdStart)
@@ -288,7 +312,13 @@ func (rc *cmdReader) trace() {
 		sysUsage = *s
 	}
 
-	memUsage := rssToByteSize(sysUsage.Maxrss)
+	maxRSS := rssToByteSize(sysUsage.Maxrss)
+	var memUsage bytesize.Bytes
+	if runtime.GOOS == "darwin" {
+		memUsage = maxRSS
+	} else if runtime.GOOS == "linux" {
+		memUsage = bytesize.Bytes(rc.lastStatus.VmHWM * uint64(bytesize.KiB))
+	}
 
 	isSlow := duration > shortGitCommandSlow(rc.cmd.Unwrap().Args)
 	isHighMem := memUsage > highMemoryUsageThreshold
@@ -312,7 +342,8 @@ func (rc *cmdReader) trace() {
 		ev.AddField("cmd_duration_ms", duration.Milliseconds())
 		ev.AddField("user_time_ms", processState.UserTime().Milliseconds())
 		ev.AddField("system_time_ms", processState.SystemTime().Milliseconds())
-		ev.AddField("cmd_ru_maxrss_kib", memUsage/bytesize.KiB)
+		ev.AddField("cmd_ru_maxrss_kib", maxRSS/bytesize.KiB)
+		ev.AddField("cmd_memusage_kib", memUsage/bytesize.KiB)
 		ev.AddField("cmd_ru_minflt", sysUsage.Minflt)
 		ev.AddField("cmd_ru_majflt", sysUsage.Majflt)
 		ev.AddField("cmd_ru_inblock", sysUsage.Inblock)
@@ -339,7 +370,8 @@ func (rc *cmdReader) trace() {
 	rc.tr.SetAttributes(attribute.Int64("cmd_duration_ms", duration.Milliseconds()))
 	rc.tr.SetAttributes(attribute.Int64("user_time_ms", processState.UserTime().Milliseconds()))
 	rc.tr.SetAttributes(attribute.Int64("system_time_ms", processState.SystemTime().Milliseconds()))
-	rc.tr.SetAttributes(attribute.Int64("cmd_ru_maxrss_kib", int64(memUsage/bytesize.KiB)))
+	rc.tr.SetAttributes(attribute.Int64("cmd_ru_maxrss_kib", int64(maxRSS/bytesize.KiB)))
+	rc.tr.SetAttributes(attribute.Int64("cmd_memusage_kib", int64(memUsage/bytesize.KiB)))
 	rc.tr.SetAttributes(attribute.Int64("cmd_ru_minflt", sysUsage.Minflt))
 	rc.tr.SetAttributes(attribute.Int64("cmd_ru_majflt", sysUsage.Majflt))
 	rc.tr.SetAttributes(attribute.Int64("cmd_ru_inblock", sysUsage.Inblock))
