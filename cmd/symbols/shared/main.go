@@ -97,7 +97,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}, handleStatus)
 
 	handler = handlePanic(logger, handler)
-	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
+	handler = trace.HTTPMiddleware(logger, handler)
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = actor.HTTPMiddleware(logger, handler)
 	server := httpserver.NewFromAddr(addr, &http.Server{

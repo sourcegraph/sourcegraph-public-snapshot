@@ -145,7 +145,7 @@
         white-space: nowrap;
         gap: 0.25rem;
 
-        padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+        padding: 0.25rem 0.5rem;
         margin: 0;
         font-weight: 400;
 
@@ -153,16 +153,25 @@
             flex: 1;
             text-overflow: ellipsis;
             overflow: hidden;
+            color: var(--text-body);
         }
 
         &:hover {
-            background-color: var(--secondary-2);
+            background-color: var(--color-bg-3);
+
+            .label {
+                color: var(--text-title);
+            }
         }
 
         &.selected {
             background-color: var(--primary);
-            color: var(--primary-4);
-            --color: var(--primary-4);
+            color: var(--light-text);
+            --color: var(--light-text);
+
+            .label {
+                color: var(--light-text);
+            }
         }
 
         .close {

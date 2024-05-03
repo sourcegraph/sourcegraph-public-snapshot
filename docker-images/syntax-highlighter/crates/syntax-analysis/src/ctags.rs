@@ -82,7 +82,7 @@ impl<'a> Reply<'a> {
             name,
             path,
             language,
-            line: scope.scope_range.start_line as usize + 1,
+            line: scope.ident_range.start_line as usize + 1,
             kind: descriptors_to_kind(&scope.descriptors, &scope.kind),
             scope: tag_scope,
         };
@@ -200,9 +200,10 @@ pub fn generate_tags<W: std::io::Write>(
             Reply::Error {
                 message: err.to_string(),
                 fatal: false,
-            }.write(buf_writer);
-            return None
-        },
+            }
+            .write(buf_writer);
+            return None;
+        }
     };
 
     let mut scope_deduplicator = HashMap::new();
@@ -253,14 +254,16 @@ pub fn ctags_runner<R: Read, W: Write>(
                     Err(error) => Reply::Error {
                         message: error.to_string(),
                         fatal: false,
-                    }.write(output)
+                    }
+                    .write(output),
                 };
             }
         }
 
         Reply::Completed {
             command: "generate-tags".to_string(),
-        }.write(output);
+        }
+        .write(output);
 
         output.flush().unwrap();
     }

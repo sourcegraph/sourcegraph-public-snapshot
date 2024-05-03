@@ -26,6 +26,7 @@ const authProviders: SourcegraphContext['authProviders'] = [
         authenticationURL: '',
         serviceID: '',
         noSignIn: false,
+        requiredForAuthz: false,
     },
     {
         clientID: '002',
@@ -35,6 +36,7 @@ const authProviders: SourcegraphContext['authProviders'] = [
         authenticationURL: '/.auth/github/login?pc=f00bar',
         serviceID: 'https://github.com',
         noSignIn: false,
+        requiredForAuthz: false,
     },
     {
         clientID: '003',
@@ -44,6 +46,7 @@ const authProviders: SourcegraphContext['authProviders'] = [
         authenticationURL: '/.auth/gitlab/login?pc=f00bar',
         serviceID: 'https://gitlab.com',
         noSignIn: false,
+        requiredForAuthz: false,
     },
 ]
 

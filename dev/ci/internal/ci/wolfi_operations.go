@@ -94,7 +94,7 @@ func buildRepoIndex(packageKeys []string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":card_index_dividers: Build and sign repository index",
 			bk.Cmd("./dev/ci/scripts/wolfi/build-repo-index.sh"),
-			// We want to run on the bazel queue, so we have a pretty minimal agent.
+			// This script is lightweight, so fine to run on the small queue
 			bk.Agent("queue", AspectWorkflows.QueueSmall),
 			// Depend on all previous package building steps
 			bk.DependsOn(packageKeys...),
@@ -299,10 +299,13 @@ func wolfiBaseImageLockAndCreatePR() *operations.Set {
 
 	ops.Append(
 		func(pipeline *bk.Pipeline) {
-			pipeline.AddStep(":whale::hash: Lock Base Image Packages",
+			pipeline.AddStep(":whale::hash: Update Base Image Packages",
 				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-lockfiles.sh"),
-				bk.Agent("queue", AspectWorkflows.QueueSmall),
+				bk.Agent("queue", AspectWorkflows.QueueDefault),
+				bk.Agent("queue", AspectWorkflows.QueueDefault),
 				bk.Key("updateBaseImageHashes"),
+				bk.DependsOn("bazel-prechecks"),
+				bk.DependsOn("bazel-prechecks"),
 			)
 		},
 	)
@@ -326,7 +329,7 @@ func WolfiCheckApkoLocks() *operations.Set {
 						MultiJobContext: "apko-check-lock",
 					},
 				}),
-				bk.Agent("queue", AspectWorkflows.QueueSmall),
+				bk.Agent("queue", AspectWorkflows.QueueDefault),
 				bk.Key("apko-check-lock"),
 				bk.SoftFail(222),
 			)

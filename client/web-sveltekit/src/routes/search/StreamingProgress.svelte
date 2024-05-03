@@ -163,7 +163,7 @@
     .progress-button {
         border: 1px solid var(--border-color-2);
         border-radius: 4px;
-        margin-left: 0.3rem;
+        padding: 0;
     }
 
     .streaming-popover {

@@ -21,7 +21,7 @@ func releasePromoteImages(c Config) operations.Operation {
 			bk.Env("VERSION", c.Version),
 			bk.Env("INTERNAL_REGISTRY", images.SourcegraphInternalReleaseRegistry),
 			bk.Env("PUBLIC_REGISTRY", images.SourcegraphDockerPublishRegistry),
-			bk.Env("ADDITIONAL_PROD_REGISTRY", images.SourcegraphArtifactRegistryPublicRegistry),
+			bk.Env("ADDITIONAL_PROD_REGISTRIES", images.SourcegraphArtifactRegistryPublicRegistry),
 			bk.AnnotatedCmd(
 				fmt.Sprintf("./tools/release/promote_images.sh %s", image_args),
 				bk.AnnotatedCmdOpts{
@@ -51,7 +51,7 @@ func releaseTestOperation(c Config) operations.Operation {
 			bk.Env("PROD_REGISTRY", prodRegistry),
 			bk.Env("VERSION", c.Version),
 			bk.AnnotatedCmd(
-				bazelCmd(`run --run_under="cd $$PWD &&" //dev/sg -- release run test --branch $$BUILDKITE_BRANCH --version $$VERSION`),
+				bazelCmd(`run --run_under="cd $$PWD &&" //dev/sg -- release run test --branch $$BUILDKITE_BRANCH --version $$VERSION --development=$$IS_DEVELOPMENT_RELEASE`),
 				bk.AnnotatedCmdOpts{
 					Annotations: &bk.AnnotationOpts{
 						Type:         bk.AnnotationTypeInfo,
@@ -80,7 +80,7 @@ func releaseFinalizeOperation(c Config) operations.Operation {
 			bk.Agent("queue", AspectWorkflows.QueueDefault),
 			bk.Env("VERSION", c.Version),
 			bk.AnnotatedCmd(
-				bazelCmd(fmt.Sprintf(`run --run_under="cd $$PWD &&" //dev/sg -- release run %s finalize --branch $$BUILDKITE_BRANCH --version $$VERSION`, command)),
+				bazelCmd(fmt.Sprintf(`run --run_under="cd $$PWD &&" //dev/sg -- release run %s finalize --branch $$BUILDKITE_BRANCH --version $$VERSION --development=$$IS_DEVELOPMENT_RELEASE`, command)),
 				bk.AnnotatedCmdOpts{
 					Annotations: &bk.AnnotationOpts{
 						Type:         bk.AnnotationTypeInfo,

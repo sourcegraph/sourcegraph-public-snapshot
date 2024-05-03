@@ -132,10 +132,14 @@ input.btn {
     padding: 0;
     background: transparent;
     color: inherit;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     border: none;
     cursor: pointer;
+
+    &.btn.btn-block {
+        display: flex;
+    }
 
     &.focus:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
         box-shadow: 0 0 0 2px var(--primary-2);

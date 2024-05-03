@@ -321,8 +321,7 @@ func (ds *Definitions) traverse(targetIDs []int, next func(definition Definition
 			}
 
 			for _, id := range next(definition) {
-				nodeID := n.id // avoid referencing the loop variable
-				newFrontier = append(newFrontier, node{id, &nodeID})
+				newFrontier = append(newFrontier, node{id, &n.id})
 			}
 		}
 

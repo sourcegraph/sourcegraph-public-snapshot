@@ -38,7 +38,8 @@
 
         .repo-link {
             align-self: baseline;
-            color: var(--text-body);
+            color: var(--body-color);
+            font-weight: 500;
             .rev {
                 color: var(--text-muted);
             }

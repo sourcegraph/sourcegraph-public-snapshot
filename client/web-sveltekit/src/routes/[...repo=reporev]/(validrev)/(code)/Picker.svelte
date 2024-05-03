@@ -114,10 +114,10 @@
     .root {
         display: flex;
         flex-direction: column;
-    }
 
-    :global([data-input-container]) {
-        margin: 0.75rem;
+        :global([data-input-container]) {
+            margin: 0.75rem;
+        }
     }
 
     .loading-state,
@@ -149,6 +149,7 @@
         padding: 0 0 0.5rem 0;
         list-style: none;
         overflow: auto;
+        color: var(--text-body);
     }
 
     .suggestions-list-item {
@@ -162,7 +163,8 @@
 
         &:hover,
         &[data-highlighted] {
-            background: var(--color-bg-3);
+            background: var(--color-bg-2);
+            color: var(--text-title);
         }
     }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/markdown"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -20,6 +21,20 @@ type GitBlobLSIFDataArgs struct {
 	Path      string
 	ExactPath bool
 	ToolName  string
+}
+
+func (a *GitBlobLSIFDataArgs) Options() shared.UploadMatchingOptions {
+	matching := shared.RootMustEnclosePath
+	if !a.ExactPath {
+		matching = shared.RootEnclosesPathOrPathEnclosesRoot
+	}
+	return shared.UploadMatchingOptions{
+		RepositoryID:       int(a.Repo.ID),
+		Commit:             string(a.Commit),
+		Path:               a.Path,
+		RootToPathMatching: matching,
+		Indexer:            a.ToolName,
+	}
 }
 
 type GitBlobLSIFDataResolver interface {

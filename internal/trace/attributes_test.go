@@ -3,8 +3,9 @@ package trace
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func Test_truncateError(t *testing.T) {

@@ -1,10 +1,9 @@
-use crate::range::Range;
 use anyhow::{Context, Result};
 use bitvec::prelude::*;
 use protobuf::Enum;
 use scip::types::{symbol_information, Descriptor, Document, Occurrence, SymbolInformation};
 
-use crate::languages::TagConfiguration;
+use crate::{languages::TagConfiguration, range::Range};
 
 #[derive(Debug)]
 pub struct Scope {
@@ -319,11 +318,11 @@ pub fn parse_tree<'a>(
 
 #[cfg(test)]
 pub mod test {
-    use crate::snapshot::{self, dump_document_with_config, SnapshotOptions};
     use scip::types::Document;
     use tree_sitter_all_languages::ParserId;
 
     use super::*;
+    use crate::snapshot::{self, dump_document_with_config, SnapshotOptions};
 
     pub fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Document {
         let mut parser = config.get_parser();

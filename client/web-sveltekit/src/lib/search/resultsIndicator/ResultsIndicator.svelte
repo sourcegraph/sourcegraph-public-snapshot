@@ -37,13 +37,11 @@
 </script>
 
 <div class="indicator">
-    <div>
-        {#if loading}
-            <LoadingSpinner inline />
-        {:else}
-            <Icon svgPath={icons[severity]} size={18} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
-        {/if}
-    </div>
+    {#if loading}
+        <LoadingSpinner --size="16px" />
+    {:else}
+        <Icon svgPath={icons[severity]} --icon-size="16px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
+    {/if}
 
     <div class="messages">
         <ProgressMessage {state} {progress} {severity} />
@@ -52,35 +50,36 @@
         {:else if done}
             <SuggestedAction {progress} {suggestedItems} {severity} {state} />
         {:else}
-            <small>Running Search</small>
+            <span>Running search...</span>
         {/if}
     </div>
-    <Icon svgPath={mdiChevronDown} size={18} --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
+
+    <Icon svgPath={mdiChevronDown} --icon-size="12px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
 </div>
 
 <style lang="scss">
     .indicator {
         display: flex;
         flex-flow: row nowrap;
-        justify-content: space-evenly;
+        justify-content: space-between;
         align-items: center;
-        gap: 0.5rem;
-        min-width: 200px;
-        max-width: fit-content;
+        gap: 0.75rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: var(--border-radius);
 
-        padding: 0.25rem;
+        &:hover {
+            background-color: var(--color-bg-2);
+        }
 
         .messages {
             display: flex;
             flex-flow: column nowrap;
             justify-content: center;
             align-items: flex-start;
-            margin-right: 0.75rem;
-            margin-left: 0.5rem;
             row-gap: 0.25rem;
         }
 
-        small {
+        span {
             color: var(--text-muted);
         }
     }

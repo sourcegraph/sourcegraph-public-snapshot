@@ -88,7 +88,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Local branch is up to date with remote"))
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Creating release branch..."))
-	if err := releaseGitRepoBranch.Checkout(ctx); err != nil {
+	if err := releaseGitRepoBranch.CheckoutNewBranch(ctx); err != nil {
 		p.Destroy()
 		return errors.Wrap(err, "failed to create release branch")
 	}
