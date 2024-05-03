@@ -223,6 +223,31 @@ service GitserverService {
   rpc FirstEverCommit(FirstEverCommitRequest) returns (FirstEverCommitResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+
+  // BehindAhead returns the behind/ahead commit counts information for the symmetric difference left...right (both Git
+  // revspecs).
+  //
+  // Behind is the number of commits that are solely reachable in "left" but not "right".
+  // Ahead is the number of commits that are solely reachable in "right" but not "left".
+  //
+  //  For the example, given the graph below, BehindAhead("A", "B") would return {Behind: 3, Ahead: 2}.
+  //
+  //	     y---b---b  branch B
+  //	    / \ /
+  //	   /   .
+  //	  /   / \
+  //	 o---x---a---a---a  branch A
+  //
+  // If either left or right are the empty string (""), the HEAD commit is implicitly used.
+  //
+  // If one of the two given revspecs does not exist, an error with a RevisionNotFoundPayload is
+  // is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc BehindAhead(BehindAheadRequest) returns (BehindAheadResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message ContributorCountsRequest {
@@ -1039,4 +1064,23 @@ message FirstEverCommitRequest {
 // a repo.
 message FirstEverCommitResponse {
   GitCommit commit = 1;
+}
+
+message BehindAheadRequest {
+  // repo_name is the name of the repo to get the behind/ahead information for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // left is a revspec that we'll take the symmetric difference against.
+  // for now, we allow non-utf8 revspecs.
+  bytes left = 3;
+  // right is a revspec that we'll take the symmetric difference against.
+  // for now, we allow non-utf8 revspecs.
+  bytes right = 4;
+}
+
+message BehindAheadResponse {
+  // behind is the number of commits that are solely reachable in "left" but not "right".
+  uint32 behind = 1;
+  // ahead is the number of commits that are solely reachable in "right" but not "left".
+  uint32 ahead = 2;
 }
