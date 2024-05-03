@@ -67,7 +67,7 @@ func (r *schemaResolver) OutOfBandMigrations(ctx context.Context, args *struct {
 				}
 
 				// If the migration is deprecated before the first version of sourcegraph, don't append it to the list.
-				if oobmigration.CompareVersions(firstVersion, *migration.Deprecated) != oobmigration.VersionOrderAfter {
+				if migration.Deprecated != nil && oobmigration.CompareVersions(firstVersion, *migration.Deprecated) != oobmigration.VersionOrderAfter {
 					filtered = append(filtered, migration)
 					continue
 				}
