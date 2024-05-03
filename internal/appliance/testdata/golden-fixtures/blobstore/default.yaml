@@ -13,6 +13,13 @@ resources:
       deploy: sourcegraph
     name: blobstore
     namespace: NORMALIZED_FOR_TESTING
+    ownerReferences:
+    - apiVersion: v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ConfigMap
+      name: sg
+      uid: NORMALIZED_FOR_TESTING
     resourceVersion: NORMALIZED_FOR_TESTING
     uid: NORMALIZED_FOR_TESTING
   spec:
@@ -161,6 +168,13 @@ resources:
       deploy: sourcegraph
     name: blobstore
     namespace: NORMALIZED_FOR_TESTING
+    ownerReferences:
+    - apiVersion: v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ConfigMap
+      name: sg
+      uid: NORMALIZED_FOR_TESTING
     resourceVersion: NORMALIZED_FOR_TESTING
     uid: NORMALIZED_FOR_TESTING
   spec:
@@ -185,6 +199,13 @@ resources:
       deploy: sourcegraph
     name: blobstore
     namespace: NORMALIZED_FOR_TESTING
+    ownerReferences:
+    - apiVersion: v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ConfigMap
+      name: sg
+      uid: NORMALIZED_FOR_TESTING
     resourceVersion: NORMALIZED_FOR_TESTING
     uid: NORMALIZED_FOR_TESTING
   spec:
