@@ -88,3 +88,45 @@ func NewEnvVarFieldRef(name, fieldPath string) corev1.EnvVar {
 		},
 	}
 }
+
+func EnvVarsRedis() []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name: "REDIS_CACHE_ENDPOINT",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "redis-cache",
+					},
+					Key: "endpoint",
+				},
+			},
+		}, {
+			Name: "REDIS_STORE_ENDPOINT",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "redis-store",
+					},
+					Key: "endpoint",
+				},
+			},
+		},
+	}
+}
+
+func EnvVarsOtel() []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name: "OTEL_AGENT_HOST",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "status.hostIP",
+				},
+			},
+		}, {
+			Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+			Value: "http://$(OTEL_AGENT_HOST):4317",
+		},
+	}
+}
