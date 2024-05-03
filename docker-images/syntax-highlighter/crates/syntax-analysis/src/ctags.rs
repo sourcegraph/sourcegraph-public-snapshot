@@ -82,7 +82,7 @@ impl<'a> Reply<'a> {
             name,
             path,
             language,
-            line: scope.scope_range.start_line as usize + 1,
+            line: scope.ident_range.start_line as usize + 1,
             kind: descriptors_to_kind(&scope.descriptors, &scope.kind),
             scope: tag_scope,
         };
