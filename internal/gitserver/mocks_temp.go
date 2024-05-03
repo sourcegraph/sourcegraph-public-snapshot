@@ -30,6 +30,9 @@ type MockClient struct {
 	// ArchiveReaderFunc is an instance of a mock function object
 	// controlling the behavior of the method ArchiveReader.
 	ArchiveReaderFunc *ClientArchiveReaderFunc
+	// BehindAheadFunc is an instance of a mock function object controlling
+	// the behavior of the method BehindAhead.
+	BehindAheadFunc *ClientBehindAheadFunc
 	// CheckPerforceCredentialsFunc is an instance of a mock function object
 	// controlling the behavior of the method CheckPerforceCredentials.
 	CheckPerforceCredentialsFunc *ClientCheckPerforceCredentialsFunc
@@ -60,9 +63,6 @@ type MockClient struct {
 	// FirstEverCommitFunc is an instance of a mock function object
 	// controlling the behavior of the method FirstEverCommit.
 	FirstEverCommitFunc *ClientFirstEverCommitFunc
-	// GetBehindAheadFunc is an instance of a mock function object
-	// controlling the behavior of the method GetBehindAhead.
-	GetBehindAheadFunc *ClientGetBehindAheadFunc
 	// GetCommitFunc is an instance of a mock function object controlling
 	// the behavior of the method GetCommit.
 	GetCommitFunc *ClientGetCommitFunc
@@ -169,6 +169,11 @@ func NewMockClient() *MockClient {
 				return
 			},
 		},
+		BehindAheadFunc: &ClientBehindAheadFunc{
+			defaultHook: func(context.Context, api.RepoName, string, string) (r0 *gitdomain.BehindAhead, r1 error) {
+				return
+			},
+		},
 		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
 			defaultHook: func(context.Context, protocol.PerforceConnectionDetails) (r0 error) {
 				return
@@ -216,11 +221,6 @@ func NewMockClient() *MockClient {
 		},
 		FirstEverCommitFunc: &ClientFirstEverCommitFunc{
 			defaultHook: func(context.Context, api.RepoName) (r0 *gitdomain.Commit, r1 error) {
-				return
-			},
-		},
-		GetBehindAheadFunc: &ClientGetBehindAheadFunc{
-			defaultHook: func(context.Context, api.RepoName, string, string) (r0 *gitdomain.BehindAhead, r1 error) {
 				return
 			},
 		},
@@ -391,6 +391,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.ArchiveReader")
 			},
 		},
+		BehindAheadFunc: &ClientBehindAheadFunc{
+			defaultHook: func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error) {
+				panic("unexpected invocation of MockClient.BehindAhead")
+			},
+		},
 		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
 			defaultHook: func(context.Context, protocol.PerforceConnectionDetails) error {
 				panic("unexpected invocation of MockClient.CheckPerforceCredentials")
@@ -439,11 +444,6 @@ func NewStrictMockClient() *MockClient {
 		FirstEverCommitFunc: &ClientFirstEverCommitFunc{
 			defaultHook: func(context.Context, api.RepoName) (*gitdomain.Commit, error) {
 				panic("unexpected invocation of MockClient.FirstEverCommit")
-			},
-		},
-		GetBehindAheadFunc: &ClientGetBehindAheadFunc{
-			defaultHook: func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error) {
-				panic("unexpected invocation of MockClient.GetBehindAhead")
 			},
 		},
 		GetCommitFunc: &ClientGetCommitFunc{
@@ -609,6 +609,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		ArchiveReaderFunc: &ClientArchiveReaderFunc{
 			defaultHook: i.ArchiveReader,
 		},
+		BehindAheadFunc: &ClientBehindAheadFunc{
+			defaultHook: i.BehindAhead,
+		},
 		CheckPerforceCredentialsFunc: &ClientCheckPerforceCredentialsFunc{
 			defaultHook: i.CheckPerforceCredentials,
 		},
@@ -638,9 +641,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		FirstEverCommitFunc: &ClientFirstEverCommitFunc{
 			defaultHook: i.FirstEverCommit,
-		},
-		GetBehindAheadFunc: &ClientGetBehindAheadFunc{
-			defaultHook: i.GetBehindAhead,
 		},
 		GetCommitFunc: &ClientGetCommitFunc{
 			defaultHook: i.GetCommit,
@@ -946,6 +946,119 @@ func (c ClientArchiveReaderFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientArchiveReaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientBehindAheadFunc describes the behavior when the BehindAhead method
+// of the parent MockClient instance is invoked.
+type ClientBehindAheadFunc struct {
+	defaultHook func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error)
+	hooks       []func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error)
+	history     []ClientBehindAheadFuncCall
+	mutex       sync.Mutex
+}
+
+// BehindAhead delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockClient) BehindAhead(v0 context.Context, v1 api.RepoName, v2 string, v3 string) (*gitdomain.BehindAhead, error) {
+	r0, r1 := m.BehindAheadFunc.nextHook()(v0, v1, v2, v3)
+	m.BehindAheadFunc.appendCall(ClientBehindAheadFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the BehindAhead method
+// of the parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientBehindAheadFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BehindAhead method of the parent MockClient instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientBehindAheadFunc) PushHook(hook func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientBehindAheadFunc) SetDefaultReturn(r0 *gitdomain.BehindAhead, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientBehindAheadFunc) PushReturn(r0 *gitdomain.BehindAhead, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientBehindAheadFunc) nextHook() func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientBehindAheadFunc) appendCall(r0 ClientBehindAheadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientBehindAheadFuncCall objects
+// describing the invocations of this function.
+func (f *ClientBehindAheadFunc) History() []ClientBehindAheadFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientBehindAheadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientBehindAheadFuncCall is an object that describes an invocation of
+// method BehindAhead on an instance of MockClient.
+type ClientBehindAheadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *gitdomain.BehindAhead
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientBehindAheadFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientBehindAheadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -2052,120 +2165,6 @@ func (c ClientFirstEverCommitFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientFirstEverCommitFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientGetBehindAheadFunc describes the behavior when the GetBehindAhead
-// method of the parent MockClient instance is invoked.
-type ClientGetBehindAheadFunc struct {
-	defaultHook func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error)
-	hooks       []func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error)
-	history     []ClientGetBehindAheadFuncCall
-	mutex       sync.Mutex
-}
-
-// GetBehindAhead delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockClient) GetBehindAhead(v0 context.Context, v1 api.RepoName, v2 string, v3 string) (*gitdomain.BehindAhead, error) {
-	r0, r1 := m.GetBehindAheadFunc.nextHook()(v0, v1, v2, v3)
-	m.GetBehindAheadFunc.appendCall(ClientGetBehindAheadFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetBehindAhead
-// method of the parent MockClient instance is invoked and the hook queue is
-// empty.
-func (f *ClientGetBehindAheadFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetBehindAhead method of the parent MockClient instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientGetBehindAheadFunc) PushHook(hook func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientGetBehindAheadFunc) SetDefaultReturn(r0 *gitdomain.BehindAhead, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientGetBehindAheadFunc) PushReturn(r0 *gitdomain.BehindAhead, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientGetBehindAheadFunc) nextHook() func(context.Context, api.RepoName, string, string) (*gitdomain.BehindAhead, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientGetBehindAheadFunc) appendCall(r0 ClientGetBehindAheadFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientGetBehindAheadFuncCall objects
-// describing the invocations of this function.
-func (f *ClientGetBehindAheadFunc) History() []ClientGetBehindAheadFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientGetBehindAheadFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientGetBehindAheadFuncCall is an object that describes an invocation of
-// method GetBehindAhead on an instance of MockClient.
-type ClientGetBehindAheadFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *gitdomain.BehindAhead
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientGetBehindAheadFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientGetBehindAheadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

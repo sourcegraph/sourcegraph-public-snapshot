@@ -18,7 +18,7 @@ type operations struct {
 	contributorCount         *observation.Operation
 	exec                     *observation.Operation
 	firstEverCommit          *observation.Operation
-	getBehindAhead           *observation.Operation
+	behindAhead              *observation.Operation
 	getCommit                *observation.Operation
 	hasCommitAfter           *observation.Operation
 	listRefs                 *observation.Operation
@@ -108,7 +108,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		contributorCount:         op("ContributorCount"),
 		exec:                     op("Exec"),
 		firstEverCommit:          op("FirstEverCommit"),
-		getBehindAhead:           op("GetBehindAhead"),
+		behindAhead:              op("BehindAhead"),
 		getCommit:                op("GetCommit"),
 		hasCommitAfter:           op("HasCommitAfter"),
 		listRefs:                 op("ListRefs"),

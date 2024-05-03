@@ -114,20 +114,19 @@ type FrontendSpec struct {
 
 // GitServerSpec defines the desired state of GitServer.
 type GitServerSpec struct {
-	// Replicas defines the number of GitServer pod replicas.
+	config.StandardConfig
+
+	// Replicas defines the number of Symbols pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// SSHSecret is the name of existing secret that contains SSH credentials to clone repositories.
-	// This secret generally contains keys such as `id_rsa` (private key) and `known_hosts`.
-	SSHSecret string `json:"sshSecret,omitempty"`
 
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 200Gi
 	StorageSize string `json:"storageSize,omitempty"`
 
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
+	// SSHSecret is the name of existing secret that contains SSH credentials to clone repositories.
+	// This secret generally contains keys such as `id_rsa` (private key) and `known_hosts`.
+	SSHSecret string `json:"sshSecret,omitempty"`
 
 	// Env defines environment variables for Git Server.
 	Env map[string]string `json:"env,omitempty"`

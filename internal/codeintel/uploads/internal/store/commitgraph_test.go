@@ -1288,6 +1288,14 @@ type FindClosestCompletedUploadsTestCase struct {
 	allOfIDs            []int
 }
 
+func (t *FindClosestCompletedUploadsTestCase) uploadMatchingOptions() shared.UploadMatchingOptions {
+	matching := shared.RootMustEnclosePath
+	if !t.rootMustEnclosePath {
+		matching = shared.RootEnclosesPathOrPathEnclosesRoot
+	}
+	return shared.UploadMatchingOptions{50, t.commit, t.file, matching, t.indexer}
+}
+
 func testFindClosestCompletedUploads(t *testing.T, store Store, testCases []FindClosestCompletedUploadsTestCase) {
 	for _, testCase := range testCases {
 		name := fmt.Sprintf(
@@ -1317,7 +1325,7 @@ func testFindClosestCompletedUploads(t *testing.T, store Store, testCases []Find
 
 		if !testCase.graphFragmentOnly {
 			t.Run(name, func(t *testing.T) {
-				uploads, err := store.FindClosestCompletedUploads(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer)
+				uploads, err := store.FindClosestCompletedUploads(context.Background(), testCase.uploadMatchingOptions())
 				if err != nil {
 					t.Fatalf("unexpected error finding closest uploads: %s", err)
 				}
@@ -1328,7 +1336,7 @@ func testFindClosestCompletedUploads(t *testing.T, store Store, testCases []Find
 
 		if testCase.graph != nil {
 			t.Run(name+" [graph-fragment]", func(t *testing.T) {
-				uploads, err := store.FindClosestCompletedUploadsFromGraphFragment(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer, testCase.graph)
+				uploads, err := store.FindClosestCompletedUploadsFromGraphFragment(context.Background(), testCase.uploadMatchingOptions(), testCase.graph)
 				if err != nil {
 					t.Fatalf("unexpected error finding closest uploads: %s", err)
 				}
