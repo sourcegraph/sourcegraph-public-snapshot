@@ -159,16 +159,22 @@ func parseStatusReason(reason string) (string, string, error) {
 	if len(parts) != 2 {
 		return "", "", errors.Newf("invalid status reason format: %q", reason)
 	}
-	keyValue := strings.Split(parts[0], ":")
-	if len(keyValue) != 2 {
-		return "", "", errors.Newf("invalid field value at pos 0 in reason: %q", reason)
+	fieldValue := func(s string) (string, error) {
+		colonIdx := strings.Index(s, ":")
+		if colonIdx == -1 {
+			return "", errors.Newf("invalid field format %q", s)
+		}
+		return s[colonIdx+1:], nil
 	}
-	url := keyValue[1]
-	keyValue = strings.Split(parts[1], ":")
-	if len(keyValue) != 2 {
-		return "", "", errors.Newf("invalid field value at pos 0 in reason: %q", reason)
+
+	url, err := fieldValue(parts[0])
+	if err != nil {
+		return "", "", errors.Wrapf(err, "field error at pos 0")
 	}
-	status := keyValue[1]
+	status, err := fieldValue(parts[1])
+	if err != nil {
+		return "", "", errors.Wrapf(err, "field error at pos 1")
+	}
 
 	return url, status, nil
 }
