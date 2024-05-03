@@ -163,6 +163,8 @@ func TestGitCLIBackend_ReadFile_GoroutineLeak(t *testing.T) {
 	// Don't complete reading all the output, instead, bail and close the reader.
 	require.NoError(t, r.Close())
 
+	time.Sleep(time.Millisecond)
+
 	// Expect no leaked routines.
 	routinesAfter := runtime.NumGoroutine()
 	require.Equal(t, routinesBefore, routinesAfter)
