@@ -292,8 +292,9 @@
         display: flex;
         align-items: baseline;
         gap: 1rem;
-        padding: 0.75rem;
+        padding: 0.5rem;
         color: var(--text-muted);
+        box-shadow: var(--fileheader-shadow);
 
         // Allows for its shadow to cascade over the code panel
         z-index: 1;
