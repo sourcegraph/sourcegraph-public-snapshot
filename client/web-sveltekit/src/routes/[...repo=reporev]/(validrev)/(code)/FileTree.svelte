@@ -79,9 +79,20 @@
     }
 
     function scrollSelectedItemIntoView() {
-        treeView.scrollSelectedItemIntoView()
+        treeView.scrollSelectedItemIntoView(
+            // Only scroll the active tree entry into the 'center' if the selected entry changed
+            // by something other than user interaction. If we always 'center' then the sidebar
+            // will "jump" as the user selects an entry with the keyboard or mouse, which is
+            // disorienting.
+            // But if we never 'center' then going back and forth might position the selected
+            // entry at the top or bottom of the sidebar, which is not very visible.
+            // So we only 'center' if focus is not on the tree container, which likely means
+            // that the user is not interacting with the tree.
+            container?.contains(document.activeElement) ? 'nearest' : 'center'
+        )
     }
 
+    let container: HTMLElement | undefined
     let treeView: TreeView<FileTreeNodeValue>
     // Since context is only set once when the component is created
     // we need to dynamically sync any changes to the corresponding
@@ -105,7 +116,7 @@
     onMount(scrollSelectedItemIntoView)
 </script>
 
-<div tabindex="-1">
+<div tabindex="-1" bind:this={container}>
     <TreeView bind:this={treeView} {treeProvider} on:select={event => handleSelect(event.detail)}>
         <svelte:fragment let:entry let:expanded>
             {@const isRoot = entry === treeRoot}
