@@ -19,12 +19,11 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
+	"github.com/sourcegraph/go-diff/diff"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -1168,28 +1167,21 @@ func (c *clientImplementor) BehindAhead(ctx context.Context, repo api.RepoName, 
 	})
 	defer endObservation(1, observation.Args{})
 
-	if err := checkSpecArgSafety(left); err != nil {
-		return nil, err
-	}
-	if err := checkSpecArgSafety(right); err != nil {
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
 		return nil, err
 	}
 
-	cmd := c.gitCommand(repo, "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
-	out, err := cmd.Output(ctx)
+	response, err := client.BehindAhead(ctx, &proto.BehindAheadRequest{
+		RepoName: string(repo),
+		Left:     []byte(left),
+		Right:    []byte(right),
+	})
 	if err != nil {
 		return nil, err
 	}
-	behindAhead := strings.Split(strings.TrimSuffix(string(out), "\n"), "\t")
-	b, err := strconv.ParseUint(behindAhead[0], 10, 0)
-	if err != nil {
-		return nil, err
-	}
-	a, err := strconv.ParseUint(behindAhead[1], 10, 0)
-	if err != nil {
-		return nil, err
-	}
-	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
+
+	return gitdomain.BehindAheadFromProto(response), nil
 }
 
 func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (_ io.ReadCloser, err error) {
