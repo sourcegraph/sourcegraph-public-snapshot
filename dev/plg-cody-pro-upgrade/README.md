@@ -19,5 +19,5 @@ Here is the complete process:
     - If a user doesn't have a `sams_account_id`, it means they don't have a SAMS account because the user hasn't logged into dotcom since the SAMS rollout on 2024-02-08.
 2. Add the SAMS account to the Sourcegraph team
     - Someone with `cody-admin` SSC superpowers needs to run this.
-    - Go to https://accounts.sourcegraph.com/ and in Dev Tools → Application → Cookies → https://accounts.sourcegraph.com/, copy the value for the `accounts_session` cookie.
+    - Go to https://accounts.sourcegraph.com/ and in Dev Tools → Application → Cookies → https://accounts.sourcegraph.com/, copy the value for the `accounts_session_v2` cookie.
     - Run `sourcegraph/sourcegraph/dev/plg-cody-pro-upgrade/main.go {SAMS_ID} {SESSION_COOKIE}`.

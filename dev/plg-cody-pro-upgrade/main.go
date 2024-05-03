@@ -33,7 +33,7 @@ func createUserAccount(host, accountID, cookie string) {
 		fmt.Println("Error creating request:", err)
 		return
 	}
-	req.Header.Add("Cookie", "accounts_session="+cookie)
+	req.Header.Add("Cookie", "accounts_session_v2="+cookie)
 	req.Header.Add("Content-Length", "0")
 
 	client := &http.Client{}
@@ -59,7 +59,7 @@ func addMemberToTeam(host, teamID, accountID, cookie string) {
 		fmt.Println("Error creating request:", err)
 		return
 	}
-	req.Header.Add("Cookie", "accounts_session="+cookie)
+	req.Header.Add("Cookie", "accounts_session_v2="+cookie)
 	req.Header.Add("Content-Length", "0")
 
 	client := &http.Client{}
