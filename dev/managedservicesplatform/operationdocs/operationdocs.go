@@ -297,7 +297,7 @@ sg msp pg connect -write-access %[1]s %[2]s`, s.Service.ID, env.ID)
 		// there instead.
 		// We must persist diagrams somewhere for
 		externalDiagramURL := fmt.Sprintf("https://github.com/sourcegraph/managed-services/blob/%s/services/%s/diagrams/%s",
-			"notion-docs", // TODO replace with 'main'
+			"main", // managed-services repo branch
 			s.Service.ID, fmt.Sprintf("%s.md", env.ID))
 		md.Paragraphf("View the %s for this environment.",
 			markdown.Linkf("generated architecture diagram", externalDiagramURL))
