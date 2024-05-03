@@ -37,8 +37,8 @@ func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 
 		status := inst.Status.Status
 		expiresAt := "n/a"
-		if inst.Lease != nil {
-			expiresAt = inst.Lease.ExpiresAt.Format(time.RFC3339)
+		if !inst.ExpiresAt.IsZero() {
+			expiresAt = inst.ExpiresAt.Format(time.RFC3339)
 		}
 
 		return []any{
