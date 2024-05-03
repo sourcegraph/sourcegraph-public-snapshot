@@ -187,7 +187,7 @@ func (s *Service) getUploadsWithDefinitionsForMonikers(ctx context.Context, orde
 	uploadsCopy := copyUploads(uploads)
 	requestState.dataLoader.SetUploadInCacheMap(uploadsCopy)
 
-	uploadsWithResolvableCommits, err := s.removeUploadsWithUnknownCommits(ctx, uploadsCopy, requestState)
+	uploadsWithResolvableCommits, err := filterUploadsWithCommits(ctx, requestState.commitCache, uploadsCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -339,7 +339,7 @@ func (s *Service) getUploadsByIDs(ctx context.Context, ids []int, requestState R
 		return nil, errors.Wrap(err, "service.GetCompletedUploadsByIDs")
 	}
 
-	uploadsWithResolvableCommits, err := s.removeUploadsWithUnknownCommits(ctx, uploads, requestState)
+	uploadsWithResolvableCommits, err := filterUploadsWithCommits(ctx, requestState.commitCache, uploads)
 	if err != nil {
 		return nil, nil
 	}
@@ -348,32 +348,6 @@ func (s *Service) getUploadsByIDs(ctx context.Context, ids []int, requestState R
 	allUploads := append(existingUploads, uploadsWithResolvableCommits...)
 
 	return allUploads, nil
-}
-
-// removeUploadsWithUnknownCommits removes uploads for commits which are unknown to gitserver from the given
-// slice. The slice is filtered in-place and returned (to update the slice length).
-func (s *Service) removeUploadsWithUnknownCommits(ctx context.Context, uploads []uploadsshared.CompletedUpload, requestState RequestState) ([]uploadsshared.CompletedUpload, error) {
-	rcs := make([]RepositoryCommit, 0, len(uploads))
-	for _, upload := range uploads {
-		rcs = append(rcs, RepositoryCommit{
-			RepositoryID: upload.RepositoryID,
-			Commit:       upload.Commit,
-		})
-	}
-
-	exists, err := requestState.commitCache.AreCommitsResolvable(ctx, rcs)
-	if err != nil {
-		return nil, err
-	}
-
-	filtered := uploads[:0]
-	for i, upload := range uploads {
-		if exists[i] {
-			filtered = append(filtered, upload)
-		}
-	}
-
-	return filtered, nil
 }
 
 // getBulkMonikerLocations returns the set of locations (within the given uploads) with an attached moniker
