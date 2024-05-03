@@ -6,7 +6,7 @@
 
     import { afterNavigate, goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
-    import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntryFields } from '$lib/repo/api/tree'
+    import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntry } from '$lib/repo/api/tree'
     import FileIcon from '$lib/repo/FileIcon.svelte'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
     import { replaceRevisionInURL } from '$lib/shared'
@@ -22,7 +22,7 @@
     /**
      * Returns the corresponding icon for `entry`
      */
-    function getDirectoryIconPath(entry: TreeEntryFields, open: boolean) {
+    function getDirectoryIconPath(entry: TreeEntry, open: boolean) {
         if (entry === treeRoot) {
             return mdiFolderArrowUpOutline
         }
