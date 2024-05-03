@@ -3,8 +3,8 @@ package headings
 import "unicode"
 
 // SanitizeHeadingID returns a sanitized anchor name for the given text.
-// Taken from https://github.com/shurcooL/sanitized_anchor_name/blob/master/main.go#L14:1
-// copy from https://sourcegraph.com/github.com/gomarkdown/markdown@663e2500819c19ed2d3f4bf955931b16fa9adf63/-/blob/parser/block.go?L83-104
+//
+// Copied from https://sourcegraph.com/github.com/gomarkdown/markdown@663e2500819c19ed2d3f4bf955931b16fa9adf63/-/blob/parser/block.go?L83-104
 func SanitizeHeadingID(text string) string {
 	var anchorName []rune
 	var futureDash = false
