@@ -672,6 +672,7 @@ func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, opts up
 	}
 
 	uploadCandidates := copyUploads(candidates)
+	// Disjoint: {uploadCandidates}, {candidates}
 	trace.AddEvent("TODO Domain Owner",
 		attribute.Int("numCandidates", len(candidates)),
 		attribute.String("candidates", uploadIDsToString(uploadCandidates)))
@@ -680,6 +681,7 @@ func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, opts up
 	commitChecker.SetResolvableCommit(opts.RepositoryID, opts.Commit)
 
 	candidatesWithCommits, err := filterUploadsWithCommits(ctx, commitChecker, uploadCandidates)
+	// Disjoint: {uploadCandidates, candidatesWithCommits}, {candidates}
 	if err != nil {
 		return nil, err
 	}
@@ -689,10 +691,14 @@ func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, opts up
 
 	// Filter in-place
 	filtered := candidatesWithCommits[:0]
+	// Disjoint: {uploadCandidates, candidatesWithCommits, filtered}, {candidates}
 
 	for i := range candidatesWithCommits {
 		switch opts.RootToPathMatching {
 		case uploadsshared.RootMustEnclosePath:
+			// Assumption: There is a 1:1 correspondence between candidates[i] and candidatesWithCommits[i]
+			// (since we're looping over candidatesWithCommits), but in general, the latter slice will
+			// be shorter in case some commits have been deleted by force-pushing
 			// TODO - this breaks if the file was renamed in git diff
 			pathExists, err := s.lsifstore.GetPathExists(ctx, candidates[i].ID, strings.TrimPrefix(opts.Path, candidates[i].Root))
 			if err != nil {
@@ -705,6 +711,7 @@ func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, opts up
 			// TODO(efritz) - ensure there's a valid document path for this condition as well
 		}
 
+		// Relying on aliasing between uploadCandidates and candidatesWithCommits
 		filtered = append(filtered, uploadCandidates[i])
 	}
 	trace.AddEvent("TODO Domain Owner",
