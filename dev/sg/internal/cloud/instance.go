@@ -67,6 +67,32 @@ func (i *Instance) IsEphemeral() bool {
 	return i.InstanceType == EphemeralInstanceType
 }
 
+func (i *Instance) IsInternal() bool {
+	return i.InstanceType == InternalInstanceType
+}
+
+func (i *Instance) IsExpired() bool {
+	t, err := i.GetExpiry()
+	if err != nil || t.IsZero() {
+		return false
+	}
+
+	return time.Now().After(*t)
+}
+
+func (i *Instance) GetExpiry() (*time.Time, error) {
+	t, err := i.features.GetEphemeralLeaseTime()
+	if err != nil {
+		return nil, err
+	}
+
+	return t, nil
+}
+
+func (i *Instance) SetExpiry(expiresAt time.Time) {
+	i.features.SetEphemeralLeaseTime(expiresAt)
+}
+
 type InstanceStatus struct {
 	Status    string `json:"status"`
 	ActionURL string `json:"actionUrl"`
@@ -214,6 +240,10 @@ func (f *InstanceFeatures) IsEphemeralInstance() bool {
 
 func (f *InstanceFeatures) SetEphemeralInstance(v bool) {
 	f.features["ephemeral_instance"] = strconv.FormatBool(v)
+}
+
+func (f *InstanceFeatures) SetEphemeralLeaseTime(expiresAt time.Time) {
+	f.features["ephemeral_instance_lease_time"] = strconv.FormatInt(expiresAt.Unix(), 10)
 }
 
 func (f *InstanceFeatures) GetEphemeralLeaseTime() (*time.Time, error) {
