@@ -5,9 +5,11 @@ go_library(
     name = "cloud",
     srcs = [
         "client.go",
+        "common.go",
         "delete_command.go",
         "deploy_command.go",
         "instance.go",
+        "lease_command.go",
         "list_command.go",
         "list_versions_command.go",
         "printers.go",
@@ -34,6 +36,7 @@ go_library(
         "@com_google_cloud_go_artifactregistry//apiv1",
         "@com_google_cloud_go_artifactregistry//apiv1/artifactregistrypb",
         "@org_golang_google_api//iterator",
+        "@org_golang_google_protobuf//types/known/timestamppb",
     ],
 )
 
