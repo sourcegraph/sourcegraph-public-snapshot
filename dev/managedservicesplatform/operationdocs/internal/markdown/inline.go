@@ -5,6 +5,8 @@ import (
 	neturl "net/url"
 	"reflect"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/internal/markdown/headings"
 )
 
 // HeadingLink generates a link to a heading that has not been written yet.
@@ -12,7 +14,7 @@ import (
 // will point to nothing.
 func HeadingLinkf(title string, vars ...any) (link, heading string) {
 	heading = fmt.Sprintf(title, vars...)
-	id := sanitizeHeadingID(heading)
+	id := headings.SanitizeHeadingID(heading)
 	return Linkf(heading, "#%s", id), heading
 }
 
@@ -43,6 +45,14 @@ func Boldf(v string, vars ...any) string {
 	return Bold(fmt.Sprintf(v, vars...))
 }
 
+func Italics(v string) string {
+	return fmt.Sprintf("*%s*", v)
+}
+
+func Italicsf(v string, vars ...any) string {
+	return Italics(fmt.Sprintf(v, vars...))
+}
+
 // Link generates a Markdown link.
 func Link(text, url string) string {
 	// some urls params are not escaped properly, let's fix that magically
@@ -66,6 +76,16 @@ func Link(text, url string) string {
 // Linkf generates a Markdown link. Format arguments only apply to the URL.
 func Linkf(text, url string, vars ...any) string {
 	return Link(text, fmt.Sprintf(url, vars...))
+}
+
+// Image generates a Markdown image.
+func Image(text, url string) string {
+	return "!" + Link(text, url)
+}
+
+// Imagef generates a Markdown image. Format arguments only apply to the URL.
+func Imagef(text, url string, vars ...any) string {
+	return "!" + Image(text, fmt.Sprintf(url, vars...))
 }
 
 // List generates a Markdown list.
