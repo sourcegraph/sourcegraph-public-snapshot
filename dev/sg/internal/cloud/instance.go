@@ -89,17 +89,6 @@ type InstanceFeatures struct {
 	features map[string]string
 }
 
-type InstanceLease struct {
-	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-}
-
-func (l *InstanceLease) String() string {
-	if l.ExpiresAt == nil {
-		return ""
-	}
-	return l.ExpiresAt.Format(time.RFC3339)
-}
-
 func newInstanceStatus(src *cloudapiv1.InstanceState) (*InstanceStatus, error) {
 	url, reason, err := parseStatusReason(src.GetReason())
 	if err != nil {

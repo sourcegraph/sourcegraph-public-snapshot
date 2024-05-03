@@ -14,21 +14,23 @@ const MaxDuration = time.Hour * 24 * 4
 
 var LeaseEphemeralCommand = cli.Command{
 	Name:        "lease",
-	ArgsUsage:   "sg cloud lease [--name instance-name] <duration>",
+	Usage:       "extend or reduce the lease of an ephemeral instance",
+	UsageText:   "sg cloud lease [command options]",
 	Description: "extend the lease of the instance for the given duration (max 4 days)",
 	Action:      wipAction(leaseCloudEphemeral),
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "name",
-			DefaultText: "name of the instance to extend lease for",
+			Usage:       "name of the instance to extend lease for",
+			DefaultText: "current branch name will be used",
 		},
 		&cli.DurationFlag{
-			Name:        "extend",
-			DefaultText: "the duration to extend the lease by (max 4 days = 96h)",
+			Name:  "extend",
+			Usage: "the duration to extend the lease by (max 4 days = 96h)",
 		},
 		&cli.DurationFlag{
-			Name:        "reduce",
-			DefaultText: "the duration to reduce the lease by - if the lease time is reduced to be in the passed the instance will be deleted!",
+			Name:  "reduce",
+			Usage: "the duration to reduce the lease by - if the lease time is reduced to be in the passed the instance will be deleted!",
 		},
 	},
 }
