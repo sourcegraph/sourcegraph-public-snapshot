@@ -232,7 +232,7 @@
         padding: 0.5rem;
         padding-bottom: 0;
         box-shadow: var(--sidebar-shadow);
-        z-index: 1;
+        z-index: 2;
     }
 
     .main {
