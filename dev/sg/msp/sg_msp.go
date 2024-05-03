@@ -2,7 +2,6 @@
 package msp
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -459,25 +458,25 @@ This command supports completions on services and environments.
 							Notion: true,
 						}
 
-						sec, err := secrets.FromContext(c.Context)
-						if err != nil {
-							return err
-						}
-						notionToken, err := sec.GetExternal(c.Context,
-							secrets.ExternalSecret{
-								Project: "sourcegraph-secrets",
-								Name:    "CORE_SERVICES_NOTION_API_TOKEN",
-							},
-							func(ctx context.Context) (string, error) {
-								v, ok := os.LookupEnv("NOTION_API_TOKEN")
-								if !ok {
-									return "", errors.New("environment variable NOTION_API_TOKEN not set")
-								}
-								std.Out.WriteSuggestionf("Using NOTION_API_TOKEN from environment")
-								return v, nil
-							})
-						if err != nil {
-							return errors.Wrap(err, "failed to get Notion token from gcloud secrets")
+						// Prefer env token for ease of integration in GitHub
+						// Actions, before falling back to using the token stored
+						// in GSM.
+						notionToken, ok := os.LookupEnv("NOTION_API_TOKEN")
+						if ok && len(notionToken) > 0 {
+							std.Out.WriteSuggestionf("Using NOTION_API_TOKEN from environment")
+						} else {
+							sec, err := secrets.FromContext(c.Context)
+							if err != nil {
+								return err
+							}
+							notionToken, err = sec.GetExternal(c.Context,
+								secrets.ExternalSecret{
+									Project: "sourcegraph-secrets",
+									Name:    "CORE_SERVICES_NOTION_API_TOKEN",
+								})
+							if err != nil {
+								return errors.Wrap(err, "failed to get Notion token")
+							}
 						}
 						notionClient := notionapi.NewClient(notionapi.Token(notionToken))
 
