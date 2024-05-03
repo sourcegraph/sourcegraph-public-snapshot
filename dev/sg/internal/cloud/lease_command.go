@@ -12,15 +12,23 @@ import (
 
 const MaxDuration = time.Hour * 24 * 4
 
-var ExtendLeaseEphemeralCommand = cli.Command{
-	Name:        "extend-lease",
-	ArgsUsage:   "sg cloud extend-lease [--name instance-name] <duration>",
+var LeaseEphemeralCommand = cli.Command{
+	Name:        "lease",
+	ArgsUsage:   "sg cloud lease [--name instance-name] <duration>",
 	Description: "extend the lease of the instance for the given duration (max 4 days)",
-	Action:      wipAction(extendLeaseCloudEphemeral),
+	Action:      wipAction(leaseCloudEphemeral),
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "name",
 			DefaultText: "name of the instance to extend lease for",
+		},
+		&cli.DurationFlag{
+			Name:        "extend",
+			DefaultText: "the duration to extend the lease by (max 4 days = 96h)",
+		},
+		&cli.DurationFlag{
+			Name:        "reduce",
+			DefaultText: "the duration to reduce the lease by - if the lease time is reduced to be in the passed the instance will be deleted!",
 		},
 	},
 }
@@ -32,20 +40,7 @@ func printLeaseTimeDiff(oldTime, newTime time.Time) {
 	std.Out.Write("\n")
 }
 
-func extendLeaseCloudEphemeral(ctx *cli.Context) error {
-	if ctx.Args().Len() != 1 {
-		return errors.New("no duration provided")
-	}
-	duration, err := time.ParseDuration(ctx.Args().First())
-	if err != nil {
-		return errors.Wrapf(err, "failed to parse duration %q", ctx.Args().First())
-	}
-
-	if duration > MaxDuration {
-		std.Out.Writef("duration %s is greater than max duration %s, setting to max duration", duration, MaxDuration)
-		duration = MaxDuration
-	}
-
+func leaseCloudEphemeral(ctx *cli.Context) error {
 	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
 		return err
@@ -73,22 +68,32 @@ func extendLeaseCloudEphemeral(ctx *cli.Context) error {
 	pending.Complete(output.Linef(CloudEmoji, output.StyleSuccess, "Fetched instance with name %q", name))
 
 	if !inst.IsEphemeral() {
-		std.Out.WriteWarningf("Cannot extend lease time of non-ephemeral instance %q", name)
+		std.Out.WriteWarningf("Cannot update lease time of non-ephemeral instance %q", name)
 		return ErrNotEphemeralInstance
 	}
 
-	pending = std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Extending lease of instance %q by %s", name, duration))
-
-	current := inst.ExpiresAt
-
-	leaseEndTime := current.Add(duration)
-	printLeaseTimeDiff(current, leaseEndTime)
-	inst, err = cloudClient.ExtendLease(ctx.Context, name, leaseEndTime)
-	if err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to extend lease"))
+	if ctx.Duration("extend") == 0 && ctx.Duration("reduce") == 0 {
+		return errors.New("must specify a duration for either --extend or --reduce")
 	}
 
-	pending.Complete(output.Linef(CloudEmoji, output.StyleSuccess, "Lease of instance %q extended by %s", name, duration))
-	newDefaultTerminalInstancePrinter().Print(inst)
-	return nil
+	pending = std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Updating lease of instance %q", name))
+
+	currentLeaseTime := inst.ExpiresAt
+
+	var leaseEndTime time.Time
+	if ctx.Duration("extend") > 0 {
+		leaseEndTime.Add(ctx.Duration("extend"))
+	}
+	if ctx.Duration("reduce") > 0 {
+		leaseEndTime = currentLeaseTime.Add(-ctx.Duration("reduce"))
+	}
+
+	printLeaseTimeDiff(currentLeaseTime, leaseEndTime)
+	inst, err = cloudClient.ExtendLease(ctx.Context, name, leaseEndTime)
+	if err != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to update lease"))
+	}
+
+	pending.Complete(output.Linef(CloudEmoji, output.StyleSuccess, "Lease of instance %q updated by %s", name, currentLeaseTime.Sub(leaseEndTime)))
+	return newDefaultTerminalInstancePrinter().Print(inst)
 }

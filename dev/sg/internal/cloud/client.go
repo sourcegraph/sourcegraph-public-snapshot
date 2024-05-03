@@ -112,15 +112,13 @@ func (c *Client) GetInstance(ctx context.Context, name string) (*Instance, error
 
 func (c *Client) ListInstances(ctx context.Context, all bool) ([]*Instance, error) {
 	var req *connect.Request[cloudapiv1.ListInstancesRequest]
-	if all {
-		req = newRequestWithToken(c.token, &cloudapiv1.ListInstancesRequest{})
-	} else {
-		req = newRequestWithToken(c.token, &cloudapiv1.ListInstancesRequest{
-			InstanceFilter: &cloudapiv1.InstanceFilter{
-				AdminEmail: &c.email,
-			},
-		})
+	listReq := cloudapiv1.ListInstancesRequest{}
+	if !all {
+		listReq.InstanceFilter = &cloudapiv1.InstanceFilter{
+			AdminEmail: &c.email,
+		}
 	}
+
 	resp, err := c.client.ListInstances(
 		ctx,
 		req,
