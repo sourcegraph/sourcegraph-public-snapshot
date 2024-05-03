@@ -28,6 +28,14 @@ type ServiceSpec struct {
 	// in a public-facing document. For now, this is used for reference in the
 	// private service spec and for internal integrations like Opsgenie.
 	Description string `yaml:"description"`
+	// NotionPageID is the unique Notion ID representing the page that should
+	// be populated with generated MSP operational guidance for this service
+	// and its environments. This page is owned by the MSP doc generator - any
+	// manual changes will be periodically overwritten.
+	//
+	// If not provided, no operational guidance will be generated for this
+	// service.
+	NotionPageID *string `yaml:"notionPageID,omitempty"`
 
 	// Kind is the type of the service, either 'service' or 'job'. Defaults to
 	// 'service'.

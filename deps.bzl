@@ -3594,6 +3594,13 @@ def go_dependencies():
         version = "v1.1.3",
     )
     go_repository(
+        name = "com_github_jomei_notionapi",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/jomei/notionapi",
+        sum = "h1:+7c32xWtKJEghIiaKgFg9yBpqh95pxxlqX/CWjqHpkw=",
+        version = "v1.13.0",
+    )
+    go_repository(
         name = "com_github_jonboulle_clockwork",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/jonboulle/clockwork",
@@ -5609,6 +5616,13 @@ def go_dependencies():
         version = "v0.0.0-20240201124957-b314c0befab1",
     )
     go_repository(
+        name = "com_github_sourcegraph_notionreposync",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/notionreposync",
+        sum = "h1:+ghayvC6PL3/8g4tqRsQCYKeH296tkogGSzpov6Ae+M=",
+        version = "v0.0.0-20240502050143-447b6b9e6763",
+    )
+    go_repository(
         name = "com_github_sourcegraph_run",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/run",
@@ -5816,8 +5830,8 @@ def go_dependencies():
         name = "com_github_tidwall_pretty",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/tidwall/pretty",
-        sum = "h1:RWIZEg2iJ8/g6fDDYzMpobmaoGh5OLl4AXtGUGPcqCs=",
-        version = "v1.2.0",
+        sum = "h1:qjsOFOWWQl+N3RsoF5/ssm1pHmJJwhjlSbZ51I6wMl4=",
+        version = "v1.2.1",
     )
     go_repository(
         name = "com_github_titanous_rocacheck",
@@ -6183,8 +6197,8 @@ def go_dependencies():
         name = "com_github_yuin_goldmark",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/yuin/goldmark",
-        sum = "h1:boZcn2GTjpsynOsC0iJHnBWa4Bi0qzfJjthwauItG68=",
-        version = "v1.6.0",
+        sum = "h1:3bajkSilaCbjdKVsKdZjZCLBNPL9pYzrCakKaf4U49U=",
+        version = "v1.7.1",
     )
     go_repository(
         name = "com_github_yuin_goldmark_emoji",
