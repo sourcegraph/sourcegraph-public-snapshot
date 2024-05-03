@@ -355,7 +355,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	locals.Add("service_id", vars.Service.ID, "Service ID")
 	locals.Add("environment_id", vars.EnvironmentID, "Environment ID")
 	locals.Add("service_name", vars.Service.GetName(), "Human-readable service name")
-	locals.Add("alert_description_suffix", alertpolicy.DescriptionSuffix(vars.Service.ID, vars.EnvironmentID),
+	locals.Add("alert_description_suffix", alertpolicy.DescriptionSuffix(vars.Service, vars.EnvironmentID),
 		"Supplemental MSP help text intended to be added to alert descriptions")
 
 	// Group alerts by type for dashboard
