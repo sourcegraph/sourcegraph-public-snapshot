@@ -72,15 +72,17 @@ func extendLeaseCloudEphemeral(ctx *cli.Context) error {
 	}
 	pending.Complete(output.Linef(CloudEmoji, output.StyleSuccess, "Fetched instance with name %q", name))
 
-	pending = std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Extending lease of instance %q by %s", name, duration))
-
-	current, err := inst.GetExpiry()
-	if err != nil {
-		errors.Wrap(err, "failed to get instance lease expiry")
+	if !inst.IsEphemeral() {
+		std.Out.WriteWarningf("Cannot extend lease time of non-ephemeral instance %q", name)
+		return ErrNotEphemeralInstance
 	}
 
+	pending = std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Extending lease of instance %q by %s", name, duration))
+
+	current := inst.ExpiresAt
+
 	leaseEndTime := current.Add(duration)
-	printLeaseTimeDiff(*current, leaseEndTime)
+	printLeaseTimeDiff(current, leaseEndTime)
 	inst, err = cloudClient.ExtendLease(ctx.Context, name, leaseEndTime)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to extend lease"))
