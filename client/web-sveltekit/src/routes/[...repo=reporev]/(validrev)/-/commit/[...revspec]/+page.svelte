@@ -1,14 +1,20 @@
 <script lang="ts">
+    import { get } from 'svelte/store'
+
+    import { navigating } from '$app/stores'
     import Commit from '$lib/Commit.svelte'
+    import { pluralize } from '$lib/common'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import FileDiff from '$lib/repo/FileDiff.svelte'
+    import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
+    import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
+    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import Alert from '$lib/wildcard/Alert.svelte'
+    import Badge from '$lib/wildcard/Badge.svelte'
+    import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
     import type { PageData, Snapshot } from './$types'
-    import FileDiff from '$lib/repo/FileDiff.svelte'
-    import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
-    import { get } from 'svelte/store'
-    import { navigating } from '$app/stores'
     import type { CommitPage_DiffConnection } from './page.gql'
-    import { Alert } from '$lib/wildcard'
 
     interface Capture {
         scroll: ScrollerCapture
@@ -57,18 +63,43 @@
         <Scroller bind:this={scroller} margin={600} on:more={data.diff?.fetchMore}>
             <div class="header">
                 <div class="info"><Commit commit={data.commit} alwaysExpanded /></div>
-                <div>
-                    <span>Commit:&nbsp;{data.commit.abbreviatedOID}</span>
-                    <span class="parents">
-                        {data.commit.parents.length} parents:
-                        {#each data.commit.parents as parent}
-                            <a href={parent.canonicalURL}>{parent.abbreviatedOID}</a>{' '}
+                <div class="parents">
+                    <span>Commit:</span>
+                    <Badge variant="secondary"><code>{data.commit.abbreviatedOID}</code></Badge>&nbsp;<CopyButton
+                        value={data.commit.abbreviatedOID}
+                    />
+                    <br />
+                    <span>{pluralize('Parent', data.commit.parents.length)}:</span>
+                    {#each data.commit.parents as parent}
+                        <Badge variant="link"><a href={parent.canonicalURL}>{parent.abbreviatedOID}</a></Badge
+                        >&nbsp;<CopyButton value={parent.abbreviatedOID} />{' '}
+                    {/each}
+                    <br />
+                    <ul>
+                        <li>
+                            <a href="/{data.repoName}@{data.commit.oid}"
+                                >Browse files at <Badge variant="link">{data.commit.abbreviatedOID}</Badge></a
+                            >
+                        </li>
+                        {#each data.commit.externalURLs as { url, serviceKind }}
+                            <li>
+                                <a href={url}>
+                                    View on
+                                    {#if serviceKind}
+                                        <CodeHostIcon repository={serviceKind} disableTooltip />
+                                        {getHumanNameForCodeHost(serviceKind)}
+                                    {:else}
+                                        code host
+                                    {/if}
+                                </a>
+                            </li>
                         {/each}
-                    </span>
+                    </ul>
                 </div>
             </div>
+            <hr />
             {#if !$diffQuery?.restoring && diffs}
-                <ul>
+                <ul class="diffs">
                     {#each diffs.nodes as node, index}
                         <li>
                             <FileDiff
@@ -100,18 +131,32 @@
 
     .header {
         display: flex;
-        padding: 1rem;
-        border-bottom: 1px solid var(--border-color);
+        margin: 1rem;
+
+        ul {
+            all: unset;
+            list-style: none;
+        }
     }
 
     .parents {
-        white-space: nowrap;
-    }
-    .info {
-        flex: 1;
+        span,
+        a {
+            vertical-align: middle;
+        }
     }
 
-    ul {
+    .info {
+        flex: 1;
+        --avatar-size: 2.5rem;
+    }
+
+    code {
+        font-family: monospace;
+        font-size: inherit;
+    }
+
+    ul.diffs {
         list-style: none;
         padding: 1rem;
 

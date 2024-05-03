@@ -1,8 +1,8 @@
 <script lang="ts">
     import { highlightRanges } from '$lib/dom'
     import { getFileMatchUrl, type ContentMatch, type PathMatch, type SymbolMatch } from '$lib/shared'
+    import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
-    import CopyPathButton from './CopyPathButton.svelte'
     import RepoRev from './RepoRev.svelte'
 
     export let result: ContentMatch | PathMatch | SymbolMatch
@@ -24,16 +24,18 @@
             {result.path}
         </a>
     {/key}
-    <CopyPathButton path={result.path} />
+    <span data-visible-on-focus><CopyButton value={result.path} label="Copy path to clipboard" /></span>
 </span>
 
 <style lang="scss">
     .root {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
         font-family: var(--code-font-family);
         font-size: var(--code-font-size);
+
+        a,
+        span {
+            vertical-align: middle;
+        }
     }
 
     .interpunct {

@@ -1,0 +1,22 @@
+.modal {
+    width: 50vw;
+    display: flex;
+    gap: 1em;
+    flex-direction: column;
+}
+
+.skip {
+    margin-left: auto;
+    margin-top: auto;
+    color: var(--violet-05);
+    border-color: var(--violet-05);
+}
+
+.title {
+    display: flex;
+    gap: 8px;
+
+    img {
+        height: 3.5rem;
+    }
+}

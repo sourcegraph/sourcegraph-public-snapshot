@@ -274,9 +274,7 @@ LIMIT %s
 `
 
 // FindClosestCompletedUploads returns the set of uploads that can most accurately answer queries for the given repository, commit, path, and
-// optional indexer. If rootMustEnclosePath is true, then only dumps with a root which is a prefix of path are returned. Otherwise,
-// any dump with a root intersecting the given path is returned.
-// Syntactic indexes are not returned unless the requested indexer is shared.SyntacticIndexer
+// optional indexer.
 //
 // This method should be used when the commit is known to exist in the lsif_nearest_uploads table. If it doesn't, then this method
 // will return no dumps (as the input commit is not reachable from anything with an upload). The nearest uploads table must be
@@ -295,19 +293,13 @@ LIMIT %s
 // It is possible for some dumps to overlap theoretically, e.g. if someone uploads one dump covering the repository root and then later
 // splits the repository into multiple dumps. For this reason, the returned dumps are always sorted in most-recently-finished order to
 // prevent returning data from stale dumps.
-func (s *store) FindClosestCompletedUploads(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.CompletedUpload, err error) {
-	ctx, trace, endObservation := s.operations.findClosestCompletedUploads.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.String("commit", commit),
-		attribute.String("path", path),
-		attribute.Bool("rootMustEnclosePath", rootMustEnclosePath),
-		attribute.String("indexer", indexer),
-	}})
+func (s *store) FindClosestCompletedUploads(ctx context.Context, opts shared.UploadMatchingOptions) (_ []shared.CompletedUpload, err error) {
+	ctx, trace, endObservation := s.operations.findClosestCompletedUploads.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
 
-	conds := makeFindClosestProcessUploadsConditions(path, rootMustEnclosePath, indexer)
+	conds := makeFindClosestProcessUploadsConditions(opts)
 	// TODO(id: completed-state-check) Make sure we only return uploads with state = 'completed' here
-	query := sqlf.Sprintf(findClosestCompletedUploadsQuery, makeVisibleUploadsQuery(repositoryID, commit), sqlf.Join(conds, " AND "))
+	query := sqlf.Sprintf(findClosestCompletedUploadsQuery, makeVisibleUploadsQuery(opts.RepositoryID, opts.Commit), sqlf.Join(conds, " AND "))
 
 	uploads, err := scanCompletedUploads(s.db.Query(ctx, query))
 	if err != nil {
@@ -347,15 +339,9 @@ ORDER BY u.finished_at DESC
 
 // FindClosestCompletedUploadsFromGraphFragment returns the set of uploads that can most accurately answer queries for the given repository, commit,
 // path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestCompletedUploads for additional details.
-func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.CompletedUpload, err error) {
-	ctx, trace, endObservation := s.operations.findClosestCompletedUploadsFromGraphFragment.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.String("commit", commit),
-		attribute.String("path", path),
-		attribute.Bool("rootMustEnclosePath", rootMustEnclosePath),
-		attribute.String("indexer", indexer),
-		attribute.Int("numCommitGraphKeys", len(commitGraph.Order())),
-	}})
+func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context, opts shared.UploadMatchingOptions, commitGraph *gitdomain.CommitGraph) (_ []shared.CompletedUpload, err error) {
+	ctx, trace, endObservation := s.operations.findClosestCompletedUploadsFromGraphFragment.With(ctx, &err,
+		observation.Args{Attrs: append(opts.Attrs(), attribute.Int("numCommitGraphKeys", len(commitGraph.Order())))})
 	defer endObservation(1, observation.Args{})
 
 	if len(commitGraph.Order()) == 0 {
@@ -369,9 +355,9 @@ func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context
 
 	commitGraphView, err := scanCommitGraphView(s.db.Query(ctx, sqlf.Sprintf(
 		findClosestCompletedUploadsFromGraphFragmentCommitGraphQuery,
-		repositoryID,
+		opts.RepositoryID,
 		sqlf.Join(commitQueries, ", "),
-		repositoryID,
+		opts.RepositoryID,
 		sqlf.Join(commitQueries, ", "),
 	)))
 	if err != nil {
@@ -382,14 +368,14 @@ func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context
 		attribute.Int("numCommitGraphViewTokenKeys", len(commitGraphView.Tokens)))
 
 	var ids []*sqlf.Query
-	for _, uploadMeta := range commitgraph.NewGraph(commitGraph, commitGraphView).UploadsVisibleAtCommit(commit) {
+	for _, uploadMeta := range commitgraph.NewGraph(commitGraph, commitGraphView).UploadsVisibleAtCommit(opts.Commit) {
 		ids = append(ids, sqlf.Sprintf("%d", uploadMeta.UploadID))
 	}
 	if len(ids) == 0 {
 		return nil, nil
 	}
 
-	conds := makeFindClosestProcessUploadsConditions(path, rootMustEnclosePath, indexer)
+	conds := makeFindClosestProcessUploadsConditions(opts)
 	// TODO(id: completed-state-check) Make sure we only return uploads with state = 'completed' here
 	query := sqlf.Sprintf(findClosestCompletedUploadsFromGraphFragmentQuery, sqlf.Join(ids, ","), sqlf.Join(conds, " AND "))
 
@@ -1087,16 +1073,17 @@ func (s *uploadMetaListSerializer) take() []byte {
 //
 //
 
-func makeFindClosestProcessUploadsConditions(path string, rootMustEnclosePath bool, indexer string) (conds []*sqlf.Query) {
-	if rootMustEnclosePath {
+func makeFindClosestProcessUploadsConditions(opts shared.UploadMatchingOptions) (conds []*sqlf.Query) {
+	switch opts.RootToPathMatching {
+	case shared.RootMustEnclosePath:
 		// Ensure that the root is a prefix of the path
-		conds = append(conds, sqlf.Sprintf(`%s LIKE (u.root || '%%%%')`, path))
-	} else {
+		conds = append(conds, sqlf.Sprintf(`%s LIKE (u.root || '%%%%')`, opts.Path))
+	case shared.RootEnclosesPathOrPathEnclosesRoot:
 		// Ensure that the root is a prefix of the path or vice versa
-		conds = append(conds, sqlf.Sprintf(`(%s LIKE (u.root || '%%%%') OR u.root LIKE (%s || '%%%%'))`, path, path))
+		conds = append(conds, sqlf.Sprintf(`(%s LIKE (u.root || '%%%%') OR u.root LIKE (%s || '%%%%'))`, opts.Path, opts.Path))
 	}
-	if indexer != "" {
-		conds = append(conds, sqlf.Sprintf("indexer = %s", indexer))
+	if opts.Indexer != "" {
+		conds = append(conds, sqlf.Sprintf("indexer = %s", opts.Indexer))
 	} else {
 		// NOTE(id: explicit-syntactic-index): Ignore syntactic indices unless they're
 		// explicitly requested to maintain backwards compatibility with older APIs
