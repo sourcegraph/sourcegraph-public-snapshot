@@ -41,8 +41,8 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 			},
 			lsifStoreAllowedPaths: []idPathPair{{22, "a.c"}},
 			matchingOptions:       shared.UploadMatchingOptions{Commit: "C2", Path: "a.c"},
-			// BUG: has upload for which path check fails
-			expectUploadIDs: []int{23},
+			// bug fix: doesn't have upload for which path check fails
+			expectUploadIDs: []int{},
 		},
 		{
 			closestUploads: []shared.CompletedUpload{
@@ -51,8 +51,8 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 			},
 			lsifStoreAllowedPaths: []idPathPair{{23, "a.c"}},
 			matchingOptions:       shared.UploadMatchingOptions{Commit: "C2", Path: "a.c"},
-			// BUG: is missing upload for which path check should succeed
-			expectUploadIDs: []int{},
+			// bug fix: has upload for which path check succeeds
+			expectUploadIDs: []int{23},
 		},
 	}
 	for _, testCase := range testCases {
