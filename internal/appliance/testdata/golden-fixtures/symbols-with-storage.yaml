@@ -137,6 +137,7 @@ resources:
       kind: PersistentVolumeClaim
       metadata:
         creationTimestamp: null
+        namespace: NORMALIZED_FOR_TESTING
       spec:
         accessModes:
         - ReadWriteOnce

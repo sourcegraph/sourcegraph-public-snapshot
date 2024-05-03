@@ -112,7 +112,7 @@ resources:
         labels:
           deploy: sourcegraph
         name: repos
-        namespace: test-appliance-b5cabb
+        namespace: NORMALIZED_FOR_TESTING
       spec:
         accessModes:
         - ReadWriteOnce

@@ -118,7 +118,7 @@ resources:
         labels:
           deploy: sourcegraph
         name: repos
-        namespace: test-appliance-7a0613
+        namespace: NORMALIZED_FOR_TESTING
       spec:
         accessModes:
         - ReadWriteOnce
