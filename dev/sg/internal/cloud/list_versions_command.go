@@ -1,17 +1,12 @@
 package cloud
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"time"
 
-	artifactregistry "cloud.google.com/go/artifactregistry/apiv1"
-	artifactregistrypb "cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
 	"github.com/grafana/regexp"
 	"github.com/urfave/cli/v2"
-	"google.golang.org/api/iterator"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -42,87 +37,12 @@ var ListVersionsEphemeralCommand = cli.Command{
 	},
 }
 
-// DockerImage is a type alias around the Google artifact registry Docker Image type
-type DockerImage artifactregistrypb.DockerImage
-
-// ArtifactRegistry is wrapper around the Google Artifact Registry client
-type ArtifactRegistry struct {
-	Project        string
-	Location       string
-	RepositoryName string
-	PageSize       int32
-
-	client *artifactregistry.Client
-}
-
-func NewArtifactRegistry(ctx context.Context, project, location, repositoryName string) (*ArtifactRegistry, error) {
-	client, err := artifactregistry.NewClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ArtifactRegistry{
-		Project:        project,
-		Location:       location,
-		RepositoryName: repositoryName,
-		PageSize:       DefaultArtifactRegistryPageSize,
-
-		client: client,
-	}, nil
-}
-
-// Parent returns the parent string in the format of projects/<project>/locations/<location>/repositories/<repositoryName>
-func (ar *ArtifactRegistry) Parent() string {
-	return fmt.Sprintf("projects/%s/locations/%s/repositories/%s", ar.Project, ar.Location, ar.RepositoryName)
-}
-
-func (ar *ArtifactRegistry) String() string {
-	return ar.Parent()
-}
-
-// ListVersions lists all Docker Images present in the Artifact Registry.
-func (ar *ArtifactRegistry) ListDockerImages(ctx context.Context) ([]*DockerImage, error) {
-	req := &artifactregistrypb.ListDockerImagesRequest{
-		Parent:   ar.Parent(),
-		PageSize: ar.PageSize,
-	}
-
-	images := []*DockerImage{}
-	resp := ar.client.ListDockerImages(ctx, req)
-	for {
-		image, err := resp.Next()
-		if err != nil {
-			if err == iterator.Done {
-				break
-			}
-			return nil, err
-		}
-		images = append(images, (*DockerImage)(image))
-	}
-
-	return images, nil
-}
-
-// GetDockerImage gets a Docker Image by name from the Artifact Registry.
-func (ar *ArtifactRegistry) GetDockerImage(ctx context.Context, name string) (*DockerImage, error) {
-	req := &artifactregistrypb.GetDockerImageRequest{
-		Name: name,
-	}
-
-	image, err := ar.client.GetDockerImage(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return (*DockerImage)(image), nil
-}
-
 func listTagsCloudEphemeral(ctx *cli.Context) error {
 	var filterRegex *regexp.Regexp
 	if ctx.String("filter") != "" {
 		filterRegex = regexp.MustCompile(ctx.String("filter"))
 	}
-	ar, err := NewArtifactRegistry(ctx.Context, "sourcegraph-ci", "us-central1", "cloud-ephemeral")
+	ar, err := NewDefaultCloudEphemeralRegistry(ctx.Context)
 	if err != nil {
 		return err
 	}
