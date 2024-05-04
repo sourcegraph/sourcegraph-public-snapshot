@@ -32,14 +32,6 @@ var DeployEphemeralCommand = cli.Command{
 			Name:        "version",
 			DefaultText: "deploys an ephemeral cloud Sourcegraph environment with the specified version. The version MUST exist and implies that no build will be created",
 		},
-		&cli.StringFlag{
-			Name:        "tag",
-			DefaultText: "the git tag that should be deployed",
-		},
-		&cli.BoolFlag{
-			Name:        "skip-wip-notice",
-			DefaultText: "skips the EXPERIMENTAL notice prompt",
-		},
 	},
 }
 
@@ -65,7 +57,7 @@ func determineVersion(build *buildkite.Build, tag string) (string, error) {
 	), nil
 }
 
-func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
+func triggerEphemeralBuild(ctx context.Context, client *bk.Client, currRepo *repo.GitRepo) (*buildkite.Build, error) {
 	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote", currRepo.Branch))
 	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "branch is out of date with remote"))
@@ -121,6 +113,59 @@ func createDeploymentForVersion(ctx context.Context, name, version string) error
 	return nil
 }
 
+func watchBuild(ctx context.Context, bkClient *bk.Client, build *buildkite.Build, tickEverySec int) (*buildkite.Build, error) {
+	pipeline := pointers.DerefZero(build.Pipeline.ID)
+	number := fmt.Sprintf("%d", pointers.DerefZero(build.Number))
+	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Waiting for build %s to complete", number))
+
+	t := time.Duration(tickEverySec) * time.Second
+	ticker := time.NewTicker(t)
+	defer ticker.Stop()
+
+	var buildError error
+tickLoop:
+	for range ticker.C {
+		build, buildError = bkClient.GetBuildByNumber(ctx, pipeline, number)
+		if buildError != nil {
+			break
+		}
+
+		state := pointers.DerefZero(build.State)
+
+		switch state {
+		case "success":
+			pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %s is commplete", number))
+			break tickLoop
+		case "failed":
+			pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Build %s has failed", number))
+			buildError = errors.Newf("build %s has failed", number)
+			break tickLoop
+		default:
+			pending.Updatef("Build %s still in progress ...", number)
+		}
+	}
+
+	return build, buildError
+}
+
+func triggerAndWaitEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
+	client, err := bk.NewClient(ctx, std.Out)
+	if err != nil {
+		return nil, err
+	}
+	build, err := triggerEphemeralBuild(ctx, client, currRepo)
+	if err != nil {
+		if err == ErrBranchOutOfSync {
+			std.Out.WriteWarningf(`Your branch %q is out of sync with remote.
+
+Please make sure you have either pushed or pulled the latest changes before trying again`, currRepo.Branch)
+		}
+		return nil, err
+	}
+
+	return watchBuild(ctx, client, build, 30)
+}
+
 func deployCloudEphemeral(ctx *cli.Context) error {
 	currentBranch, err := repo.GetCurrentBranch(ctx.Context)
 	if err != nil {
@@ -139,13 +184,9 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	version := ctx.String("version")
 	// if a version is specified we do not build anything and just trigger the cloud deployment
 	if version == "" {
-		build, err := triggerEphemeralBuild(ctx.Context, currRepo)
+		build, err := triggerAndWaitEphemeralBuild(ctx.Context, currRepo)
 		if err != nil {
-			if err == ErrBranchOutOfSync {
-				std.Out.WriteWarningf(`Your branch %q is out of sync with remote.
-
-Please make sure you have either pushed or pulled the latest changes before trying again`, currRepo.Branch)
-			}
+			std.Out.WriteFailuref("A problem occured during the ephemeral build")
 			return err
 		}
 		version, err = determineVersion(build, ctx.String("tag"))
