@@ -121,7 +121,7 @@ func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number s
 	b, _, err := c.bk.Builds.Get(BuildkiteOrg, pipeline, number, nil)
 	if err != nil {
 		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil, errors.New("no build found")
+			return nil, errors.Newf("build %s not found on pipeline %q", number, pipeline)
 		}
 		return nil, err
 	}

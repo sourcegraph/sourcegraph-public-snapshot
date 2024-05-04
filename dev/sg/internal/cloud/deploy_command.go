@@ -3,6 +3,7 @@ package cloud
 import (
 	"cmp"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -114,7 +115,7 @@ func createDeploymentForVersion(ctx context.Context, name, version string) error
 }
 
 func watchBuild(ctx context.Context, bkClient *bk.Client, build *buildkite.Build, tickEverySec int) (*buildkite.Build, error) {
-	pipeline := pointers.DerefZero(build.Pipeline.ID)
+	pipeline := pointers.DerefZero(build.Pipeline.Slug)
 	number := fmt.Sprintf("%d", pointers.DerefZero(build.Number))
 	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Waiting for build %s to complete", number))
 
