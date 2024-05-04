@@ -58,31 +58,6 @@ func determineVersion(build *buildkite.Build, tag string) (string, error) {
 	), nil
 }
 
-func triggerEphemeralBuild(ctx context.Context, client *bk.Client, currRepo *repo.GitRepo) (*buildkite.Build, error) {
-	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote", currRepo.Branch))
-	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "branch is out of date with remote"))
-		return nil, err
-	} else if isOutOfSync {
-		return nil, ErrBranchOutOfSync
-	}
-
-	client, err := bk.NewClient(ctx, std.Out)
-	if err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to create client to trigger build"))
-		return nil, err
-	}
-	pending.Updatef("Starting cloud ephemeral build for %q on commit %q", currRepo.Branch, currRepo.Ref)
-	build, err := client.TriggerBuild(ctx, "sourcegraph", currRepo.Branch, currRepo.Ref, bk.WithEnvVar("CLOUD_EPHEMERAL", "true"))
-	if err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to trigger build"))
-		return nil, err
-	}
-	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %d created. Build progress can be viewed at %s", pointers.DerefZero(build.Number), pointers.DerefZero(build.WebURL)))
-
-	return build, nil
-}
-
 func createDeploymentForVersion(ctx context.Context, name, version string) error {
 	email, err := GetGCloudAccount(ctx)
 	if err != nil {
@@ -149,6 +124,26 @@ tickLoop:
 	return build, buildError
 }
 
+func triggerEphemeralBuild(ctx context.Context, client *bk.Client, currRepo *repo.GitRepo) (*buildkite.Build, error) {
+	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote", currRepo.Branch))
+	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "branch is out of date with remote"))
+		return nil, err
+	} else if isOutOfSync {
+		return nil, ErrBranchOutOfSync
+	}
+
+	pending.Updatef("Starting cloud ephemeral build for %q on commit %q", currRepo.Branch, currRepo.Ref)
+	build, err := client.TriggerBuild(ctx, "sourcegraph", currRepo.Branch, currRepo.Ref, bk.WithEnvVar("CLOUD_EPHEMERAL", "true"))
+	if err != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to trigger build"))
+		return nil, err
+	}
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %d created. Build progress can be viewed at %s", pointers.DerefZero(build.Number), pointers.DerefZero(build.WebURL)))
+
+	return build, nil
+}
+
 func triggerAndWaitEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
 	client, err := bk.NewClient(ctx, std.Out)
 	if err != nil {
@@ -188,7 +183,7 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 		build, err := triggerAndWaitEphemeralBuild(ctx.Context, currRepo)
 		if err != nil {
 			std.Out.WriteFailuref("Cannot start deployment as there was problem with the ephemeral build")
-			return err
+			return errors.Wrapf(err, "cloud ephemeral deployment failure")
 		}
 		version, err = determineVersion(build, ctx.String("tag"))
 		if err != nil {
