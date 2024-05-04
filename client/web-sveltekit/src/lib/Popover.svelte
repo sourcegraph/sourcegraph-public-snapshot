@@ -80,10 +80,17 @@
 <slot {toggle} {registerTrigger} {registerTarget} />
 {#if trigger && isOpen}
     <div
-        use:registerPopoverContainer
         use:portal
-        use:popover={{ reference: target ?? trigger, options: { placement, offset: 3, shift: { padding: 4 } } }}
         use:onClickOutside
+        use:registerPopoverContainer
+        use:popover={{
+            reference: target ?? trigger,
+            options: {
+                placement,
+                offset: showOnHover ? 0 : 3,
+                shift: { padding: 4 },
+            },
+        }}
         on:click-outside={handleClickOutside}
     >
         <slot name="content" {toggle} />
