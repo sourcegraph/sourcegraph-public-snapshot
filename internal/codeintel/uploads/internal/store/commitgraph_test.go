@@ -106,9 +106,9 @@ func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(3)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	refs := map[string][]gitdomain.Ref{
@@ -158,18 +158,18 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(12)), Parents: []api.CommitID{api.CommitID(makeCommit(11))}},
-		{ID: api.CommitID(makeCommit(11)), Parents: []api.CommitID{api.CommitID(makeCommit(10))}},
-		{ID: api.CommitID(makeCommit(10)), Parents: []api.CommitID{api.CommitID(makeCommit(3))}},
-		{ID: api.CommitID(makeCommit(7)), Parents: []api.CommitID{api.CommitID(makeCommit(6))}},
-		{ID: api.CommitID(makeCommit(6)), Parents: []api.CommitID{api.CommitID(makeCommit(5))}},
-		{ID: api.CommitID(makeCommit(5)), Parents: []api.CommitID{api.CommitID(makeCommit(4)), api.CommitID(makeCommit(9))}},
-		{ID: api.CommitID(makeCommit(9)), Parents: []api.CommitID{api.CommitID(makeCommit(8))}},
-		{ID: api.CommitID(makeCommit(8)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(4)), Parents: []api.CommitID{api.CommitID(makeCommit(3))}},
-		{ID: api.CommitID(makeCommit(3)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(12), makeCommit(11)),
+		gitCommit(makeCommit(11), makeCommit(10)),
+		gitCommit(makeCommit(10), makeCommit(3)),
+		gitCommit(makeCommit(7), makeCommit(6)),
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(4), makeCommit(9)),
+		gitCommit(makeCommit(9), makeCommit(8)),
+		gitCommit(makeCommit(8), makeCommit(2)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
@@ -268,18 +268,18 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 	}
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(12)), Parents: []api.CommitID{api.CommitID(makeCommit(11))}},
-		{ID: api.CommitID(makeCommit(11)), Parents: []api.CommitID{api.CommitID(makeCommit(10))}},
-		{ID: api.CommitID(makeCommit(10)), Parents: []api.CommitID{api.CommitID(makeCommit(3))}},
-		{ID: api.CommitID(makeCommit(7)), Parents: []api.CommitID{api.CommitID(makeCommit(6))}},
-		{ID: api.CommitID(makeCommit(6)), Parents: []api.CommitID{api.CommitID(makeCommit(5))}},
-		{ID: api.CommitID(makeCommit(5)), Parents: []api.CommitID{api.CommitID(makeCommit(4)), api.CommitID(makeCommit(9))}},
-		{ID: api.CommitID(makeCommit(9)), Parents: []api.CommitID{api.CommitID(makeCommit(8))}},
-		{ID: api.CommitID(makeCommit(8)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(4)), Parents: []api.CommitID{api.CommitID(makeCommit(3))}},
-		{ID: api.CommitID(makeCommit(3)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(12), makeCommit(11)),
+		gitCommit(makeCommit(11), makeCommit(10)),
+		gitCommit(makeCommit(10), makeCommit(3)),
+		gitCommit(makeCommit(7), makeCommit(6)),
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(4), makeCommit(9)),
+		gitCommit(makeCommit(9), makeCommit(8)),
+		gitCommit(makeCommit(8), makeCommit(2)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
@@ -350,14 +350,14 @@ func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(8)), Parents: []api.CommitID{api.CommitID(makeCommit(6))}},
-		{ID: api.CommitID(makeCommit(7)), Parents: []api.CommitID{api.CommitID(makeCommit(6))}},
-		{ID: api.CommitID(makeCommit(6)), Parents: []api.CommitID{api.CommitID(makeCommit(5))}},
-		{ID: api.CommitID(makeCommit(5)), Parents: []api.CommitID{api.CommitID(makeCommit(2)), api.CommitID(makeCommit(4))}},
-		{ID: api.CommitID(makeCommit(4)), Parents: []api.CommitID{api.CommitID(makeCommit(3))}},
-		{ID: api.CommitID(makeCommit(3)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(8), makeCommit(6)),
+		gitCommit(makeCommit(7), makeCommit(6)),
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(2), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(1)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	refs := map[string][]gitdomain.Ref{
@@ -409,14 +409,14 @@ func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(8)), Parents: []api.CommitID{api.CommitID(makeCommit(7))}},
-		{ID: api.CommitID(makeCommit(7)), Parents: []api.CommitID{api.CommitID(makeCommit(4))}},
-		{ID: api.CommitID(makeCommit(6)), Parents: []api.CommitID{api.CommitID(makeCommit(5))}},
-		{ID: api.CommitID(makeCommit(5)), Parents: []api.CommitID{api.CommitID(makeCommit(4))}},
-		{ID: api.CommitID(makeCommit(4)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(3)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(8), makeCommit(7)),
+		gitCommit(makeCommit(7), makeCommit(4)),
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(1)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	refs := map[string][]gitdomain.Ref{
@@ -459,8 +459,8 @@ func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	refs := map[string][]gitdomain.Ref{
@@ -525,12 +525,12 @@ func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(6)), Parents: []api.CommitID{api.CommitID(makeCommit(5))}},
-		{ID: api.CommitID(makeCommit(5)), Parents: []api.CommitID{api.CommitID(makeCommit(3)), api.CommitID(makeCommit(4))}},
-		{ID: api.CommitID(makeCommit(4)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(3)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(3), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(2)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	refs := map[string][]gitdomain.Ref{
@@ -583,11 +583,11 @@ func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(5)), Parents: []api.CommitID{api.CommitID(makeCommit(4))}},
-		{ID: api.CommitID(makeCommit(4)), Parents: []api.CommitID{api.CommitID(makeCommit(3))}},
-		{ID: api.CommitID(makeCommit(3)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(5), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	refs := map[string][]gitdomain.Ref{
@@ -630,9 +630,9 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(3)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	refs := map[string][]gitdomain.Ref{
@@ -703,14 +703,14 @@ func TestFindClosestCompletedUploads(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(8)), Parents: []api.CommitID{api.CommitID(makeCommit(6))}},
-		{ID: api.CommitID(makeCommit(7)), Parents: []api.CommitID{api.CommitID(makeCommit(6))}},
-		{ID: api.CommitID(makeCommit(6)), Parents: []api.CommitID{api.CommitID(makeCommit(5))}},
-		{ID: api.CommitID(makeCommit(5)), Parents: []api.CommitID{api.CommitID(makeCommit(2)), api.CommitID(makeCommit(4))}},
-		{ID: api.CommitID(makeCommit(4)), Parents: []api.CommitID{api.CommitID(makeCommit(3))}},
-		{ID: api.CommitID(makeCommit(3)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(8), makeCommit(6)),
+		gitCommit(makeCommit(7), makeCommit(6)),
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(2), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(1)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
@@ -769,14 +769,14 @@ func TestFindClosestCompletedUploadsAlternateCommitGraph(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(8)), Parents: []api.CommitID{api.CommitID(makeCommit(7))}},
-		{ID: api.CommitID(makeCommit(7)), Parents: []api.CommitID{api.CommitID(makeCommit(4))}},
-		{ID: api.CommitID(makeCommit(6)), Parents: []api.CommitID{api.CommitID(makeCommit(5))}},
-		{ID: api.CommitID(makeCommit(5)), Parents: []api.CommitID{api.CommitID(makeCommit(4))}},
-		{ID: api.CommitID(makeCommit(4)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(3)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(8), makeCommit(7)),
+		gitCommit(makeCommit(7), makeCommit(4)),
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(1)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
@@ -826,11 +826,11 @@ func TestFindClosestCompletedUploadsAlternateCommitGraphWithOverwrittenVisibleUp
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(5)), Parents: []api.CommitID{api.CommitID(makeCommit(4))}},
-		{ID: api.CommitID(makeCommit(4)), Parents: []api.CommitID{api.CommitID(makeCommit(3))}},
-		{ID: api.CommitID(makeCommit(3)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(5), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
@@ -879,8 +879,8 @@ func TestFindClosestCompletedUploadsDistinctRoots(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
@@ -952,12 +952,12 @@ func TestFindClosestCompletedUploadsOverlappingRoots(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(6)), Parents: []api.CommitID{api.CommitID(makeCommit(5))}},
-		{ID: api.CommitID(makeCommit(5)), Parents: []api.CommitID{api.CommitID(makeCommit(3)), api.CommitID(makeCommit(4))}},
-		{ID: api.CommitID(makeCommit(4)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(3)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(3), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(2)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
@@ -1016,11 +1016,11 @@ func TestFindClosestCompletedUploadsIndexerName(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(5)), Parents: []api.CommitID{api.CommitID(makeCommit(4))}},
-		{ID: api.CommitID(makeCommit(4)), Parents: []api.CommitID{api.CommitID(makeCommit(3))}},
-		{ID: api.CommitID(makeCommit(3)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(5), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
@@ -1102,7 +1102,7 @@ func TestFindClosestCompletedUploadsIntersectingPath(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
@@ -1151,11 +1151,11 @@ func TestFindClosestCompletedUploadsFromGraphFragment(t *testing.T) {
 	insertUploads(t, db, uploads...)
 
 	currentGraph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(6)), Parents: []api.CommitID{api.CommitID(makeCommit(5))}},
-		{ID: api.CommitID(makeCommit(5)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(3)), Parents: []api.CommitID{api.CommitID(makeCommit(2))}},
-		{ID: api.CommitID(makeCommit(2)), Parents: []api.CommitID{api.CommitID(makeCommit(1))}},
-		{ID: api.CommitID(makeCommit(1))},
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(1)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(currentGraph, toCommitGraphView(uploads)).Gather()
@@ -1182,10 +1182,10 @@ func TestFindClosestCompletedUploadsFromGraphFragment(t *testing.T) {
 
 	// Test
 	graphFragment := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
-		{ID: api.CommitID(makeCommit(7)), Parents: []api.CommitID{api.CommitID(makeCommit(4)), api.CommitID(makeCommit(6))}},
-		{ID: api.CommitID(makeCommit(4)), Parents: []api.CommitID{api.CommitID(makeCommit(3))}},
-		{ID: api.CommitID(makeCommit(6))},
-		{ID: api.CommitID(makeCommit(3))},
+		gitCommit(makeCommit(7), makeCommit(4), makeCommit(6)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(6)),
+		gitCommit(makeCommit(3)),
 	})
 
 	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
@@ -1651,4 +1651,15 @@ func readBenchmarkFile(path string) ([]byte, error) {
 	}
 
 	return contents, nil
+}
+
+func gitCommit(id string, parents ...string) *gitdomain.Commit {
+	parentIDs := make([]api.CommitID, len(parents))
+	for i, parent := range parents {
+		parentIDs[i] = api.CommitID(parent)
+	}
+	return &gitdomain.Commit{
+		ID:      api.CommitID(id),
+		Parents: parentIDs,
+	}
 }

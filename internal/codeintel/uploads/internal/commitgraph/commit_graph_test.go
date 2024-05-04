@@ -35,19 +35,19 @@ func TestCalculateVisibleUploads(t *testing.T) {
 	// NOTE: The input to ParseCommitGraph must match the order and format
 	// of `git log --pretty="%H %P" --topo-order`.
 	testGraph := ParseCommitGraph([]*gitdomain.Commit{
-		{ID: "n", Parents: []api.CommitID{"l"}},
-		{ID: "m", Parents: []api.CommitID{"k"}},
-		{ID: "k", Parents: []api.CommitID{"h"}},
-		{ID: "j", Parents: []api.CommitID{"b", "h"}},
-		{ID: "h", Parents: []api.CommitID{"f"}},
-		{ID: "l", Parents: []api.CommitID{"i"}},
-		{ID: "i", Parents: []api.CommitID{"f"}},
-		{ID: "f", Parents: []api.CommitID{"e"}},
-		{ID: "g", Parents: []api.CommitID{"e"}},
-		{ID: "e", Parents: []api.CommitID{"c"}},
-		{ID: "d", Parents: []api.CommitID{"c"}},
-		{ID: "c", Parents: []api.CommitID{"a"}},
-		{ID: "b", Parents: []api.CommitID{"a"}},
+		gitCommit("n", "l"),
+		gitCommit("m", "k"),
+		gitCommit("k", "h"),
+		gitCommit("j", "b", "h"),
+		gitCommit("h", "f"),
+		gitCommit("l", "i"),
+		gitCommit("i", "f"),
+		gitCommit("f", "e"),
+		gitCommit("g", "e"),
+		gitCommit("e", "c"),
+		gitCommit("d", "c"),
+		gitCommit("c", "a"),
+		gitCommit("b", "a"),
 	})
 
 	commitGraphView := NewCommitGraphView()
@@ -103,21 +103,21 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 	// NOTE: The input to ParseCommitGraph must match the order and format
 	// of `git log --topo-sort`.
 	testGraph := ParseCommitGraph([]*gitdomain.Commit{
-		{ID: "q", Parents: []api.CommitID{"o"}},
-		{ID: "p", Parents: []api.CommitID{"n"}},
-		{ID: "o", Parents: []api.CommitID{"l", "m"}},
-		{ID: "n", Parents: []api.CommitID{"l"}},
-		{ID: "m", Parents: []api.CommitID{"k"}},
-		{ID: "l", Parents: []api.CommitID{"k"}},
-		{ID: "k", Parents: []api.CommitID{"j"}},
-		{ID: "j", Parents: []api.CommitID{"i"}},
-		{ID: "i", Parents: []api.CommitID{"h"}},
-		{ID: "h", Parents: []api.CommitID{"g"}},
-		{ID: "g", Parents: []api.CommitID{"f"}},
-		{ID: "f", Parents: []api.CommitID{"d", "e"}},
-		{ID: "e", Parents: []api.CommitID{"c"}},
-		{ID: "d", Parents: []api.CommitID{"b", "c"}},
-		{ID: "c", Parents: []api.CommitID{"a"}},
+		gitCommit("q", "o"),
+		gitCommit("p", "n"),
+		gitCommit("o", "l", "m"),
+		gitCommit("n", "l"),
+		gitCommit("m", "k"),
+		gitCommit("l", "k"),
+		gitCommit("k", "j"),
+		gitCommit("j", "i"),
+		gitCommit("i", "h"),
+		gitCommit("h", "g"),
+		gitCommit("g", "f"),
+		gitCommit("f", "d", "e"),
+		gitCommit("e", "c"),
+		gitCommit("d", "b", "c"),
+		gitCommit("c", "a"),
 	})
 
 	commitGraphView := NewCommitGraphView()
@@ -276,4 +276,15 @@ func makeTestGraph(commitGraph *CommitGraph, commitGraphView *CommitGraphView) (
 	}
 
 	return uploads, links
+}
+
+func gitCommit(id string, parents ...string) *gitdomain.Commit {
+	parentIDs := make([]api.CommitID, len(parents))
+	for i, parent := range parents {
+		parentIDs[i] = api.CommitID(parent)
+	}
+	return &gitdomain.Commit{
+		ID:      api.CommitID(id),
+		Parents: parentIDs,
+	}
 }
