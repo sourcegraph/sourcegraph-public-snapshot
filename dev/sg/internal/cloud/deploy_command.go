@@ -135,11 +135,11 @@ tickLoop:
 
 		switch state {
 		case "success":
-			pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %s is commplete", number))
+			pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %s completed", number))
 			break tickLoop
 		case "failed":
-			pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Build %s has failed", number))
-			buildError = errors.Newf("build %s has failed", number)
+			pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Build %s failed", number))
+			buildError = errors.Newf("build %s failed", number)
 			break tickLoop
 		default:
 			pending.Updatef("Build %s still in progress ...", number)
@@ -187,7 +187,7 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	if version == "" {
 		build, err := triggerAndWaitEphemeralBuild(ctx.Context, currRepo)
 		if err != nil {
-			std.Out.WriteFailuref("A problem occured during the ephemeral build")
+			std.Out.WriteFailuref("Cannot start deployment as there was problem with the ephemeral build")
 			return err
 		}
 		version, err = determineVersion(build, ctx.String("tag"))
