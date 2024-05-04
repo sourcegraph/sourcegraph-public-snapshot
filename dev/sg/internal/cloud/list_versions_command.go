@@ -129,7 +129,7 @@ func listTagsCloudEphemeral(ctx *cli.Context) error {
 	pending := std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Retrieving docker images from registry %q", ar.RepositoryName))
 	images, err := ar.ListDockerImages(ctx.Context)
 	if err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to retreive images from registry %q", ar.RepositoryName))
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to retreive images from registry %q", ar.RepositoryName))
 		return err
 	}
 	pending.Complete(output.Linef(CloudEmoji, output.StyleSuccess, "Retrieved %d docker images from registry %q", len(images), ar.RepositoryName))
