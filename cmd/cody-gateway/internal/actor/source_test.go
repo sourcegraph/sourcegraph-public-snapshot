@@ -74,7 +74,8 @@ func TestSourcesWorkers(t *testing.T) {
 		w := NewSources(s1).Worker(observation.NewContext(logger), sourceWorkerMutex1, time.Millisecond)
 		go func() {
 			<-stop1
-			w.Stop()
+			err := w.Stop(context.Background())
+			require.NoError(t, err)
 		}()
 		w.Start()
 	})
@@ -89,7 +90,8 @@ func TestSourcesWorkers(t *testing.T) {
 		w := NewSources(s2).Worker(observation.NewContext(logger), sourceWorkerMutex, time.Millisecond)
 		go func() {
 			<-stop2
-			w.Stop()
+			err := w.Stop(context.Background())
+			require.NoError(t, err)
 		}()
 		w.Start()
 	})

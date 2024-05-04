@@ -127,8 +127,7 @@ func StandaloneRun(ctx context.Context, runner util.CmdRunner, logger log.Logger
 		cancel()
 	}()
 
-	goroutine.MonitorBackgroundRoutines(ctx, routines...)
-	return nil
+	return goroutine.MonitorBackgroundRoutines(ctx, routines...)
 }
 
 func mustRegisterVMCountMetric(observationCtx *observation.Context, runner util.CmdRunner, logger log.Logger, prefix string) {

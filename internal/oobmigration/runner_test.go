@@ -8,6 +8,7 @@ import (
 
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
@@ -36,7 +37,8 @@ func TestRunner(t *testing.T) {
 
 	go runner.startInternal(allowAll)
 	tickN(ticker, 3)
-	runner.Stop()
+	err := runner.Stop(context.Background())
+	require.NoError(t, err)
 
 	if callCount := len(migrator.UpFunc.History()); callCount != 3 {
 		t.Errorf("unexpected number of calls to Up. want=%d have=%d", 3, callCount)
@@ -67,7 +69,8 @@ func TestRunnerError(t *testing.T) {
 
 	go runner.startInternal(allowAll)
 	tickN(ticker, 1)
-	runner.Stop()
+	err := runner.Stop(context.Background())
+	require.NoError(t, err)
 
 	if calls := store.AddErrorFunc.history; len(calls) != 1 {
 		t.Fatalf("unexpected number of calls to AddError. want=%d have=%d", 1, len(calls))
@@ -124,7 +127,8 @@ func TestRunnerRemovesCompleted(t *testing.T) {
 	tickN(ticker1, 5)
 	tickN(ticker2, 5)
 	tickN(ticker3, 5)
-	runner.Stop()
+	err := runner.Stop(context.Background())
+	require.NoError(t, err)
 
 	// not finished
 	if callCount := len(migrator1.UpFunc.History()); callCount != 5 {
@@ -417,7 +421,8 @@ func TestRunnerBoundsFilter(t *testing.T) {
 		return m.ID != 2
 	})
 	tickN(ticker, 64)
-	runner.Stop()
+	err := runner.Stop(context.Background())
+	require.NoError(t, err)
 
 	// not called
 	if callCount := len(migrator2.UpFunc.History()); callCount != 0 {

@@ -132,7 +132,11 @@ func (l *BufferedLogger) LogEvent(spanCtx context.Context, event Event) error {
 	}
 }
 
-// Start begins working by procssing the logger's buffer, blocking until stop
+func (l *BufferedLogger) Name() string {
+	return "BufferedLogger"
+}
+
+// Start begins working by processing the logger's buffer, blocking until stop
 // is called and the backlog is cleared.
 func (l *BufferedLogger) Start() {
 	var wg sync.WaitGroup
@@ -157,7 +161,7 @@ func (l *BufferedLogger) Start() {
 }
 
 // Stop stops buffered logger's background processing job and flushes its buffer.
-func (l *BufferedLogger) Stop() {
+func (l *BufferedLogger) Stop(context.Context) error {
 	l.bufferClosed.Store(true)
 	close(l.bufferC)
 	l.log.Info("buffer closed - waiting for events to flush")
@@ -175,4 +179,5 @@ func (l *BufferedLogger) Stop() {
 		l.log.Error("failed to shut down within shutdown deadline",
 			log.Error(errors.Newf("unflushed events: %d", len(l.bufferC)))) // real error for Sentry
 	}
+	return nil
 }

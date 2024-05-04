@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
@@ -954,12 +955,16 @@ func TestSyncRun(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		goroutine.MonitorBackgroundRoutines(ctx, syncer.Routines(ctx, store, repos.RunOptions{
-			EnqueueInterval: func() time.Duration { return time.Second },
-			IsDotCom:        false,
-			MinSyncInterval: func() time.Duration { return 1 * time.Millisecond },
-			DequeueInterval: 1 * time.Millisecond,
-		})...)
+		err := goroutine.MonitorBackgroundRoutines(
+			ctx,
+			syncer.Routines(ctx, store, repos.RunOptions{
+				EnqueueInterval: func() time.Duration { return time.Second },
+				IsDotCom:        false,
+				MinSyncInterval: func() time.Duration { return 1 * time.Millisecond },
+				DequeueInterval: 1 * time.Millisecond,
+			})...,
+		)
+		assert.EqualError(t, err, "unable to stop routines gracefully: context canceled")
 		done <- struct{}{}
 	}()
 
@@ -1109,12 +1114,16 @@ func TestSyncerMultipleServices(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		goroutine.MonitorBackgroundRoutines(ctx, syncer.Routines(ctx, store, repos.RunOptions{
-			EnqueueInterval: func() time.Duration { return time.Second },
-			IsDotCom:        false,
-			MinSyncInterval: func() time.Duration { return 1 * time.Minute },
-			DequeueInterval: 1 * time.Millisecond,
-		})...)
+		err := goroutine.MonitorBackgroundRoutines(
+			ctx,
+			syncer.Routines(ctx, store, repos.RunOptions{
+				EnqueueInterval: func() time.Duration { return time.Second },
+				IsDotCom:        false,
+				MinSyncInterval: func() time.Duration { return 1 * time.Minute },
+				DequeueInterval: 1 * time.Millisecond,
+			})...,
+		)
+		assert.EqualError(t, err, "unable to stop routines gracefully: context canceled")
 		done <- struct{}{}
 	}()
 

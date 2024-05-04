@@ -210,7 +210,12 @@ func RunOutOfBandMigrations(
 	}
 
 	go runner.StartPartial(ids)
-	defer runner.Stop()
+	defer func() {
+		err := runner.Stop(ctx)
+		if err != nil {
+			out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to stop out of band migrations: %s", err))
+		}
+	}()
 	defer func() {
 		if err == nil {
 			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Out of band migrations complete"))

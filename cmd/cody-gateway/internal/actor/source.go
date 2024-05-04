@@ -201,6 +201,10 @@ type redisLockedBackgroundRoutine struct {
 	routine goroutine.BackgroundRoutine
 }
 
+func (s *redisLockedBackgroundRoutine) Name() string {
+	return s.routine.Name()
+}
+
 func (s *redisLockedBackgroundRoutine) Start() {
 	s.logger.Info("Starting background sync routine")
 
@@ -220,10 +224,10 @@ func (s *redisLockedBackgroundRoutine) Start() {
 	s.routine.Start()
 }
 
-func (s *redisLockedBackgroundRoutine) Stop() {
+func (s *redisLockedBackgroundRoutine) Stop(ctx context.Context) error {
 	start := time.Now()
 	s.logger.Info("Stopping background sync routine")
-	s.routine.Stop()
+	stopErr := s.routine.Stop(ctx)
 
 	// If we have the lock, release it and let somebody else work
 	if expire := s.rmux.Until(); !expire.IsZero() && expire.After(time.Now()) {
@@ -247,6 +251,7 @@ func (s *redisLockedBackgroundRoutine) Stop() {
 
 	s.logger.Info("Background sync successfully stopped",
 		log.Duration("elapsed", time.Since(start)))
+	return stopErr
 }
 
 // sourcesSyncHandler is a handler for NewPeriodicGoroutine

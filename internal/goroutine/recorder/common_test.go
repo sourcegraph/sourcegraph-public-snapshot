@@ -1,13 +1,15 @@
 package recorder
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/sourcegraph/log"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/stretchr/testify/assert"
 )
 
 // TestLoggerAndReaderHappyPaths tests pretty much everything in the happy path of both the logger and the log reader.
@@ -114,8 +116,9 @@ func (r *RoutineMock) Start() {
 	// Do nothing
 }
 
-func (r *RoutineMock) Stop() {
+func (r *RoutineMock) Stop(context.Context) error {
 	// Do nothing
+	return nil
 }
 
 func (r *RoutineMock) Name() string {

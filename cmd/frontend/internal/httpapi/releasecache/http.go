@@ -58,7 +58,10 @@ func NewHandler(logger log.Logger) http.Handler {
 
 		// If we already have an updater goroutine running, we need to stop it.
 		if handler.updater != nil {
-			handler.updater.Stop()
+			err := handler.updater.Stop(ctx)
+			if err != nil {
+				logger.Error("failed to stop updater routine", log.Error(err))
+			}
 			handler.updater = nil
 		}
 
@@ -78,7 +81,12 @@ func NewHandler(logger log.Logger) http.Handler {
 			goroutine.WithDescription("caches src-cli versions polled periodically"),
 			goroutine.WithInterval(config.interval),
 		)
-		go goroutine.MonitorBackgroundRoutines(ctx, handler.updater)
+		go func() {
+			err := goroutine.MonitorBackgroundRoutines(ctx, handler.updater)
+			if err != nil {
+				logger.Error("error monitoring updater routine", log.Error(err))
+			}
+		}()
 
 		handler.rc = rc
 		handler.webhookSecret = config.webhookSecret
@@ -145,7 +153,7 @@ func (h *handler) handleWebhook(w http.ResponseWriter, r *http.Request) {
 type signatureValidator func(signature string, payload []byte, secret []byte) error
 
 func (h *handler) doHandleWebhook(w http.ResponseWriter, r *http.Request, signatureValidator signatureValidator) {
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Warn("error reading payload", log.Error(err))

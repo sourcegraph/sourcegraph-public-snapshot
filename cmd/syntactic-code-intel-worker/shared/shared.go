@@ -3,7 +3,6 @@ package shared
 import (
 	"context"
 	"database/sql"
-
 	"net/http"
 	"time"
 
@@ -50,9 +49,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	})
 
 	// Go!
-	goroutine.MonitorBackgroundRoutines(ctx, server, indexingWorker)
-
-	return nil
+	return goroutine.MonitorBackgroundRoutines(ctx, server, indexingWorker)
 }
 
 func initDB(observationCtx *observation.Context, name string) *sql.DB {

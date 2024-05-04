@@ -181,12 +181,13 @@ func (r *PeriodicGoroutine) Start() {
 // Stop will cancel the context passed to the handler function to stop the current
 // iteration of work, then break the loop in the Start method so that no new work
 // is accepted. This method blocks until Start has returned.
-func (r *PeriodicGoroutine) Stop() {
+func (r *PeriodicGoroutine) Stop(context.Context) error {
 	if r.recorder != nil {
 		go r.recorder.LogStop(r)
 	}
 	r.cancel()
 	<-r.finished
+	return nil
 }
 
 func (r *PeriodicGoroutine) runHandlerPool() {

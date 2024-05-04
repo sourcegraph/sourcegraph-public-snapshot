@@ -25,7 +25,7 @@ type TopicClient interface {
 	Ping(ctx context.Context) error
 	// Stop stops the topic publishing channel. The client should not be used after
 	// calling Stop.
-	Stop()
+	Stop(ctx context.Context) error
 }
 
 // TopicPublisher is a Pub/Sub publisher bound to a topic.
@@ -101,8 +101,9 @@ func (c *topicClient) PublishMessage(ctx context.Context, message []byte, attrib
 	return nil
 }
 
-func (c *topicClient) Stop() {
+func (c *topicClient) Stop(context.Context) error {
 	c.topic.Stop()
+	return nil
 }
 
 // NewNoopTopicClient creates a no-op Pub/Sub client that does nothing on any
@@ -118,7 +119,7 @@ func (c *noopTopicClient) Publish(context.Context, ...[]byte) error { return nil
 func (c *noopTopicClient) PublishMessage(context.Context, []byte, map[string]string) error {
 	return nil
 }
-func (c *noopTopicClient) Stop() {}
+func (c *noopTopicClient) Stop(context.Context) error { return nil }
 
 // NewLoggingTopicClient creates a Pub/Sub client that just logs all messages,
 // and does nothing otherwise. This is also a useful stub implementation of the

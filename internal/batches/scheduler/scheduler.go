@@ -100,12 +100,13 @@ func (s *Scheduler) Start() {
 	}
 }
 
-func (s *Scheduler) Stop() {
+func (s *Scheduler) Stop(context.Context) error {
 	if s.recorder != nil {
 		go s.recorder.LogStop(s)
 	}
 	s.done <- struct{}{}
 	close(s.done)
+	return nil
 }
 
 func (s *Scheduler) enqueueChangeset() error {

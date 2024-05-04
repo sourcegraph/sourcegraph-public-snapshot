@@ -11,6 +11,7 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/build"
@@ -143,7 +144,13 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		server.store.Set(b)
 
 		ctx, cancel := context.WithCancel(context.Background())
-		go goroutine.MonitorBackgroundRoutines(ctx, deleteOldBuilds(logger, server.store, 10*time.Millisecond, 24*time.Hour))
+		go func() {
+			err := goroutine.MonitorBackgroundRoutines(
+				ctx,
+				deleteOldBuilds(logger, server.store, 10*time.Millisecond, 24*time.Hour),
+			)
+			assert.EqualError(t, err, "unable to stop routines gracefully: context canceled")
+		}()
 		time.Sleep(20 * time.Millisecond)
 		cancel()
 
@@ -165,7 +172,13 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		server.store.Set(b)
 
 		ctx, cancel := context.WithCancel(context.Background())
-		go goroutine.MonitorBackgroundRoutines(ctx, deleteOldBuilds(logger, server.store, 10*time.Millisecond, 24*time.Hour))
+		go func() {
+			err := goroutine.MonitorBackgroundRoutines(
+				ctx,
+				deleteOldBuilds(logger, server.store, 10*time.Millisecond, 24*time.Hour),
+			)
+			assert.EqualError(t, err, "unable to stop routines gracefully: context canceled")
+		}()
 		time.Sleep(20 * time.Millisecond)
 		cancel()
 

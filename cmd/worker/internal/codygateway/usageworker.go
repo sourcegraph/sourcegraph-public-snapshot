@@ -44,6 +44,10 @@ type usageRoutine struct {
 	cancel context.CancelFunc
 }
 
+func (j *usageRoutine) Name() string {
+	return "CodyGatewayUsageWorker"
+}
+
 func (j *usageRoutine) Start() {
 	var ctx context.Context
 	ctx, j.cancel = context.WithCancel(context.Background())
@@ -100,8 +104,9 @@ func (j *usageRoutine) Start() {
 	})
 }
 
-func (j *usageRoutine) Stop() {
+func (j *usageRoutine) Stop(context.Context) error {
 	if j.cancel != nil {
 		j.cancel()
 	}
+	return nil
 }

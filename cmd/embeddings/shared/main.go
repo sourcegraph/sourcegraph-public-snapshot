@@ -91,9 +91,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// Mark health server as ready and go!
 	ready()
 
-	goroutine.MonitorBackgroundRoutines(ctx, server)
-
-	return nil
+	return goroutine.MonitorBackgroundRoutines(ctx, server)
 }
 
 func NewHandler(

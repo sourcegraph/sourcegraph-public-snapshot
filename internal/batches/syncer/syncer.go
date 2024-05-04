@@ -68,6 +68,10 @@ func NewSyncRegistry(ctx context.Context, observationCtx *observation.Context, b
 	}
 }
 
+func (s *SyncRegistry) Name() string {
+	return "SyncRegistry"
+}
+
 func (s *SyncRegistry) Start() {
 	// Fetch initial list of syncers.
 	if err := s.syncCodeHosts(s.ctx); err != nil {
@@ -88,11 +92,15 @@ func (s *SyncRegistry) Start() {
 		goroutine.WithInterval(externalServiceSyncerInterval),
 	)
 
-	goroutine.MonitorBackgroundRoutines(s.ctx, externalServiceSyncer)
+	err := goroutine.MonitorBackgroundRoutines(s.ctx, externalServiceSyncer)
+	if err != nil {
+		s.logger.Error("error monitoring background routines", log.Error(err))
+	}
 }
 
-func (s *SyncRegistry) Stop() {
+func (s *SyncRegistry) Stop(context.Context) error {
 	s.cancel()
+	return nil
 }
 
 // EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.

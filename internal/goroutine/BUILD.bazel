@@ -37,6 +37,7 @@ go_test(
     deps = [
         "//lib/errors",
         "@com_github_derision_test_glock//:glock",
+        "@com_github_stretchr_testify//require",
     ],
 )
 

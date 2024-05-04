@@ -1,12 +1,14 @@
 package dbworker
 
 import (
+	"context"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/derision-test/glock"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -43,7 +45,8 @@ func TestResetter(t *testing.T) {
 	resetter := newResetter(logger, store.Store[*TestRecord](s), options, clock)
 	go func() { resetter.Start() }()
 	clock.BlockingAdvance(time.Second)
-	resetter.Stop()
+	err := resetter.Stop(context.Background())
+	require.NoError(t, err)
 
 	if callCount := len(s.ResetStalledFunc.History()); callCount < 1 {
 		t.Errorf("unexpected reset stalled call count. want>=%d have=%d", 1, callCount)

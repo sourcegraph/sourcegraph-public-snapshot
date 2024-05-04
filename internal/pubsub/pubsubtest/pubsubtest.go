@@ -50,4 +50,4 @@ func (c *MemoryTopicClient) PublishMessage(ctx context.Context, message []byte, 
 }
 
 func (c *MemoryTopicClient) Ping(context.Context) error { return nil }
-func (c *MemoryTopicClient) Stop()                      {}
+func (c *MemoryTopicClient) Stop(context.Context) error { return nil }

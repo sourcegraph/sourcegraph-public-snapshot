@@ -1,17 +1,19 @@
 package recorder
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Recordable interface {
 	Start()
-	Stop()
+	Stop(ctx context.Context) error
 	Name() string
 	Type() RoutineType
 	JobName() string
