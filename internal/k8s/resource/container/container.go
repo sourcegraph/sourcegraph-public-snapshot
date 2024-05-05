@@ -91,42 +91,15 @@ func NewEnvVarFieldRef(name, fieldPath string) corev1.EnvVar {
 
 func EnvVarsRedis() []corev1.EnvVar {
 	return []corev1.EnvVar{
-		{
-			Name: "REDIS_CACHE_ENDPOINT",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "redis-cache",
-					},
-					Key: "endpoint",
-				},
-			},
-		}, {
-			Name: "REDIS_STORE_ENDPOINT",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "redis-store",
-					},
-					Key: "endpoint",
-				},
-			},
-		},
+		NewEnvVarSecretKeyRef("REDIS_CACHE_ENDPOINT", "redis-cache", "endpoint"),
+		NewEnvVarSecretKeyRef("REDIS_STORE_ENDPOINT", "redis-store", "endpoint"),
 	}
 }
 
 func EnvVarsOtel() []corev1.EnvVar {
 	return []corev1.EnvVar{
-		{
-			Name: "OTEL_AGENT_HOST",
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "status.hostIP",
-				},
-			},
-		}, {
-			Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-			Value: "http://$(OTEL_AGENT_HOST):4317",
-		},
+		// OTEL_AGENT_HOST must be defined before OTEL_EXPORTER_OTLP_ENDPOINT to substitute the node IP on which the DaemonSet pod instance runs in the latter variable
+		NewEnvVarFieldRef("OTEL_AGENT_HOST", "status.hostIP"),
+		{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://$(OTEL_AGENT_HOST):4317"},
 	}
 }
