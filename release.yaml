@@ -6,28 +6,28 @@ meta:
 
 requirements:
   # We use wget here, because curl --fail-with-body was introduced in a version ulterior to what we can have on the CI agents.
-  - name: "wget"
-    cmd: "wget --help"
-  - name: "jq"
-    cmd: "jq --help"
-  - name: "Buidkite access token"
+  - name: 'wget'
+    cmd: 'wget --help'
+  - name: 'jq'
+    cmd: 'jq --help'
+  - name: 'Buidkite access token'
     env: BUILDKITE_ACCESS_TOKEN
     only: # We only need this to create CI builds.
       - internal.create
       - promoteToPublic.create
     # `write_builds` permission is all that's needed here
     # You also need to ensure you add access to the Sourcegraph organization on Buildkite.
-  - name: "GitHub CLI"
-    cmd: "which gh"
+  - name: 'GitHub CLI'
+    cmd: 'which gh'
     only:
       - promoteToPublic.finalize
-  - name: "GitHub CLI auth status"
-    cmd: "gh auth status"
+  - name: 'GitHub CLI auth status'
+    cmd: 'gh auth status'
     only:
       - promoteToPublic.finalize
 
-   # announce-engineering slack webhook url:
-   # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=pldpna5vivapxe4phewnqd42ji&h=team-sourcegraph.1password.com
+    # announce-engineering slack webhook url:
+    # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=pldpna5vivapxe4phewnqd42ji&h=team-sourcegraph.1password.com
   - name: 'Slack Webhook URL'
     env: SLACK_WEBHOOK_URL
     only:
@@ -160,7 +160,7 @@ test:
         # We purposely limit the concurrency to 6, because if we use the default, there are
         # scenarios where we can exhaust available ports to the docker daemon and end up
         # with an infrastructure flake.
-        max_routines=6
+        max_routines=5
         # Hardcoding version, as for now I just want to make sure this works in CI.
         bazel ${bazelrc[*]} run //testing/tools/upgradetest:release_test_run -- all \
           --post-release-version={{tag}} \
@@ -252,7 +252,7 @@ promoteToPublic:
           Promoted release is **publicly available** through a git tag at [\`{{version}}\`](https://github.com/sourcegraph/sourcegraph/tree/{{version}}).
           EOF
 
-      - name: "git:release:create"
+      - name: 'git:release:create'
         cmd: |
           tag="{{tag}}"
           version="{{version}}"
