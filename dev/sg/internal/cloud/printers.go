@@ -31,8 +31,8 @@ type jsonInstancePrinter struct {
 func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 	valueFunc := func(inst *Instance) []any {
 		name := inst.Name
-		if len(name) > 40 {
-			name = name[:40]
+		if len(name) > 37 {
+			name = name[:37] + "..."
 		}
 
 		status := inst.Status.Status
@@ -70,6 +70,8 @@ func (p *terminalInstancePrinter) Print(items ...*Instance) error {
 		line := fmt.Sprintf("%-40s %-11s %s", values...)
 		std.Out.WriteLine(output.Line("", output.StyleGrey, line))
 	}
+
+	std.Out.WriteSuggestionf("Some names may be truncated. To see the full names use the --raw format")
 	return nil
 }
 
