@@ -68,6 +68,9 @@ internal:
             else
               echo "Build created, see:"
               echo $body | jq .web_url
+              cat << EOF | buildkite-agent annotate --style info
+              This is a Release build. Learn more about the process in the [reference documentation](https://www.notion.so/sourcegraph/Releases-3429f31510f2451fbc38a7f9ccaa0492)
+              EOF
             fi
   finalize:
     steps:
@@ -218,6 +221,9 @@ promoteToPublic:
           else
             echo "Build created, see:"
             echo $body | jq .web_url
+            cat << EOF | buildkite-agent annotate --style info
+            This is a Release build. Learn more about the process in the [reference documentation](https://www.notion.so/sourcegraph/Releases-3429f31510f2451fbc38a7f9ccaa0492)
+            EOF
           fi
   finalize:
     steps:
