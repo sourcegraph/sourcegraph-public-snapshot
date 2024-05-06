@@ -745,7 +745,7 @@ This command supports completions on services and environments.
 							connectionName,
 							serviceAccountEmail,
 							proxyPort,
-							svc.Service.GetGoLink(env.ID))
+							svc.Service.GetHandbookPageURL())
 						if err != nil {
 							return err
 						}
