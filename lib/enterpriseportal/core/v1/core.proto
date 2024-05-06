@@ -59,6 +59,8 @@ message EnterpriseSubscription {
   string display_name = 3;
 }
 
+// EnterpriseSubscriptionLicenseClassic corresponds to
+// ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_CLASSIC.
 message EnterpriseSubscriptionLicenseClassic {
   message Info {
     // The tags that indicate which features are activated by this license.
@@ -114,13 +116,9 @@ message EnterpriseSubscriptionLicense {
   string subscription_id = 2;
   // Timeline of key events corresponding to this license.
   repeated EnterpriseSubscriptionLicenseCondition conditions = 3;
-
-  // Type of the license, available primarily for reference - this value will
-  // correspond to the appropriate type of the 'license' field.
-  EnterpriseSubscriptionLicenseType type = 4;
   // License data, based on the type of the license.
   oneof license {
-    EnterpriseSubscriptionLicenseClassic classic = 5;
+    EnterpriseSubscriptionLicenseClassic classic = 4;
   }
 }
 
