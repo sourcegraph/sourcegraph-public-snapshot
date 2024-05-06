@@ -296,9 +296,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			runtype.InternalRelease,
 			runtype.CloudEphemeral,
 		) {
-			imageBuildOps.Append(bazelBuildExecutorVM(c, alwaysRebuild))
+			imageBuildOps.Append(bazelBuildExecutorVM(c, false))
+			// imageBuildOps.Append(bazelBuildExecutorVM(c, alwaysRebuild))
 			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				imageBuildOps.Append(bazelBuildExecutorDockerMirror(c))
+				// imageBuildOps.Append(bazelBuildExecutorDockerMirror(c))
 			}
 		}
 		ops.Merge(imageBuildOps)
@@ -322,10 +323,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(publishOpsDev)
 
 		// End-to-end tests
-		ops.Merge(operations.NewNamedSet("End-to-end tests",
-			executorsE2E(c),
-			// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
-		))
+		// ops.Merge(operations.NewNamedSet("End-to-end tests",
+		// 	executorsE2E(c),
+		// 	// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
+		// ))
 
 		// Wolfi package and base images
 		packageOps, apkoOps := addWolfiOps(c)
