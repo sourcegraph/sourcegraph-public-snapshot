@@ -5,6 +5,7 @@ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
 proto_library(
     name = "v1_proto",
     srcs = ["appliance.proto"],
+    strip_import_prefix = "/internal",
     visibility = ["//:__subpackages__"],
 )
 
