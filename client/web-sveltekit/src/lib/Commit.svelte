@@ -7,7 +7,6 @@
     import Icon from '$lib/Icon.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
-    import Badge from '$lib/wildcard/Badge.svelte'
 
     import type { Commit } from './Commit.gql'
 
@@ -59,11 +58,6 @@
             <pre>{commit.body}</pre>
         {/if}
     </div>
-    {#if !alwaysExpanded}
-        <div class="buttons">
-            <Badge variant="link"><a href={commit.canonicalURL}>{commit.abbreviatedOID}</a></Badge>
-        </div>
-    {/if}
 </div>
 
 <style lang="scss">
@@ -83,11 +77,14 @@
         font-weight: 600;
         flex: 0 1 auto;
         padding-right: 0.5rem;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
         color: var(--body-color);
         min-width: 0;
+
+        @media (--sm-breakpoint-up) {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
     }
 
     .avatar {
@@ -106,7 +103,12 @@
         color: var(--body-color);
         border: 1px solid var(--secondary);
         cursor: pointer;
+
+        @media (--xs-breakpoint-down) {
+            align-self: flex-start;
+        }
     }
+
     pre {
         margin-top: 0.5rem;
         margin-bottom: 1.5rem;
@@ -115,9 +117,5 @@
         max-width: 100%;
         word-wrap: break-word;
         white-space: pre-wrap;
-    }
-
-    .buttons {
-        align-self: center;
     }
 </style>
