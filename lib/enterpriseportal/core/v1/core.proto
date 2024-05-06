@@ -193,11 +193,12 @@ message ListSubscriptionLicensesRequest {
   // See pagination concepts from https://cloud.google.com/apis/design/design_patterns#list_pagination
   int32 page_size = 1;
   // The client uses this field to request a specific page of the list results.
+  // A zero value requests the first page.
   //
   // See pagination concepts from https://cloud.google.com/apis/design/design_patterns#list_pagination
   //
   // TODO: Create an internal pagination token type: https://protobuf.dev/programming-guides/api/#encode-opaque-data-in-strings
-  optional string page_token = 2;
+  string page_token = 2;
 
   // Filters define the lookup strategy for this list request. Multiple filters
   // are treated as AND-concatenated.
