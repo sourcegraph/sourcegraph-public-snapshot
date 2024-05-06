@@ -14,7 +14,8 @@
 </script>
 
 <div class="last-commit">
-    <div class="avatar">
+    <!-- Wrapper diff necessary to prevent avatar from being squished -->
+    <div>
         <Avatar avatar={user} />
     </div>
     <div class="display-name">
@@ -32,34 +33,22 @@
 
 <style lang="scss">
     .last-commit {
+        --avatar-size: 1.5rem;
+
         display: flex;
-        flex-flow: row nowrap;
         align-items: center;
-        justify-content: space-between;
-        margin-right: 0.5rem;
+        gap: 0.5rem;
         white-space: nowrap;
-        max-width: 400px;
         font-size: var(--font-size-small);
     }
 
-    .avatar {
-        display: flex;
-        flex-flow: row nowrap;
-        align-items: center;
-        margin-right: 0.5rem;
-        --avatar-size: 1.5rem;
-    }
-
     .display-name {
-        margin-right: 0.75rem;
+        margin-right: 0.25rem;
         color: var(--text-body);
     }
 
     .commit-message {
-        align-items: center;
         color: var(--text-muted);
-        margin-right: 0.5rem;
-        max-width: 240px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

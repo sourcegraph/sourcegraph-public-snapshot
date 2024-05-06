@@ -38,10 +38,9 @@
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
     import { createFileTreeStore } from './fileTreeStore'
-
     import type { GitHistory_HistoryConnection, RepoPage_ReferencesLocationConnection } from './layout.gql'
-    import RepositoryRevPicker from './RepositoryRevPicker.svelte'
     import ReferencePanel from './ReferencePanel.svelte'
+    import RepositoryRevPicker from './RepositoryRevPicker.svelte'
 
     enum TabPanels {
         History,
@@ -262,8 +261,9 @@
 
         display: flex;
         align-items: center;
-        flex-flow: row nowrap;
         justify-content: space-between;
+        gap: 1rem;
+
         overflow: hidden;
         border-top: 1px solid var(--border-color);
         box-shadow: var(--bottom-panel-shadow);
@@ -271,6 +271,10 @@
         color: var(--text-body);
         // Applying z-index to the bottom panel allows its shadow to cascade correctly on the code but still say behind the left panel
         z-index: 1;
+
+        .last-commit {
+            overflow: hidden;
+        }
 
         &.open {
             height: 32vh;
