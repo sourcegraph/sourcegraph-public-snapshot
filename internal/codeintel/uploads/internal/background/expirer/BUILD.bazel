@@ -42,6 +42,7 @@ go_test(
         "//internal/api",
         "//internal/codeintel/policies",
         "//internal/codeintel/policies/shared",
+        "//internal/codeintel/uploads/internal/commitgraph",
         "//internal/codeintel/uploads/internal/lsifstore",
         "//internal/codeintel/uploads/internal/store",
         "//internal/codeintel/uploads/shared",

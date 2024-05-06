@@ -1,11 +1,13 @@
 package commitgraph
 
+import "github.com/sourcegraph/sourcegraph/internal/api"
+
 // CommitGraphView is a space-efficient view of a commit graph decorated with the
 // set of uploads visible at every commit.
 type CommitGraphView struct {
 	// Meta is a map from commit to metadata on each visible upload from that
 	// commit's location in the commit graph.
-	Meta map[string][]UploadMeta
+	Meta map[api.CommitID][]UploadMeta
 
 	// Tokens is a map from upload identifiers to a hash of their root an indexer
 	// field. Equality of this token for two uploads means that they are able to
@@ -22,12 +24,12 @@ type UploadMeta struct {
 
 func NewCommitGraphView() *CommitGraphView {
 	return &CommitGraphView{
-		Meta:   map[string][]UploadMeta{},
+		Meta:   map[api.CommitID][]UploadMeta{},
 		Tokens: map[int]string{},
 	}
 }
 
-func (v *CommitGraphView) Add(meta UploadMeta, commit, token string) {
+func (v *CommitGraphView) Add(meta UploadMeta, commit api.CommitID, token string) {
 	v.Meta[commit] = append(v.Meta[commit], meta)
 	v.Tokens[meta.UploadID] = token
 }

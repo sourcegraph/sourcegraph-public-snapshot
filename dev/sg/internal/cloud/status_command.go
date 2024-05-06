@@ -53,8 +53,7 @@ func statusCloudEphemeral(ctx *cli.Context) error {
 	}
 	name = sanitizeInstanceName(name)
 
-	cloudEmoji := "☁️"
-	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Getting status of ephemeral instance %q", name))
+	pending := std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Getting status of ephemeral instance %q", name))
 	inst, err := cloudClient.GetInstance(ctx.Context, name)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "getting status of %q failed", name))

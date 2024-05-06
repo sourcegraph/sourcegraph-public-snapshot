@@ -45,11 +45,12 @@ var cloudCommand = &cli.Command{
 				return nil
 			},
 		},
+		&cloud.DeleteEphemeralCommand,
 		&cloud.DeployEphemeralCommand,
+		&cloud.LeaseEphemeralCommand,
 		&cloud.ListEphemeralCommand,
 		&cloud.ListVersionsEphemeralCommand,
 		&cloud.StatusEphemeralCommand,
-		&cloud.DeleteEphemeralCommand,
 	},
 }
 

@@ -1683,8 +1683,8 @@ github.com/smartystreets/goconvey v1.6.4/go.mod h1:syvi0/a8iFYH4r/RixwvyeAJjdLS9
 github.com/soheilhy/cmux v0.1.4/go.mod h1:IM3LyeVVIOuxMH7sFAkER9+bJ4dT7Ms6E4xg4kGIyLM=
 github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b h1:Mlytsllyx6d1eaKXt8urXX0YjP5Tq4UGV+BfL6Yc1aQ=
 github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b/go.mod h1:0MLTrjQI8EuVmvykEhcfr/7X0xmaDAZrqMgxIq3OXHk=
-github.com/sourcegraph/cloud-api v0.0.0-20240423104735-5602ff6597cc h1:tgqkTr812ydrUTktrJGRD9BpIEt/Gv0/NsJiugr6qe0=
-github.com/sourcegraph/cloud-api v0.0.0-20240423104735-5602ff6597cc/go.mod h1:1xzM0rrlsGlo7OVxoXx8aj5LBQXSo0BxvRkWJujjIVY=
+github.com/sourcegraph/cloud-api v0.0.0-20240501113836-ecd1d4cba9dd h1:ZCHR0jxMJ0QhwHbHnbXuWTJrIeJT6uuJZ5D8V2Csg6g=
+github.com/sourcegraph/cloud-api v0.0.0-20240501113836-ecd1d4cba9dd/go.mod h1:1xzM0rrlsGlo7OVxoXx8aj5LBQXSo0BxvRkWJujjIVY=
 github.com/sourcegraph/conc v0.3.1-0.20240108182409-4afefce20f9b h1:0FsjN+u9fNXTS2C1JnJ6G/gkgcUg8dscyyfu3PwHWUQ=
 github.com/sourcegraph/conc v0.3.1-0.20240108182409-4afefce20f9b/go.mod h1:Sdozi7LEKbFPqYX2/J+iBAM6HpqSLTASQIKqDmF7Mt0=
 github.com/sourcegraph/go-ctags v0.0.0-20240325032535-71f1ec6e46e4 h1:jppwnpC+DT9tIiRbw21lD0drA9Jqu4X47iA4gTk4w8M=

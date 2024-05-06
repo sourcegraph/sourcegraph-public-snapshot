@@ -25,7 +25,7 @@ func (g *GitCommitClient) FirstCommit(ctx context.Context, repoName api.RepoName
 	return g.cachedFirstCommit.GitFirstEverCommit(ctx, g.gitserverClient, repoName)
 }
 func (g *GitCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
-	options := gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}
+	options := gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), Order: gitserver.CommitsOrderCommitDate}
 	if len(revision) > 0 {
 		options.Range = revision
 	}

@@ -980,7 +980,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			before := ""
 			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
 			client := NewTestClient(t).WithChecker(checker)
-			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, DateOrder: true, After: after, Before: before})
+			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, Order: CommitsOrderCommitDate, After: after, Before: before})
 			if err == nil {
 				t.Error("expected error, got nil")
 			}
