@@ -37,6 +37,7 @@
     import { isKeyDown, isMouseEvent, isTouchEvent } from './event'
     import type { Direction, DragState, PanelGroupContext, PanelId, ResizeEvent } from './types'
     import { PanelGroupDirection } from './types'
+    import { callPanelCallbacks } from './utils/callPanelsCallbacks'
 
     // Props
     export let id: string = ''
@@ -45,6 +46,7 @@
     // Local state
     let groupElement: HTMLElement
     let panelSizeBeforeCollapseMap = new Map<string, number>()
+    let panelIdToLastNotifiedSizeMap: Record<string, number> = {}
 
     // Used in resize handler to avoid cursor panel UI flickering
     let prevDelta: number | null = null
@@ -75,10 +77,14 @@
 
             // Validate even saved layouts in case something has changed since last render
             // e.g. for pixel groups, this could be the size of the window
-            $layoutStore = validatePanelGroupLayout(
+            const nextLayout = validatePanelGroupLayout(
                 unsafeLayout,
                 panels.map(panelData => panelData.constraints)
             )
+
+            $layoutStore = nextLayout
+
+            callPanelCallbacks($panelsStore, nextLayout, panelIdToLastNotifiedSizeMap)
         })
     )
 
@@ -133,6 +139,8 @@
 
             if (!compareLayouts($layoutStore, nextLayout)) {
                 $layoutStore = nextLayout
+
+                callPanelCallbacks($panelsStore, nextLayout, panelIdToLastNotifiedSizeMap)
             }
         }
     }
@@ -171,6 +179,8 @@
 
             if (!compareLayouts($layoutStore, nextLayout)) {
                 $layoutStore = nextLayout
+
+                callPanelCallbacks($panelsStore, nextLayout, panelIdToLastNotifiedSizeMap)
             }
         }
     }
@@ -188,6 +198,11 @@
         })
 
         return () => {
+            // When a panel is removed from the group, we should delete the most
+            // recent prev-size entry for it. If we don't do this, then a conditionally
+            // rendered panel might not call onResize when it's re-mounted.
+            delete panelIdToLastNotifiedSizeMap[panel.id]
+
             panelsStore.update(panels => panels.filter(existingTab => existingTab.id !== panel.id))
         }
     }
@@ -260,6 +275,8 @@
 
             if (layoutChanged) {
                 $layoutStore = nextLayout
+
+                callPanelCallbacks($panelsStore, nextLayout, panelIdToLastNotifiedSizeMap)
             }
         }
     }
@@ -294,12 +311,12 @@
         })
     }
 
-    function isPanelCollapsed(panel: PanelInfo): boolean {
-        const { panelSize, collapsible, collapsedSize = 0 } = getPanelMetadata($panelsStore, panel, $layoutStore)
+    function getPanelCollapsedState(panel: PanelInfo): Readable<boolean> {
+        return derived([layoutStore, panelsStore], ([layout, panels]) => {
+            const { panelSize, collapsible, collapsedSize = 0 } = getPanelMetadata(panels, panel, layout)
 
-        assert(panelSize != null, `Panel size not found for panel "${panel.id}"`)
-
-        return collapsible === true && fuzzyNumbersEqual(panelSize, collapsedSize)
+            return panelSize != null && collapsible === true && fuzzyNumbersEqual(panelSize, collapsedSize)
+        })
     }
 
     setContext<PanelGroupContext>('panel-group-context', {
@@ -315,7 +332,7 @@
         direction: direction as PanelGroupDirection,
         expandPanel,
         collapsePanel,
-        isPanelCollapsed,
+        getPanelCollapsedState,
     })
 </script>
 

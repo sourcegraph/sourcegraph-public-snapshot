@@ -63,7 +63,7 @@
     }
 </script>
 
-<div class="tabs">
+<div class="tabs" data-tabs>
     <div class="tabs-header" role="tablist" data-tab-header>
         {#each $tabs as tab, index (tab.id)}
             <button

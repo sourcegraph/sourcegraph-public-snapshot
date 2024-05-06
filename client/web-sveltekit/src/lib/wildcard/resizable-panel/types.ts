@@ -14,11 +14,22 @@ export type Direction = `${PanelGroupDirection}` | PanelGroupDirection
 // TODO [VK]: Keyboard events are not supported but will be in the next iteration
 export type ResizeEvent = KeyboardEvent | MouseEvent | TouchEvent
 
+export type PanelOnCollapse = () => void
+export type PanelOnExpand = () => void
+export type PanelOnResize = (size: number, prevSize: number | undefined) => void
+
+export interface PanelCallbacks {
+    onCollapse?: PanelOnCollapse
+    onExpand?: PanelOnExpand
+    onResize?: PanelOnResize
+}
+
 export interface PanelInfo {
     id: PanelId
     idFromProps: PanelId | null
     order: number | undefined
     constraints: PanelConstraints
+    callbacks: PanelCallbacks
     getPanelElement: () => HTMLElement
 }
 
@@ -52,5 +63,5 @@ export interface PanelGroupContext {
     // External panels API
     collapsePanel: (panel: PanelInfo) => void
     expandPanel: (panel: PanelInfo) => void
-    isPanelCollapsed: (panel: PanelInfo) => boolean
+    getPanelCollapsedState: (panel: PanelInfo) => Readable<boolean>
 }

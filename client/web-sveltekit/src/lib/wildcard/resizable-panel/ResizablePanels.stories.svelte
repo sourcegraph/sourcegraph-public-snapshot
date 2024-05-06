@@ -150,7 +150,9 @@
                 collapsedSize={15}
                 bind:this={leftPanel}
             >
-                <div class="item">left</div>
+                <svelte:fragment let:isCollapsed>
+                    <div class="item" class:isCollapsed>left</div>
+                </svelte:fragment>
             </Panel>
             <PanelResizeHandle />
             <Panel minSize={20} id="second" order={2}>
@@ -182,5 +184,9 @@
         display: flex;
         overflow: hidden;
         height: 100%;
+    }
+
+    .isCollapsed {
+        background-color: darkblue;
     }
 </style>

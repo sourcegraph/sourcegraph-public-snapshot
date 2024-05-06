@@ -294,6 +294,7 @@
         gap: 1rem;
         padding: 0.5rem;
         color: var(--text-muted);
+        background-color: var(--color-bg-1);
         box-shadow: var(--fileheader-shadow);
 
         // Allows for its shadow to cascade over the code panel
