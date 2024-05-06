@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"io"
 	"net/http"
 	"net/url"
@@ -19,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -62,6 +62,8 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		// For sign-out requests (signout cookie is  present), the user will be redirected to the SG login page.
 		pc := getExactlyOneOAuthProvider()
 		if pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && !auth.HasSignOutCookie(r) && isHuman(r) && !conf.IsAccessRequestEnabled() {
+			fmt.Println("BACKEND REDIRECT")
+
 			span.AddEvent("redirect to signin")
 			v := make(url.Values)
 			v.Set("redirect", auth.SafeRedirectURL(r.URL.String()))
@@ -71,6 +73,8 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 
 			return
 		}
+
+		fmt.Println("COOKIE PRESENT")
 
 		span.AddEvent("proceeding to next")
 		span.End()

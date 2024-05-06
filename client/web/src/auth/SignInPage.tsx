@@ -87,7 +87,8 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
     const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))
     // If there is only one auth provider that is going to be displayed, and request access is disabled, we want to redirect to the auth provider directly.
-    if (thirdPartyAuthProviders.length === 1 && !builtInAuthProvider && !isRequestAccessAllowed) {
+    if (context.sourcegraphDotComMode && thirdPartyAuthProviders.length === 1) {
+        console.log("FRONTEND REDIRECT")
         // Add '?returnTo=' + encodeURIComponent(returnTo) to thirdPartyAuthProviders[0].authenticationURL in a safe way.
         const redirectUrl = new URL(thirdPartyAuthProviders[0].authenticationURL, window.location.href)
         if (returnTo) {
