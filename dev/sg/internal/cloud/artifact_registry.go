@@ -10,6 +10,7 @@ import (
 	artifactregistrypb "cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
 	"google.golang.org/api/iterator"
 )
+
 const DefaultArtifactRegistryPageSize = 10000
 
 // DockerImage is a type alias around the Google artifact registry Docker Image type
