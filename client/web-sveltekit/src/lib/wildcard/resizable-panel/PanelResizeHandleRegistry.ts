@@ -46,7 +46,7 @@ export class PanelResizeHandleRegistry {
         direction: PanelGroupDirection,
         hitAreaMargins: PointerHitAreaMargins,
         setResizeHandlerState: SetResizeHandlerState
-    ): () => {} {
+    ): () => void {
         const { ownerDocument } = element
 
         const data: ResizeHandlerData = {
