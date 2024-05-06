@@ -488,11 +488,6 @@ type Client interface {
 	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
 	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
 
-	// RevList makes a git rev-list call and returns up to count commits. if nextCursor
-	// is non-empty, it is used as the starting point for the next call, use it to iterate
-	// to iterate over the whole history.
-	RevList(ctx context.Context, repo api.RepoName, commit string, count int) (_ []api.CommitID, nextCursor string, err error)
-
 	// SystemsInfo returns information about all gitserver instances associated with a Sourcegraph instance.
 	SystemsInfo(ctx context.Context) ([]protocol.SystemInfo, error)
 
