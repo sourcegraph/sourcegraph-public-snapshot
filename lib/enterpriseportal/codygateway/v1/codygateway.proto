@@ -1,17 +1,16 @@
 syntax = "proto3";
 
-package enterpriseportal.cody.v1;
+package enterpriseportal.codygateway.v1;
 
 import "google/protobuf/duration.proto";
 
-option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cody/v1";
+option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codygateway/v1";
 
-// EnterprisePortalCodyService is an extension to Enterprise Portal that
-// provides Cody managed services access management capbilities, such as quotas
-// for Cody Gateway.
+// EnterprisePortalCodyGatewayService is an extension to Enterprise Portal that
+// provides Cody Gateway access management capbilities (e.g. access quotas).
 //
 // DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
-service EnterprisePortalCodyService {
+service EnterprisePortalCodyGatewayService {
   // Retrieve Cody Gateway access granted to an Enterprise subscription.
   //
   // For classic licenses, properties may be inferred from the active license,
