@@ -7,9 +7,6 @@ import (
 
 	"cdr.dev/slog"
 	"cdr.dev/slog/sloggers/sloghuman"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"oss.terrastruct.com/d2/d2format"
 	"oss.terrastruct.com/d2/d2graph"
 	"oss.terrastruct.com/d2/d2layouts/d2dagrelayout"
@@ -18,6 +15,10 @@ import (
 	"oss.terrastruct.com/d2/d2renderers/d2svg"
 	"oss.terrastruct.com/d2/lib/log"
 	"oss.terrastruct.com/d2/lib/textmeasure"
+
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type diagram struct {
@@ -268,17 +269,6 @@ func (d *diagram) Render() ([]byte, error) {
 	}
 
 	return svg, nil
-}
-
-// createEdge add an undirected connection between shapes.
-// Optionally annotate the connection with a label
-func addConnection(graph *d2graph.Graph, firstKey string, secondKey string, label string) (*d2graph.Graph, error) {
-	graph, key, err := d2oracle.Create(graph, nil, fmt.Sprintf("%s - %s", firstKey, secondKey))
-	if err != nil {
-		return graph, err
-	}
-	graph, err = d2oracle.Set(graph, nil, key+".label", nil, pointers.Ptr(label))
-	return graph, err
 }
 
 // addDirectedConnection adds a directed connection between shapes.

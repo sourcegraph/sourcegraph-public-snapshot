@@ -1332,6 +1332,8 @@ type GitHubConnection struct {
 	//
 	// - `public` mirrors all public repositories for GitHub Enterprise and is the equivalent of `none` for GitHub
 	//
+	// - `internal` mirrors all internal repositories for GitHub Enterprise and is the equivalent of `none` for GitHub
+	//
 	// - `affiliated` mirrors all repositories affiliated with the configured token's user:
 	// 	- Private repositories with read access
 	// 	- Public repositories owned by the user or their orgs

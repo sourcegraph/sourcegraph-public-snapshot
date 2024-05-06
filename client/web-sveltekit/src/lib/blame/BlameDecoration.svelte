@@ -33,6 +33,7 @@
         gap: 0.5em;
 
         .date {
+            flex-shrink: 0;
             font-weight: bold;
             margin-right: 0.25rem;
         }

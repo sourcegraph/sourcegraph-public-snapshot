@@ -964,22 +964,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1LbqvA8R46fS+Zwl18guXt5zvYrw=",
+        "checksum": "Q1NyPDKnpnwrKJ7+7foWCAaDw7V5s=",
         "control": {
-          "checksum": "sha1-LbqvA8R46fS+Zwl18guXt5zvYrw=",
-          "range": "bytes=660-1037"
+          "checksum": "sha1-NyPDKnpnwrKJ7+7foWCAaDw7V5s=",
+          "range": "bytes=660-1036"
         },
         "data": {
-          "checksum": "sha256-Onbp332eMogVPHfUpduSsjA5w+xpyHcCb7VuMA4T1x8=",
-          "range": "bytes=1038-20466045"
+          "checksum": "sha256-4VGdMs4AxZGZuJXWW2ztq3UWSnWb0z6+Aa4s5uInmzI=",
+          "range": "bytes=1037-20466010"
         },
         "name": "p4-fusion-sg",
         "signature": {
-          "checksum": "sha1-29MX0Y8RvdpmHPm4IPFCo3diYzY=",
+          "checksum": "sha1-3jfZRXx840UdCOYzfJKSoffWnJY=",
           "range": "bytes=0-659"
         },
-        "url": "https://packages.sgdev.org/main/x86_64/p4-fusion-sg-1.13.2-r3.apk",
-        "version": "1.13.2-r3"
+        "url": "https://packages.sgdev.org/main/x86_64/p4-fusion-sg-1.13.2-r4.apk",
+        "version": "1.13.2-r4"
       },
       {
         "architecture": "x86_64",

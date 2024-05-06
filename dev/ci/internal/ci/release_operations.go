@@ -21,7 +21,7 @@ func releasePromoteImages(c Config) operations.Operation {
 			bk.Env("VERSION", c.Version),
 			bk.Env("INTERNAL_REGISTRY", images.SourcegraphInternalReleaseRegistry),
 			bk.Env("PUBLIC_REGISTRY", images.SourcegraphDockerPublishRegistry),
-			bk.Env("ADDITIONAL_PROD_REGISTRY", images.SourcegraphArtifactRegistryPublicRegistry),
+			bk.Env("ADDITIONAL_PROD_REGISTRIES", images.SourcegraphArtifactRegistryPublicRegistry),
 			bk.AnnotatedCmd(
 				fmt.Sprintf("./tools/release/promote_images.sh %s", image_args),
 				bk.AnnotatedCmdOpts{

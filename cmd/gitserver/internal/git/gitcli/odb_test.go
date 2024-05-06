@@ -163,6 +163,8 @@ func TestGitCLIBackend_ReadFile_GoroutineLeak(t *testing.T) {
 	// Don't complete reading all the output, instead, bail and close the reader.
 	require.NoError(t, r.Close())
 
+	time.Sleep(time.Millisecond)
+
 	// Expect no leaked routines.
 	routinesAfter := runtime.NumGoroutine()
 	require.Equal(t, routinesBefore, routinesAfter)
@@ -323,5 +325,99 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 		if !errors.As(err, &repoErr) {
 			t.Fatalf("unexpected error: %v", err)
 		}
+	})
+}
+
+func TestGitCLIBackend_GetBehindAhead(t *testing.T) {
+	ctx := context.Background()
+
+	// Prepare repo state:
+	backend := BackendWithRepoCommands(t,
+		// This is the commit graph we are creating
+		//
+		//         +-----> 3  -----> 4           (branch1)
+		//         |
+		//         |
+		// 0 ----> 1  ----> 2 -----> 5  -----> 6  (master)
+		//
+		"echo abcd > file0",
+		"git add file0",
+		"git commit -m commit0 --author='Foo Author <foo@sourcegraph.com>'",
+
+		"echo abcd > file1",
+		"git add file1",
+		"git commit -m commit1 --author='Foo Author <foo@sourcegraph.com>'",
+
+		"git branch branch1",
+
+		"echo efgh > file2",
+		"git add file2",
+		"git commit -m commit2 --author='Foo Author <foo@sourcegraph.com>'",
+
+		"git checkout branch1",
+
+		"echo ijkl > file3",
+		"git add file3",
+		"git commit -m commit3 --author='Foo Author <foo@sourcegraph.com>'",
+
+		"echo ijkl > file4",
+		"git add file4",
+		"git commit -m commit4 --author='Foo Author <foo@sourcegraph.com>'",
+
+		"git checkout master",
+
+		"echo ijkl > file5",
+		"git add file5",
+		"git commit -m commit5 --author='Foo Author <foo@sourcegraph.com>'",
+
+		"echo ijkl > file6",
+		"git add file6",
+		"git commit -m commit6 --author='Foo Author <foo@sourcegraph.com>'",
+	)
+
+	left := "branch1"
+	right := "master"
+
+	t.Run("valid branches", func(t *testing.T) {
+		behindAhead, err := backend.BehindAhead(ctx, left, right)
+		require.NoError(t, err)
+		require.Equal(t, &gitdomain.BehindAhead{Behind: 2, Ahead: 3}, behindAhead)
+	})
+
+	t.Run("missing left branch", func(t *testing.T) {
+		_, err := backend.BehindAhead(ctx, left, "")
+		require.NoError(t, err) // Should compare to HEAD
+	})
+
+	t.Run("missing right branch", func(t *testing.T) {
+		_, err := backend.BehindAhead(ctx, "", right)
+		require.NoError(t, err) // Should compare to HEAD
+	})
+
+	t.Run("invalid left branch", func(t *testing.T) {
+		_, err := backend.BehindAhead(ctx, "invalid-branch", right)
+		require.Error(t, err)
+		var e *gitdomain.RevisionNotFoundError
+		require.True(t, errors.As(err, &e))
+	})
+
+	t.Run("invalid right branch", func(t *testing.T) {
+		_, err := backend.BehindAhead(ctx, left, "invalid-branch")
+		require.Error(t, err)
+		var e *gitdomain.RevisionNotFoundError
+		require.True(t, errors.As(err, &e))
+	})
+
+	t.Run("same branch", func(t *testing.T) {
+		behindAhead, err := backend.BehindAhead(ctx, left, left)
+		require.NoError(t, err)
+		require.Equal(t, &gitdomain.BehindAhead{Behind: 0, Ahead: 0}, behindAhead)
+	})
+
+	t.Run("invalid object id", func(t *testing.T) {
+		_, err := backend.BehindAhead(ctx, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", right)
+		require.Error(t, err)
+		var e *gitdomain.RevisionNotFoundError
+		require.True(t, errors.As(err, &e))
 	})
 }

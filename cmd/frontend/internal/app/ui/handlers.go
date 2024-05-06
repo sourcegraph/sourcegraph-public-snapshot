@@ -588,9 +588,7 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 	hubspotutil.SyncUser(email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
 		IsServerAdmin:          true,
 		AnonymousUserID:        anonymousUserId,
-		FirstSourceURL:         getCookie("sourcegraphSourceUrl"),
 		LastSourceURL:          getCookie("sourcegraphRecentSourceUrl"),
-		OriginalReferrer:       getCookie("originalReferrer"),
 		LastReferrer:           getCookie("sg_referrer"),
 		SignupSessionSourceURL: getCookie("sourcegraphSignupSourceUrl"),
 		SignupSessionReferrer:  getCookie("sourcegraphSignupReferrer"),

@@ -209,8 +209,8 @@
     section {
         display: flex;
         flex: 1;
-        background-color: var(--code-bg);
         overflow: hidden;
+        background-color: var(--code-bg);
     }
 
     header {
@@ -232,7 +232,7 @@
         padding: 0.5rem;
         padding-bottom: 0;
         box-shadow: var(--sidebar-shadow);
-        z-index: 1;
+        z-index: 2;
     }
 
     .main {
@@ -267,8 +267,10 @@
         overflow: hidden;
         border-top: 1px solid var(--border-color);
         box-shadow: var(--bottom-panel-shadow);
-        background-color: var(--code-bg);
-        padding: 0 0.25rem;
+        background-color: var(--color-bg-1);
+        color: var(--text-body);
+        // Applying z-index to the bottom panel allows its shadow to cascade correctly on the code but still say behind the left panel
+        z-index: 1;
 
         &.open {
             height: 32vh;

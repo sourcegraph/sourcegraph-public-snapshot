@@ -977,6 +977,33 @@ func firstEverCommitRequestToLogFields(req *proto.FirstEverCommitRequest) []log.
 	}
 }
 
+func (l *loggingGRPCServer) BehindAhead(ctx context.Context, request *proto.BehindAheadRequest) (response *proto.BehindAheadResponse, err error) {
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+			proto.GitserverService_BehindAhead_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			BehindAheadRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.BehindAhead(ctx, request)
+}
+
+func BehindAheadRequestToLogFields(req *proto.BehindAheadRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.String("left", string(req.GetLeft())),
+		log.String("right", string(req.GetRight())),
+	}
+}
+
 type loggingRepositoryServiceServer struct {
 	base   proto.GitserverRepositoryServiceServer
 	logger log.Logger

@@ -1398,6 +1398,47 @@ func (gs *grpcServer) FirstEverCommit(ctx context.Context, request *proto.FirstE
 	}, nil
 }
 
+func (gs *grpcServer) BehindAhead(ctx context.Context, req *proto.BehindAheadRequest) (*proto.BehindAheadResponse, error) {
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("left", string(req.GetLeft())),
+		log.String("right", string(req.GetRight())),
+	)
+
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
+		return nil, err
+	}
+
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	behindAhead, err := backend.BehindAhead(ctx, string(req.GetLeft()), string(req.GetRight()))
+	if err != nil {
+		if gitdomain.IsRevisionNotFoundError(err) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: err.Error(),
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		return nil, err
+	}
+
+	return behindAhead.ToProto(), nil
+}
+
 // checkRepoExists checks if a given repository is cloned on disk, and returns an
 // error otherwise.
 // On Sourcegraph.com, not all repos are managed by the scheduler. We thus

@@ -156,9 +156,6 @@
 
     registerHotkey({
         keys: { key: '/' },
-        // Allows `/` symbol to populate input's value
-        // when input is focused
-        allowDefault: true,
         handler: () => {
             // If the search input doesn't have focus, focus it
             // and disallow `/` symbol populate the input value
@@ -299,8 +296,6 @@
 </form>
 
 <style lang="scss">
-    @use '$lib/breakpoints';
-
     form {
         isolation: isolate;
         width: 100%;

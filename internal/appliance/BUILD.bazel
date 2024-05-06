@@ -7,6 +7,7 @@ go_library(
         "appliance.go",
         "blobstore.go",
         "defaults.go",
+        "gitserver.go",
         "grpc.go",
         "kubernetes.go",
         "reconcile.go",
@@ -57,6 +58,7 @@ go_test(
     name = "appliance_test",
     srcs = [
         "blobstore_test.go",
+        "gitserver_test.go",
         "golden_test.go",
         "helpers_test.go",
         "repo_updater_test.go",

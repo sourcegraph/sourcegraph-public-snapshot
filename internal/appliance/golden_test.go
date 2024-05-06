@@ -64,6 +64,9 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 	suite.Require().NoError(err)
 	for _, obj := range ssets.Items {
 		obj := obj
+		for i := range obj.Spec.VolumeClaimTemplates {
+			obj.Spec.VolumeClaimTemplates[i].Namespace = "NORMALIZED_FOR_TESTING"
+		}
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "StatefulSet"})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)

@@ -8,7 +8,7 @@
 ; (import_statement name: (_) @descriptor.term)
 ; (import_from_statement name: (_) @descriptor.term)
 
-(class_definition name: (_) @descriptor.type @kind.class body: (_) @scope)
+(class_definition name: (_) @descriptor.type @kind.class body: (_) ) @scope
 (class_definition
   body: (block
           [(function_definition

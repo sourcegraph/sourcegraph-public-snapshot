@@ -101,8 +101,55 @@ func (c *gitserverClient) LogReverseEach(ctx context.Context, repo string, commi
 	return c.innerClient.LogReverseEach(ctx, repo, commit, n, onLogEntry)
 }
 
+const revListPageSize = 100
+
 func (c *gitserverClient) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	return c.innerClient.RevList(ctx, repo, commit, onCommit)
+	nextCursor := commit
+	for {
+		var commits []api.CommitID
+		var err error
+		commits, nextCursor, err = c.paginatedRevList(ctx, api.RepoName(repo), nextCursor, revListPageSize)
+		if err != nil {
+			return err
+		}
+		for _, c := range commits {
+			shouldContinue, err := onCommit(string(c))
+			if err != nil {
+				return err
+			}
+			if !shouldContinue {
+				return nil
+			}
+		}
+		if nextCursor == "" {
+			return nil
+		}
+	}
+}
+
+func (c *gitserverClient) paginatedRevList(ctx context.Context, repo api.RepoName, commit string, count int) ([]api.CommitID, string, error) {
+	commits, err := c.innerClient.Commits(ctx, repo, gitserver.CommitsOptions{
+		N:           uint(count + 1),
+		Range:       commit,
+		FirstParent: true,
+	})
+	if err != nil {
+		return nil, "", err
+	}
+
+	commitIDs := make([]api.CommitID, 0, count+1)
+
+	for _, commit := range commits {
+		commitIDs = append(commitIDs, commit.ID)
+	}
+
+	var nextCursor string
+	if len(commitIDs) > count {
+		nextCursor = string(commitIDs[len(commitIDs)-1])
+		commitIDs = commitIDs[:count]
+	}
+
+	return commitIDs, nextCursor, nil
 }
 
 var NUL = []byte{0}

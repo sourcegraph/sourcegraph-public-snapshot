@@ -33,6 +33,13 @@ func newDefaultConfig() Sourcegraph {
 				Replicas:    1,
 				StorageSize: "12Gi",
 			},
+			GitServer: GitServerSpec{
+				StandardConfig: config.StandardConfig{
+					PrometheusPort: ptr.To(6060),
+				},
+				Replicas:    1,
+				StorageSize: "200Gi",
+			},
 		},
 	}
 }

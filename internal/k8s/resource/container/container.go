@@ -88,3 +88,18 @@ func NewEnvVarFieldRef(name, fieldPath string) corev1.EnvVar {
 		},
 	}
 }
+
+func EnvVarsRedis() []corev1.EnvVar {
+	return []corev1.EnvVar{
+		NewEnvVarSecretKeyRef("REDIS_CACHE_ENDPOINT", "redis-cache", "endpoint"),
+		NewEnvVarSecretKeyRef("REDIS_STORE_ENDPOINT", "redis-store", "endpoint"),
+	}
+}
+
+func EnvVarsOtel() []corev1.EnvVar {
+	return []corev1.EnvVar{
+		// OTEL_AGENT_HOST must be defined before OTEL_EXPORTER_OTLP_ENDPOINT to substitute the node IP on which the DaemonSet pod instance runs in the latter variable
+		NewEnvVarFieldRef("OTEL_AGENT_HOST", "status.hostIP"),
+		{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://$(OTEL_AGENT_HOST):4317"},
+	}
+}

@@ -18,7 +18,7 @@
         <Avatar avatar={user} />
     </div>
     <div class="display-name">
-        <span class="label">{user.name}</span>
+        <span class="label">{user.displayName || user.name}</span>
     </div>
     <div class="commit-message">
         <a href={canonicalURL}>

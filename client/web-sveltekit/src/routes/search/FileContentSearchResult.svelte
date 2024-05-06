@@ -145,12 +145,14 @@
         }
 
         &:hover {
-            background-color: var(--subtle-bg-2);
+            background-color: var(--color-bg-2);
+            color: var(--text-title);
         }
     }
 
     .code {
         border-bottom: 1px solid var(--border-color);
+        background-color: var(--code-bg);
 
         &:last-child {
             border-bottom: none;

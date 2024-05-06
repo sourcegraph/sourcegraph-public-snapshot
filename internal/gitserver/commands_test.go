@@ -980,7 +980,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			before := ""
 			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
 			client := NewTestClient(t).WithChecker(checker)
-			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, DateOrder: true, After: after, Before: before})
+			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, Order: CommitsOrderCommitDate, After: after, Before: before})
 			if err == nil {
 				t.Error("expected error, got nil")
 			}
@@ -2249,6 +2249,76 @@ func TestClient_FirstEverCommit(t *testing.T) {
 
 			// Should fail with RepositoryEmptyError
 			_, err := c.FirstEverCommit(context.Background(), "repo")
+			require.Error(t, err)
+			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		})
+	})
+}
+
+func TestClient_GetBehindAhead(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.BehindAheadFunc.SetDefaultReturn(&proto.BehindAheadResponse{
+					Behind: 5,
+					Ahead:  3,
+				}, nil)
+
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		actualBehindAhead, err := c.BehindAhead(context.Background(), "repo", "left", "right")
+		require.NoError(t, err)
+
+		expected := &gitdomain.BehindAhead{
+			Behind: 5,
+			Ahead:  3,
+		}
+
+		if diff := cmp.Diff(expected, actualBehindAhead, cmpopts.EquateEmpty()); diff != "" {
+			t.Fatalf("unexpected behind/ahead (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("returns well known error types", func(t *testing.T) {
+		t.Run("repository not found", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					s, err := status.New(codes.NotFound, "repository not found").WithDetails(&proto.RepoNotFoundPayload{Repo: "repo", CloneInProgress: true})
+					require.NoError(t, err)
+					c.BehindAheadFunc.PushReturn(nil, s.Err())
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			// Should fail with clone error
+			_, err := c.BehindAhead(context.Background(), "repo", "left", "right")
+			require.Error(t, err)
+			require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
+		})
+
+		t.Run("revision not found", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "right"})
+					require.NoError(t, err)
+					c.BehindAheadFunc.SetDefaultReturn(nil, s.Err())
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			// Should fail with RevisionNotFoundError
+			_, err := c.BehindAhead(context.Background(), "repo", "left", "right")
 			require.Error(t, err)
 			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 		})

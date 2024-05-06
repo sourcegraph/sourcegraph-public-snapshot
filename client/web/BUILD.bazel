@@ -1061,6 +1061,7 @@ ts_project(
         "src/enterprise/user/settings/UserEventLogsPage.tsx",
         "src/enterprise/user/settings/auth/UserSettingsPermissionsPage.tsx",
         "src/enterprise/user/settings/auth/backend.ts",
+        "src/external-account-modal/ExternalAccountsModal.tsx",
         "src/featureFlags/FeatureFlagsProvider.tsx",
         "src/featureFlags/createFlagMock.ts",
         "src/featureFlags/featureFlags.ts",

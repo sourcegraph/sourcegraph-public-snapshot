@@ -30,6 +30,7 @@ export interface AuthProvider {
     serviceID: string
     clientID: string
     noSignIn: boolean
+    requiredForAuthz: boolean
 }
 
 /**

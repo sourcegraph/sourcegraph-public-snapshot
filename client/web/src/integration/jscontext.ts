@@ -14,6 +14,7 @@ export const builtinAuthProvider = {
     isBuiltin: true,
     authenticationURL: '',
     noSignIn: false,
+    requiredForAuthz: false,
 }
 
 export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: string }): SourcegraphContext => ({

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/gitops"
@@ -19,15 +18,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-var ErrUserCancelled = errors.New("user cancelled")
-var ErrWrongBranch = errors.New("wrong current branch")
-var ErrBranchOutOfSync = errors.New("branch is out of sync with remote")
-
 var DeployEphemeralCommand = cli.Command{
 	Name:        "deploy",
 	Usage:       "sg could deploy --branch <branch> --tag <tag>",
 	Description: "Deploy the specified branch or tag to an ephemeral Sourcegraph Cloud environment",
-	Action:      deployCloudEphemeral,
+	Action:      wipAction(deployCloudEphemeral),
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "name",
@@ -70,19 +65,6 @@ func determineVersion(build *buildkite.Build, tag string) (string, error) {
 	), nil
 }
 
-func oneOfEquals(value string, i ...string) bool {
-	for _, item := range i {
-		if value == item {
-			return true
-		}
-	}
-	return false
-}
-
-func getGCloudAccount(ctx context.Context) (string, error) {
-	return run.Cmd(ctx, "gcloud", "config", "get", "account").Run().String()
-}
-
 func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
 	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote", currRepo.Branch))
 	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
@@ -108,24 +90,6 @@ func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildk
 	return build, nil
 }
 
-func printWIPNotice(ctx *cli.Context) error {
-	if ctx.Bool("skip-wip-notice") {
-		return nil
-	}
-	notice := output.Line("🧪", output.StyleBold, "EXPERIMENTAL COMMAND - Do you want to continue? (yes/no)")
-
-	var answer string
-	if _, err := std.FancyPromptAndScan(std.Out, notice, &answer); err != nil {
-		return err
-	}
-
-	if oneOfEquals(answer, "yes", "y") {
-		return nil
-	}
-
-	return ErrUserCancelled
-}
-
 func createDeploymentForVersion(ctx context.Context, name, version string) error {
 	email, err := GetGCloudAccount(ctx)
 	if err != nil {
@@ -143,25 +107,21 @@ func createDeploymentForVersion(ctx context.Context, name, version string) error
 	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Creating deployment %q for version %q", name, version))
 
 	spec := NewDeploymentSpec(
-		name,
+		sanitizeInstanceName(name),
 		version,
 	)
-	inst, err := cloudClient.DeployVersion(ctx, spec)
+	inst, err := cloudClient.CreateInstance(ctx, spec)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "deployment failed: %v", err))
 		return errors.Wrapf(err, "failed to deploy version %v", version)
 	}
 
 	pending.Writef("Deploy instance details: \n%s", inst.String())
-	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Deployment %q created for version %q - access at: %s", name, version, inst.Hostname))
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Deployment %q created for version %q - access at: %s", name, version, inst.URL))
 	return nil
 }
 
 func deployCloudEphemeral(ctx *cli.Context) error {
-	// while we work on this command we print a notice and ask to continue
-	if err := printWIPNotice(ctx); err != nil {
-		return err
-	}
 	currentBranch, err := repo.GetCurrentBranch(ctx.Context)
 	if err != nil {
 		return errors.Wrap(err, "failed to determine current branch")
