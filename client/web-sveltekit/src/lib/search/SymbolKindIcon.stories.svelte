@@ -10,10 +10,17 @@
     }
 </script>
 
+<script lang="ts">
+    let size = '16'
+</script>
+
 <Story name="Default">
+    <p>Adjust size:</p>
+    <input type="range" min="0" max="100" bind:value={size} />
+
     <div>
         {#each Object.values(SymbolKind) as symbolKind}
-            <SymbolKindIcon {symbolKind} />
+            <SymbolKindIcon {symbolKind} --icon-size="{size}px" />
         {/each}
     </div>
 </Story>

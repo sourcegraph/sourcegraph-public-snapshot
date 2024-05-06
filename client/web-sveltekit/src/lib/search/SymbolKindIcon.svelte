@@ -51,16 +51,6 @@
 
     const functionFamily: Set<string> = new Set([SymbolKind.CONSTRUCTOR, SymbolKind.FUNCTION, SymbolKind.METHOD])
 
-    const typeFamily: Set<string> = new Set([
-        SymbolKind.STRING,
-        SymbolKind.BOOLEAN,
-        SymbolKind.NUMBER,
-        SymbolKind.ARRAY,
-        SymbolKind.OBJECT,
-        SymbolKind.NULL,
-        SymbolKind.OPERATOR,
-    ])
-
     const variableFamily: Set<string> = new Set([
         SymbolKind.VARIABLE,
         SymbolKind.CONSTANT,
