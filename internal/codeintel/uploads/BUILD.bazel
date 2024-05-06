@@ -23,6 +23,7 @@ go_library(
         "//internal/codeintel/uploads/internal/background/expirer",
         "//internal/codeintel/uploads/internal/background/janitor",
         "//internal/codeintel/uploads/internal/background/processor",
+        "//internal/codeintel/uploads/internal/commitgraph",
         "//internal/codeintel/uploads/internal/lsifstore",
         "//internal/codeintel/uploads/internal/store",
         "//internal/codeintel/uploads/shared",
@@ -48,6 +49,7 @@ go_test(
     deps = [
         "//internal/api",
         "//internal/codeintel/policies/shared",
+        "//internal/codeintel/uploads/internal/commitgraph",
         "//internal/codeintel/uploads/internal/lsifstore",
         "//internal/codeintel/uploads/internal/store",
         "//internal/codeintel/uploads/shared",

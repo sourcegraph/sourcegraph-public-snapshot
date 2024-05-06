@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -140,13 +141,16 @@ func (s *Service) InferClosestUploads(ctx context.Context, opts shared.UploadMat
 	// and try to link it with what we have in the database. Then mark the repository's commit
 	// graph as dirty so it's updated for subsequent requests.
 
-	graph, err := s.gitserverClient.CommitGraph(ctx, repo.Name, gitserver.CommitGraphOptions{
-		Commit: opts.Commit,
-		Limit:  numAncestors,
+	commits, err := s.gitserverClient.Commits(ctx, repo.Name, gitserver.CommitsOptions{
+		Range: opts.Commit,
+		N:     numAncestors,
+		Order: gitserver.CommitsOrderTopoDate,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "gitserverClient.CommitGraph")
+		return nil, errors.Wrap(err, "gitserverClient.Commits")
 	}
+
+	graph := commitgraph.ParseCommitGraph(commits)
 
 	uploads, err := s.store.FindClosestCompletedUploadsFromGraphFragment(ctx, opts, graph)
 	if err != nil {

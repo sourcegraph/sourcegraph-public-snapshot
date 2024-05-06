@@ -1,16 +1,16 @@
 package commitgraph
 
 import (
-	"sort"
+	"slices"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type Graph struct {
 	commitGraphView *CommitGraphView
-	graph           map[string][]string
-	commits         []string
-	ancestorUploads map[string]map[string]UploadMeta
+	graph           map[api.CommitID][]api.CommitID
+	commits         []api.CommitID
+	ancestorUploads map[api.CommitID]map[string]UploadMeta
 }
 
 type Envelope struct {
@@ -19,24 +19,24 @@ type Envelope struct {
 }
 
 type VisibilityRelationship struct {
-	Commit  string
+	Commit  api.CommitID
 	Uploads []UploadMeta
 }
 
 type LinkRelationship struct {
-	Commit         string
-	AncestorCommit string
+	Commit         api.CommitID
+	AncestorCommit api.CommitID
 	Distance       uint32
 }
 
 // NewGraph creates a commit graph decorated with the set of uploads visible from that commit
 // based on the given commit graph and complete set of LSIF upload metadata.
-func NewGraph(commitGraph *gitdomain.CommitGraph, commitGraphView *CommitGraphView) *Graph {
+func NewGraph(commitGraph *CommitGraph, commitGraphView *CommitGraphView) *Graph {
 	graph := commitGraph.Graph()
 	order := commitGraph.Order()
 
 	ancestorUploads := populateUploadsByTraversal(graph, order, commitGraphView)
-	sort.Strings(order)
+	slices.Sort(order)
 
 	return &Graph{
 		commitGraphView: commitGraphView,
@@ -47,7 +47,7 @@ func NewGraph(commitGraph *gitdomain.CommitGraph, commitGraphView *CommitGraphVi
 }
 
 // UploadsVisibleAtCommit returns the set of uploads that are visible from the given commit.
-func (g *Graph) UploadsVisibleAtCommit(commit string) []UploadMeta {
+func (g *Graph) UploadsVisibleAtCommit(commit api.CommitID) []UploadMeta {
 	ancestorUploads, ancestorDistance := traverseForUploads(g.graph, g.ancestorUploads, commit)
 	return adjustVisibleUploads(ancestorUploads, ancestorDistance)
 }
@@ -100,9 +100,9 @@ func (g *Graph) Stream() <-chan Envelope {
 // method is only used for convenience and testing and should not be used in a hot path.
 // It can be VERY memory intensive in production to have a reference to each commit's
 // upload metadata concurrently.
-func (g *Graph) Gather() (uploads map[string][]UploadMeta, links map[string]LinkRelationship) {
-	uploads = map[string][]UploadMeta{}
-	links = map[string]LinkRelationship{}
+func (g *Graph) Gather() (uploads map[api.CommitID][]UploadMeta, links map[api.CommitID]LinkRelationship) {
+	uploads = map[api.CommitID][]UploadMeta{}
+	links = map[api.CommitID]LinkRelationship{}
 
 	for v := range g.Stream() {
 		if v.Uploads != nil {
@@ -117,8 +117,8 @@ func (g *Graph) Gather() (uploads map[string][]UploadMeta, links map[string]Link
 }
 
 // reverseGraph returns the reverse of the given graph by flipping all the edges.
-func reverseGraph(graph map[string][]string) map[string][]string {
-	reverse := make(map[string][]string, len(graph))
+func reverseGraph(graph map[api.CommitID][]api.CommitID) map[api.CommitID][]api.CommitID {
+	reverse := make(map[api.CommitID][]api.CommitID, len(graph))
 	for child := range graph {
 		reverse[child] = nil
 	}
@@ -143,10 +143,10 @@ func reverseGraph(graph map[string][]string) map[string][]string {
 // For all remaining commits, we can easily re-calculate the visible uploads without storing them.
 // All such commits have a single, unambiguous path to an ancestor that does store data. These
 // commits have the same visibility (the descendant is just farther away).
-func populateUploadsByTraversal(graph map[string][]string, order []string, commitGraphView *CommitGraphView) map[string]map[string]UploadMeta {
+func populateUploadsByTraversal(graph map[api.CommitID][]api.CommitID, order []api.CommitID, commitGraphView *CommitGraphView) map[api.CommitID]map[string]UploadMeta {
 	reverseGraph := reverseGraph(graph)
 
-	uploads := make(map[string]map[string]UploadMeta, len(order))
+	uploads := make(map[api.CommitID]map[string]UploadMeta, len(order))
 	for _, commit := range order {
 		parents := graph[commit]
 
@@ -195,7 +195,7 @@ func populateUploadsByTraversal(graph map[string][]string, order []string, commi
 // smaller distance to the source commit will shadow the other. Similarly, If an ancestor and the
 // child commit define uploads for the same root and indexer pair, the upload defined on the commit
 // will shadow the upload defined on the ancestor.
-func populateUploadsForCommit(uploads map[string]map[string]UploadMeta, ancestors []string, distance uint32, commitGraphView *CommitGraphView, commit string) map[string]UploadMeta {
+func populateUploadsForCommit(uploads map[api.CommitID]map[string]UploadMeta, ancestors []api.CommitID, distance uint32, commitGraphView *CommitGraphView, commit api.CommitID) map[string]UploadMeta {
 	// The capacity chosen here is an underestimate, but seems to perform well in benchmarks using
 	// live user data. We have attempted to make this value more precise to minimize the number of
 	// re-hash operations, but any counting we do requires auxiliary space and takes additional CPU
@@ -235,7 +235,7 @@ func populateUploadsForCommit(uploads map[string]map[string]UploadMeta, ancestor
 // traverseForUploads returns the value in the given uploads map whose key matches the first ancestor
 // in the graph with a value present in the map. The distance in the graph between the original commit
 // and the ancestor is also returned.
-func traverseForUploads(graph map[string][]string, uploads map[string]map[string]UploadMeta, commit string) (map[string]UploadMeta, uint32) {
+func traverseForUploads(graph map[api.CommitID][]api.CommitID, uploads map[api.CommitID]map[string]UploadMeta, commit api.CommitID) (map[string]UploadMeta, uint32) {
 	commit, distance, _ := traverseForCommit(graph, uploads, commit)
 	return uploads[commit], distance
 }
@@ -246,7 +246,7 @@ func traverseForUploads(graph map[string][]string, uploads map[string]map[string
 //
 // NOTE: We assume that each commit with multiple parents have been assigned data while walking
 // the graph in topological order. If that is not the case, one parent will be chosen arbitrarily.
-func traverseForCommit(graph map[string][]string, uploads map[string]map[string]UploadMeta, commit string) (string, uint32, bool) {
+func traverseForCommit(graph map[api.CommitID][]api.CommitID, uploads map[api.CommitID]map[string]UploadMeta, commit api.CommitID) (api.CommitID, uint32, bool) {
 	for distance := uint32(0); ; distance++ {
 		if _, ok := uploads[commit]; ok {
 			return commit, distance, true

@@ -56,6 +56,7 @@ go_test(
     deps = [
         "//cmd/frontend/backend",
         "//internal/api",
+        "//internal/codeintel/uploads/internal/commitgraph",
         "//internal/codeintel/uploads/internal/lsifstore",
         "//internal/codeintel/uploads/internal/store",
         "//internal/codeintel/uploads/shared",

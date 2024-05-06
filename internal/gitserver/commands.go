@@ -229,50 +229,6 @@ func checkSpecArgSafety(spec string) error {
 	return nil
 }
 
-type CommitGraphOptions struct {
-	Commit  string
-	AllRefs bool
-	Limit   int
-	Since   *time.Time
-} // please update LogFields if you add a field here
-
-// CommitGraph returns the commit graph for the given repository as a mapping
-// from a commit to its parents. If a commit is supplied, the returned graph will
-// be rooted at the given commit. If a non-zero limit is supplied, at most that
-// many commits will be returned.
-func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
-	ctx, _, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	args := []string{"log", "--pretty=%H %P", "--topo-order"}
-	if opts.AllRefs {
-		args = append(args, "--all")
-	}
-	if opts.Commit != "" {
-		args = append(args, opts.Commit)
-	}
-	if opts.Since != nil {
-		args = append(args, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
-	}
-	if opts.Limit > 0 {
-		args = append(args, fmt.Sprintf("-%d", opts.Limit))
-	}
-
-	cmd := c.gitCommand(repo, args...)
-
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return gitdomain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
-}
-
 // CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
 // is to separate the first line (the metadata line) from the remaining lines (the files), and then parse the metadata line
 // into component parts separately.
@@ -1315,9 +1271,26 @@ func (c *clientImplementor) Stat(ctx context.Context, repo api.RepoName, commit 
 	return fi, nil
 }
 
+type CommitsOrder int
+
+const (
+	// CommitsOrderDefault uses the default ordering of git log: in reverse chronological order.
+	// See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+	CommitsOrderDefault CommitsOrder = iota
+	// Show no parents before all of its children are shown, but otherwise show commits
+	// in the commit timestamp order.
+	// See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+	CommitsOrderCommitDate
+	// Show no parents before all of its children are shown, and avoid showing commits
+	// on multiple lines of history intermixed.
+	// See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+	CommitsOrderTopoDate
+)
+
 // CommitsOptions specifies options for Commits.
 type CommitsOptions struct {
-	Range string // commit range (revspec, "A..B", "A...B", etc.)
+	AllRefs bool   // if true, all refs are searched for commits, not just a given range. When set, Range should not be specified.
+	Range   string // commit range (revspec, "A..B", "A...B", etc.)
 
 	N    uint // limit the number of returned commits to this many (0 means no limit)
 	Skip uint // skip this many commits at the beginning
@@ -1328,7 +1301,7 @@ type CommitsOptions struct {
 	After  string // include only commits after this date
 	Before string // include only commits before this date
 
-	DateOrder bool // Whether or not commits should be sorted by date (optional)
+	Order CommitsOrder
 
 	Path string // only commits modifying the given path are selected (optional)
 
@@ -1759,8 +1732,15 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	if opt.Before != "" {
 		args = append(args, "--before="+opt.Before)
 	}
-	if opt.DateOrder {
+	switch opt.Order {
+	case CommitsOrderCommitDate:
 		args = append(args, "--date-order")
+	case CommitsOrderTopoDate:
+		args = append(args, "--topo-order")
+	case CommitsOrderDefault:
+		// nothing to do
+	default:
+		return nil, errors.Newf("invalid ordering %d", opt.Order)
 	}
 
 	if opt.MessageQuery != "" {
@@ -1769,6 +1749,12 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 
 	if opt.Range != "" {
 		args = append(args, opt.Range)
+	}
+	if opt.AllRefs {
+		args = append(args, "--all")
+	}
+	if opt.Range != "" && opt.AllRefs {
+		return nil, errors.New("cannot specify both a Range and AllRefs")
 	}
 	if opt.NameOnly {
 		args = append(args, "--name-only")

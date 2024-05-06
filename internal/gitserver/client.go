@@ -458,12 +458,6 @@ type Client interface {
 	// longer required.
 	Diff(ctx context.Context, repo api.RepoName, opts DiffOptions) (*DiffFileIterator, error)
 
-	// CommitGraph returns the commit graph for the given repository as a mapping
-	// from a commit to its parents. If a commit is supplied, the returned graph will
-	// be rooted at the given commit. If a non-zero limit is supplied, at most that
-	// many commits will be returned.
-	CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error)
-
 	// CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
 	// is to separate the first line (the metadata line) from the remaining lines (the files), and then parse the metadata line
 	// into component parts separately.

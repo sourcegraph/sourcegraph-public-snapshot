@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -136,14 +137,14 @@ func mapRefsToCommits(refs []gitdomain.Ref) map[string][]gitdomain.Ref {
 // The number of commits pulled back here should not grow over time unless the repo is growing at an
 // accelerating rate, as we routinely expire old information for active repositories in a janitor
 // process.
-func (s *commitGraphUpdater) getCommitGraph(ctx context.Context, repositoryID int, repo api.RepoName) (*gitdomain.CommitGraph, error) {
+func (s *commitGraphUpdater) getCommitGraph(ctx context.Context, repositoryID int, repo api.RepoName) (*commitgraph.CommitGraph, error) {
 	commitDate, ok, err := s.store.GetOldestCommitDate(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		// No uploads exist for this repository
-		return gitdomain.ParseCommitGraph(nil), nil
+		return commitgraph.ParseCommitGraph(nil), nil
 	}
 
 	// The --since flag for git log is exclusive, but we want to include the commit where the
@@ -151,13 +152,16 @@ func (s *commitGraphUpdater) getCommitGraph(ctx context.Context, repositoryID in
 	// back any more data than we wanted.
 	commitDate = commitDate.Add(-time.Second)
 
-	commitGraph, err := s.gitserverClient.CommitGraph(ctx, repo, gitserver.CommitGraphOptions{
+	commits, err := s.gitserverClient.Commits(ctx, repo, gitserver.CommitsOptions{
 		AllRefs: true,
-		Since:   &commitDate,
+		Order:   gitserver.CommitsOrderTopoDate,
+		After:   commitDate.Format(time.RFC3339),
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "gitserver.CommitGraph")
+		return nil, errors.Wrap(err, "gitserver.Commits")
 	}
+
+	commitGraph := commitgraph.ParseCommitGraph(commits)
 
 	return commitGraph, nil
 }

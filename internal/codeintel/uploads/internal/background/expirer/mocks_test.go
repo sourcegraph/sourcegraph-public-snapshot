@@ -16,6 +16,7 @@ import (
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	commitgraph "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -648,7 +649,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		FindClosestCompletedUploadsFromGraphFragmentFunc: &StoreFindClosestCompletedUploadsFromGraphFragmentFunc{
-			defaultHook: func(context.Context, shared1.UploadMatchingOptions, *gitdomain.CommitGraph) (r0 []shared1.CompletedUpload, r1 error) {
+			defaultHook: func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) (r0 []shared1.CompletedUpload, r1 error) {
 				return
 			},
 		},
@@ -893,7 +894,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		UpdateUploadsVisibleToCommitsFunc: &StoreUpdateUploadsVisibleToCommitsFunc{
-			defaultHook: func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) (r0 error) {
+			defaultHook: func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) (r0 error) {
 				return
 			},
 		},
@@ -975,7 +976,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		FindClosestCompletedUploadsFromGraphFragmentFunc: &StoreFindClosestCompletedUploadsFromGraphFragmentFunc{
-			defaultHook: func(context.Context, shared1.UploadMatchingOptions, *gitdomain.CommitGraph) ([]shared1.CompletedUpload, error) {
+			defaultHook: func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error) {
 				panic("unexpected invocation of MockStore.FindClosestCompletedUploadsFromGraphFragment")
 			},
 		},
@@ -1220,7 +1221,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		UpdateUploadsVisibleToCommitsFunc: &StoreUpdateUploadsVisibleToCommitsFunc{
-			defaultHook: func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error {
+			defaultHook: func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error {
 				panic("unexpected invocation of MockStore.UpdateUploadsVisibleToCommits")
 			},
 		},
@@ -2773,8 +2774,8 @@ func (c StoreFindClosestCompletedUploadsFuncCall) Results() []interface{} {
 // behavior when the FindClosestCompletedUploadsFromGraphFragment method of
 // the parent MockStore instance is invoked.
 type StoreFindClosestCompletedUploadsFromGraphFragmentFunc struct {
-	defaultHook func(context.Context, shared1.UploadMatchingOptions, *gitdomain.CommitGraph) ([]shared1.CompletedUpload, error)
-	hooks       []func(context.Context, shared1.UploadMatchingOptions, *gitdomain.CommitGraph) ([]shared1.CompletedUpload, error)
+	defaultHook func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error)
+	hooks       []func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error)
 	history     []StoreFindClosestCompletedUploadsFromGraphFragmentFuncCall
 	mutex       sync.Mutex
 }
@@ -2782,7 +2783,7 @@ type StoreFindClosestCompletedUploadsFromGraphFragmentFunc struct {
 // FindClosestCompletedUploadsFromGraphFragment delegates to the next hook
 // function in the queue and stores the parameter and result values of this
 // invocation.
-func (m *MockStore) FindClosestCompletedUploadsFromGraphFragment(v0 context.Context, v1 shared1.UploadMatchingOptions, v2 *gitdomain.CommitGraph) ([]shared1.CompletedUpload, error) {
+func (m *MockStore) FindClosestCompletedUploadsFromGraphFragment(v0 context.Context, v1 shared1.UploadMatchingOptions, v2 *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error) {
 	r0, r1 := m.FindClosestCompletedUploadsFromGraphFragmentFunc.nextHook()(v0, v1, v2)
 	m.FindClosestCompletedUploadsFromGraphFragmentFunc.appendCall(StoreFindClosestCompletedUploadsFromGraphFragmentFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -2791,7 +2792,7 @@ func (m *MockStore) FindClosestCompletedUploadsFromGraphFragment(v0 context.Cont
 // SetDefaultHook sets function that is called when the
 // FindClosestCompletedUploadsFromGraphFragment method of the parent
 // MockStore instance is invoked and the hook queue is empty.
-func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) SetDefaultHook(hook func(context.Context, shared1.UploadMatchingOptions, *gitdomain.CommitGraph) ([]shared1.CompletedUpload, error)) {
+func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) SetDefaultHook(hook func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error)) {
 	f.defaultHook = hook
 }
 
@@ -2800,7 +2801,7 @@ func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) SetDefaultHook(h
 // MockStore instance invokes the hook at the front of the queue and
 // discards it. After the queue is empty, the default hook function is
 // invoked for any future action.
-func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) PushHook(hook func(context.Context, shared1.UploadMatchingOptions, *gitdomain.CommitGraph) ([]shared1.CompletedUpload, error)) {
+func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) PushHook(hook func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2809,19 +2810,19 @@ func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) PushHook(hook fu
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) SetDefaultReturn(r0 []shared1.CompletedUpload, r1 error) {
-	f.SetDefaultHook(func(context.Context, shared1.UploadMatchingOptions, *gitdomain.CommitGraph) ([]shared1.CompletedUpload, error) {
+	f.SetDefaultHook(func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) PushReturn(r0 []shared1.CompletedUpload, r1 error) {
-	f.PushHook(func(context.Context, shared1.UploadMatchingOptions, *gitdomain.CommitGraph) ([]shared1.CompletedUpload, error) {
+	f.PushHook(func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) nextHook() func(context.Context, shared1.UploadMatchingOptions, *gitdomain.CommitGraph) ([]shared1.CompletedUpload, error) {
+func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) nextHook() func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2864,7 +2865,7 @@ type StoreFindClosestCompletedUploadsFromGraphFragmentFuncCall struct {
 	Arg1 shared1.UploadMatchingOptions
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 *gitdomain.CommitGraph
+	Arg2 *commitgraph.CommitGraph
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []shared1.CompletedUpload
@@ -8228,15 +8229,15 @@ func (c StoreUpdateUploadRetentionFuncCall) Results() []interface{} {
 // UpdateUploadsVisibleToCommits method of the parent MockStore instance is
 // invoked.
 type StoreUpdateUploadsVisibleToCommitsFunc struct {
-	defaultHook func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error
-	hooks       []func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error
+	defaultHook func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error
+	hooks       []func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error
 	history     []StoreUpdateUploadsVisibleToCommitsFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateUploadsVisibleToCommits delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) UpdateUploadsVisibleToCommits(v0 context.Context, v1 int, v2 *gitdomain.CommitGraph, v3 map[string][]gitdomain.Ref, v4 time.Duration, v5 time.Duration, v6 int, v7 time.Time) error {
+func (m *MockStore) UpdateUploadsVisibleToCommits(v0 context.Context, v1 int, v2 *commitgraph.CommitGraph, v3 map[string][]gitdomain.Ref, v4 time.Duration, v5 time.Duration, v6 int, v7 time.Time) error {
 	r0 := m.UpdateUploadsVisibleToCommitsFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6, v7)
 	m.UpdateUploadsVisibleToCommitsFunc.appendCall(StoreUpdateUploadsVisibleToCommitsFuncCall{v0, v1, v2, v3, v4, v5, v6, v7, r0})
 	return r0
@@ -8245,7 +8246,7 @@ func (m *MockStore) UpdateUploadsVisibleToCommits(v0 context.Context, v1 int, v2
 // SetDefaultHook sets function that is called when the
 // UpdateUploadsVisibleToCommits method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreUpdateUploadsVisibleToCommitsFunc) SetDefaultHook(hook func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error) {
+func (f *StoreUpdateUploadsVisibleToCommitsFunc) SetDefaultHook(hook func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error) {
 	f.defaultHook = hook
 }
 
@@ -8254,7 +8255,7 @@ func (f *StoreUpdateUploadsVisibleToCommitsFunc) SetDefaultHook(hook func(contex
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreUpdateUploadsVisibleToCommitsFunc) PushHook(hook func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error) {
+func (f *StoreUpdateUploadsVisibleToCommitsFunc) PushHook(hook func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -8263,19 +8264,19 @@ func (f *StoreUpdateUploadsVisibleToCommitsFunc) PushHook(hook func(context.Cont
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreUpdateUploadsVisibleToCommitsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error {
+	f.SetDefaultHook(func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreUpdateUploadsVisibleToCommitsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error {
+	f.PushHook(func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error {
 		return r0
 	})
 }
 
-func (f *StoreUpdateUploadsVisibleToCommitsFunc) nextHook() func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error {
+func (f *StoreUpdateUploadsVisibleToCommitsFunc) nextHook() func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -8317,7 +8318,7 @@ type StoreUpdateUploadsVisibleToCommitsFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 *gitdomain.CommitGraph
+	Arg2 *commitgraph.CommitGraph
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 map[string][]gitdomain.Ref
