@@ -46,10 +46,18 @@
     $: if ($commitsQuery?.data?.repository?.commit?.ancestors) {
         commits = $commitsQuery.data.repository.commit.ancestors
     }
+    $: pageTitle = (() => {
+        const parts = ['Commits']
+        if (data.path) {
+            parts.push(data.path)
+        }
+        parts.push(data.displayRepoName, 'Sourcegraph')
+        return parts.join(' - ')
+    })()
 </script>
 
 <svelte:head>
-    <title>Commits - {data.displayRepoName} - Sourcegraph</title>
+    <title>{pageTitle}</title>
 </svelte:head>
 
 <section>
