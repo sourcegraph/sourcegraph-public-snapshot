@@ -7,6 +7,7 @@ load("@rules_buf//buf:defs.bzl", "buf_lint_test")
 proto_library(
     name = "v1_proto",
     srcs = ["core.proto"],
+    strip_import_prefix = "/lib",  # keep
     visibility = ["//visibility:public"],
     deps = ["@com_google_protobuf//:timestamp_proto"],
 )
