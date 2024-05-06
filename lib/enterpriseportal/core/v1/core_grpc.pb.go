@@ -19,9 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	EnterprisePortalCoreService_GetSubscription_FullMethodName          = "/sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService/GetSubscription"
-	EnterprisePortalCoreService_ListSubscriptions_FullMethodName        = "/sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService/ListSubscriptions"
-	EnterprisePortalCoreService_ListSubscriptionLicenses_FullMethodName = "/sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService/ListSubscriptionLicenses"
+	EnterprisePortalCoreService_GetSubscription_FullMethodName          = "/enterpriseportal.core.v1.EnterprisePortalCoreService/GetSubscription"
+	EnterprisePortalCoreService_ListSubscriptions_FullMethodName        = "/enterpriseportal.core.v1.EnterprisePortalCoreService/ListSubscriptions"
+	EnterprisePortalCoreService_ListSubscriptionLicenses_FullMethodName = "/enterpriseportal.core.v1.EnterprisePortalCoreService/ListSubscriptionLicenses"
 )
 
 // EnterprisePortalCoreServiceClient is the client API for EnterprisePortalCoreService service.
@@ -169,7 +169,7 @@ func _EnterprisePortalCoreService_ListSubscriptionLicenses_Handler(srv interface
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var EnterprisePortalCoreService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService",
+	ServiceName: "enterpriseportal.core.v1.EnterprisePortalCoreService",
 	HandlerType: (*EnterprisePortalCoreServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

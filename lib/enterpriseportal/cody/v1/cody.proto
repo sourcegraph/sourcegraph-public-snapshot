@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package sourcegraph.enterpriseportal.cody.v1;
+package enterpriseportal.cody.v1;
 
 option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cody/v1";
 
@@ -33,7 +33,7 @@ message GetCodyGatewayAccessRequest {
 }
 
 enum CodyGatewayRateLimitSource {
-  CODY_GATEWAY_RATE_LIMIT_SOURCE_UNKNOWN = 0;
+  CODY_GATEWAY_RATE_LIMIT_SOURCE_UNSPECIFIED = 0;
   // Indicates that a custom override for the rate limit has been stored.
   CODY_GATEWAY_RATE_LIMIT_SOURCE_OVERRIDE = 1;
   // Indicates that the rate limit is inferred by the subscriptions active plan.

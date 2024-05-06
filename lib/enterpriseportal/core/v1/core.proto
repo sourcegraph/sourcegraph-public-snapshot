@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package sourcegraph.enterpriseportal.core.v1;
+package enterpriseportal.core.v1;
 
 import "google/protobuf/timestamp.proto";
 
@@ -32,11 +32,11 @@ service EnterprisePortalCoreService {
 }
 
 enum EnterpriseSubscriptionConditionEvent {
-  SUBSCRIPTION_CONDITION_EVENT_UNKNOWN = 0;
+  ENTERPRISE_SUBSCRIPTION_CONDITION_EVENT_UNSPECIFIED = 0;
   // License creation event.
-  SUBSCRIPTION_CONDITION_EVENT_CREATED = 1;
+  ENTERPRISE_SUBSCRIPTION_CONDITION_EVENT_CREATED = 1;
   // License archival event. i.e. 'is_archived'
-  SUBSCRIPTION_CONDITION_EVENT_ARCHIVED = 2;
+  ENTERPRISE_SUBSCRIPTION_CONDITION_EVENT_ARCHIVED = 2;
 }
 
 message EnterpriseSubscriptionCondition {
@@ -68,9 +68,9 @@ message EnterpriseSubscriptionLicenseClassic {
     // seconds since the epoch.
     int64 expires_at = 3;
     // The Salesforce subscription ID associated with this product license.
-    string salesforceSubscriptionID = 4;
+    string salesforce_subscription_id = 4;
     // The Salesforce opportunity ID associated with this product license.
-    string salesforceOpportunityID = 5;
+    string salesforce_opportunity_id = 5;
   }
 
   // Version of this classic license's information schema.
@@ -85,13 +85,13 @@ message EnterpriseSubscriptionLicenseClassic {
 }
 
 enum EnterpriseSubscriptionLicenseConditionEvent {
-  SUBSCRIPTION_LICENSE_CONDITION_EVENT_UNKNOWN = 0;
+  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_EVENT_UNSPECIFIED = 0;
   // License creation event.
-  SUBSCRIPTION_LICENSE_CONDITION_EVENT_CREATED = 1;
+  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_EVENT_CREATED = 1;
   // License archival event. i.e. 'is_archived'
-  SUBSCRIPTION_LICENSE_CONDITION_EVENT_ARCHIVED = 2;
+  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_EVENT_ARCHIVED = 2;
   // License revocation event, i.e. 'is_revoked'
-  SUBSCRIPTION_LICENSE_CONDITION_EVENT_REVOKED = 3;
+  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_EVENT_REVOKED = 3;
 }
 
 message EnterpriseSubscriptionLicenseCondition {
@@ -134,14 +134,16 @@ message GetSubscriptionRequest {
 // EnterpriseSubscriptionLicenseType can be used to denote different types of
 // licenses.
 enum EnterpriseSubscriptionLicenseType {
-  SUBSCRIPTION_LICENSE_TYPE_UNSPECIFIED = 0;
-  // This license is the classic licensing mechanism that Sourcegraph has always
-  // had. Each Subscription is expected to have at most one active Sourcegraph
-  // classic license.
-  SUBSCRIPTION_LICENSE_TYPE_CLASSIC = 1;
+  ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_UNSPECIFIED = 0;
+  // This license type is the classic licensing mechanism that Sourcegraph has
+  // always had. Each Subscription is expected to have at most one active
+  // Sourcegraph classic license used by their primary production Sourcegraph
+  // instance.
+  ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_CLASSIC = 1;
 }
 
 message GetSubscriptionResponse {
+  // Subscription is the requested subscription.
   EnterpriseSubscription subscription = 1;
 }
 

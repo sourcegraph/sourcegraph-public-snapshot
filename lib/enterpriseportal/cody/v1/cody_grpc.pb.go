@@ -19,8 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	EnterprisePortalCodyService_GetCodyGatewayAccess_FullMethodName  = "/sourcegraph.enterpriseportal.cody.v1.EnterprisePortalCodyService/GetCodyGatewayAccess"
-	EnterprisePortalCodyService_ListCodyGatewayAccess_FullMethodName = "/sourcegraph.enterpriseportal.cody.v1.EnterprisePortalCodyService/ListCodyGatewayAccess"
+	EnterprisePortalCodyService_GetCodyGatewayAccess_FullMethodName  = "/enterpriseportal.cody.v1.EnterprisePortalCodyService/GetCodyGatewayAccess"
+	EnterprisePortalCodyService_ListCodyGatewayAccess_FullMethodName = "/enterpriseportal.cody.v1.EnterprisePortalCodyService/ListCodyGatewayAccess"
 )
 
 // EnterprisePortalCodyServiceClient is the client API for EnterprisePortalCodyService service.
@@ -134,7 +134,7 @@ func _EnterprisePortalCodyService_ListCodyGatewayAccess_Handler(srv interface{},
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var EnterprisePortalCodyService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "sourcegraph.enterpriseportal.cody.v1.EnterprisePortalCodyService",
+	ServiceName: "enterpriseportal.cody.v1.EnterprisePortalCodyService",
 	HandlerType: (*EnterprisePortalCodyServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

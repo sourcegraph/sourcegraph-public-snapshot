@@ -23,7 +23,7 @@ const _ = connect.IsAtLeastVersion1_13_0
 const (
 	// EnterprisePortalCoreServiceName is the fully-qualified name of the EnterprisePortalCoreService
 	// service.
-	EnterprisePortalCoreServiceName = "sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService"
+	EnterprisePortalCoreServiceName = "enterpriseportal.core.v1.EnterprisePortalCoreService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -36,13 +36,13 @@ const (
 const (
 	// EnterprisePortalCoreServiceGetSubscriptionProcedure is the fully-qualified name of the
 	// EnterprisePortalCoreService's GetSubscription RPC.
-	EnterprisePortalCoreServiceGetSubscriptionProcedure = "/sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService/GetSubscription"
+	EnterprisePortalCoreServiceGetSubscriptionProcedure = "/enterpriseportal.core.v1.EnterprisePortalCoreService/GetSubscription"
 	// EnterprisePortalCoreServiceListSubscriptionsProcedure is the fully-qualified name of the
 	// EnterprisePortalCoreService's ListSubscriptions RPC.
-	EnterprisePortalCoreServiceListSubscriptionsProcedure = "/sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService/ListSubscriptions"
+	EnterprisePortalCoreServiceListSubscriptionsProcedure = "/enterpriseportal.core.v1.EnterprisePortalCoreService/ListSubscriptions"
 	// EnterprisePortalCoreServiceListSubscriptionLicensesProcedure is the fully-qualified name of the
 	// EnterprisePortalCoreService's ListSubscriptionLicenses RPC.
-	EnterprisePortalCoreServiceListSubscriptionLicensesProcedure = "/sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService/ListSubscriptionLicenses"
+	EnterprisePortalCoreServiceListSubscriptionLicensesProcedure = "/enterpriseportal.core.v1.EnterprisePortalCoreService/ListSubscriptionLicenses"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -54,7 +54,7 @@ var (
 )
 
 // EnterprisePortalCoreServiceClient is a client for the
-// sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService service.
+// enterpriseportal.core.v1.EnterprisePortalCoreService service.
 type EnterprisePortalCoreServiceClient interface {
 	// GetSubscription retrieves an exact match on an Enterprise subscription.
 	GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error)
@@ -65,9 +65,9 @@ type EnterprisePortalCoreServiceClient interface {
 }
 
 // NewEnterprisePortalCoreServiceClient constructs a client for the
-// sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService service. By default, it uses the
-// Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
-// uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
+// enterpriseportal.core.v1.EnterprisePortalCoreService service. By default, it uses the Connect
+// protocol with the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed
+// requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
 // connect.WithGRPCWeb() options.
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
@@ -106,26 +106,24 @@ type enterprisePortalCoreServiceClient struct {
 	listSubscriptionLicenses *connect.Client[v1.ListSubscriptionLicensesRequest, v1.ListSubscriptionLicensesResponse]
 }
 
-// GetSubscription calls
-// sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService.GetSubscription.
+// GetSubscription calls enterpriseportal.core.v1.EnterprisePortalCoreService.GetSubscription.
 func (c *enterprisePortalCoreServiceClient) GetSubscription(ctx context.Context, req *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error) {
 	return c.getSubscription.CallUnary(ctx, req)
 }
 
-// ListSubscriptions calls
-// sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService.ListSubscriptions.
+// ListSubscriptions calls enterpriseportal.core.v1.EnterprisePortalCoreService.ListSubscriptions.
 func (c *enterprisePortalCoreServiceClient) ListSubscriptions(ctx context.Context, req *connect.Request[v1.ListSubscriptionsRequest]) (*connect.Response[v1.ListSubscriptionsResponse], error) {
 	return c.listSubscriptions.CallUnary(ctx, req)
 }
 
 // ListSubscriptionLicenses calls
-// sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService.ListSubscriptionLicenses.
+// enterpriseportal.core.v1.EnterprisePortalCoreService.ListSubscriptionLicenses.
 func (c *enterprisePortalCoreServiceClient) ListSubscriptionLicenses(ctx context.Context, req *connect.Request[v1.ListSubscriptionLicensesRequest]) (*connect.Response[v1.ListSubscriptionLicensesResponse], error) {
 	return c.listSubscriptionLicenses.CallUnary(ctx, req)
 }
 
 // EnterprisePortalCoreServiceHandler is an implementation of the
-// sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService service.
+// enterpriseportal.core.v1.EnterprisePortalCoreService service.
 type EnterprisePortalCoreServiceHandler interface {
 	// GetSubscription retrieves an exact match on an Enterprise subscription.
 	GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error)
@@ -162,7 +160,7 @@ func NewEnterprisePortalCoreServiceHandler(svc EnterprisePortalCoreServiceHandle
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
-	return "/sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return "/enterpriseportal.core.v1.EnterprisePortalCoreService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case EnterprisePortalCoreServiceGetSubscriptionProcedure:
 			enterprisePortalCoreServiceGetSubscriptionHandler.ServeHTTP(w, r)
@@ -180,13 +178,13 @@ func NewEnterprisePortalCoreServiceHandler(svc EnterprisePortalCoreServiceHandle
 type UnimplementedEnterprisePortalCoreServiceHandler struct{}
 
 func (UnimplementedEnterprisePortalCoreServiceHandler) GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService.GetSubscription is not implemented"))
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.core.v1.EnterprisePortalCoreService.GetSubscription is not implemented"))
 }
 
 func (UnimplementedEnterprisePortalCoreServiceHandler) ListSubscriptions(context.Context, *connect.Request[v1.ListSubscriptionsRequest]) (*connect.Response[v1.ListSubscriptionsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService.ListSubscriptions is not implemented"))
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.core.v1.EnterprisePortalCoreService.ListSubscriptions is not implemented"))
 }
 
 func (UnimplementedEnterprisePortalCoreServiceHandler) ListSubscriptionLicenses(context.Context, *connect.Request[v1.ListSubscriptionLicensesRequest]) (*connect.Response[v1.ListSubscriptionLicensesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sourcegraph.enterpriseportal.core.v1.EnterprisePortalCoreService.ListSubscriptionLicenses is not implemented"))
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.core.v1.EnterprisePortalCoreService.ListSubscriptionLicenses is not implemented"))
 }
