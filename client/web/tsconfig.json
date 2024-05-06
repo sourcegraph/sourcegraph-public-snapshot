@@ -6,6 +6,7 @@
     "jsx": "react-jsx",
     "rootDir": ".",
     "outDir": "out",
+    "resolveJsonModule": true,
   },
   "references": [
     {
