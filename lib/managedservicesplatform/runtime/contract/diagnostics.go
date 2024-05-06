@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sourcegraph/log"
 
@@ -22,7 +23,7 @@ type diagnosticsContract struct {
 	DiagnosticsSecret *string
 
 	OpenTelemetry opentelemetry.Config
-	SentryDSN     *string
+	sentryDSN     *string
 
 	// copies of higher-level configuration
 	internal internalContract
@@ -44,7 +45,7 @@ func loadDiagnosticsContract(
 				defaultGCPProjectID),
 			OtelSDKDisabled: env.GetBool("OTEL_SDK_DISABLED", "false", "disable OpenTelemetry SDK"),
 		},
-		SentryDSN: env.GetOptional("SENTRY_DSN", "Sentry error reporting DSN"),
+		sentryDSN: env.GetOptional("SENTRY_DSN", "Sentry error reporting DSN"),
 
 		internal: internal,
 		msp:      msp,
@@ -168,4 +169,34 @@ func (c diagnosticsContract) DiagnosticsAuthMiddleware(next http.Handler) http.H
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// ConfigureSentry enables Sentry error log reporting for
+// github.com/sourcegraph/log. This does not need to be used if you are already
+// using MSP runtime initialization.
+//
+// The logging library MUST have been initialized with the Sentry sink:
+//
+//	liblog := log.Init(res, log.NewSentrySink())
+//	defer liblog.Sync()
+//
+// The returned liblog is *log.PostInitCallbacks that is accepted by this method.
+// Configuration updates are applied to all loggers, even if they are already
+// initialized.
+func (c diagnosticsContract) ConfigureSentry(liblog *log.PostInitCallbacks) bool {
+	var sentryEnabled bool
+	if c.sentryDSN != nil {
+		liblog.Update(func() log.SinksConfig {
+			sentryEnabled = true
+			return log.SinksConfig{
+				Sentry: &log.SentrySink{
+					ClientOptions: sentry.ClientOptions{
+						Dsn:         *c.sentryDSN,
+						Environment: c.internal.environmentID,
+					},
+				},
+			}
+		})()
+	}
+	return sentryEnabled
 }

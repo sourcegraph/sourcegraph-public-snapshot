@@ -14,7 +14,6 @@ go_library(
         "//lib/background",
         "//lib/managedservicesplatform/runtime/contract",
         "//lib/managedservicesplatform/runtime/internal/opentelemetry",
-        "@com_github_getsentry_sentry_go//:sentry-go",
         "@com_github_sourcegraph_log//:log",
         "@com_google_cloud_go_profiler//:profiler",
     ],
