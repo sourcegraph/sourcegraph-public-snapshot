@@ -11,7 +11,10 @@ option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cod
 // DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
 service EnterprisePortalCodyService {
   // Retrieve Cody Gateway access granted to an Enterprise subscription.
-  rpc GetCodyGatewayAccess(GetCodyGatewayAccessRequest) returns (GetCodyGatewayAccessResponse) {
+  //
+  // For classic licenses, properties may be inferred from the active license,
+  // or be defined in overrides.
+  rpc GetCodyGatewayAccess(GetCodyGatewayAccessRequest) returns (CodyGatewayAccess) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
@@ -92,14 +95,6 @@ message CodyGatewayAccess {
   // Available access tokens for authenticating as the subscription holder with
   // managed Sourcegraph services.
   repeated CodyGatewayAccessToken access_tokens = 7;
-}
-
-message GetCodyGatewayAccessResponse {
-  // The Cody Gateway access for the requested subscription.
-  //
-  // For classic licenses, properties may be inferred from the active license,
-  // or be defined in overrides.
-  CodyGatewayAccess access = 1;
 }
 
 message ListCodyGatewayAccessRequest {

@@ -16,7 +16,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cor
 // DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
 service EnterprisePortalCoreService {
   // GetSubscription retrieves an exact match on an Enterprise subscription.
-  rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse) {
+  rpc GetSubscription(GetSubscriptionRequest) returns (EnterpriseSubscription) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
@@ -139,11 +139,6 @@ enum EnterpriseSubscriptionLicenseType {
   // always had. Each Subscription is expected to have at most one active
   // Sourcegraph classic license used by a Sourcegraph instance at a time.
   ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_CLASSIC = 1;
-}
-
-message GetSubscriptionResponse {
-  // Subscription is the requested subscription.
-  EnterpriseSubscription subscription = 1;
 }
 
 message ListSubscriptionsRequest {
