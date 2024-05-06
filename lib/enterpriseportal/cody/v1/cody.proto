@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package enterpriseportal.cody.v1;
 
+import "google/protobuf/duration.proto";
+
 option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cody/v1";
 
 // EnterprisePortalCodyService is an extension to Enterprise Portal that
@@ -63,7 +65,7 @@ message CodyGatewayRateLimit {
   // Requests per time interval.
   int64 limit = 3;
   // Interval for rate limiting.
-  int64 interval_seconds = 4;
+  google.protobuf.Duration interval_duration = 4;
 }
 
 message CodyGatewayAccessToken {
