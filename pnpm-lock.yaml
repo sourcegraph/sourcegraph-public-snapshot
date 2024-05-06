@@ -1505,12 +1505,6 @@ importers:
       '@sourcegraph/wildcard':
         specifier: workspace:*
         version: link:../wildcard
-      '@stripe/react-stripe-js':
-        specifier: ^2.7.0
-        version: 2.7.0(@stripe/stripe-js@3.3.0)(react-dom@18.1.0)(react@18.1.0)
-      '@stripe/stripe-js':
-        specifier: ^3.3.0
-        version: 3.3.0
     devDependencies:
       '@sourcegraph/build-config':
         specifier: workspace:*

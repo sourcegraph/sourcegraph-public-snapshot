@@ -6,10 +6,10 @@ import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settin
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
-import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
 import { isSearchJobsEnabled } from './search-jobs/utility'
+import { useEmbeddedCodyProUi } from './cody/util'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
@@ -435,8 +435,7 @@ export const routes: RouteObject[] = [
                     />
                 )}
                 condition={({ isSourcegraphDotCom }) => {
-                    const [embeddedUiEnabled] = useFeatureFlag('cody-enable-embedded-cody-pro-ui', false)
-                    return isSourcegraphDotCom && embeddedUiEnabled
+                    return isSourcegraphDotCom && useEmbeddedCodyProUi()
                 }}
             />
         ),

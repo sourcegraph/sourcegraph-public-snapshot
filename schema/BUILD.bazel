@@ -63,7 +63,6 @@ go_library(
     srcs = [
         "bitbucket_server_util.go",
         "bitbucketcloud_util.go",
-        "cody_pro_util.go",
         "extension_schema.go",
         "github_util.go",
         "gitlab_util.go",

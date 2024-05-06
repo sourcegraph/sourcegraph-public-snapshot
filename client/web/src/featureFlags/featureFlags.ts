@@ -9,7 +9,6 @@ export const FEATURE_FLAGS = [
     'auditlog-expansion',
     'blob-page-switch-areas-shortcuts',
     'cody-chat-mock-test',
-    'cody-enable-embedded-cody-pro-ui',
     'cody-web-search',
     'contrast-compliant-syntax-highlighting',
     'enable-ownership-panels',

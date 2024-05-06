@@ -29,9 +29,9 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
         // createCheckoutSession and let it run async.
         // (And not `await createCheckoutSession` or `return createCheckoutSession`.)
         void createCheckoutSession('monthly', showPromoCodeField, customerEmail, setClientSecret, setErrorDetails)
-    }, [customerEmail, showPromoCodeField])
+    }, [customerEmail, showPromoCodeField, setClientSecret, setErrorDetails])
 
-    const embeddedCheckoutOpts /* unexported EmbeddedCheckoutProviderProps.options */ = {
+    const options /* unexported EmbeddedCheckoutProviderProps.options */ = {
         clientSecret,
     }
     return (
@@ -44,7 +44,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
             )}
 
             {clientSecret && (
-                <EmbeddedCheckoutProvider stripe={stripeHandle} options={embeddedCheckoutOpts}>
+                <EmbeddedCheckoutProvider stripe={stripeHandle} options={options}>
                     <EmbeddedCheckout />
                 </EmbeddedCheckoutProvider>
             )}
@@ -75,7 +75,7 @@ async function createCheckoutSession(
         // take care of exchanging the Sourcegraph session credentials for a SAMS access token.
         // And then proxy the request onto the SSC backend, which will actually create the
         // checkout session.
-        const resp = await fetch(`${origin}/.api/ssc/proxy/checkout/session`, {
+        const response = await fetch(`${origin}/.api/ssc/proxy/checkout/session`, {
             // Pass along the "sgs" session cookie to identify the caller.
             credentials: 'same-origin',
             method: 'POST',
@@ -96,14 +96,14 @@ async function createCheckoutSession(
             }),
         })
 
-        const respBody = await resp.text()
-        if (resp.status >= 200 && resp.status <= 299) {
-            const typedResp = JSON.parse(respBody) as createSessionResponse
+        const responseBody = await response.text()
+        if (response.status >= 200 && response.status <= 299) {
+            const typedResp = JSON.parse(responseBody) as createSessionResponse
             setClientSecret(typedResp.clientSecret)
         } else {
             // Pass any 4xx or 5xx directly to the user. We expect the
             // server to have properly redcated any sensive information.
-            setErrorDetails(respBody)
+            setErrorDetails(responseBody)
         }
     } catch (error) {
         setErrorDetails(`unhandled exception: ${JSON.stringify(error)}`)

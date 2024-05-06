@@ -168,7 +168,7 @@ func InitRouter(db database.DB) {
 	// Register Sourcegraph.com-specific pages as applicable.
 	if config.Dotcom != nil && config.Dotcom.CodyProConfig != nil {
 		staticPages = append(staticPages, staticPageInfo{
-			path: "/cody/subscription/new", name: "cody",
+			path: "/cody/manage/subscription/new", name: "cody",
 			title: "New Cody Pro Subscription", index: false,
 		})
 	}
