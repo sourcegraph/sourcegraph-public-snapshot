@@ -43,7 +43,7 @@
             overflow: 'auto',
         },
         '.cm-content': {
-            padding: '0.5rem 0',
+            paddingBottom: '1.5rem',
             '&:focus-visible': {
                 outline: 'none',
                 boxShadow: 'none',

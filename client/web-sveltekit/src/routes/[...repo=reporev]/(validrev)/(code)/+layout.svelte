@@ -232,7 +232,7 @@
         padding: 0.5rem;
         padding-bottom: 0;
         box-shadow: var(--sidebar-shadow);
-        z-index: 1;
+        z-index: 2;
     }
 
     .main {
@@ -265,16 +265,15 @@
         flex-flow: row nowrap;
         justify-content: space-between;
         overflow: hidden;
+        border-top: 1px solid var(--border-color);
         box-shadow: var(--bottom-panel-shadow);
-        background-color: var(--code-bg);
+        background-color: var(--color-bg-1);
         color: var(--text-body);
-        // Applying z-index to the bottom panel allows its shadow to cascade correctly
+        // Applying z-index to the bottom panel allows its shadow to cascade correctly on the code but still say behind the left panel
         z-index: 1;
 
         &.open {
             height: 32vh;
-            box-shadow: var(--bottom-panel-open-shadow);
-            border-top: 1px solid var(--secondary-1);
             // Disable flex layout so that tabs simply fill the available space
             display: block;
 
