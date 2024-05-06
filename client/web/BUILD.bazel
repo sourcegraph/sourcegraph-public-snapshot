@@ -1753,8 +1753,6 @@ ts_project(
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/telemetry",
         ":node_modules/@sourcegraph/wildcard",
-        ":node_modules/@stripe/react-stripe-js",
-        ":node_modules/@stripe/stripe-js",
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/commands",
         "//:node_modules/@codemirror/lang-json",
@@ -1784,6 +1782,8 @@ ts_project(
         "//:node_modules/@reach/visually-hidden",
         "//:node_modules/@sentry/browser",
         "//:node_modules/@sourcegraph/extension-api-classes",
+        "//:node_modules/@stripe/react-stripe-js",
+        "//:node_modules/@stripe/stripe-js",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",
