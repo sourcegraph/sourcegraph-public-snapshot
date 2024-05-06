@@ -124,7 +124,6 @@
         } else if (selectedTab === TabPanels.References) {
             // Close references panel when navigating to a URL that doesn't have the 'references' view state
             selectedTab = null
-            bottomPanel.collapse()
         }
     })
 
@@ -260,13 +259,13 @@
     // sidebar is rendered over content panel.
     :global([data-panel-id='sidebar-panel']) {
         z-index: 1;
-        position: relative;
+        isolation: isolate;
         box-shadow: var(--sidebar-shadow);
     }
 
     :global([data-panel-id='content-panel']) {
         z-index: 0;
-        position: relative;
+        isolation: isolate;
     }
 
     .sidebar {
