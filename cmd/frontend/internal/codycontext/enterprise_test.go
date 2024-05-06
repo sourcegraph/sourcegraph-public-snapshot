@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 	"time"
 
@@ -29,9 +28,7 @@ func TestNewEnterpriseFilter(t *testing.T) {
 		includeByDefault = originalIncludeByDefault
 	})
 
-	_, file, _, ok := runtime.Caller(0)
-	require.Equal(t, true, ok)
-	content, err := os.ReadFile(filepath.Join(filepath.Dir(file), "enterprise_test_data.json"))
+	content, err := os.ReadFile(filepath.Join("testdata", "enterprise_filter_test_data.json"))
 	require.NoError(t, err)
 
 	type repo struct {
