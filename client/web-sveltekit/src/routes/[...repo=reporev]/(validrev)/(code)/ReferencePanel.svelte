@@ -90,7 +90,7 @@
             </Panel>
             {#if previewURL}
                 <PanelResizeHandle />
-                <Panel defaultSize={50}>
+                <Panel defaultSize={50} id="reference-panel-preview">
                     <FilePreview href={previewURL} on:close={() => (selectedLocation = null)} />
                 </Panel>
             {/if}
@@ -104,6 +104,11 @@
 
         &.show-info {
             padding: 1rem;
+        }
+
+        :global([data-panel-id='reference-panel-preview']) {
+            z-index: 0;
+            position: relative;
         }
     }
 
