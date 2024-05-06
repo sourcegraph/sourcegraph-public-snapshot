@@ -2,11 +2,7 @@ package cloud
 
 import (
 	"context"
-<<<<<<< HEAD
-=======
-	"fmt"
 	"strings"
->>>>>>> 8c6637776df (handle deploying a version)
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -76,7 +72,8 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 		version,
 	)
 
-	inst, err := cloudClient.GetInstance(ctx, spec.Name)
+	// Check if the deployment already exists
+	_, err = cloudClient.GetInstance(ctx, spec.Name)
 	if err != nil {
 		if !errors.Is(err, ErrInstanceNotFound) {
 			return errors.Wrapf(err, "failed to determine if instance %q already exists", spec.Name)
@@ -87,7 +84,7 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 		return ErrDeploymentExists
 	}
 
-	inst, err = cloudClient.CreateInstance(ctx, spec)
+	inst, err := cloudClient.CreateInstance(ctx, spec)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment failed: %v", err))
 		return errors.Wrapf(err, "failed to deploy version %v", version)
@@ -98,46 +95,7 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 	return nil
 }
 
-<<<<<<< HEAD
 func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
-=======
-func watchBuild(ctx context.Context, bkClient *bk.Client, build *buildkite.Build, tickEverySec int) (*buildkite.Build, error) {
-	pipeline := pointers.DerefZero(build.Pipeline.Slug)
-	number := fmt.Sprintf("%d", pointers.DerefZero(build.Number))
-	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Waiting for build %s to complete", number))
-
-	t := time.Duration(tickEverySec) * time.Second
-	ticker := time.NewTicker(t)
-	defer ticker.Stop()
-
-	var buildError error
-tickLoop:
-	for range ticker.C {
-		build, buildError = bkClient.GetBuildByNumber(ctx, pipeline, number)
-		if buildError != nil {
-			break
-		}
-
-		state := pointers.DerefZero(build.State)
-
-		switch state {
-		case "success":
-			pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %s completed", number))
-			break tickLoop
-		case "failed":
-			pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Build %s failed", number))
-			buildError = errors.Newf("build %s failed", number)
-			break tickLoop
-		default:
-			pending.Updatef("Build %s still in progress ...", number)
-		}
-	}
-
-	return build, buildError
-}
-
-func triggerEphemeralBuild(ctx context.Context, client *bk.Client, currRepo *repo.GitRepo) (*buildkite.Build, error) {
->>>>>>> 8c6637776df (handle deploying a version)
 	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote", currRepo.Branch))
 	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "branch is out of date with remote"))
@@ -160,6 +118,24 @@ func triggerEphemeralBuild(ctx context.Context, client *bk.Client, currRepo *rep
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %d created. Build progress can be viewed at %s", pointers.DerefZero(build.Number), pointers.DerefZero(build.WebURL)))
 
 	return build, nil
+}
+
+func checkVersionExistsInRegistry(ctx context.Context, version string) error {
+	ar, err := NewDefaultCloudEphemeralRegistry(ctx)
+	if err != nil {
+		std.Out.WriteFailuref("failed to create Cloud Ephemeral registry")
+		return err
+	}
+	pending := std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Checking if version %q exists in Cloud ephemeral registry", version))
+	if images, err := ar.FindDockerImageExact(ctx, "gitserver", version); err != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to check if version %q exists in Cloud ephemeral registry", version))
+		return err
+	} else if len(images) == 0 {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "no version %q found in Cloud ephemeral registry!", version))
+		return errors.Newf("no image with tag %q found", version)
+	}
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Version %q found in Cloud ephemeral registry", version))
+	return nil
 }
 
 func deployCloudEphemeral(ctx *cli.Context) error {
@@ -196,43 +172,14 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 		if err != nil {
 			return err
 		}
-	} else {
-		// Check that the given version exists
-		ar, err := NewDefaultCloudEphemeralRegistry(ctx.Context)
-		if err != nil {
-			std.Out.WriteFailuref("failed to create Cloud Ephemeral registry")
-			return err
-		}
-		pending := std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Checking if version %q exists in Cloud ephemeral registry", version))
-		if images, err := ar.FindDockerImageExact(ctx.Context, "gitserver", version); err != nil {
-			pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to check if version %q exists in Cloud ephemeral registry", version))
-			return err
-		} else if len(images) == 0 {
-			pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "no version %q found in Cloud ephemeral registry!", version))
-			return errors.Newf("no image with tag %q found", version)
-		}
-		pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Version %q found in Cloud ephemeral registry", version))
-		// if a version was given then we
+	} else if err = checkVersionExistsInRegistry(ctx.Context, version); err != nil {
+		return err
 	}
 	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
 		return err
 	}
 
-<<<<<<< HEAD
-	name := cmp.Or(ctx.String("name"), currRepo.Branch)
-	err = createDeploymentForVersion(ctx.Context, name, version)
-	if err != nil {
-		if errors.Is(err, ErrDeploymentExists) {
-			std.Out.WriteWarningf("Cannot create a new deployment as a deployment with name %q already exists", name)
-			std.Out.WriteSuggestionf(`You might want to try one of the following:
-- Specify a different deployment name with the --name flag
-- Upgrade the current deployment instead by using the upgrade command instead of deploy`)
-		}
-		return err
-	}
-	return nil
-=======
 	var deploymentName string
 	if ctx.String("name") != "" {
 		deploymentName = ctx.String("name")
@@ -246,5 +193,4 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 	}
 
 	return createDeploymentForVersion(ctx.Context, email, deploymentName, version)
->>>>>>> 8c6637776df (handle deploying a version)
 }
