@@ -6,7 +6,7 @@ npm_link_all_packages(name = "node_modules")
 npm_package(
     name = "cody-context-filters-test-dataset_pkg",
     srcs = [
-        "dataset.json",
+        "dataset.json",  # keep
         "package.json",
     ],
 )
