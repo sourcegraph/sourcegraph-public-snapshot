@@ -23,8 +23,8 @@ service EnterprisePortalCodyService {
 
 message GetCodyGatewayAccessRequest {
   oneof query {
-    // The external UUID-format identifier for the Enterprise subscription to
-    // retrieve Cody Gateway access for.
+    // The external, prefixed UUID-format identifier for the Enterprise
+    // subscription to retrieve Cody Gateway access for.
     string subscription_id = 1;
     // Look up a access using an associated access token representing this
     // subscription's Cody Gateway access.
@@ -70,8 +70,8 @@ message CodyGatewayAccessToken {
 }
 
 message CodyGatewayAccess {
-  // The external UUID-format identifier for the Enterprise subscription
-  // corresponding to this Cody Gateway access description.
+  // The external, prefixed UUID-format identifier for the Enterprise
+  // subscription corresponding to this Cody Gateway access description.
   string subscription_id = 1;
 
   // Whether or not a subscription has Cody Gateway access.

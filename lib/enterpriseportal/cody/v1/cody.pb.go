@@ -141,8 +141,8 @@ type isGetCodyGatewayAccessRequest_Query interface {
 }
 
 type GetCodyGatewayAccessRequest_SubscriptionId struct {
-	// The external UUID-format identifier for the Enterprise subscription to
-	// retrieve Cody Gateway access for.
+	// The external, prefixed UUID-format identifier for the Enterprise
+	// subscription to retrieve Cody Gateway access for.
 	SubscriptionId string `protobuf:"bytes,1,opt,name=subscription_id,json=subscriptionId,proto3,oneof"`
 }
 
@@ -297,8 +297,8 @@ type CodyGatewayAccess struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The external UUID-format identifier for the Enterprise subscription
-	// corresponding to this Cody Gateway access description.
+	// The external, prefixed UUID-format identifier for the Enterprise
+	// subscription corresponding to this Cody Gateway access description.
 	SubscriptionId string `protobuf:"bytes,1,opt,name=subscription_id,json=subscriptionId,proto3" json:"subscription_id,omitempty"`
 	// Whether or not a subscription has Cody Gateway access.
 	Enabled bool `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`

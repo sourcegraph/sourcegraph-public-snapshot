@@ -50,7 +50,7 @@ message EnterpriseSubscriptionCondition {
 // EnterpriseSubscription represents a Sourcegraph Enterprise subscription.
 // It is one of the fundamental elements of the Enterprise Portal service.
 message EnterpriseSubscription {
-  // ID is the external UUID-format identifier for this subscription.
+  // ID is the external, prefixed UUID-format identifier for this subscription.
   string id = 1;
   // Timeline of key events corresponding to this subscription.
   repeated EnterpriseSubscriptionCondition conditions = 2;
@@ -106,24 +106,27 @@ message EnterpriseSubscriptionLicenseCondition {
 // Enterprise subscription. It is one of the fundamental elements of the
 // Enterprise Portal service.
 message EnterpriseSubscriptionLicense {
-  // ID is the external UUID-format identifier for this license key.
+  // ID is the external, prefixed UUID-format identifier for this license key.
   string id = 1;
-  // The external UUID-format identifier for the subscription that owns this
-  // license.
+  // The external, prefixed UUID-format identifier for the subscription that
+  // owns this license.
   string subscription_id = 2;
   // Timeline of key events corresponding to this license.
   repeated EnterpriseSubscriptionLicenseCondition conditions = 3;
 
-  // License data.
+  // Type of the license, available primarily for reference - this value will
+  // correspond to the appropriate type of the 'license' field.
+  EnterpriseSubscriptionLicenseType type = 4;
+  // License data, based on the type of the license.
   oneof license {
-    EnterpriseSubscriptionLicenseClassic classic = 4;
+    EnterpriseSubscriptionLicenseClassic classic = 5;
   }
 }
 
 message GetSubscriptionRequest {
   // Query specifies the lookup strategy for this get request.
   oneof query {
-    // Look up a subscription using its UUID-format identifier.
+    // Look up a subscription using its external, prefixed UUID-format identifier.
     string id = 1;
   }
 }
@@ -169,13 +172,13 @@ message ListSubscriptionLicensesFilter {
     // Return only licenses corresponding to the given subscription ID, with the
     // most recently issued licenses first.
     string subscription_id = 1;
+    // Return only licenses of the given type.
+    EnterpriseSubscriptionLicenseType type = 2;
+    // Return only licenses with the given archival status.
+    bool is_archived = 3;
     // Return only product subscriptions whose license key contains this
     // substring.
-    string license_key_substring = 2;
-    // Return only licenses of the given type.
-    EnterpriseSubscriptionLicenseType type = 3;
-    // Return only licenses with the given archival status.
-    bool is_archived = 4;
+    string license_key_substring = 4;
   }
 }
 
@@ -194,7 +197,8 @@ message ListSubscriptionLicensesRequest {
   // TODO: Create an internal pagination token type: https://protobuf.dev/programming-guides/api/#encode-opaque-data-in-strings
   optional string page_token = 2;
 
-  // Filters define the lookup strategy for this list request.
+  // Filters define the lookup strategy for this list request. Multiple filters
+  // are treated as AND-concatenated.
   repeated ListSubscriptionLicensesFilter filters = 3;
 }
 

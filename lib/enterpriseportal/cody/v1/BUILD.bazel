@@ -1,13 +1,11 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
-load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@rules_proto_grpc//doc:defs.bzl", "doc_template_compile")
 
 proto_library(
     name = "v1_proto",
-    srcs = ["core.proto"],
+    srcs = ["cody.proto"],
     visibility = ["//visibility:public"],
-    deps = ["@com_google_protobuf//:timestamp_proto"],
 )
 
 go_proto_library(
@@ -16,14 +14,14 @@ go_proto_library(
         "//:gen-go-grpc",
         "@io_bazel_rules_go//proto:go_proto",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/core/v1",
+    importpath = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cody/v1",
     proto = ":v1_proto",
     visibility = ["//visibility:public"],
 )
 
 go_library(
-    name = "core",
+    name = "cody",
     embed = [":v1_go_proto"],
-    importpath = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/core/v1",
+    importpath = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cody/v1",
     visibility = ["//visibility:public"],
 )
