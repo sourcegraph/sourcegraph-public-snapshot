@@ -108,7 +108,7 @@ func (c *gitserverClient) RevList(ctx context.Context, repo string, commit strin
 	for {
 		var commits []api.CommitID
 		var err error
-		commits, nextCursor, err = c.innerClient.RevList(ctx, api.RepoName(repo), nextCursor, revListPageSize)
+		commits, nextCursor, err = c.paginatedRevList(ctx, api.RepoName(repo), nextCursor, revListPageSize)
 		if err != nil {
 			return err
 		}
@@ -125,6 +125,31 @@ func (c *gitserverClient) RevList(ctx context.Context, repo string, commit strin
 			return nil
 		}
 	}
+}
+
+func (c *gitserverClient) paginatedRevList(ctx context.Context, repo api.RepoName, commit string, count int) ([]api.CommitID, string, error) {
+	commits, err := c.innerClient.Commits(ctx, repo, gitserver.CommitsOptions{
+		N:           uint(count + 1),
+		Range:       commit,
+		FirstParent: true,
+	})
+	if err != nil {
+		return nil, "", err
+	}
+
+	commitIDs := make([]api.CommitID, 0, count+1)
+
+	for _, commit := range commits {
+		commitIDs = append(commitIDs, commit.ID)
+	}
+
+	var nextCursor string
+	if len(commitIDs) > count {
+		nextCursor = string(commitIDs[len(commitIDs)-1])
+		commitIDs = commitIDs[:count]
+	}
+
+	return commitIDs, nextCursor, nil
 }
 
 var NUL = []byte{0}

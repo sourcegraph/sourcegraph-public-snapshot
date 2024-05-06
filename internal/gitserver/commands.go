@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -1063,53 +1062,6 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, ba
 	return api.CommitID(res.GetMergeBaseCommitSha()), nil
 }
 
-func (c *clientImplementor) RevList(ctx context.Context, repo api.RepoName, commit string, count int) (_ []api.CommitID, nextCursor string, err error) {
-	ctx, _, endObservation := c.operations.revList.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("commit", commit),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	command := c.gitCommand(repo, revListArgs(count, commit)...)
-
-	stdout, err := command.Output(ctx)
-	if err != nil {
-		return nil, "", err
-	}
-
-	commits := make([]api.CommitID, 0, count+1)
-
-	lr := byteutils.NewLineReader(stdout)
-	for lr.Scan() {
-		line := lr.Line()
-		line = bytes.TrimSpace(line)
-		if len(line) == 0 {
-			continue
-		}
-		commit := api.CommitID(line)
-		commits = append(commits, commit)
-	}
-
-	if len(commits) > count {
-		nextCursor = string(commits[len(commits)-1])
-		commits = commits[:count]
-	}
-
-	return commits, nextCursor, nil
-}
-
-func revListArgs(count int, givenCommit string) []string {
-	return []string{
-		"rev-list",
-		"--first-parent",
-		fmt.Sprintf("--max-count=%d", count+1),
-		givenCommit,
-	}
-}
-
 // BehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
 func (c *clientImplementor) BehindAhead(ctx context.Context, repo api.RepoName, left, right string) (_ *gitdomain.BehindAhead, err error) {
@@ -1306,6 +1258,14 @@ type CommitsOptions struct {
 	Path string // only commits modifying the given path are selected (optional)
 
 	Follow bool // follow the history of the path beyond renames (works only for a single path)
+
+	// When finding commits to include, follow only the first parent commit upon
+	// seeing a merge commit. This option can give a better overview when viewing
+	// the evolution of a particular topic branch, because merges into a topic
+	// branch tend to be only about adjusting to updated upstream from time to time,
+	// and this option allows you to ignore the individual commits brought in to
+	// your history by such a merge.
+	FirstParent bool
 
 	// When true return the names of the files changed in the commit
 	NameOnly bool
@@ -1745,6 +1705,10 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 
 	if opt.MessageQuery != "" {
 		args = append(args, "--fixed-strings", "--regexp-ignore-case", "--grep="+opt.MessageQuery)
+	}
+
+	if opt.FirstParent {
+		args = append(args, "--first-parent")
 	}
 
 	if opt.Range != "" {
