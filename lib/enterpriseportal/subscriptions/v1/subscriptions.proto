@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package enterpriseportal.core.v1;
+package enterpriseportal.subscriptions.v1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/core/v1";
+option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1";
 
 // EnterprisePortalCoreService is the core service API specification for
 // Enterprise Portal's subscription and licenses management capbilities.
@@ -15,19 +15,19 @@ option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cor
 // now.
 //
 // DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
-service EnterprisePortalCoreService {
+service EnterprisePortalSubscriptionsService {
   // GetSubscription retrieves an exact match on an Enterprise subscription.
-  rpc GetSubscription(GetSubscriptionRequest) returns (EnterpriseSubscription) {
+  rpc GetEnterpriseSubscription(GetEnterpriseSubscriptionRequest) returns (EnterpriseSubscription) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
-  // ListSubscriptions queries for Enterprise subscriptions.
-  rpc ListSubscriptions(ListSubscriptionsRequest) returns (ListSubscriptionsResponse) {
+  // ListEnterpriseSubscriptions queries for Enterprise subscriptions.
+  rpc ListEnterpriseSubscriptions(ListEnterpriseSubscriptionsRequest) returns (ListEnterpriseSubscriptionsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
-  // ListSubscriptionLicenses queries for Enterprise subscription licenses.
-  rpc ListSubscriptionLicenses(ListSubscriptionLicensesRequest) returns (ListSubscriptionLicensesResponse) {
+  // ListEnterpriseSubscriptionLicenses queries for Enterprise subscription licenses.
+  rpc ListEnterpriseSubscriptionLicenses(ListEnterpriseSubscriptionLicensesRequest) returns (ListEnterpriseSubscriptionLicensesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -122,7 +122,7 @@ message EnterpriseSubscriptionLicense {
   }
 }
 
-message GetSubscriptionRequest {
+message GetEnterpriseSubscriptionRequest {
   // Query specifies the lookup strategy for this get request.
   oneof query {
     // Look up a subscription using its external, prefixed UUID-format identifier.
@@ -140,7 +140,7 @@ enum EnterpriseSubscriptionLicenseType {
   ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_CLASSIC = 1;
 }
 
-message ListSubscriptionsRequest {
+message ListEnterpriseSubscriptionsRequest {
   // Clients use this field to specify the maximum number of results to be
   // returned by the server. The server may further constrain the maximum number
   // of results returned in a single page. If the page_size is 0, the server
@@ -154,7 +154,7 @@ message ListSubscriptionsRequest {
   string page_token = 2;
 }
 
-message ListSubscriptionsResponse {
+message ListEnterpriseSubscriptionsResponse {
   // This field represents the pagination token to retrieve the next page of
   // results. If the value is "", it means no further results for the request.
   string next_page_token = 1;
@@ -162,7 +162,7 @@ message ListSubscriptionsResponse {
   repeated EnterpriseSubscription subscriptions = 2;
 }
 
-message ListSubscriptionLicensesFilter {
+message ListEnterpriseSubscriptionLicensesFilter {
   oneof filter {
     // Return only licenses corresponding to the given subscription ID, with the
     // most recently issued licenses first.
@@ -177,7 +177,7 @@ message ListSubscriptionLicensesFilter {
   }
 }
 
-message ListSubscriptionLicensesRequest {
+message ListEnterpriseSubscriptionLicensesRequest {
   // Clients use this field to specify the maximum number of results to be
   // returned by the server. The server may further constrain the maximum number
   // of results returned in a single page. If the page_size is 0, the server
@@ -195,10 +195,10 @@ message ListSubscriptionLicensesRequest {
 
   // Filters define the lookup strategy for this list request. Multiple filters
   // are treated as AND-concatenated.
-  repeated ListSubscriptionLicensesFilter filters = 3;
+  repeated ListEnterpriseSubscriptionLicensesFilter filters = 3;
 }
 
-message ListSubscriptionLicensesResponse {
+message ListEnterpriseSubscriptionLicensesResponse {
   // This field represents the pagination token to retrieve the next page of
   // results. If the value is "", it means no further results for the request.
   string next_page_token = 1;
