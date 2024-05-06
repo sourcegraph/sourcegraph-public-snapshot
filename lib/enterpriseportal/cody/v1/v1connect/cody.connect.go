@@ -37,21 +37,25 @@ const (
 	// EnterprisePortalCodyServiceGetCodyGatewayAccessProcedure is the fully-qualified name of the
 	// EnterprisePortalCodyService's GetCodyGatewayAccess RPC.
 	EnterprisePortalCodyServiceGetCodyGatewayAccessProcedure = "/sourcegraph.enterpriseportal.cody.v1.EnterprisePortalCodyService/GetCodyGatewayAccess"
+	// EnterprisePortalCodyServiceListCodyGatewayAccessProcedure is the fully-qualified name of the
+	// EnterprisePortalCodyService's ListCodyGatewayAccess RPC.
+	EnterprisePortalCodyServiceListCodyGatewayAccessProcedure = "/sourcegraph.enterpriseportal.cody.v1.EnterprisePortalCodyService/ListCodyGatewayAccess"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	enterprisePortalCodyServiceServiceDescriptor                    = v1.File_cody_proto.Services().ByName("EnterprisePortalCodyService")
-	enterprisePortalCodyServiceGetCodyGatewayAccessMethodDescriptor = enterprisePortalCodyServiceServiceDescriptor.Methods().ByName("GetCodyGatewayAccess")
+	enterprisePortalCodyServiceServiceDescriptor                     = v1.File_cody_proto.Services().ByName("EnterprisePortalCodyService")
+	enterprisePortalCodyServiceGetCodyGatewayAccessMethodDescriptor  = enterprisePortalCodyServiceServiceDescriptor.Methods().ByName("GetCodyGatewayAccess")
+	enterprisePortalCodyServiceListCodyGatewayAccessMethodDescriptor = enterprisePortalCodyServiceServiceDescriptor.Methods().ByName("ListCodyGatewayAccess")
 )
 
 // EnterprisePortalCodyServiceClient is a client for the
 // sourcegraph.enterpriseportal.cody.v1.EnterprisePortalCodyService service.
 type EnterprisePortalCodyServiceClient interface {
 	// Retrieve Cody Gateway access granted to an Enterprise subscription.
-	// Properties may be inferred from the active license, or be defined in
-	// overrides.
 	GetCodyGatewayAccess(context.Context, *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.GetCodyGatewayAccessResponse], error)
+	// List all Cody Gateway access granted to any Enterprise subscription.
+	ListCodyGatewayAccess(context.Context, *connect.Request[v1.ListCodyGatewayAccessRequest]) (*connect.Response[v1.ListCodyGatewayAccessResponse], error)
 }
 
 // NewEnterprisePortalCodyServiceClient constructs a client for the
@@ -72,12 +76,20 @@ func NewEnterprisePortalCodyServiceClient(httpClient connect.HTTPClient, baseURL
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
+		listCodyGatewayAccess: connect.NewClient[v1.ListCodyGatewayAccessRequest, v1.ListCodyGatewayAccessResponse](
+			httpClient,
+			baseURL+EnterprisePortalCodyServiceListCodyGatewayAccessProcedure,
+			connect.WithSchema(enterprisePortalCodyServiceListCodyGatewayAccessMethodDescriptor),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // enterprisePortalCodyServiceClient implements EnterprisePortalCodyServiceClient.
 type enterprisePortalCodyServiceClient struct {
-	getCodyGatewayAccess *connect.Client[v1.GetCodyGatewayAccessRequest, v1.GetCodyGatewayAccessResponse]
+	getCodyGatewayAccess  *connect.Client[v1.GetCodyGatewayAccessRequest, v1.GetCodyGatewayAccessResponse]
+	listCodyGatewayAccess *connect.Client[v1.ListCodyGatewayAccessRequest, v1.ListCodyGatewayAccessResponse]
 }
 
 // GetCodyGatewayAccess calls
@@ -86,13 +98,19 @@ func (c *enterprisePortalCodyServiceClient) GetCodyGatewayAccess(ctx context.Con
 	return c.getCodyGatewayAccess.CallUnary(ctx, req)
 }
 
+// ListCodyGatewayAccess calls
+// sourcegraph.enterpriseportal.cody.v1.EnterprisePortalCodyService.ListCodyGatewayAccess.
+func (c *enterprisePortalCodyServiceClient) ListCodyGatewayAccess(ctx context.Context, req *connect.Request[v1.ListCodyGatewayAccessRequest]) (*connect.Response[v1.ListCodyGatewayAccessResponse], error) {
+	return c.listCodyGatewayAccess.CallUnary(ctx, req)
+}
+
 // EnterprisePortalCodyServiceHandler is an implementation of the
 // sourcegraph.enterpriseportal.cody.v1.EnterprisePortalCodyService service.
 type EnterprisePortalCodyServiceHandler interface {
 	// Retrieve Cody Gateway access granted to an Enterprise subscription.
-	// Properties may be inferred from the active license, or be defined in
-	// overrides.
 	GetCodyGatewayAccess(context.Context, *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.GetCodyGatewayAccessResponse], error)
+	// List all Cody Gateway access granted to any Enterprise subscription.
+	ListCodyGatewayAccess(context.Context, *connect.Request[v1.ListCodyGatewayAccessRequest]) (*connect.Response[v1.ListCodyGatewayAccessResponse], error)
 }
 
 // NewEnterprisePortalCodyServiceHandler builds an HTTP handler from the service implementation. It
@@ -108,10 +126,19 @@ func NewEnterprisePortalCodyServiceHandler(svc EnterprisePortalCodyServiceHandle
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
+	enterprisePortalCodyServiceListCodyGatewayAccessHandler := connect.NewUnaryHandler(
+		EnterprisePortalCodyServiceListCodyGatewayAccessProcedure,
+		svc.ListCodyGatewayAccess,
+		connect.WithSchema(enterprisePortalCodyServiceListCodyGatewayAccessMethodDescriptor),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/sourcegraph.enterpriseportal.cody.v1.EnterprisePortalCodyService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case EnterprisePortalCodyServiceGetCodyGatewayAccessProcedure:
 			enterprisePortalCodyServiceGetCodyGatewayAccessHandler.ServeHTTP(w, r)
+		case EnterprisePortalCodyServiceListCodyGatewayAccessProcedure:
+			enterprisePortalCodyServiceListCodyGatewayAccessHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -123,4 +150,8 @@ type UnimplementedEnterprisePortalCodyServiceHandler struct{}
 
 func (UnimplementedEnterprisePortalCodyServiceHandler) GetCodyGatewayAccess(context.Context, *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.GetCodyGatewayAccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sourcegraph.enterpriseportal.cody.v1.EnterprisePortalCodyService.GetCodyGatewayAccess is not implemented"))
+}
+
+func (UnimplementedEnterprisePortalCodyServiceHandler) ListCodyGatewayAccess(context.Context, *connect.Request[v1.ListCodyGatewayAccessRequest]) (*connect.Response[v1.ListCodyGatewayAccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sourcegraph.enterpriseportal.cody.v1.EnterprisePortalCodyService.ListCodyGatewayAccess is not implemented"))
 }

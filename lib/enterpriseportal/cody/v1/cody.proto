@@ -11,9 +11,12 @@ option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cod
 // DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
 service EnterprisePortalCodyService {
   // Retrieve Cody Gateway access granted to an Enterprise subscription.
-  // Properties may be inferred from the active license, or be defined in
-  // overrides.
   rpc GetCodyGatewayAccess(GetCodyGatewayAccessRequest) returns (GetCodyGatewayAccessResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // List all Cody Gateway access granted to any Enterprise subscription.
+  rpc ListCodyGatewayAccess(ListCodyGatewayAccessRequest) returns (ListCodyGatewayAccessResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -66,23 +69,57 @@ message CodyGatewayAccessToken {
   string token = 1;
 }
 
-message GetCodyGatewayAccessResponse {
+message CodyGatewayAccess {
+  // The external UUID-format identifier for the Enterprise subscription
+  // corresponding to this Cody Gateway access description.
+  string subscription_id = 1;
+
   // Whether or not a subscription has Cody Gateway access.
-  bool enabled = 1;
+  bool enabled = 2;
 
   // Rate limit for chat completions access, or null if not enabled.
-  optional CodyGatewayRateLimit chat_completions_rate_limit = 2;
+  optional CodyGatewayRateLimit chat_completions_rate_limit = 3;
   // Rate limit for code completions access, or null if not enabled.
-  optional CodyGatewayRateLimit code_completions_rate_limit = 3;
+  optional CodyGatewayRateLimit code_completions_rate_limit = 4;
   // Rate limit for embedding text chunks, or null if not enabled.
-  optional CodyGatewayRateLimit embeddings_rate_limt = 4;
+  optional CodyGatewayRateLimit embeddings_rate_limt = 5;
 
   // The most preferable Sourcegraph access token to use for authenticating as
   // the subscription holder with managed Sourcegraph services.
   // Null only if creating a token failed, for example when no active license
   // exists.
-  optional CodyGatewayAccessToken current_access_token = 5;
+  optional CodyGatewayAccessToken current_access_token = 6;
   // Available access tokens for authenticating as the subscription holder with
   // managed Sourcegraph services.
-  repeated CodyGatewayAccessToken access_tokens = 6;
+  repeated CodyGatewayAccessToken access_tokens = 7;
+}
+
+message GetCodyGatewayAccessResponse {
+  // The Cody Gateway access for the requested subscription.
+  //
+  // For classic licenses, properties may be inferred from the active license,
+  // or be defined in overrides.
+  CodyGatewayAccess access = 1;
+}
+
+message ListCodyGatewayAccessRequest {
+  // Clients use this field to specify the maximum number of results to be
+  // returned by the server. The server may further constrain the maximum number
+  // of results returned in a single page. If the page_size is 0, the server
+  // will decide the number of results to be returned.
+  //
+  // See pagination concepts from https://cloud.google.com/apis/design/design_patterns#list_pagination
+  int32 page_size = 1;
+  // The client uses this field to request a specific page of the list results.
+  //
+  // See pagination concepts from https://cloud.google.com/apis/design/design_patterns#list_pagination
+  string page_token = 2;
+}
+
+message ListCodyGatewayAccessResponse {
+  // This field represents the pagination token to retrieve the next page of
+  // results. If the value is "", it means no further results for the request.
+  string next_page_token = 1;
+  // The list of Cody Gateway access that matched the given query.
+  repeated CodyGatewayAccess accesses = 2;
 }

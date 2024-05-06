@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	EnterprisePortalCodyService_GetCodyGatewayAccess_FullMethodName = "/sourcegraph.enterpriseportal.cody.v1.EnterprisePortalCodyService/GetCodyGatewayAccess"
+	EnterprisePortalCodyService_GetCodyGatewayAccess_FullMethodName  = "/sourcegraph.enterpriseportal.cody.v1.EnterprisePortalCodyService/GetCodyGatewayAccess"
+	EnterprisePortalCodyService_ListCodyGatewayAccess_FullMethodName = "/sourcegraph.enterpriseportal.cody.v1.EnterprisePortalCodyService/ListCodyGatewayAccess"
 )
 
 // EnterprisePortalCodyServiceClient is the client API for EnterprisePortalCodyService service.
@@ -27,9 +28,9 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EnterprisePortalCodyServiceClient interface {
 	// Retrieve Cody Gateway access granted to an Enterprise subscription.
-	// Properties may be inferred from the active license, or be defined in
-	// overrides.
 	GetCodyGatewayAccess(ctx context.Context, in *GetCodyGatewayAccessRequest, opts ...grpc.CallOption) (*GetCodyGatewayAccessResponse, error)
+	// List all Cody Gateway access granted to any Enterprise subscription.
+	ListCodyGatewayAccess(ctx context.Context, in *ListCodyGatewayAccessRequest, opts ...grpc.CallOption) (*ListCodyGatewayAccessResponse, error)
 }
 
 type enterprisePortalCodyServiceClient struct {
@@ -49,14 +50,23 @@ func (c *enterprisePortalCodyServiceClient) GetCodyGatewayAccess(ctx context.Con
 	return out, nil
 }
 
+func (c *enterprisePortalCodyServiceClient) ListCodyGatewayAccess(ctx context.Context, in *ListCodyGatewayAccessRequest, opts ...grpc.CallOption) (*ListCodyGatewayAccessResponse, error) {
+	out := new(ListCodyGatewayAccessResponse)
+	err := c.cc.Invoke(ctx, EnterprisePortalCodyService_ListCodyGatewayAccess_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EnterprisePortalCodyServiceServer is the server API for EnterprisePortalCodyService service.
 // All implementations must embed UnimplementedEnterprisePortalCodyServiceServer
 // for forward compatibility
 type EnterprisePortalCodyServiceServer interface {
 	// Retrieve Cody Gateway access granted to an Enterprise subscription.
-	// Properties may be inferred from the active license, or be defined in
-	// overrides.
 	GetCodyGatewayAccess(context.Context, *GetCodyGatewayAccessRequest) (*GetCodyGatewayAccessResponse, error)
+	// List all Cody Gateway access granted to any Enterprise subscription.
+	ListCodyGatewayAccess(context.Context, *ListCodyGatewayAccessRequest) (*ListCodyGatewayAccessResponse, error)
 	mustEmbedUnimplementedEnterprisePortalCodyServiceServer()
 }
 
@@ -66,6 +76,9 @@ type UnimplementedEnterprisePortalCodyServiceServer struct {
 
 func (UnimplementedEnterprisePortalCodyServiceServer) GetCodyGatewayAccess(context.Context, *GetCodyGatewayAccessRequest) (*GetCodyGatewayAccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCodyGatewayAccess not implemented")
+}
+func (UnimplementedEnterprisePortalCodyServiceServer) ListCodyGatewayAccess(context.Context, *ListCodyGatewayAccessRequest) (*ListCodyGatewayAccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListCodyGatewayAccess not implemented")
 }
 func (UnimplementedEnterprisePortalCodyServiceServer) mustEmbedUnimplementedEnterprisePortalCodyServiceServer() {
 }
@@ -99,6 +112,24 @@ func _EnterprisePortalCodyService_GetCodyGatewayAccess_Handler(srv interface{}, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EnterprisePortalCodyService_ListCodyGatewayAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCodyGatewayAccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EnterprisePortalCodyServiceServer).ListCodyGatewayAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EnterprisePortalCodyService_ListCodyGatewayAccess_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EnterprisePortalCodyServiceServer).ListCodyGatewayAccess(ctx, req.(*ListCodyGatewayAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EnterprisePortalCodyService_ServiceDesc is the grpc.ServiceDesc for EnterprisePortalCodyService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -109,6 +140,10 @@ var EnterprisePortalCodyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCodyGatewayAccess",
 			Handler:    _EnterprisePortalCodyService_GetCodyGatewayAccess_Handler,
+		},
+		{
+			MethodName: "ListCodyGatewayAccess",
+			Handler:    _EnterprisePortalCodyService_ListCodyGatewayAccess_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
