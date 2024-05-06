@@ -11,11 +11,6 @@
 
     export let data: PageData
 
-    // The following props control the look and file of the file page when used
-    // in a preview context.
-    export let embedded = false
-    export let disableCodeIntel = embedded
-
     export const snapshot: Snapshot = {
         capture() {
             return {
@@ -43,7 +38,7 @@
 {#if data.type === 'DiffView'}
     <DiffView {data} />
 {:else}
-    <FileView bind:this={fileView} {data} {embedded} {disableCodeIntel}>
+    <FileView bind:this={fileView} {data}>
         <svelte:fragment slot="actions">
             <slot name="actions" />
         </svelte:fragment>

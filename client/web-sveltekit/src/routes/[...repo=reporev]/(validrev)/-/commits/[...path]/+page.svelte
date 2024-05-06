@@ -4,8 +4,10 @@
     import { navigating } from '$app/stores'
     import Commit from '$lib/Commit.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
-    import { Alert } from '$lib/wildcard'
+    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import { Alert, Badge } from '$lib/wildcard'
 
     import type { PageData, Snapshot } from './$types'
     import type { CommitsPage_GitCommitConnection } from './page.gql'
@@ -46,21 +48,54 @@
     $: if ($commitsQuery?.data?.repository?.commit?.ancestors) {
         commits = $commitsQuery.data.repository.commit.ancestors
     }
+    $: pageTitle = (() => {
+        const parts = ['Commits']
+        if (data.path) {
+            parts.push(data.path)
+        }
+        parts.push(data.displayRepoName, 'Sourcegraph')
+        return parts.join(' - ')
+    })()
 </script>
 
 <svelte:head>
-    <title>Commits - {data.displayRepoName} - Sourcegraph</title>
+    <title>{pageTitle}</title>
 </svelte:head>
 
+{#if data.path}
+    <h2>Commits in <code>{data.path}</code></h2>
+{/if}
 <section>
-    {#if data.path}
-        <h2>Commits in <code>{data.path}</code></h2>
-    {/if}
     <Scroller bind:this={scroller} margin={600} on:more={fetchMore}>
         {#if !$commitsQuery.restoring && commits}
-            <ul>
+            <ul class="commits">
                 {#each commits.nodes as commit (commit.canonicalURL)}
-                    <li><Commit {commit} /></li>
+                    <li>
+                        <div class="commit">
+                            <Commit {commit} />
+                        </div>
+                        <ul class="actions">
+                            <li>
+                                <Badge variant="link">
+                                    <a href={commit.canonicalURL} title="View commit">{commit.abbreviatedOID}</a>
+                                </Badge>
+                            </li>
+                            <li><a href="/{data.repoName}@{commit.oid}">Browse files</a></li>
+                            {#each commit.externalURLs as { url, serviceKind }}
+                                <li>
+                                    <a href={url}>
+                                        View on
+                                        {#if serviceKind}
+                                            <CodeHostIcon repository={serviceKind} disableTooltip />
+                                            {getHumanNameForCodeHost(serviceKind)}
+                                        {:else}
+                                            code host
+                                        {/if}
+                                    </a>
+                                </li>
+                            {/each}
+                        </ul>
+                    </li>
                 {:else}
                     <li>
                         <Alert variant="info">No commits found</Alert>
@@ -69,11 +104,11 @@
             </ul>
         {/if}
         {#if $commitsQuery.fetching || $commitsQuery.restoring}
-            <div>
+            <div class="footer">
                 <LoadingSpinner />
             </div>
         {:else if !$commitsQuery.fetching && $commitsQuery.error}
-            <div>
+            <div class="footer">
                 <Alert variant="danger">
                     Unable to fetch commits: {$commitsQuery.error.message}
                 </Alert>
@@ -84,37 +119,74 @@
 
 <style lang="scss">
     section {
-        flex: 1;
-        min-height: 0;
         overflow: hidden;
     }
 
+    ul {
+        margin: 0;
+        padding: 0;
+    }
+
     h2,
-    ul,
-    div {
-        padding: 1rem;
+    ul.commits,
+    .footer {
         max-width: var(--viewport-xl);
+        width: 100%;
         margin: 0 auto;
+        padding: 0.5rem;
+
+        @media (--sm-breakpoint-up) {
+            padding: 1rem;
+        }
     }
 
     ul {
         list-style: none;
-        --avatar-size: 2.5rem;
     }
 
-    li {
-        border-bottom: 1px solid var(--border-color);
-        padding: 0.5rem 0;
+    ul.commits {
+        --avatar-size: 2.5rem;
 
-        &:last-child {
-            border: none;
+        > li {
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            padding: 0.5rem 0;
+            gap: 1rem;
+
+            @media (--xs-breakpoint-down) {
+                display: block;
+
+                .actions {
+                    display: flex;
+                    gap: 0.5rem;
+                    margin-top: 0.5rem;
+
+                    li:not(:last-child)::after {
+                        content: '•';
+                        padding-left: 0.5rem;
+                        color: var(--text-muted);
+                    }
+                }
+            }
+
+            .commit {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .actions {
+                flex-shrink: 0;
+            }
+
+            &:last-child {
+                border: none;
+            }
         }
     }
 
-    div {
+    .footer {
         &:not(:first-child) {
             border-top: 1px solid var(--border-color);
         }
-        padding: 0.5rem 0;
     }
 </style>

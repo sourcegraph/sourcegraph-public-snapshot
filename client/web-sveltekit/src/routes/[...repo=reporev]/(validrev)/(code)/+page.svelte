@@ -21,6 +21,10 @@
     })
 </script>
 
+<svelte:head>
+    <title>{data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
+
 <h3 class="header">
     <div class="sidebar-button" class:hidden={$sidebarOpen}>
         <SidebarToggleButton />
