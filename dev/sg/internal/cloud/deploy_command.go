@@ -3,7 +3,6 @@ package cloud
 import (
 	"cmp"
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -18,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+var ErrDeploymentExists error = errors.New("deployment already exists")
 
 var DeployEphemeralCommand = cli.Command{
 	Name:        "deploy",
@@ -72,15 +73,26 @@ func createDeploymentForVersion(ctx context.Context, name, version string) error
 	}
 
 	cloudEmoji := "☁️"
-	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Creating deployment %q for version %q", name, version))
-
+	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Starting deployment %q for version %q", name, version))
 	spec := NewDeploymentSpec(
 		sanitizeInstanceName(name),
 		version,
 	)
-	inst, err := cloudClient.CreateInstance(ctx, spec)
+
+	inst, err := cloudClient.GetInstance(ctx, spec.Name)
 	if err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "deployment failed: %v", err))
+		if !errors.Is(err, ErrInstanceNotFound) {
+			return errors.Wrapf(err, "failed to determine if instance %q already exists", spec.Name)
+		}
+	} else {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Cannot deploy %q", err))
+		// Deployment exists
+		return ErrDeploymentExists
+	}
+
+	inst, err = cloudClient.CreateInstance(ctx, spec)
+	if err != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment failed: %v", err))
 		return errors.Wrapf(err, "failed to deploy version %v", version)
 	}
 
@@ -89,48 +101,18 @@ func createDeploymentForVersion(ctx context.Context, name, version string) error
 	return nil
 }
 
-func watchBuild(ctx context.Context, bkClient *bk.Client, build *buildkite.Build, tickEverySec int) (*buildkite.Build, error) {
-	pipeline := pointers.DerefZero(build.Pipeline.Slug)
-	number := fmt.Sprintf("%d", pointers.DerefZero(build.Number))
-	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Waiting for build %s to complete", number))
-
-	t := time.Duration(tickEverySec) * time.Second
-	ticker := time.NewTicker(t)
-	defer ticker.Stop()
-
-	var buildError error
-tickLoop:
-	for range ticker.C {
-		build, buildError = bkClient.GetBuildByNumber(ctx, pipeline, number)
-		if buildError != nil {
-			break
-		}
-
-		state := pointers.DerefZero(build.State)
-
-		switch state {
-		case "success":
-			pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %s completed", number))
-			break tickLoop
-		case "failed":
-			pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Build %s failed", number))
-			buildError = errors.Newf("build %s failed", number)
-			break tickLoop
-		default:
-			pending.Updatef("Build %s still in progress ...", number)
-		}
-	}
-
-	return build, buildError
-}
-
-func triggerEphemeralBuild(ctx context.Context, client *bk.Client, currRepo *repo.GitRepo) (*buildkite.Build, error) {
+func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
 	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote", currRepo.Branch))
 	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "branch is out of date with remote"))
 		return nil, err
 	} else if isOutOfSync {
 		return nil, ErrBranchOutOfSync
+	}
+
+	client, err := bk.NewClient(ctx, std.Out)
+	if err != nil {
+		return nil, err
 	}
 
 	pending.Updatef("Starting cloud ephemeral build for %q on commit %q", currRepo.Branch, currRepo.Ref)
@@ -142,24 +124,6 @@ func triggerEphemeralBuild(ctx context.Context, client *bk.Client, currRepo *rep
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %d created. Build progress can be viewed at %s", pointers.DerefZero(build.Number), pointers.DerefZero(build.WebURL)))
 
 	return build, nil
-}
-
-func triggerAndWaitEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
-	client, err := bk.NewClient(ctx, std.Out)
-	if err != nil {
-		return nil, err
-	}
-	build, err := triggerEphemeralBuild(ctx, client, currRepo)
-	if err != nil {
-		if err == ErrBranchOutOfSync {
-			std.Out.WriteWarningf(`Your branch %q is out of sync with remote.
-
-Please make sure you have either pushed or pulled the latest changes before trying again`, currRepo.Branch)
-		}
-		return nil, err
-	}
-
-	return watchBuild(ctx, client, build, 30)
 }
 
 func deployCloudEphemeral(ctx *cli.Context) error {
@@ -180,11 +144,18 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	version := ctx.String("version")
 	// if a version is specified we do not build anything and just trigger the cloud deployment
 	if version == "" {
-		build, err := triggerAndWaitEphemeralBuild(ctx.Context, currRepo)
+		build, err := triggerEphemeralBuild(ctx.Context, currRepo)
 		if err != nil {
-			std.Out.WriteFailuref("Cannot start deployment as there was problem with the ephemeral build")
+			if err == ErrBranchOutOfSync {
+				std.Out.WriteWarningf(`Your branch %q is out of sync with remote.
+
+Please make sure you have either pushed or pulled the latest changes before trying again`, currRepo.Branch)
+			} else {
+				std.Out.WriteFailuref("Cannot start deployment as there was problem with the ephemeral build")
+			}
 			return errors.Wrapf(err, "cloud ephemeral deployment failure")
 		}
+
 		version, err = determineVersion(build, ctx.String("tag"))
 		if err != nil {
 			return err
@@ -192,5 +163,15 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	}
 
 	name := cmp.Or(ctx.String("name"), currRepo.Branch)
-	return createDeploymentForVersion(ctx.Context, name, version)
+	err = createDeploymentForVersion(ctx.Context, name, version)
+	if err != nil {
+		if errors.Is(err, ErrDeploymentExists) {
+			std.Out.WriteWarningf("Cannot create a new deployment as a deployment with name %q already exists", name)
+			std.Out.WriteSuggestionf(`You might want to try one of the following:
+- Specify a different deployment name with the --name flag
+- Upgrade the current deployment instead by using the upgrade command instead of deploy`)
+		}
+		return err
+	}
+	return nil
 }
