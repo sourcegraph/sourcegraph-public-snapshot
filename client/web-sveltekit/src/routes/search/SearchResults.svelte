@@ -146,10 +146,6 @@
     }
 </script>
 
-<svelte:head>
-    <title>{queryFromURL} - Sourcegraph</title>
-</svelte:head>
-
 <GlobalHeaderPortal>
     <div class="search-header">
         <SearchInput {queryState} size="compat" onSubmit={handleSubmit} />
