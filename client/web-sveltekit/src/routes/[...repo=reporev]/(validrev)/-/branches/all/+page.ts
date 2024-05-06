@@ -1,29 +1,38 @@
-import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
+import { getGraphQLClient, infinityQuery } from '$lib/graphql'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
 import { AllBranchesPage_BranchesQuery } from './page.gql'
 
-export const load: PageLoad = ({ params }) => {
+const PAGE_SIZE = 50
+
+export const load: PageLoad = ({ params, url }) => {
     const client = getGraphQLClient()
     const { repoName } = parseRepoRevision(params.repo)
+    const query = url.searchParams.get('query') ?? ''
 
     return {
-        branches: client
-            .query(AllBranchesPage_BranchesQuery, {
+        query,
+        branchesQuery: infinityQuery({
+            client,
+            query: AllBranchesPage_BranchesQuery,
+            variables: {
                 repoName,
-                first: 20,
+                first: PAGE_SIZE,
                 withBehindAhead: true,
-            })
-            .then(
-                mapOrThrow(result => {
-                    if (!result.data?.repository) {
-                        // This page will never render when the repository is not found.
-                        // The (validrev) data loader will render an error page instead.
-                        throw new Error('Expected Repository')
+                query,
+            },
+            nextVariables: previousResult => {
+                if (previousResult?.data?.repository?.branches?.pageInfo?.hasNextPage) {
+                    return {
+                        first: previousResult.data.repository.branches.nodes.length + PAGE_SIZE,
                     }
-                    return result.data.repository.branches
-                })
-            ),
+                }
+                return undefined
+            },
+            combine: (_previousResult, nextResult) => {
+                return nextResult
+            },
+        }),
     }
 }

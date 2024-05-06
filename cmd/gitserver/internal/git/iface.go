@@ -53,7 +53,6 @@ type GitBackend interface {
 	// paths to include in the archive. If empty, all paths are included.
 	//
 	// If the commit does not exist, a RevisionNotFoundError is returned.
-	// If any path does not exist, a os.PathError is returned.
 	ArchiveReader(ctx context.Context, format ArchiveFormat, treeish string, paths []string) (io.ReadCloser, error)
 	// ResolveRevision resolves the given revspec to a commit ID.
 	// I.e., HEAD, deadbeefdeadbeefdeadbeefdeadbeef, or refs/heads/main.
@@ -70,7 +69,6 @@ type GitBackend interface {
 	// If two resources are created at the same timestamp, the records are ordered
 	// alphabetically.
 	ListRefs(ctx context.Context, opt ListRefsOpts) (RefIterator, error)
-
 	// RevAtTime returns the OID of the nearest ancestor of `spec` that has a
 	// commit time before the given time. To simplify the logic, it only
 	// follows the first parent of merge commits to linearize the commit
@@ -80,12 +78,61 @@ type GitBackend interface {
 	// If no commit exists in the history of revspec before time, an empty
 	// commitID is returned.
 	RevAtTime(ctx context.Context, revspec string, time time.Time) (api.CommitID, error)
+	// RawDiff returns the raw git diff for the given range.
+	// Diffs returned from this function will have the following settings applied:
+	// - 3 lines of context
+	// - No a/ b/ prefixes
+	// - Rename detection
+	// If either base or head don't exist, a RevisionNotFoundError is returned.
+	RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, paths ...string) (io.ReadCloser, error)
+	// ContributorCounts returns the number of commits per contributor in the
+	// set of commits specified by the options.
+	// Aggregations are done by email address.
+	// If range does not exist, a RevisionNotFoundError is returned.
+	ContributorCounts(ctx context.Context, opt ContributorCountsOpts) ([]*gitdomain.ContributorCount, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
 	// remove this method.
 	Exec(ctx context.Context, args ...string) (io.ReadCloser, error)
+
+	// FirstEverCommit returns the first commit ever made to the repository.
+	//
+	// If the repository is empty, a RevisionNotFoundError is returned (as the
+	// "HEAD" ref does not exist).
+	FirstEverCommit(ctx context.Context) (api.CommitID, error)
+
+	// BehindAhead returns the behind/ahead commit counts information for the symmetric difference left...right (both Git
+	// revspecs).
+	//
+	// Behind is the number of commits that are solely reachable in "left" but not "right".
+	// Ahead is the number of commits that are solely reachable in "right" but not "left".
+	//
+	//  For the example, given the graph below, BehindAhead("A", "B") would return {Behind: 3, Ahead: 2}.
+	//
+	//	     y---b---b  branch B
+	//	    / \ /
+	//	   /   .
+	//	  /   / \
+	//	 o---x---a---a---a  branch A
+	//
+	// If either left or right are the empty string (""), the HEAD commit is implicitly used.
+	//
+	// If one of the two given revspecs does not exist, a RevisionNotFoundError
+	// is returned.
+	BehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error)
 }
+
+type GitDiffComparisonType int
+
+const (
+	// Corresponds to the BASE...HEAD syntax that returns any commits that are not
+	// in both BASE and HEAD.
+	GitDiffComparisonTypeIntersection GitDiffComparisonType = iota
+	// Corresponds to the BASE..HEAD syntax that only returns any commits that are
+	// in HEAD but not in BASE.
+	GitDiffComparisonTypeOnlyInHead
+)
 
 // GitConfigBackend provides methods for interacting with git configuration.
 type GitConfigBackend interface {
@@ -157,4 +204,18 @@ type RefIterator interface {
 	Next() (*gitdomain.Ref, error)
 	// Close releases resources associated with the iterator.
 	Close() error
+}
+
+// ContributorCountsOpts are options for the ContributorCounts method.
+type ContributorCountsOpts struct {
+	// If set, only count commits that are in the given range.
+	// Range can contain:
+	// - A commit hash or ref name, which includes that commit/ref and all of the parents
+	// - A range of two commits/hashes, separated by either .. or ... notation: A..B, A...B
+	Range string
+	// If set, only count commits that are after the given time.
+	After time.Time
+	// If set, only count commits that are in the given path. Can be a pathspec
+	// (e.g., "foo/bar/").
+	Path string
 }

@@ -7,7 +7,6 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/internal/handlerutil",
-        "//internal/conf",
         "//internal/env",
         "//internal/trace",
         "@com_github_inconshreveable_log15//:log15",

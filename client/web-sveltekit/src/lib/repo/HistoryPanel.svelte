@@ -5,24 +5,28 @@
 </script>
 
 <script lang="ts">
-    import { mdiClose } from '@mdi/js'
+    import { mdiFileDocumentOutline, mdiNotebookOutline } from '@mdi/js'
     import { tick } from 'svelte'
 
     import { page } from '$app/stores'
-    import { scrollIntoView } from '$lib/actions'
     import Avatar from '$lib/Avatar.svelte'
+    import { SourcegraphURL } from '$lib/common'
+    import { scrollIntoViewOnMount } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
+    import { replaceRevisionInURL } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
+    import { Badge } from '$lib/wildcard'
 
     import type { HistoryPanel_HistoryConnection } from './HistoryPanel.gql'
 
     export let history: HistoryPanel_HistoryConnection | null
     export let fetchMore: (afterCursor: string | null) => void
     export let loading: boolean = false
-    export let enableInlineDiffs: boolean
+    export let enableInlineDiff: boolean = false
+    export let enableViewAtCommit: boolean = false
 
     export function capture(): Capture {
         return {
@@ -40,12 +44,6 @@
         }
     }
 
-    function getClearURL(): string {
-        const url = new URL($page.url ?? window.location)
-        url.searchParams.delete('rev')
-        return url.href
-    }
-
     function loadMore() {
         if (history?.pageInfo.hasNextPage) {
             fetchMore(history.pageInfo.endCursor)
@@ -59,40 +57,52 @@
         selectedRev &&
         history &&
         history.nodes.length > 0 &&
-        !history.nodes.some(commit => commit.abbreviatedOID === selectedRev)
+        !history.nodes.some(commit => commit.abbreviatedOID === selectedRev) &&
+        history.pageInfo.hasNextPage
     ) {
         loadMore()
     }
 
     $: selectedRev = $page.url?.searchParams.get('rev')
-    $: clearURL = getClearURL()
 </script>
 
 <Scroller bind:this={scroller} margin={200} on:more={loadMore}>
     {#if history}
         <table>
             {#each history.nodes as commit (commit.id)}
-                {@const selected = commit.abbreviatedOID === selectedRev}
-                <tr class:selected use:scrollIntoView={selected}>
+                {@const selected = commit.abbreviatedOID === selectedRev || commit.oid === selectedRev}
+                <tr class:selected use:scrollIntoViewOnMount={selected}>
                     <td>
-                        <Avatar avatar={commit.author.person} />&nbsp;
-                        {commit.author.person.displayName}
+                        <Badge variant="link"><a href={commit.canonicalURL}>{commit.abbreviatedOID}</a></Badge>
                     </td>
                     <td class="subject">
-                        {#if enableInlineDiffs}
-                            <a href="?rev={commit.abbreviatedOID}">{commit.subject}</a>
+                        {#if enableInlineDiff}
+                            <a href="?rev={commit.oid}&diff=1">{commit.subject}</a>
                         {:else}
                             {commit.subject}
                         {/if}
                     </td>
-                    <td><Timestamp date={new Date(commit.author.date)} strict /></td>
-                    <td><a href={commit.canonicalURL}>{commit.abbreviatedOID}</a></td>
                     <td>
-                        {#if selected}
-                            <Tooltip tooltip="Hide comparison">
-                                <a href={clearURL}><Icon svgPath={mdiClose} inline /></a>
+                        <Avatar avatar={commit.author.person} />&nbsp;
+                        {commit.author.person.displayName}
+                    </td>
+                    <td><Timestamp date={new Date(commit.author.date)} strict /></td>
+                    {#if enableViewAtCommit}
+                        <td>
+                            <Tooltip tooltip="View at commit">
+                                <a href="?rev={commit.oid}"><Icon svgPath={mdiFileDocumentOutline} inline /></a>
                             </Tooltip>
-                        {/if}
+                        </td>
+                    {/if}
+                    <td>
+                        <Tooltip tooltip="Browse files at commit">
+                            <a
+                                href={replaceRevisionInURL(
+                                    SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString(),
+                                    commit.oid
+                                )}><Icon svgPath={mdiNotebookOutline} inline /></a
+                            >
+                        </Tooltip>
                     </td>
                 </tr>
             {/each}
@@ -110,8 +120,12 @@
     }
 
     td {
-        padding: 0.25rem;
+        padding: 0.5rem 1rem;
         white-space: nowrap;
+
+        :global([data-avatar]) {
+            vertical-align: middle;
+        }
 
         &.subject {
             white-space: normal;
@@ -119,10 +133,18 @@
     }
 
     tr {
+        --icon-fill-color: var(--header-icon-color);
         border-bottom: 1px solid var(--border-color);
 
         &.selected {
-            background-color: var(--color-bg-2);
+            --icon-fill-color: inherit;
+
+            color: var(--light-text);
+            background-color: var(--primary);
+
+            a {
+                color: inherit;
+            }
         }
     }
 </style>

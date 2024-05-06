@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"fmt"
-	"math"
 	"sort"
 	"strings"
 	"testing"
@@ -207,7 +206,7 @@ func TestGetUploads(t *testing.T) {
 			runTest(testCase, 0, 0)
 		} else {
 			for lo := range n {
-				if numErrors := runTest(testCase, lo, int(math.Min(float64(lo)+3, float64(n)))); numErrors > 0 {
+				if numErrors := runTest(testCase, lo, min(lo+3, n)); numErrors > 0 {
 					break
 				}
 			}

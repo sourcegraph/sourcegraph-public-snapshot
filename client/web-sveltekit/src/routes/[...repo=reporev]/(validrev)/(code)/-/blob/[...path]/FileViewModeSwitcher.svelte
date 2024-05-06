@@ -82,7 +82,6 @@
         --border-width: 1px;
 
         display: inline-flex;
-        gap: 0.5rem;
         background-color: var(--secondary-4);
         border-radius: var(--border-radius);
         align-items: center;
@@ -92,10 +91,11 @@
     [role='radio'] {
         border: var(--border-width) solid transparent;
         cursor: pointer;
-        padding: 0.25rem 0.5rem;
+        padding: 0.25rem 0.75rem;
         border-radius: var(--border-radius);
-        color: var(--text-muted);
+        color: var(--text-body);
         margin: calc(var(--border-width) * -1);
+        user-select: none;
 
         &:focus-visible {
             box-shadow: 0 0 0 2px var(--primary-2);

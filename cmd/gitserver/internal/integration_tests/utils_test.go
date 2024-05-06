@@ -46,6 +46,7 @@ var root string
 var (
 	testGitserverClient gitserver.Client
 	GitserverAddresses  []string
+	testServer          *server.Server
 )
 
 func InitGitserver() {
@@ -119,7 +120,9 @@ func InitGitserver() {
 	})
 
 	grpcServer := defaults.NewServer(logger)
-	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s, &server.GRPCServerConfig{
+		ExhaustiveRequestLoggingEnabled: true,
+	}))
 	handler := internalgrpc.MultiplexHandlers(grpcServer, http.NotFoundHandler())
 
 	srv := &http.Server{
@@ -135,6 +138,7 @@ func InitGitserver() {
 	source := gitserver.NewTestClientSource(&t, []string{serverAddress})
 	testGitserverClient = gitserver.NewTestClient(&t).WithClientSource(source)
 	GitserverAddresses = []string{serverAddress}
+	testServer = s
 }
 
 // MakeGitRepository calls initGitRepository to create a new Git repository and returns a handle to
@@ -143,11 +147,8 @@ func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 	t.Helper()
 	dir := InitGitRepository(t, cmds...)
 	repo := api.RepoName(filepath.Base(dir))
-	if resp, err := testGitserverClient.RequestRepoUpdate(context.Background(), repo); err != nil {
-		t.Fatal(err)
-	} else if resp.Error != "" {
-		t.Fatal(resp.Error)
-	}
+	_, _, err := testServer.FetchRepository(context.Background(), repo)
+	require.NoError(t, err)
 	return repo
 }
 

@@ -5,6 +5,7 @@ import (
 	"io"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -345,7 +346,7 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 		require.Error(t, err)
 		require.True(t, errors.Is(err, context.Canceled), "unexpected error: %v", err)
 
-		require.NoError(t, it.Close())
+		require.True(t, errors.Is(it.Close(), context.Canceled), "unexpected error: %v", err)
 	})
 
 	// For now, we don't want to error for this case.
@@ -398,6 +399,8 @@ func TestGitCLIBackend_ListRefs_GoroutineLeak(t *testing.T) {
 
 	// Don't complete reading all the output, instead, bail and close the reader.
 	require.NoError(t, it.Close())
+
+	time.Sleep(time.Millisecond)
 
 	// Expect no leaked routines.
 	routinesAfter := runtime.NumGoroutine()

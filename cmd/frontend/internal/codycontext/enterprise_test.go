@@ -3,17 +3,23 @@ package codycontext
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewEnterpriseFilter(t *testing.T) {
@@ -22,7 +28,6 @@ func TestNewEnterpriseFilter(t *testing.T) {
 		conf.Mock(nil)
 		includeByDefault = originalIncludeByDefault
 	})
-	logger := logtest.Scoped(t)
 
 	_, file, _, ok := runtime.Caller(0)
 	require.Equal(t, true, ok)
@@ -74,25 +79,58 @@ func TestNewEnterpriseFilter(t *testing.T) {
 		return result
 	}
 
+	newFF := func(v bool) *featureflag.FeatureFlag {
+		return &featureflag.FeatureFlag{
+			Name:      "cody-context-filters-enabled",
+			Bool:      &featureflag.FeatureFlagBool{Value: v},
+			Rollout:   nil,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			DeletedAt: nil,
+		}
+	}
+	featureFlagValues := []*featureflag.FeatureFlag{newFF(true), newFF(false), nil}
+
 	for _, tt := range data.TestCases {
-		t.Run(tt.Name, func(t *testing.T) {
-			includeByDefault = tt.IncludeByDefault
-			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					CodyContextFilters: tt.Ccf,
-				},
-			})
-
-			f := newEnterpriseFilter(logger)
-
-			var repos []types.RepoIDName
-			for _, r := range tt.Repos {
-				repos = append(repos, types.RepoIDName{ID: r.Id, Name: r.Name})
+		for _, ff := range featureFlagValues {
+			name := tt.Name
+			if ff != nil {
+				name = name + fmt.Sprintf(" (%q feature flag value: %t)", ff.Name, ff.Bool.Value)
 			}
+			t.Run(name, func(t *testing.T) {
+				includeByDefault = tt.IncludeByDefault
+				conf.Mock(&conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						CodyContextFilters: tt.Ccf,
+					},
+				})
 
-			actualIncludedRepos, filter, _ := f.GetFilter(context.Background(), normalizeRepos(tt.Repos))
-			require.Equal(t, normalizeRepos(tt.IncludedRepos), actualIncludedRepos)
-			require.Equal(t, normalizeFileChunks(tt.IncludedFileChunks), filter(normalizeFileChunks(tt.FileChunks)))
-		})
+				// TODO: remove feature flag mocking after `CodyContextFilters` support is added to the IDE clients.
+				featureFlags := dbmocks.NewMockFeatureFlagStore()
+				if ff != nil {
+					featureFlags.GetFeatureFlagFunc.SetDefaultReturn(ff, nil)
+				}
+				db := dbmocks.NewMockDB()
+				db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+
+				f := newEnterpriseFilter(logtest.Scoped(t), db)
+				includedRepos, matcher, _ := f.getMatcher(context.Background(), normalizeRepos(tt.Repos))
+				includedFileChunks := make([]fileChunk, 0, len(tt.FileChunks))
+				for _, chunk := range tt.FileChunks {
+					if matcher(chunk.Repo.Id, chunk.Path) {
+						includedFileChunks = append(includedFileChunks, chunk)
+					}
+				}
+
+				if ff != nil && ff.Bool.Value {
+					require.Equal(t, normalizeRepos(tt.IncludedRepos), includedRepos)
+					require.Equal(t, normalizeFileChunks(tt.IncludedFileChunks), normalizeFileChunks(includedFileChunks))
+				} else {
+					// If feature flag is not set or is set to false, the Cody context filters are disabled.
+					require.Equal(t, normalizeRepos(tt.Repos), includedRepos)
+					require.Equal(t, normalizeFileChunks(tt.FileChunks), normalizeFileChunks(includedFileChunks))
+				}
+			})
+		}
 	}
 }

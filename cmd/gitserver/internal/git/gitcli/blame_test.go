@@ -119,7 +119,7 @@ func TestGitCLIBackend_Blame(t *testing.T) {
 		require.Error(t, err)
 		require.True(t, errors.Is(err, context.Canceled), "unexpected error: %v", err)
 
-		require.NoError(t, hr.Close())
+		require.True(t, errors.Is(hr.Close(), context.Canceled), "unexpected error: %v", err)
 	})
 
 	t.Run("commit not found", func(t *testing.T) {

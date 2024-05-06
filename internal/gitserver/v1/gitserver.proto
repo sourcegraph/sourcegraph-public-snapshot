@@ -2,10 +2,44 @@ syntax = "proto3";
 
 package gitserver.v1;
 
-import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
+
+// GitserverRepositoryService exposes operations to be performed by repo-updater.
+// These methods are not meant to be used by other services, and should be considered
+// an implementation detail of gitserver.
+service GitserverRepositoryService {
+  // DeleteRepository deletes a repository on disk if it exists.
+  // If it doesn't, an error is returned.
+  rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse) {}
+  // FetchRepository fetches a repository from a remote. If the repository is not
+  // yet cloned, it will be cloned. Otherwise, it will be updated.
+  rpc FetchRepository(FetchRepositoryRequest) returns (FetchRepositoryResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+}
+
+message DeleteRepositoryRequest {
+  // repo_name is the name of the repo to delete.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+}
+
+message DeleteRepositoryResponse {}
+
+message FetchRepositoryRequest {
+  // repo_name is the name of the repo to fetch.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+}
+
+message FetchRepositoryResponse {
+  // last_fetched is the time the repository was last fetched.
+  google.protobuf.Timestamp last_fetched = 1;
+  // last_changed is the time the repository was last changed.
+  google.protobuf.Timestamp last_changed = 2;
+}
 
 service GitserverService {
   rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
@@ -33,8 +67,8 @@ service GitserverService {
   // currently not filter parts of the archive, so this would be considered
   // leaking information.
   //
-  // If the given treeish does not exist, an error with a
-  // RevisionNotFoundPayload is returned.
+  // If the given treeish does not exist, an error with a RevisionNotFoundPayload
+  // is returned.
   //
   // If the given repo is not cloned, it will be enqueued for cloning and a
   // NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -43,10 +77,6 @@ service GitserverService {
   }
   rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
-  rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {
-    option idempotency_level = IDEMPOTENT;
   }
   rpc IsPerforcePathCloneable(IsPerforcePathCloneableRequest) returns (IsPerforcePathCloneableResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -82,10 +112,7 @@ service GitserverService {
   }
   // Blame runs a blame operation on the specified file. It returns a stream of
   // hunks as they are found. The --incremental flag is used on the git CLI
-  // level to achieve this behavior. The endpoint will verify that the user is
-  // allowed to blame the given file if subrepo permissions are enabled for the
-  // repo. If access is denied, an error with a UnauthorizedPayload in the
-  // details is returned.
+  // level to achieve this behavior.
   //
   // If the given repo is not cloned, it will be enqueued for cloning and a
   // NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -102,11 +129,6 @@ service GitserverService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // ReadFile gets a file from the repo ODB and streams the contents back.
-  // The endpoint will verify that the user is allowed to view the given file
-  // if subrepo permissions are enabled for the repo. If access is denied, an
-  // error with a UnauthorizedPayload in the details is returned. If the path
-  // points to a submodule, no error is returned and an empty file is streamed
-  // back.
   //
   // If the given repo is not cloned, it will be enqueued for cloning and a
   // NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -114,11 +136,6 @@ service GitserverService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // GetCommit gets a commit from the repo ODB.
-  // The endpoint will verify that the user is allowed to view the given commit.
-  //
-  // If subrepo permissions are enabled for the repo. If access is denied, an
-  // error with a RevisionNotFoundPayload is returned, to not leak existence of
-  // the commit.
   //
   // If the commit is not found, an error with a RevisionNotFoundPayload is
   // returned.
@@ -177,6 +194,117 @@ service GitserverService {
   rpc RevAtTime(RevAtTimeRequest) returns (RevAtTimeResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // RawDiff returns the raw git diff for the given range.
+  // Diffs returned from this function will have the following settings applied:
+  // - 3 lines of context
+  // - No a/ b/ prefixes
+  // - Rename detection
+  //
+  // If either base or head are not found, an error with a RevisionNotFoundPayload
+  // is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc RawDiff(RawDiffRequest) returns (stream RawDiffResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // ContributorCounts returns the number of commits grouped by commit author.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc ContributorCounts(ContributorCountsRequest) returns (ContributorCountsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // FirstEverCommit returns the first commit ever made to the repository.
+  //
+  // If the given repository is empty, an error with a RevisionNotFoundPayload is
+  // returned.
+  rpc FirstEverCommit(FirstEverCommitRequest) returns (FirstEverCommitResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // BehindAhead returns the behind/ahead commit counts information for the symmetric difference left...right (both Git
+  // revspecs).
+  //
+  // Behind is the number of commits that are solely reachable in "left" but not "right".
+  // Ahead is the number of commits that are solely reachable in "right" but not "left".
+  //
+  //  For the example, given the graph below, BehindAhead("A", "B") would return {Behind: 3, Ahead: 2}.
+  //
+  //	     y---b---b  branch B
+  //	    / \ /
+  //	   /   .
+  //	  /   / \
+  //	 o---x---a---a---a  branch A
+  //
+  // If either left or right are the empty string (""), the HEAD commit is implicitly used.
+  //
+  // If one of the two given revspecs does not exist, an error with a RevisionNotFoundPayload is
+  // is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  rpc BehindAhead(BehindAheadRequest) returns (BehindAheadResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message ContributorCountsRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // Optional range to limit the commits inspected. If not given, all commits are considered.
+  // This can either be a revspec, which will be interpreted as "every commit since
+  // root until this commit", or a range, with either .. or ... separator.
+  bytes range = 3;
+  // After is an optional parameter to specify the earliest commit to consider in
+  // the aggregation. If not specified, all commits will be returned.
+  google.protobuf.Timestamp after = 4;
+  // path can optionally be specified to limit the commits to a single path.
+  // If not specified, the commits will be returned for all paths.
+  // Path can also be a path prefix, for example cmd/gitserver/.
+  bytes path = 5;
+}
+
+message ContributorCount {
+  GitSignature author = 1;
+  int32 count = 2;
+}
+
+message ContributorCountsResponse {
+  repeated ContributorCount counts = 1;
+}
+
+message RawDiffRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // The base spec to resolve. I.e., HEAD, deadbeefdeadbeefdeadbeefdeadbeef, or
+  // refs/heads/main.
+  bytes base_rev_spec = 3;
+  // The head spec to resolve. I.e., HEAD, deadbeefdeadbeefdeadbeefdeadbeef, or
+  // refs/heads/main.
+  bytes head_rev_spec = 4;
+  enum ComparisonType {
+    COMPARISON_TYPE_UNSPECIFIED = 0;
+    // Corresponds to the BASE..HEAD syntax that only returns any commits that are
+    // in HEAD but not in BASE.
+    COMPARISON_TYPE_ONLY_IN_HEAD = 1;
+    // Corresponds to the BASE...HEAD syntax that returns any commits that are not
+    // in both BASE and HEAD.
+    COMPARISON_TYPE_INTERSECTION = 2;
+  }
+  // comparison_type is the type of comparison to perform. If unspecified, will
+  // fall back to COMPARISON_TYPE_INTERSECTION.
+  ComparisonType comparison_type = 5;
+  // paths is a list of paths to filter the diff to. If empty, all paths are diffed.
+  repeated bytes paths = 6;
+}
+
+message RawDiffResponse {
+  // chunk is the raw diff chunk.
+  bytes chunk = 1;
 }
 
 message ListRefsRequest {
@@ -200,10 +328,10 @@ message ListRefsResponse {
 
 message GitRef {
   // ref_name is the unabbreviated name of the reference, i.e., refs/heads/main, or refs/tags/1.0.
-  string ref_name = 1;
+  bytes ref_name = 1;
   // short_ref_name is the abbreviated name of the reference, if unambiguous.
   // I.e., main, or 1.0.
-  string short_ref_name = 2;
+  bytes short_ref_name = 2;
   // target_commit is the hash of the commit the reference is currently pointing at.
   // For a head reference, this is the commit the head is currently pointing at.
   // For a tag, this is the commit that the tag is attached to.
@@ -272,10 +400,15 @@ message GetCommitRequest {
   // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
   string repo_name = 2;
   string commit = 3;
+  // If true, the modified_files field in the GetCommitResponse will be populated.
+  bool include_modified_files = 4;
 }
 
 message GetCommitResponse {
   GitCommit commit = 1;
+  // Contains the list of files the commit modified.
+  // NOTE: Only populated if include_modified_files in the GetCommitRequest is true.
+  repeated bytes modified_files = 2;
 }
 
 message GitCommit {
@@ -498,15 +631,6 @@ message ExecStatusPayload {
   string stderr = 2;
 }
 
-// UnauthorizedPayload is the payload returned when an actor cannot access
-// a commit or file due to subrepo permissions.
-message UnauthorizedPayload {
-  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
-  string repo_name = 2;
-  optional string path = 3;
-  optional string commit = 4;
-}
-
 message SearchRequest {
   // repo is the name of the repo to be searched
   string repo = 1;
@@ -680,7 +804,7 @@ message ArchiveRequest {
   ArchiveFormat format = 3;
   // paths is the list of paths to include in the archive. If empty, all
   // paths are included.
-  repeated string paths = 4;
+  repeated bytes paths = 4;
 }
 
 // ArchiveResponse is the response from the Archive RPC that returns a chunk of
@@ -724,40 +848,6 @@ message RepoCloneProgressResponse {
   string clone_progress = 2;
   // cloned is whether the repository has been cloned successfully
   bool cloned = 3;
-}
-
-// RepoDeleteRequest is a request to delete a repository.
-message RepoDeleteRequest {
-  // repo is the name of the repo to delete.
-  string repo = 1;
-}
-
-// RepoDeleteResponse is the response from the RepoDelete RPC.
-message RepoDeleteResponse {}
-
-// RepoUpdateRequest is a request to update a repository.
-message RepoUpdateRequest {
-  // RepoUpdateRequest used to have an unused clone_from_shard field.
-  reserved 3;
-  // repo is the name of the repo to update.
-  string repo = 1;
-  // since is the debounce interval for queries, used only with
-  // request-repo-update.
-  // This field has now been deprecated and is no longer respected.
-  // The caller should make sure to not call this endpoint more often
-  // than needed, and gitserver may make it's own internal decisions
-  // on when to fast-pass a request.
-  google.protobuf.Duration since = 2 [deprecated = true];
-}
-
-// RepoUpdateResponse is the response from the RepoUpdate RPC.
-message RepoUpdateResponse {
-  // last_fetched is the time the repository was last fetched.
-  google.protobuf.Timestamp last_fetched = 1;
-  // last_changed is the time the repository was last changed.
-  google.protobuf.Timestamp last_changed = 2;
-  // error is the error that occurred during the update.
-  string error = 3;
 }
 
 // ListGitoliteRequest is a request to list all repositories in gitolite.
@@ -961,4 +1051,36 @@ message MergeBaseRequest {
 // revspecs.
 message MergeBaseResponse {
   string merge_base_commit_sha = 1;
+}
+
+// FirstEverCommitRequest is a request to get the first ever commit in a repo.
+message FirstEverCommitRequest {
+  // repo_name is the name of the repo to get the first ever commit for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+}
+
+// FirstEverCommitResponse is the response from getting the first ever commit in
+// a repo.
+message FirstEverCommitResponse {
+  GitCommit commit = 1;
+}
+
+message BehindAheadRequest {
+  // repo_name is the name of the repo to get the behind/ahead information for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // left is a revspec that we'll take the symmetric difference against.
+  // for now, we allow non-utf8 revspecs.
+  bytes left = 3;
+  // right is a revspec that we'll take the symmetric difference against.
+  // for now, we allow non-utf8 revspecs.
+  bytes right = 4;
+}
+
+message BehindAheadResponse {
+  // behind is the number of commits that are solely reachable in "left" but not "right".
+  uint32 behind = 1;
+  // ahead is the number of commits that are solely reachable in "right" but not "left".
+  uint32 ahead = 2;
 }

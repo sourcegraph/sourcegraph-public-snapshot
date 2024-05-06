@@ -25,7 +25,6 @@ go_library(
         "//internal/database",
         "//internal/embeddings",
         "//internal/embeddings/background/repo",
-        "//internal/embeddings/db",
         "//internal/embeddings/embed",
         "//internal/env",
         "//internal/featureflag",

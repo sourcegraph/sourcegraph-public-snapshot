@@ -4,14 +4,15 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, type Series } from '@sourcegraph/wildcard'
 
 import type { SearchStatisticsResult, SearchStatisticsVariables } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
-import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup'
+import { TimeSavedCalculatorGroup, TimeSavedCalculatorGroupProps } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, type ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
@@ -21,8 +22,10 @@ import { SEARCH_STATISTICS } from './queries'
 
 import styles from './index.module.scss'
 
-export const AnalyticsSearchPage: React.FC = () => {
-    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Search' })
+interface Props extends TelemetryV2Props {}
+
+export const AnalyticsSearchPage: React.FC<Props> = ({ telemetryRecorder }) => {
+    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Search', telemetryRecorder })
     const { data, error, loading } = useQuery<SearchStatisticsResult, SearchStatisticsVariables>(SEARCH_STATISTICS, {
         variables: {
             dateRange: dateRange.value,
@@ -30,8 +33,9 @@ export const AnalyticsSearchPage: React.FC = () => {
         },
     })
     useEffect(() => {
-        eventLogger.logPageView('AdminAnalyticsSearch')
-    }, [])
+        EVENT_LOGGER.logPageView('AdminAnalyticsSearch')
+        telemetryRecorder.recordEvent('admin.analytics.search', 'view')
+    }, [telemetryRecorder])
     const [stats, legends] = useMemo(() => {
         if (!data) {
             return []
@@ -126,7 +130,7 @@ export const AnalyticsSearchPage: React.FC = () => {
         return [stats, legends]
     }, [data, aggregation.selected, dateRange.value])
 
-    const calculatorProps = useMemo(() => {
+    const calculatorProps: TimeSavedCalculatorGroupProps | undefined = useMemo(() => {
         if (!data) {
             return
         }
@@ -167,8 +171,9 @@ export const AnalyticsSearchPage: React.FC = () => {
                     value: totalCount,
                 },
             ],
+            telemetryRecorder,
         }
-    }, [data, dateRange.value])
+    }, [data, dateRange.value, telemetryRecorder])
 
     if (error) {
         throw error

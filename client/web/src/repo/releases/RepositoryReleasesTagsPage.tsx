@@ -2,6 +2,8 @@ import React, { useCallback, useEffect } from 'react'
 
 import { type Observable, of } from 'rxjs'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
@@ -13,14 +15,13 @@ import {
     type GitRefFields,
     type RepositoryFields,
 } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import {
     GitReferenceNode,
     type GitReferenceNodeProps,
     queryGitReferences as queryGitReferencesFromBackend,
 } from '../GitReference'
 
-interface Props {
+interface Props extends TelemetryV2Props {
     repo: RepositoryFields | undefined
     isPackage?: boolean
     queryGitReferences?: (args: {
@@ -37,10 +38,12 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWith
     repo,
     isPackage,
     queryGitReferences: queryGitReferences = queryGitReferencesFromBackend,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
-        eventLogger.logViewEvent('RepositoryReleasesTags')
-    }, [])
+        EVENT_LOGGER.logViewEvent('RepositoryReleasesTags')
+        telemetryRecorder.recordEvent('repo.releasesTags', 'view')
+    }, [telemetryRecorder])
 
     const queryTags = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> => {

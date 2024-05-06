@@ -2336,7 +2336,7 @@ sum by (op)(increase(src_codeintel_lockfiles_errors_total{job=~"^(frontend|sourc
 
 #### frontend: gitserver_client_total
 
-<p class="subtitle">Aggregate graphql operations every 5m</p>
+<p class="subtitle">Aggregate client operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -2358,7 +2358,7 @@ sum(increase(src_gitserver_client_total{job=~"^(frontend|sourcegraph-frontend).*
 
 #### frontend: gitserver_client_99th_percentile_duration
 
-<p class="subtitle">Aggregate successful graphql operation duration distribution over 5m</p>
+<p class="subtitle">Aggregate successful client operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -2380,7 +2380,7 @@ sum  by (le)(rate(src_gitserver_client_duration_seconds_bucket{job=~"^(frontend|
 
 #### frontend: gitserver_client_errors_total
 
-<p class="subtitle">Aggregate graphql operation errors every 5m</p>
+<p class="subtitle">Aggregate client operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -2402,7 +2402,7 @@ sum(increase(src_gitserver_client_errors_total{job=~"^(frontend|sourcegraph-fron
 
 #### frontend: gitserver_client_error_rate
 
-<p class="subtitle">Aggregate graphql operation error rate over 5m</p>
+<p class="subtitle">Aggregate client operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -2424,7 +2424,7 @@ sum(increase(src_gitserver_client_errors_total{job=~"^(frontend|sourcegraph-fron
 
 #### frontend: gitserver_client_total
 
-<p class="subtitle">Graphql operations every 5m</p>
+<p class="subtitle">Client operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -2446,7 +2446,7 @@ sum by (op,scope)(increase(src_gitserver_client_total{job=~"^(frontend|sourcegra
 
 #### frontend: gitserver_client_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful graphql operation duration over 5m</p>
+<p class="subtitle">99th percentile successful client operation duration over 5m</p>
 
 This panel has no related alerts.
 
@@ -2468,7 +2468,7 @@ histogram_quantile(0.99, sum  by (le,op,scope)(rate(src_gitserver_client_duratio
 
 #### frontend: gitserver_client_errors_total
 
-<p class="subtitle">Graphql operation errors every 5m</p>
+<p class="subtitle">Client operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -2490,7 +2490,7 @@ sum by (op,scope)(increase(src_gitserver_client_errors_total{job=~"^(frontend|so
 
 #### frontend: gitserver_client_error_rate
 
-<p class="subtitle">Graphql operation error rate over 5m</p>
+<p class="subtitle">Client operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -6350,6 +6350,37 @@ Query:
 
 <br />
 
+#### gitserver: high_memory_git_commands
+
+<p class="subtitle">Number of git commands that exceeded the threshold for high memory usage</p>
+
+This graph tracks the number of git subcommands that gitserver ran that exceeded the threshold for high memory usage.
+This graph in itself is not an alert, but it is used to learn about the memory usage of gitserver.
+
+If gitserver frequently serves requests where the status code is KILLED, this graph might help to correlate that
+with the high memory usage.
+
+This graph spiking is not a problem necessarily. But when subcommands or the whole gitserver service are getting
+OOM killed and this graph shows spikes, increasing the memory might be useful.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100021` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query:
+
+```
+sort_desc(sum(sum_over_time(src_gitserver_exec_high_memory_usage_count{instance=~`${shard:regex}`}[2m])) by (cmd))
+```
+</details>
+
+<br />
+
 #### gitserver: running_git_commands
 
 <p class="subtitle">Git commands running on each gitserver instance</p>
@@ -7794,7 +7825,7 @@ sum by (op)(increase(src_gitserver_backend_errors_total{job=~"^gitserver.*"}[5m]
 
 #### gitserver: gitserver_client_total
 
-<p class="subtitle">Aggregate graphql operations every 5m</p>
+<p class="subtitle">Aggregate client operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -7816,7 +7847,7 @@ sum(increase(src_gitserver_client_total{job=~"^*.*"}[5m]))
 
 #### gitserver: gitserver_client_99th_percentile_duration
 
-<p class="subtitle">Aggregate successful graphql operation duration distribution over 5m</p>
+<p class="subtitle">Aggregate successful client operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -7838,7 +7869,7 @@ sum  by (le)(rate(src_gitserver_client_duration_seconds_bucket{job=~"^*.*"}[5m])
 
 #### gitserver: gitserver_client_errors_total
 
-<p class="subtitle">Aggregate graphql operation errors every 5m</p>
+<p class="subtitle">Aggregate client operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -7860,7 +7891,7 @@ sum(increase(src_gitserver_client_errors_total{job=~"^*.*"}[5m]))
 
 #### gitserver: gitserver_client_error_rate
 
-<p class="subtitle">Aggregate graphql operation error rate over 5m</p>
+<p class="subtitle">Aggregate client operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -7882,7 +7913,7 @@ sum(increase(src_gitserver_client_errors_total{job=~"^*.*"}[5m])) / (sum(increas
 
 #### gitserver: gitserver_client_total
 
-<p class="subtitle">Graphql operations every 5m</p>
+<p class="subtitle">Client operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -7904,7 +7935,7 @@ sum by (op,scope)(increase(src_gitserver_client_total{job=~"^*.*"}[5m]))
 
 #### gitserver: gitserver_client_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful graphql operation duration over 5m</p>
+<p class="subtitle">99th percentile successful client operation duration over 5m</p>
 
 This panel has no related alerts.
 
@@ -7926,7 +7957,7 @@ histogram_quantile(0.99, sum  by (le,op,scope)(rate(src_gitserver_client_duratio
 
 #### gitserver: gitserver_client_errors_total
 
-<p class="subtitle">Graphql operation errors every 5m</p>
+<p class="subtitle">Client operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -7948,7 +7979,7 @@ sum by (op,scope)(increase(src_gitserver_client_errors_total{job=~"^*.*"}[5m]))
 
 #### gitserver: gitserver_client_error_rate
 
-<p class="subtitle">Graphql operation error rate over 5m</p>
+<p class="subtitle">Client operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -13904,7 +13935,7 @@ max(rate(src_repo_perms_syncer_schedule_repos_total[1m]))
 
 #### worker: gitserver_client_total
 
-<p class="subtitle">Aggregate graphql operations every 5m</p>
+<p class="subtitle">Aggregate client operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -13926,7 +13957,7 @@ sum(increase(src_gitserver_client_total{job=~"^worker.*"}[5m]))
 
 #### worker: gitserver_client_99th_percentile_duration
 
-<p class="subtitle">Aggregate successful graphql operation duration distribution over 5m</p>
+<p class="subtitle">Aggregate successful client operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -13948,7 +13979,7 @@ sum  by (le)(rate(src_gitserver_client_duration_seconds_bucket{job=~"^worker.*"}
 
 #### worker: gitserver_client_errors_total
 
-<p class="subtitle">Aggregate graphql operation errors every 5m</p>
+<p class="subtitle">Aggregate client operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -13970,7 +14001,7 @@ sum(increase(src_gitserver_client_errors_total{job=~"^worker.*"}[5m]))
 
 #### worker: gitserver_client_error_rate
 
-<p class="subtitle">Aggregate graphql operation error rate over 5m</p>
+<p class="subtitle">Aggregate client operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -13992,7 +14023,7 @@ sum(increase(src_gitserver_client_errors_total{job=~"^worker.*"}[5m])) / (sum(in
 
 #### worker: gitserver_client_total
 
-<p class="subtitle">Graphql operations every 5m</p>
+<p class="subtitle">Client operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -14014,7 +14045,7 @@ sum by (op,scope)(increase(src_gitserver_client_total{job=~"^worker.*"}[5m]))
 
 #### worker: gitserver_client_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful graphql operation duration over 5m</p>
+<p class="subtitle">99th percentile successful client operation duration over 5m</p>
 
 This panel has no related alerts.
 
@@ -14036,7 +14067,7 @@ histogram_quantile(0.99, sum  by (le,op,scope)(rate(src_gitserver_client_duratio
 
 #### worker: gitserver_client_errors_total
 
-<p class="subtitle">Graphql operation errors every 5m</p>
+<p class="subtitle">Client operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -14058,7 +14089,7 @@ sum by (op,scope)(increase(src_gitserver_client_errors_total{job=~"^worker.*"}[5
 
 #### worker: gitserver_client_error_rate
 
-<p class="subtitle">Graphql operation error rate over 5m</p>
+<p class="subtitle">Client operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -17164,7 +17195,7 @@ sum by (urn) (rate(src_internal_rate_limit_wait_duration_count{failed="true"}[5m
 
 #### repo-updater: gitserver_client_total
 
-<p class="subtitle">Aggregate graphql operations every 5m</p>
+<p class="subtitle">Aggregate client operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -17186,7 +17217,7 @@ sum(increase(src_gitserver_client_total{job=~"^repo-updater.*"}[5m]))
 
 #### repo-updater: gitserver_client_99th_percentile_duration
 
-<p class="subtitle">Aggregate successful graphql operation duration distribution over 5m</p>
+<p class="subtitle">Aggregate successful client operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -17208,7 +17239,7 @@ sum  by (le)(rate(src_gitserver_client_duration_seconds_bucket{job=~"^repo-updat
 
 #### repo-updater: gitserver_client_errors_total
 
-<p class="subtitle">Aggregate graphql operation errors every 5m</p>
+<p class="subtitle">Aggregate client operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -17230,7 +17261,7 @@ sum(increase(src_gitserver_client_errors_total{job=~"^repo-updater.*"}[5m]))
 
 #### repo-updater: gitserver_client_error_rate
 
-<p class="subtitle">Aggregate graphql operation error rate over 5m</p>
+<p class="subtitle">Aggregate client operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -17252,7 +17283,7 @@ sum(increase(src_gitserver_client_errors_total{job=~"^repo-updater.*"}[5m])) / (
 
 #### repo-updater: gitserver_client_total
 
-<p class="subtitle">Graphql operations every 5m</p>
+<p class="subtitle">Client operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -17274,7 +17305,7 @@ sum by (op,scope)(increase(src_gitserver_client_total{job=~"^repo-updater.*"}[5m
 
 #### repo-updater: gitserver_client_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful graphql operation duration over 5m</p>
+<p class="subtitle">99th percentile successful client operation duration over 5m</p>
 
 This panel has no related alerts.
 
@@ -17296,7 +17327,7 @@ histogram_quantile(0.99, sum  by (le,op,scope)(rate(src_gitserver_client_duratio
 
 #### repo-updater: gitserver_client_errors_total
 
-<p class="subtitle">Graphql operation errors every 5m</p>
+<p class="subtitle">Client operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -17318,7 +17349,7 @@ sum by (op,scope)(increase(src_gitserver_client_errors_total{job=~"^repo-updater
 
 #### repo-updater: gitserver_client_error_rate
 
-<p class="subtitle">Graphql operation error rate over 5m</p>
+<p class="subtitle">Client operation error rate over 5m</p>
 
 This panel has no related alerts.
 

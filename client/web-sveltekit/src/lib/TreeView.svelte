@@ -26,8 +26,13 @@
 
     export let treeProvider: TreeProvider<N>
 
-    export function scrollSelectedItemIntoView() {
-        treeRoot?.querySelector('[aria-selected="true"] [data-treeitem-label]')?.scrollIntoView({ block: 'nearest' })
+    /**
+     * Scrolls the selected item into view, either into the center or the nearest edge.
+     *
+     * @param position - The position to scroll the item to. Defaults to 'nearest'.
+     */
+    export function scrollSelectedItemIntoView(position: 'nearest' | 'center' = 'nearest') {
+        treeRoot?.querySelector('[aria-selected="true"] [data-treeitem-label]')?.scrollIntoView({ block: position })
     }
 
     const dispatch = createEventDispatcher<{ select: HTMLElement }>()

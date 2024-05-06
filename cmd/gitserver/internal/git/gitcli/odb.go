@@ -3,6 +3,7 @@ package gitcli
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -187,3 +188,91 @@ func (g *gitCLIBackend) getBlobOID(ctx context.Context, commit api.CommitID, pat
 	}
 	return api.CommitID(fields[2]), nil
 }
+
+func (g *gitCLIBackend) BehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error) {
+	if err := checkSpecArgSafety(left); err != nil {
+		return nil, err
+	}
+	if err := checkSpecArgSafety(right); err != nil {
+		return nil, err
+	}
+
+	if left == "" {
+		left = "HEAD"
+	}
+
+	if right == "" {
+		right = "HEAD"
+	}
+
+	rc, err := g.NewCommand(ctx, WithArguments("rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right)))
+	if err != nil {
+		return nil, errors.Wrap(err, "running git rev-list")
+	}
+	defer rc.Close()
+
+	out, err := io.ReadAll(rc)
+	if err != nil {
+		var e *CommandFailedError
+		if errors.As(err, &e) {
+			switch {
+			case e.ExitStatus == 128 && bytes.Contains(e.Stderr, []byte("fatal: ambiguous argument")):
+				fallthrough
+			case e.ExitStatus == 128 && bytes.Contains(e.Stderr, []byte("fatal: Invalid symmetric difference expression")):
+				return nil, &gitdomain.RevisionNotFoundError{
+					Repo: g.repoName,
+					Spec: fmt.Sprintf("%s...%s", left, right),
+				}
+			}
+		}
+
+		return nil, errors.Wrap(err, "reading git rev-list output")
+	}
+
+	behindAhead := strings.Split(strings.TrimSuffix(string(out), "\n"), "\t")
+	b, err := strconv.ParseUint(behindAhead[0], 10, 0)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse behindahead output %q", out)
+	}
+	a, err := strconv.ParseUint(behindAhead[1], 10, 0)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse behindahead output %q", out)
+	}
+	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
+}
+
+func (g *gitCLIBackend) FirstEverCommit(ctx context.Context) (api.CommitID, error) {
+	rc, err := g.NewCommand(ctx, WithArguments("rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"))
+	if err != nil {
+		return "", err
+	}
+	defer rc.Close()
+
+	out, err := io.ReadAll(rc)
+	if err != nil {
+		var cmdFailedErr *CommandFailedError
+		if errors.As(err, &cmdFailedErr) {
+			if cmdFailedErr.ExitStatus == 129 && bytes.Contains(cmdFailedErr.Stderr, []byte(revListUsageString)) {
+				// If the error is due to an empty repository, return a sentinel error.
+				e := &gitdomain.RevisionNotFoundError{
+					Repo: g.repoName,
+					Spec: "HEAD",
+				}
+				return "", e
+			}
+		}
+
+		return "", errors.Wrap(err, "git rev-list command failed")
+	}
+
+	lines := bytes.TrimSpace(out)
+	tokens := bytes.SplitN(lines, []byte("\n"), 2)
+	if len(tokens) == 0 {
+		return "", errors.New("FirstEverCommit returned no revisions")
+	}
+	first := tokens[0]
+	id := api.CommitID(bytes.TrimSpace(first))
+	return id, nil
+}
+
+const revListUsageString = `usage: git rev-list [<options>] <commit>... [--] [<path>...]`

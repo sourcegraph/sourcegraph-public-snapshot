@@ -6,9 +6,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/ssc"
 )
 
 // newSSCRefreshCodyRateLimitHandler returns an http.Handler to trigger cody's rate limit refresh for a user
@@ -26,7 +27,7 @@ func newSSCRefreshCodyRateLimitHandler(logger log.Logger, db database.DB) http.H
 		oidcAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 			AccountID:   samsAccountID,
 			ServiceType: "openidconnect",
-			ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
+			ServiceID:   ssc.GetSAMSServiceID(),
 			LimitOffset: &database.LimitOffset{
 				Limit: 1,
 			},

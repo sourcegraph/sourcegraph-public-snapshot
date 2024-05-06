@@ -4,14 +4,15 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, type Series } from '@sourcegraph/wildcard'
 
 import type { ExtensionsStatisticsResult, ExtensionsStatisticsVariables } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
-import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup'
+import { TimeSavedCalculatorGroup, TimeSavedCalculatorGroupProps } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, type ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
@@ -21,8 +22,10 @@ import { EXTENSIONS_STATISTICS } from './queries'
 
 import styles from './index.module.scss'
 
-export const AnalyticsExtensionsPage: React.FunctionComponent = () => {
-    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Extensions' })
+interface Props extends TelemetryV2Props {}
+
+export const AnalyticsExtensionsPage: React.FunctionComponent<Props> = ({ telemetryRecorder }) => {
+    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Extensions', telemetryRecorder })
     const { data, error, loading } = useQuery<ExtensionsStatisticsResult, ExtensionsStatisticsVariables>(
         EXTENSIONS_STATISTICS,
         {
@@ -33,8 +36,9 @@ export const AnalyticsExtensionsPage: React.FunctionComponent = () => {
         }
     )
     useEffect(() => {
-        eventLogger.logPageView('AdminAnalyticsExtensions')
-    }, [])
+        EVENT_LOGGER.logPageView('AdminAnalyticsExtensions')
+        telemetryRecorder.recordEvent('admin.analytics.extensions', 'view')
+    }, [telemetryRecorder])
     const [stats, legends, calculatorProps, installationStats] = useMemo(() => {
         if (!data) {
             return []
@@ -119,7 +123,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent = () => {
             },
         ]
 
-        const calculatorProps = {
+        const calculatorProps: TimeSavedCalculatorGroupProps = {
             page: 'Extensions',
             label: 'Total events',
             dateRange: dateRange.value,
@@ -150,6 +154,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent = () => {
                         "Searches from VS Code across all of your company's code without locally cloning repositories or complex scripting.",
                 },
             ],
+            telemetryRecorder,
         }
         const totalUsersCount = data?.site.users.totalCount
         const installationStats =
@@ -162,7 +167,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent = () => {
                 : undefined
 
         return [stats, legends, calculatorProps, installationStats]
-    }, [data, dateRange.value, aggregation.selected])
+    }, [data, dateRange.value, aggregation.selected, telemetryRecorder])
 
     if (error) {
         throw error

@@ -1,0 +1,24 @@
+# Only download remote outputs of top level targets to the local machine.
+# Docs: https://bazel.build/reference/command-line-reference#flag--remote_download_toplevel
+build --remote_download_toplevel
+
+# Upload locally executed action results to the remote cache.
+# Docs: https://bazel.build/reference/command-line-reference#flag--remote_upload_local_results
+build --remote_upload_local_results
+
+# Fall back to standalone local execution strategy if remote execution fails. If the grpc remote
+# cache connection fails, it will fail the build, add this so it falls back to the local cache.
+# Docs: https://bazel.build/reference/command-line-reference#flag--remote_local_fallback
+build --remote_local_fallback
+
+# These likely perform faster locally than the overhead of pulling/pushing from/to the remote cache,
+# as well as being able to reduce how much we push to the cache
+common --modify_execution_info=CopyDirectory=+no-remote,CopyToDirectory=+no-remote,CopyFile=+no-remote
+
+common --credential_helper=storage.googleapis.com=%workspace%/dev/remote_cache_local_env.sh
+common --remote_cache=https://storage.googleapis.com/local_bazel_remote_cache
+
+# If true, remote cache I/O will happen in the background instead of taking place as the part of a spawn.
+# Docs: https://bazel.build/reference/command-line-reference#flag--experimental_remote_cache_async
+# Appears to be quite unstable, disabling for now
+# common  --experimental_remote_cache_async

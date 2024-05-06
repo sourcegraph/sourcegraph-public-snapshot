@@ -1,8 +1,9 @@
-import { type ChangeEvent, type FC, useState } from 'react'
+import { type ChangeEvent, type FC, useState, useEffect } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
 
 import { BackfillQueueOrderBy, InsightQueueItemState } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Container,
     ErrorAlert,
@@ -25,7 +26,9 @@ import { GET_CODE_INSIGHTS_JOBS } from './query'
 
 import styles from './CodeInsightsJobs.module.scss'
 
-export const CodeInsightsJobs: FC = () => {
+interface Props extends TelemetryV2Props {}
+
+export const CodeInsightsJobs: FC<Props> = ({ telemetryRecorder }) => {
     const [search, setSearch] = useState<string>('')
     const [orderBy, setOrderBy] = useState<BackfillQueueOrderBy>(BackfillQueueOrderBy.QUEUE_POSITION)
     const [selectedJobs, setSelectedJobs] = useState<string[]>([])
@@ -33,6 +36,8 @@ export const CodeInsightsJobs: FC = () => {
         InsightQueueItemState.PROCESSING,
         InsightQueueItemState.QUEUED,
     ])
+
+    useEffect(() => telemetryRecorder.recordEvent('admin.codeInsightsJobs', 'view'), [telemetryRecorder])
 
     const { connection, loading, error, ...paginationProps } = usePageSwitcherPagination<
         GetCodeInsightsJobsResult,

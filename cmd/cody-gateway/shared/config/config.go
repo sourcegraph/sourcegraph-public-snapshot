@@ -33,6 +33,8 @@ type Config struct {
 		// Prompts that get flagged are stored in Redis for a short-time, for
 		// better understanding the nature of any ongoing spam/abuse waves.
 		FlaggedPromptRecorderTTL time.Duration
+
+		ClientID string
 	}
 
 	Anthropic AnthropicConfig
@@ -71,6 +73,8 @@ type Config struct {
 
 	// SAMSClientConfig for verifying and generating SAMS access tokens.
 	SAMSClientConfig SAMSClientConfig
+	// one of "production", "staging" or "dev" (all 3 can connect to sourcegraph.com)
+	Environment string
 }
 
 type OpenTelemetryConfig struct {
@@ -89,6 +93,7 @@ type FireworksConfig struct {
 	AccessToken                            string
 	StarcoderCommunitySingleTenantPercent  int
 	StarcoderEnterpriseSingleTenantPercent int
+	FlaggingConfig                         FlaggingConfig
 }
 
 type OpenAIConfig struct {
@@ -151,6 +156,8 @@ func (c *Config) Load() {
 
 	c.Dotcom.AccessToken = c.GetOptional("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN",
 		"The Sourcegraph.com access token to be used. If not provided, dotcom-based actor sources will be disabled.")
+	c.Dotcom.ClientID = c.GetOptional("CODY_GATEWAY_DOTCOM_CLIENT_ID",
+		"Value of X-Sourcegraph-Client-Id header to be passed to sourcegraph.com.")
 	c.Dotcom.URL = c.Get("CODY_GATEWAY_DOTCOM_API_URL", "https://sourcegraph.com/.api/graphql", "Custom override for the dotcom API endpoint")
 	if _, err := url.Parse(c.Dotcom.URL); err != nil {
 		c.AddError(errors.Wrap(err, "invalid CODY_GATEWAY_DOTCOM_API_URL"))
@@ -234,10 +241,12 @@ func (c *Config) Load() {
 			"accounts/fireworks/models/llama-v2-34b-code-instruct",
 			"accounts/fireworks/models/mistral-7b-instruct-4k",
 			"accounts/fireworks/models/mixtral-8x7b-instruct",
-			"accounts/fireworks/models/mixtral-8x22b-instruct-preview",
+			"accounts/fireworks/models/mixtral-8x22b-instruct",
 			// Deprecated model strings
 			"accounts/fireworks/models/starcoder-3b-w8a16",
 			"accounts/fireworks/models/starcoder-1b-w8a16",
+			// Finetuned models
+			fireworks.Mixtral8x7bFineTunedModel,
 		}, ","),
 		"Fireworks models that can be used."))
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
@@ -285,6 +294,8 @@ func (c *Config) Load() {
 	c.SAMSClientConfig.URL = c.GetOptional("SAMS_URL", "SAMS service endpoint")
 	c.SAMSClientConfig.ClientID = c.GetOptional("SAMS_CLIENT_ID", "SAMS OAuth client ID")
 	c.SAMSClientConfig.ClientSecret = c.GetOptional("SAMS_CLIENT_SECRET", "SAMS OAuth client secret")
+
+	c.Environment = c.Get("CODY_GATEWAY_ENVIRONMENT", "dev", "Environment name.")
 }
 
 // loadFlaggingConfig loads the common set of flagging-related environment variables for

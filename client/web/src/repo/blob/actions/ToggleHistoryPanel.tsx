@@ -6,9 +6,9 @@ import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { SourcegraphURL } from '@sourcegraph/common'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
 import { RepoActionInfo } from '../../RepoActionInfo'
 import type { RepoHeaderContext } from '../../RepoHeader'
@@ -52,7 +52,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
         this.subscriptions.add(
             this.toggles.subscribe(() => {
                 const visible = ToggleHistoryPanel.isVisible(this.props.location)
-                eventLogger.log(visible ? 'HideHistoryPanel' : 'ShowHistoryPanel')
+                EVENT_LOGGER.log(visible ? 'HideHistoryPanel' : 'ShowHistoryPanel')
                 this.props.navigate(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
             })
         )

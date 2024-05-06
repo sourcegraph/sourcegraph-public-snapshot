@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "upgradetest_lib",
@@ -66,5 +66,16 @@ sh_binary(
         "//cmd/frontend:image_tarball",
         "//cmd/migrator:image_tarball",
         "//internal/database:generate_schemas",
+    ],
+)
+
+sh_binary(
+    name = "release_test_run",
+    srcs = ["release_test.sh"],
+    args = [
+        "$(location :go_upgradetest)",
+    ],
+    data = [
+        ":go_upgradetest",
     ],
 )

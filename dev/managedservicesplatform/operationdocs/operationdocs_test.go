@@ -1,11 +1,16 @@
 package operationdocs
 
 import (
+	"context"
 	"testing"
 
 	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/notionreposync/renderer/renderertest"
+
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/terraform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -23,9 +28,10 @@ const (
 
 func TestRender(t *testing.T) {
 	for _, tc := range []struct {
-		name string
-		spec spec.Spec
-		opts Options
+		name   string
+		spec   spec.Spec
+		alerts map[string]terraform.AlertPolicy
+		opts   Options
 	}{{
 		name: "basic",
 		spec: spec.Spec{
@@ -53,6 +59,23 @@ func TestRender(t *testing.T) {
 				Stages: []spec.RolloutStageSpec{{EnvironmentID: testServiceEnvironment}},
 			},
 		},
+		alerts: map[string]terraform.AlertPolicy{
+			"monitoring-common-cpu": {
+				DisplayName: "High Container CPU Utilization",
+				Documentation: terraform.Documentation{
+					Content: "High CPU Usage - it may be neccessary to reduce load or increase CPU allocation",
+				},
+				Severity: "WARNING",
+			},
+			"monitoring-common-memory": {
+				DisplayName: "High Container Memory Utilization",
+				Documentation: terraform.Documentation{
+					Content: "High Memory Usage - it may be neccessary to reduce load or increase memory allocation",
+				},
+				Severity: "WARNING",
+			},
+		},
+		opts: Options{},
 	}, {
 		name: "resources",
 		spec: spec.Spec{
@@ -86,6 +109,23 @@ func TestRender(t *testing.T) {
 				},
 			}},
 		},
+		alerts: map[string]terraform.AlertPolicy{
+			"monitoring-common-cpu": {
+				DisplayName: "High Container CPU Utilization",
+				Documentation: terraform.Documentation{
+					Content: "High CPU Usage - it may be neccessary to reduce load or increase CPU allocation",
+				},
+				Severity: "WARNING",
+			},
+			"monitoring-common-memory": {
+				DisplayName: "High Container Memory Utilization",
+				Documentation: terraform.Documentation{
+					Content: "High Memory Usage - it may be neccessary to reduce load or increase memory allocation",
+				},
+				Severity: "WARNING",
+			},
+		},
+		opts: Options{},
 	}, {
 		name: "with README",
 		spec: spec.Spec{
@@ -115,6 +155,23 @@ func TestRender(t *testing.T) {
 
 Some additional operations!`),
 		},
+		alerts: map[string]terraform.AlertPolicy{
+			"monitoring-common-cpu": {
+				DisplayName: "High Container CPU Utilization",
+				Documentation: terraform.Documentation{
+					Content: "High CPU Usage - it may be neccessary to reduce load or increase CPU allocation",
+				},
+				Severity: "WARNING",
+			},
+			"monitoring-common-memory": {
+				DisplayName: "High Container Memory Utilization",
+				Documentation: terraform.Documentation{
+					Content: "High Memory Usage - it may be neccessary to reduce load or increase memory allocation",
+				},
+				Severity: "WARNING",
+			},
+		},
+		opts: Options{},
 	}, {
 		name: "multi env rollout",
 		spec: spec.Spec{
@@ -149,11 +206,35 @@ Some additional operations!`),
 				Stages: []spec.RolloutStageSpec{{EnvironmentID: testServiceEnvironment}, {EnvironmentID: robertServiceEnvironment}},
 			},
 		},
+		alerts: map[string]terraform.AlertPolicy{
+			"monitoring-common-cpu": {
+				DisplayName: "High Container CPU Utilization",
+				Documentation: terraform.Documentation{
+					Content: "High CPU Usage - it may be neccessary to reduce load or increase CPU allocation",
+				},
+				Severity: "WARNING",
+			},
+			"monitoring-common-memory": {
+				DisplayName: "High Container Memory Utilization",
+				Documentation: terraform.Documentation{
+					Content: "High Memory Usage - it may be neccessary to reduce load or increase memory allocation",
+				},
+				Severity: "WARNING",
+			},
+		},
+		opts: Options{},
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
-			doc, err := Render(tc.spec, tc.opts)
+			doc, err := Render(tc.spec, tc.alerts, tc.opts)
 			require.NoError(t, err)
 			autogold.ExpectFile(t, autogold.Raw(doc))
+
+			t.Run("renderable by Notion converter", func(t *testing.T) {
+				blocks := renderertest.MockBlockUpdater{}
+				assert.NoError(t, NewNotionConverter(context.Background(), &blocks).
+					ProcessMarkdown([]byte(doc)))
+				assert.NotEmpty(t, blocks.GetAddedBlocks())
+			})
 		})
 	}
 }

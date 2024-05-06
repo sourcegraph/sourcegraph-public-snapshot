@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringalertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -15,9 +16,12 @@ func createCloudSQLAlerts(
 	id resourceid.ID,
 	vars Variables,
 	channels alertpolicy.NotificationChannels,
-) error {
+) ([]monitoringalertpolicy.MonitoringAlertPolicy, error) {
 	cloudSQLResourceName := fmt.Sprintf("%s:%s",
 		vars.ProjectID, *vars.CloudSQLInstanceID)
+
+	// Collect all alerts to aggregate in a dashboard
+	var alerts []monitoringalertpolicy.MonitoringAlertPolicy
 
 	// CloudSQL instance alerts.
 	// Iterate over a list of Cloud SQL alert configurations. Custom struct defines
@@ -121,7 +125,7 @@ Try increasing the 'resource.postgreSQL.maxConnections' configuration parameter.
 		config.ThresholdAggregation.ResourceKind = alertpolicy.CloudSQL
 		config.ThresholdAggregation.ResourceName = cloudSQLResourceName
 
-		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+		alert, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			// Alert policy
 			ID:                   config.ID,
 			Name:                 config.Name,
@@ -133,9 +137,11 @@ Try increasing the 'resource.postgreSQL.maxConnections' configuration parameter.
 			EnvironmentID:        vars.EnvironmentID,
 			ProjectID:            vars.ProjectID,
 			NotificationChannels: channels,
-		}); err != nil {
-			return err
+		})
+		if err != nil {
+			return nil, err
 		}
+		alerts = append(alerts, alert.AlertPolicy)
 	}
 
 	// CloudSQLDatabase alerts
@@ -193,7 +199,7 @@ Try increasing the 'resource.postgreSQL.maxConnections' configuration parameter.
 		config.ThresholdAggregation.ResourceKind = alertpolicy.CloudSQLDatabase
 		config.ThresholdAggregation.ResourceName = cloudSQLResourceName
 
-		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+		alert, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			// Alert policy
 			ID:                   config.ID,
 			Name:                 config.Name,
@@ -205,10 +211,12 @@ Try increasing the 'resource.postgreSQL.maxConnections' configuration parameter.
 			EnvironmentID:        vars.EnvironmentID,
 			ProjectID:            vars.ProjectID,
 			NotificationChannels: channels,
-		}); err != nil {
-			return err
+		})
+		if err != nil {
+			return nil, err
 		}
+		alerts = append(alerts, alert.AlertPolicy)
 	}
 
-	return nil
+	return alerts, nil
 }

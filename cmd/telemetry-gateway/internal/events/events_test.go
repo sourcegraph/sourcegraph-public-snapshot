@@ -16,7 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubtest"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 func TestPublish(t *testing.T) {
@@ -56,9 +56,10 @@ func TestPublish(t *testing.T) {
 	for i := range events {
 		events[i] = &telemetrygatewayv1.Event{
 			Id:        strconv.Itoa(i),
-			Feature:   t.Name(),
-			Action:    strconv.Itoa(i),
 			Timestamp: timestamppb.Now(),
+			// Feature, Action must pass validation
+			Feature: "testPublish",
+			Action:  "action",
 		}
 	}
 
@@ -81,6 +82,9 @@ func TestPublish(t *testing.T) {
 
 	// Collect all the results we got
 	for _, r := range results {
+		assert.Nil(t, r.PublishError)
+		assert.Equal(t, r.EventFeature, "testPublish")
+		assert.Equal(t, r.EventAction, "action")
 		eventResults[r.EventID] = true
 	}
 

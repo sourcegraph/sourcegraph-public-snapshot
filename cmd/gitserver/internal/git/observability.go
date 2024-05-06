@@ -39,6 +39,16 @@ type observableBackend struct {
 	backend    GitBackend
 }
 
+func (b *observableBackend) BehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error) {
+	ctx, _, endObservation := b.operations.getBehindAhead.With(ctx, nil, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("BehindAhead").Inc()
+	defer concurrentOps.WithLabelValues("BehindAhead").Dec()
+
+	return b.backend.BehindAhead(ctx, left, right)
+}
+
 func (b *observableBackend) Config() GitConfigBackend {
 	return &observableGitConfigBackend{
 		backend:    b.backend.Config(),
@@ -329,22 +339,76 @@ func (hr *observableRefIterator) Close() error {
 	return err
 }
 
+func (b *observableBackend) RawDiff(ctx context.Context, base string, head string, typ GitDiffComparisonType, paths ...string) (_ io.ReadCloser, err error) {
+	ctx, errCollector, endObservation := b.operations.rawDiff.WithErrors(ctx, &err, observation.Args{})
+	ctx, cancel := context.WithCancel(ctx)
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	concurrentOps.WithLabelValues("RawDiff").Inc()
+
+	r, err := b.backend.RawDiff(ctx, base, head, typ, paths...)
+	if err != nil {
+		concurrentOps.WithLabelValues("RawDiff").Dec()
+		cancel()
+		return nil, err
+	}
+
+	return &observableReadCloser{
+		inner: r,
+		endObservation: func(err error) {
+			concurrentOps.WithLabelValues("RawDiff").Dec()
+			errCollector.Collect(&err)
+			cancel()
+		},
+	}, nil
+}
+
+func (b *observableBackend) ContributorCounts(ctx context.Context, opt ContributorCountsOpts) (_ []*gitdomain.ContributorCount, err error) {
+	ctx, _, endObservation := b.operations.contributorCounts.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.String("range", opt.Range),
+			attribute.Stringer("after", opt.After),
+			attribute.String("path", opt.Path),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("ContributorCounts").Inc()
+	defer concurrentOps.WithLabelValues("ContributorCounts").Dec()
+
+	return b.backend.ContributorCounts(ctx, opt)
+}
+
+func (b *observableBackend) FirstEverCommit(ctx context.Context) (_ api.CommitID, err error) {
+	ctx, _, endObservation := b.operations.firstEverCommit.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("FirstEverCommit").Inc()
+	defer concurrentOps.WithLabelValues("FirstEverCommit").Dec()
+
+	return b.backend.FirstEverCommit(ctx)
+}
+
 type operations struct {
-	configGet       *observation.Operation
-	configSet       *observation.Operation
-	configUnset     *observation.Operation
-	getObject       *observation.Operation
-	mergeBase       *observation.Operation
-	blame           *observation.Operation
-	symbolicRefHead *observation.Operation
-	revParseHead    *observation.Operation
-	readFile        *observation.Operation
-	exec            *observation.Operation
-	getCommit       *observation.Operation
-	archiveReader   *observation.Operation
-	resolveRevision *observation.Operation
-	listRefs        *observation.Operation
-	revAtTime       *observation.Operation
+	configGet         *observation.Operation
+	configSet         *observation.Operation
+	configUnset       *observation.Operation
+	getObject         *observation.Operation
+	mergeBase         *observation.Operation
+	blame             *observation.Operation
+	symbolicRefHead   *observation.Operation
+	revParseHead      *observation.Operation
+	readFile          *observation.Operation
+	exec              *observation.Operation
+	getCommit         *observation.Operation
+	archiveReader     *observation.Operation
+	resolveRevision   *observation.Operation
+	listRefs          *observation.Operation
+	revAtTime         *observation.Operation
+	rawDiff           *observation.Operation
+	contributorCounts *observation.Operation
+	firstEverCommit   *observation.Operation
+	getBehindAhead    *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -373,21 +437,25 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		configGet:       op("config-get"),
-		configSet:       op("config-set"),
-		configUnset:     op("config-unset"),
-		getObject:       op("get-object"),
-		mergeBase:       op("merge-base"),
-		blame:           op("blame"),
-		symbolicRefHead: op("symbolic-ref-head"),
-		revParseHead:    op("rev-parse-head"),
-		readFile:        op("read-file"),
-		exec:            op("exec"),
-		getCommit:       op("get-commit"),
-		archiveReader:   op("archive-reader"),
-		resolveRevision: op("resolve-revision"),
-		listRefs:        op("list-refs"),
-		revAtTime:       op("rev-at-time"),
+		configGet:         op("config-get"),
+		configSet:         op("config-set"),
+		configUnset:       op("config-unset"),
+		getObject:         op("get-object"),
+		mergeBase:         op("merge-base"),
+		blame:             op("blame"),
+		symbolicRefHead:   op("symbolic-ref-head"),
+		revParseHead:      op("rev-parse-head"),
+		readFile:          op("read-file"),
+		exec:              op("exec"),
+		getCommit:         op("get-commit"),
+		archiveReader:     op("archive-reader"),
+		resolveRevision:   op("resolve-revision"),
+		listRefs:          op("list-refs"),
+		revAtTime:         op("rev-at-time"),
+		rawDiff:           op("raw-diff"),
+		contributorCounts: op("contributor-counts"),
+		firstEverCommit:   op("first-ever-commit"),
+		getBehindAhead:    op("get-behind-ahead"),
 	}
 }
 
