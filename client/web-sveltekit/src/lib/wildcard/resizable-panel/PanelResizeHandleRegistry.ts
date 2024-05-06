@@ -135,11 +135,12 @@ export class PanelResizeHandleRegistry {
         const { target } = event
         const { x, y } = getResizeEventCoordinates(event)
 
-        event.preventDefault()
-        event.stopImmediatePropagation()
-
         PanelResizeHandleRegistry.panelConstraintFlags.clear()
         PanelResizeHandleRegistry.isPointerDown = false
+
+        if (PanelResizeHandleRegistry.intersectingHandles.length > 0) {
+            event.preventDefault()
+        }
 
         PanelResizeHandleRegistry.updateResizeHandlerStates('up', event)
         PanelResizeHandleRegistry.recalculateIntersectingHandles({ target, x, y })
@@ -152,9 +153,6 @@ export class PanelResizeHandleRegistry {
         const { target } = event
         const { x, y } = getResizeEventCoordinates(event)
 
-        event.preventDefault()
-        event.stopImmediatePropagation()
-
         PanelResizeHandleRegistry.isPointerDown = true
 
         PanelResizeHandleRegistry.recalculateIntersectingHandles({ target, x, y })
@@ -162,6 +160,9 @@ export class PanelResizeHandleRegistry {
 
         if (PanelResizeHandleRegistry.intersectingHandles.length > 0) {
             PanelResizeHandleRegistry.updateResizeHandlerStates('down', event)
+
+            event.preventDefault()
+            event.stopImmediatePropagation()
         }
     }
 
