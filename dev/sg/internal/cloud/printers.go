@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -30,19 +31,22 @@ type jsonInstancePrinter struct {
 func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 	valueFunc := func(inst *Instance) []any {
 		name := inst.Name
-		if len(name) > 20 {
-			name = name[:20]
+		if len(name) > 37 {
+			name = name[:37] + "..."
 		}
 
 		status := inst.Status.Status
-		createdAt := inst.CreatedAt.String()
+		expiresAt := "n/a"
+		if !inst.ExpiresAt.IsZero() {
+			expiresAt = inst.ExpiresAt.Format(time.RFC3339)
+		}
 
 		return []any{
-			name, status, createdAt,
+			name, status, expiresAt,
 		}
 
 	}
-	return newTerminalInstancePrinter(valueFunc, "%-40s %-11s %s", "Name", "Status", "Created At")
+	return newTerminalInstancePrinter(valueFunc, "%-40s %-11s %s", "Name", "Status", "Expires At")
 }
 
 func newTerminalInstancePrinter(valueFunc func(i *Instance) []any, headingFmt string, headings ...string) *terminalInstancePrinter {
@@ -66,6 +70,8 @@ func (p *terminalInstancePrinter) Print(items ...*Instance) error {
 		line := fmt.Sprintf("%-40s %-11s %s", values...)
 		std.Out.WriteLine(output.Line("", output.StyleGrey, line))
 	}
+
+	std.Out.WriteSuggestionf("Some names may be truncated. To see the full names use the --raw format")
 	return nil
 }
 

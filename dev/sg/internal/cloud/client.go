@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 	cloudapiv1 "github.com/sourcegraph/cloud-api/go/cloudapi/v1"
 	"github.com/sourcegraph/cloud-api/go/cloudapi/v1/cloudapiv1connect"
 	"github.com/sourcegraph/run"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -49,7 +51,7 @@ func NewDeploymentSpec(name, version string) *DeploymentSpec {
 	features := newInstanceFeatures()
 	features.SetEphemeralInstance(true)
 	return &DeploymentSpec{
-		Name:             sanitizeInstanceName(name),
+		Name:             name,
 		Version:          version,
 		InstanceFeatures: features.Value(),
 	}
@@ -109,16 +111,14 @@ func (c *Client) GetInstance(ctx context.Context, name string) (*Instance, error
 }
 
 func (c *Client) ListInstances(ctx context.Context, all bool) ([]*Instance, error) {
-	var req *connect.Request[cloudapiv1.ListInstancesRequest]
-	if all {
-		req = newRequestWithToken(c.token, &cloudapiv1.ListInstancesRequest{})
-	} else {
-		req = newRequestWithToken(c.token, &cloudapiv1.ListInstancesRequest{
-			InstanceFilter: &cloudapiv1.InstanceFilter{
-				AdminEmail: &c.email,
-			},
-		})
+	listReq := cloudapiv1.ListInstancesRequest{}
+	if !all {
+		listReq.InstanceFilter = &cloudapiv1.InstanceFilter{
+			AdminEmail: &c.email,
+		}
 	}
+
+	req := newRequestWithToken(c.token, &listReq)
 	resp, err := c.client.ListInstances(
 		ctx,
 		req,
@@ -160,7 +160,20 @@ func (c *Client) DeleteInstance(ctx context.Context, name string) error {
 	return nil
 }
 
-func sanitizeInstanceName(name string) string {
-	name = strings.ToLower(name)
-	return strings.ReplaceAll(name, "/", "-")
+func (c *Client) ExtendLease(ctx context.Context, name string, extendTime time.Time) (*Instance, error) {
+	req := newRequestWithToken(c.token, &cloudapiv1.UpdateInstanceLeaseRequest{
+		Name:        name,
+		Environment: DevEnvironment,
+		Lease: &timestamppb.Timestamp{
+			Seconds: extendTime.Unix(),
+			Nanos:   0,
+		},
+	})
+
+	resp, err := c.client.UpdateInstanceLease(ctx, req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to extend lease for instance %q", name)
+	}
+
+	return newInstance(resp.Msg.GetInstance())
 }
