@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+// MaxDuration is the maximum lease duration by which a deployment can be extended by, which is 4 days
 const MaxDuration = time.Hour * 24 * 4
 
 var LeaseEphemeralCommand = cli.Command{
@@ -106,6 +107,10 @@ func leaseCloudEphemeral(ctx *cli.Context) error {
 		return err
 	} else {
 		leaseEndTime = t
+	}
+
+	if leaseEndTime.Sub(currentLeaseTime) > MaxDuration {
+		return errors.Newf("cannot extend lease time by more than %s", MaxDuration)
 	}
 
 	pending = std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Updating lease of instance %q", name))
