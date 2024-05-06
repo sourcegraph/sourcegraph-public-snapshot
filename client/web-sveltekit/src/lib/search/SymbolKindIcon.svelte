@@ -130,6 +130,7 @@
         text {
             font-family: var(--code-font-family);
             fill: var(--color);
+            font-weight: bold;
         }
 
         path {
