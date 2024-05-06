@@ -300,6 +300,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// imageBuildOps.Append(bazelBuildExecutorVM(c, alwaysRebuild))
 			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				// imageBuildOps.Append(bazelBuildExecutorDockerMirror(c))
+				_ = fmt.Sprintf("foo")
 			}
 		}
 		ops.Merge(imageBuildOps)
