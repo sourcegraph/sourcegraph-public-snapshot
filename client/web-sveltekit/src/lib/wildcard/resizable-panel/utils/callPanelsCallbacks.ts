@@ -1,6 +1,7 @@
-import type { PanelInfo, PanelsLayout } from '../types'
-import { assert } from './assert'
 import { fuzzyNumbersEqual } from '../numbers'
+import type { PanelInfo, PanelsLayout } from '../types'
+
+import { assert } from './assert'
 
 export function callPanelCallbacks(
     panelsArray: PanelInfo[],
