@@ -10,8 +10,9 @@ option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cor
 // Enterprise Portal's subscription and licenses management capbilities.
 //
 // Extensions to support additional Enterprise services are expected to be
-// defined as separate gRPC services in 'lib/enterpriseportal', though they will
-// generally all be implemented by the Enterprise Portal Service directly.
+// defined as separate gRPC services in 'lib/enterpriseportal' - these are
+// generally all be implemented by the Enterprise Portal Service directly for
+// now.
 //
 // DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
 service EnterprisePortalCoreService {
