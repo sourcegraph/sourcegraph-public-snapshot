@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package sourcegraph.enterpriseportal.cody.v1;
+
+option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cody/v1";
+
+// EnterprisePortalCodyService is an extension to Enterprise Portal that
+// provides Cody managed services access management capbilities, such as quotas
+// for Cody Gateway.
+//
+// DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
+service EnterprisePortalCodyService {
+  // Retrieve Cody Gateway access granted to an Enterprise subscription.
+  // Properties may be inferred from the active license, or be defined in
+  // overrides.
+  rpc GetCodyGatewayAccess(GetCodyGatewayAccessRequest) returns (GetCodyGatewayAccessResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message GetCodyGatewayAccessRequest {
+  oneof query {
+    // The external UUID-format identifier for the Enterprise subscription to
+    // retrieve Cody Gateway access for.
+    string subscription_id = 1;
+    // Look up a access using an associated access token representing this
+    // subscription's Cody Gateway access.
+    string access_token = 2;
+  }
+}
+
+enum CodyGatewayRateLimitSource {
+  CODY_GATEWAY_RATE_LIMIT_SOURCE_UNKNOWN = 0;
+  // Indicates that a custom override for the rate limit has been stored.
+  CODY_GATEWAY_RATE_LIMIT_SOURCE_OVERRIDE = 1;
+  // Indicates that the rate limit is inferred by the subscriptions active plan.
+  CODY_GATEWAY_RATE_LIMIT_SOURCE_PLAN = 2;
+}
+
+message CodyGatewayRateLimit {
+  // The source of the rate limit configuration.
+  CodyGatewayRateLimitSource source = 1;
+  // The models that are allowed for this rate limit bucket.
+  // Usually, customers will have two separate rate limits, one
+  // for chat completions and one for code completions. A usual
+  // config could include:
+  //
+  //     chatCompletionsRateLimit: {
+  //         allowedModels: [anthropic/claude-v1, anthropic/claude-v1.3]
+  //     },
+  //     codeCompletionsRateLimit: {
+  //         allowedModels: [anthropic/claude-instant-v1]
+  //     }
+  //
+  // In general, the model names are of the format "$PROVIDER/$MODEL_NAME".
+  repeated string allowed_models = 2;
+  // Requests per time interval.
+  int64 limit = 3;
+  // Interval for rate limiting.
+  int64 interval_seconds = 4;
+}
+
+message CodyGatewayAccessToken {
+  // Access token for authenticating as the subscription holder with managed
+  // Sourcegraph services.
+  string token = 1;
+}
+
+message GetCodyGatewayAccessResponse {
+  // Whether or not a subscription has Cody Gateway access.
+  bool enabled = 1;
+
+  // Rate limit for chat completions access, or null if not enabled.
+  optional CodyGatewayRateLimit chat_completions_rate_limit = 2;
+  // Rate limit for code completions access, or null if not enabled.
+  optional CodyGatewayRateLimit code_completions_rate_limit = 3;
+  // Rate limit for embedding text chunks, or null if not enabled.
+  optional CodyGatewayRateLimit embeddings_rate_limt = 4;
+
+  // The most preferable Sourcegraph access token to use for authenticating as
+  // the subscription holder with managed Sourcegraph services.
+  // Null only if creating a token failed, for example when no active license
+  // exists.
+  optional CodyGatewayAccessToken current_access_token = 5;
+  // Available access tokens for authenticating as the subscription holder with
+  // managed Sourcegraph services.
+  repeated CodyGatewayAccessToken access_tokens = 6;
+}

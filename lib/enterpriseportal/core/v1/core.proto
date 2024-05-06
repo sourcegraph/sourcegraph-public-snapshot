@@ -1,0 +1,207 @@
+syntax = "proto3";
+
+package sourcegraph.enterpriseportal.core.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/core/v1";
+
+// EnterprisePortalCoreService is the core service API specification for
+// Enterprise Portal's subscription and licenses management capbilities.
+//
+// Extensions to support additional Enterprise services are expected to be
+// defined as separate gRPC services in 'lib/enterpriseportal', though they will
+// generally all be implemented by the Enterprise Portal Service directly.
+//
+// DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
+service EnterprisePortalCoreService {
+  // GetSubscription retrieves an exact match on an Enterprise subscription.
+  rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // ListSubscriptions queries for Enterprise subscriptions.
+  rpc ListSubscriptions(ListSubscriptionsRequest) returns (ListSubscriptionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // ListSubscriptionLicenses queries for Enterprise subscription licenses.
+  rpc ListSubscriptionLicenses(ListSubscriptionLicensesRequest) returns (ListSubscriptionLicensesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+enum EnterpriseSubscriptionConditionEvent {
+  SUBSCRIPTION_CONDITION_EVENT_UNKNOWN = 0;
+  // License creation event.
+  SUBSCRIPTION_CONDITION_EVENT_CREATED = 1;
+  // License archival event. i.e. 'is_archived'
+  SUBSCRIPTION_CONDITION_EVENT_ARCHIVED = 2;
+}
+
+message EnterpriseSubscriptionCondition {
+  google.protobuf.Timestamp timestamp = 1;
+  // Event is the type of event corresponding to this condition.
+  EnterpriseSubscriptionConditionEvent event = 2;
+  // Message is a description of the condition and why it happened.
+  optional string message = 3;
+}
+
+// EnterpriseSubscription represents a Sourcegraph Enterprise subscription.
+// It is one of the fundamental elements of the Enterprise Portal service.
+message EnterpriseSubscription {
+  // ID is the external UUID-format identifier for this subscription.
+  string id = 1;
+  // Timeline of key events corresponding to this subscription.
+  repeated EnterpriseSubscriptionCondition conditions = 2;
+  // Display name of this subscription. This is not guaranteed to be unique.
+  string display_name = 3;
+}
+
+message EnterpriseSubscriptionLicenseClassic {
+  message Info {
+    // The tags that indicate which features are activated by this license.
+    repeated string tags = 1;
+    // The number of users for which this product subscription is valid.
+    int64 user_count = 2;
+    // The expiration date of this product license, expressed as the number of
+    // seconds since the epoch.
+    int64 expires_at = 3;
+    // The Salesforce subscription ID associated with this product license.
+    string salesforceSubscriptionID = 4;
+    // The Salesforce opportunity ID associated with this product license.
+    string salesforceOpportunityID = 5;
+  }
+
+  // Version of this classic license's information schema.
+  int32 info_version = 1;
+  // Information embedded into the license key.
+  Info info = 2;
+  // The license key.
+  string license_key = 3;
+  // UUID of the known instance using this license key, self-reported from
+  // online license checks. Also known as 'site ID'.
+  string instance_id = 4;
+}
+
+enum EnterpriseSubscriptionLicenseConditionEvent {
+  SUBSCRIPTION_LICENSE_CONDITION_EVENT_UNKNOWN = 0;
+  // License creation event.
+  SUBSCRIPTION_LICENSE_CONDITION_EVENT_CREATED = 1;
+  // License archival event. i.e. 'is_archived'
+  SUBSCRIPTION_LICENSE_CONDITION_EVENT_ARCHIVED = 2;
+  // License revocation event, i.e. 'is_revoked'
+  SUBSCRIPTION_LICENSE_CONDITION_EVENT_REVOKED = 3;
+}
+
+message EnterpriseSubscriptionLicenseCondition {
+  google.protobuf.Timestamp timestamp = 1;
+  // Event is the type of event corresponding to this condition.
+  EnterpriseSubscriptionLicenseConditionEvent event = 2;
+  // Message is a description of the condition and why it happened.
+  optional string message = 3;
+}
+
+// EnterpriseSubscriptionLicense represents a license for a Sourcegraph
+// Enterprise subscription. It is one of the fundamental elements of the
+// Enterprise Portal service.
+message EnterpriseSubscriptionLicense {
+  // ID is the external UUID-format identifier for this license key.
+  string id = 1;
+  // The external UUID-format identifier for the subscription that owns this
+  // license.
+  string subscription_id = 2;
+  // Timeline of key events corresponding to this license.
+  repeated EnterpriseSubscriptionLicenseCondition conditions = 3;
+
+  // License data.
+  oneof license {
+    EnterpriseSubscriptionLicenseClassic classic = 4;
+  }
+}
+
+message GetSubscriptionRequest {
+  // Query specifies the lookup strategy for this get request.
+  oneof query {
+    // Look up a subscription using its UUID-format identifier.
+    string id = 1;
+  }
+}
+
+// EnterpriseSubscriptionLicenseType can be used to denote different types of
+// licenses.
+enum EnterpriseSubscriptionLicenseType {
+  SUBSCRIPTION_LICENSE_TYPE_UNSPECIFIED = 0;
+  // This license is the classic licensing mechanism that Sourcegraph has always
+  // had. Each Subscription is expected to have at most one active Sourcegraph
+  // classic license.
+  SUBSCRIPTION_LICENSE_TYPE_CLASSIC = 1;
+}
+
+message GetSubscriptionResponse {
+  EnterpriseSubscription subscription = 1;
+}
+
+message ListSubscriptionsRequest {
+  // Clients use this field to specify the maximum number of results to be
+  // returned by the server. The server may further constrain the maximum number
+  // of results returned in a single page. If the page_size is 0, the server
+  // will decide the number of results to be returned.
+  //
+  // See pagination concepts from https://cloud.google.com/apis/design/design_patterns#list_pagination
+  int32 page_size = 1;
+  // The client uses this field to request a specific page of the list results.
+  //
+  // See pagination concepts from https://cloud.google.com/apis/design/design_patterns#list_pagination
+  string page_token = 2;
+}
+
+message ListSubscriptionsResponse {
+  // This field represents the pagination token to retrieve the next page of
+  // results. If the value is "", it means no further results for the request.
+  string next_page_token = 1;
+  // The list of subscriptions that matched the given query.
+  repeated EnterpriseSubscription subscriptions = 2;
+}
+
+message ListSubscriptionLicensesFilter {
+  oneof filter {
+    // Return only licenses corresponding to the given subscription ID, with the
+    // most recently issued licenses first.
+    string subscription_id = 1;
+    // Return only product subscriptions whose license key contains this
+    // substring.
+    string license_key_substring = 2;
+    // Return only licenses of the given type.
+    EnterpriseSubscriptionLicenseType type = 3;
+    // Return only licenses with the given archival status.
+    bool is_archived = 4;
+  }
+}
+
+message ListSubscriptionLicensesRequest {
+  // Clients use this field to specify the maximum number of results to be
+  // returned by the server. The server may further constrain the maximum number
+  // of results returned in a single page. If the page_size is 0, the server
+  // will decide the number of results to be returned.
+  //
+  // See pagination concepts from https://cloud.google.com/apis/design/design_patterns#list_pagination
+  int32 page_size = 1;
+  // The client uses this field to request a specific page of the list results.
+  //
+  // See pagination concepts from https://cloud.google.com/apis/design/design_patterns#list_pagination
+  //
+  // TODO: Create an internal pagination token type: https://protobuf.dev/programming-guides/api/#encode-opaque-data-in-strings
+  optional string page_token = 2;
+
+  // Filters define the lookup strategy for this list request.
+  repeated ListSubscriptionLicensesFilter filters = 3;
+}
+
+message ListSubscriptionLicensesResponse {
+  // This field represents the pagination token to retrieve the next page of
+  // results. If the value is "", it means no further results for the request.
+  string next_page_token = 1;
+  // The list of licenses that matched the given query.
+  repeated EnterpriseSubscriptionLicense licenses = 2;
+}

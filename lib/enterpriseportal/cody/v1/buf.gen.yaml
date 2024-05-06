@@ -1,0 +1,25 @@
+# Configuration file for https://buf.build/, which we use for Protobuf code generation.
+version: v1
+plugins:
+  - plugin: buf.build/grpc/go:v1.3.0
+    out: .
+    opt:
+      - paths=source_relative
+  - plugin: buf.build/protocolbuffers/go:v1.29.1
+    out: .
+    opt:
+      - paths=source_relative
+
+  # Generate connectrpc bindings in Go
+  - plugin: buf.build/connectrpc/go:v1.16.1
+    out: .
+    opt:
+      - paths=source_relative
+
+  # Generate OpenAPI schema from connectrpc
+  # https://github.com/sudorandom/protoc-gen-connect-openapi
+  # go install github.com/sudorandom/protoc-gen-connect-openapi@v0.7.2
+  # - plugin: connect-openapi
+  #   out: 'v1connect' # documents the ConnectRPC API
+  #   opt:
+  #     - base=v1connect/openapi.base.yaml
