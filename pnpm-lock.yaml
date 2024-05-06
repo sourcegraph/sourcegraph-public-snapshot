@@ -536,6 +536,9 @@ importers:
       '@slack/web-api':
         specifier: ^5.15.0
         version: 5.15.0
+      '@sourcegraph/cody-context-filters-test-dataset':
+        specifier: workspace:*
+        version: link:client/cody-context-filters-test-dataset
       '@sourcegraph/eslint-config':
         specifier: 0.37.1
         version: 0.37.1(@testing-library/dom@8.13.0)(eslint@8.57.0)(typescript@5.4.2)
@@ -1222,6 +1225,8 @@ importers:
       '@sourcegraph/testing':
         specifier: workspace:*
         version: link:../testing
+
+  client/cody-context-filters-test-dataset: {}
 
   client/cody-shared:
     dependencies:
