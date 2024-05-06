@@ -32,6 +32,10 @@ var LeaseEphemeralCommand = cli.Command{
 			Name:  "reduce",
 			Usage: "the duration to reduce the lease by - if the lease time is reduced to be in the passed the instance will be deleted!",
 		},
+		&cli.BoolFlag{
+			Name:  "expire-now",
+			Usage: "sets the lease expiry time to now",
+		},
 	},
 }
 
@@ -40,6 +44,26 @@ func printLeaseTimeDiff(oldTime, newTime time.Time) {
 	std.Out.WriteLine(output.Linef("", output.StyleRed, "- Lease time %s", oldTime.Format(time.RFC3339)))
 	std.Out.WriteLine(output.Linef("", output.StyleGreen, "+ Lease time %s", newTime.Format(time.RFC3339)))
 	std.Out.Write("\n")
+}
+
+func calcLeaseEnd(currentLeaseTime time.Time, extension, reduction time.Duration) (time.Time, error) {
+	var leaseEndTime time.Time
+	if extension == 0 && reduction == 0 {
+		return leaseEndTime, errors.New("extension and reduction times cannot both be 0")
+	}
+
+	if extension > 0 {
+		leaseEndTime = currentLeaseTime.Add(extension)
+	} else {
+		return leaseEndTime, errors.New("lease extension value should be a positive value")
+	}
+	if reduction > 0 {
+		leaseEndTime = currentLeaseTime.Add(-reduction)
+	} else {
+		return leaseEndTime, errors.New("lease reduction value should be a positive value")
+	}
+
+	return leaseEndTime, nil
 }
 
 func leaseCloudEphemeral(ctx *cli.Context) error {
@@ -74,21 +98,17 @@ func leaseCloudEphemeral(ctx *cli.Context) error {
 		return ErrNotEphemeralInstance
 	}
 
-	if ctx.Duration("extend") == 0 && ctx.Duration("reduce") == 0 {
-		return errors.New("must specify a duration for either --extend or --reduce")
+	currentLeaseTime := inst.ExpiresAt
+	var leaseEndTime time.Time
+	if ctx.Bool("expire-now") {
+		leaseEndTime = time.Now()
+	} else if t, err := calcLeaseEnd(currentLeaseTime, ctx.Duration("extend"), ctx.Duration("reduce")); err != nil {
+		return err
+	} else {
+		leaseEndTime = t
 	}
 
 	pending = std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Updating lease of instance %q", name))
-
-	currentLeaseTime := inst.ExpiresAt
-
-	var leaseEndTime time.Time
-	if ctx.Duration("extend") > 0 {
-		leaseEndTime.Add(ctx.Duration("extend"))
-	}
-	if ctx.Duration("reduce") > 0 {
-		leaseEndTime = currentLeaseTime.Add(-ctx.Duration("reduce"))
-	}
 
 	printLeaseTimeDiff(currentLeaseTime, leaseEndTime)
 	inst, err = cloudClient.ExtendLease(ctx.Context, name, leaseEndTime)
