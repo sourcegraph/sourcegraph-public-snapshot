@@ -98,6 +98,10 @@ func leaseCloudEphemeral(ctx *cli.Context) error {
 		std.Out.WriteWarningf("Cannot update lease time of non-ephemeral instance %q", name)
 		return ErrNotEphemeralInstance
 	}
+	if inst.IsExpired() {
+		std.Out.WriteWarningf(" Cannot update lease time of expired instance %q", name)
+		return ErrExpiredInstance
+	}
 
 	currentLeaseTime := inst.ExpiresAt
 	var leaseEndTime time.Time
@@ -110,7 +114,7 @@ func leaseCloudEphemeral(ctx *cli.Context) error {
 	}
 
 	if leaseEndTime.Sub(currentLeaseTime) > MaxDuration {
-		return errors.Newf("cannot extend lease time by more than %s", MaxDuration)
+		return errors.Newf("cannot update lease time by more than %s", MaxDuration)
 	}
 
 	pending = std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Updating lease of instance %q", name))
@@ -121,6 +125,6 @@ func leaseCloudEphemeral(ctx *cli.Context) error {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to update lease"))
 	}
 
-	pending.Complete(output.Linef(CloudEmoji, output.StyleSuccess, "Lease of instance %q updated by %s", name, currentLeaseTime.Sub(leaseEndTime)))
+	pending.Complete(output.Linef(CloudEmoji, output.StyleSuccess, "Lease of instance %q updated by %s", name, leaseEndTime.Sub(currentLeaseTime)))
 	return newDefaultTerminalInstancePrinter().Print(inst)
 }

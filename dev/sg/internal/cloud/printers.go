@@ -31,8 +31,8 @@ type jsonInstancePrinter struct {
 func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 	valueFunc := func(inst *Instance) []any {
 		name := inst.Name
-		if len(name) > 20 {
-			name = name[:20]
+		if len(name) > 40 {
+			name = name[:40]
 		}
 
 		status := inst.Status.Status

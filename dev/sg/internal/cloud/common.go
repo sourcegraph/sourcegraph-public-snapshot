@@ -17,6 +17,7 @@ var ErrUserCancelled = errors.New("user cancelled")
 var ErrWrongBranch = errors.New("wrong current branch")
 var ErrBranchOutOfSync = errors.New("branch is out of sync with remote")
 var ErrNotEphemeralInstance = errors.New("instance is not ephemeral")
+var ErrExpiredInstance = errors.New("instance has already expired")
 
 const CloudEmoji = "☁️"
 
