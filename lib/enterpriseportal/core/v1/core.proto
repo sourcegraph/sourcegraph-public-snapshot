@@ -40,7 +40,7 @@ enum EnterpriseSubscriptionConditionEvent {
 }
 
 message EnterpriseSubscriptionCondition {
-  google.protobuf.Timestamp timestamp = 1;
+  google.protobuf.Timestamp create_time = 1;
   // Event is the type of event corresponding to this condition.
   EnterpriseSubscriptionConditionEvent event = 2;
   // Message is a description of the condition and why it happened.
@@ -95,7 +95,7 @@ enum EnterpriseSubscriptionLicenseConditionEvent {
 }
 
 message EnterpriseSubscriptionLicenseCondition {
-  google.protobuf.Timestamp timestamp = 1;
+  google.protobuf.Timestamp create_time = 1;
   // Event is the type of event corresponding to this condition.
   EnterpriseSubscriptionLicenseConditionEvent event = 2;
   // Message is a description of the condition and why it happened.
