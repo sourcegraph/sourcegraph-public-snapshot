@@ -25,10 +25,13 @@ var ListVersionsEphemeralCommand = cli.Command{
 	Description: "list ephemeral cloud instances attached to your GCP account",
 	Action:      listTagsCloudEphemeral,
 	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "format",
-			Usage: "format to print out the list of versions out - can be one json, raw or formatted",
-			Value: "formatted",
+		&cli.BoolFlag{
+			Name:  "json",
+			Usage: "print the instance details in JSON",
+		},
+		&cli.BoolFlag{
+			Name:  "raw",
+			Usage: "print all of the instance details",
 		},
 		&cli.IntFlag{
 			Name:  "limit",
@@ -36,8 +39,9 @@ var ListVersionsEphemeralCommand = cli.Command{
 			Value: 100,
 		},
 		&cli.StringFlag{
-			Name:  "filter",
-			Usage: "filter versions by regex",
+			Name:    "filter",
+			Usage:   "filter versions by regex",
+			Aliases: []string{"f"},
 		},
 	},
 }
@@ -127,7 +131,7 @@ func listTagsCloudEphemeral(ctx *cli.Context) error {
 		return err
 	}
 	pending := std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Retrieving docker images from registry %q", ar.RepositoryName))
-	images, err := ar.ListDockerImages(ctx.Context)
+	images, err := ar.ListDockerImages(ctx.Context, FilterTagByRegex(filterRegex))
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to retreive images from registry %q", ar.RepositoryName))
 		return err
@@ -143,20 +147,20 @@ func listTagsCloudEphemeral(ctx *cli.Context) error {
 		}
 	}
 
-	switch ctx.String("format") {
-	case "json":
+	switch {
+	case ctx.Bool("json"):
 		{
 			return json.NewEncoder(os.Stdout).Encode(imagesByTag)
 		}
-	case "raw":
+	case ctx.Bool("raw"):
 		{
 			count := 0
 			limit := ctx.Int("limit")
 			for tag, images := range imagesByTag {
 				image := images[0]
-				std.Out.Writef("Tag: %s\n", tag)
-				std.Out.Writef(" %-50s %-20s %s", "Name", "Upload time", "URI")
-				std.Out.Writef("- %-50s %-20s %s", image.Name, image.UploadTime.AsTime().Format(time.DateTime), image.Uri)
+				std.Out.Writef(`Tag                   : %s
+Upload Time           : %s
+Image count           : %d`, tag, image.UploadTime.AsTime().Format(time.DateTime), len(images))
 				count++
 				if limit >= 1 && count >= limit {
 					break
@@ -171,13 +175,16 @@ func listTagsCloudEphemeral(ctx *cli.Context) error {
 			for tag, images := range imagesByTag {
 				// we use the first image to get the upload time
 				image := images[0]
-				tag := tag[:min(50, len(tag))]
+				if len(tag) > 50 {
+					tag = tag[:47] + "..."
+				}
 				std.Out.Writef("%-50s %-20s %-5d", tag, image.UploadTime.AsTime().Format(time.DateTime), len(images))
 				count++
 				if limit >= 1 && count >= limit {
 					break
 				}
 			}
+			std.Out.WriteSuggestionf("Some tags might have been truncated. To see the full tag ouput use the --raw format or filter the tags by using --filter")
 		}
 	}
 	return nil

@@ -136,7 +136,6 @@ tickLoop:
 	return build, buildError
 }
 
-
 func triggerEphemeralBuild(ctx context.Context, client *bk.Client, currRepo *repo.GitRepo) (*buildkite.Build, error) {
 >>>>>>> 8c6637776df (handle deploying a version)
 	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote", currRepo.Branch))
@@ -205,10 +204,10 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 			return err
 		}
 		pending := std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Checking if version %q exists in Cloud ephemeral registry", version))
-		if exists, err := ar.HasDockerImageTag(ctx.Context, "gitserver", version); err != nil {
+		if images, err := ar.FindDockerImageExact(ctx.Context, "gitserver", version); err != nil {
 			pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to check if version %q exists in Cloud ephemeral registry", version))
 			return err
-		} else if !exists {
+		} else if len(images) == 0 {
 			pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "no version %q found in Cloud ephemeral registry!", version))
 			return errors.Newf("no image with tag %q found", version)
 		}
