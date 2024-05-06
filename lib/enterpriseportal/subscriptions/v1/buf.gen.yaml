@@ -15,11 +15,3 @@ plugins:
     out: .
     opt:
       - paths=source_relative
-
-  # Generate OpenAPI schema from connectrpc
-  # https://github.com/sudorandom/protoc-gen-connect-openapi
-  # go install github.com/sudorandom/protoc-gen-connect-openapi@v0.7.2
-  # - plugin: connect-openapi
-  #   out: 'v1connect' # documents the ConnectRPC API
-  #   opt:
-  #     - base=v1connect/openapi.base.yaml
