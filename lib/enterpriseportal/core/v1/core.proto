@@ -137,8 +137,7 @@ enum EnterpriseSubscriptionLicenseType {
   ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_UNSPECIFIED = 0;
   // This license type is the classic licensing mechanism that Sourcegraph has
   // always had. Each Subscription is expected to have at most one active
-  // Sourcegraph classic license used by their primary production Sourcegraph
-  // instance.
+  // Sourcegraph classic license used by a Sourcegraph instance at a time.
   ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_CLASSIC = 1;
 }
 
