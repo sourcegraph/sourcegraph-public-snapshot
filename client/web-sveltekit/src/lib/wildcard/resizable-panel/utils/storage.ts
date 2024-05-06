@@ -1,23 +1,49 @@
 import type { PanelInfo, PanelsLayout } from '../types'
 
 interface SerializedPanelGroupState {
-    [panelIds: string]: PanelsLayout
+    [panelIds: string]: PanelConfigurationState
 }
 
-export function savePanelGroupLayout(panelId: string, panels: PanelInfo[], layout: PanelsLayout): void {
+export interface PanelConfigurationState {
+    layout: number[]
+    expandToSizes: {
+        [panelId: string]: number
+    }
+}
+
+/**
+ * Important abstraction over key, it might be useful when we change logic
+ * around persistent data to switch keys and hence don't think about migration
+ * values from local storage which have been saved by old logic
+ *
+ * Changing key serialization resets existing saved panels information
+ */
+function getPanelIdKey(panelId: string): string {
+    return `${panelId}-v2`
+}
+
+export function savePanelGroupLayout(
+    panelId: string,
+    panels: PanelInfo[],
+    layout: PanelsLayout,
+    panelSizesBeforeCollapse: Map<string, number>
+): void {
     const panelsKey = getPanelsKey(panels)
     const state = loadSerializedPanelGroupState(panelId) ?? {}
 
-    state[panelsKey] = layout
+    state[panelsKey] = {
+        layout,
+        expandToSizes: Object.fromEntries(panelSizesBeforeCollapse.entries()),
+    }
 
     try {
-        localStorage.setItem(panelId, JSON.stringify(state))
+        localStorage.setItem(getPanelIdKey(panelId), JSON.stringify(state))
     } catch (error) {
         console.error(error)
     }
 }
 
-export function loadPanelGroupLayout(groupId: string, panels: PanelInfo[]): PanelsLayout | null {
+export function loadPanelGroupLayout(groupId: string, panels: PanelInfo[]): PanelConfigurationState | null {
     const state = loadSerializedPanelGroupState(groupId) ?? {}
     const panelKey = getPanelsKey(panels)
 
@@ -26,7 +52,7 @@ export function loadPanelGroupLayout(groupId: string, panels: PanelInfo[]): Pane
 
 function loadSerializedPanelGroupState(panelGroupKey: string): SerializedPanelGroupState | null {
     try {
-        const serialized = localStorage.getItem(panelGroupKey)
+        const serialized = localStorage.getItem(getPanelIdKey(panelGroupKey))
         if (serialized) {
             const parsed = JSON.parse(serialized)
             if (typeof parsed === 'object' && parsed !== undefined) {

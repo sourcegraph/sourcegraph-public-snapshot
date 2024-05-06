@@ -8,21 +8,48 @@
     export let maxSize: number | undefined = undefined
     export let defaultSize: number | undefined = undefined
     export let order: number | undefined = undefined
+    export let collapsible: boolean | undefined = undefined
+    export let collapsedSize: number | undefined = undefined
 
     const panelId = id ?? getId()
     let panelElement: HTMLElement
 
-    const { groupId, getPanelStyles, registerPanel } = getContext<PanelGroupContext>('panel-group-context')
+    const { groupId, getPanelStyles, registerPanel, expandPanel, collapsePanel, isPanelCollapsed } =
+        getContext<PanelGroupContext>('panel-group-context')
 
-    onDestroy(
-        registerPanel({
-            id: panelId,
-            idFromProps: id,
-            order,
-            constraints: { defaultSize, minSize, maxSize },
-            getPanelElement: () => panelElement,
-        })
-    )
+    // TODO: Support update registry as any of panelInfo deps change
+    const panelInfo = {
+        order,
+        id: panelId,
+        idFromProps: id,
+        constraints: {
+            minSize,
+            maxSize,
+            defaultSize,
+            collapsible,
+            collapsedSize,
+        },
+        getPanelElement: () => panelElement,
+    }
+
+    // External imperative Panel API
+    export function collapse(): void {
+        collapsePanel(panelInfo)
+    }
+
+    export function expand(): void {
+        expandPanel(panelInfo)
+    }
+
+    export function isCollapsed() {
+        return isPanelCollapsed(panelInfo)
+    }
+
+    export function isExpanded() {
+        return !isPanelCollapsed(panelInfo)
+    }
+
+    onDestroy(registerPanel(panelInfo))
 
     $: styles = getPanelStyles(panelId)
 </script>

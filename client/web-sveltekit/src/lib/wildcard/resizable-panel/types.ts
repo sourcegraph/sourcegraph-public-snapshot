@@ -48,4 +48,9 @@ export interface PanelGroupContext {
     stopDragging: () => void
     getPanelGroupElement: () => HTMLElement
     getPanelStyles: (id: PanelId) => Readable<string>
+
+    // External panels API
+    collapsePanel: (panel: PanelInfo) => void
+    expandPanel: (panel: PanelInfo) => void
+    isPanelCollapsed: (panel: PanelInfo) => boolean
 }

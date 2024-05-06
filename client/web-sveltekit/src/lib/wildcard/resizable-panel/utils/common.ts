@@ -1,4 +1,4 @@
-import type { PanelId, PanelInfo } from '../types'
+import type { PanelConstraints, PanelId, PanelInfo, PanelsLayout } from '../types'
 
 let counter = 0
 
@@ -9,6 +9,26 @@ export function getId(): string {
 
 export function findPanelDataIndex(panelDataArray: PanelInfo[], panelId: PanelId): number {
     return panelDataArray.findIndex(prevPanelData => prevPanelData.id === panelId)
+}
+
+export interface PanelMetadata extends PanelConstraints {
+    panelSize: number
+    pivotIndices: number[]
+}
+
+export function getPanelMetadata(panelDataArray: PanelInfo[], panel: PanelInfo, layout: PanelsLayout): PanelMetadata {
+    const panelIndex = findPanelDataIndex(panelDataArray, panel.id)
+
+    const isLastPanel = panelIndex === panelDataArray.length - 1
+    const pivotIndices = isLastPanel ? [panelIndex - 1, panelIndex] : [panelIndex, panelIndex + 1]
+
+    const panelSize = layout[panelIndex]
+
+    return {
+        panelSize,
+        pivotIndices,
+        ...panel.constraints,
+    }
 }
 
 export function sortPanels(panels: PanelInfo[]): PanelInfo[] {

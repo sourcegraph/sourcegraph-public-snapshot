@@ -26,6 +26,17 @@
             }
         }
     }
+
+    // Collapsable panels example
+    let leftPanel: Panel
+
+    function handleExpandCollapsePanel() {
+        if (leftPanel.isCollapsed()) {
+            leftPanel.expand()
+        } else {
+            leftPanel.collapse()
+        }
+    }
 </script>
 
 <Story name="Horizontal panels">
@@ -119,6 +130,34 @@
             </Panel>
             <PanelResizeHandle />
             <Panel defaultSize={20} minSize={10}>
+                <div class="item">right</div>
+            </Panel>
+        </PanelGroup>
+    </section>
+</Story>
+
+<Story name="Collapsable panels">
+    <button on:click={handleExpandCollapsePanel}>Collapse/expand left panel</button>
+
+    <section class="root">
+        <PanelGroup id="main-group" direction="horizontal">
+            <Panel
+                id="first"
+                order={1}
+                minSize={40}
+                defaultSize={50}
+                collapsible
+                collapsedSize={15}
+                bind:this={leftPanel}
+            >
+                <div class="item">left</div>
+            </Panel>
+            <PanelResizeHandle />
+            <Panel minSize={20} id="second" order={2}>
+                <div class="item">middle</div>
+            </Panel>
+            <PanelResizeHandle />
+            <Panel defaultSize={30} minSize={20} id="third" order={3}>
                 <div class="item">right</div>
             </Panel>
         </PanelGroup>

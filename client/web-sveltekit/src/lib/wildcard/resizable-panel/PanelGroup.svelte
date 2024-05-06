@@ -4,7 +4,7 @@
 
     // Store save layout debounced callback globally
     // to limit the frequency of localStorage updates.
-    const DEBOUNCE_MAP: Record<string, any> = {}
+    const DEBOUNCE_MAP: Record<string, typeof savePanelGroupLayout> = {}
     const LOCAL_STORAGE_DEBOUNCE_INTERVAL = 100
 
     function getPanelGroupId(propId: string): string {
@@ -23,7 +23,8 @@
     import { assert } from './utils/assert'
     import { debounce } from './utils/debounce'
     import { loadPanelGroupLayout, savePanelGroupLayout } from './utils/storage'
-    import { findPanelDataIndex, sortPanels } from './utils/common'
+    import { fuzzyNumbersEqual } from './numbers'
+    import { findPanelDataIndex, getPanelMetadata, sortPanels } from './utils/common'
     import { calculateUnsafeDefaultLayout } from './utils/calculateUnsafeDefaultLayout'
     import { validatePanelGroupLayout } from './utils/validatePanelGroupLayout'
     import { computePanelFlexBoxStyle } from './utils/computePanelFlexBoxStyle'
@@ -43,6 +44,7 @@
 
     // Local state
     let groupElement: HTMLElement
+    let panelSizeBeforeCollapseMap = new Map<string, number>()
 
     // Used in resize handler to avoid cursor panel UI flickering
     let prevDelta: number | null = null
@@ -59,10 +61,11 @@
             let unsafeLayout: PanelsLayout | null = null
 
             if (id && $layoutStore.length > 0) {
-                const savedLayout = loadPanelGroupLayout(id, panels)
+                const state = loadPanelGroupLayout(id, panels)
 
-                if (savedLayout) {
-                    unsafeLayout = savedLayout
+                if (state) {
+                    unsafeLayout = state.layout
+                    panelSizeBeforeCollapseMap = new Map(Object.entries(state.expandToSizes))
                 }
             }
 
@@ -96,9 +99,81 @@
             // Clone mutable data before passing to the debounced
             // function, else we run the risk of saving an incorrect
             // combination of mutable and immutable values to state.
-            debouncedSave(id, [...$panelsStore], layout)
+            debouncedSave(id, [...$panelsStore], layout, new Map(panelSizeBeforeCollapseMap))
         })
     )
+
+    // External API methods
+    function collapsePanel(panel: PanelInfo): void {
+        if (!panel.constraints.collapsible) {
+            return
+        }
+
+        const panelConstraintsArray = $panelsStore.map(panel => panel.constraints)
+        const { collapsedSize = 0, panelSize, pivotIndices } = getPanelMetadata($panelsStore, panel, $layoutStore)
+
+        assert(panelSize != null, `Panel size not found for panel "${panel.id}"`)
+
+        if (!fuzzyNumbersEqual(panelSize, collapsedSize)) {
+            // Store size before collapse;
+            // This is the size that gets restored if the expand() API is used.
+            panelSizeBeforeCollapseMap.set(panel.id, panelSize)
+
+            const isLastPanel = findPanelDataIndex($panelsStore, panel.id) === $panelsStore.length - 1
+            const delta = isLastPanel ? panelSize - collapsedSize : collapsedSize - panelSize
+
+            const nextLayout = adjustLayoutByDelta({
+                delta,
+                pivotIndices,
+                initialLayout: $layoutStore,
+                prevLayout: $layoutStore,
+                panelConstraints: panelConstraintsArray,
+                trigger: 'imperative-api',
+            })
+
+            if (!compareLayouts($layoutStore, nextLayout)) {
+                $layoutStore = nextLayout
+            }
+        }
+    }
+
+    function expandPanel(panel: PanelInfo, minSizeOverride?: number): void {
+        if (!panel.constraints.collapsible) {
+            return
+        }
+
+        const {
+            pivotIndices,
+            panelSize = 0,
+            collapsedSize = 0,
+            minSize: minSizeFromProps = 0,
+        } = getPanelMetadata($panelsStore, panel, $layoutStore)
+        const panelConstraintsArray = $panelsStore.map(panel => panel.constraints)
+
+        const minSize = minSizeOverride ?? minSizeFromProps
+
+        if (fuzzyNumbersEqual(panelSize, collapsedSize)) {
+            // Restore this panel to the size it was before it was collapsed, if possible.
+            const prevPanelSize = panelSizeBeforeCollapseMap.get(panel.id)
+
+            const baseSize = prevPanelSize != null && prevPanelSize >= minSize ? prevPanelSize : minSize
+            const isLastPanel = findPanelDataIndex($panelsStore, panel.id) === $panelsStore.length - 1
+            const delta = isLastPanel ? panelSize - baseSize : baseSize - panelSize
+
+            const nextLayout = adjustLayoutByDelta({
+                delta,
+                initialLayout: $layoutStore,
+                panelConstraints: panelConstraintsArray,
+                pivotIndices,
+                prevLayout: $layoutStore,
+                trigger: 'imperative-api',
+            })
+
+            if (!compareLayouts($layoutStore, nextLayout)) {
+                $layoutStore = nextLayout
+            }
+        }
+    }
 
     function registerPanel(panel: PanelInfo): Unsubscriber {
         panelsStore.update(panels => {
@@ -219,6 +294,14 @@
         })
     }
 
+    function isPanelCollapsed(panel: PanelInfo): boolean {
+        const { panelSize, collapsible, collapsedSize = 0 } = getPanelMetadata($panelsStore, panel, $layoutStore)
+
+        assert(panelSize != null, `Panel size not found for panel "${panel.id}"`)
+
+        return collapsible === true && fuzzyNumbersEqual(panelSize, collapsedSize)
+    }
+
     setContext<PanelGroupContext>('panel-group-context', {
         groupId,
         registerPanel,
@@ -230,6 +313,9 @@
         dragStateStore,
         getPanelGroupElement: () => groupElement,
         direction: direction as PanelGroupDirection,
+        expandPanel,
+        collapsePanel,
+        isPanelCollapsed,
     })
 </script>
 
