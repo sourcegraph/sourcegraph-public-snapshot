@@ -271,6 +271,7 @@ require (
 	github.com/hashicorp/terraform-cdk-go/cdktf v0.17.3
 	github.com/invopop/jsonschema v0.12.0
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
+	github.com/jomei/notionapi v1.13.0
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/mroth/weightedrand/v2 v2.0.1
 	github.com/nxadm/tail v1.4.11
@@ -290,6 +291,7 @@ require (
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry v0.0.0-20240109225336-01188650a68d
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/slack v0.0.0-20240103014439-025608ddf849
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20231218231056-4749baca142f
+	github.com/sourcegraph/notionreposync v0.0.0-20240502050143-447b6b9e6763
 	github.com/sourcegraph/scip v0.3.3
 	github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240426173441-db5b0a145ceb
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20240422195121-52350cd2e507
@@ -605,7 +607,7 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	github.com/tidwall/match v1.1.1 // indirect
-	github.com/tidwall/pretty v1.2.0 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8
@@ -614,7 +616,7 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
-	github.com/yuin/goldmark v1.6.0
+	github.com/yuin/goldmark v1.7.1
 	github.com/yuin/goldmark-emoji v1.0.1 // indirect
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
 	go.bobheadxi.dev/streamline v1.3.2

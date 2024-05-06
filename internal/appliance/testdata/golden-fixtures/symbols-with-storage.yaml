@@ -129,6 +129,8 @@ resources:
         terminationGracePeriodSeconds: 30
         volumes:
         - emptyDir: {}
+          name: cache
+        - emptyDir: {}
           name: tmp
     updateStrategy:
       type: RollingUpdate
@@ -137,6 +139,10 @@ resources:
       kind: PersistentVolumeClaim
       metadata:
         creationTimestamp: null
+        labels:
+          deploy: sourcegraph
+        name: cache
+        namespace: NORMALIZED_FOR_TESTING
       spec:
         accessModes:
         - ReadWriteOnce

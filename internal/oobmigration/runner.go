@@ -202,7 +202,7 @@ func (r *Runner) Start(currentVersion, firstVersion Version) {
 			return false
 		}
 
-		if CompareVersions(firstVersion, *migration.Deprecated) == VersionOrderAfter {
+		if migration.Deprecated != nil && CompareVersions(firstVersion, *migration.Deprecated) == VersionOrderAfter {
 			// instance initialized after migration deprecation
 			return false
 		}

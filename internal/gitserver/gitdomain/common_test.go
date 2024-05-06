@@ -358,3 +358,24 @@ func TestRoundTripContributorCount(t *testing.T) {
 		t.Fatalf("unexpected diff (-want +got):\n%s", diff)
 	}
 }
+
+func TestRoundTripBehindAhead(t *testing.T) {
+	diff := ""
+
+	err := quick.Check(func(behind, ahead uint32) bool {
+		original := BehindAhead{
+			Behind: behind,
+			Ahead:  ahead,
+		}
+		converted := BehindAheadFromProto(original.ToProto())
+		if diff = cmp.Diff(&original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}, nil)
+
+	if err != nil {
+		t.Fatalf("unexpected diff (-want +got):\n%s", diff)
+	}
+}
