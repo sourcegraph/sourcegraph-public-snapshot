@@ -19,7 +19,7 @@ service EnterprisePortalCodyService {
   }
 
   // List all Cody Gateway access granted to any Enterprise subscription.
-  rpc ListCodyGatewayAccess(ListCodyGatewayAccessRequest) returns (ListCodyGatewayAccessResponse) {
+  rpc ListCodyGatewayAccesses(ListCodyGatewayAccessesRequest) returns (ListCodyGatewayAccessesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -97,7 +97,7 @@ message CodyGatewayAccess {
   repeated CodyGatewayAccessToken access_tokens = 7;
 }
 
-message ListCodyGatewayAccessRequest {
+message ListCodyGatewayAccessesRequest {
   // Clients use this field to specify the maximum number of results to be
   // returned by the server. The server may further constrain the maximum number
   // of results returned in a single page. If the page_size is 0, the server
@@ -111,7 +111,7 @@ message ListCodyGatewayAccessRequest {
   string page_token = 2;
 }
 
-message ListCodyGatewayAccessResponse {
+message ListCodyGatewayAccessesResponse {
   // This field represents the pagination token to retrieve the next page of
   // results. If the value is "", it means no further results for the request.
   string next_page_token = 1;
