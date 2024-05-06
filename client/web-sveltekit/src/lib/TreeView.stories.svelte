@@ -1,5 +1,6 @@
 <script lang="ts" context="module">
     import { Story, Template } from '@storybook/addon-svelte-csf'
+
     import {
         createEmptySingleSelectTreeState,
         updateTreeState,
@@ -95,10 +96,10 @@
 
 <style lang="scss">
     :global(.label:hover),
-    :global(.treeitem.selected) > :global(.label) {
+    :global([data-treeitem][aria-selected]) > :global(.label) {
         background-color: lightblue;
     }
-    :global(.treeitem:focus) > :global(.label) {
+    :global([data-treeitem]:focus) > :global(.label) {
         outline: 2px solid green !important;
     }
 </style>

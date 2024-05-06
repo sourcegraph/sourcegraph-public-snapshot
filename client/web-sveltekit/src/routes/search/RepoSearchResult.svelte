@@ -57,14 +57,14 @@
     {#if description}
         <!-- #key is needed here to recreate the paragraph because use:highlightRanges changes the DOM -->
         {#key description}
-            <p class="p-2 m-0" use:highlightRanges={{ ranges: descriptionMatches }}>
+            <p use:highlightRanges={{ ranges: descriptionMatches }}>
                 {limitDescription(description)}
             </p>
         {/key}
     {/if}<!--
         Intentional weird comment to avoid adding an empty line to the body
     -->{#if badges.length > 0}
-        <ul class="p-2">
+        <ul>
             {#each badges as badge}
                 <li>
                     <Badge variant="outlineSecondary">
@@ -81,6 +81,7 @@
 <style lang="scss">
     ul {
         margin: 0;
+        padding: 0.5rem;
         list-style: none;
         display: flex;
         gap: 0.5rem;
@@ -89,6 +90,11 @@
         code {
             color: var(--search-filter-keyword-color);
         }
+    }
+
+    p {
+        padding: 0.5rem;
+        margin: 0;
     }
 
     .info {

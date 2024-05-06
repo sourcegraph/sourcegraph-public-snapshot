@@ -78,7 +78,7 @@
     </svelte:fragment>
     <!-- #key is needed here to recreate the element because use:highlightCommit changes the DOM -->
     {#key content}
-        <pre class="{highlightCls} p-2" use:highlightCommit={{ ranges: matches }}>{content}</pre>
+        <pre class={highlightCls} use:highlightCommit={{ ranges: matches }}>{content}</pre>
     {/key}
 </SearchResult>
 
@@ -95,6 +95,7 @@
     }
 
     pre {
+        padding: 0.5rem;
         margin: 0;
         font-family: var(--code-font-family);
         font-size: var(--code-font-size);

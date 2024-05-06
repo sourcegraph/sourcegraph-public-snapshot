@@ -35,13 +35,11 @@
 </script>
 
 <li
-    class="treeitem"
-    class:selectable
-    class:selected
     role="treeitem"
     aria-selected={selectable ? selected : undefined}
     aria-expanded={expandable ? expanded : undefined}
     {tabindex}
+    data-treeitem
     data-node-id={nodeID}
 >
     <span class="label" data-treeitem-label>
@@ -65,11 +63,11 @@
     </span>
     {#if expanded && children}
         {#await children}
-            <div class="ml-4">
+            <div class="loading">
                 <LoadingSpinner center={false} />
             </div>
         {:then treeProvider}
-            <ul role="group" class="ml-2">
+            <ul role="group">
                 {#each treeProvider.getEntries() as entry (treeProvider.getNodeID(entry))}
                     <svelte:self {entry} {treeProvider} let:entry let:toggle let:expanded>
                         <slot {entry} {toggle} {expanded} />
@@ -83,7 +81,7 @@
 </li>
 
 <style lang="scss">
-    li {
+    [role='treeitem'] {
         // Margin ensures that focus rings are not covered by preceeding or following elements
         margin: 0.25rem 0;
         border-radius: var(--border-radius);
@@ -95,6 +93,11 @@
                 box-shadow: var(--focus-box-shadow);
             }
         }
+    }
+
+    [role='group'],
+    .loading {
+        margin-left: 1rem;
     }
 
     .label {

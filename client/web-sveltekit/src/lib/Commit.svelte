@@ -45,7 +45,7 @@
         </div>
     {/if}
     <div class="info">
-        <span class="d-flex">
+        <span class="title">
             <a class="subject" href={commit.canonicalURL}>{commit.subject}</a>
             {#if !alwaysExpanded && commit.body}
                 <button type="button" on:click={() => (expanded = !expanded)}>
@@ -73,17 +73,21 @@
         min-width: 0;
     }
 
-    .subject {
-        font-weight: 600;
-        flex: 0 1 auto;
-        padding-right: 0.5rem;
-        color: var(--body-color);
-        min-width: 0;
+    .title {
+        display: flex;
+        gap: 0.5rem;
 
-        @media (--sm-breakpoint-up) {
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
+        .subject {
+            font-weight: 600;
+            flex: 0 1 auto;
+            color: var(--body-color);
+            min-width: 0;
+
+            @media (--sm-breakpoint-up) {
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }
         }
     }
 

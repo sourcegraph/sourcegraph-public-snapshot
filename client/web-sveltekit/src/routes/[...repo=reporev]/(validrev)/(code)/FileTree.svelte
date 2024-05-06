@@ -153,7 +153,7 @@
     div {
         overflow: auto;
 
-        :global(.treeitem.selectable) > :global(.label) {
+        :global([data-treeitem][aria-selected]) > :global([data-treeitem-label]) {
             cursor: pointer;
             border-radius: var(--border-radius);
 
@@ -162,7 +162,7 @@
             }
         }
 
-        :global(.treeitem.selected) > :global(.label) {
+        :global([data-treeitem][aria-selected='true']) > :global([data-treeitem-label]) {
             background-color: var(--color-bg-3);
         }
     }
@@ -176,7 +176,7 @@
         text-decoration: none;
         padding: 0.1rem 0;
 
-        :global(.treeitem.selected) & {
+        :global([data-treeitem][aria-selected='true']) & {
             color: var(--text-title);
         }
 

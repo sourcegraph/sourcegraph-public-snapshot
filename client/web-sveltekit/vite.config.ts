@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => {
                         // (without it scss @import paths are always relative to the importing file)
                         join(__dirname, '..'),
                     ],
-                    additionalData: `@use '$lib/breakpoints.scss';`,
+                    additionalData: `@use '$lib/styles/breakpoints.scss';`,
                 },
             },
             modules: {

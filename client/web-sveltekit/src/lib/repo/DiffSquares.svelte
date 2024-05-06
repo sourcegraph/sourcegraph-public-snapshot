@@ -35,8 +35,8 @@
     {#each squares as type}
         <span
             class="square"
-            class:bg-success={type === SquareType.Added}
-            class:bg-danger={type === SquareType.Deleted}
+            class:added={type === SquareType.Added}
+            class:deleted={type === SquareType.Deleted}
         />
     {/each}
 </span>
@@ -52,5 +52,13 @@
         width: 0.5rem;
         height: 0.5rem;
         background-color: var(--text-muted);
+    }
+
+    .added {
+        background-color: var(--success);
+    }
+
+    .deleted {
+        background-color: var(--danger);
     }
 </style>

@@ -69,12 +69,12 @@
             </ButtonGroup>
         </form>
         {#if !currentContributorConnection && $contributorConnection.pending}
-            <div class="mt-3">
+            <div class="info">
                 <LoadingSpinner />
             </div>
         {:else if currentContributorConnection}
             {@const nodes = currentContributorConnection.nodes}
-            <table class="mt-3">
+            <table>
                 <tbody>
                     {#each nodes as contributor}
                         {@const commit = contributor.commits.nodes[0]}
@@ -99,18 +99,16 @@
                 </tbody>
             </table>
             {#if nodes.length > 0}
-                <div class="d-flex flex-column align-items-center">
+                <div class="paginator">
                     <Paginator
                         disabled={$contributorConnection.pending}
                         pageInfo={currentContributorConnection.pageInfo}
                     />
-                    <p class="mt-1 text-muted">
-                        <small>Total contributors: {currentContributorConnection.totalCount}</small>
-                    </p>
+                    <small>Total contributors: {currentContributorConnection.totalCount}</small>
                 </div>
             {/if}
         {:else if $contributorConnection.error}
-            <div class="mt-2">
+            <div class="info">
                 <Alert variant="danger">
                     Unable to load contributors: {$contributorConnection.error.message}
                 </Alert>
@@ -135,6 +133,7 @@
     table {
         border-collapse: collapse;
         width: 100%;
+        margin-top: 1rem;
     }
 
     td {
@@ -149,5 +148,20 @@
             white-space: nowrap;
             text-overflow: ellipsis;
         }
+    }
+
+    .paginator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        small {
+            margin-top: 0.5rem;
+            color: var(--text-muted);
+        }
+    }
+
+    .info {
+        margin-top: 1rem;
     }
 </style>

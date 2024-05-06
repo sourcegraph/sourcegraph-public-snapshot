@@ -1,0 +1,22 @@
+$viewport-sm: 576px;
+$viewport-md: 768px;
+$viewport-lg: 992px;
+$viewport-xl: 1200px;
+
+/* stylelint-disable unknownAtRules */
+@custom-media --xs-breakpoint-up (min-width: none);
+@custom-media --sm-breakpoint-up (min-width: #{$viewport-sm});
+@custom-media --md-breakpoint-up (min-width: #{$viewport-md});
+@custom-media --lg-breakpoint-up (min-width: #{$viewport-lg});
+@custom-media --xl-breakpoint-up (min-width: #{$viewport-xl});
+
+// The maximum value is calculated as the minimum of the next one less 0.02px
+// to work around the limitations of `min-` and `max-` prefixes and viewports with fractional widths.
+// See https://www.w3.org/TR/mediaqueries-4/#mq-min-max
+// Uses 0.02px rather than 0.01px to work around a current rounding bug in Safari.
+// See https://bugs.webkit.org/show_bug.cgi?id=178261
+@custom-media --xs-breakpoint-down (max-width: #{$viewport-sm - .02});
+@custom-media --sm-breakpoint-down (max-width: #{$viewport-md - .02});
+@custom-media --md-breakpoint-down (max-width: #{$viewport-lg - .02});
+@custom-media --lg-breakpoint-down (max-width: #{$viewport-xl - .02});
+@custom-media --xl-breakpoint-down (max-width: none);

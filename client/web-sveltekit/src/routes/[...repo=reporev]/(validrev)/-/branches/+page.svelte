@@ -20,7 +20,7 @@
             {@const activeBranches = result.branches.nodes.filter(branch => branch.id !== result.defaultBranch?.id)}
 
             {#if result.defaultBranch}
-                <table class="mb-3">
+                <table>
                     <thead><tr><th colspan="3">Default branch</th></tr></thead>
                     <tbody>
                         <GitReference ref={result.defaultBranch} />
@@ -66,6 +66,10 @@
         background-color: var(--color-bg-1);
         border-radius: var(--border-radius);
         border-spacing: 0;
+
+        & + table {
+            margin-top: 1rem;
+        }
     }
 
     thead th {

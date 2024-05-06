@@ -10,10 +10,9 @@
 <script lang="ts">
     import type { SVGAttributes } from 'svelte/elements'
 
-    interface $$Props extends SVGAttributes<SVGElement> {
+    type $$Props = SVGAttributes<SVGElement> & {
         svgPath: string
         inline?: boolean
-        size?: number
     }
 
     export let svgPath: string
@@ -34,6 +33,7 @@
         &.icon-inline {
             width: $iconInlineSize;
             height: $iconInlineSize;
+            vertical-align: text-bottom;
         }
         color: var(--icon-fill-color, var(--color, inherit));
         fill: currentColor;
