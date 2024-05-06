@@ -137,22 +137,16 @@
             await goto(url, { replaceState: true, keepFocus: true, noScroll: true })
         }
         selectedTab = event.detail
-
-        console.log('selectTab', selectedTab)
     }
 
     function handleBottomPanelExpand() {
         if (selectedTab == null) {
             selectedTab = 0
         }
-
-        console.log('onExpand', selectedTab)
     }
 
     function handleBottomPanelCollapse() {
         selectedTab = null
-
-        console.log('onCollapse', selectedTab)
     }
 
     $: {
