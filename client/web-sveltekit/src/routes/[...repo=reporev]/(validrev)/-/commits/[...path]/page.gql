@@ -1,5 +1,13 @@
 fragment CommitsPage_GitCommitConnection on GitCommitConnection {
     nodes {
+        canonicalURL
+        oid
+        abbreviatedOID
+        externalURLs {
+            serviceKind
+            url
+        }
+
         ...Commit
     }
     pageInfo {
@@ -8,7 +16,13 @@ fragment CommitsPage_GitCommitConnection on GitCommitConnection {
     }
 }
 
-query CommitsPage_CommitsQuery($repoName: String!, $revision: String!, $first: Int, $path: String, $afterCursor: String) {
+query CommitsPage_CommitsQuery(
+    $repoName: String!
+    $revision: String!
+    $first: Int
+    $path: String
+    $afterCursor: String
+) {
     repository(name: $repoName) {
         id
         commit(rev: $revision) {

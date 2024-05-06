@@ -204,60 +204,41 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1+rBEmKEIywe0o/a65ZPjWoUECRQ=",
+        "checksum": "Q1L7tGvBw0qXPJMTfQzmf+lrJP7r8=",
         "control": {
-          "checksum": "sha1-+rBEmKEIywe0o/a65ZPjWoUECRQ=",
-          "range": "bytes=703-1054"
+          "checksum": "sha1-L7tGvBw0qXPJMTfQzmf+lrJP7r8=",
+          "range": "bytes=700-1079"
         },
         "data": {
-          "checksum": "sha256-fcShKjtj6wR6kgjwToU1J8hU+AGRf1OGZt9jeXJdM0Q=",
-          "range": "bytes=1055-82406"
-        },
-        "name": "openssl-config",
-        "signature": {
-          "checksum": "sha1-RT/o4gi2oC/l+6IhikP9/PH5awg=",
-          "range": "bytes=0-702"
-        },
-        "url": "https://packages.wolfi.dev/os/x86_64/openssl-config-3.3.0-r5.apk",
-        "version": "3.3.0-r5"
-      },
-      {
-        "architecture": "x86_64",
-        "checksum": "Q11DkfNRzraQMj7ue8LFH6VN6d7Bo=",
-        "control": {
-          "checksum": "sha1-1DkfNRzraQMj7ue8LFH6VN6d7Bo=",
-          "range": "bytes=707-1092"
-        },
-        "data": {
-          "checksum": "sha256-c95GJNThldUhfxVSGbchUI0pS4j6h45Yx6JDPXHaAI0=",
-          "range": "bytes=1093-5915048"
+          "checksum": "sha256-ylGI+oyO+prO2VzhQ9r8sWnLa4h06JQrZ0iNOvKwQkw=",
+          "range": "bytes=1080-5915047"
         },
         "name": "libcrypto3",
         "signature": {
-          "checksum": "sha1-EmjggcTaE4QTKI1FzSom0rXam1c=",
-          "range": "bytes=0-706"
+          "checksum": "sha1-NykXfIUqAZeDpe2kM0e2DJnq5lQ=",
+          "range": "bytes=0-699"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libcrypto3-3.3.0-r5.apk",
-        "version": "3.3.0-r5"
+        "url": "https://packages.wolfi.dev/os/x86_64/libcrypto3-3.3.0-r6.apk",
+        "version": "3.3.0-r6"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q15sT5bGF6kgE7DepzZIHCpPpuP70=",
+        "checksum": "Q1d6dZ+1V4FgAqJC7bmSncO4lmsII=",
         "control": {
-          "checksum": "sha1-5sT5bGF6kgE7DepzZIHCpPpuP70=",
+          "checksum": "sha1-d6dZ+1V4FgAqJC7bmSncO4lmsII=",
           "range": "bytes=702-1085"
         },
         "data": {
-          "checksum": "sha256-fWOAfZYgXO6+yM4Dpo/y7dvV3uxSEhhfO4SUX79TQDw=",
-          "range": "bytes=1086-1196497"
+          "checksum": "sha256-VkVoGQ4Yr1DiRgYxhSqDkY5gOs5X5OatIPGTtvs6Xyw=",
+          "range": "bytes=1086-1196496"
         },
         "name": "libssl3",
         "signature": {
-          "checksum": "sha1-4+7eITv9weTmoYBAAyd92WsXS24=",
+          "checksum": "sha1-W1VGS1lFy/PnwNAxzsy9XaMlqgk=",
           "range": "bytes=0-701"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libssl3-3.3.0-r5.apk",
-        "version": "3.3.0-r5"
+        "url": "https://packages.wolfi.dev/os/x86_64/libssl3-3.3.0-r6.apk",
+        "version": "3.3.0-r6"
       },
       {
         "architecture": "x86_64",
@@ -717,60 +698,60 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1hgEBBo1tLreSINI2qiCUpUrIE9k=",
+        "checksum": "Q1Iszpy1Sf56PdmQbNAu90V2xdp3M=",
         "control": {
-          "checksum": "sha1-hgEBBo1tLreSINI2qiCUpUrIE9k=",
-          "range": "bytes=700-1139"
+          "checksum": "sha1-Iszpy1Sf56PdmQbNAu90V2xdp3M=",
+          "range": "bytes=704-1144"
         },
         "data": {
-          "checksum": "sha256-OFDWkK8l015fs0YvTCXVKLQmOxq+7W5RgJHIqKYZsTE=",
-          "range": "bytes=1140-808582"
+          "checksum": "sha256-v2kkZlpgLuUAnJIJZ3SDooe6oVv6h4XGP2bOn/TNRMI=",
+          "range": "bytes=1145-837072"
         },
         "name": "libcurl-openssl4",
         "signature": {
-          "checksum": "sha1-sygIdNZXB/W8fyOrdelY5RXh3aA=",
-          "range": "bytes=0-699"
+          "checksum": "sha1-0FZ57QN9yP62tLuYfz1DzYeoR+I=",
+          "range": "bytes=0-703"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libcurl-openssl4-8.6.0-r0.apk",
-        "version": "8.6.0-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/libcurl-openssl4-8.7.1-r1.apk",
+        "version": "8.7.1-r1"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1eQzLI9XN4FM69fm9B4LWd9frcwM=",
+        "checksum": "Q1M0pSwnJNMoVT0rH8IrnR5GF6r3s=",
         "control": {
-          "checksum": "sha1-eQzLI9XN4FM69fm9B4LWd9frcwM=",
-          "range": "bytes=703-1098"
+          "checksum": "sha1-M0pSwnJNMoVT0rH8IrnR5GF6r3s=",
+          "range": "bytes=700-1103"
         },
         "data": {
-          "checksum": "sha256-zkew7+IbyyyENezhlStwO062zaWd+yP/lpbI+CCJVZQ=",
-          "range": "bytes=1099-281166"
+          "checksum": "sha256-VwutOQmeT0aBS4cIAlOF/+SS6qomMkGzUH/vTzaQY8c=",
+          "range": "bytes=1104-350124"
         },
         "name": "curl",
         "signature": {
-          "checksum": "sha1-igXspQSxo3Eu3o8DeNrYt3YxSbY=",
-          "range": "bytes=0-702"
+          "checksum": "sha1-WUfebW2Vh8RChbjC4FTZpZTxC74=",
+          "range": "bytes=0-699"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/curl-8.6.0-r0.apk",
-        "version": "8.6.0-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/curl-8.7.1-r1.apk",
+        "version": "8.7.1-r1"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1Qw/3QqSUVfXMObQRB1Q/OR2E2Pk=",
+        "checksum": "Q1/q4iRR0kFQhST5iHlgi2w4Zt3TM=",
         "control": {
-          "checksum": "sha1-Qw/3QqSUVfXMObQRB1Q/OR2E2Pk=",
-          "range": "bytes=660-1019"
+          "checksum": "sha1-/q4iRR0kFQhST5iHlgi2w4Zt3TM=",
+          "range": "bytes=705-1075"
         },
         "data": {
-          "checksum": "sha256-Acu4swCJY4zVqLGpjN7PJzQ6juyZajEZ/xlJeahCk4k=",
-          "range": "bytes=1020-173298"
+          "checksum": "sha256-PB4kZxW7fNTAR5P4/fGxCQXlgQzxjFC+vUy52A/URps=",
+          "range": "bytes=1076-169676"
         },
         "name": "mailcap",
         "signature": {
-          "checksum": "sha1-fFIHN05okWjQyXdVrXiU2HpqEC4=",
-          "range": "bytes=0-659"
+          "checksum": "sha1-tL83mkJEkF1dOLrC/pdpyKifJNc=",
+          "range": "bytes=0-704"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/mailcap-2.1.54-r0.apk",
-        "version": "2.1.54-r0"
+        "url": "https://packages.wolfi.dev/os/x86_64/mailcap-2.1.54-r1.apk",
+        "version": "2.1.54-r1"
       },
       {
         "architecture": "x86_64",

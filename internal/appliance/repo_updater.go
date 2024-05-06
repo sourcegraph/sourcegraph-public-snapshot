@@ -59,14 +59,8 @@ func (r *Reconciler) reconcileRepoUpdaterDeployment(ctx context.Context, sg *Sou
 	// TODO: https://github.com/sourcegraph/sourcegraph/issues/62076
 	ctr.Image = "index.docker.io/sourcegraph/repo-updater:5.3.2@sha256:5a414aa030c7e0922700664a43b449ee5f3fafa68834abef93988c5992c747c6"
 
-	ctr.Env = []corev1.EnvVar{
-		container.NewEnvVarSecretKeyRef("REDIS_CACHE_ENDPOINT", "redis-cache", "endpoint"),
-		container.NewEnvVarSecretKeyRef("REDIS_STORE_ENDPOINT", "redis-store", "endpoint"),
-
-		// OTEL_AGENT_HOST must be defined before OTEL_EXPORTER_OTLP_ENDPOINT to substitute the node IP on which the DaemonSet pod instance runs in the latter variable
-		container.NewEnvVarFieldRef("OTEL_AGENT_HOST", "status.hostIP"),
-		{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://$(OTEL_AGENT_HOST):4317"},
-	}
+	ctr.Env = append(ctr.Env, container.EnvVarsRedis()...)
+	ctr.Env = append(ctr.Env, container.EnvVarsOtel()...)
 
 	ctr.Ports = []corev1.ContainerPort{
 		{Name: "http", ContainerPort: 3182},
@@ -98,7 +92,7 @@ func (r *Reconciler) reconcileRepoUpdaterDeployment(ctx context.Context, sg *Sou
 		TimeoutSeconds:   5,
 	}
 
-	podTemplate := pod.NewPodTemplate(name)
+	podTemplate := pod.NewPodTemplate(name, cfg)
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
 
 	dep := deployment.NewDeployment(name, sg.Namespace, sg.Spec.RequestedVersion)

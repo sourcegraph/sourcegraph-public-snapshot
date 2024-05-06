@@ -1,0 +1,59 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "completions",
+    srcs = [
+        "chat.go",
+        "codecompletion.go",
+        "handler.go",
+        "limiter.go",
+        "observability.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/completions",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/internal/cody",
+        "//internal/accesstoken",
+        "//internal/actor",
+        "//internal/auth",
+        "//internal/authz",
+        "//internal/completions/client",
+        "//internal/completions/client/anthropic",
+        "//internal/completions/client/fireworks",
+        "//internal/completions/types",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/dotcom",
+        "//internal/featureflag",
+        "//internal/guardrails",
+        "//internal/hashutil",
+        "//internal/honey",
+        "//internal/metrics",
+        "//internal/redispool",
+        "//internal/requestclient",
+        "//internal/search/streaming/http",
+        "//internal/telemetry",
+        "//internal/telemetry/telemetryrecorder",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_masterminds_semver//:semver",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "completions_test",
+    srcs = ["handler_test.go"],
+    embed = [":completions"],
+    deps = [
+        "//internal/completions/types",
+        "//internal/conf",
+        "//schema",
+        "@com_github_stretchr_testify//require",
+    ],
+)

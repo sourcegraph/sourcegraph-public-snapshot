@@ -1,18 +1,18 @@
 import { describe, test, expect } from 'vitest'
 
-import { ViewMode, toViewMode } from './util'
+import { CodeViewMode, toCodeViewMode } from './util'
 
 describe('toViewMode', () => {
     test.each`
         input        | expected
-        ${undefined} | ${ViewMode.Default}
-        ${null}      | ${ViewMode.Default}
-        ${'code'}    | ${ViewMode.Code}
-        ${'CoDe'}    | ${ViewMode.Code}
-        ${'raw'}     | ${ViewMode.Code}
-        ${'blame'}   | ${ViewMode.Blame}
-        ${'BlAmE'}   | ${ViewMode.Blame}
+        ${undefined} | ${CodeViewMode.Default}
+        ${null}      | ${CodeViewMode.Default}
+        ${'code'}    | ${CodeViewMode.Code}
+        ${'CoDe'}    | ${CodeViewMode.Code}
+        ${'raw'}     | ${CodeViewMode.Code}
+        ${'blame'}   | ${CodeViewMode.Blame}
+        ${'BlAmE'}   | ${CodeViewMode.Blame}
     `('$input -> $expected', ({ input, expected }) => {
-        expect(toViewMode(input)).toBe(expected)
+        expect(toCodeViewMode(input)).toBe(expected)
     })
 })

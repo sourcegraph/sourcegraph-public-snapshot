@@ -9,6 +9,7 @@ func (suite *ApplianceTestSuite) TestDeployRepoUpdater() {
 		name string
 	}{
 		{name: "repo-updater-default"},
+		{name: "repo-updater-with-pod-template-config"},
 		{name: "repo-updater-with-resources"},
 		{name: "repo-updater-with-no-resources"},
 		{name: "repo-updater-with-sa-annotations"},

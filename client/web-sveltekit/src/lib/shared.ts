@@ -7,6 +7,7 @@ export {
     toPrettyBlobURL,
     toRepoURL,
     type AbsoluteRepoFile,
+    replaceRevisionInURL,
 } from '@sourcegraph/shared/src/util/url'
 export {
     isCloneInProgressErrorLike,
@@ -90,12 +91,4 @@ export function displayRepoName(repoName: string): string {
         parts = parts.slice(1) // remove hostname from repo name (reduce visual noise)
     }
     return parts.join('/')
-}
-
-/**
- * Splits the repository name into the dir and base components.
- */
-export function splitPath(path: string): [string, string] {
-    const components = path.split('/')
-    return [components.slice(0, -1).join('/'), components.at(-1) ?? '']
 }

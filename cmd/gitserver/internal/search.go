@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -77,7 +76,7 @@ func searchWithObservability(ctx context.Context, logger log.Logger, repoDir com
 			}
 			if traceID := trace.ID(ctx); traceID != "" {
 				ev.AddField("traceID", traceID)
-				ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
+				ev.AddField("trace", trace.URL(traceID))
 			}
 			if honey.Enabled() {
 				_ = ev.Send()

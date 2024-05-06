@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -653,82 +654,6 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 	})
 }
 
-func TestRepository_FirstEverCommit(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
-
-	testCases := []struct {
-		commitDates []string
-		want        string
-	}{
-		{
-			commitDates: []string{
-				"2006-01-02T15:04:05Z",
-				"2007-01-02T15:04:05Z",
-				"2008-01-02T15:04:05Z",
-			},
-			want: "2006-01-02T15:04:05Z",
-		},
-		{
-			commitDates: []string{
-				"2007-01-02T15:04:05Z", // Don't think this is possible, but if it is we still want the first commit (not strictly "oldest")
-				"2006-01-02T15:04:05Z",
-				"2007-01-02T15:04:06Z",
-			},
-			want: "2007-01-02T15:04:05Z",
-		},
-	}
-
-	t.Run("basic", func(t *testing.T) {
-		for _, tc := range testCases {
-			gitCommands := make([]string, len(tc.commitDates))
-			for i, date := range tc.commitDates {
-				gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
-			}
-
-			repo := MakeGitRepository(t, gitCommands...)
-
-			client := NewTestClient(t).WithClientSource(NewTestClientSource(t, []string{"test"}, func(o *TestClientSourceOptions) {
-				o.ClientFunc = func(conn *grpc.ClientConn) proto.GitserverServiceClient {
-					date, err := time.Parse(time.RFC3339, tc.want)
-					require.NoError(t, err)
-					c := NewMockGitserverServiceClient()
-					c.GetCommitFunc.SetDefaultReturn(&proto.GetCommitResponse{
-						Commit: &proto.GitCommit{
-							Committer: &proto.GitSignature{
-								Date: timestamppb.New(date),
-							},
-						},
-					}, nil)
-					return c
-				}
-			}))
-
-			gotCommit, err := client.FirstEverCommit(ctx, repo)
-			if err != nil {
-				t.Fatal(err)
-			}
-			got := gotCommit.Committer.Date.Format(time.RFC3339)
-			if got != tc.want {
-				t.Errorf("got %q, want %q", got, tc.want)
-			}
-		}
-	})
-
-	// Added for awareness if this error message changes. Insights skip over empty repos and check against error message
-	t.Run("empty repo", func(t *testing.T) {
-		repo := MakeGitRepository(t)
-		_, err := NewClient("test").FirstEverCommit(ctx, repo)
-		wantErr := `git command [rev-list --reverse --date-order --max-parents=0 HEAD] failed (output: ""): exit status 128`
-		if err.Error() != wantErr {
-			t.Errorf("expected :%s, got :%s", wantErr, err)
-		}
-	})
-}
-
 func TestRepository_Commits(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
@@ -1055,7 +980,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			before := ""
 			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
 			client := NewTestClient(t).WithChecker(checker)
-			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, DateOrder: true, After: after, Before: before})
+			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, Order: CommitsOrderCommitDate, After: after, Before: before})
 			if err == nil {
 				t.Error("expected error, got nil")
 			}
@@ -2255,5 +2180,147 @@ func TestClient_ContributorCounts(t *testing.T) {
 		_, err := c.ContributorCount(context.Background(), "repo", ContributorOptions{})
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+}
+
+func TestClient_FirstEverCommit(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+
+		expectedCommit := &gitdomain.Commit{
+			ID:        "deadbeef",
+			Author:    gitdomain.Signature{Name: "Foo", Email: "foo@bar.com"},
+			Committer: &gitdomain.Signature{Name: "Bar", Email: "bar@bar.com"},
+			Message:   "Initial commit",
+			Parents:   []api.CommitID{},
+		}
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+
+				c := NewMockGitserverServiceClient()
+				c.FirstEverCommitFunc.SetDefaultReturn(&proto.FirstEverCommitResponse{
+					Commit: expectedCommit.ToProto(),
+				}, nil)
+
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		actualCommit, err := c.FirstEverCommit(context.Background(), "repo")
+		require.NoError(t, err)
+
+		if diff := cmp.Diff(expectedCommit, actualCommit, cmpopts.EquateEmpty()); diff != "" {
+			t.Fatalf("unexpected commit (-want +got):\n%s", diff)
+		}
+	})
+	t.Run("returns well known error types", func(t *testing.T) {
+		t.Run("repository not found", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					s, err := status.New(codes.NotFound, "repository not found").WithDetails(&proto.RepoNotFoundPayload{Repo: "repo", CloneInProgress: true})
+					require.NoError(t, err)
+					c.FirstEverCommitFunc.PushReturn(nil, s.Err())
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			// Should fail with clone error
+			_, err := c.FirstEverCommit(context.Background(), "repo")
+			require.Error(t, err)
+			require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
+		})
+
+		t.Run("empty repository", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					s, err := status.New(codes.FailedPrecondition, "empty repo").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "HEAD"})
+					require.NoError(t, err)
+					c.FirstEverCommitFunc.SetDefaultReturn(nil, s.Err())
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			// Should fail with RepositoryEmptyError
+			_, err := c.FirstEverCommit(context.Background(), "repo")
+			require.Error(t, err)
+			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		})
+	})
+}
+
+func TestClient_GetBehindAhead(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.BehindAheadFunc.SetDefaultReturn(&proto.BehindAheadResponse{
+					Behind: 5,
+					Ahead:  3,
+				}, nil)
+
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		actualBehindAhead, err := c.BehindAhead(context.Background(), "repo", "left", "right")
+		require.NoError(t, err)
+
+		expected := &gitdomain.BehindAhead{
+			Behind: 5,
+			Ahead:  3,
+		}
+
+		if diff := cmp.Diff(expected, actualBehindAhead, cmpopts.EquateEmpty()); diff != "" {
+			t.Fatalf("unexpected behind/ahead (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("returns well known error types", func(t *testing.T) {
+		t.Run("repository not found", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					s, err := status.New(codes.NotFound, "repository not found").WithDetails(&proto.RepoNotFoundPayload{Repo: "repo", CloneInProgress: true})
+					require.NoError(t, err)
+					c.BehindAheadFunc.PushReturn(nil, s.Err())
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			// Should fail with clone error
+			_, err := c.BehindAhead(context.Background(), "repo", "left", "right")
+			require.Error(t, err)
+			require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
+		})
+
+		t.Run("revision not found", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "right"})
+					require.NoError(t, err)
+					c.BehindAheadFunc.SetDefaultReturn(nil, s.Err())
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			// Should fail with RevisionNotFoundError
+			_, err := c.BehindAhead(context.Background(), "repo", "left", "right")
+			require.Error(t, err)
+			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		})
 	})
 }

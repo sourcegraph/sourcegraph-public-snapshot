@@ -156,7 +156,12 @@
 
     registerHotkey({
         keys: { key: '/' },
-        handler: focus,
+        handler: () => {
+            // If the search input doesn't have focus, focus it
+            // and disallow `/` symbol populate the input value
+            focus()
+            return false
+        },
     })
 
     $: regularExpressionEnabled = $queryState.patternType === SearchPatternType.regexp
@@ -291,8 +296,6 @@
 </form>
 
 <style lang="scss">
-    @use '$lib/breakpoints';
-
     form {
         isolation: isolate;
         width: 100%;

@@ -8,6 +8,10 @@ import { type GitCommitFieldsWithTree, type TreeEntriesVariables, TreeEntries } 
 
 const MAX_FILE_TREE_ENTRIES = 1000
 
+export function isFileEntry(entry: TreeEntry): entry is Extract<TreeEntry, { __typename: 'GitBlob' }> {
+    return entry.__typename === 'GitBlob' || !entry.isDirectory
+}
+
 export function fetchTreeEntries(args: TreeEntriesVariables): Promise<GitCommitFieldsWithTree> {
     return query(
         TreeEntries,
@@ -32,8 +36,8 @@ export function fetchTreeEntries(args: TreeEntriesVariables): Promise<GitCommitF
 export const NODE_LIMIT: unique symbol = Symbol()
 
 type TreeRoot = NonNullable<GitCommitFieldsWithTree['tree']>
-export type TreeEntryFields = NonNullable<GitCommitFieldsWithTree['tree']>['entries'][number]
-type ExpandableFileTreeNodeValues = TreeEntryFields
+export type TreeEntry = NonNullable<GitCommitFieldsWithTree['tree']>['entries'][number]
+type ExpandableFileTreeNodeValues = TreeEntry
 export type FileTreeNodeValue = ExpandableFileTreeNodeValues | typeof NODE_LIMIT
 export type FileTreeData = { root: TreeRoot; values: FileTreeNodeValue[] }
 

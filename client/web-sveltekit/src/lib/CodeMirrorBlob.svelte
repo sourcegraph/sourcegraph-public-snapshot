@@ -43,7 +43,7 @@
             overflow: 'auto',
         },
         '.cm-content': {
-            padding: 0,
+            paddingBottom: '1.5rem',
             '&:focus-visible': {
                 outline: 'none',
                 boxShadow: 'none',
@@ -56,7 +56,7 @@
             backgroundColor: 'transparent',
         },
         '.cm-gutters': {
-            'background-color': 'transparent',
+            'background-color': 'var(--code-bg)',
             border: 'none',
             color: 'var(--line-number-color)',
         },
@@ -68,8 +68,10 @@
                 color: 'var(--text-body)',
             },
         },
+        '.cm-lineNumbers .cm-gutterElement': {
+            padding: '0 1.5ex',
+        },
         '.cm-line': {
-            paddingLeft: '3ex',
             lineHeight: '1.54',
         },
         '.selected-line': {
@@ -345,7 +347,7 @@
 
 <style lang="scss">
     .root {
-        --blame-decoration-width: 400px;
+        --blame-decoration-width: 300px;
         --blame-recency-width: 4px;
 
         height: 100%;

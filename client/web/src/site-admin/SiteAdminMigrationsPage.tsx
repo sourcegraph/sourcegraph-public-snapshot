@@ -8,7 +8,7 @@ import { parse as _parseVersion, type SemVer } from 'semver'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     LoadingSpinner,
@@ -30,14 +30,14 @@ import { PageTitle } from '../components/PageTitle'
 import type { OutOfBandMigrationFields } from '../graphql-operations'
 
 import {
-    fetchAllOutOfBandMigrations as defaultFetchAllMigrations,
+    fetchOutOfBandMigrations as defaultFetchMigrations,
     fetchSiteUpdateCheck as defaultFetchSiteUpdateCheck,
 } from './backend'
 
 import styles from './SiteAdminMigrationsPage.module.scss'
 
 export interface SiteAdminMigrationsPageProps extends TelemetryProps, TelemetryV2Props {
-    fetchAllMigrations?: typeof defaultFetchAllMigrations
+    fetchMigrations?: typeof defaultFetchMigrations
     fetchSiteUpdateCheck?: () => Observable<{ productVersion: string }>
     now?: () => Date
 }
@@ -82,7 +82,7 @@ const DOWNGRADE_RANGE = 1
 export const SiteAdminMigrationsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminMigrationsPageProps>
 > = ({
-    fetchAllMigrations = defaultFetchAllMigrations,
+    fetchMigrations = defaultFetchMigrations,
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
     now,
     telemetryRecorder,
@@ -96,14 +96,15 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
             () =>
                 timer(0, REFRESH_INTERVAL_MS, undefined).pipe(
                     concatMap(() =>
-                        fetchAllMigrations().pipe(
+                        // Exclude ExcludeDeprecatedBeforeFirstVersion: true
+                        fetchMigrations(true).pipe(
                             catchError((error): [ErrorLike] => [asError(error)]),
                             repeat({ delay: REFRESH_INTERVAL_MS })
                         )
                     ),
                     takeWhile(() => true, true)
                 ),
-            [fetchAllMigrations]
+            [fetchMigrations]
         )
     )
 
@@ -426,6 +427,10 @@ export const isInvalidForVersion = (migration: OutOfBandMigrationFields, version
         // Migrations only store major/minor version components
         const deprecated = parseVersion(`${migration.deprecated}.0`)
         if (deprecated && version.major === deprecated.major && version.minor >= deprecated.minor) {
+            return migration.progress !== 1
+        }
+
+        if (deprecated && version.major > deprecated.major) {
             return migration.progress !== 1
         }
     }

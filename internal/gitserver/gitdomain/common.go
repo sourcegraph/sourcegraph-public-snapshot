@@ -445,6 +445,27 @@ type BehindAhead struct {
 	Ahead  uint32 `json:"Ahead,omitempty"`
 }
 
+func BehindAheadFromProto(p *proto.BehindAheadResponse) *BehindAhead {
+	if p == nil {
+		return nil
+	}
+
+	return &BehindAhead{
+		Behind: p.GetBehind(),
+		Ahead:  p.GetAhead(),
+	}
+}
+
+func (b *BehindAhead) ToProto() *proto.BehindAheadResponse {
+	if b == nil {
+		return nil
+	}
+	return &proto.BehindAheadResponse{
+		Behind: b.Behind,
+		Ahead:  b.Ahead,
+	}
+}
+
 // EnsureRefPrefix checks whether the ref is a full ref and contains the
 // "refs/heads" prefix (i.e. "refs/heads/master") or just an abbreviated ref
 // (i.e. "master") and adds the "refs/heads/" prefix if the latter is the case.

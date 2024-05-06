@@ -42,6 +42,10 @@
             --icon-color: var(--primary);
         }
 
+        h4 {
+            margin-bottom: 0.25rem;
+        }
+
         a {
             display: flex;
             align-items: center;

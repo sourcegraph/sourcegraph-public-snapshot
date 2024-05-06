@@ -38,7 +38,7 @@
         {#if result === null}
             <div class="error-wrapper">
                 <div class="circle">
-                    <Icon svgPath={mdiMapSearch} size={80} />
+                    <Icon svgPath={mdiMapSearch} --icon-size="80px" />
                 </div>
                 <h2>Directory not found</h2>
             </div>

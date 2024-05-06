@@ -1,0 +1,74 @@
+spec:
+  requestedVersion: "5.3.9104"
+
+  blobstore:
+    disabled: true
+
+  codeInsights:
+    disabled: true
+
+  codeIntel:
+    disabled: true
+
+  frontend:
+    disabled: true
+
+  gitServer:
+    disabled: true
+
+  indexedSearch:
+    disabled: true
+
+  indexedSearchIndexer:
+    disabled: true
+
+  pgsql:
+    disabled: true
+
+  postgresExporter:
+    disabled: true
+
+  preciseCodeIntel:
+    disabled: true
+
+  redisCache:
+    disabled: true
+
+  redisExporter:
+    disabled: true
+
+  redisStore:
+    disabled: true
+
+  repoUpdater:
+    podTemplateConfig:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: disktype
+                operator: In
+                values:
+                - ssd
+      imagePullSecrets:
+        - name: myPrivateRegistrySecret
+      nodeSelector:
+        my-node-label: some-value
+      tolerations:
+        - key: "key1"
+          operator: "Equal"
+          value: "value1"
+          effect: "NoSchedule"
+
+  searcher:
+    disabled: true
+
+  symbols:
+    disabled: true
+
+  syntectServer:
+    disabled: true
+
+  worker:
+    disabled: true

@@ -12,8 +12,15 @@ h6 {
 }
 
 body {
+    --font-size-base: 0.9375rem;
+    --font-size-small: 0.875rem;
+    --font-size-tiny: 0.8125rem;
     --code-font-size: 13px;
     --border-radius: 4px;
+
+    input::placeholder {
+        color: var(--text-muted);
+    }
 }
 
 // Theme Light
@@ -24,15 +31,22 @@ body {
     --text-body: var(--gray-08);
     --search-result-header-bg: #eef2f5;
     --line-number-color: var(--gray-06);
+    --code-bg: var(--white);
     --code-selection-bg: rgba(231, 238, 250, 0.8);
 
     // Shadows
-    --sidebar-shadow: 0 79px 22px 0 rgba(30, 4, 47, 0), 0 51px 20 0 rgba(30, 4, 47, 0.01),
+    --sidebar-shadow: 0 79px 22px 0 rgba(30, 4, 47, 0), 0 51px 20px 0 rgba(30, 4, 47, 0.01),
         0 29px 17px 0 rgba(30, 4, 47, 0.02), 0 13px 13px 0 rgba(30, 4, 47, 0.03), 0 3px 7px 0 rgba(30, 4, 47, 0.04);
     --fileheader-shadow: 0 6px 2px 0 rgba(0, 0, 0, 0), 0 4px 2px 0 rgba(0, 0, 0, 0.01), 0 2px 1px 0 rgba(0, 0, 0, 0.02),
         0 1px 1px 0 rgba(0, 0, 0, 0.03), 0 0 1px 0 rgba(0, 0, 0, 0.04);
-    --bottom-panel-shadow: 0 -37px 10 0 rgba(1, 6, 12, 0), 0 -24px 10 0 rgba(1, 6, 12, 0.01),
-        0 -13px 8px 0 rgba(1, 6, 12, 0.02), 0 -6px 6px 0 rgba(1, 6, 12, 0.03), 0 -1px 3px 0 rgba(1, 6, 12, 0.04);
+    --blame-header-shadow: 0 16px 5px 0 rgba(0, 0, 0, 0), 0 11px 4px 0 rgba(0, 0, 0, 0.01),
+        0 6px 4px 0 rgba(0, 0, 0, 0.02), 0 3px 3px 0 rgba(0, 0, 0, 0.03), 0 1px 1px 0 rgba(0, 0, 0, 0.04);
+    --bottom-panel-shadow: 0 -19px 5px 0 rgba(1, 6, 12, 0), 0 -12px 5px 0 rgba(1, 6, 12, 0),
+        0 -7px 4px 0 rgba(1, 6, 12, 0.01), 0 -3px 3px 0 rgba(1, 6, 12, 0.02), 0 -1px 2px 0 rgba(1, 6, 12, 0.02);
+    --bottom-panel-open-shadow: 0 -50px 14px 0 rgba(1, 6, 12, 0), 0 -32px 13px 0 rgba(1, 6, 12, 0.01),
+        0 -18px 11px 0 rgba(1, 6, 12, 0.02), 0 -8px 8px 0 rgba(1, 6, 12, 0.03), 0 -2px 4px 0 rgba(1, 6, 12, 0.04);
+    --popover-shadow: 0 174px 49px 0 rgba(0, 0, 0, 0), 0 112px 45px 0 rgba(0, 0, 0, 0.01),
+        0 63px 38px 0 rgba(0, 0, 0, 0.02), 0 28px 28px 0 rgba(0, 0, 0, 0.03), 0 7px 15px 0 rgba(0, 0, 0, 0.04);
 }
 
 // Theme Dark
@@ -48,10 +62,16 @@ body {
     --code-bg: var(--gray-12);
 
     // Shadows
-    --sidebar-shadow: 0 318px 89px 0 rgba(12, 1, 19, 0.01), 0 203px 81px 0 rgba(12, 1, 19, 0.05),
-        0 114px 69px 0 rgba(12, 1, 19, 0.16), 0 51px 51px 0 rgba(12, 1, 19, 0.27), 0 13px 28px 0 rgba(12, 1, 19, 0.31);
+    --sidebar-shadow: 0 240px 80px 0 rgba(12, 1, 19, 0.01), 0 160px 80px 0 rgba(12, 1, 19, 0.02),
+        0 120px 60px 0 rgba(12, 1, 19, 0.08), 0 48px 24px 0 rgba(12, 1, 19, 0.16), 0 12px 28px 0 rgba(12, 1, 19, 0.24);
+    --blame-header-shadow: 0 25px 7px 0 rgba(0, 0, 0, 0), 0 16px 6px 0 rgba(0, 0, 0, 0.04),
+        0 9px 5px 0 rgba(0, 0, 0, 0.12), 0 4px 4px 0 rgba(0, 0, 0, 0.2), 0 1px 2px 0 rgba(0, 0, 0, 0.24);
     --fileheader-shadow: 0 6px 2px 0 rgba(15, 2, 24, 0.01), 0 4px 2px 0 rgba(15, 2, 24, 0.05),
         0 2px 1px 0 rgba(15, 2, 24, 0.16), 0 1px 1px 0 rgba(15, 2, 24, 0.27), 0 0 1px 0 rgba(15, 2, 24, 0.31);
-    --bottom-panel-shadow: 0 -37px 10 0 rgba(1, 6, 12, 0.01), 0 -24px 10 0 rgba(1, 6, 12, 0.05),
-        0 -13px 8px 0 rgba(1, 6, 12, 0.16), 0 -6px 6px 0 rgba(1, 6, 12, 0.27), 0 -1px 3px 0 rgba(1, 6, 12, 0.31);
+    --bottom-panel-shadow: 0 0 4px 0 rgba(1, 6, 12, 0.01), 0 -8px 8px 0 rgba(1, 6, 12, 0.04),
+        0 -12px 6px 0 rgba(1, 6, 12, 0.08), 0 -4px 8px 0 rgba(1, 6, 12, 0.16), 0 -2px 4px 0 rgba(1, 6, 12, 0.32);
+    --bottom-panel-open-shadow: 0 -32px 12px 0 rgba(0, 0, 0, 0.02), 0 -24px 12px 0 rgba(0, 0, 0, 0.04),
+        0 -16px 8px 0 rgba(0, 0, 0, 0.08), 0 -8px 4px 0 rgba(0, 0, 0, 0.16), 0 -2px 4px 0 rgba(0, 0, 0, 0.32);
+    --popover-shadow: 0 174px 49px 0 rgba(0, 0, 0, 0.01), 0 112px 45px 0 rgba(0, 0, 0, 0.05),
+        0 63px 38px 0 rgba(0, 0, 0, 0.16), 0 28px 28px 0 rgba(0, 0, 0, 0.27), 0 7px 15px 0 rgba(0, 0, 0, 0.31);
 }

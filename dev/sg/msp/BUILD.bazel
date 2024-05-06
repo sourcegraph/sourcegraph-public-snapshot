@@ -5,6 +5,7 @@ go_library(
     name = "msp",
     srcs = [
         "helpers.go",
+        "notion.go",
         "sg_msp.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/msp",
@@ -14,6 +15,7 @@ go_library(
         "//dev/managedservicesplatform/clouddeploy",
         "//dev/managedservicesplatform/googlesecretsmanager",
         "//dev/managedservicesplatform/operationdocs",
+        "//dev/managedservicesplatform/operationdocs/diagram",
         "//dev/managedservicesplatform/operationdocs/terraform",
         "//dev/managedservicesplatform/spec",
         "//dev/managedservicesplatform/stacks",
@@ -28,13 +30,16 @@ go_library(
         "//dev/sg/msp/example",
         "//dev/sg/msp/repo",
         "//dev/sg/msp/schema",
-        "//lib/cliutil/completions",
         "//lib/errors",
         "//lib/output",
         "//lib/pointers",
+        "@com_github_jomei_notionapi//:notionapi",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_notionreposync//notion",
         "@com_github_sourcegraph_run//:run",
         "@com_github_urfave_cli_v2//:cli",
         "@org_golang_x_exp//maps",
+        "@org_uber_go_atomic//:atomic",
     ],
 )
 

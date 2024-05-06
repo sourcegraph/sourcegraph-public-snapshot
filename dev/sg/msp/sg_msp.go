@@ -10,9 +10,13 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jomei/notionapi" // we use this for file uploads
 	"github.com/urfave/cli/v2"
+	"go.uber.org/atomic"
 	"golang.org/x/exp/maps"
 
+	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/notionreposync/notion"
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
@@ -31,8 +35,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/example"
 	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
-	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -41,19 +45,13 @@ import (
 var Command = &cli.Command{
 	Name:    "managed-services-platform",
 	Aliases: []string{"msp"},
-	Usage:   "EXPERIMENTAL: Generate and manage services deployed on the Sourcegraph Managed Services Platform",
-	Description: `WARNING: MSP is currently still an experimental project.
-To learm more, refer to go/rfc-msp and go/msp (https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform)`,
-	UsageText: `
-# Create a service specification
-sg msp init $SERVICE
+	Usage:   "Generate and manage services deployed on the Sourcegraph Managed Services Platform (MSP)",
+	Description: `To learm more about MSP, refer to go/msp (https://sourcegraph.notion.site/712a0389f54c4d3a90d069aa2d979a59).
 
-# Provision Terraform Cloud workspaces
-sg msp tfc sync $SERVICE $ENVIRONMENT
+MSP infrastructure manifests are managed in https://github.com/sourcegraph/managed-services - many commands expect you to be operating within a local copy of this repository.
+Refer to https://github.com/sourcegraph/managed-services/blob/main/README.md#tooling-setup for more information.
 
-# Generate Terraform manifests
-sg msp generate $SERVICE $ENVIRONMENT
-`,
+Please reach out to #discuss-core-services for assistance if you have any questions!`,
 	Category: category.Company,
 	Subcommands: []*cli.Command{
 		{
@@ -198,6 +196,10 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 			Name:      "init-env",
 			ArgsUsage: "<service ID> <env ID>",
 			Usage:     "Add an environment to an existing Managed Services Platform service",
+			Description: fmt.Sprintf(`Templates a new environment to be added to an existing Managed Services Platform service.
+If your service does not exist yet, use 'sg msp init' to get started.
+
+%s`, msprepo.DescribeServicesOptions()),
 			Flags: []cli.Flag{
 				&cli.IntFlag{
 					Name:  "project-id-suffix-length",
@@ -205,11 +207,8 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 					Value: spec.DefaultSuffixLength,
 				},
 			},
-			Before: msprepo.UseManagedServicesRepo,
-			BashComplete: completions.CompleteArgs(func() (options []string) {
-				ss, _ := msprepo.ListServices()
-				return ss
-			}),
+			Before:       msprepo.UseManagedServicesRepo,
+			BashComplete: msprepo.ServicesCompletions(),
 			Action: func(c *cli.Context) error {
 				svc, err := useServiceArgument(c, false) // we're expecting a potential second argument
 				if err != nil {
@@ -265,11 +264,13 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 		{
 			Name:      "generate",
 			Aliases:   []string{"gen"},
-			ArgsUsage: "<service ID>",
+			ArgsUsage: "<service ID> <env ID>",
 			Usage:     "Generate Terraform assets for a Managed Services Platform service spec",
-			Description: `Optionally use '-all' to sync all environments for a service.
+			Description: fmt.Sprintf(`Optionally use '-all' to sync all environments for a service.
 
-Supports completions on services and environments.`,
+This command supports completions on services and environments.
+
+%s`, msprepo.DescribeServicesOptions()),
 			UsageText: `
 # generate single env for a single service
 sg msp generate <service> <env>
@@ -379,14 +380,18 @@ sg msp generate -all -category=test
 			},
 		},
 		{
-			Name:    "operations",
-			Aliases: []string{"ops"},
-			Usage:   "Generate operational reference for a service",
-			Before:  msprepo.UseManagedServicesRepo,
-			BashComplete: completions.CompleteArgs(func() (options []string) {
-				ss, _ := msprepo.ListServices()
-				return ss
-			}),
+			Name:      "operations",
+			Aliases:   []string{"ops"},
+			Usage:     "Generate operational reference for a service",
+			ArgsUsage: `<service ID>`,
+			UsageText: "sg msp ops [command options] <service ID>",
+			Description: fmt.Sprintf(`Directly view operational reference documentation for a service - also available in go/msp-ops.
+
+This command supports completions on services and environments.
+
+%s`, msprepo.DescribeServicesOptions()),
+			Before:       msprepo.UseManagedServicesRepo,
+			BashComplete: msprepo.ServicesCompletions(),
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
 					Name:  "pretty",
@@ -405,14 +410,13 @@ sg msp generate -all -category=test
 					return errors.Wrap(err, "msprepo.GitRevision")
 				}
 
-				collectedAlerts, err := CollectAlertPolicies(svc)
+				collectedAlerts, err := collectAlertPolicies(svc)
 				if err != nil {
 					return errors.Wrap(err, "CollectAlertPolicies")
 				}
 
-				doc, err := operationdocs.Render(*svc, operationdocs.Options{
+				doc, err := operationdocs.Render(*svc, collectedAlerts, operationdocs.Options{
 					ManagedServicesRevision: repoRev,
-					AlertPolicies:           collectedAlerts,
 				})
 				if err != nil {
 					return errors.Wrap(err, "operationdocs.Render")
@@ -425,37 +429,19 @@ sg msp generate -all -category=test
 			},
 			Subcommands: []*cli.Command{
 				{
-					Name:   "generate-handbook-pages",
-					Usage:  "Generate operations handbook pages for all services",
-					Hidden: true, // not meant for day-to-day use
-					Description: `By default, we expect the 'sourcegraph/handbook' repository to be checked out adjacent to the 'sourcegraph/managed-services' repository, i.e.:
-	/
-	├─ managed-services/ <-- current directory
-	├─ handbook/         <-- github.com/sourcegraph/handbook
-
-The '-handbook-path' flag can also be used to specify where sourcegraph/handbook is cloned.`,
-					Before: msprepo.UseManagedServicesRepo,
+					Name:        "generate-handbook-pages",
+					Usage:       "Generate operations handbook pages in Notion for all services",
+					Hidden:      true, // not meant for day-to-day use
+					Description: `Requires NOTION_API_TOKEN or access to sourcegraph-secrets/CORE_SERVICES_NOTION_API_TOKEN.`,
+					Before:      msprepo.UseManagedServicesRepo,
 					Flags: []cli.Flag{
-						&cli.StringFlag{
-							Name:  "handbook-path",
-							Usage: "Path to the directory in which sourcegraph/handbook is cloned",
-							Value: "../handbook",
-							Action: func(_ *cli.Context, v string) error {
-								// 'Required: true' will error out even if a default
-								// value is set, so do our own validation here.
-								if v == "" {
-									return errors.New("cannot be empty")
-								}
-								return nil
-							},
+						&cli.IntFlag{
+							Name:  "concurrency",
+							Value: 3,
+							Usage: "Maximum number of concurrent updates to Notion pages",
 						},
 					},
-					Action: func(c *cli.Context) error {
-						handbookPath := c.String("handbook-path")
-						if err := isHandbookRepo(handbookPath); err != nil {
-							return errors.Wrapf(err, "expecting github.com/sourcegraph/handbook at %q", handbookPath)
-						}
-
+					Action: func(c *cli.Context) (err error) {
 						services, err := msprepo.ListServices()
 						if err != nil {
 							return err
@@ -465,63 +451,170 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 						if err != nil {
 							return errors.Wrap(err, "msprepo.GitRevision")
 						}
-
 						opts := operationdocs.Options{
 							ManagedServicesRevision: repoRev,
 							GenerateCommand:         strings.Join(os.Args, " "),
-							Handbook:                true,
+							// This command is for generating Notion pages.
+							Notion: true,
 						}
 
-						// Reset directory to ensure we don't have lingering references
-						{
-							dir := filepath.Join(handbookPath, operationdocs.HandbookDirectory)
-							_ = os.RemoveAll(dir)
-							_ = os.Mkdir(dir, os.ModePerm)
-							std.Out.Writef("Reset destination directory %q.", dir)
+						// Prefer env token for ease of integration in GitHub
+						// Actions, before falling back to using the token stored
+						// in GSM.
+						notionToken, ok := os.LookupEnv("NOTION_API_TOKEN")
+						if ok && len(notionToken) > 0 {
+							std.Out.WriteSuggestionf("Using NOTION_API_TOKEN from environment")
+						} else {
+							sec, err := secrets.FromContext(c.Context)
+							if err != nil {
+								return err
+							}
+							notionToken, err = sec.GetExternal(c.Context,
+								secrets.ExternalSecret{
+									Project: "sourcegraph-secrets",
+									Name:    "CORE_SERVICES_NOTION_API_TOKEN",
+								})
+							if err != nil {
+								return errors.Wrap(err, "failed to get Notion token")
+							}
 						}
+						notionClient := notionapi.NewClient(notionapi.Token(notionToken))
 
+						type task struct {
+							svc          *spec.Spec
+							noNotionPage bool
+						}
+						var tasks []task
 						var serviceSpecs []*spec.Spec
+						var statusBars []*output.StatusBar
 						for _, s := range services {
+							status := output.NewStatusBarWithLabel(s)
+							statusBars = append(statusBars, status)
+
 							svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
 							if err != nil {
 								return errors.Wrapf(err, "load service %q", s)
 							}
 							serviceSpecs = append(serviceSpecs, svc)
-							collectedAlerts, err := CollectAlertPolicies(svc)
-							opts.AlertPolicies = collectedAlerts
-							if err != nil {
-								return errors.Wrapf(err, "%s: CollectAlertPolicies", s)
+							if svc.Service.NotionPageID == nil {
+								tasks = append(tasks, task{
+									svc:          svc,
+									noNotionPage: true,
+								})
+								continue
 							}
-							doc, err := operationdocs.Render(*svc, opts)
-							if err != nil {
-								return errors.Wrap(err, s)
-							}
-							pagePath := filepath.Join(handbookPath,
-								operationdocs.ServiceHandbookPath(s))
-							if err := os.WriteFile(pagePath, []byte(doc), 0o644); err != nil {
-								return errors.Wrap(err, s)
-							}
-							std.Out.WriteNoticef("[%s]\tWrote %q", s, pagePath)
+							tasks = append(tasks, task{svc: svc})
 						}
 
-						indexDoc := operationdocs.RenderIndexPage(serviceSpecs, opts)
-						indexPath := filepath.Join(handbookPath,
-							operationdocs.IndexPathHandbookPath())
-						if err := os.WriteFile(indexPath, []byte(indexDoc), 0o644); err != nil {
-							return errors.Wrap(err, "index page")
+						// Prepare nice progress bars to look at while slowly
+						// updating Notion pages
+						concurrency := c.Int("concurrency")
+						prog := std.Out.ProgressWithStatusBars(
+							[]output.ProgressBar{{
+								Label: fmt.Sprintf("Generating service handbook pages (concurrency: %d)", concurrency),
+								Max:   float64(len(services)),
+							}},
+							statusBars,
+							nil)
+
+						// Do work concurrently, counting how many tasks are done
+						wg := pool.New().WithErrors().WithMaxGoroutines(concurrency)
+						completedCount := atomic.NewInt32(0)
+						for i, t := range tasks {
+							if t.noNotionPage {
+								prog.SetValue(0, float64(completedCount.Inc()))
+								prog.StatusBarCompletef(i, "Skipped: no Notion page provided in service spec")
+								continue
+							}
+							svc := t.svc
+							s := svc.Service.ID
+
+							wg.Go(func() (err error) {
+								defer func() {
+									if err != nil {
+										prog.StatusBarFailf(i, err.Error())
+									}
+								}()
+
+								prog.StatusBarUpdatef(i, "Collecting alert policies")
+								collectedAlerts, err := collectAlertPolicies(svc)
+								if err != nil {
+									return errors.Wrapf(err, "%s: CollectAlertPolicies", s)
+								}
+
+								prog.StatusBarUpdatef(i, "Rendering Markdown docs")
+								doc, err := operationdocs.Render(*svc, collectedAlerts, opts)
+								if err != nil {
+									return errors.Wrap(err, s)
+								}
+
+								prog.StatusBarUpdatef(i, "Preparing target Notion page %s",
+									operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
+								if err := resetNotionPage(
+									c.Context,
+									notionClient,
+									*svc.Service.NotionPageID,
+									fmt.Sprintf("%s infrastructure operations", svc.Service.GetName()),
+								); err != nil {
+									return errors.Wrapf(err, "%s: reset page %s",
+										s, operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
+								}
+
+								prog.StatusBarUpdatef(i, "Rendering target Notion page %s",
+									operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
+								blockUpdater := notion.NewPageBlockUpdater(notionClient, *svc.Service.NotionPageID)
+								if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
+									ProcessMarkdown([]byte(doc)); err != nil {
+									return errors.Wrap(err, s)
+								}
+
+								prog.StatusBarCompletef(i, "Wrote %q",
+									operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
+								prog.SetValue(0, float64(completedCount.Inc()))
+								return nil
+							})
 						}
-						std.Out.WriteNoticef("[index]\tWrote %q", indexPath)
+						if err := wg.Wait(); err != nil {
+							prog.Close()
+							return errors.Wrap(err, "failed to generate some pages")
+						}
+						prog.Complete()
+
+						pending := std.Out.Pending(output.StylePending.Linef(
+							"Generating MSP operations index page"))
+						if err := resetNotionPage(
+							c.Context,
+							notionClient,
+							operationdocs.IndexNotionPageID(),
+							"Managed Services infrastructure",
+						); err != nil {
+							return errors.Wrapf(err, "index: reset page %s",
+								operationdocs.NotionHandbookURL(operationdocs.IndexNotionPageID()))
+						}
+						blockUpdater := notion.NewPageBlockUpdater(notionClient, operationdocs.IndexNotionPageID())
+						doc := operationdocs.RenderIndexPage(serviceSpecs, opts)
+						if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
+							ProcessMarkdown([]byte(doc)); err != nil {
+							return errors.Wrap(err, "apply index page")
+						}
+						pending.Complete(output.Linef(output.EmojiSuccess, output.StyleReset,
+							"Wrote index page %q", operationdocs.NotionHandbookURL(operationdocs.IndexNotionPageID())))
 
 						std.Out.WriteSuccessf("All pages generated!")
-						std.Out.WriteSuggestionf("Make sure to commit the generated changes and open a pull request in github.com/sourcegraph/handbook.")
 						return nil
 					},
 				},
 			},
 		},
 		{
-			Name:   "logs",
-			Usage:  "Quick links for logs of various MSP components",
+			Name:      "logs",
+			Usage:     "Quick links for logs of various MSP components",
+			ArgsUsage: "<service ID> <environment ID>",
+			Description: fmt.Sprintf(`View logs of various MSP infrastructure components for a specified service environment and component.
+
+This command supports completions on services and environments.
+
+%s`, msprepo.DescribeServicesOptions()),
 			Before: msprepo.UseManagedServicesRepo,
 			Flags: []cli.Flag{
 				&cli.StringFlag{
@@ -556,7 +649,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 				{
 					Name:  "connect",
 					Usage: "Connect to the PostgreSQL instance",
-					Description: `
+					Description: fmt.Sprintf(`
 This command runs 'cloud-sql-proxy' authenticated against the specified MSP
 service environment, and provides 'psql' commands for interacting with the
 database through the proxy.
@@ -566,7 +659,12 @@ install 'cloud-sql-proxy'.
 
 By default, you will only have 'SELECT' privileges through the connection - for
 full access, use the '-write-access' flag.
-`,
+
+You may need Entitle grants to use this command - see go/msp-ops for more details.
+
+This command supports completions on services and environments.
+
+%s`, msprepo.DescribeServicesOptions()),
 					ArgsUsage: "<service ID> <environment ID>",
 					Flags: []cli.Flag{
 						&cli.IntFlag{
@@ -647,7 +745,7 @@ full access, use the '-write-access' flag.
 							connectionName,
 							serviceAccountEmail,
 							proxyPort,
-							svc.Service.GetGoLink(env.ID))
+							svc.Service.GetHandbookPageURL())
 						if err != nil {
 							return err
 						}
@@ -679,9 +777,15 @@ full access, use the '-write-access' flag.
 			Before:  msprepo.UseManagedServicesRepo,
 			Subcommands: []*cli.Command{
 				{
-					Name:        "view",
-					Usage:       "View MSP Terraform Cloud workspaces",
-					Description: "You may need to request access to the workspaces - see https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/#terraform-cloud",
+					Name:  "view",
+					Usage: "View MSP Terraform Cloud workspaces",
+					Description: fmt.Sprintf(`View Terraform Cloud workspaces for a given service or service environment.
+
+You may need to request access to the workspaces via Entitle - refer to go/msp-ops for more details.
+
+This command supports completions on services and environments.
+
+%s`, msprepo.DescribeServicesOptions()),
 					UsageText: `
 # View all workspaces for all MSP services
 sg msp tfc view
@@ -723,9 +827,11 @@ sg msp tfc view <service> <environment>
 				{
 					Name:  "sync",
 					Usage: "Create or update all required Terraform Cloud workspaces for an environment",
-					Description: `Optionally use '-all' to sync all environments for a service.
+					Description: fmt.Sprintf(`Optionally use '-all' to sync all environments for a service.
 
-Supports completions on services and environments.`,
+This command supports completions on services and environments.
+
+%s`, msprepo.DescribeServicesOptions()),
 					ArgsUsage: "<service ID> [environment ID]",
 					Flags: []cli.Flag{
 						&cli.BoolFlag{

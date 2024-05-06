@@ -5,6 +5,10 @@
     import { type TabsContext, KEY } from './Tabs.svelte'
 
     export let title: string
+    /**
+     * SVG path for the icon to display in the tab header.
+     */
+    export let icon: string | undefined = undefined
 
     const context = getContext<TabsContext>(KEY)
     const id = uuid.v4()
@@ -13,6 +17,7 @@
         context.register({
             id: tabId,
             title,
+            icon,
         })
     )
     $: selectedId = context.selectedTabID

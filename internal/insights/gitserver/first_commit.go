@@ -2,7 +2,6 @@ package gitserver
 
 import (
 	"context"
-	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -15,12 +14,11 @@ var (
 	EmptyRepoErr = errors.New("empty repository")
 )
 
-const emptyRepoErrMessage = `git command [rev-list --reverse --date-order --max-parents=0 HEAD] failed (output: ""): exit status 129`
-
 func isFirstCommitEmptyRepoError(err error) bool {
-	if strings.Contains(err.Error(), emptyRepoErrMessage) {
+	if gitdomain.IsRevisionNotFoundError(err) {
 		return true
 	}
+
 	unwrappedErr := errors.Unwrap(err)
 	if unwrappedErr != nil {
 		return isFirstCommitEmptyRepoError(unwrappedErr)
@@ -29,11 +27,7 @@ func isFirstCommitEmptyRepoError(err error) bool {
 }
 
 func GitFirstEverCommit(ctx context.Context, gitserverClient gitserver.Client, repoName api.RepoName) (*gitdomain.Commit, error) {
-	commit, err := gitserverClient.FirstEverCommit(ctx, repoName)
-	if err != nil && isFirstCommitEmptyRepoError(err) {
-		return nil, errors.Wrap(EmptyRepoErr, err.Error())
-	}
-	return commit, err
+	return gitserverClient.FirstEverCommit(ctx, repoName)
 }
 
 func NewCachedGitFirstEverCommit() *CachedGitFirstEverCommit {

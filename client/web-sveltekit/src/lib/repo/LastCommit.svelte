@@ -18,51 +18,54 @@
         <Avatar avatar={user} />
     </div>
     <div class="display-name">
-        <small>{user.name}</small>
+        <span class="label">{user.displayName || user.name}</span>
     </div>
     <div class="commit-message">
         <a href={canonicalURL}>
-            <small>{commitMessage}</small>
+            {commitMessage}
         </a>
     </div>
     <div class="commit-date">
-        <small>{commitDate}</small>
+        {commitDate}
     </div>
 </div>
 
 <style lang="scss">
-    .avatar {
-        align-items: center;
+    .last-commit {
         display: flex;
         flex-flow: row nowrap;
-        margin-right: 0.25rem;
+        align-items: center;
+        justify-content: space-between;
+        margin-right: 0.5rem;
+        white-space: nowrap;
+        max-width: 400px;
+        font-size: var(--font-size-small);
     }
 
-    .commit-date {
-        color: var(--text-muted);
+    .avatar {
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        margin-right: 0.5rem;
+        --avatar-size: 1.5rem;
+    }
+
+    .display-name {
+        margin-right: 0.75rem;
+        color: var(--text-body);
     }
 
     .commit-message {
         align-items: center;
         color: var(--text-muted);
         margin-right: 0.5rem;
-        max-width: 200px;
+        max-width: 240px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
-    .display-name {
-        margin-right: 0.5rem;
-    }
-
-    .last-commit {
-        align-items: center;
-        display: flex;
-        flex-flow: row nowrap;
-        justify-content: space-between;
-        margin-right: 0.5rem;
-        white-space: nowrap;
-        max-width: 400px;
+    .commit-date {
+        color: var(--text-muted);
     }
 </style>

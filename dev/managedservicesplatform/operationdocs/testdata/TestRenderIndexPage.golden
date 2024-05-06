@@ -1,38 +1,35 @@
-# Managed Services infrastructure
+> [!NOTE]
+> Generated from: unknown revision of [sourcegraph/managed-services](https://github.com/sourcegraph/managed-services)
 
-<!--
-Generated from: unknown revision of https://github.com/sourcegraph/managed-services
--->
-
-These pages contain generated operational guidance for the infrastructure of the 4 [Managed Services Platform (MSP)](../teams/core-services/managed-services/platform.md) services (across 6 environments) currently in operation at Sourcegraph.
+These pages contain generated operational guidance for the infrastructure of the 4 [Managed Services Platform (MSP)](https://sourcegraph.notion.site/712a0389f54c4d3a90d069aa2d979a59) services (across 6 environments) currently in operation at Sourcegraph.
 This includes information about each service, configured environments, Entitle requests, common tasks, monitoring, custom documentation provided by service operators, and so on.
 In addition to service-specific guidance, [General guidance](#general-guidance) is also available.
 
-MSP is owned by [Core Services](../teams/core-services/index.md), but individual teams are responsible for the services they operate on the platform.
+MSP is owned by [Core Services](https://sourcegraph.notion.site/ed8af5ecf15545b292816ebba261a93c), but individual teams are responsible for the services they operate on the platform.
 
 Services are defined in [`sourcegraph/managed-services`](https://github.com/sourcegraph/managed-services), though service source code may live elsewhere.
 
 > [!NOTE]
 > This page may be out of date if a service or environment was recently added or updated - reach out to #discuss-core-services for help updating these pages, or use `sg msp operations $SERVICE_ID` to view the generated documentation in your terminal.
 
-## team-a
+# team-a
 
 Managed Services Platform services owned by `team-a`:
 
-- [Service 1](./service-1.md)
-- [Service 2](./service-2.md)
-- [Service 4](./service-4.md)
+- Service 1 (no Notion page provided in service specification for generated docs)
+- Service 2 (no Notion page provided in service specification for generated docs)
+- Service 4 (no Notion page provided in service specification for generated docs)
 
-## team-b
+# team-b
 
 Managed Services Platform services owned by `team-b`:
 
-- [Service 3](./service-3.md)
-- [Service 4](./service-4.md)
+- Service 3 (no Notion page provided in service specification for generated docs)
+- Service 4 (no Notion page provided in service specification for generated docs)
 
-## General guidance
+# General guidance
 
-### Infrastructure access
+## Infrastructure access
 
 For MSP service environments other than `category: test`, access needs to be requested through Entitle.
 Test environments are placed in the "Engineering Projects" GCP folder, which should have access granted to engineers by default.
@@ -52,7 +49,7 @@ You can also choose to request access to an individual project in Entitle by fol
 
 The custom roles used for MSP infrastructure access are [configured in `sourcegraph/infrastructure`](https://github.com/sourcegraph/infrastructure/blob/main/gcp/custom-roles/msp.tf).
 
-### Terraform Cloud access
+## Terraform Cloud access
 
 Terraform Cloud (TFC) workspaces for MSP [can be found using the `msp` workspace tag](https://app.terraform.io/app/sourcegraph/workspaces?tag=msp).
 

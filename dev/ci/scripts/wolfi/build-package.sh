@@ -12,6 +12,8 @@ IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
 echo "~~~ :aspect: :stethoscope: Agent Health check"
 /etc/aspect/workflows/bin/agent_health_check
 
+echo "~~~ :package: :hammer_and_pick: Package build setup"
+
 tmpdir=$(mktemp -d -t melange-bin.XXXXXXXX)
 # shellcheck disable=SC2317
 # false positive by shellcheck https://github.com/koalaman/shellcheck/issues/2660
@@ -46,6 +48,8 @@ trap cleanup EXIT
   chmod +x bwrap
   mv bwrap bin/
 )
+
+echo "~~~ :package: :construction_worker: Package build"
 
 export PATH="$tmpdir/bin:$PATH"
 

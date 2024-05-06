@@ -13,7 +13,6 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/collections",
-        "//internal/conf",
         "//internal/database",
         "//internal/insights/query/querybuilder",
         "//internal/insights/types",

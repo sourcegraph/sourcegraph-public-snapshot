@@ -2,19 +2,18 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -63,7 +62,7 @@ func (r *externalAccountResolver) CodySubscription(ctx context.Context) (*CodySu
 		return nil, errors.New("this feature is only available on sourcegraph.com")
 	}
 
-	if r.account.ServiceType != "openidconnect" || r.account.ServiceID != fmt.Sprintf("https://%s", ssc.GetSAMSHostName()) {
+	if r.account.ServiceType != "openidconnect" || r.account.ServiceID != ssc.GetSAMSServiceID() {
 		return nil, nil
 	}
 

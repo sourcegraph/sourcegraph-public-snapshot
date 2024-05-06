@@ -162,7 +162,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	handler = actor.HTTPMiddleware(logger, handler)
 	handler = requestclient.InternalHTTPMiddleware(handler)
 	handler = requestinteraction.HTTPMiddleware(handler)
-	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
+	handler = trace.HTTPMiddleware(logger, handler)
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, gitserver, config), handler)
 
@@ -324,7 +324,7 @@ func recordCommandsOnRepos(repos []string, ignoredGitCommands []string) wrexec.S
 	// we won't record any git commands with these commands since they are considered to be not destructive
 	ignoredGitCommandsMap := collections.NewSet(ignoredGitCommands...)
 
-	return func(ctx context.Context, cmd *exec.Cmd) bool {
+	return func(_ context.Context, cmd *exec.Cmd) bool {
 		base := filepath.Base(cmd.Path)
 		if base != "git" {
 			return false

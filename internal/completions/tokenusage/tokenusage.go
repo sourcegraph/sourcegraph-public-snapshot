@@ -61,7 +61,7 @@ func (m *Manager) TokenizeAndCalculateUsage(inputMessages []types.Message, outpu
 	return nil
 }
 
-func (m *Manager) UpdateAnthropicModelUsage(inputTokens, outputTokens int, model, feature string, provider Provider) error {
+func (m *Manager) UpdateTokenCountsFromModelUsage(inputTokens, outputTokens int, model, feature string, provider Provider) error {
 	baseKey := fmt.Sprintf("%s:%s:%s:", provider, model, feature)
 
 	if err := m.updateTokenCounts(baseKey+"input", int64(inputTokens)); err != nil {

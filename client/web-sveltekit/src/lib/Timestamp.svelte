@@ -1,14 +1,17 @@
 <script lang="ts" context="module">
-    function formatDate(date: Date, options: { utc?: boolean }): string {
+    import { addMinutes, format as dateFnsFormat } from 'date-fns'
+
+    export function formatDate(date: Date, options: { utc?: boolean; format?: TimestampFormat }): string {
         if (options.utc) {
             date = addMinutes(date, date.getTimezoneOffset())
         }
         const dateHasTime = date.toString().includes('T')
-        const defaultFormat = dateHasTime ? TimestampFormat.FULL_DATE_TIME : TimestampFormat.FULL_DATE
-        return format(date, defaultFormat) + (options.utc ? ' UTC' : '')
+        const defaultFormat =
+            options.format ?? (dateHasTime ? TimestampFormat.FULL_DATE_TIME : TimestampFormat.FULL_DATE)
+        return dateFnsFormat(date, defaultFormat) + (options.utc ? ' UTC' : '')
     }
 
-    enum TimestampFormat {
+    export enum TimestampFormat {
         FULL_TIME = 'HH:mm:ss',
         FULL_DATE = 'yyyy-MM-dd',
         FULL_DATE_TIME = 'yyyy-MM-dd pp',
@@ -16,7 +19,7 @@
 </script>
 
 <script lang="ts">
-    import { addMinutes, format, formatDistance, formatDistanceStrict } from 'date-fns'
+    import { formatDistance, formatDistanceStrict } from 'date-fns'
 
     import { currentDate } from './stores'
     import Tooltip from './Tooltip.svelte'

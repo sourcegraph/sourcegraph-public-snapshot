@@ -21,11 +21,15 @@
 
     import { beforeNavigate, goto } from '$app/navigation'
     import { limitHit } from '$lib/branded'
+    import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
+    import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import type { URLQueryFilter } from '$lib/search/dynamicFilters'
+    import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
+    import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
+    import type { QueryState } from '$lib/search/state'
     import {
         type AggregateStreamingSearchResults,
         type PathMatch,
@@ -33,14 +37,10 @@
         type SymbolMatch,
         type ContentMatch,
     } from '$lib/shared'
-    import type { QueryState } from '$lib/search/state'
-    import Icon from '$lib/Icon.svelte'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
     import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
     import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
     import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
-    import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
-    import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
 
     import PreviewPanel from './PreviewPanel.svelte'
     import SearchAlert from './SearchAlert.svelte'
@@ -146,10 +146,6 @@
     }
 </script>
 
-<svelte:head>
-    <title>{queryFromURL} - Sourcegraph</title>
-</svelte:head>
-
 <GlobalHeaderPortal>
     <div class="search-header">
         <SearchInput {queryState} size="compat" onSubmit={handleSubmit} />
@@ -238,8 +234,7 @@
 
         .actions {
             border-bottom: 1px solid var(--border-color);
-            padding: 0.5rem 0;
-            padding-left: 0.25rem;
+            padding: 0.5rem;
             display: flex;
             align-items: center;
             flex-shrink: 0;

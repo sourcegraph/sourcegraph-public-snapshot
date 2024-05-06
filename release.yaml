@@ -28,11 +28,17 @@ requirements:
 
    # announce-engineering slack webhook url:
    # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=pldpna5vivapxe4phewnqd42ji&h=team-sourcegraph.1password.com
-
-   # bolaji-release-testing
-   # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=isv4abynddpox72wwbhaamo76e&i=7zjax5rm5hlilbgrzeb257i62i&h=team-sourcegraph.1password.com
   - name: 'Slack Webhook URL'
     env: SLACK_WEBHOOK_URL
+    only:
+      - promoteToPublic.finalize
+
+  # team-cloud-ops slack webhook url:
+  # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=xwwpaakz5iajowr2fruueoevba&h=team-sourcegraph.1password.com
+  - name: 'Slack Webhook URL Cloud Ops'
+    env: SLACK_WEBHOOK_URL_CLOUD_OPS
+    only:
+      - promoteToPublic.finalize
 
 internal:
   create:
@@ -62,6 +68,9 @@ internal:
             else
               echo "Build created, see:"
               echo $body | jq .web_url
+              cat << EOF | buildkite-agent annotate --style info
+              This is a Release build. Learn more about the process in the [reference documentation](https://www.notion.so/sourcegraph/Releases-3429f31510f2451fbc38a7f9ccaa0492)
+              EOF
             fi
   finalize:
     steps:
@@ -212,6 +221,9 @@ promoteToPublic:
           else
             echo "Build created, see:"
             echo $body | jq .web_url
+            cat << EOF | buildkite-agent annotate --style info
+            This is a Release build. Learn more about the process in the [reference documentation](https://www.notion.so/sourcegraph/Releases-3429f31510f2451fbc38a7f9ccaa0492)
+            EOF
           fi
   finalize:
     steps:
@@ -278,23 +290,27 @@ promoteToPublic:
 
       # tag is usually in the format `5.3.2`
       # while version is usually the tag prepended with a v, `v5.3.2`
-      - name: 'Slack notification (#announce-engineering)'
+      - name: 'Slack notification (#announce-engineering, #team-cloud-ops)'
         cmd: |
           echo "Posting slack notification for release"
           tag="{{tag}}"
           changelog_version="${tag//./}"
-          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --post-data '{
-            "type": "mrkdwn",
-            "text": "*Sourcegraph {{tag}} has been published*\n\n• <https://sourcegraph.com/docs/CHANGELOG#${changelog_version} | Changelog>\n• <https://github.com/sourcegraph/sourcegraph/releases/tag/{{version}} | GitHub release>"
-          }' "$SLACK_WEBHOOK_URL")
-          exit_code=$?
+          webhooks=("$SLACK_WEBHOOK_URL" "$SLACK_WEBHOOK_URL_CLOUD_OPS")
+          for webhook in "${webhooks[@]}"
+          do
+            body=$(wget --content-on-error -O- --header="Content-Type: application/json" --post-data '{
+              "type": "mrkdwn",
+              "text": "*Sourcegraph {{tag}} has been published*\n\n• <https://sourcegraph.com/docs/CHANGELOG#${changelog_version} | Changelog>\n• <https://github.com/sourcegraph/sourcegraph/releases/tag/{{version}} | GitHub release>"
+            }' "$webhook")
+            exit_code=$?
 
-          if [ $exit_code != 0 ]; then
-            echo "❌ Unable to post message to slack, got:"
-            echo "--- raw body ---"
-            echo $body
-            echo "--- raw body ---"
-            exit $exit_code
-          else
-            echo "Posted to slack."
-          fi
+            if [ $exit_code != 0 ]; then
+              echo "❌ Unable to post message to slack, got:"
+              echo "--- raw body ---"
+              echo $body
+              echo "--- raw body ---"
+              exit $exit_code
+            else
+              echo "Posted to slack."
+            fi
+          done

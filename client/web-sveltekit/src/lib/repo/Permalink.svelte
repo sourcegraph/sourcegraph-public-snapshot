@@ -7,8 +7,8 @@
 
     import { page } from '$app/stores'
     import Icon from '$lib/Icon.svelte'
+    import { replaceRevisionInURL } from '$lib/shared'
     import Tooltip from '$lib/Tooltip.svelte'
-    import { replaceRevisionInURL } from '$lib/web'
 
     export let commitID: string
 

@@ -48,7 +48,7 @@ export const CodySwitchAccountPage: React.FunctionComponent<CodySwitchAccountPag
             <Card className={classNames('d-flex flex-column flex-1 mx-auto p-4', styles.switchAccountCard)}>
                 <Text>
                     Your Cody client is signed in with a different account <strong>(@{username})</strong>. To manage the
-                    account being used by your Cody client, sign out and sign in with the correct account.
+                    account being used by your Cody client, sign out and sign in with the intended account.
                 </Text>
                 <Button to="/-/sign-out" as={AnchorLink} variant="primary" className="mt-3">
                     Sign out to switch accounts

@@ -515,10 +515,7 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 	}
 
 	countsByLanguage := make([]jsonCodeIntelRepositoryCountsByLanguage, 0, len(codeIntelUsage.CountsByLanguage))
-	for language, counts := range codeIntelUsage.CountsByLanguage {
-		// note: do not capture loop var by ref
-		languageID := language
-
+	for languageID, counts := range codeIntelUsage.CountsByLanguage {
 		countsByLanguage = append(countsByLanguage, jsonCodeIntelRepositoryCountsByLanguage{
 			LanguageID:                            &languageID,
 			NumRepositoriesWithUploadRecords:      counts.NumRepositoriesWithUploadRecords,
@@ -545,9 +542,6 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 
 	languageRequests := make([]jsonLanguageRequest, 0, len(codeIntelUsage.LanguageRequests))
 	for _, request := range codeIntelUsage.LanguageRequests {
-		// note: do not capture loop var by ref
-		request := request
-
 		languageRequests = append(languageRequests, jsonLanguageRequest{
 			LanguageID:  &request.LanguageID,
 			NumRequests: &request.NumRequests,

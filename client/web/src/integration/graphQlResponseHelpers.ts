@@ -4,6 +4,7 @@ import { RepositoryType, type TreeEntriesResult } from '@sourcegraph/shared/src/
 
 import {
     type BlobResult,
+    ContextFiltersResult,
     ExternalServiceKind,
     type FileExternalLinksResult,
     type FileNamesResult,
@@ -152,5 +153,15 @@ export const createFileNamesResult = (): FileNamesResult => ({
         id: 'repo-123',
         __typename: 'Repository',
         commit: { id: 'c0ff33', __typename: 'GitCommit', fileNames: ['README.md'] },
+    },
+})
+
+export const createCodyContextFiltersResult = (): ContextFiltersResult => ({
+    site: {
+        codyContextFilters: {
+            raw: null,
+            __typename: 'CodyContextFilters',
+        },
+        __typename: 'Site',
     },
 })

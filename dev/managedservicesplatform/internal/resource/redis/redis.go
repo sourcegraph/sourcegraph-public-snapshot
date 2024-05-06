@@ -31,10 +31,8 @@ type Config struct {
 }
 
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
-	// Default to 'true' - TODO(@bobheadxi) migrate default to false
-	// after explicitly configuring production instances to use HA
-	// Redis for now.
-	useHA := pointers.Deref(config.Spec.HighAvailability, true)
+	// Default to 'false'
+	useHA := pointers.DerefZero(config.Spec.HighAvailability)
 	instanceName := id.DisplayName()
 	if !useHA {
 		// Tier changes require recreation. We give basic-tier instance different

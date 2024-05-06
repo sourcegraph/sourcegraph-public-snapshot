@@ -739,10 +739,16 @@ func (s *EnvironmentResourcesSpec) Validate() []error {
 type EnvironmentResourceRedisSpec struct {
 	// MemoryGB defaults to 1.
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
-	// HighAvailability is enabled by default. It toggles regional replicas for
-	// the Redis instance without adding read replicas.
+	// HighAvailability is disabled by default. Enabling it toggles regional
+	// replicas for the Redis instance without adding read replicas for ~double
+	// the price. It should be enabled for our most critical services, but as
+	// Redis is fairly affordable, if you run into Redis stability issues there
+	// is no blocker to enabling this.
+	//
 	//  - https://cloud.google.com/memorystore/docs/redis/high-availability-for-memorystore-for-redis
 	//  - https://cloud.google.com/memorystore/docs/redis/pricing#instance_pricing_with_no_read_replicas
+	//
+	// Also see: https://sourcegraph.notion.site/655e89d164b24727803f5e5a603226d8
 	HighAvailability *bool `yaml:"highAvailability,omitempty"`
 }
 
@@ -759,11 +765,14 @@ type EnvironmentResourcePostgreSQLSpec struct {
 	// MaxConnections defaults to whatever CloudSQL provides. Must be between
 	// 14 and 262143.
 	MaxConnections *int `yaml:"maxConnections,omitempty"`
-	// HighAvailability is disabled by default. It toggles Cloud SQL HA
-	// configuration for double the price and additional point-in-time-recovery
+	// HighAvailability is disabled by default. Enabling it provisions Cloud SQL
+	// HA configuration for ~double the price and additional point-in-time-recovery
 	// backup expenses, and should only be enabled for our most critical services.
+	//
 	//  - https://cloud.google.com/sql/docs/postgres/high-availability
 	//  - https://cloud.google.com/sql/pricing
+	//
+	// Also see: https://sourcegraph.notion.site/655e89d164b24727803f5e5a603226d8
 	HighAvailability *bool `yaml:"highAvailability,omitempty"`
 }
 

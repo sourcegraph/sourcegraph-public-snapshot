@@ -68,8 +68,53 @@ func ListServices() ([]string, error) {
 	return listServicesFromRoot(".")
 }
 
+// DescribeServicesOptions returns a list of services for use in command
+// descriptions, assuming MSP conventions somewhere in the path of the current
+// working directory.
+func DescribeServicesOptions() string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Sprintf("Could not list services: %s", err.Error())
+	}
+	repoRoot, err := repositoryRoot(cwd)
+	if err != nil {
+		return fmt.Sprintf("Could not list services: %s", err.Error())
+	}
+	services, err := listServicesFromRoot(repoRoot)
+	if err != nil {
+		return fmt.Sprintf("Could not list services: %s", err.Error())
+	}
+	if len(services) == 0 {
+		return fmt.Sprintf("Could not list services: no services found, %s",
+			ErrNotInsideManagedServices.Error())
+	}
+	return fmt.Sprintf("Available services:\n- %s",
+		strings.Join(services, "\n- "))
+}
+
+// ServicesCompletions provides completions capabilities for commands that accept
+// '<service ID>' positional argument. It traverses upwards to repo root and
+// attempts to list services from there.
+func ServicesCompletions(additionalArgs ...func(args cli.Args) (options []string)) cli.BashCompleteFunc {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil
+	}
+	repoRoot, err := repositoryRoot(cwd)
+	if err != nil {
+		return nil
+	}
+	return completions.CompletePositionalArgs(append([]func(args cli.Args) (options []string){
+		func(args cli.Args) (options []string) {
+			services, _ := listServicesFromRoot(repoRoot)
+			return services
+		},
+	}, additionalArgs...)...)
+}
+
 // ServicesAndEnvironmentsCompletion provides completions capabilities for
 // commands that accept '<service ID> <environment ID>' positional arguments.
+// It traverses upwards to repo root and attempts to list services from there.
 func ServicesAndEnvironmentsCompletion(additionalArgs ...func(args cli.Args) (options []string)) cli.BashCompleteFunc {
 	cwd, err := os.Getwd()
 	if err != nil {
