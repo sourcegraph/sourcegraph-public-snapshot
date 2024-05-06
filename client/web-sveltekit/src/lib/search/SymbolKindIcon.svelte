@@ -3,13 +3,6 @@
 
     import { SymbolKind } from '$lib/graphql-types'
 
-    function narrowSymbolKind(kind: SymbolKind | string): SymbolKind {
-        if (Object.values(SymbolKind).some(k => k === kind)) {
-            return kind as SymbolKind
-        }
-        return SymbolKind.UNKNOWN
-    }
-
     const AbbreviatedSymbolKinds: Map<string, string> = new Map([
         [SymbolKind.ARRAY, '[]'],
         [SymbolKind.BOOLEAN, 'Bo'],
