@@ -24,16 +24,12 @@ const APIEndpoint = "https://cloud-ops-dev.sgdev.org/api"
 // DevEnvironment is the environment where Cloud allows ephemeral instance types
 const DevEnvironment = "dev"
 
-// EphemeralInstanceType is the instace type we should use when creating an instance with the cloud API.
-// It is set to internal because in cloud, internal instance types does not have metrics or security enabled.
-const EphemeralInstanceType = "internal"
-
 var _ EphemeralClient = &Client{}
 
 type EphemeralClient interface {
 	CreateInstance(context.Context, *DeploymentSpec) (*Instance, error)
 	GetInstance(context.Context, string) (*Instance, error)
-	ListInstances(context.Context) ([]*Instance, error)
+	ListInstances(context.Context, bool) ([]*Instance, error)
 	DeleteInstance(context.Context, string) error
 }
 
@@ -50,12 +46,12 @@ type DeploymentSpec struct {
 }
 
 func NewDeploymentSpec(name, version string) *DeploymentSpec {
+	features := newInstanceFeatures()
+	features.SetEphemeralInstance(true)
 	return &DeploymentSpec{
-		Name:    sanitizeInstanceName(name),
-		Version: version,
-		InstanceFeatures: map[string]string{
-			"ephemeral": "true", // need to have this to make the instance ephemeral
-		},
+		Name:             sanitizeInstanceName(name),
+		Version:          version,
+		InstanceFeatures: features.Value(),
 	}
 }
 
@@ -109,15 +105,20 @@ func (c *Client) GetInstance(ctx context.Context, name string) (*Instance, error
 		return nil, errors.Wrapf(err, "failed to get instance %q", name)
 	}
 
-	return newInstance(resp.Msg.GetInstance()), nil
+	return newInstance(resp.Msg.GetInstance())
 }
 
-func (c *Client) ListInstances(ctx context.Context) ([]*Instance, error) {
-	req := newRequestWithToken(c.token, &cloudapiv1.ListInstancesRequest{
-		InstanceFilter: &cloudapiv1.InstanceFilter{
-			AdminEmail: &c.email,
-		},
-	})
+func (c *Client) ListInstances(ctx context.Context, all bool) ([]*Instance, error) {
+	var req *connect.Request[cloudapiv1.ListInstancesRequest]
+	if all {
+		req = newRequestWithToken(c.token, &cloudapiv1.ListInstancesRequest{})
+	} else {
+		req = newRequestWithToken(c.token, &cloudapiv1.ListInstancesRequest{
+			InstanceFilter: &cloudapiv1.InstanceFilter{
+				AdminEmail: &c.email,
+			},
+		})
+	}
 	resp, err := c.client.ListInstances(
 		ctx,
 		req,
@@ -126,7 +127,7 @@ func (c *Client) ListInstances(ctx context.Context) ([]*Instance, error) {
 		return nil, errors.Wrap(err, "failed to list instances")
 	}
 
-	return toInstances(resp.Msg.GetInstances()...), nil
+	return toInstances(resp.Msg.GetInstances()...)
 }
 
 func (c *Client) CreateInstance(ctx context.Context, spec *DeploymentSpec) (*Instance, error) {
@@ -152,7 +153,7 @@ func (c *Client) CreateInstance(ctx context.Context, spec *DeploymentSpec) (*Ins
 		return nil, errors.Wrap(err, "failed to deploy instance")
 	}
 
-	return newInstance(resp.Msg.GetInstance()), nil
+	return newInstance(resp.Msg.GetInstance())
 }
 
 func (c *Client) DeleteInstance(ctx context.Context, name string) error {

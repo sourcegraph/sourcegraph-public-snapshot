@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -34,4 +35,11 @@ go_library(
         "@com_google_cloud_go_artifactregistry//apiv1/artifactregistrypb",
         "@org_golang_google_api//iterator",
     ],
+)
+
+go_test(
+    name = "cloud_test",
+    srcs = ["instance_test.go"],
+    embed = [":cloud"],
+    deps = ["@com_github_sourcegraph_cloud_api//go/cloudapi/v1:cloudapi"],
 )

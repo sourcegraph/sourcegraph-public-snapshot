@@ -34,7 +34,7 @@ func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 			name = name[:20]
 		}
 
-		status := inst.Status
+		status := inst.Status.Status
 		createdAt := inst.CreatedAt.String()
 
 		return []any{
@@ -42,7 +42,7 @@ func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 		}
 
 	}
-	return newTerminalInstancePrinter(valueFunc, "%-20s %-11s %s", "Name", "Status", "Created At")
+	return newTerminalInstancePrinter(valueFunc, "%-40s %-11s %s", "Name", "Status", "Created At")
 }
 
 func newTerminalInstancePrinter(valueFunc func(i *Instance) []any, headingFmt string, headings ...string) *terminalInstancePrinter {
@@ -63,7 +63,7 @@ func (p *terminalInstancePrinter) Print(items ...*Instance) error {
 	std.Out.WriteLine(output.Line("", output.StyleBold, heading))
 	for _, inst := range items {
 		values := p.valueFunc(inst)
-		line := fmt.Sprintf("%-20s %-11s %s", values...)
+		line := fmt.Sprintf("%-40s %-11s %s", values...)
 		std.Out.WriteLine(output.Line("", output.StyleGrey, line))
 	}
 	return nil
