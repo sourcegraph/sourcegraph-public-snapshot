@@ -1,15 +1,15 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { observeIntersection } from '$lib/intersection-observer'
-    import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
     import CodeExcerpt from '$lib/CodeExcerpt.svelte'
-    import SymbolKind from '$lib/search/SymbolKind.svelte'
+    import { observeIntersection } from '$lib/intersection-observer'
+    import RepoStars from '$lib/repo/RepoStars.svelte'
+    import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
+    import SymbolKind from '$lib/search/SymbolKindIcon.svelte'
     import type { SymbolMatch } from '$lib/shared'
 
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
     import PreviewButton from './PreviewButton.svelte'
-    import RepoStars from '$lib/repo/RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
 
     export let result: SymbolMatch
@@ -41,9 +41,7 @@
             {#each result.symbols as symbol, index}
                 <a href={symbol.url}>
                     <div class="result">
-                        <div class="symbol-kind">
-                            <SymbolKind symbolKind={symbol.kind} />
-                        </div>
+                        <SymbolKind symbolKind={symbol.kind} --icon-size="1em" />
                         {#await highlightedHTMLRows then result}
                             <CodeExcerpt
                                 startLine={symbol.line}
@@ -65,16 +63,13 @@
         align-items: center;
         width: 100%;
         padding: 0.5rem;
+        gap: 0.5rem;
         border-bottom: 1px solid var(--border-color);
 
         background-color: var(--code-bg);
         &:hover {
             background-color: var(--subtle-bg-2);
         }
-    }
-
-    .symbol-kind {
-        margin-right: 0.5rem;
     }
 
     a:hover {

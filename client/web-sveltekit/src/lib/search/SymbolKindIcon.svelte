@@ -3,7 +3,14 @@
 
     import { SymbolKind } from '$lib/graphql-types'
 
-    const AbbreviatedSymbolKinds = new Map([
+    function narrowSymbolKind(kind: SymbolKind | string): SymbolKind {
+        if (Object.values(SymbolKind).some(k => k === kind)) {
+            return kind as SymbolKind
+        }
+        return SymbolKind.UNKNOWN
+    }
+
+    const AbbreviatedSymbolKinds: Map<string, string> = new Map([
         [SymbolKind.ARRAY, '[]'],
         [SymbolKind.BOOLEAN, 'Bo'],
         [SymbolKind.CLASS, 'C'],
@@ -30,7 +37,7 @@
         [SymbolKind.VARIABLE, 'Var'],
     ])
 
-    const SymbolKindSymbols = new Map([
+    const SymbolKindSymbols: Map<string, string> = new Map([
         [SymbolKind.FILE, mdiFileCodeOutline],
         [SymbolKind.NULL, mdiNull],
     ])
@@ -68,7 +75,7 @@
 
     import { humanReadableSymbolKind } from './symbolUtils'
 
-    export let symbolKind: SymbolKind
+    export let symbolKind: SymbolKind | string
 </script>
 
 <Tooltip tooltip={humanReadableSymbolKind(symbolKind)}>
