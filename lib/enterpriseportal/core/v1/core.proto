@@ -67,9 +67,9 @@ message EnterpriseSubscriptionLicenseClassic {
     repeated string tags = 1;
     // The number of users for which this product subscription is valid.
     int64 user_count = 2;
-    // The expiration date of this product license, expressed as the number of
-    // seconds since the epoch.
-    int64 expires_at = 3;
+    // The expiration date of this product license. In license data, this is
+    // called 'expires_at', expressed as the number of seconds since the epoch.
+    google.protobuf.Timestamp expire_time = 3;
     // The Salesforce subscription ID associated with this product license.
     string salesforce_subscription_id = 4;
     // The Salesforce opportunity ID associated with this product license.
