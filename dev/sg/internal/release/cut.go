@@ -37,7 +37,6 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	defaultBranch := cctx.String("branch")
 
 	ctx := cctx.Context
-	fmt.Println("releaseBranch", releaseBranch)
 	releaseGitRepoBranch := repo.NewGitRepo(releaseBranch, releaseBranch)
 	defaultGitRepoBranch := repo.NewGitRepo(defaultBranch, defaultBranch)
 
