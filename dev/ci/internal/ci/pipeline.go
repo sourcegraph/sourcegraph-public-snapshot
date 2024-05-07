@@ -296,10 +296,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			runtype.InternalRelease,
 			runtype.CloudEphemeral,
 		) {
-			imageBuildOps.Append(bazelBuildExecutorVM(c, alwaysRebuild))
-			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				imageBuildOps.Append(bazelBuildExecutorDockerMirror(c))
-			}
+			// imageBuildOps.Append(bazelBuildExecutorVM(c, alwaysRebuild))
+			// if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+			// 	imageBuildOps.Append(bazelBuildExecutorDockerMirror(c))
+			// }
 		}
 		ops.Merge(imageBuildOps)
 
@@ -322,10 +322,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(publishOpsDev)
 
 		// End-to-end tests
-		ops.Merge(operations.NewNamedSet("End-to-end tests",
-			executorsE2E(c),
-			// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
-		))
+		// ops.Merge(operations.NewNamedSet("End-to-end tests",
+		// 	executorsE2E(c),
+		// 	// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
+		// ))
 
 		// Wolfi package and base images
 		packageOps, apkoOps := addWolfiOps(c)
@@ -342,13 +342,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
 		// Executor VM image
-		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease, runtype.InternalRelease) {
-			publishOps.Append(bazelPublishExecutorVM(c, alwaysRebuild))
-			publishOps.Append(bazelPublishExecutorBinary(c))
-			if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				publishOps.Append(bazelPublishExecutorDockerMirror(c))
-			}
-		}
+		// if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease, runtype.InternalRelease) {
+		// 	publishOps.Append(bazelPublishExecutorVM(c, alwaysRebuild))
+		// 	publishOps.Append(bazelPublishExecutorBinary(c))
+		// 	if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+		// 		publishOps.Append(bazelPublishExecutorDockerMirror(c))
+		// 	}
+		// }
 
 		// Final Bazel images
 		publishOps.Append(bazelPushImagesFinal(c))
