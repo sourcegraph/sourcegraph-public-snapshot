@@ -65,33 +65,33 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 		return err
 	}
 
-	cloudEmoji := "☁️"
-	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Starting deployment %q for version %q", name, version))
 	spec := NewDeploymentSpec(
 		sanitizeInstanceName(name),
 		version,
 	)
+	cloudEmoji := "☁️"
+	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Starting deployment %q for version %q", spec.Name, spec.Version))
 
 	// Check if the deployment already exists
 	_, err = cloudClient.GetInstance(ctx, spec.Name)
 	if err != nil {
 		if !errors.Is(err, ErrInstanceNotFound) {
-			return errors.Wrapf(err, "failed to determine if instance %q already exists", spec.Name)
+			return errors.Wrapf(err, "failed to check if instance %q already exists", spec.Name)
 		}
 	} else {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Cannot create new deployment %q as a deployment with that name already exists", err))
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", spec.Name))
 		// Deployment exists
 		return ErrDeploymentExists
 	}
 
 	inst, err := cloudClient.CreateInstance(ctx, spec)
 	if err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment failed: %v", err))
-		return errors.Wrapf(err, "failed to deploy version %v", version)
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", spec.Name))
+		return errors.Wrapf(err, "failed to deploy %q of version %s", spec.Name, spec.Version)
 	}
 
 	pending.Writef("Deploy instance details: \n%s", inst.String())
-	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Deployment %q created for version %q - access at: %s", name, version, inst.URL))
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Deployment %q created for version %q - access at: %s", spec.Name, spec.Version, inst.URL))
 	return nil
 }
 
