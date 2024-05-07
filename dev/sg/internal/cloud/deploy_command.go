@@ -3,6 +3,7 @@ package cloud
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -160,6 +161,23 @@ func cancelBuild(ctx context.Context, build *buildkite.Build) error {
 
 }
 
+func createDeploymentName(originalName, version, email, branch string) string {
+	var deploymentName string
+	if originalName != "" {
+		deploymentName = originalName
+	} else if version != "" {
+		// if a version is given we generate a name based on the email user and the given version
+		// to make sure the deployment is unique
+		user := strings.ReplaceAll(email[0:strings.Index(email, "@")], ".", "_")
+		deploymentName = user[:min(12, len(user))] + "_" + version
+	} else {
+		deploymentName = branch
+	}
+
+	return deploymentName
+
+}
+
 func deployCloudEphemeral(ctx *cli.Context) error {
 	currentBranch, err := repo.GetCurrentBranch(ctx.Context)
 	if err != nil {
@@ -204,23 +222,12 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 		return err
 	}
 
-	var deploymentName string
-	if ctx.String("name") != "" {
-		deploymentName = ctx.String("name")
-	} else if ctx.String("version") != "" {
-		// if a version is given we generate a name based on the email user and the given version
-		// to make sure the deployment is unique
-		user := strings.ReplaceAll(email[0:strings.Index(email, "@")], ".", "_")
-		deploymentName = user[:min(12, len(user))] + "_" + version
-	} else {
-		deploymentName = currRepo.Branch
-	}
-
+	deploymentName := createDeploymentName(ctx.String("name"), version, email, currRepo.Branch)
 	err = createDeploymentForVersion(ctx.Context, email, deploymentName, version)
 	if err != nil {
 		cancelBuild(ctx.Context, build)
 		if errors.Is(err, ErrDeploymentExists) {
-			std.Out.WriteWarningf("Cannot create a new deployment as a deployment with name %q already exists", name)
+			std.Out.WriteWarningf("Cannot create a new deployment as a deployment with name %q already exists", deploymentName)
 			std.Out.WriteSuggestionf(`You might want to try one of the following:
 - Specify a different deployment name with the --name flag
 - Upgrade the current deployment instead by using the upgrade command instead of deploy`)
