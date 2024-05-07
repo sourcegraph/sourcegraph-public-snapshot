@@ -221,15 +221,6 @@ type RedisCacheSpec struct {
 	Env map[string]string `json:"env,omitempty"`
 }
 
-// RedisExporterSpec defines the desired state of the Redis Exporter service.
-type RedisExporterSpec struct {
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
-	// Env defines environment variables for Redis Exporter.
-	Env map[string]string `json:"env,omitempty"`
-}
-
 // RedisStoreSpec defines the desired state of the Redis Store service.
 type RedisStoreSpec struct {
 	// Disabled defines if Redis Store is enabled or not.
@@ -389,9 +380,6 @@ type SourcegraphSpec struct {
 
 	// RedisCache defines the desired state of the Redis cache service.
 	RedisCache RedisCacheSpec `json:"redisCache,omitempty"`
-
-	// RedisExporter defines the desired state of the Redis exporter service.
-	RedisExporter RedisExporterSpec `json:"redisExporter,omitempty"`
 
 	// RedisStore defines the desired state of the Redis store service.
 	RedisStore RedisStoreSpec `json:"redisStore,omitempty"`
