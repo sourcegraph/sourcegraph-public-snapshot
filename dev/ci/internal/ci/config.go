@@ -70,7 +70,7 @@ func NewConfig(now time.Time) Config {
 			"WOLFI_BASE_REBUILD": os.Getenv("WOLFI_BASE_REBUILD"),
 			"RELEASE_INTERNAL":   os.Getenv("RELEASE_INTERNAL"),
 			"RELEASE_PUBLIC":     os.Getenv("RELEASE_PUBLIC"),
-			"CLOUD_EPHEMERAL":    os.Getenv("CLOUD_EPHEMERAL"),
+			"CLOUD_EPHEMERAL":    "true", //os.Getenv("CLOUD_EPHEMERAL"),
 		})
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
