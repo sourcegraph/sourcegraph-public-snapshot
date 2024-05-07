@@ -1,4 +1,5 @@
 <script lang="ts">
+    // @sg EnableRollout
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import GitReference from '$lib/repo/GitReference.svelte'
 

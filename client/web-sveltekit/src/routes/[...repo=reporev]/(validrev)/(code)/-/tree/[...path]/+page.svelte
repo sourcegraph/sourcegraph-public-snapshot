@@ -1,4 +1,5 @@
 <script lang="ts">
+    // @sg EnableRollout
     import { mdiMapSearch } from '@mdi/js'
 
     import Icon from '$lib/Icon.svelte'
