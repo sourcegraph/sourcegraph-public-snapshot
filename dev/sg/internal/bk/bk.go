@@ -47,7 +47,7 @@ func retrieveToken(ctx context.Context, out *std.Output) (string, error) {
 	}
 
 	token, err := store.GetExternal(ctx, secrets.ExternalSecret{
-		Project: "sourcegraph-local-dev",
+		Project: secrets.LocalDevProject,
 		Name:    "SG_BUILDKITE_TOKEN",
 	}, func(_ context.Context) (string, error) {
 		return getTokenFromUser(out)
