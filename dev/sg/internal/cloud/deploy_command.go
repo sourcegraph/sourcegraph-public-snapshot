@@ -149,28 +149,6 @@ func checkVersionExistsInRegistry(ctx context.Context, version string) error {
 	return nil
 }
 
-func cancelBuild(ctx context.Context, build *buildkite.Build) error {
-	if build == nil {
-		// nothing to cancel
-		return nil
-	}
-	client, err := bk.NewClient(ctx, std.Out)
-	if err != nil {
-		return err
-	}
-
-	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Cancelling build %d", pointers.DerefZero(build.Number)))
-	buildNr := strconv.FormatInt(int64(pointers.DerefZero(build.Number)), 10)
-	_, err = client.CancelBuild(ctx, "sourcegraph", "sourcegraph", buildNr)
-	if err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to cancel build"))
-		return err
-	}
-	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %d has been cancelled", pointers.DerefZero(build.Number)))
-	return nil
-
-}
-
 func createDeploymentName(originalName, version, email, branch string) string {
 	var deploymentName string
 	if originalName != "" {
