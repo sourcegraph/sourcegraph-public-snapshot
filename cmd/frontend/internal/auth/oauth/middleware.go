@@ -62,8 +62,6 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		// For sign-out requests (signout cookie is  present), the user will be redirected to the SG login page.
 		pc := getExactlyOneOAuthProvider()
 		if pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && !auth.HasSignOutCookie(r) && isHuman(r) && !conf.IsAccessRequestEnabled() {
-			fmt.Println("BACKEND REDIRECT")
-
 			span.AddEvent("redirect to signin")
 			v := make(url.Values)
 			v.Set("redirect", auth.SafeRedirectURL(r.URL.String()))
@@ -73,9 +71,6 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 
 			return
 		}
-
-		fmt.Println("COOKIE PRESENT")
-
 		span.AddEvent("proceeding to next")
 		span.End()
 		next.ServeHTTP(w, r)
