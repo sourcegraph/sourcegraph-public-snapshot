@@ -476,7 +476,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		SvelteKit: sveltekit.GetJSContext(req.Context()),
 	}
 	if dotcomConfig := conf.Get().Dotcom; dotcomConfig != nil {
-		context.FrontendCodyProConfig = makeFrontendCodyProConfig(dotcomConfig.CodyProConfig)
+		if codyProConfig := dotcomConfig.CodyProConfig; codyProConfig != nil {
+			context.FrontendCodyProConfig = makeFrontendCodyProConfig(dotcomConfig.CodyProConfig)
+		}
 	}
 
 	// If the license a Sourcegraph instance is running under does not support Code Search features
@@ -701,6 +703,9 @@ func licenseInfo() (info LicenseInfo) {
 }
 
 func makeFrontendCodyProConfig(config *schema.CodyProConfig) *FrontendCodyProConfig {
+	if config == nil {
+		return nil
+	}
 	return &FrontendCodyProConfig{
 		StripePublishableKey: config.StripePublishableKey,
 	}
