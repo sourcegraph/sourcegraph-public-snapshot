@@ -38,8 +38,12 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *Source
 	name := "symbols"
 	cfg := sg.Spec.Symbols
 
+	defaultImage, err := getDefaultImage(sg, name)
+	if err != nil {
+		return err
+	}
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
-		Image: getDefaultImage(sg, name),
+		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{
 				corev1.ResourceCPU:    resource.MustParse("500m"),

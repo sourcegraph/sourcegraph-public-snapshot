@@ -38,8 +38,12 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *Sour
 	cfg := sg.Spec.GitServer
 	name := "gitserver"
 
+	defaultImage, err := getDefaultImage(sg, name)
+	if err != nil {
+		return err
+	}
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
-		Image: getDefaultImage(sg, name),
+		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{
 				corev1.ResourceCPU:    resource.MustParse("4"),
