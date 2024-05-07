@@ -148,6 +148,12 @@ type LicenseInfo struct {
 	Features     LicenseFeatures      `json:"features"`
 }
 
+// FrontendCodyProConfig is the configuration data for Cody Pro that needs to be passed
+// to the frontend.
+type FrontendCodyProConfig struct {
+	StripePublishableKey string `json:"stripePublishableKey"`
+}
+
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 //
@@ -261,6 +267,9 @@ type JSContext struct {
 	RunningOnMacOS bool `json:"runningOnMacOS"`
 
 	SvelteKit sveltekit.JSContext `json:"svelteKit"`
+
+	// Bundle the Cody Pro configuration data that needs to be available on the frontend.
+	FrontendCodyProConfig *FrontendCodyProConfig `json:"frontendCodyProConfig"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -465,6 +474,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		RunningOnMacOS: runningOnMacOS,
 
 		SvelteKit: sveltekit.GetJSContext(req.Context()),
+	}
+	if dotcomConfig := conf.Get().Dotcom; dotcomConfig != nil {
+		context.FrontendCodyProConfig = makeFrontendCodyProConfig(dotcomConfig.CodyProConfig)
 	}
 
 	// If the license a Sourcegraph instance is running under does not support Code Search features
@@ -686,4 +698,10 @@ func licenseInfo() (info LicenseInfo) {
 	}
 
 	return info
+}
+
+func makeFrontendCodyProConfig(config *schema.CodyProConfig) *FrontendCodyProConfig {
+	return &FrontendCodyProConfig{
+		StripePublishableKey: config.StripePublishableKey,
+	}
 }

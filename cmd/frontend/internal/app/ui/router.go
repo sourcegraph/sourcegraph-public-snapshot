@@ -163,6 +163,16 @@ func InitRouter(db database.DB) {
 		{path: "/survey/{score}", name: "survey-score", title: "Survey", index: false},
 		{path: "/welcome", name: "welcome", title: "Welcome", index: false},
 	}
+
+	config := conf.Get()
+	// Register Sourcegraph.com-specific pages as applicable.
+	if config.Dotcom != nil && config.Dotcom.CodyProConfig != nil {
+		staticPages = append(staticPages, staticPageInfo{
+			path: "/cody/manage/subscription/new", name: "cody",
+			title: "New Cody Pro Subscription", index: false,
+		})
+	}
+
 	for _, p := range staticPages {
 		var handler http.Handler
 		if p.index {

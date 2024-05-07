@@ -228,6 +228,8 @@ ts_project(
         "src/cody/management/CodyManagementPage.tsx",
         "src/cody/management/SubscriptionStats.tsx",
         "src/cody/management/UseCodyInEditorSection.tsx",
+        "src/cody/management/subscription/new/CodyProCheckoutForm.tsx",
+        "src/cody/management/subscription/new/NewCodyProSubscriptionPage.tsx",
         "src/cody/onboarding/CodyOnboarding.tsx",
         "src/cody/onboarding/EditorStep.tsx",
         "src/cody/onboarding/PurposeStep.tsx",
@@ -1778,6 +1780,8 @@ ts_project(
         "//:node_modules/@reach/visually-hidden",
         "//:node_modules/@sentry/browser",
         "//:node_modules/@sourcegraph/extension-api-classes",
+        "//:node_modules/@stripe/react-stripe-js",
+        "//:node_modules/@stripe/stripe-js",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",
