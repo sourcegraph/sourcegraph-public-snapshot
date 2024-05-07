@@ -27,7 +27,7 @@ func newTelemetryGatewayEvents(
 	for i, gqlEvent := range gqlEvents {
 		if err := telemetrygatewayv1.ValidateEventFeatureAction(gqlEvent.Feature, gqlEvent.Action); err != nil {
 			return nil, errors.Wrapf(err, "invalid feature/action for event %d: %s/%s",
-				i, gqlEvent.Feature, gqlEvent.Action)
+				i, errors.Safe(gqlEvent.Feature), errors.Safe(gqlEvent.Action))
 		}
 
 		event := telemetrygatewayevent.New(ctx, now, newUUID)

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
@@ -74,12 +75,14 @@ func (r *Resolver) RecordEvents(ctx context.Context, args *graphqlbackend.Record
 		// This is an important failure, make sure we surface it, as it could be
 		// an implementation error.
 		data, _ := json.Marshal(args.Events)
-		r.logger.Error("failed to convert telemetry events to internal format",
+		trace.Logger(ctx, r.logger).Error("failed to convert telemetry events to internal format",
 			log.Error(err),
 			log.String("eventData", string(data)))
 		return nil, errors.Wrap(err, "invalid events provided")
 	}
 	if err := r.teestore.StoreEvents(ctx, gatewayEvents); err != nil {
+		trace.Logger(ctx, r.logger).Error("error storing events",
+			log.Error(err))
 		return nil, errors.Wrap(err, "error storing events")
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
