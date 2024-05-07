@@ -349,7 +349,7 @@
     "eventsource": "1.1.1",
     "fast-json-stable-stringify": "^2.0.0",
     "focus-visible": "^5.2.0",
-    "fzf": "^0.5.1",
+    "fzf": "^0.5.2",
     "got": "^11.5.2",
     "graphiql": "^1.11.5",
     "handlebars": "^4.7.7",
