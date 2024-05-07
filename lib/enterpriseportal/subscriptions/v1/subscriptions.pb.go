@@ -183,6 +183,7 @@ type EnterpriseSubscriptionCondition struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The time this condition was created.
 	CreateTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	// Event is the type of event corresponding to this condition.
 	Event EnterpriseSubscriptionConditionEvent `protobuf:"varint,2,opt,name=event,proto3,enum=enterpriseportal.subscriptions.v1.EnterpriseSubscriptionConditionEvent" json:"event,omitempty"`
@@ -394,6 +395,7 @@ type EnterpriseSubscriptionLicenseCondition struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The time this condition was created.
 	CreateTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	// Event is the type of event corresponding to this condition.
 	Event EnterpriseSubscriptionLicenseConditionEvent `protobuf:"varint,2,opt,name=event,proto3,enum=enterpriseportal.subscriptions.v1.EnterpriseSubscriptionLicenseConditionEvent" json:"event,omitempty"`
