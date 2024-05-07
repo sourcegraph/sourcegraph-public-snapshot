@@ -811,9 +811,11 @@ func handleVersions(cCtx *cli.Context, overrideStd, overrideMVU, overrideAuto []
 		}
 	}
 
-	semverPostRelease := semver.MustParse(postRelease)
-	if semverPostRelease.LessThan(latestFullVer) {
-		return nil, nil, nil, nil, nil, nil, errors.Newf("post-release %q is older than latest full version.", postRelease)
+	if postRelease != "" {
+		semverPostRelease := semver.MustParse(postRelease)
+		if semverPostRelease.LessThan(latestFullVer) {
+			return nil, nil, nil, nil, nil, nil, errors.Newf("post-release %q is older than latest full version.", postRelease)
+		}
 	}
 
 	// Std versions tests are all versions within a minor version of the release candidate, all others are MVU.
