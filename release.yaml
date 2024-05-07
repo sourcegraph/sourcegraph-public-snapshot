@@ -80,7 +80,7 @@ internal:
           body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '{
               "name": "sourcegraph",
               "version": "{{version}}",
-              "git_sha": "${COMMIT_SHA}"
+              "git_sha": "'${COMMIT_SHA}'"
             }' "https://releaseregistry.sourcegraph.com/v1/releases")
           exit_code=$?
 
