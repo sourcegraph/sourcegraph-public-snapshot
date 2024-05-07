@@ -30,7 +30,6 @@ go_library(
         "//dev/sg/internal/std",
         "//dev/sg/root",
         "//internal/download",
-        "//internal/honey",
         "//lib/errors",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_masterminds_semver//:semver",
