@@ -5,6 +5,7 @@ import { Navigate, useNavigate, type RouteObject } from 'react-router-dom'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { useEmbeddedCodyProUi } from './cody/util'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
@@ -68,6 +69,10 @@ const CodyManagementPage = lazyComponent(() => import('./cody/management/CodyMan
 const CodySwitchAccountPage = lazyComponent(
     () => import('./cody/switch-account/CodySwitchAccountPage'),
     'CodySwitchAccountPage'
+)
+const NewCodyProSubscriptionPage = lazyComponent(
+    () => import('./cody/management/subscription/new/NewCodyProSubscriptionPage'),
+    'NewCodyProSubscriptionPage'
 )
 const CodySubscriptionPage = lazyComponent(
     () => import('./cody/subscription/CodySubscriptionPage'),
@@ -416,6 +421,20 @@ export const routes: RouteObject[] = [
                     <CodyManagementPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
                 )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.CodyNewProSubscription,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <NewCodyProSubscriptionPage
+                        authenticatedUser={props.authenticatedUser}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    />
+                )}
+                condition={({ isSourcegraphDotCom }) => isSourcegraphDotCom && useEmbeddedCodyProUi()}
             />
         ),
     },
