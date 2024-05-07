@@ -140,7 +140,6 @@ func (c *Client) ListInstances(ctx context.Context, all bool) ([]*Instance, erro
 }
 
 func (c *Client) CreateInstance(ctx context.Context, spec *DeploymentSpec) (*Instance, error) {
-	// TODO(burmudar): Better method to get LicenseKeys
 	licenseKey := spec.License
 	if licenseKey == "" {
 		return nil, errors.New("no license key - the env var 'EPHEMERAL_LICENSE_KEY' is empty")
