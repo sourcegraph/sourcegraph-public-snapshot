@@ -2,7 +2,7 @@ package cloud
 
 import (
 	"context"
-	"strings"
+	"strconv"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -138,6 +138,28 @@ func checkVersionExistsInRegistry(ctx context.Context, version string) error {
 	return nil
 }
 
+func cancelBuild(ctx context.Context, build *buildkite.Build) error {
+	if build == nil {
+		// nothing to cancel
+		return nil
+	}
+	client, err := bk.NewClient(ctx, std.Out)
+	if err != nil {
+		return err
+	}
+
+	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Cancelling build %d", pointers.DerefZero(build.Number)))
+	buildNr := strconv.FormatInt(int64(pointers.DerefZero(build.Number)), 10)
+	_, err = client.CancelBuild(ctx, "sourcegraph", "sourcegraph", buildNr)
+	if err != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to cancel build"))
+		return err
+	}
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %d has been cancelled", pointers.DerefZero(build.Number)))
+	return nil
+
+}
+
 func deployCloudEphemeral(ctx *cli.Context) error {
 	currentBranch, err := repo.GetCurrentBranch(ctx.Context)
 	if err != nil {
@@ -153,10 +175,11 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	}
 	currRepo = repo.NewGitRepo(currentBranch, head)
 
+	var build *buildkite.Build
 	version := ctx.String("version")
 	// if a version is specified we do not build anything and just trigger the cloud deployment
 	if version == "" {
-		build, err := triggerEphemeralBuild(ctx.Context, currRepo)
+		b, err := triggerEphemeralBuild(ctx.Context, currRepo)
 		if err != nil {
 			if err == ErrBranchOutOfSync {
 				std.Out.WriteWarningf(`Your branch %q is out of sync with remote.
@@ -168,6 +191,7 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 			return errors.Wrapf(err, "cloud ephemeral deployment failure")
 		}
 
+		build = b
 		version, err = determineVersion(build, ctx.String("tag"))
 		if err != nil {
 			return err
@@ -192,5 +216,16 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 		deploymentName = currRepo.Branch
 	}
 
-	return createDeploymentForVersion(ctx.Context, email, deploymentName, version)
+	err = createDeploymentForVersion(ctx.Context, email, deploymentName, version)
+	if err != nil {
+		cancelBuild(ctx.Context, build)
+		if errors.Is(err, ErrDeploymentExists) {
+			std.Out.WriteWarningf("Cannot create a new deployment as a deployment with name %q already exists", name)
+			std.Out.WriteSuggestionf(`You might want to try one of the following:
+- Specify a different deployment name with the --name flag
+- Upgrade the current deployment instead by using the upgrade command instead of deploy`)
+		}
+		return err
+	}
+	return nil
 }

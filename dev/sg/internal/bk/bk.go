@@ -212,6 +212,10 @@ func (c *Client) GetJobAnnotationsByBuildNumber(ctx context.Context, pipeline st
 	return result, nil
 }
 
+func (c *Client) CancelBuild(ctx context.Context, org, pipeline, number string) (*buildkite.Build, error) {
+	return c.bk.Builds.Cancel(org, pipeline, number)
+}
+
 // TriggerBuild request a build on Buildkite API and returns that build.
 func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit string, opts ...CreateBuildOpt) (*buildkite.Build, error) {
 	newBuild := &buildkite.CreateBuild{
