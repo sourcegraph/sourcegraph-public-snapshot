@@ -19,5 +19,3 @@ accounts:
     - username: jaeger
       uid: 10001
       gid: 10002
-
-# MANUAL REBUILD: 

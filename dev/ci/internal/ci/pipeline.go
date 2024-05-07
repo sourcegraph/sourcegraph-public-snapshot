@@ -144,15 +144,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(securityOps)
 
 		// Wolfi package and apko lock check
-		packageOps, baseImageOps, apkoOps := addWolfiOps(c)
+		packageOps, apkoOps := addWolfiOps(c)
 		if apkoOps != nil {
 			ops.Merge(apkoOps)
 		}
 		if packageOps != nil {
 			ops.Merge(packageOps)
-		}
-		if baseImageOps != nil {
-			ops.Merge(baseImageOps)
 		}
 
 		if c.Diff.Has(changed.ClientBrowserExtensions) {
@@ -203,6 +200,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.WolfiBaseRebuild:
 		// If this is a Wolfi base image rebuild, run script to re-lock packages
 		// for all Wolfi base images and open a PR
+		ops.Merge(
+			BazelOpsSet(buildOptions,
+				CoreTestOperationsOptions{
+					IsMainBranch: buildOptions.Branch == "main",
+				}),
+		)
 		ops.Merge(wolfiBaseImageLockAndCreatePR())
 
 	// Use CandidateNoTest if you want to build legacy Docker Images
@@ -302,7 +305,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Core tests
 		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
-			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun, runtype.CloudEphemeral),
@@ -326,15 +328,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		))
 
 		// Wolfi package and base images
-		packageOps, baseImageOps, apkoOps := addWolfiOps(c)
+		packageOps, apkoOps := addWolfiOps(c)
 		if apkoOps != nil {
 			ops.Merge(apkoOps)
 		}
 		if packageOps != nil {
 			ops.Merge(packageOps)
-		}
-		if baseImageOps != nil {
-			ops.Merge(baseImageOps)
 		}
 
 		// All operations before this point are required

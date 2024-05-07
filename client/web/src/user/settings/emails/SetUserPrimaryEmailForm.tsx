@@ -5,6 +5,8 @@ import { lastValueFrom } from 'rxjs'
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
@@ -15,13 +17,12 @@ import type {
     UserEmailsResult,
     UserSettingsAreaUserFields,
 } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 
 import styles from './SetUserPrimaryEmailForm.module.scss'
 
 type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
 
-interface Props {
+interface Props extends TelemetryV2Props {
     user: Pick<UserSettingsAreaUserFields, 'id' | 'scimControlled'>
     emails: UserEmail[]
     onDidSet: () => void
@@ -38,6 +39,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
     emails,
     onDidSet,
     className,
+    telemetryRecorder,
 }) => {
     const currentPrimaryEmail = findPrimaryEmail(emails)
     const [primaryEmail, setPrimaryEmail] = useState<string | undefined>(currentPrimaryEmail)
@@ -73,7 +75,8 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
                     )
                 )
 
-                eventLogger.log('UserEmailAddressSetAsPrimary')
+                EVENT_LOGGER.log('UserEmailAddressSetAsPrimary')
+                telemetryRecorder.recordEvent('settings.email', 'setAsPrimary')
                 setStatusOrError(undefined)
 
                 if (onDidSet) {
@@ -83,7 +86,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<React.PropsWithChildren<
                 setStatusOrError(asError(error))
             }
         },
-        [user, primaryEmail, onDidSet]
+        [user, primaryEmail, onDidSet, telemetryRecorder]
     )
 
     return (

@@ -3,10 +3,10 @@ import React, { useEffect, useState } from 'react'
 import { gql, useMutation } from '@apollo/client'
 
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 
 import type { AuthenticatedUser } from '../../auth'
 import type { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { SurveySuccessToast } from './SurveySuccessToast'
 import { SurveyUseCaseToast } from './SurveyUseCaseToast'
@@ -58,7 +58,7 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
     })
 
     useEffect(() => {
-        eventLogger.log('SurveyReminderViewed')
+        EVENT_LOGGER.log('SurveyReminderViewed')
         telemetryRecorder.recordEvent('surveyNPS.toast', 'view')
     }, [telemetryRecorder])
 

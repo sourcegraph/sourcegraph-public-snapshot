@@ -86,5 +86,3 @@ paths:
   - path: /sg_grafana_additional_dashboards
     type: directory
     permissions: 0o755
-
-# MANUAL REBUILD: 

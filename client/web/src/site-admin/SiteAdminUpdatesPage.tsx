@@ -6,6 +6,7 @@ import { parseISO, formatDistance } from 'date-fns'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useQuery, useMutation } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     LoadingSpinner,
@@ -42,7 +43,7 @@ import { SITE_UPDATE_CHECK, SITE_UPGRADE_READINESS, SET_AUTO_UPGRADE } from './b
 
 import styles from './SiteAdminUpdatesPage.module.scss'
 
-interface Props extends TelemetryProps {}
+interface Props extends TelemetryProps, TelemetryV2Props {}
 const capitalize = (text: string): string => (text && text[0].toUpperCase() + text.slice(1)) || ''
 
 const SiteUpdateCheck: React.FC = () => {
@@ -390,10 +391,11 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
 /**
  * A page displaying information about available updates for the Sourcegraph instance. As well as the readiness status of the instance for upgrade.
  */
-export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService }) => {
+export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService, telemetryRecorder }) => {
     useMemo(() => {
         telemetryService.logViewEvent('SiteAdminUpdates')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('admin.updates', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <div>

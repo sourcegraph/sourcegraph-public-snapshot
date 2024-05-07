@@ -78,7 +78,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                 action: 'click',
                 label: 'expand / collapse file tree view',
             })
-            props.telemetryRecorder.recordEvent('blobSidebar.fileTreeView', 'click')
+            props.telemetryRecorder.recordEvent('repoSidebar.fileTreeView', 'click')
             setPersistedIsVisible(value)
             setIsVisible(value)
         },
@@ -86,7 +86,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
     )
     const handleSymbolClick = useCallback(() => {
         props.telemetryService.log('SymbolTreeViewClicked')
-        props.telemetryRecorder.recordEvent('blobSidebar.symbolTreeView', 'click')
+        props.telemetryRecorder.recordEvent('repoSidebar.symbolTreeView', 'click')
     }, [props.telemetryService, props.telemetryRecorder])
 
     const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')

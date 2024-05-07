@@ -108,11 +108,8 @@ func (r *EventRecorder) Record(ctx context.Context, feature eventFeature, action
 	if ctx == nil {
 		return errors.New("context is required")
 	}
-	if feature == "" {
-		return errors.New("feature is required")
-	}
-	if action == "" {
-		return errors.New("action is required")
+	if err := telemetrygatewayv1.ValidateEventFeatureAction(string(feature), string(action)); err != nil {
+		return errors.Wrap(err, "invalid event feature or action")
 	}
 	return r.store.StoreEvents(ctx, []*telemetrygatewayv1.Event{
 		newTelemetryGatewayEvent(ctx, time.Now(), telemetrygatewayv1.DefaultEventIDFunc, feature, action, parameters),

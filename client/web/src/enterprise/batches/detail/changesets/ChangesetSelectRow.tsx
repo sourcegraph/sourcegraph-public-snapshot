@@ -5,10 +5,10 @@ import { of } from 'rxjs'
 
 import { pluralize } from '@sourcegraph/common'
 import type { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { type AllChangesetIDsVariables, type Scalars, BulkOperationType } from '../../../../graphql-operations'
-import { eventLogger } from '../../../../tracking/eventLogger'
 import { type Action, DropdownButton } from '../../DropdownButton'
 import { MultiSelectContext } from '../../MultiSelectContext'
 import {
@@ -53,7 +53,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownDescription:
             'Attempt to close all selected changesets on the code hosts. The changesets will remain part of the batch change.',
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
-            eventLogger.log('batch_change_details:bulk_action_close:clicked')
+            EVENT_LOGGER.log('batch_change_details:bulk_action_close:clicked')
             telemetryRecorder.recordEvent('batchChange.details.bulkAction', 'close')
             return (
                 <CloseChangesetsModal
@@ -72,7 +72,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownDescription:
             'Create a comment on all selected changesets. For example, you could ask people for reviews, give an update, or post a cat GIF.',
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
-            eventLogger.log('batch_change_details:bulk_action_comment:clicked')
+            EVENT_LOGGER.log('batch_change_details:bulk_action_comment:clicked')
             telemetryRecorder.recordEvent('batchChange.details.bulkAction', 'comment')
             return (
                 <CreateCommentModal
@@ -97,7 +97,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
                 changesetIDs={changesetIDs}
                 afterCreate={onDone}
                 onCancel={onCancel}
-                telemetryService={eventLogger}
+                telemetryService={EVENT_LOGGER}
                 telemetryRecorder={telemetryRecorder}
             />
         ),
@@ -108,7 +108,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownTitle: 'Export Changeset(s)',
         dropdownDescription: 'Export selected changesets',
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
-            eventLogger.log('batch_change_details:bulk_action_export:clicked')
+            EVENT_LOGGER.log('batch_change_details:bulk_action_export:clicked')
             telemetryRecorder.recordEvent('batchChange.details.bulkAction', 'export')
             return (
                 <ExportChangesetsModal
@@ -128,7 +128,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownDescription:
             'Attempt to merge all selected changesets. Some changesets may be unmergeable if there are rules preventing merge, such as CI requirements.',
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
-            eventLogger.log('batch_change_details:bulk_action_merge:clicked')
+            EVENT_LOGGER.log('batch_change_details:bulk_action_merge:clicked')
             telemetryRecorder.recordEvent('batchChange.details.bulkAction', 'merge')
             return (
                 <MergeChangesetsModal
@@ -146,7 +146,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownTitle: 'Publish changesets',
         dropdownDescription: 'Attempt to publish all selected changesets to the code hosts.',
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
-            eventLogger.log('batch_change_details:bulk_action_published:clicked')
+            EVENT_LOGGER.log('batch_change_details:bulk_action_published:clicked')
             telemetryRecorder.recordEvent('batchChange.details.bulkAction', 'publish')
             return (
                 <PublishChangesetsModal
@@ -164,7 +164,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
         dropdownTitle: 'Retry changesets',
         dropdownDescription: 'Re-enqueues the selected changesets for processing, if they failed.',
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel, telemetryRecorder) => {
-            eventLogger.log('batch_change_details:bulk_action_retry:clicked')
+            EVENT_LOGGER.log('batch_change_details:bulk_action_retry:clicked')
             telemetryRecorder.recordEvent('batchChange.details.bulkAction', 'retry')
             return (
                 <ReenqueueChangesetsModal

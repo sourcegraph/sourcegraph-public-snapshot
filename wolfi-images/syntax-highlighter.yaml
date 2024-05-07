@@ -9,5 +9,3 @@ contents:
     ## syntax-highlighter packages
     - libstdc++
     - http-server-stabilizer@sourcegraph
-
-# MANUAL REBUILD: 

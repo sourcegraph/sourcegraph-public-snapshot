@@ -58,10 +58,6 @@
     $: ({ repoName, displayRepoName } = data)
 </script>
 
-<svelte:head>
-    <title>{data.displayRepoName} - Sourcegraph</title>
-</svelte:head>
-
 <GlobalHeaderPortal>
     <nav aria-label="repository">
         <h1><a href="/{repoName}">{displayRepoName}</a></h1>
@@ -116,7 +112,7 @@
         min-width: 0;
 
         a {
-            color: var(--body-color);
+            color: var(--text-body);
             text-decoration: none;
         }
 
@@ -132,6 +128,10 @@
         margin: 0 1rem 0 0;
         font-size: 1rem;
         white-space: nowrap;
+
+        a {
+            color: var(--text-title);
+        }
     }
 
     ul {
@@ -158,6 +158,7 @@
 
             &[aria-current='page'] {
                 background-color: var(--color-bg-3);
+                color: var(--text-title);
             }
         }
 

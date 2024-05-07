@@ -165,4 +165,14 @@ func (r *automaticRetryClient) ContributorCounts(ctx context.Context, in *proto.
 	return r.base.ContributorCounts(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) FirstEverCommit(ctx context.Context, in *proto.FirstEverCommitRequest, opts ...grpc.CallOption) (*proto.FirstEverCommitResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.FirstEverCommit(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) BehindAhead(ctx context.Context, in *proto.BehindAheadRequest, opts ...grpc.CallOption) (*proto.BehindAheadResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.BehindAhead(ctx, in, opts...)
+}
+
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

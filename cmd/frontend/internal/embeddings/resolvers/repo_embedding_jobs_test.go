@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -40,7 +39,7 @@ func TestDBPaginationWithRepoFilter(t *testing.T) {
 	require.NoError(t, err)
 
 	// Enable embeddings, so that resolvers work:
-	dotcom.MockSourcegraphDotComMode(t, true)
+	conf.MockForceAllowEmbeddings(t, true)
 
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{

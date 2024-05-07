@@ -3,6 +3,8 @@ package appliance
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 )
 
 type ManagementStateType string
@@ -27,16 +29,11 @@ type DatabaseSpec struct {
 
 // BlobstoreSpec defines the desired state of Blobstore.
 type BlobstoreSpec struct {
-	// Disabled defines if Blobstore is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
+	config.StandardConfig
 
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 200Gi
 	StorageSize string `json:"storageSize,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Env defines environment variables for Blobstore.
 	Env map[string]string `json:"env,omitempty"`
@@ -117,20 +114,19 @@ type FrontendSpec struct {
 
 // GitServerSpec defines the desired state of GitServer.
 type GitServerSpec struct {
-	// Replicas defines the number of GitServer pod replicas.
+	config.StandardConfig
+
+	// Replicas defines the number of Symbols pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// SSHSecret is the name of existing secret that contains SSH credentials to clone repositories.
-	// This secret generally contains keys such as `id_rsa` (private key) and `known_hosts`.
-	SSHSecret string `json:"sshSecret,omitempty"`
 
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 200Gi
 	StorageSize string `json:"storageSize,omitempty"`
 
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
+	// SSHSecret is the name of existing secret that contains SSH credentials to clone repositories.
+	// This secret generally contains keys such as `id_rsa` (private key) and `known_hosts`.
+	SSHSecret string `json:"sshSecret,omitempty"`
 
 	// Env defines environment variables for Git Server.
 	Env map[string]string `json:"env,omitempty"`
@@ -256,8 +252,7 @@ type RedisStoreSpec struct {
 
 // RepoUpdaterSpec defines the desired state of the Repo Updater service.
 type RepoUpdaterSpec struct {
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
+	config.StandardConfig
 
 	// Env defines environment variables for Redis Updater.
 	Env map[string]string `json:"env,omitempty"`
@@ -286,6 +281,8 @@ type SearcherSpec struct {
 
 // SymbolsSpec defines the desired state of the Symbols service.
 type SymbolsSpec struct {
+	config.StandardConfig
+
 	// Replicas defines the number of Symbols pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
@@ -293,9 +290,6 @@ type SymbolsSpec struct {
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 12Gi
 	StorageSize string `json:"storageSize,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 
 	// Env defines environment variables for Symbols.
 	Env map[string]string `json:"env,omitempty"`
@@ -352,14 +346,12 @@ type SourcegraphSpec struct {
 	// RequestedVersion is the user-requested version of Sourcegraph to deploy.
 	RequestedVersion string `json:"requestedVersion"`
 
+	// ImageRepository overrides the default image repository.
+	ImageRepository string `json:"imageRepository"`
+
 	// ManagementState defines if Sourcegraph should be managed by the operator or not.
 	// Default is managed.
 	ManagementState ManagementStateType `json:"managementState,omitempty"`
-
-	// LocalDevMode will remove all resource requests, allowing the scheduler to best-fit pods.
-	// Intended for local development with limited resources.
-	// Default: false
-	LocalDevMode bool `json:"localDevMode,omitempty"`
 
 	// MaintenancePassword will set the password for the administrator maintenance UI.
 	// If no password is set, a random password will be generated and storage in a secret.

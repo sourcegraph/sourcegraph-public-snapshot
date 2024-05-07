@@ -2,6 +2,7 @@ import { useLayoutEffect, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useSyncedWithURLState, type SetStateResult } from '@sourcegraph/wildcard'
 
@@ -15,6 +16,7 @@ import {
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
 import { GroupResultsPing } from './pings'
+import { V2SearchAggregationModeTypes } from './SearchAggregationResult'
 import { AggregationUIMode } from './types'
 
 type SerializedAggregationMode = 'repo' | 'path' | 'author' | 'group' | 'repo-metadata' | ''
@@ -176,7 +178,7 @@ export const AGGREGATION_SEARCH_QUERY = gql`
     }
 `
 
-interface SearchAggregationDataInput {
+interface SearchAggregationDataInput extends TelemetryV2Props {
     query: string
     patternType: SearchPatternType
     aggregationMode: SearchAggregationMode | null
@@ -207,6 +209,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
         extendedTimeout,
         proactive = false,
         telemetryService,
+        telemetryRecorder,
     } = input
 
     const [, setURLAggregationMode] = useAggregationSearchMode()
@@ -258,7 +261,7 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
                 // skip: true resets data field in the useQuery hook, in order to use previously
                 // saved data we use useState to store data outside useQuery hook
                 setState({ data, calculatedMode: calculatedAggregationMode })
-                sendAggregationPing({ data, extendedTimeout, proactive, telemetryService })
+                sendAggregationPing({ data, extendedTimeout, proactive, telemetryService, telemetryRecorder })
             },
         }
     )
@@ -302,7 +305,7 @@ export const isNonExhaustiveAggregationResults = (response?: GetSearchAggregatio
     return response.searchQueryAggregate?.aggregations?.__typename === 'NonExhaustiveSearchAggregationResult'
 }
 
-interface UseAggregationPingsArgs {
+interface UseAggregationPingsArgs extends TelemetryV2Props {
     data: GetSearchAggregationResult | undefined
     proactive: boolean
     extendedTimeout: boolean
@@ -310,7 +313,7 @@ interface UseAggregationPingsArgs {
 }
 
 function sendAggregationPing(props: UseAggregationPingsArgs): void {
-    const { data, proactive, extendedTimeout, telemetryService } = props
+    const { data, proactive, extendedTimeout, telemetryService, telemetryRecorder } = props
 
     const aggregation = data?.searchQueryAggregate.aggregations
 
@@ -332,6 +335,9 @@ function sendAggregationPing(props: UseAggregationPingsArgs): void {
                 { aggregationMode: mode },
                 { aggregationMode: mode }
             )
+            telemetryRecorder.recordEvent('search.group.results.proactiveLimit', 'hit', {
+                metadata: { aggregationMode: mode ? V2SearchAggregationModeTypes[mode] : 0 },
+            })
         }
 
         if (noExtensionAvailable) {
@@ -340,6 +346,9 @@ function sendAggregationPing(props: UseAggregationPingsArgs): void {
                 { aggregationMode: mode },
                 { aggregationMode: mode }
             )
+            telemetryRecorder.recordEvent('search.group.results.explicitLimit', 'hit', {
+                metadata: { aggregationMode: mode ? V2SearchAggregationModeTypes[mode] : 0 },
+            })
         }
     } else {
         const { mode } = aggregation
@@ -350,12 +359,18 @@ function sendAggregationPing(props: UseAggregationPingsArgs): void {
                 { aggregationMode: mode },
                 { aggregationMode: mode }
             )
+            telemetryRecorder.recordEvent('search.group.results.explicitLimit', 'success', {
+                metadata: { aggregationMode: mode ? V2SearchAggregationModeTypes[mode] : 0 },
+            })
         } else {
             telemetryService.log(
                 GroupResultsPing.ProactiveLimitSuccess,
                 { aggregationMode: mode },
                 { aggregationMode: mode }
             )
+            telemetryRecorder.recordEvent('search.group.results.proactiveLimit', 'success', {
+                metadata: { aggregationMode: mode ? V2SearchAggregationModeTypes[mode] : 0 },
+            })
         }
     }
 }

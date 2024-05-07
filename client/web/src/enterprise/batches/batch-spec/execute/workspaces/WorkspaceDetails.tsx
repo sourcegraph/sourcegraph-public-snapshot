@@ -19,6 +19,7 @@ import indicator from 'ordinal/indicator'
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import type { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Badge,
     LoadingSpinner,
@@ -64,7 +65,6 @@ import {
     type BatchSpecWorkspaceStepResult,
     type BatchSpecWorkspaceStepVariables,
 } from '../../../../../graphql-operations'
-import { eventLogger } from '../../../../../tracking/eventLogger'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
 import { ChangesetSpecFileDiffConnection } from '../../../preview/list/ChangesetSpecFileDiffConnection'
 import {
@@ -197,7 +197,7 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                         className={styles.workspaceDetail}
                         onClick={() => {
                             toggleShowDiagnostics()
-                            eventLogger.log('batch_change_execution:workspace_timeline:clicked')
+                            EVENT_LOGGER.log('batch_change_execution:workspace_timeline:clicked')
                             telemetryRecorder.recordEvent('batchChange.execution.workspaceTimeline', 'click')
                         }}
                         variant="link"
@@ -640,7 +640,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                 size="medium"
                                 behavior="forceRender"
                                 onChange={index => {
-                                    eventLogger.log(`batch_change_execution:workspace_tab_${tabsNames[index]}:clicked`)
+                                    EVENT_LOGGER.log(`batch_change_execution:workspace_tab_${tabsNames[index]}:clicked`)
                                     telemetryRecorder.recordEvent('batchChange.execution.tab', 'click', {
                                         metadata: { tab: index },
                                     })

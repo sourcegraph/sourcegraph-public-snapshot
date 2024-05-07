@@ -16,7 +16,7 @@
 <script lang="ts">
     import { mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
-    import { tick } from 'svelte'
+    import { onMount, tick } from 'svelte'
     import { writable } from 'svelte/store'
 
     import { beforeNavigate, goto } from '$app/navigation'
@@ -29,6 +29,7 @@
     import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
+    import type { QueryState } from '$lib/search/state'
     import {
         type AggregateStreamingSearchResults,
         type PathMatch,
@@ -36,6 +37,7 @@
         type SymbolMatch,
         type ContentMatch,
     } from '$lib/shared'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
     import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
     import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
     import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
@@ -99,8 +101,13 @@
         },
         queryState,
     })
+
     beforeNavigate(() => {
         cache.set(queryFromURL, { count, expanded: expandedSet, preview: $previewResult })
+    })
+
+    onMount(() => {
+        SVELTE_LOGGER.logViewEvent(SVELTE_TELEMETRY_EVENTS.ViewSearchResultsPage)
     })
 
     function loadMore(event: { detail: boolean }) {
@@ -121,15 +128,27 @@
         await tick()
         void goto(getQueryURL($queryState))
     }
-</script>
 
-<svelte:head>
-    <title>{queryFromURL} - Sourcegraph</title>
-</svelte:head>
+    function handleResultCopy(): void {
+        SVELTE_LOGGER.log(...codeCopiedEvent('search-result'))
+    }
+
+    function handleSearchResultClick(): void {
+        SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.SearchResultClick)
+    }
+
+    function handleSubmit(state: QueryState) {
+        SVELTE_LOGGER.log(
+            SVELTE_TELEMETRY_EVENTS.SearchSubmit,
+            { source: 'nav', query: state.query },
+            { source: 'nav', patternType: state.patternType }
+        )
+    }
+</script>
 
 <GlobalHeaderPortal>
     <div class="search-header">
-        <SearchInput {queryState} size="compat" />
+        <SearchInput {queryState} size="compat" onSubmit={handleSubmit} />
     </div>
 </GlobalHeaderPortal>
 
@@ -155,7 +174,7 @@
                             <SearchAlert alert={$stream.alert} />
                         </div>
                     {/if}
-                    <ol>
+                    <ol on:click={handleSearchResultClick} on:copy={handleResultCopy}>
                         {#each resultsToShow as result, i}
                             {@const component = getSearchResultComponent(result)}
                             {#if i === resultsToShow.length - 1}
@@ -215,8 +234,7 @@
 
         .actions {
             border-bottom: 1px solid var(--border-color);
-            padding: 0.5rem 0;
-            padding-left: 0.25rem;
+            padding: 0.5rem;
             display: flex;
             align-items: center;
             flex-shrink: 0;

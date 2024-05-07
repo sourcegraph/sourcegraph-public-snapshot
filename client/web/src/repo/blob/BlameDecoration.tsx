@@ -5,6 +5,7 @@ import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import { BehaviorSubject } from 'rxjs'
 
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     createRectangle,
     Icon,
@@ -17,7 +18,6 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../tracking/eventLogger'
 import { getURLToFileCommit } from '../../util/url'
 import type { BlameHunk, BlameHunkData } from '../blame/shared'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
@@ -123,7 +123,7 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
     const id = hunkStartLine?.toString() || ''
     const onOpen = useCallback(() => {
         onSelect?.(hunkStartLine)
-        eventLogger.log('GitBlamePopupViewed')
+        EVENT_LOGGER.log('GitBlamePopupViewed')
     }, [onSelect, hunkStartLine])
     const onClose = useCallback(() => onDeselect?.(hunkStartLine), [onDeselect, hunkStartLine])
     const { isOpen, open, close, closeWithTimeout, openWithTimeout } = usePopover({
@@ -244,5 +244,5 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
 }
 
 const logCommitClick = (): void => {
-    eventLogger.log('GitBlamePopupClicked', { target: 'commit' }, { target: 'commit' })
+    EVENT_LOGGER.log('GitBlamePopupClicked', { target: 'commit' }, { target: 'commit' })
 }

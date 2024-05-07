@@ -22,9 +22,9 @@ export interface FilterLinkProps {
     value: string
     count?: number
     limitHit?: boolean
-    kind?: string
+    kind?: Filter['kind']
     labelConverter?: (label: string) => JSX.Element
-    onFilterChosen: (value: string, kind?: string) => void
+    onFilterChosen: (value: string, kind?: Filter['kind']) => void
 }
 
 export const FilterLink: React.FunctionComponent<React.PropsWithChildren<FilterLinkProps>> = ({
@@ -67,7 +67,7 @@ export const FilterLink: React.FunctionComponent<React.PropsWithChildren<FilterL
 
 export const getRepoFilterLinks = (
     filters: Filter[] | undefined,
-    onFilterChosen: (value: string, kind?: string) => void
+    onFilterChosen: (value: string, kind?: Filter['kind']) => void
 ): React.ReactElement[] => {
     function repoLabelConverter(label: string): JSX.Element {
         const Icon = CodeHostIcon({
@@ -103,7 +103,7 @@ export const getRepoFilterLinks = (
 export const getDynamicFilterLinks = (
     filters: Filter[] | undefined,
     kinds: Filter['kind'][],
-    onFilterChosen: (value: string, kind?: string) => void,
+    onFilterChosen: (value: string, kind?: Filter['kind']) => void,
     ariaLabelTransform: (label: string, value: string) => string = label => `${label}`,
     labelTransform: (label: string, value: string) => string = label => `${label}`
 ): React.ReactElement[] =>

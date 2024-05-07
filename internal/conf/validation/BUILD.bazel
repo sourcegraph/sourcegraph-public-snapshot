@@ -8,6 +8,7 @@ go_library(
         "auth.go",
         "batches.go",
         "cody.go",
+        "cody_pro.go",
         "encryption.go",
         "highlight.go",
         "licensing.go",

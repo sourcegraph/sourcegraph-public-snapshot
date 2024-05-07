@@ -26,5 +26,3 @@ paths:
     permissions: 0o755
 
 work-dir: /
-
-# MANUAL REBUILD: 

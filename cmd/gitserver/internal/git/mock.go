@@ -287,6 +287,9 @@ type MockGitBackend struct {
 	// ArchiveReaderFunc is an instance of a mock function object
 	// controlling the behavior of the method ArchiveReader.
 	ArchiveReaderFunc *GitBackendArchiveReaderFunc
+	// BehindAheadFunc is an instance of a mock function object controlling
+	// the behavior of the method BehindAhead.
+	BehindAheadFunc *GitBackendBehindAheadFunc
 	// BlameFunc is an instance of a mock function object controlling the
 	// behavior of the method Blame.
 	BlameFunc *GitBackendBlameFunc
@@ -299,6 +302,9 @@ type MockGitBackend struct {
 	// ExecFunc is an instance of a mock function object controlling the
 	// behavior of the method Exec.
 	ExecFunc *GitBackendExecFunc
+	// FirstEverCommitFunc is an instance of a mock function object
+	// controlling the behavior of the method FirstEverCommit.
+	FirstEverCommitFunc *GitBackendFirstEverCommitFunc
 	// GetCommitFunc is an instance of a mock function object controlling
 	// the behavior of the method GetCommit.
 	GetCommitFunc *GitBackendGetCommitFunc
@@ -340,6 +346,11 @@ func NewMockGitBackend() *MockGitBackend {
 				return
 			},
 		},
+		BehindAheadFunc: &GitBackendBehindAheadFunc{
+			defaultHook: func(context.Context, string, string) (r0 *gitdomain.BehindAhead, r1 error) {
+				return
+			},
+		},
 		BlameFunc: &GitBackendBlameFunc{
 			defaultHook: func(context.Context, api.CommitID, string, BlameOptions) (r0 BlameHunkReader, r1 error) {
 				return
@@ -357,6 +368,11 @@ func NewMockGitBackend() *MockGitBackend {
 		},
 		ExecFunc: &GitBackendExecFunc{
 			defaultHook: func(context.Context, ...string) (r0 io.ReadCloser, r1 error) {
+				return
+			},
+		},
+		FirstEverCommitFunc: &GitBackendFirstEverCommitFunc{
+			defaultHook: func(context.Context) (r0 api.CommitID, r1 error) {
 				return
 			},
 		},
@@ -422,6 +438,11 @@ func NewStrictMockGitBackend() *MockGitBackend {
 				panic("unexpected invocation of MockGitBackend.ArchiveReader")
 			},
 		},
+		BehindAheadFunc: &GitBackendBehindAheadFunc{
+			defaultHook: func(context.Context, string, string) (*gitdomain.BehindAhead, error) {
+				panic("unexpected invocation of MockGitBackend.BehindAhead")
+			},
+		},
 		BlameFunc: &GitBackendBlameFunc{
 			defaultHook: func(context.Context, api.CommitID, string, BlameOptions) (BlameHunkReader, error) {
 				panic("unexpected invocation of MockGitBackend.Blame")
@@ -440,6 +461,11 @@ func NewStrictMockGitBackend() *MockGitBackend {
 		ExecFunc: &GitBackendExecFunc{
 			defaultHook: func(context.Context, ...string) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockGitBackend.Exec")
+			},
+		},
+		FirstEverCommitFunc: &GitBackendFirstEverCommitFunc{
+			defaultHook: func(context.Context) (api.CommitID, error) {
+				panic("unexpected invocation of MockGitBackend.FirstEverCommit")
 			},
 		},
 		GetCommitFunc: &GitBackendGetCommitFunc{
@@ -502,6 +528,9 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 		ArchiveReaderFunc: &GitBackendArchiveReaderFunc{
 			defaultHook: i.ArchiveReader,
 		},
+		BehindAheadFunc: &GitBackendBehindAheadFunc{
+			defaultHook: i.BehindAhead,
+		},
 		BlameFunc: &GitBackendBlameFunc{
 			defaultHook: i.Blame,
 		},
@@ -513,6 +542,9 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 		},
 		ExecFunc: &GitBackendExecFunc{
 			defaultHook: i.Exec,
+		},
+		FirstEverCommitFunc: &GitBackendFirstEverCommitFunc{
+			defaultHook: i.FirstEverCommit,
 		},
 		GetCommitFunc: &GitBackendGetCommitFunc{
 			defaultHook: i.GetCommit,
@@ -658,6 +690,117 @@ func (c GitBackendArchiveReaderFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitBackendArchiveReaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitBackendBehindAheadFunc describes the behavior when the BehindAhead
+// method of the parent MockGitBackend instance is invoked.
+type GitBackendBehindAheadFunc struct {
+	defaultHook func(context.Context, string, string) (*gitdomain.BehindAhead, error)
+	hooks       []func(context.Context, string, string) (*gitdomain.BehindAhead, error)
+	history     []GitBackendBehindAheadFuncCall
+	mutex       sync.Mutex
+}
+
+// BehindAhead delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitBackend) BehindAhead(v0 context.Context, v1 string, v2 string) (*gitdomain.BehindAhead, error) {
+	r0, r1 := m.BehindAheadFunc.nextHook()(v0, v1, v2)
+	m.BehindAheadFunc.appendCall(GitBackendBehindAheadFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the BehindAhead method
+// of the parent MockGitBackend instance is invoked and the hook queue is
+// empty.
+func (f *GitBackendBehindAheadFunc) SetDefaultHook(hook func(context.Context, string, string) (*gitdomain.BehindAhead, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BehindAhead method of the parent MockGitBackend instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GitBackendBehindAheadFunc) PushHook(hook func(context.Context, string, string) (*gitdomain.BehindAhead, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitBackendBehindAheadFunc) SetDefaultReturn(r0 *gitdomain.BehindAhead, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, string) (*gitdomain.BehindAhead, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitBackendBehindAheadFunc) PushReturn(r0 *gitdomain.BehindAhead, r1 error) {
+	f.PushHook(func(context.Context, string, string) (*gitdomain.BehindAhead, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitBackendBehindAheadFunc) nextHook() func(context.Context, string, string) (*gitdomain.BehindAhead, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitBackendBehindAheadFunc) appendCall(r0 GitBackendBehindAheadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitBackendBehindAheadFuncCall objects
+// describing the invocations of this function.
+func (f *GitBackendBehindAheadFunc) History() []GitBackendBehindAheadFuncCall {
+	f.mutex.Lock()
+	history := make([]GitBackendBehindAheadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitBackendBehindAheadFuncCall is an object that describes an invocation
+// of method BehindAhead on an instance of MockGitBackend.
+type GitBackendBehindAheadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *gitdomain.BehindAhead
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitBackendBehindAheadFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitBackendBehindAheadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -1092,6 +1235,111 @@ func (c GitBackendExecFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitBackendExecFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitBackendFirstEverCommitFunc describes the behavior when the
+// FirstEverCommit method of the parent MockGitBackend instance is invoked.
+type GitBackendFirstEverCommitFunc struct {
+	defaultHook func(context.Context) (api.CommitID, error)
+	hooks       []func(context.Context) (api.CommitID, error)
+	history     []GitBackendFirstEverCommitFuncCall
+	mutex       sync.Mutex
+}
+
+// FirstEverCommit delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitBackend) FirstEverCommit(v0 context.Context) (api.CommitID, error) {
+	r0, r1 := m.FirstEverCommitFunc.nextHook()(v0)
+	m.FirstEverCommitFunc.appendCall(GitBackendFirstEverCommitFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the FirstEverCommit
+// method of the parent MockGitBackend instance is invoked and the hook
+// queue is empty.
+func (f *GitBackendFirstEverCommitFunc) SetDefaultHook(hook func(context.Context) (api.CommitID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FirstEverCommit method of the parent MockGitBackend instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitBackendFirstEverCommitFunc) PushHook(hook func(context.Context) (api.CommitID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitBackendFirstEverCommitFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
+	f.SetDefaultHook(func(context.Context) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitBackendFirstEverCommitFunc) PushReturn(r0 api.CommitID, r1 error) {
+	f.PushHook(func(context.Context) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitBackendFirstEverCommitFunc) nextHook() func(context.Context) (api.CommitID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitBackendFirstEverCommitFunc) appendCall(r0 GitBackendFirstEverCommitFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitBackendFirstEverCommitFuncCall objects
+// describing the invocations of this function.
+func (f *GitBackendFirstEverCommitFunc) History() []GitBackendFirstEverCommitFuncCall {
+	f.mutex.Lock()
+	history := make([]GitBackendFirstEverCommitFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitBackendFirstEverCommitFuncCall is an object that describes an
+// invocation of method FirstEverCommit on an instance of MockGitBackend.
+type GitBackendFirstEverCommitFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 api.CommitID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitBackendFirstEverCommitFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitBackendFirstEverCommitFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

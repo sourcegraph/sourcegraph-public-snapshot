@@ -5,10 +5,10 @@ import { useLocation } from 'react-router-dom'
 import { animated, useSpring } from 'react-spring'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, useLocalStorage, H3, H4, Icon, Link, Text, VIEWPORT_XL } from '@sourcegraph/wildcard'
 
 import type { Scalars } from '../../../../../graphql-operations'
-import { eventLogger } from '../../../../../tracking/eventLogger'
 import { createRenderTemplate } from '../../../create/useSearchTemplate'
 import { insertNameIntoLibraryItem } from '../../yaml-util'
 
@@ -134,7 +134,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
         if (selectedItem && !('isReadOnly' in props && props.isReadOnly)) {
             const codeWithName = updateTemplateWithQueryAndName(selectedItem.code)
             const templateName = selectedItem.name
-            eventLogger.log('batch_change_editor:template:loaded', { template: templateName })
+            EVENT_LOGGER.log('batch_change_editor:template:loaded', { template: templateName })
             props.telemetryRecorder.recordEvent('batchChange.editor.template', 'load')
             props.onReplaceItem(codeWithName)
             setSelectedItem(undefined)
@@ -191,7 +191,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                             rel="noopener noreferrer"
                             to="https://github.com/sourcegraph/batch-change-examples"
                             onClick={() => {
-                                eventLogger.log('batch_change_editor:view_more_examples:clicked')
+                                EVENT_LOGGER.log('batch_change_editor:view_more_examples:clicked')
                                 props.telemetryRecorder.recordEvent('batchChange.editor.viewMoreExamples', 'click')
                             }}
                         >

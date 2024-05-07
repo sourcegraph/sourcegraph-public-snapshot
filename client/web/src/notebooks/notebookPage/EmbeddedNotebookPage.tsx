@@ -12,9 +12,9 @@ import {
 } from '@sourcegraph/shared/src/backend/file'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../tracking/eventLogger'
 import { fetchNotebook } from '../backend'
 import { convertNotebookTitleToFileName } from '../serialize'
 
@@ -32,7 +32,7 @@ const LOADING = 'loading' as const
 export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({ platformContext, ...props }) => {
     const { notebookId } = useParams()
 
-    useEffect(() => eventLogger.logPageView('EmbeddedNotebookPage'), [])
+    useEffect(() => EVENT_LOGGER.logPageView('EmbeddedNotebookPage'), [])
     platformContext.telemetryRecorder.recordEvent('embeddedNotebook', 'view')
 
     const notebookOrError = useObservable(
@@ -78,7 +78,7 @@ export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({ platformCo
                     viewerCanManage={false}
                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     streamSearch={aggregateStreamingSearch}
-                    telemetryService={eventLogger}
+                    telemetryService={EVENT_LOGGER}
                     telemetryRecorder={platformContext.telemetryRecorder}
                     platformContext={platformContext}
                     exportedFileName={convertNotebookTitleToFileName(notebookOrError.title)}

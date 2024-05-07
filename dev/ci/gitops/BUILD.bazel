@@ -4,7 +4,7 @@ go_library(
     name = "gitops",
     srcs = ["git_ops.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/ci/gitops",
-    visibility = ["//dev/ci:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         "//internal/oobmigration",
         "//lib/errors",

@@ -35,7 +35,7 @@ import {
     type StreamSearchOptions,
 } from '@sourcegraph/shared/src/search/stream'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE, type TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Button, H2, H4, Icon, Link, Panel, useLocalStorage, useScrollManager } from '@sourcegraph/wildcard'
@@ -135,6 +135,8 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         onLogSearchResultClick,
     } = props
 
+    const telemetryRecorder = platformContext.telemetryRecorder
+
     const submittedURLQueryRef = useRef(submittedURLQuery)
     const containerRef = useRef<HTMLDivElement>(null)
     const { previewBlob, clearPreview } = useSearchResultState()
@@ -177,7 +179,8 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
     const handleFilterPanelClose = useCallback(() => {
         clearPreview()
         telemetryService.log('SearchFilePreviewClose', {}, {})
-    }, [telemetryService, clearPreview])
+        telemetryRecorder.recordEvent('search.filePreview', 'close')
+    }, [telemetryService, clearPreview, telemetryRecorder])
 
     return (
         <div className={classNames(styles.root, { [styles.rootWithNewFilters]: newFiltersEnabled })}>
@@ -190,6 +193,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                     className={styles.newFilters}
                     onQueryChange={handleFilterPanelQueryChange}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
 
@@ -205,6 +209,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                     aggregationUIMode={aggregationUIMode}
                     settingsCascade={settingsCascade}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     caseSensitive={caseSensitive}
                     className={classNames(styles.filters)}
                     setSidebarCollapsed={setSidebarCollapsed}
@@ -227,6 +232,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                 sourcegraphURL={platformContext.sourcegraphURL}
                 isSourcegraphDotCom={isSourcegraphDotCom}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 className={styles.infobar}
                 onExpandAllResultsToggle={onExpandAllResultsToggle}
                 onShowMobileFiltersChanged={setSidebarCollapsed}
@@ -257,6 +263,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                         aria-label="Aggregation results panel"
                         onQuerySubmit={onQuerySubmit}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         className="m-3"
                     />
                 )}
@@ -265,6 +272,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                     <div className={styles.contentMetaInfo}>
                         <DidYouMean
                             telemetryService={props.telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                             query={submittedURLQuery}
                             patternType={patternType}
                             caseSensitive={caseSensitive}
@@ -334,6 +342,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                 <FilePreviewPanel
                     blobInfo={previewBlob}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     onClose={handleFilterPanelClose}
                 />
             )}
@@ -375,13 +384,13 @@ const NewSearchSidebarWrapper: FC<PropsWithChildren<NewSearchSidebarWrapper>> = 
     )
 }
 
-interface FilePreviewPanelProps extends TelemetryProps {
+interface FilePreviewPanelProps extends TelemetryProps, TelemetryV2Props {
     blobInfo: SearchResultPreview
     onClose: () => void
 }
 
 const FilePreviewPanel: FC<FilePreviewPanelProps> = props => {
-    const { blobInfo, onClose, telemetryService } = props
+    const { blobInfo, onClose, telemetryService, telemetryRecorder } = props
 
     const staticHighlights = useMemo(() => {
         if (blobInfo.type === 'path') {
@@ -392,7 +401,8 @@ const FilePreviewPanel: FC<FilePreviewPanelProps> = props => {
 
     useEffect(() => {
         telemetryService.logViewEvent('SearchFilePreview')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('search.filePreview', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <Panel
@@ -426,8 +436,7 @@ const FilePreviewPanel: FC<FilePreviewPanelProps> = props => {
                     navigateToLineOnAnyClick={false}
                     className={styles.previewContent}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
-                    // TODO (dadlerj): update to use a real telemetry recorder
-                    telemetryRecorder={noOpTelemetryRecorder}
+                    telemetryRecorder={telemetryRecorder}
                     staticHighlightRanges={staticHighlights}
                 />
             </Suspense>

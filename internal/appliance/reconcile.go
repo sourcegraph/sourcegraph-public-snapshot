@@ -60,7 +60,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, errors.New("failed to get sourcegraph spec from configmap")
 	}
 
-	var sourcegraph Sourcegraph
+	sourcegraph := newDefaultConfig()
 	if err := yaml.Unmarshal([]byte(data), &sourcegraph); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -79,6 +79,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Reconcile services here
 	if err := r.reconcileBlobstore(ctx, &sourcegraph, &applianceSpec); err != nil {
 		return ctrl.Result{}, errors.Newf("failed to reconcile blobstore: %w", err)
+	}
+	if err := r.reconcileRepoUpdater(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile repo updater: %w", err)
+	}
+	if err := r.reconcileSymbols(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile symbols service: %w", err)
+	}
+	if err := r.reconcileGitServer(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile gitserver: %w", err)
 	}
 
 	// Set the current version annotation in case migration logic depends on it.

@@ -4,9 +4,9 @@ import { lastValueFrom } from 'rxjs'
 
 import { type ErrorLike, logger } from '@sourcegraph/common'
 import { BillingCategory, BillingProduct } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { TelemetryRecorder } from '@sourcegraph/telemetry'
 
-import { eventLogger } from '../../../tracking/eventLogger'
 import { CodeInsightsBackendContext, type Insight, type InsightDashboard } from '../core'
 import { getTrackingTypeByInsightType } from '../pings'
 import { V2InsightType } from '../pings/types'
@@ -53,7 +53,7 @@ export function useRemoveInsightFromDashboard(
 
                 const insightType = getTrackingTypeByInsightType(insight.type)
 
-                eventLogger.log('InsightRemovalFromDashboard', { insightType }, { insightType })
+                EVENT_LOGGER.log('InsightRemovalFromDashboard', { insightType }, { insightType })
                 telemetryRecorder.recordEvent('insight', 'removeFromDashboard', {
                     metadata: { insightType: V2InsightType[insightType] },
                 })

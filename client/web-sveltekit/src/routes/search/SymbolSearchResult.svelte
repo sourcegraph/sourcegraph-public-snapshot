@@ -3,7 +3,7 @@
 <script lang="ts">
     import { observeIntersection } from '$lib/intersection-observer'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
-    import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
+    import CodeExcerpt from '$lib/CodeExcerpt.svelte'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
     import type { SymbolMatch } from '$lib/shared'
 
@@ -46,7 +46,7 @@
                         </div>
                         {#await highlightedHTMLRows then result}
                             <CodeExcerpt
-                                startLine={symbol.line - 1}
+                                startLine={symbol.line}
                                 plaintextLines={['']}
                                 highlightedHTMLRows={result?.[index]}
                                 --background-color="transparent"

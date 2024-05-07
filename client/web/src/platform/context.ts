@@ -9,6 +9,7 @@ import type { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
 import { gqlToCascade, type SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     toPrettyBlobURL,
     type RepoFile,
@@ -21,7 +22,6 @@ import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
 import type { TelemetryRecorderProvider } from '../telemetry'
-import { eventLogger } from '../tracking/eventLogger'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
@@ -91,7 +91,7 @@ export function createPlatformContext(props: {
         urlToFile: toPrettyWebBlobURL,
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
-        telemetryService: eventLogger,
+        telemetryService: EVENT_LOGGER,
         telemetryRecorder: props.telemetryRecorderProvider.getRecorder(
             window.context.debug
                 ? [

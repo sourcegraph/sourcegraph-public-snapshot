@@ -1,15 +1,14 @@
 import type { ApolloClient } from '@apollo/client'
 
 import type { BillingCategory, BillingProduct } from '@sourcegraph/shared/src/telemetry'
+import { sessionTracker } from '@sourcegraph/shared/src/telemetry/web/sessionTracker'
+import { userTracker } from '@sourcegraph/shared/src/telemetry/web/userTracker'
 import {
     TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
     MarketingTrackingTelemetryProcessor,
     type MarketingTrackingProvider,
     type TelemetryEventMarketingTrackingInput,
 } from '@sourcegraph/telemetry'
-
-import { sessionTracker } from '../tracking/sessionTracker'
-import { userTracker } from '../tracking/userTracker'
 
 import { ApolloTelemetryExporter } from './apolloTelemetryExporter'
 

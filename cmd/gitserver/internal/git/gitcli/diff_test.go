@@ -101,6 +101,6 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 		require.Error(t, err)
 		require.True(t, errors.Is(err, context.Canceled), "unexpected error: %v", err)
 
-		require.NoError(t, r.Close())
+		require.True(t, errors.Is(r.Close(), context.Canceled), "unexpected error: %v", err)
 	})
 }

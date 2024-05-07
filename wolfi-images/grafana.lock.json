@@ -1,5 +1,5 @@
 {
-  "configHash": "9718b530b480918b294b0cbc0bd163d09f3783dfb3ee58ee092c3335eb7df397",
+  "configHash": "9ed4d915d1c5e54360e87305c3bab861102413e764f535d8b066632f7c98c195",
   "contents": {
     "keyring": [
       {
@@ -113,60 +113,41 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1+rBEmKEIywe0o/a65ZPjWoUECRQ=",
+        "checksum": "Q1L7tGvBw0qXPJMTfQzmf+lrJP7r8=",
         "control": {
-          "checksum": "sha1-+rBEmKEIywe0o/a65ZPjWoUECRQ=",
-          "range": "bytes=703-1054"
+          "checksum": "sha1-L7tGvBw0qXPJMTfQzmf+lrJP7r8=",
+          "range": "bytes=700-1079"
         },
         "data": {
-          "checksum": "sha256-fcShKjtj6wR6kgjwToU1J8hU+AGRf1OGZt9jeXJdM0Q=",
-          "range": "bytes=1055-82406"
-        },
-        "name": "openssl-config",
-        "signature": {
-          "checksum": "sha1-RT/o4gi2oC/l+6IhikP9/PH5awg=",
-          "range": "bytes=0-702"
-        },
-        "url": "https://packages.wolfi.dev/os/x86_64/openssl-config-3.3.0-r5.apk",
-        "version": "3.3.0-r5"
-      },
-      {
-        "architecture": "x86_64",
-        "checksum": "Q11DkfNRzraQMj7ue8LFH6VN6d7Bo=",
-        "control": {
-          "checksum": "sha1-1DkfNRzraQMj7ue8LFH6VN6d7Bo=",
-          "range": "bytes=707-1092"
-        },
-        "data": {
-          "checksum": "sha256-c95GJNThldUhfxVSGbchUI0pS4j6h45Yx6JDPXHaAI0=",
-          "range": "bytes=1093-5915048"
+          "checksum": "sha256-ylGI+oyO+prO2VzhQ9r8sWnLa4h06JQrZ0iNOvKwQkw=",
+          "range": "bytes=1080-5915047"
         },
         "name": "libcrypto3",
         "signature": {
-          "checksum": "sha1-EmjggcTaE4QTKI1FzSom0rXam1c=",
-          "range": "bytes=0-706"
+          "checksum": "sha1-NykXfIUqAZeDpe2kM0e2DJnq5lQ=",
+          "range": "bytes=0-699"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libcrypto3-3.3.0-r5.apk",
-        "version": "3.3.0-r5"
+        "url": "https://packages.wolfi.dev/os/x86_64/libcrypto3-3.3.0-r6.apk",
+        "version": "3.3.0-r6"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q15sT5bGF6kgE7DepzZIHCpPpuP70=",
+        "checksum": "Q1d6dZ+1V4FgAqJC7bmSncO4lmsII=",
         "control": {
-          "checksum": "sha1-5sT5bGF6kgE7DepzZIHCpPpuP70=",
+          "checksum": "sha1-d6dZ+1V4FgAqJC7bmSncO4lmsII=",
           "range": "bytes=702-1085"
         },
         "data": {
-          "checksum": "sha256-fWOAfZYgXO6+yM4Dpo/y7dvV3uxSEhhfO4SUX79TQDw=",
-          "range": "bytes=1086-1196497"
+          "checksum": "sha256-VkVoGQ4Yr1DiRgYxhSqDkY5gOs5X5OatIPGTtvs6Xyw=",
+          "range": "bytes=1086-1196496"
         },
         "name": "libssl3",
         "signature": {
-          "checksum": "sha1-4+7eITv9weTmoYBAAyd92WsXS24=",
+          "checksum": "sha1-W1VGS1lFy/PnwNAxzsy9XaMlqgk=",
           "range": "bytes=0-701"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libssl3-3.3.0-r5.apk",
-        "version": "3.3.0-r5"
+        "url": "https://packages.wolfi.dev/os/x86_64/libssl3-3.3.0-r6.apk",
+        "version": "3.3.0-r6"
       },
       {
         "architecture": "x86_64",
@@ -341,22 +322,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1rCafcQ7IynpQj60X+daVyjn0W14=",
+        "checksum": "Q1q7Ljv/xCPRBWPKJnlbLeS40ahj0=",
         "control": {
-          "checksum": "sha1-rCafcQ7IynpQj60X+daVyjn0W14=",
-          "range": "bytes=702-1265"
+          "checksum": "sha1-q7Ljv/xCPRBWPKJnlbLeS40ahj0=",
+          "range": "bytes=704-1279"
         },
         "data": {
-          "checksum": "sha256-rJP0/i6ZLdqfq2RtGXCVDZpuLpVpDafoKAz79+rnDTw=",
-          "range": "bytes=1266-2075835"
+          "checksum": "sha256-Lrk6cGl2NYmLRFKgGuAmBgc/RPao4219lXbH5zyC1Ro=",
+          "range": "bytes=1280-2043444"
         },
         "name": "bash",
         "signature": {
-          "checksum": "sha1-lHwzJAuRM+tLR42naP59XMspXvw=",
-          "range": "bytes=0-701"
+          "checksum": "sha1-QsoeahC4nNKQnLss4vaFdSu7JHY=",
+          "range": "bytes=0-703"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/bash-5.2.21-r1.apk",
-        "version": "5.2.21-r1"
+        "url": "https://packages.wolfi.dev/os/x86_64/bash-5.2.21-r2.apk",
+        "version": "5.2.21-r2"
       },
       {
         "architecture": "x86_64",
@@ -550,41 +531,41 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1f1askbmC5qhWzOcoTndoTZFttH4=",
+        "checksum": "Q1ajPJahRUOXPQi5uP+ZR6bPRHmSs=",
         "control": {
-          "checksum": "sha1-f1askbmC5qhWzOcoTndoTZFttH4=",
-          "range": "bytes=700-1076"
+          "checksum": "sha1-ajPJahRUOXPQi5uP+ZR6bPRHmSs=",
+          "range": "bytes=702-1082"
         },
         "data": {
-          "checksum": "sha256-qXIWD8OQroVJK9uQVSe0hZLfHjEDuSqd7khmNQd5NX8=",
-          "range": "bytes=1077-181897"
+          "checksum": "sha256-ZxJNKcHTyPIBqlbNaIAqGGBFVmc4gNb1uxVr/Pm0f1o=",
+          "range": "bytes=1083-181896"
         },
         "name": "openssl-provider-legacy",
         "signature": {
-          "checksum": "sha1-3t4XypeYwpIG/zvG0YZZ+3bxRQ4=",
-          "range": "bytes=0-699"
+          "checksum": "sha1-eoJ92rTKkwmcC/KJkOOBQYP71B8=",
+          "range": "bytes=0-701"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/openssl-provider-legacy-3.3.0-r5.apk",
-        "version": "3.3.0-r5"
+        "url": "https://packages.wolfi.dev/os/x86_64/openssl-provider-legacy-3.3.0-r6.apk",
+        "version": "3.3.0-r6"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1z87sCebNsJLbGZ3B0hD+fcWwGvk=",
+        "checksum": "Q1Rr9iCcoxoMqqUG6qK0Pijds75w8=",
         "control": {
-          "checksum": "sha1-z87sCebNsJLbGZ3B0hD+fcWwGvk=",
-          "range": "bytes=705-1130"
+          "checksum": "sha1-Rr9iCcoxoMqqUG6qK0Pijds75w8=",
+          "range": "bytes=700-1124"
         },
         "data": {
-          "checksum": "sha256-eYhePOF+iUml8ilKATvtt0cL1oSZkx1jYyrSO8xWt2w=",
-          "range": "bytes=1131-1210649"
+          "checksum": "sha256-J38WbkW5e0fUDkCu07oQMiSEUeRLNHPwXkHSM/65zOY=",
+          "range": "bytes=1125-1241850"
         },
         "name": "openssl",
         "signature": {
-          "checksum": "sha1-kzgJpvCQ0sqBI0C09mdZJ86e1sc=",
-          "range": "bytes=0-704"
+          "checksum": "sha1-Qx3qpOtcxAcHM8HsVn5Bz2ru9/4=",
+          "range": "bytes=0-699"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/openssl-3.3.0-r5.apk",
-        "version": "3.3.0-r5"
+        "url": "https://packages.wolfi.dev/os/x86_64/openssl-3.3.0-r6.apk",
+        "version": "3.3.0-r6"
       },
       {
         "architecture": "x86_64",

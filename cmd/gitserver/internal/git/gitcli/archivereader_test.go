@@ -179,6 +179,6 @@ func TestGitCLIBackend_ArchiveReader(t *testing.T) {
 		require.Error(t, err)
 		require.True(t, errors.Is(err, context.Canceled), "unexpected error: %v", err)
 
-		require.NoError(t, r.Close())
+		require.True(t, errors.Is(r.Close(), context.Canceled), "unexpected error: %v", err)
 	})
 }

@@ -145,6 +145,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                 className={styles.pageContent}
                                 authenticatedUser={context.authenticatedUser}
                                 context={globalContext}
+                                telemetryRecorder={platformContext.telemetryRecorder}
                             />
                         ) : (
                             <LoadingSpinner />

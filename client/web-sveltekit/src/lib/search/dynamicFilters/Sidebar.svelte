@@ -37,6 +37,7 @@
     import LanguageIcon from '$lib/LanguageIcon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
     import Tooltip from '$lib/Tooltip.svelte'
     import Button from '$lib/wildcard/Button.svelte'
@@ -75,11 +76,17 @@
     $: resetModifier = inferOperatingSystem(navigator.userAgent) === 'MacOS' ? '⌥' : 'Alt'
     $: resetURL = resetFilters($page.url).toString()
     $: enableReset = selectedFilters.length > 0
+
     function handleResetKeydown(event: KeyboardEvent) {
         if (enableReset && event.altKey && event.key === 'Backspace') {
             goto(resetURL)
         }
     }
+
+    function handleFilterSelect(kind: SectionItem['kind']): void {
+        SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.SelectSearchFilter, { kind }, { kind })
+    }
+
     onMount(() => {
         window.addEventListener('keydown', handleResetKeydown)
         return () => window.removeEventListener('keydown', handleResetKeydown)
@@ -98,7 +105,7 @@
         </div>
 
         {#if !queryHasTypeFilter(searchQuery)}
-            <Section items={typeFilters} title="By type" showAll>
+            <Section items={typeFilters} title="By type" showAll onFilterSelect={handleFilterSelect}>
                 <svelte:fragment slot="label" let:label>
                     <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
                     {label}
@@ -106,7 +113,12 @@
             </Section>
         {/if}
 
-        <Section items={groupedFilters.repo} title="By repository" filterPlaceholder="Filter repositories">
+        <Section
+            items={groupedFilters.repo}
+            title="By repository"
+            filterPlaceholder="Filter repositories"
+            onFilterSelect={handleFilterSelect}
+        >
             <svelte:fragment slot="label" let:label>
                 <Tooltip tooltip={label} placement="right">
                     <span>
@@ -116,27 +128,42 @@
                 </Tooltip>
             </svelte:fragment>
         </Section>
-        <Section items={groupedFilters.lang} title="By language" filterPlaceholder="Filter languages">
+        <Section
+            items={groupedFilters.lang}
+            title="By language"
+            filterPlaceholder="Filter languages"
+            onFilterSelect={handleFilterSelect}
+        >
             <svelte:fragment slot="label" let:label>
                 <LanguageIcon class="icon" language={label} inline />&nbsp;
                 {label}
             </svelte:fragment>
         </Section>
-        <Section items={groupedFilters['symbol type']} title="By symbol type" filterPlaceholder="Filter symbol types">
+        <Section
+            items={groupedFilters['symbol type']}
+            title="By symbol type"
+            filterPlaceholder="Filter symbol types"
+            onFilterSelect={handleFilterSelect}
+        >
             <svelte:fragment slot="label" let:label>
                 <SymbolKind symbolKind={label.toUpperCase()} />
                 {label}
             </svelte:fragment>
         </Section>
-        <Section items={groupedFilters.author} title="By author" filterPlaceholder="Filter authors" />
-        <Section items={groupedFilters['commit date']} title="By commit date">
+        <Section
+            items={groupedFilters.author}
+            title="By author"
+            filterPlaceholder="Filter authors"
+            onFilterSelect={handleFilterSelect}
+        />
+        <Section items={groupedFilters['commit date']} title="By commit date" onFilterSelect={handleFilterSelect}>
             <span class="commit-date-label" slot="label" let:label let:value>
                 {label}
                 <small><pre>{value}</pre></small>
             </span>
         </Section>
-        <Section items={groupedFilters.file} title="By file" showAll />
-        <Section items={groupedFilters.utility} title="Utility" showAll />
+        <Section items={groupedFilters.file} title="By file" showAll onFilterSelect={handleFilterSelect} />
+        <Section items={groupedFilters.utility} title="Utility" showAll onFilterSelect={handleFilterSelect} />
 
         {#if state === 'loading'}
             <LoadingSkeleton />
@@ -168,8 +195,9 @@
     .scroll-container {
         padding-top: 1rem;
         height: 100%;
-        background-color: var(--sidebar-bg);
+        background-color: var(--color-bg-1);
         overflow-y: auto;
+        box-shadow: var(--sidebar-shadow);
 
         display: flex;
         flex-direction: column;

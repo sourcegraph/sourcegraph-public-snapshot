@@ -34,6 +34,6 @@
 <style lang="scss">
     span.count :global(span) {
         background-color: var(--secondary-2);
-        color: var(--text-muted);
+        color: var(--text-body);
     }
 </style>

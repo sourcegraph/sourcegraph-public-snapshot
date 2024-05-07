@@ -25,11 +25,9 @@ func newTelemetryGatewayEvents(
 ) ([]*telemetrygatewayv1.Event, error) {
 	gatewayEvents := make([]*telemetrygatewayv1.Event, len(gqlEvents))
 	for i, gqlEvent := range gqlEvents {
-		if gqlEvent.Feature == "" {
-			return nil, errors.Newf("feature is required for event %d", i)
-		}
-		if gqlEvent.Action == "" {
-			return nil, errors.Newf("action is required for event %d", i)
+		if err := telemetrygatewayv1.ValidateEventFeatureAction(gqlEvent.Feature, gqlEvent.Action); err != nil {
+			return nil, errors.Wrapf(err, "invalid feature/action for event %d: %s/%s",
+				i, gqlEvent.Feature, gqlEvent.Action)
 		}
 
 		event := telemetrygatewayevent.New(ctx, now, newUUID)

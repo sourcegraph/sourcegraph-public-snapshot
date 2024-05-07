@@ -43,7 +43,7 @@
             overflow: 'auto',
         },
         '.cm-content': {
-            padding: 0,
+            paddingBottom: '1.5rem',
             '&:focus-visible': {
                 outline: 'none',
                 boxShadow: 'none',
@@ -60,8 +60,19 @@
             border: 'none',
             color: 'var(--line-number-color)',
         },
+        '.cm-gutterElement': {
+            lineHeight: '1.54',
+            minWidth: '40px !important',
+
+            '&:hover': {
+                color: 'var(--text-body)',
+            },
+        },
+        '.cm-lineNumbers .cm-gutterElement': {
+            padding: '0 1.5ex',
+        },
         '.cm-line': {
-            paddingLeft: '1ex',
+            lineHeight: '1.54',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
@@ -104,6 +115,7 @@
         }),
         defaultTheme,
         linkify,
+        hideEmptyLastLine,
     ]
 </script>
 
@@ -132,6 +144,7 @@
         type BlameHunkData,
         lockFirstVisibleLine,
         temporaryTooltip,
+        hideEmptyLastLine,
     } from '$lib/web'
 
     import BlameDecoration from './blame/BlameDecoration.svelte'
@@ -149,8 +162,9 @@
     export let highlights: string
     export let wrapLines: boolean = false
     export let selectedLines: LineOrPositionOrRange | null = null
-    export let codeIntelAPI: CodeIntelAPI
+    export let codeIntelAPI: CodeIntelAPI | null
     export let staticHighlightRanges: Range[] = []
+    export let onCopy: () => void = () => {}
     /**
      * The initial scroll position when the editor is first mounted.
      * Changing the value afterwards has no effect.
@@ -187,31 +201,34 @@
         filePath: blobInfo.filePath,
         languages: blobInfo.languages,
     }
-    $: codeIntelExtension = createCodeIntelExtension({
-        api: {
-            api: codeIntelAPI,
-            documentInfo: documentInfo,
-            goToDefinition: (view, definition, options) => goToDefinition(documentInfo, view, definition, options),
-            openReferences,
-            openImplementations,
-            createTooltipView: options => new HovercardView(options.view, options.token, options.hovercardData),
-        },
-        // TODO(fkling): Support tooltip pinning
-        pin: {},
-        navigate: to => {
-            if (typeof to === 'number') {
-                if (to > 0) {
-                    history.forward()
-                } else {
-                    history.back()
-                }
-            } else {
-                goto(to.toString())
-            }
-        },
-    })
-    $: lineWrapping = wrapLines ? EditorView.lineWrapping : []
-    $: syntaxHighlighting = highlights ? syntaxHighlight.of({ content: blobInfo.content, lsif: highlights }) : []
+    $: codeIntelExtension = codeIntelAPI
+        ? createCodeIntelExtension({
+              api: {
+                  api: codeIntelAPI,
+                  documentInfo: documentInfo,
+                  goToDefinition: (view, definition, options) =>
+                      goToDefinition(documentInfo, view, definition, options),
+                  openReferences,
+                  openImplementations,
+                  createTooltipView: options => new HovercardView(options.view, options.token, options.hovercardData),
+              },
+              // TODO(fkling): Support tooltip pinning
+              pin: {},
+              navigate: to => {
+                  if (typeof to === 'number') {
+                      if (to > 0) {
+                          history.forward()
+                      } else {
+                          history.back()
+                      }
+                  } else {
+                      goto(to.toString())
+                  }
+              },
+          })
+        : null
+    $: lineWrapping = wrapLines ? EditorView.lineWrapping : null
+    $: syntaxHighlighting = highlights ? syntaxHighlight.of({ content: blobInfo.content, lsif: highlights }) : null
     $: staticHighlightExtension = staticHighlights(staticHighlightRanges)
 
     $: blameColumnExtension = showBlame
@@ -225,7 +242,7 @@
                   }
               },
           })
-        : []
+        : null
     $: blameDataExtension = blameDataFacet(blameData)
 
     // Reinitialize the editor when its content changes. Update only the extensions when they change.
@@ -321,7 +338,7 @@
 </script>
 
 {#if browser}
-    <div bind:this={container} class="root test-editor" data-editor="codemirror6" />
+    <div bind:this={container} class="root test-editor" data-editor="codemirror6" on:copy={onCopy} />
 {:else}
     <div class="root">
         <pre>{blobInfo.content}</pre>
@@ -330,7 +347,7 @@
 
 <style lang="scss">
     .root {
-        --blame-decoration-width: 400px;
+        --blame-decoration-width: 300px;
         --blame-recency-width: 4px;
 
         height: 100%;

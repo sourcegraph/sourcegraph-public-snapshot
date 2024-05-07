@@ -348,7 +348,7 @@ func TestGetEmbeddableReposLimit(t *testing.T) {
 }
 
 func TestGetEmbeddableRepoOpts(t *testing.T) {
-	dotcom.MockSourcegraphDotComMode(t, true)
+	conf.MockForceAllowEmbeddings(t, true)
 
 	conf.Mock(&conf.Unified{})
 	defer conf.Mock(nil)

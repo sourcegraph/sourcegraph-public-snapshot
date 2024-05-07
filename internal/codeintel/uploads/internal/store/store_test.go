@@ -13,6 +13,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -23,7 +24,7 @@ import (
 )
 
 // insertNearestUploads populates the lsif_nearest_uploads table with the given upload metadata.
-func insertNearestUploads(t testing.TB, db database.DB, repositoryID int, uploads map[string][]commitgraph.UploadMeta) {
+func insertNearestUploads(t testing.TB, db database.DB, repositoryID int, uploads map[api.CommitID][]commitgraph.UploadMeta) {
 	var rows []*sqlf.Query
 	for commit, uploadMetas := range uploads {
 		uploadsByLength := make(map[int]int, len(uploadMetas))

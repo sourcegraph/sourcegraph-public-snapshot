@@ -1,27 +1,38 @@
-import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
+import { getGraphQLClient, infinityQuery } from '$lib/graphql'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
 import { TagsPage_TagsQuery } from './page.gql'
 
-export const load: PageLoad = ({ params }) => {
+const PAGE_SIZE = 50
+
+export const load: PageLoad = ({ params, url }) => {
     const client = getGraphQLClient()
     const { repoName } = parseRepoRevision(params.repo)
+    const query = url.searchParams.get('query') ?? ''
 
     return {
-        tags: client
-            .query(TagsPage_TagsQuery, {
+        query,
+        tagsQuery: infinityQuery({
+            client,
+            query: TagsPage_TagsQuery,
+            variables: {
                 repoName,
-                first: 20,
+                first: PAGE_SIZE,
                 withBehindAhead: false,
-            })
-            .then(
-                mapOrThrow(result => {
-                    if (!result.data?.repository) {
-                        throw new Error('Unable to load repository data.')
+                query,
+            },
+            nextVariables: previousResult => {
+                if (previousResult?.data?.repository?.gitRefs?.pageInfo?.hasNextPage) {
+                    return {
+                        first: previousResult.data.repository.gitRefs.nodes.length + PAGE_SIZE,
                     }
-                    return result.data.repository.gitRefs
-                })
-            ),
+                }
+                return undefined
+            },
+            combine: (_previousResult, nextResult) => {
+                return nextResult
+            },
+        }),
     }
 }

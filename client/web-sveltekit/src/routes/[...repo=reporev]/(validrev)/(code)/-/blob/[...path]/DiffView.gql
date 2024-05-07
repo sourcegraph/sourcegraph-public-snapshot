@@ -1,0 +1,17 @@
+fragment DiffViewGitBlob on GitBlob {
+    ...FileIcon_GitBlob
+}
+
+fragment DiffViewCommit on GitCommit {
+    diff {
+        fileDiffs(paths: [$path]) {
+            nodes {
+                hunks {
+                    ...FileDiffHunks_Hunk
+                }
+            }
+        }
+    }
+
+    ...DiffSummaryHeaderCommit
+}

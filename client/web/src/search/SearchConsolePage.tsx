@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -13,6 +13,7 @@ import {
 } from '@sourcegraph/branded'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
@@ -26,7 +27,8 @@ import styles from './SearchConsolePage.module.scss'
 interface SearchConsolePageProps
     extends SearchStreamingProps,
         Omit<StreamingSearchResultsListProps, 'allExpanded' | 'executedQuery' | 'showSearchContext'>,
-        OwnConfigProps {
+        OwnConfigProps,
+        TelemetryV2Props {
     isMacPlatform: boolean
 }
 
@@ -89,6 +91,8 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
             [patternType, transformedQuery, streamSearch]
         )
     )
+
+    useEffect(() => props.telemetryRecorder.recordEvent('search.console', 'view'), [props.telemetryRecorder])
 
     return (
         <div className="w-100 p-2">

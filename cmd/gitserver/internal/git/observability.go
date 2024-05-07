@@ -39,6 +39,16 @@ type observableBackend struct {
 	backend    GitBackend
 }
 
+func (b *observableBackend) BehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error) {
+	ctx, _, endObservation := b.operations.getBehindAhead.With(ctx, nil, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("BehindAhead").Inc()
+	defer concurrentOps.WithLabelValues("BehindAhead").Dec()
+
+	return b.backend.BehindAhead(ctx, left, right)
+}
+
 func (b *observableBackend) Config() GitConfigBackend {
 	return &observableGitConfigBackend{
 		backend:    b.backend.Config(),
@@ -369,6 +379,16 @@ func (b *observableBackend) ContributorCounts(ctx context.Context, opt Contribut
 	return b.backend.ContributorCounts(ctx, opt)
 }
 
+func (b *observableBackend) FirstEverCommit(ctx context.Context) (_ api.CommitID, err error) {
+	ctx, _, endObservation := b.operations.firstEverCommit.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("FirstEverCommit").Inc()
+	defer concurrentOps.WithLabelValues("FirstEverCommit").Dec()
+
+	return b.backend.FirstEverCommit(ctx)
+}
+
 type operations struct {
 	configGet         *observation.Operation
 	configSet         *observation.Operation
@@ -387,6 +407,8 @@ type operations struct {
 	revAtTime         *observation.Operation
 	rawDiff           *observation.Operation
 	contributorCounts *observation.Operation
+	firstEverCommit   *observation.Operation
+	getBehindAhead    *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -432,6 +454,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		revAtTime:         op("rev-at-time"),
 		rawDiff:           op("raw-diff"),
 		contributorCounts: op("contributor-counts"),
+		firstEverCommit:   op("first-ever-commit"),
+		getBehindAhead:    op("get-behind-ahead"),
 	}
 }
 

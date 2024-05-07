@@ -242,12 +242,5 @@ func activeUsers(ctx context.Context, db database.DB, dayPeriods, weekPeriods, m
 }
 
 func minIntOrZero(a, b int) int {
-	min := b
-	if a < b {
-		min = a
-	}
-	if min < 0 {
-		return 0
-	}
-	return min
+	return max(min(a, b), 0)
 }

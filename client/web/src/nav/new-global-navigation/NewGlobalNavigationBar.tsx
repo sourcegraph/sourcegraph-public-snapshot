@@ -10,6 +10,7 @@ import shallow from 'zustand/shallow'
 import { LegacyToggles } from '@sourcegraph/branded'
 import { Toggles } from '@sourcegraph/branded/src/search-ui/input/toggles/Toggles'
 import type { SearchQueryState, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Text, Icon, Button, Modal, Link, ProductStatusBadge, ButtonLink } from '@sourcegraph/wildcard'
@@ -30,7 +31,7 @@ import { UserNavItem } from '../UserNavItem'
 
 import styles from './NewGlobalNavigationBar.module.scss'
 
-interface NewGlobalNavigationBar extends TelemetryProps {
+interface NewGlobalNavigationBar extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     notebooksEnabled: boolean
@@ -61,6 +62,7 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
         showSearchBox,
         showFeedbackModal,
         telemetryService,
+        telemetryRecorder,
     } = props
 
     const isLightTheme = useIsLightTheme()
@@ -105,6 +107,7 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
                         authenticatedUser={authenticatedUser}
                         selectedSearchContextSpec={selectedSearchContextSpec}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 ) : (
                     <InlineNavigationPanel
@@ -173,7 +176,7 @@ const selectQueryState = (state: SearchQueryState): NavigationSearchBoxState => 
     searchMode: state.searchMode,
 })
 
-interface NavigationSearchBoxProps extends TelemetryProps {
+interface NavigationSearchBoxProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     selectedSearchContextSpec?: string
@@ -184,7 +187,8 @@ interface NavigationSearchBoxProps extends TelemetryProps {
  * search box gets focus.
  */
 const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
-    const { authenticatedUser, isSourcegraphDotCom, selectedSearchContextSpec, telemetryService } = props
+    const { authenticatedUser, isSourcegraphDotCom, selectedSearchContextSpec, telemetryService, telemetryRecorder } =
+        props
 
     const navigate = useNavigate()
     const location = useLocation()
@@ -200,10 +204,11 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
                 source: 'nav',
                 historyOrNavigate: navigate,
                 selectedSearchContextSpec,
+                telemetryRecorder,
                 ...parameters,
             })
         },
-        [submitSearch, navigate, location, selectedSearchContextSpec]
+        [submitSearch, navigate, location, selectedSearchContextSpec, telemetryRecorder]
     )
 
     // TODO: Move this check outside of navigation component and share it via context
@@ -220,6 +225,7 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
             authenticatedUser={authenticatedUser}
             selectedSearchContextSpec={selectedSearchContextSpec}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             className={styles.searchBar}
             onChange={setQueryState}
             onSubmit={submitSearchOnChange}

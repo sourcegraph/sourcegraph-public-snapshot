@@ -12,9 +12,9 @@ go_library(
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//cmd/frontend/internal/cody",
         "//internal/api",
         "//internal/auth",
-        "//internal/cody",
         "//internal/conf",
         "//internal/database",
         "//internal/embeddings",
@@ -46,7 +46,6 @@ go_test(
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",
-        "//internal/dotcom",
         "//internal/embeddings",
         "//internal/embeddings/background/repo",
         "//internal/featureflag",

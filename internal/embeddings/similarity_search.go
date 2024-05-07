@@ -107,8 +107,6 @@ func (index *EmbeddingIndex) SimilaritySearch(
 	if len(rowsPerWorker) > 1 {
 		var wg conc.WaitGroup
 		for workerIdx := range len(rowsPerWorker) {
-			// Capture the loop variable value so we can use it in the closure below.
-			workerIdx := workerIdx
 			wg.Go(func() {
 				heaps[workerIdx] = index.partialSimilaritySearch(query, numResults, rowsPerWorker[workerIdx], opts)
 			})

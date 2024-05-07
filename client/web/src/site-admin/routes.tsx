@@ -198,44 +198,44 @@ const codyIsEnabled = (): boolean => Boolean(window.context?.codyEnabled && wind
 export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/',
-        render: () => <AnalyticsOverviewPage />,
+        render: props => <AnalyticsOverviewPage {...props} />,
     },
     {
         path: '/analytics/search',
-        render: () => <AnalyticsSearchPage />,
+        render: props => <AnalyticsSearchPage {...props} />,
         condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: '/analytics/code-intel',
-        render: () => <AnalyticsCodeIntelPage />,
+        render: props => <AnalyticsCodeIntelPage {...props} />,
         condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: '/analytics/extensions',
-        render: () => <AnalyticsExtensionsPage />,
+        render: props => <AnalyticsExtensionsPage {...props} />,
     },
     {
         path: '/analytics/users',
-        render: () => <AnalyticsUsersPage />,
+        render: props => <AnalyticsUsersPage {...props} />,
     },
     {
         path: '/analytics/cody',
-        render: () => <AnalyticsCodyPage />,
+        render: props => <AnalyticsCodyPage {...props} />,
         condition: ({ license }) => license.isCodyEnabled,
     },
     {
         path: '/analytics/code-insights',
-        render: () => <AnalyticsCodeInsightsPage />,
+        render: props => <AnalyticsCodeInsightsPage {...props} />,
         condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
     },
     {
         path: '/analytics/batch-changes',
-        render: () => <AnalyticsBatchChangesPage />,
+        render: props => <AnalyticsBatchChangesPage {...props} />,
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
     {
         path: '/analytics/notebooks',
-        render: () => <AnalyticsNotebooksPage />,
+        render: props => <AnalyticsNotebooksPage {...props} />,
         condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
@@ -269,12 +269,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/account-requests',
-        render: () => <AccessRequestsPage />,
+        render: props => <AccessRequestsPage {...props} />,
         condition: () => checkRequestAccessAllowed(window.context),
     },
     {
         path: '/users/new',
-        render: () => <SiteAdminCreateUserPage />,
+        render: props => <SiteAdminCreateUserPage {...props} />,
     },
     {
         path: '/tokens',
@@ -355,9 +355,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/permissions-syncs',
-        render: props => (
-            <PermissionsSyncJobsTable {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
-        ),
+        render: props => <PermissionsSyncJobsTable {...props} />,
     },
     {
         path: '/gitservers',
@@ -365,11 +363,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/users',
-        render: () => (
+        render: props => (
             <UsersManagement
                 renderAssignmentModal={(onCancel, onSuccess, user) => (
                     <RoleAssignmentModal onCancel={onCancel} onSuccess={onSuccess} user={user} />
                 )}
+                {...props}
             />
         ),
     },
@@ -416,7 +415,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/batch-changes',
-        render: () => <BatchChangesSiteConfigSettingsPage />,
+        render: props => <BatchChangesSiteConfigSettingsPage {...props} />,
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
     {
@@ -438,7 +437,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/batch-changes/specs',
-        render: props => <BatchSpecsPage telemetryRecorder={props.platformContext.telemetryRecorder} />,
+        render: props => <BatchSpecsPage {...props} />,
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
     },
@@ -457,7 +456,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         exact: true,
         path: '/code-insights-jobs',
-        render: () => <CodeInsightsJobsPage />,
+        render: props => <CodeInsightsJobsPage {...props} />,
         condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
     },
     {
@@ -480,7 +479,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/lsif-uploads/:id',
-        render: () => <SiteAdminPreciseIndexPage />,
+        render: props => <SiteAdminPreciseIndexPage {...props} />,
     },
 
     // Executor routes
@@ -537,7 +536,7 @@ function NavigateToCodeGraph(): JSX.Element {
 
 const siteAdminUserManagementRoute: SiteAdminAreaRoute = {
     path: '/users',
-    render: () => <UsersManagement renderAssignmentModal={() => null} />,
+    render: props => <UsersManagement renderAssignmentModal={() => null} {...props} />,
 }
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [

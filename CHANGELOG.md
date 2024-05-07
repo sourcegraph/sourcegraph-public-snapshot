@@ -21,8 +21,9 @@ All notable changes to Sourcegraph are documented in this file.
 - Added syntax highlighting for the [Pkl](https://pkl-lang.org/) configuration language. [#61478](https://github.com/sourcegraph/sourcegraph/pull/61478)
 - New `rev:at.time()` search filter that allows you to search a branch at a point in time. [#61513](https://github.com/sourcegraph/sourcegraph/pull/61513)
 - "cody.contextFilters" field to the site config. Admins can set include and exclude rules to define which repositories Cody can use as context in its requests to third-party LLMs. [#61101](https://github.com/sourcegraph/sourcegraph/pull/61101), [#61641](https://github.com/sourcegraph/sourcegraph/pull/61641)
-- Added exhaustive logging for all gRPC requests sent to gitserver service gitserver. This feature is off by default, and can be enabled by setting the `SRC_GITSERVER_EXHAUSTIVE_LOGGING_ENABLED` environment variable to `true`. [#61270](https://github.com/sourcegraph/sourcegraph/pull/61270)
-- Added exhaustive logging for all gRPC requests sent to the repository service in gitserver. This feature is off by default, and can be enabled by setting the `SRC_GITSERVER_EXHAUSTIVE_LOGGING_ENABLED` environment variable to `true`. [#62158](https://github.com/sourcegraph/sourcegraph/pull/62158)
+- Added whether "cody.contextFilters" field is configured in the site config to pings. [#62080](https://github.com/sourcegraph/sourcegraph/pull/62080)
+- Added exhaustive logging for all gRPC requests sent to gitserver. This feature is off by default, and can be enabled by setting the `SRC_GITSERVER_EXHAUSTIVE_LOGGING_ENABLED` environment variable to `true`. [#61270](https://github.com/sourcegraph/sourcegraph/pull/61270)
+- Added an `internal` option for the `repositoryQuery` field for GitHub Enterprise code host connections. This will mirror all internal repositories on the code host. [#61924](https://github.com/sourcegraph/sourcegraph/pull/61924)
 
 ### Changed
 
@@ -30,6 +31,9 @@ All notable changes to Sourcegraph are documented in this file.
 - The default noop Event type in the honey package has been replaced with a new type that aggregates fields in memory for testing and logging purposes. [#61854](https://github.com/sourcegraph/sourcegraph/pull/61854)
 - Improved the performance of Language Stats Insights by 50-70% by increasing the concurrent requests from the frontend to the gitserver from 1 to 4. You can override the concurrency with the `GET_INVENTORY_GIT_SERVER_CONCURRENCY` environment variable. [#62011](https://github.com/sourcegraph/sourcegraph/pull/62011)
 - Raised the backend timeout for Language Stats Insights from 3 minutes to 5 minutes. You can override this with the `GET_INVENTORY_TIMEOUT` environment variable. [#62011](https://github.com/sourcegraph/sourcegraph/pull/62011)
+- Code insights drilldown behavior has been changed from a diff search to a point-in-time search with the new `rev:at.time()`. [#61953](https://github.com/sourcegraph/sourcegraph/pull/61953)
+- The `FirstEverCommit` gitserver client method has been changed to use a new bespoke gRPC endpoint instead of the legacy `exec` endpoint. [#62173](https://github.com/sourcegraph/sourcegraph/pull/62173)
+- The `GetBehindAhead` gitserver client method has been changed to use a new bespoke gRPC endpoint instead of the legacy `exec` endpoint. [#62217](https://github.com/sourcegraph/sourcegraph/pull/62217)
 
 ### Fixed
 
@@ -38,6 +42,8 @@ All notable changes to Sourcegraph are documented in this file.
 - The ArchiveReader() RPC in the gitserver service now uses the correct protobuf type that allows for non-utf8 byte sequences in file paths. [#61970](https://github.com/sourcegraph/sourcegraph/pull/61970)
 - Pinned code intel popovers and popovers opened via the keyboard are properly shown again. [#61966](https://github.com/sourcegraph/sourcegraph/pull/61966)
 - Syntax highlighting works correctly for JSX files. [#62027](https://github.com/sourcegraph/sourcegraph/pull/62027)
+- Changesets with a skipped CI check now have their CI status correctly displayed in the Batch Changes UI. [#62204](https://github.com/sourcegraph/sourcegraph/pull/62204)
+- Fixed the Sourcegraph login page auto-redirecting to the single auth provider when request access is enabled. [#62376](https://github.com/sourcegraph/sourcegraph/pull/62376)
 
 ## 5.3.12303
 

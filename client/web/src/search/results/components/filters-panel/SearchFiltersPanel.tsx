@@ -5,6 +5,7 @@ import create from 'zustand'
 import { NewSearchFilters, useUrlFilters } from '@sourcegraph/branded'
 import { DeleteIcon } from '@sourcegraph/branded/src/search-ui/results/filters/components/Icons'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Button, Icon, Modal, Panel, useWindowSize } from '@sourcegraph/wildcard'
 
@@ -20,7 +21,7 @@ export const useSearchFiltersStore = create<SearchFiltersStore>(set => ({
     setFiltersPanel: (open: boolean) => set({ isOpen: open }),
 }))
 
-export interface SearchFiltersPanelProps extends TelemetryProps {
+export interface SearchFiltersPanelProps extends TelemetryProps, TelemetryV2Props {
     query: string
     filters: Filter[] | undefined
     withCountAllFilter: boolean

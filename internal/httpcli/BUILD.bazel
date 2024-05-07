@@ -7,6 +7,7 @@ go_library(
         "client.go",
         "doc.go",
         "external.go",
+        "init.go",
         "noop_response_cache.go",
         "redis_logger_middleware.go",
         "transport.go",
@@ -15,6 +16,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
+        "//internal/conf/conftypes",
         "//internal/conf/deploy",
         "//internal/env",
         "//internal/hostmatcher",

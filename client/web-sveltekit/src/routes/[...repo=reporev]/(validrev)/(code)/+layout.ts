@@ -2,6 +2,7 @@ import { dirname } from 'path'
 
 import { from } from 'rxjs'
 
+import type { LineOrPositionOrRange } from '$lib/common'
 import { getGraphQLClient, infinityQuery, mapOrThrow } from '$lib/graphql'
 import { GitRefType } from '$lib/graphql-types'
 import { fetchSidebarFileTree } from '$lib/repo/api/tree'
@@ -9,9 +10,16 @@ import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
-import { GitHistoryQuery, LastCommitQuery, RepositoryGitCommits, RepositoryGitRefs } from './layout.gql'
+import {
+    GitHistoryQuery,
+    LastCommitQuery,
+    RepositoryGitCommits,
+    RepositoryGitRefs,
+    RepoPage_PreciseCodeIntel,
+} from './layout.gql'
 
 const HISTORY_COMMITS_PER_PAGE = 20
+const REFERENCES_PER_PAGE = 20
 
 export const load: LayoutLoad = async ({ parent, params }) => {
     const client = getGraphQLClient()
@@ -85,6 +93,63 @@ export const load: LayoutLoad = async ({ parent, params }) => {
             },
         }),
 
+        // We are not extracting the selected position from the URL because that creates a dependency
+        // on the full URL, which causes this loader to be re-executed on every URL change.
+        getReferenceStore: (lineOrPosition: LineOrPositionOrRange & { line: number }) =>
+            infinityQuery({
+                client,
+                query: RepoPage_PreciseCodeIntel,
+                variables: from(
+                    resolvedRevision.then(revspec => ({
+                        repoName,
+                        revspec,
+                        filePath: params.path ?? '',
+                        first: REFERENCES_PER_PAGE,
+                        // Line and character are 1-indexed, but the API expects 0-indexed
+                        line: lineOrPosition.line - 1,
+                        character: lineOrPosition.character! - 1,
+                        afterCursor: null as string | null,
+                    }))
+                ),
+                nextVariables: previousResult => {
+                    if (previousResult?.data?.repository?.commit?.blob?.lsif?.references.pageInfo.hasNextPage) {
+                        return {
+                            afterCursor: previousResult.data.repository.commit.blob.lsif.references.pageInfo.endCursor,
+                        }
+                    }
+                    return undefined
+                },
+                combine: (previousResult, nextResult) => {
+                    if (!nextResult.data?.repository?.commit?.blob?.lsif) {
+                        return nextResult
+                    }
+
+                    const previousNodes = previousResult.data?.repository?.commit?.blob?.lsif?.references?.nodes ?? []
+                    const nextNodes = nextResult.data?.repository?.commit?.blob?.lsif?.references?.nodes ?? []
+
+                    return {
+                        ...nextResult,
+                        data: {
+                            repository: {
+                                ...nextResult.data.repository,
+                                commit: {
+                                    ...nextResult.data.repository.commit,
+                                    blob: {
+                                        ...nextResult.data.repository.commit.blob,
+                                        lsif: {
+                                            ...nextResult.data.repository.commit.blob.lsif,
+                                            references: {
+                                                ...nextResult.data.repository.commit.blob.lsif.references,
+                                                nodes: [...previousNodes, ...nextNodes],
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    }
+                },
+            }),
         // Repository pickers queries (branch, tags and commits)
         getRepoBranches: (searchTerm: string) =>
             getGraphQLClient()

@@ -7,6 +7,7 @@ import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Alert, Form, Input, LoadingSpinner, Text, Badge, Link, useSessionStorage } from '@sourcegraph/wildcard'
@@ -14,7 +15,6 @@ import { Alert, Form, Input, LoadingSpinner, Text, Badge, Link, useSessionStorag
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { useURLSyncedString } from '../../hooks/useUrlSyncedString'
-import { eventLogger } from '../../tracking/eventLogger'
 import { DOTCOM_URL } from '../../tracking/util'
 import { CodyIcon } from '../components/CodyIcon'
 import { isEmailVerificationNeededForCody } from '../isCodyEnabled'
@@ -40,7 +40,7 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
     telemetryRecorder,
 }) => {
     useEffect(() => {
-        eventLogger.logPageView('CodySearch')
+        EVENT_LOGGER.logPageView('CodySearch')
         telemetryRecorder.recordEvent('cody.search', 'view')
     }, [telemetryRecorder])
 
@@ -70,7 +70,7 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
             return
         }
 
-        eventLogger.log(
+        EVENT_LOGGER.log(
             'web:codySearch:submit',
             !isPrivateInstance ? { input: sanitizedInput } : null,
             !isPrivateInstance ? { input: sanitizedInput } : null
@@ -82,7 +82,7 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
                 setLoading(false)
 
                 if (query) {
-                    eventLogger.log(
+                    EVENT_LOGGER.log(
                         'web:codySearch:submitSucceeded',
                         !isPrivateInstance ? { input: sanitizedInput, translatedQuery: query } : null,
                         !isPrivateInstance ? { input: sanitizedInput, translatedQuery: query } : null
@@ -94,7 +94,7 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
                         search: buildSearchURLQuery(query, SearchPatternType.regexp, false) + '&ref=cody-search',
                     })
                 } else {
-                    eventLogger.log(
+                    EVENT_LOGGER.log(
                         'web:codySearch:submitFailed',
                         !isPrivateInstance ? { input: sanitizedInput, reason: 'untranslatable' } : null,
                         !isPrivateInstance ? { input: sanitizedInput, reason: 'untranslatable' } : null
@@ -107,7 +107,7 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
             },
             error => {
                 telemetryRecorder.recordEvent('cody.search', 'fail')
-                eventLogger.log(
+                EVENT_LOGGER.log(
                     'web:codySearch:submitFailed',
                     !isPrivateInstance
                         ? {

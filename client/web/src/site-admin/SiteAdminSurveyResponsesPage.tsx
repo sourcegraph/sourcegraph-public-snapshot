@@ -4,6 +4,8 @@ import classNames from 'classnames'
 import { Subscription } from 'rxjs'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Badge,
     type BADGE_VARIANTS,
@@ -35,7 +37,6 @@ import {
     fetchSurveyResponseAggregates,
 } from '../marketing/backend'
 import { SURVEY_QUESTIONS } from '../marketing/components/SurveyUseCaseForm'
-import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 
 import { ValueLegendItem } from './analytics/components/ValueLegendList'
@@ -311,19 +312,22 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
     }
 }
 
-interface Props {}
+interface Props extends TelemetryV2Props {}
 
 const LAST_TAB_STORAGE_KEY = 'site-admin-survey-responses-last-tab'
 /**
  * A page displaying the survey responses on this site.
  */
 
-export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
+export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    telemetryRecorder,
+}) => {
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
 
     useEffect(() => {
-        eventLogger.logViewEvent('SiteAdminSurveyResponses')
-    }, [])
+        EVENT_LOGGER.logViewEvent('SiteAdminSurveyResponses')
+        telemetryRecorder.recordEvent('admin.surveyResponses', 'view')
+    }, [telemetryRecorder])
 
     return (
         <div className="site-admin-survey-responses-page">

@@ -19,12 +19,11 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
+	"github.com/sourcegraph/go-diff/diff"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -227,50 +226,6 @@ func checkSpecArgSafety(spec string) error {
 		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)
 	}
 	return nil
-}
-
-type CommitGraphOptions struct {
-	Commit  string
-	AllRefs bool
-	Limit   int
-	Since   *time.Time
-} // please update LogFields if you add a field here
-
-// CommitGraph returns the commit graph for the given repository as a mapping
-// from a commit to its parents. If a commit is supplied, the returned graph will
-// be rooted at the given commit. If a non-zero limit is supplied, at most that
-// many commits will be returned.
-func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
-	ctx, _, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	args := []string{"log", "--pretty=%H %P", "--topo-order"}
-	if opts.AllRefs {
-		args = append(args, "--all")
-	}
-	if opts.Commit != "" {
-		args = append(args, opts.Commit)
-	}
-	if opts.Since != nil {
-		args = append(args, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
-	}
-	if opts.Limit > 0 {
-		args = append(args, fmt.Sprintf("-%d", opts.Limit))
-	}
-
-	cmd := c.gitCommand(repo, args...)
-
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return gitdomain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
 }
 
 // CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
@@ -1107,36 +1062,10 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, ba
 	return api.CommitID(res.GetMergeBaseCommitSha()), nil
 }
 
-// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
-func (c *clientImplementor) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) (err error) {
-	ctx, _, endObservation := c.operations.revList.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			attribute.String("repo", repo),
-			attribute.String("commit", commit),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	command := c.gitCommand(api.RepoName(repo), RevListArgs(commit)...)
-	command.DisableTimeout()
-	stdout, err := command.StdoutReader(ctx)
-	if err != nil {
-		return err
-	}
-	defer stdout.Close()
-
-	return gitdomain.RevListEach(stdout, onCommit)
-}
-
-func RevListArgs(givenCommit string) []string {
-	return []string{"rev-list", "--first-parent", givenCommit}
-}
-
-// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+// BehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
-func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (_ *gitdomain.BehindAhead, err error) {
-	ctx, _, endObservation := c.operations.getBehindAhead.With(ctx, &err, observation.Args{
+func (c *clientImplementor) BehindAhead(ctx context.Context, repo api.RepoName, left, right string) (_ *gitdomain.BehindAhead, err error) {
+	ctx, _, endObservation := c.operations.behindAhead.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
@@ -1146,28 +1075,21 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 	})
 	defer endObservation(1, observation.Args{})
 
-	if err := checkSpecArgSafety(left); err != nil {
-		return nil, err
-	}
-	if err := checkSpecArgSafety(right); err != nil {
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
 		return nil, err
 	}
 
-	cmd := c.gitCommand(repo, "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
-	out, err := cmd.Output(ctx)
+	response, err := client.BehindAhead(ctx, &proto.BehindAheadRequest{
+		RepoName: string(repo),
+		Left:     []byte(left),
+		Right:    []byte(right),
+	})
 	if err != nil {
 		return nil, err
 	}
-	behindAhead := strings.Split(strings.TrimSuffix(string(out), "\n"), "\t")
-	b, err := strconv.ParseUint(behindAhead[0], 10, 0)
-	if err != nil {
-		return nil, err
-	}
-	a, err := strconv.ParseUint(behindAhead[1], 10, 0)
-	if err != nil {
-		return nil, err
-	}
-	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
+
+	return gitdomain.BehindAheadFromProto(response), nil
 }
 
 func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (_ io.ReadCloser, err error) {
@@ -1301,9 +1223,26 @@ func (c *clientImplementor) Stat(ctx context.Context, repo api.RepoName, commit 
 	return fi, nil
 }
 
+type CommitsOrder int
+
+const (
+	// CommitsOrderDefault uses the default ordering of git log: in reverse chronological order.
+	// See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+	CommitsOrderDefault CommitsOrder = iota
+	// Show no parents before all of its children are shown, but otherwise show commits
+	// in the commit timestamp order.
+	// See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+	CommitsOrderCommitDate
+	// Show no parents before all of its children are shown, and avoid showing commits
+	// on multiple lines of history intermixed.
+	// See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+	CommitsOrderTopoDate
+)
+
 // CommitsOptions specifies options for Commits.
 type CommitsOptions struct {
-	Range string // commit range (revspec, "A..B", "A...B", etc.)
+	AllRefs bool   // if true, all refs are searched for commits, not just a given range. When set, Range should not be specified.
+	Range   string // commit range (revspec, "A..B", "A...B", etc.)
 
 	N    uint // limit the number of returned commits to this many (0 means no limit)
 	Skip uint // skip this many commits at the beginning
@@ -1314,11 +1253,19 @@ type CommitsOptions struct {
 	After  string // include only commits after this date
 	Before string // include only commits before this date
 
-	DateOrder bool // Whether or not commits should be sorted by date (optional)
+	Order CommitsOrder
 
 	Path string // only commits modifying the given path are selected (optional)
 
 	Follow bool // follow the history of the path beyond renames (works only for a single path)
+
+	// When finding commits to include, follow only the first parent commit upon
+	// seeing a merge commit. This option can give a better overview when viewing
+	// the evolution of a particular topic branch, because merges into a topic
+	// branch tend to be only about adjusting to updated upstream from time to time,
+	// and this option allows you to ignore the individual commits brought in to
+	// your history by such a merge.
+	FirstParent bool
 
 	// When true return the names of the files changed in the commit
 	NameOnly bool
@@ -1745,16 +1692,33 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	if opt.Before != "" {
 		args = append(args, "--before="+opt.Before)
 	}
-	if opt.DateOrder {
+	switch opt.Order {
+	case CommitsOrderCommitDate:
 		args = append(args, "--date-order")
+	case CommitsOrderTopoDate:
+		args = append(args, "--topo-order")
+	case CommitsOrderDefault:
+		// nothing to do
+	default:
+		return nil, errors.Newf("invalid ordering %d", opt.Order)
 	}
 
 	if opt.MessageQuery != "" {
 		args = append(args, "--fixed-strings", "--regexp-ignore-case", "--grep="+opt.MessageQuery)
 	}
 
+	if opt.FirstParent {
+		args = append(args, "--first-parent")
+	}
+
 	if opt.Range != "" {
 		args = append(args, opt.Range)
+	}
+	if opt.AllRefs {
+		args = append(args, "--all")
+	}
+	if opt.Range != "" && opt.AllRefs {
+		return nil, errors.New("cannot specify both a Range and AllRefs")
 	}
 	if opt.NameOnly {
 		args = append(args, "--name-only")
@@ -1769,7 +1733,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 }
 
 // FirstEverCommit returns the first commit ever made to the repository.
-func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoName) (_ *gitdomain.Commit, err error) {
+func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoName) (commit *gitdomain.Commit, err error) {
 	ctx, _, endObservation := c.operations.firstEverCommit.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
@@ -1778,20 +1742,19 @@ func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoNa
 	})
 	defer endObservation(1, observation.Args{})
 
-	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.Output(ctx)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
+		return nil, err
 	}
-	lines := bytes.TrimSpace(out)
-	tokens := bytes.SplitN(lines, []byte("\n"), 2)
-	if len(tokens) == 0 {
-		return nil, errors.New("FirstEverCommit returned no revisions")
+
+	result, err := client.FirstEverCommit(ctx, &proto.FirstEverCommitRequest{
+		RepoName: string(repo),
+	})
+	if err != nil {
+		return nil, err
 	}
-	first := tokens[0]
-	id := api.CommitID(bytes.TrimSpace(first))
-	return c.GetCommit(ctx, repo, id)
+
+	return gitdomain.CommitFromProto(result.GetCommit()), nil
 }
 
 const (

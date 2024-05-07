@@ -96,14 +96,6 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	tr, ctx := trace.New(ctx, "zoekt."+cat, attrs...)
 	defer tr.EndWithErrIfNotContext(&err)
 
-	// We wrap our queries in GobCache, this gives us a convenient way to find
-	// out the marshalled size of the query.
-	if gobCache, ok := q.(*query.GobCache); ok {
-		b, _ := gobCache.GobEncode()
-		tr.SetAttributes(attribute.Int("query.size", len(b)))
-		event.AddField("query.size", len(b))
-	}
-
 	// Instrument the RPC layer
 	var writeRequestStart, writeRequestDone time.Time
 	if isLeaf {

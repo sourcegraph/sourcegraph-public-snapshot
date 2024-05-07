@@ -55,5 +55,3 @@ accounts:
     - username: postgres
       uid: 70
       gid: 70
-
-# MANUAL REBUILD: 
