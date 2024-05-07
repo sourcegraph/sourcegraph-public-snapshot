@@ -6,10 +6,12 @@ fd=$(mktemp)
 cat <<EOF | buildkite-agent annotate --style=info --context=cloud-ephemeral
   <div class="flex">
     <div>
-    Images in this build will be pused to the Cloud Ephemeral registry with the following tag/version
+    Images in this build will be pushed to the Cloud Ephemeral registry with the following tag/version
     <pre>$VERSION</pre>
 
+    <p>
     Using this version you create a Cloud Ephemeral deployment by running
+    </p>
       <pre class="term">
       <code>
         sg cloud deploy --version "$VERSION"
@@ -23,7 +25,6 @@ cat <<EOF | buildkite-agent annotate --style=info --context=cloud-ephemeral
     </pre>
   </div>
   <div class="ml-auto">
-    <img class="emoji" alt="cloud-emoji" src="https://buildkiteassets.com/emojis/img-apple-64/2601-fe0f.png"/>
-    Cloud Ephemeral
+  :cloud: Cloud Ephemeral
   </div>
 EOF
