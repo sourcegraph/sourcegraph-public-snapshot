@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"cloud.google.com/go/profiler"
-	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/background"
@@ -79,20 +78,7 @@ func Start[
 	}
 
 	// Enable Sentry error log reporting
-	var sentryEnabled bool
-	if ctr.Diagnostics.SentryDSN != nil {
-		liblog.Update(func() log.SinksConfig {
-			sentryEnabled = true
-			return log.SinksConfig{
-				Sentry: &log.SentrySink{
-					ClientOptions: sentry.ClientOptions{
-						Dsn:         *ctr.Diagnostics.SentryDSN,
-						Environment: ctr.EnvironmentID,
-					},
-				},
-			}
-		})()
-	}
+	sentryEnabled := ctr.Diagnostics.ConfigureSentry(liblog)
 
 	// Check for environment errors
 	if err := env.Validate(); err != nil {

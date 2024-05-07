@@ -1077,9 +1077,7 @@ ts_project(
         "src/fuzzyFinder/SearchValue.ts",
         "src/fuzzyFinder/SearchValueRankingCache.ts",
         "src/fuzzyFinder/WordSensitiveFuzzySearch.ts",
-        "src/get-cody/DownloadAppButton.tsx",
         "src/get-cody/GetCodyPage.tsx",
-        "src/get-cody/GetCodyPageIcon.tsx",
         "src/global/GlobalAlert.tsx",
         "src/global/GlobalAlerts.tsx",
         "src/global/Notices.tsx",
@@ -2107,7 +2105,6 @@ ESBUILD_CONFIG_DEPS = [
 BUNDLE_DATA_DEPS = [
     ":module_styles",
     ":package_styles",
-    "src/get-cody/SourceSans3VF-Upright.ttf.woff2",
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
     "src/enterprise/codeintel/configuration/schema.json",
     ":enterprise-yaml",

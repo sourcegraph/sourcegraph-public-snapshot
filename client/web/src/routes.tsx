@@ -96,7 +96,7 @@ const PassThroughToServer: React.FC = () => {
 export const routes: RouteObject[] = [
     {
         path: PageRoutes.GetCody,
-        element: <LegacyRoute render={props => <GetCodyPage {...props} context={window.context} />} />,
+        element: <LegacyRoute render={props => <GetCodyPage {...props} />} />,
     },
     {
         path: PageRoutes.PostSignUp,
