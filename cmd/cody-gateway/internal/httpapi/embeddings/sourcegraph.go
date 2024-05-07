@@ -16,7 +16,7 @@ import (
 
 const (
 	modelDimensions           = 768
-	inferenceSecretHeaderName = "x-smega-inference-auth"
+	inferenceSecretHeaderName = "sourcegraph-smega-inference-auth"
 )
 
 func NewSourcegraphClient(httpClient httpcli.Doer, apiURL string, apiToken string) EmbeddingsClient {
