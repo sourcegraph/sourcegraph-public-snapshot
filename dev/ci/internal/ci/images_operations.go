@@ -109,12 +109,15 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 		devRegistry = images.CloudEphemeralRegistry
 		prodRegistry = ""
 		additionalProdRegistry = "" // we don't want to push to the public registry on cloud ephemeral
-		// by setting this to true, the `push_all.sh` script will tag images witht the `PUSH_VERSION`
+		// by setting this to true, the `push_all.sh` script will tag images with the `PUSH_VERSION`
 		cloudEphemeral = "true"
-		opts = append(opts, bk.Cmd(fmt.Sprintf("./dev/ci/annotate-cloud-ephemeral.sh %s", c.Version)))
+		// we do not want this annotation when we're doing the candidate push - since the candidate tag is different
+		if !isCandidate {
+			opts = append(opts, bk.Cmd(fmt.Sprintf("./dev/ci/annotate-cloud-ephemeral.sh %s", c.Version)))
+		}
 	}
 
-	//_, bazelRC := aspectBazelRC()
+	_, bazelRC := aspectBazelRC()
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(stepName,
@@ -127,17 +130,17 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 				bk.Env("DEV_REGISTRY", devRegistry),
 				bk.Env("PROD_REGISTRY", prodRegistry),
 				bk.Env("ADDITIONAL_PROD_REGISTRIES", additionalProdRegistry),
-				//bk.Cmd(bazelStampedCmd(fmt.Sprintf(`build $$(bazel --bazelrc=%s --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc query 'kind("oci_push rule", //...)')`, bazelRC))),
+				bk.Cmd(bazelStampedCmd(fmt.Sprintf(`build $$(bazel --bazelrc=%s --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc query 'kind("oci_push rule", //...)')`, bazelRC))),
 				bk.ArtifactPaths("build_event_log.bin"),
-				// bk.AnnotatedCmd(
-				// 	"./dev/ci/push_all.sh",
-				// 	bk.AnnotatedCmdOpts{
-				// 		Annotations: &bk.AnnotationOpts{
-				// 			Type:         bk.AnnotationTypeInfo,
-				// 			IncludeNames: false,
-				// 		},
-				// 	},
-				// ),
+				bk.AnnotatedCmd(
+					"./dev/ci/push_all.sh",
+					bk.AnnotatedCmdOpts{
+						Annotations: &bk.AnnotationOpts{
+							Type:         bk.AnnotationTypeInfo,
+							IncludeNames: false,
+						},
+					},
+				),
 			)...,
 		)
 	}
