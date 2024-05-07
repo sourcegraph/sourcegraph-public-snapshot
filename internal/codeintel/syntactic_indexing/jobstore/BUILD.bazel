@@ -6,16 +6,22 @@ go_library(
     srcs = [
         "job.go",
         "store.go",
+        "store_observability.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/actor",
         "//internal/database/basestore",
         "//internal/database/dbutil",
+        "//internal/memo",
+        "//internal/metrics",
         "//internal/observation",
         "//internal/workerutil",
         "//internal/workerutil/dbworker/store",
         "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -28,6 +34,7 @@ go_test(
     embed = [":jobstore"],
     tags = ["requires-network"],
     deps = [
+        "//internal/actor",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/observation",
