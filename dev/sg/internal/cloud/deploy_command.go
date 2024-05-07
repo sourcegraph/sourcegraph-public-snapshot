@@ -79,7 +79,7 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 			return errors.Wrapf(err, "failed to determine if instance %q already exists", spec.Name)
 		}
 	} else {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Cannot deploy %q", err))
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Cannot create new deployment %q as a deployment with that name already exists", err))
 		// Deployment exists
 		return ErrDeploymentExists
 	}
