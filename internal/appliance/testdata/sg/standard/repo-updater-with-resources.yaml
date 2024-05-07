@@ -41,14 +41,15 @@ spec:
     disabled: true
 
   repoUpdater:
-    resources:
+    containerConfig:
       repo-updater:
-        requests:
-          cpu: 1500m
-          memory: 2Gi
-        limits:
-          cpu: "4"
-          memory: 4Gi
+        resources:
+          requests:
+            cpu: 1500m
+            memory: 2Gi
+          limits:
+            cpu: "4"
+            memory: 4Gi
 
   searcher:
     disabled: true

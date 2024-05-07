@@ -1,42 +1,41 @@
 resources:
 - apiVersion: apps/v1
-  kind: Deployment
+  kind: StatefulSet
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: db60986dc2fa6300a59d62fe32fccd74d3974c69bc88550270eb14ce4f2831ac
+      appliance.sourcegraph.com/configHash: 4310746eaab789e0d69f900836e6a3cea2979fe2e00be351e44120eb9cc43f29
     creationTimestamp: "2024-04-19T00:00:00Z"
     generation: 1
     labels:
-      app.kubernetes.io/component: repo-updater
+      app.kubernetes.io/component: symbols
       app.kubernetes.io/name: sourcegraph
       app.kubernetes.io/version: 5.3.9104
       deploy: sourcegraph
-    name: repo-updater
+    name: symbols
     namespace: NORMALIZED_FOR_TESTING
     resourceVersion: NORMALIZED_FOR_TESTING
     uid: NORMALIZED_FOR_TESTING
   spec:
     minReadySeconds: 10
-    progressDeadlineSeconds: 600
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
+    podManagementPolicy: OrderedReady
     replicas: 1
     revisionHistoryLimit: 10
     selector:
       matchLabels:
-        app: repo-updater
-    strategy:
-      rollingUpdate:
-        maxSurge: 25%
-        maxUnavailable: 25%
-      type: RollingUpdate
+        app: symbols
+    serviceName: symbols
     template:
       metadata:
         annotations:
-          kubectl.kubernetes.io/default-container: repo-updater
+          kubectl.kubernetes.io/default-container: symbols
         creationTimestamp: null
         labels:
-          app: repo-updater
+          app: symbols
           deploy: sourcegraph
-        name: repo-updater
+        name: symbols
       spec:
         containers:
         - env:
@@ -50,6 +49,17 @@ resources:
               secretKeyRef:
                 key: endpoint
                 name: redis-store
+          - name: SYMBOLS_CACHE_SIZE_MB
+            value: "11059"
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: SYMBOLS_CACHE_DIR
+            value: /mnt/cache/$(POD_NAME)
+          - name: TMPDIR
+            value: /mnt/tmp
           - name: OTEL_AGENT_HOST
             valueFrom:
               fieldRef:
@@ -57,20 +67,21 @@ resources:
                 fieldPath: status.hostIP
           - name: OTEL_EXPORTER_OTLP_ENDPOINT
             value: http://$(OTEL_AGENT_HOST):4317
-          image: index.docker.io/sourcegraph/repo-updater:5.3.2@sha256:5a414aa030c7e0922700664a43b449ee5f3fafa68834abef93988c5992c747c6
+          image: my-custom-image-repository.info/sourcegraph-images/some-image:some-tag
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
             httpGet:
               path: /healthz
-              port: debug
+              port: http
               scheme: HTTP
-            periodSeconds: 1
+            initialDelaySeconds: 60
+            periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 5
-          name: repo-updater
+          name: symbols
           ports:
-          - containerPort: 3182
+          - containerPort: 3184
             name: http
             protocol: TCP
           - containerPort: 6060
@@ -79,13 +90,20 @@ resources:
           readinessProbe:
             failureThreshold: 3
             httpGet:
-              path: /ready
-              port: debug
+              path: /healthz
+              port: http
               scheme: HTTP
-            periodSeconds: 1
+            initialDelaySeconds: 60
+            periodSeconds: 5
             successThreshold: 1
-            timeoutSeconds: 5
-          resources: {}
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2G
+            requests:
+              cpu: 500m
+              memory: 500M
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -93,6 +111,11 @@ resources:
             runAsUser: 100
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+          - mountPath: /mnt/cache
+            name: cache
+          - mountPath: /mnt/tmp
+            name: tmp
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
@@ -101,15 +124,44 @@ resources:
           fsGroupChangePolicy: OnRootMismatch
           runAsGroup: 101
           runAsUser: 100
-        serviceAccount: repo-updater
-        serviceAccountName: repo-updater
+        serviceAccount: symbols
+        serviceAccountName: symbols
         terminationGracePeriodSeconds: 30
-  status: {}
+        volumes:
+        - emptyDir: {}
+          name: cache
+        - emptyDir: {}
+          name: tmp
+    updateStrategy:
+      type: RollingUpdate
+    volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        creationTimestamp: null
+        labels:
+          deploy: sourcegraph
+        name: cache
+        namespace: NORMALIZED_FOR_TESTING
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 12Gi
+        storageClassName: sourcegraph
+        volumeMode: Filesystem
+      status:
+        phase: Pending
+  status:
+    availableReplicas: 0
+    replicas: 0
 - apiVersion: v1
   data:
     spec: |
       spec:
         requestedVersion: "5.3.9104"
+        imageRepository: my-custom-image-repository.info/sourcegraph-images
 
         blobstore:
           disabled: true
@@ -151,15 +203,15 @@ resources:
           disabled: true
 
         repoUpdater:
-          containerConfig:
-            repo-updater:
-              bestEffortQOS: true
+          disabled: true
 
         searcher:
           disabled: true
 
         symbols:
-          disabled: true
+          containerConfig:
+            symbols:
+              image: some-image:some-tag
 
         syntectServer:
           disabled: true
@@ -180,11 +232,11 @@ resources:
   kind: ServiceAccount
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: db60986dc2fa6300a59d62fe32fccd74d3974c69bc88550270eb14ce4f2831ac
+      appliance.sourcegraph.com/configHash: 4310746eaab789e0d69f900836e6a3cea2979fe2e00be351e44120eb9cc43f29
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
       deploy: sourcegraph
-    name: repo-updater
+    name: symbols
     namespace: NORMALIZED_FOR_TESTING
     resourceVersion: NORMALIZED_FOR_TESTING
     uid: NORMALIZED_FOR_TESTING
@@ -192,15 +244,15 @@ resources:
   kind: Service
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: db60986dc2fa6300a59d62fe32fccd74d3974c69bc88550270eb14ce4f2831ac
+      appliance.sourcegraph.com/configHash: 4310746eaab789e0d69f900836e6a3cea2979fe2e00be351e44120eb9cc43f29
       prometheus.io/port: "6060"
       sourcegraph.prometheus/scrape: "true"
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
-      app: repo-updater
-      app.kubernetes.io/component: repo-updater
+      app: symbols
+      app.kubernetes.io/component: symbols
       deploy: sourcegraph
-    name: repo-updater
+    name: symbols
     namespace: NORMALIZED_FOR_TESTING
     resourceVersion: NORMALIZED_FOR_TESTING
     uid: NORMALIZED_FOR_TESTING
@@ -214,11 +266,15 @@ resources:
     ipFamilyPolicy: SingleStack
     ports:
     - name: http
-      port: 3182
+      port: 3184
       protocol: TCP
       targetPort: http
+    - name: debug
+      port: 6060
+      protocol: TCP
+      targetPort: debug
     selector:
-      app: repo-updater
+      app: symbols
     sessionAffinity: None
     type: ClusterIP
   status:
