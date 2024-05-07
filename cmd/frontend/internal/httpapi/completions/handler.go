@@ -2,6 +2,7 @@ package completions
 
 import (
 	"context"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -97,7 +98,7 @@ func newCompletionsHandler(
 		// To ensure Cody clients respect these restrictions, we enforce the minimum supported client version.
 		isDotcom := dotcom.SourcegraphDotComMode()
 		if !isDotcom {
-			if err := checkClientCodyIgnoreCompatibility(r); err != nil {
+			if err := checkClientCodyIgnoreCompatibility(ctx, db, r); err != nil {
 				http.Error(w, err.Error(), err.statusCode)
 				return
 			}
@@ -468,7 +469,7 @@ func (e *codyIgnoreCompatibilityError) Error() string {
 // checkClientCodyIgnoreCompatibility checks if the client version respects Cody context filters (aka Cody Ignore) defined in the site config.
 // A non-nil codyIgnoreCompatibilityError implies that the HTTP request should be rejected with the error text and code from the returned error.
 // Error text is safe to be surfaced to end user.
-func checkClientCodyIgnoreCompatibility(r *http.Request) *codyIgnoreCompatibilityError {
+func checkClientCodyIgnoreCompatibility(ctx context.Context, db database.DB, r *http.Request) *codyIgnoreCompatibilityError {
 	// If Cody context filters are not defined on the instance, we do not restrict client version.
 	// Because the site hasn't configured Cody Ignore, no need to enforce it.
 	if conf.SiteConfig().CodyContextFilters == nil {
@@ -496,7 +497,21 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *codyIgnoreCompatibilit
 	case types.CodyClientVscode:
 		cvc = clientVersionConstraint{client: clientName, constraint: ">= 1.20.0"}
 	case types.CodyClientJetbrains:
-		cvc = clientVersionConstraint{client: clientName, constraint: ">= 6.0.0"}
+		c := ">= 6.0.0"
+		// Intended for development use only.
+		flag, err := db.FeatureFlags().GetFeatureFlag(ctx, "cody-context-filters-allow-pre-release-client-versions")
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return &codyIgnoreCompatibilityError{
+				reason:     "Failed to get feature flag value.",
+				statusCode: http.StatusInternalServerError,
+			}
+		}
+		if flag != nil && flag.Bool.Value {
+			// Add a pre-release version comparator to a constraint to ensure matching pre-release versions pass the constraint check.
+			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
+			c += "-0"
+		}
+		cvc = clientVersionConstraint{client: clientName, constraint: c}
 	default:
 		return &codyIgnoreCompatibilityError{
 			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
