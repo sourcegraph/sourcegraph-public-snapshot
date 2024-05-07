@@ -9,10 +9,10 @@ func (suite *ApplianceTestSuite) TestStandardFeatures() {
 	for _, tc := range []struct {
 		name string
 	}{
-		{name: "repo-updater-with-pod-template-config"},
-		{name: "repo-updater-with-resources"},
-		{name: "repo-updater-with-no-resources"},
-		{name: "repo-updater-with-sa-annotations"},
+		{name: "standard/repo-updater-with-pod-template-config"},
+		{name: "standard/repo-updater-with-resources"},
+		{name: "standard/repo-updater-with-no-resources"},
+		{name: "standard/repo-updater-with-sa-annotations"},
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMap(tc.name)
@@ -30,16 +30,16 @@ func (suite *ApplianceTestSuite) TestStandardFeatures() {
 // More complex test cases involving updates to the configmap can have their own
 // test blocks
 func (suite *ApplianceTestSuite) TestResourcesDeletedWhenDisabled() {
-	namespace := suite.createConfigMap("blobstore-default")
+	namespace := suite.createConfigMap("blobstore/default")
 	suite.Require().Eventually(func() bool {
 		return suite.getConfigMapReconcileEventCount(namespace) > 0
 	}, time.Second*10, time.Millisecond*200)
 
 	eventsSeenSoFar := suite.getConfigMapReconcileEventCount(namespace)
-	suite.updateConfigMap(namespace, "everything-disabled")
+	suite.updateConfigMap(namespace, "standard/everything-disabled")
 	suite.Require().Eventually(func() bool {
 		return suite.getConfigMapReconcileEventCount(namespace) > eventsSeenSoFar
 	}, time.Second*10, time.Millisecond*200)
 
-	suite.makeGoldenAssertions(namespace, "blobstore-subsequent-disable")
+	suite.makeGoldenAssertions(namespace, "standard/blobstore-subsequent-disable")
 }
