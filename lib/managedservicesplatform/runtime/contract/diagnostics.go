@@ -3,13 +3,20 @@ package contract
 import (
 	"context"
 	"crypto/subtle"
+	"fmt"
+	"math"
 	"net/http"
 	"net/url"
+	"os"
+	"time"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/trace"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/internal/opentelemetry"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -24,6 +31,9 @@ type diagnosticsContract struct {
 
 	OpenTelemetry opentelemetry.Config
 	sentryDSN     *string
+
+	cronSchedule *string
+	cronDeadline *time.Duration
 
 	// copies of higher-level configuration
 	internal internalContract
@@ -45,7 +55,9 @@ func loadDiagnosticsContract(
 				defaultGCPProjectID),
 			OtelSDKDisabled: env.GetBool("OTEL_SDK_DISABLED", "false", "disable OpenTelemetry SDK"),
 		},
-		sentryDSN: env.GetOptional("SENTRY_DSN", "Sentry error reporting DSN"),
+		sentryDSN:    env.GetOptional("SENTRY_DSN", "Sentry error reporting DSN"),
+		cronSchedule: env.GetOptional("JOB_EXECUTION_CRON_SCHEDULE", "Jobs: expected cron schedule for job executions"),
+		cronDeadline: env.GetOptionalInterval("JOB_EXECUTION_DEADLINE", "Jobs: maximum duration to wait for job executions"),
 
 		internal: internal,
 		msp:      msp,
@@ -185,7 +197,7 @@ func (c diagnosticsContract) DiagnosticsAuthMiddleware(next http.Handler) http.H
 // initialized.
 func (c diagnosticsContract) ConfigureSentry(liblog *log.PostInitCallbacks) bool {
 	var sentryEnabled bool
-	if c.sentryDSN != nil {
+	if c.useSentry() {
 		liblog.Update(func() log.SinksConfig {
 			sentryEnabled = true
 			return log.SinksConfig{
@@ -199,4 +211,146 @@ func (c diagnosticsContract) ConfigureSentry(liblog *log.PostInitCallbacks) bool
 		})()
 	}
 	return sentryEnabled
+}
+
+// JobExecutionCheckIn checks in to indicate a job execution is starting, and
+// returns a callback that should be called when the job execution is complete.
+// This is only valid for MSP cron jobs.
+//
+// Direct usage example:
+//
+//	func work(ctx context.Context) (err error) {
+//		done, err := c.Diagnostics.JobExecutionCheckIn(ctx)
+//		if err != nil { /* failed to register check-in */ }
+//		defer done(err)
+//
+//		// ... do work
+//	}
+//
+// Note the use of named returns in order to correctly capture the final error.
+// Various contract environment variables MUST be set for Sentry monitor check-ins
+// to be enabled, otherwise this method will only render log entries - required
+// variables are set by MSP infrastructure.
+func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (func(err error), error) {
+	// All values must be set by MSP infrastructure
+	useSentryCronMonitor := c.useSentry() &&
+		c.cronSchedule != nil &&
+		c.cronDeadline != nil
+
+	executionID := inferJobExecutionID(ctx)
+	logger := opentelemetry.TracedLogger(ctx, c.internal.logger).
+		Scoped("execution.checkin").
+		With(
+			log.Bool("useSentryCronMonitor", useSentryCronMonitor),
+			log.String("executionID", executionID),
+		)
+
+	start := time.Now()
+	logger.Info("job execution starting")
+
+	logCompletion := func(err error) {
+		d := log.Duration("duration", time.Since(start))
+		if err != nil {
+			logger.Error("job execution failed", log.Error(err), d)
+		} else {
+			logger.Info("job execution succeeded", d)
+		}
+	}
+
+	if !useSentryCronMonitor {
+		return logCompletion, nil
+	}
+
+	// Set up Sentry client with some metadata, similar to sourcegraph/log
+	// https://github.com/sourcegraph/log/blob/main/internal/sinkcores/sentrycore/worker.go#L96
+	s, err := sentry.NewClient(sentry.ClientOptions{
+		Dsn:         *c.sentryDSN,
+		Release:     c.internal.service.Version(),
+		Environment: c.internal.environmentID,
+		Tags: map[string]string{
+			"scope":                    "job.execution.checkin",
+			"resource.service.name":    c.internal.service.Name(),
+			"resource.service.version": c.internal.service.Version(),
+		},
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "initialize Sentry client from configured DSN")
+	}
+
+	monitor := fmt.Sprintf("%s-%s", c.internal.service.Name(), c.internal.environmentID)
+	monitorConfig := &sentry.MonitorConfig{
+		Schedule:   sentry.CrontabSchedule(*c.cronSchedule),
+		MaxRuntime: int64(math.Ceil(c.cronDeadline.Minutes())),
+		// Half the deadline is used as a margin to allow for a grace period
+		// for execution to report they are active
+		CheckInMargin: int64(math.Ceil(c.cronDeadline.Minutes() / 2)),
+		// Set in MSP
+		Timezone: "Etc/UTC",
+	}
+
+	// Also reflect trace into Sentry's specialized trace context
+	// https://develop.sentry.dev/sdk/event-payloads/contexts/#trace-context
+	scope := sentry.NewScope()
+	if span := trace.SpanContextFromContext(ctx); span.HasTraceID() {
+		scope.SetContext("trace", sentry.Context{
+			"trace_id": span.TraceID().String(),
+			"span_id":  span.SpanID().String(),
+		})
+	}
+
+	ev := s.CaptureCheckIn(
+		&sentry.CheckIn{
+			ID:          sentry.EventID(executionID),
+			MonitorSlug: monitor,
+			Status:      sentry.CheckInStatusInProgress,
+		},
+		monitorConfig,
+		scope)
+	return func(err error) {
+		defer s.Flush(time.Second)
+		status := sentry.CheckInStatusOK
+		if err != nil {
+			status = sentry.CheckInStatusError
+		}
+		logCompletion(err)
+		_ = s.CaptureCheckIn(
+			&sentry.CheckIn{
+				ID:          *ev,
+				MonitorSlug: monitor,
+				Status:      status,
+				Duration:    time.Since(start),
+			},
+			monitorConfig,
+			scope)
+	}, nil
+}
+
+func (c diagnosticsContract) useSentry() bool {
+	return c.sentryDSN != nil
+}
+
+func inferJobExecutionID(ctx context.Context) string {
+	// Extract an identifier based on Cloud Run job environment variables.
+	// https://cloud.google.com/run/docs/container-contract#env-vars
+	// We reference them directly here instead of as part of Contract to keep
+	// this opaque to other callsites.
+	if id := os.Getenv("CLOUD_RUN_EXECUTION"); id != "" {
+		if idx := os.Getenv("CLOUD_RUN_TASK_INDEX"); idx != "" {
+			id = fmt.Sprintf("%s-%s", id, idx)
+		}
+		if attempt := os.Getenv("CLOUD_RUN_TASK_ATTEMPT"); attempt != "" {
+			id = fmt.Sprintf("%s-%s", id, attempt)
+		}
+		return id
+	}
+	// Otherwise, use the trace ID if there is one as the execution
+	if span := trace.SpanContextFromContext(ctx); span.HasTraceID() {
+		return span.TraceID().String()
+	}
+	// Otherwise, generate a random UUID.
+	id, err := uuid.NewV7()
+	if err != nil {
+		panic(errors.Wrap(err, "failed to generate event ID"))
+	}
+	return id.String()
 }
