@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +37,15 @@ var DeployEphemeralCommand = cli.Command{
 			DefaultText: "deploys an ephemeral cloud Sourcegraph environment with the specified version. The version MUST exist and implies that no build will be created",
 		},
 	},
+}
+
+func deployUpgradeSuggestion(name, version string) string {
+	var text = "You might want to try one of the following:\n" +
+		"- Create a new deployment with a different name by running\n" +
+		"\n```sg cloud deploy --name <new-name>```\n\n" +
+		"- Upgrade the existing deployment with the new version once the build completes by running\n" +
+		"\n```sg cloud upgrade --name \"%s\"--version \"%s\"```\n"
+	return fmt.Sprintf(text, name, version)
 }
 
 func determineVersion(build *buildkite.Build, tag string) (string, error) {
@@ -214,6 +224,7 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 		if err != nil {
 			return err
 		}
+		std.Out.WriteMarkdown(fmt.Sprintf("The build will push images with the following tag/version: `%s`", version))
 	} else if err = checkVersionExistsInRegistry(ctx.Context, version); err != nil {
 		return err
 	}
@@ -225,12 +236,9 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 	deploymentName := createDeploymentName(ctx.String("name"), version, email, currRepo.Branch)
 	err = createDeploymentForVersion(ctx.Context, email, deploymentName, version)
 	if err != nil {
-		cancelBuild(ctx.Context, build)
 		if errors.Is(err, ErrDeploymentExists) {
-			std.Out.WriteWarningf("Cannot create a new deployment as a deployment with name %q already exists", deploymentName)
-			std.Out.WriteSuggestionf(`You might want to try one of the following:
-- Specify a different deployment name with the --name flag
-- Upgrade the current deployment instead by using the upgrade command instead of deploy`)
+			std.Out.WriteWarningf("Cannot create a new deployment since a deployment with name %q already exists", deploymentName)
+			std.Out.WriteMarkdown(deployUpgradeSuggestion(deploymentName, version))
 		}
 		return err
 	}
