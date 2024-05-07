@@ -58,7 +58,7 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 					{
 						Key:       "step.kubernetes.key-1",
 						Name:      "step-kubernetes-key-1",
-						Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script.sh"},
+						Command:   []string{"/bin/sh", "/job/.sourcegraph-executor/script.sh"},
 						Dir:       ".",
 						Env:       []string{"FOO=bar"},
 						Operation: operations.Exec,
@@ -99,7 +99,7 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 						{
 							Key:       "step.kubernetes.key-1",
 							Name:      "step-kubernetes-key-1",
-							Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script1.sh"},
+							Command:   []string{"/bin/sh", "/job/.sourcegraph-executor/script1.sh"},
 							Dir:       ".",
 							Env:       []string{"FOO=bar"},
 							Operation: operations.Exec,
@@ -112,7 +112,7 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 						{
 							Key:       "step.kubernetes.key-2",
 							Name:      "step-kubernetes-key-2",
-							Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script2.sh"},
+							Command:   []string{"/bin/sh", "/job/.sourcegraph-executor/script2.sh"},
 							Dir:       ".",
 							Env:       []string{"FOO=bar"},
 							Operation: operations.Exec,
@@ -145,7 +145,7 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 					{
 						Key:       "step.kubernetes.0",
 						Name:      "step-kubernetes-0",
-						Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script.sh"},
+						Command:   []string{"/bin/sh", "/job/.sourcegraph-executor/script.sh"},
 						Dir:       ".",
 						Env:       []string{"FOO=bar"},
 						Operation: operations.Exec,
@@ -182,7 +182,7 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 					{
 						Key:     "step.kubernetes.my-key",
 						Name:    "step-kubernetes-my-key",
-						Command: []string{"/bin/sh -c /job/.sourcegraph-executor/42.0_github.com_sourcegraph_sourcegraph@deadbeef.sh"},
+						Command: []string{"/bin/sh", "/job/.sourcegraph-executor/42.0_github.com_sourcegraph_sourcegraph@deadbeef.sh"},
 						Dir:     ".",
 						Env:     []string{"FOO=bar"},
 						Image:   "my-image",
