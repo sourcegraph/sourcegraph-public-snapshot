@@ -43,8 +43,17 @@ func TestJobExecutionCheckIn(t *testing.T) {
 
 	for _, failed := range []bool{true, false} {
 		t.Run(fmt.Sprintf("failed=%v", failed), func(t *testing.T) {
-			done, err := c.JobExecutionCheckIn(context.Background())
+			// Do not use noop provider, so that the trace ID is not zero.
+			ctx, span := oteltracesdk.NewTracerProvider().
+				Tracer(t.Name()).
+				Start(context.Background(), "test")
+			t.Cleanup(func() { span.End() })
+
+			done, err := c.JobExecutionCheckIn(ctx)
 			assert.NoError(t, err)
+
+			time.Sleep(100 * time.Millisecond) // emulate some work
+
 			if failed {
 				done(errors.New("failed"))
 			} else {

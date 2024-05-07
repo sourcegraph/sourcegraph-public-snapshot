@@ -263,7 +263,7 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (func(err 
 
 	// Set up Sentry client with some metadata, similar to sourcegraph/log
 	// https://github.com/sourcegraph/log/blob/main/internal/sinkcores/sentrycore/worker.go#L96
-	s, err := sentry.NewClient(sentry.ClientOptions{
+	sentryClient, err := sentry.NewClient(sentry.ClientOptions{
 		Dsn:         *c.sentryDSN,
 		Release:     c.internal.service.Version(),
 		Environment: c.internal.environmentID,
@@ -290,6 +290,10 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (func(err 
 
 	// Also reflect trace into Sentry's specialized trace context
 	// https://develop.sentry.dev/sdk/event-payloads/contexts/#trace-context
+	// Only the trace context is supported right now, it's not possible to
+	// attach error details - it's expected that an error will be reported
+	// separately with a trace from logger.
+	// https://develop.sentry.dev/sdk/check-ins/
 	scope := sentry.NewScope()
 	if span := trace.SpanContextFromContext(ctx); span.HasTraceID() {
 		scope.SetContext("trace", sentry.Context{
@@ -298,7 +302,7 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (func(err 
 		})
 	}
 
-	ev := s.CaptureCheckIn(
+	ev := sentryClient.CaptureCheckIn(
 		&sentry.CheckIn{
 			ID:          sentry.EventID(executionID),
 			MonitorSlug: monitor,
@@ -307,13 +311,14 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (func(err 
 		monitorConfig,
 		scope)
 	return func(err error) {
-		defer s.Flush(time.Second)
+		defer sentryClient.Flush(time.Second)
+
 		status := sentry.CheckInStatusOK
 		if err != nil {
 			status = sentry.CheckInStatusError
 		}
 		logCompletion(err)
-		_ = s.CaptureCheckIn(
+		_ = sentryClient.CaptureCheckIn(
 			&sentry.CheckIn{
 				ID:          *ev,
 				MonitorSlug: monitor,
