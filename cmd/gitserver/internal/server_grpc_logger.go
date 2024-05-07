@@ -6,15 +6,17 @@ import (
 	"sync/atomic"
 	"time"
 
+	"google.golang.org/grpc/codes"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	"google.golang.org/grpc/codes"
 
 	"github.com/sourcegraph/log"
+	"google.golang.org/grpc/status"
+
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"google.golang.org/grpc/status"
 )
 
 // loggingGRPCServer is a wrapper around the provided GitserverServiceServer
@@ -1001,6 +1003,35 @@ func BehindAheadRequestToLogFields(req *proto.BehindAheadRequest) []log.Field {
 		log.String("repoName", req.GetRepoName()),
 		log.String("left", string(req.GetLeft())),
 		log.String("right", string(req.GetRight())),
+	}
+}
+
+func (l *loggingGRPCServer) ChangedFiles(req *proto.ChangedFilesRequest, ss proto.GitserverService_ChangedFilesServer) (err error) {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+			proto.GitserverService_ChangedFiles_FullMethodName,
+			status.Code(err),
+			trace.Context(ss.Context()).TraceID,
+			elapsed,
+
+			changedFilesRequestToLogFields(req)...,
+		)
+
+	}()
+
+	return l.base.ChangedFiles(req, ss)
+}
+
+func changedFilesRequestToLogFields(req *proto.ChangedFilesRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.String("base", string(req.GetBase())),
+		log.String("head", string(req.GetHead())),
 	}
 }
 
