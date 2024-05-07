@@ -5,8 +5,11 @@
   "description": "Cody context filters test dataset",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sourcegraph/sourcegraph",
+    "url": "git+https://github.com/sourcegraph/sourcegraph.git",
     "directory": "client/cody-context-filters-test-dataset"
+  },
+  "scripts": {
+    "prepublishOnly": "node scripts/generate.js"
   },
   "files": [
     "dataset.json"

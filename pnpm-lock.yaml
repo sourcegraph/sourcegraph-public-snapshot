@@ -537,7 +537,7 @@ importers:
         specifier: ^5.15.0
         version: 5.15.0
       '@sourcegraph/cody-context-filters-test-dataset':
-        specifier: workspace:*
+        specifier: ^0.0.1
         version: link:client/cody-context-filters-test-dataset
       '@sourcegraph/eslint-config':
         specifier: 0.37.1
