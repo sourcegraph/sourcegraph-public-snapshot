@@ -34,7 +34,7 @@
 <style lang="scss">
     span {
         display: contents;
-        & :global(span) {
+        :global(span) {
             background-color: var(--secondary-2);
             color: var(--text-body);
         }
