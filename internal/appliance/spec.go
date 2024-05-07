@@ -171,38 +171,13 @@ type PreciseCodeIntelSpec struct {
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
-// RedisCacheSpec defines the desired state of the Redis cache service.
-type RedisCacheSpec struct {
-	// Disabled defines if Redis Cache is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
-
-	// ExistingSecret is the name of an existing secret to use.
-	ExistingSecret string `json:"existingSecret,omitempty"`
+// RedisSpec defines the desired state of a Redis-based service.
+type RedisSpec struct {
+	config.StandardConfig
 
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 100Gi
 	StorageSize string `json:"storageSize,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
-}
-
-// RedisStoreSpec defines the desired state of the Redis Store service.
-type RedisStoreSpec struct {
-	// Disabled defines if Redis Store is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
-
-	// ExistingSecret is the name of an existing secret to use.
-	ExistingSecret string `json:"existingSecret,omitempty"`
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 100Gi
-	StorageSize string `json:"storageSize,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 // RepoUpdaterSpec defines the desired state of the Repo Updater service.
@@ -328,10 +303,10 @@ type SourcegraphSpec struct {
 	PreciseCodeIntel PreciseCodeIntelSpec `json:"preciseCodeIntel,omitempty"`
 
 	// RedisCache defines the desired state of the Redis cache service.
-	RedisCache RedisCacheSpec `json:"redisCache,omitempty"`
+	RedisCache RedisSpec `json:"redisCache,omitempty"`
 
 	// RedisStore defines the desired state of the Redis store service.
-	RedisStore RedisStoreSpec `json:"redisStore,omitempty"`
+	RedisStore RedisSpec `json:"redisStore,omitempty"`
 
 	// RepoUpdater defines the desired state of the Repo updater service.
 	RepoUpdater RepoUpdaterSpec `json:"repoUpdater,omitempty"`
