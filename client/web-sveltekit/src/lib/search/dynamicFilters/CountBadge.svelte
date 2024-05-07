@@ -20,7 +20,7 @@
 </script>
 
 {#if count !== undefined}
-    <span class="count">
+    <span>
         {#if exhaustive}
             <Badge variant="secondary">{count}</Badge>
         {:else}
@@ -32,8 +32,11 @@
 {/if}
 
 <style lang="scss">
-    span.count :global(span) {
-        background-color: var(--secondary-2);
-        color: var(--text-body);
+    span {
+        display: contents;
+        :global(span) {
+            background-color: var(--secondary-2);
+            color: var(--text-body);
+        }
     }
 </style>
