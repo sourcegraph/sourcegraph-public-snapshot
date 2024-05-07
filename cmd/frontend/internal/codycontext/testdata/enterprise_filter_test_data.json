@@ -3,8 +3,6 @@
     {
       "name": "Cody context filters are not defined",
       "description": "Any repo should be included.",
-      "includeByDefault": true,
-      "includeUnknown": false,
       "cody.contextFilters": null,
       "repos": [
         { "name": "github.com/sourcegraph/about", "id": 1 },
@@ -82,8 +80,6 @@
     {
       "name": "Include and exclude rules are not defined",
       "description": "This scenario shouldn't happen. \"cody.contextFilters\" if defined in the site config, should have at least one property. Thus, either \"include\" or \"exclude\" should be defined. We rely on site config schema validation.",
-      "includeByDefault": true,
-      "includeUnknown": false,
       "cody.contextFilters": {},
       "repos": [
         { "name": "github.com/sourcegraph/about", "id": 1 },
@@ -161,8 +157,6 @@
     {
       "name": "Include and exclude rules are empty lists",
       "description": "This scenario shouldn't happen. If either \"include\" or \"exclude\" field is defined, it should have at least one item. We rely on site config schema validation.",
-      "includeByDefault": true,
-      "includeUnknown": false,
       "cody.contextFilters": {
         "include": [],
         "exclude": []
@@ -243,8 +237,6 @@
     {
       "name": "Only include rules are defined",
       "description": "Only repos matching \"include\" repo name patterns should be included.",
-      "includeByDefault": true,
-      "includeUnknown": false,
       "cody.contextFilters": {
         "include": [{ "repoNamePattern": "^github\\.com\\/sourcegraph\\/.+" }]
       },
@@ -316,8 +308,6 @@
     {
       "name": "Only exclude rules are defined",
       "description": "Only repos not matching any of \"include\" repo name patterns should be included.",
-      "includeByDefault": true,
-      "includeUnknown": false,
       "cody.contextFilters": {
         "exclude": [{ "repoNamePattern": "^github\\.com\\/sourcegraph\\/.+" }]
       },
@@ -371,8 +361,6 @@
     {
       "name": "Include and exclude rules are defined",
       "description": "Only repos matching any of \"include\" and not matching any of \"exclude\" repo name patterns should be included.",
-      "includeByDefault": true,
-      "includeUnknown": false,
       "cody.contextFilters": {
         "include": [{ "repoNamePattern": "^github\\.com\\/sourcegraph\\/.+" }],
         "exclude": [{ "repoNamePattern": ".*cody.*" }]
@@ -453,8 +441,6 @@
     {
       "name": "Multiple include and exclude rules are defined",
       "description": "Only repos matching any of \"include\" and not matching any of \"exclude\" repo name patterns should be included.",
-      "includeByDefault": true,
-      "includeUnknown": false,
       "cody.contextFilters": {
         "include": [
           { "repoNamePattern": "^github\\.com\\/sourcegraph\\/.+" },
@@ -555,8 +541,6 @@
     {
       "name": "Include rules contain repo name pattern matching any repo",
       "description": "Any repo should be included.",
-      "includeByDefault": true,
-      "includeUnknown": false,
       "cody.contextFilters": {
         "include": [{ "repoNamePattern": ".*" }]
       },
@@ -668,8 +652,6 @@
     {
       "name": "Exclude rules contain repo name pattern matching any repo",
       "description": "Neither repo should be included.",
-      "includeByDefault": true,
-      "includeUnknown": false,
       "cody.contextFilters": {
         "include": [{ "repoNamePattern": "^github\\.com\\/sourcegraph\\/.+" }],
         "exclude": [{ "repoNamePattern": ".*" }]

@@ -22,10 +22,8 @@ import (
 )
 
 func TestNewEnterpriseFilter(t *testing.T) {
-	originalIncludeByDefault := includeByDefault
 	t.Cleanup(func() {
 		conf.Mock(nil)
-		includeByDefault = originalIncludeByDefault
 	})
 
 	content, err := os.ReadFile(filepath.Join("testdata", "enterprise_filter_test_data.json"))
@@ -42,8 +40,6 @@ func TestNewEnterpriseFilter(t *testing.T) {
 	type testCase struct {
 		Name               string                     `json:"name"`
 		Description        string                     `json:"description"`
-		IncludeByDefault   bool                       `json:"includeByDefault"`
-		IncludeUnknown     bool                       `json:"includeUnknown"`
 		Ccf                *schema.CodyContextFilters `json:"cody.contextFilters"`
 		Repos              []repo                     `json:"repos"`
 		IncludedRepos      []repo                     `json:"includedRepos"`
@@ -95,7 +91,6 @@ func TestNewEnterpriseFilter(t *testing.T) {
 				name = name + fmt.Sprintf(" (%q feature flag value: %t)", ff.Name, ff.Bool.Value)
 			}
 			t.Run(name, func(t *testing.T) {
-				includeByDefault = tt.IncludeByDefault
 				conf.Mock(&conf.Unified{
 					SiteConfiguration: schema.SiteConfiguration{
 						CodyContextFilters: tt.Ccf,

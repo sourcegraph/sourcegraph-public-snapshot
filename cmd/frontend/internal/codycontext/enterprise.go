@@ -19,8 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var includeByDefault = true
-
 var (
 	metricCacheHit = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_codycontext_filter_cache_hit",
@@ -158,7 +156,7 @@ func (f filtersConfig) isRepoIncluded(repo types.RepoIDName) bool {
 	}
 	metricCacheMiss.Inc()
 
-	included := includeByDefault
+	included := true
 
 	if len(f.include) > 0 {
 		for _, p := range f.include {
