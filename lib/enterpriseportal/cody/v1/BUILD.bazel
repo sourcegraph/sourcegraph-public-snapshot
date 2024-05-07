@@ -6,7 +6,7 @@ load("@rules_buf//buf:defs.bzl", "buf_lint_test")
 proto_library(
     name = "v1_proto",
     srcs = ["cody.proto"],
-    strip_import_prefix = "/lib",  # keep
+    strip_import_prefix = "/lib/enterpriseportal/cody/v1",  # keep
     visibility = ["//visibility:public"],
 )
 

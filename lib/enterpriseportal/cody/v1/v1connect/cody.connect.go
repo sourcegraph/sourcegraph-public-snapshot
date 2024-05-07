@@ -7,7 +7,7 @@ package v1connect
 import (
 	connect "connectrpc.com/connect"
 	context "context"
-	errors "errors"
+	errors "errors" //nolint:depguard
 	v1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cody/v1"
 	http "net/http"
 	strings "strings"
