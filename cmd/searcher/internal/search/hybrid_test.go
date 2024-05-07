@@ -16,6 +16,9 @@ import (
 	zoektgrpc "github.com/sourcegraph/zoekt/cmd/zoekt-webserver/grpc/server"
 	"google.golang.org/grpc"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
@@ -81,13 +84,6 @@ Hello world example in go`, typeFile},
 		delete(files, unchanged)
 	}
 
-	gitDiffOutput := strings.Join([]string{
-		"M", "changed.go",
-		"A", "added.md",
-		"D", "removed.md",
-		"", // trailing null
-	}, "\x00")
-
 	s := newStore(t, files)
 
 	// explictly remove FetchTar since we should only be using FetchTarByPath
@@ -115,14 +111,19 @@ Hello world example in go`, typeFile},
 
 	// we expect one command against git, lets just fake it.
 	service := &search.Service{
-		GitDiffSymbols: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
+		GitChangedFiles: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (gitserver.ChangedFilesIterator, error) {
 			if commitA != "indexedfdeadbeefdeadbeefdeadbeefdeadbeef" {
 				return nil, errors.Errorf("expected first commit to be indexed, got: %s", commitA)
 			}
 			if commitB != "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef" {
 				return nil, errors.Errorf("expected first commit to be unindexed, got: %s", commitB)
 			}
-			return []byte(gitDiffOutput), nil
+
+			return gitserver.NewChangedFilesIteratorFromSlice([]gitdomain.PathStatus{
+				{Status: gitdomain.ModifiedAMD, Path: "changed.go"},
+				{Status: gitdomain.AddedAMD, Path: "added.md"},
+				{Status: gitdomain.DeletedAMD, Path: "removed.md"},
+			}), nil
 		},
 		MaxTotalPathsLength: 100_000,
 
