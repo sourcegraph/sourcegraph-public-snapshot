@@ -133,6 +133,11 @@ func runScript(name string, script string) *linter {
 	return &linter{
 		Name: name,
 		Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
+			defer func() {
+				println("DONE", script)
+				println("DONE", script)
+				println("DONE", script)
+			}()
 			return root.Run(run.Bash(ctx, script)).StreamLines(out.Write)
 		},
 	}
@@ -149,14 +154,19 @@ func runScriptSerialized(name string, script string) *linter {
 	return &linter{
 		Name: name,
 		Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
-			event := honey.FromContext(ctx)
-
 			t1 := time.Now()
 			runScriptSerializedMu.Lock()
-			t2 := time.Since(t1)
-			event.AddField("pnpm_lock_duration", t2.Seconds())
-			event.AddField("pnpm_lock_duration_ms", t2.Milliseconds())
 			defer runScriptSerializedMu.Unlock()
+			// record the time it took to run the script, if it does have a honey event
+			defer func() {
+				event := honey.FromContext(ctx)
+				if event == nil {
+					return
+				}
+				t2 := time.Since(t1)
+				event.AddField("pnpm_lock_duration", t2.Seconds())
+				event.AddField("pnpm_lock_duration_ms", t2.Milliseconds())
+			}()
 			return root.Run(run.Bash(ctx, script)).StreamLines(out.Write)
 		},
 	}
