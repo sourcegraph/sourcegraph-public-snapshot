@@ -1,0 +1,77 @@
+{
+  "action": "update",
+  "actor": {
+    "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "name": "Michael Lin",
+    "type": "user"
+  },
+  "createdAt": "2024-05-01T22:01:44.848Z",
+  "data": {
+    "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "createdAt": "2024-05-01T21:58:58.543Z",
+    "updatedAt": "2024-05-01T22:01:44.848Z",
+    "number": 5,
+    "title": "slkdajflasdlf",
+    "priority": 0,
+    "boardOrder": 0,
+    "sortOrder": -3180,
+    "labelIds": [
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx"
+    ],
+    "teamId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "previousIdentifiers": [],
+    "creatorId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "stateId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "priorityLabel": "No priority",
+    "botActor": null,
+    "identifier": "FOO-5",
+    "url": "https://linear.app/sourcegraph/issue/FOO-5/slkdajflasdlf",
+    "state": {
+      "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+      "color": "#bec2c8",
+      "name": "Backlog",
+      "type": "backlog"
+    },
+    "team": {
+      "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+      "key": "FOO",
+      "name": "FOO's Test"
+    },
+    "subscriberIds": [
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx"
+    ],
+    "labels": [
+      {
+        "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+        "color": "#c52828",
+        "name": "bug"
+      },
+      {
+        "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+        "color": "#FFB6C1",
+        "name": "graph/backend"
+      },
+      {
+        "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+        "color": "#bec2c8",
+        "name": "auto-index"
+      }
+    ]
+  },
+  "updatedFrom": {
+    "updatedAt": "2024-05-01T22:01:08.109Z",
+    "labelIds": [
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx"
+    ]
+  },
+  "url": "https://linear.app/sourcegraph/issue/FOO-5/slkdajflasdlf",
+  "type": "Issue",
+  "organizationId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+  "webhookTimestamp": 1714600904932,
+  "webhookId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx"
+}

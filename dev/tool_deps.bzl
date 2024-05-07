@@ -10,6 +10,7 @@ PACKER_VERSION = "1.8.3"
 P4_FUSION_VERSION = "v1.13.2-sg.04a293a"
 GH_VERSION = "2.45.0"
 PGUTILS_VERSION = "ad082497"
+LINEAR_SDK_VERSION = "21.1.0"
 
 GH_BUILDFILE = """
 filegroup(
@@ -332,4 +333,10 @@ def tool_deps():
         url = "https://github.com/cedarai/embedded-postgres-binaries/releases/download/13.6-with-tools-20220304/postgresql-13.6-darwin-arm64.txz",
         build_file_content = PGUTILS_BUILDFILE,
         sha256 = "32fd723dc8a64efaebc18e78f293bc7c5523fbb659a82be0f9da900f3a28c510",
+    )
+
+    http_file(
+        name = "linear-sdk-graphql-schema",
+        url = "https://raw.githubusercontent.com/linear/linear/%40linear/sdk%40{0}/packages/sdk/src/schema.graphql".format(LINEAR_SDK_VERSION),
+        integrity = "sha256-9WUYPWt4iWcE/fhm6guqrfbk41y+Hb3jIR9I0/yCzwk=",
     )
