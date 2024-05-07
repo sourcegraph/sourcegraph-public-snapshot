@@ -1,5 +1,5 @@
 <script lang="ts">
-    // @sg RepoRoot
+    // @sg RepoRoot EnableRollout
     import { onMount } from 'svelte'
 
     import { sidebarOpen } from '$lib/repo/stores'
