@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/sourcegraph/run"
 	"go.bobheadxi.dev/streamline/pipeline"
@@ -16,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -42,10 +40,10 @@ var Targets = []Target{
 			onlyLocal(goGenerateLinter),
 			onlyLocal(goDBConnImport),
 			onlyLocal(noLocalHost),
-			timeCheck(lintGoDirectives()),
-			timeCheck(lintLoggingLibraries()),
+			lintGoDirectives(),
+			lintLoggingLibraries(),
 			onlyLocal(lintTracingLibraries()),
-			timeCheck(goModGuards()),
+			goModGuards(),
 			onlyLocal(lintSGExit()),
 		},
 	},
@@ -61,42 +59,42 @@ var Targets = []Target{
 		Description: "Check Dockerfiles for Sourcegraph best practices",
 		Checks: []*linter{
 			// TODO move to pre-commit
-			timeCheck(hadolint()),
+			hadolint(),
 		},
 	},
 	{
 		Name:        "client",
 		Description: "Check client code for linting errors, forbidden imports, etc",
 		Checks: []*linter{
-			timeCheck(inlineTemplates),
+			inlineTemplates,
 			// we only run this linter locally, since on CI it has it's own job
 			onlyLocal(runScriptSerialized("pnpm lint:js:web", "dev/ci/pnpm-run.sh lint:js:web")),
-			timeCheck(checkUnversionedDocsLinks()),
+			checkUnversionedDocsLinks(),
 		},
 	},
 	{
 		Name:        "pnpm",
 		Description: "Check pnpm lockfiles for optimality",
 		Checks: []*linter{
-			timeCheck(runScriptSerialized("pnpm dedupe", "dev/check/pnpm-deduplicate.sh")),
+			runScriptSerialized("pnm dedupe", "dev/check/pnpm-deduplicate.sh"),
 		},
 	},
 	{
 		Name:        "shell",
 		Description: "Check shell code for linting errors, formatting, etc",
 		Checks: []*linter{
-			timeCheck(shFmt),
-			timeCheck(shellCheck),
-			timeCheck(bashSyntax),
+			shFmt,
+			shellCheck,
+			bashSyntax,
 		},
 	},
 	{
 		Name:        "protobuf",
 		Description: "Check protobuf code for linting errors, formatting, etc",
 		Checks: []*linter{
-			timeCheck(bufFormat),
-			timeCheck(bufGenerate),
-			timeCheck(bufLint),
+			bufFormat,
+			bufGenerate,
+			bufLint,
 		},
 	},
 	{
@@ -115,7 +113,7 @@ var Formatting = Target{
 	Name:        "format",
 	Description: "Check client code and docs for formatting errors",
 	Checks: []*linter{
-		timeCheck(prettier),
+		prettier,
 	},
 }
 
@@ -133,11 +131,6 @@ func runScript(name string, script string) *linter {
 	return &linter{
 		Name: name,
 		Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
-			defer func() {
-				println("DONE", script)
-				println("DONE", script)
-				println("DONE", script)
-			}()
 			return root.Run(run.Bash(ctx, script)).StreamLines(out.Write)
 		},
 	}
@@ -154,19 +147,8 @@ func runScriptSerialized(name string, script string) *linter {
 	return &linter{
 		Name: name,
 		Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
-			t1 := time.Now()
 			runScriptSerializedMu.Lock()
 			defer runScriptSerializedMu.Unlock()
-			// record the time it took to run the script, if it does have a honey event
-			defer func() {
-				event := honey.FromContext(ctx)
-				if event == nil {
-					return
-				}
-				t2 := time.Since(t1)
-				event.AddField("pnpm_lock_duration", t2.Seconds())
-				event.AddField("pnpm_lock_duration_ms", t2.Milliseconds())
-			}()
 			return root.Run(run.Bash(ctx, script)).StreamLines(out.Write)
 		},
 	}
