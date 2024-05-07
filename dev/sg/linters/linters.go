@@ -76,7 +76,7 @@ var Targets = []Target{
 		Name:        "pnpm",
 		Description: "Check pnpm lockfiles for optimality",
 		Checks: []*linter{
-			runScriptSerialized("pnm dedupe", "dev/check/pnpm-deduplicate.sh"),
+			runScriptSerialized("pnpm dedupe", "dev/check/pnpm-deduplicate.sh"),
 		},
 	},
 	{
