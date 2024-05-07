@@ -196,15 +196,15 @@
         <PanelResizeHandle id="blob-page-panels-separator" />
     {/if}
 
-    <Panel id="content-panel" order={2}>
+    <Panel id="blob-content-panels" order={2}>
         <PanelGroup id="content-panels" direction="vertical">
-            <Panel id="main-content-panel" order={1} defaultSize={90}>
+            <Panel id="main-content-panel" order={1}>
                 <slot />
             </Panel>
             <PanelResizeHandle />
             <Panel
                 bind:this={bottomPanel}
-                id="bottom-tabs-panel"
+                id="bottom-actions-panel"
                 order={2}
                 defaultSize={1}
                 minSize={20}
