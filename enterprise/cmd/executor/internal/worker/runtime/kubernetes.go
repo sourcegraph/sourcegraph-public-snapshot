@@ -68,7 +68,7 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job
 				Name: strings.ReplaceAll(key, ".", "-"),
 				Command: []string{
 					"/bin/sh",
-						filepath.Join(command.KubernetesJobMountPath, files.ScriptsPath, scriptName),
+					filepath.Join(command.KubernetesJobMountPath, files.ScriptsPath, scriptName),
 				},
 				Dir:   step.Dir,
 				Env:   step.Env,
