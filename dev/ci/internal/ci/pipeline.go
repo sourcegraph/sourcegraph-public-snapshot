@@ -284,7 +284,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 	default:
 		// Executor VM image
-		alwaysRebuild := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) || c.Diff.Has(changed.ExecutorVMImage)
+		// alwaysRebuild := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
 
