@@ -377,6 +377,7 @@ type changedFilesIterator struct {
 	closeChan chan struct{}
 
 	buffer []gitdomain.PathStatus
+	index  int
 }
 
 func (i *changedFilesIterator) Next() (gitdomain.PathStatus, error) {

@@ -58,6 +58,7 @@ go_test(
         "//internal/database/dbmocks",
         "//internal/diskcache",
         "//internal/endpoint",
+        "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/grpc/defaults",
         "//internal/observation",
