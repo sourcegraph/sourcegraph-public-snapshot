@@ -17,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
+var ErrInstanceNotFound error = errors.New("instance not found")
+
 // HeaderUserToken is the header name for the user token when communicating with the Cloud API.
 const HeaderUserToken = "X-GCP-User-Token"
 

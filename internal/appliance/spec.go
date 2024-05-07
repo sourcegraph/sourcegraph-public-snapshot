@@ -346,6 +346,9 @@ type SourcegraphSpec struct {
 	// RequestedVersion is the user-requested version of Sourcegraph to deploy.
 	RequestedVersion string `json:"requestedVersion"`
 
+	// ImageRepository overrides the default image repository.
+	ImageRepository string `json:"imageRepository"`
+
 	// ManagementState defines if Sourcegraph should be managed by the operator or not.
 	// Default is managed.
 	ManagementState ManagementStateType `json:"managementState,omitempty"`

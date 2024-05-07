@@ -196,15 +196,15 @@
         <PanelResizeHandle id="blob-page-panels-separator" />
     {/if}
 
-    <Panel id="content-panel" order={2}>
+    <Panel id="blob-content-panels" order={2}>
         <PanelGroup id="content-panels" direction="vertical">
-            <Panel id="main-content-panel" order={1} defaultSize={90}>
+            <Panel id="main-content-panel" order={1}>
                 <slot />
             </Panel>
             <PanelResizeHandle />
             <Panel
                 bind:this={bottomPanel}
-                id="bottom-tabs-panel"
+                id="bottom-actions-panel"
                 order={2}
                 defaultSize={1}
                 minSize={20}
@@ -263,9 +263,18 @@
         box-shadow: var(--sidebar-shadow);
     }
 
-    :global([data-panel-id='content-panel']) {
+    :global([data-panel-id='blob-content-panels']) {
         z-index: 0;
         isolation: isolate;
+    }
+
+    :global([data-panel-resize-handle-id='blob-page-panels-separator']) {
+        &::before {
+            // Even though side-panel shadow should be rendered over
+            // the right content panel, resize handle still should be rendered
+            // over any panel elements
+            z-index: 2 !important;
+        }
     }
 
     .sidebar {
@@ -292,15 +301,6 @@
         flex-shrink: 0;
     }
 
-    :global([data-panel-resize-handle-id='blob-page-panels-separator']) {
-        &::before {
-            // Even though side-panel shadow should be rendered over
-            // the right content panel, resize handle still should be rendered
-            // over any panel elements
-            z-index: 2 !important;
-        }
-    }
-
     // Revision picker trigger button
     header > :global(button) {
         white-space: nowrap;
@@ -315,7 +315,7 @@
         overflow: hidden;
     }
 
-    :global([data-panel-id='bottom-tabs-panel']) {
+    :global([data-panel-id='bottom-actions-panel']) {
         min-height: 2.5625rem; // 41px which is bottom panel compact size
         box-shadow: var(--bottom-panel-shadow);
     }
