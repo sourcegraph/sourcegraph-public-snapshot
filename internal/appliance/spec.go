@@ -34,9 +34,6 @@ type BlobstoreSpec struct {
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 200Gi
 	StorageSize string `json:"storageSize,omitempty"`
-
-	// Env defines environment variables for Blobstore.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 // CodeInsightsDBSpec defines the desired state of Code Insights database.
@@ -57,9 +54,6 @@ type CodeInsightsDBSpec struct {
 
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
-	// Env defines environment variables for Code Insights.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 // CodeIntelDBSpec defines the desired state of Code Intel database.
@@ -80,9 +74,6 @@ type CodeIntelDBSpec struct {
 
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
-	// Env defines environment variables for Code Intel.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 type IngressSpec struct {
@@ -107,9 +98,6 @@ type FrontendSpec struct {
 
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
-	// Env defines environment variables for Frontend.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 // GitServerSpec defines the desired state of GitServer.
@@ -127,9 +115,6 @@ type GitServerSpec struct {
 	// SSHSecret is the name of existing secret that contains SSH credentials to clone repositories.
 	// This secret generally contains keys such as `id_rsa` (private key) and `known_hosts`.
 	SSHSecret string `json:"sshSecret,omitempty"`
-
-	// Env defines environment variables for Git Server.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 // IndexedSearchSpec defines the desired state of Index Search.
@@ -144,18 +129,12 @@ type IndexedSearchSpec struct {
 
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
-	// Env defines environment variables for Indexed Search.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 // IndexedSearchIndexerSpec defines the desired state of the Index Search Indexer.
 type IndexedSearchIndexerSpec struct {
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
-	// Env defines environment variables for Indexed Search Indexer.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 // PGSQLSpec defines the desired state of the PostgreSQL server.
@@ -176,17 +155,11 @@ type PGSQLSpec struct {
 
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
-	// Env defines environment variables for PGSQL.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 type PostgresExporterSpec struct {
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
-	// Env defines environment variables for Postgres Exporter.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 type PreciseCodeIntelSpec struct {
@@ -196,9 +169,6 @@ type PreciseCodeIntelSpec struct {
 
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
-	// Env defines environment variables for Code Intel.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 // RedisCacheSpec defines the desired state of the Redis cache service.
@@ -216,9 +186,6 @@ type RedisCacheSpec struct {
 
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
-	// Env defines environment variables for Redis Cache.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 // RedisStoreSpec defines the desired state of the Redis Store service.
@@ -236,17 +203,11 @@ type RedisStoreSpec struct {
 
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
-	// Env defines environment variables for Redis Store.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 // RepoUpdaterSpec defines the desired state of the Repo Updater service.
 type RepoUpdaterSpec struct {
 	config.StandardConfig
-
-	// Env defines environment variables for Redis Updater.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 // SearcherSpec defines the desired state of the Searcher service.
@@ -265,9 +226,6 @@ type SearcherSpec struct {
 
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
-	// Env defines environment variables for Searcher.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 // SymbolsSpec defines the desired state of the Symbols service.
@@ -281,9 +239,6 @@ type SymbolsSpec struct {
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 12Gi
 	StorageSize string `json:"storageSize,omitempty"`
-
-	// Env defines environment variables for Symbols.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 // SyntectServerSpec defines the desired state of the Syntect server service.
@@ -294,9 +249,6 @@ type SyntectServerSpec struct {
 
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
-	// Env defines environment variables for Syntect Server.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 type WorkerSpec struct {
@@ -306,9 +258,6 @@ type WorkerSpec struct {
 
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
-
-	// Env defines environment variables for Worker.
-	Env map[string]string `json:"env,omitempty"`
 }
 
 type StorageClassSpec struct {
