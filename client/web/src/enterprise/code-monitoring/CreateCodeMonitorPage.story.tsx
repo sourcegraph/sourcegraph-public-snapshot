@@ -1,6 +1,8 @@
 import type { Meta, StoryFn } from '@storybook/react'
 import sinon from 'sinon'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import type { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
 
@@ -31,6 +33,7 @@ export const CreateCodeMonitorPageStory: StoryFn = () => (
                 }
                 createCodeMonitor={sinon.fake()}
                 isSourcegraphDotCom={false}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )}
     </WebStory>

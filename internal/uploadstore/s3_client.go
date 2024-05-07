@@ -23,7 +23,6 @@ import (
 )
 
 type s3Store struct {
-	logger       log.Logger
 	bucket       string
 	manageBucket bool
 	client       s3API
@@ -268,7 +267,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	}
 
 	var parts []s3types.CompletedPart
-	for i := 0; i < len(sources); i++ {
+	for i := range len(sources) {
 		partNumber := i + 1
 
 		parts = append(parts, s3types.CompletedPart{

@@ -1,8 +1,9 @@
 package ci
 
 import (
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 )
 
 var (
@@ -58,9 +59,6 @@ sg ci status --build 123456
 
 # Pull logs of failed jobs to stdout
 sg ci logs
-# Push logs of most recent main failure to local Loki for analysis
-# You can spin up a Loki instance with 'sg run loki grafana'
-sg ci logs --branch main --out http://127.0.0.1:3100
 # Get the logs for a specific build number, useful when debugging
 sg ci logs --build 123456
 

@@ -88,7 +88,7 @@ func TestRedisLoggerMiddleware(t *testing.T) {
 	}
 
 	// Enable feature
-	setOutboundRequestLogLimit(t, 1)
+	mockOutboundRequestLogLimit(t, 1)
 
 	for _, tc := range testCases {
 		tc := tc
@@ -138,7 +138,7 @@ func TestRedisLoggerMiddleware_multiple(t *testing.T) {
 	rcache.SetupForTest(t)
 
 	// Enable the feature
-	setOutboundRequestLogLimit(t, int32(limit))
+	mockOutboundRequestLogLimit(t, int32(limit))
 
 	// Build client with middleware
 	cli := redisLoggerMiddleware()(newFakeClient(http.StatusOK, []byte(`{"responseBody":true}`), nil))
@@ -146,7 +146,7 @@ func TestRedisLoggerMiddleware_multiple(t *testing.T) {
 	// Send requests and track the URLs we send so we can compare later to
 	// what was stored.
 	var wantURLs []string
-	for i := 0; i < requests; i++ {
+	for i := range requests {
 		u := fmt.Sprintf("http://dev/%d", i)
 		wantURLs = append(wantURLs, u)
 
@@ -284,8 +284,8 @@ func TestRedisLoggerMiddleware_formatStackFrame(t *testing.T) {
 	}
 }
 
-func setOutboundRequestLogLimit(t *testing.T, limit int32) {
-	old := OutboundRequestLogLimit()
-	SetOutboundRequestLogLimit(limit)
-	t.Cleanup(func() { SetOutboundRequestLogLimit(old) })
+func mockOutboundRequestLogLimit(t *testing.T, limit int32) {
+	old := outboundRequestLogLimit()
+	setOutboundRequestLogLimit(limit)
+	t.Cleanup(func() { setOutboundRequestLogLimit(old) })
 }

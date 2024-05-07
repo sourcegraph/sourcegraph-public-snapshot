@@ -23,11 +23,11 @@ go_library(
         "//internal/codeintel/uploads/internal/background/expirer",
         "//internal/codeintel/uploads/internal/background/janitor",
         "//internal/codeintel/uploads/internal/background/processor",
+        "//internal/codeintel/uploads/internal/commitgraph",
         "//internal/codeintel/uploads/internal/lsifstore",
         "//internal/codeintel/uploads/internal/store",
         "//internal/codeintel/uploads/shared",
         "//internal/database",
-        "//internal/env",
         "//internal/gitserver",
         "//internal/goroutine",
         "//internal/metrics",
@@ -38,7 +38,6 @@ go_library(
         "//lib/errors",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
-        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -50,6 +49,7 @@ go_test(
     deps = [
         "//internal/api",
         "//internal/codeintel/policies/shared",
+        "//internal/codeintel/uploads/internal/commitgraph",
         "//internal/codeintel/uploads/internal/lsifstore",
         "//internal/codeintel/uploads/internal/store",
         "//internal/codeintel/uploads/shared",

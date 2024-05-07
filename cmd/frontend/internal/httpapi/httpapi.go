@@ -21,19 +21,20 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	confProto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -172,7 +173,7 @@ func NewHandler(
 	m.Path("/completions/stream").Methods("POST").Handler(handlers.NewChatCompletionsStreamHandler())
 	m.Path("/completions/code").Methods("POST").Handler(handlers.NewCodeCompletionsHandler())
 
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(handlers.NewDotcomLicenseCheckHandler())
 
 		updatecheckHandler, err := updatecheck.ForwardHandler()
@@ -204,14 +205,35 @@ func NewHandler(
 				SAMSClient: samsClient,
 			}
 
-			// API endpoint for ssc to trigger cody's rate limit refresh for a user
-			// TODO(sourcegraph#59625) remove this as part of adding SAMSActor source
+			// API endpoint for the SSC backend to trigger cody's rate limit refresh for a user.
+			// TODO(sourcegraph#59625): Remove this as part of adding SAMSActor source.
 			m.Path("/ssc/users/{samsAccountID}/cody/limits/refresh").Methods("POST").Handler(
 				samsAuthenticator.RequireScopes(
 					[]sams.Scope{sams.ScopeDotcom},
 					newSSCRefreshCodyRateLimitHandler(logger, db),
 				),
 			)
+
+			// API endpoint for proxying an arbitrary API request to the SSC backend.
+			//
+			// SECURITY: We are relying on the caller of this function to register the
+			// necessary authentication middleware. (e.g. injecting the Sourcegraph actor
+			// based on the session cookie or Sg user access token in the request's header.)
+			//
+			// This middleware handler then exchanges the authenticated Sourcegraph user's
+			// credentials for their SAMS external identy's access token, and proxies the
+			// HTTP call to the SSC backend.
+			//
+			// This means that for any cookie-based authentication method, we need to have
+			// CSRF protection. (However, that appears to be the case, see `newExternalHTTPHandler`
+			// and its use of `CookieMiddlewareWithCSRFSafety`.)
+			sscBackendProxy := ssc.APIProxyHandler{
+				CodyProConfig: conf.Get().Dotcom.CodyProConfig,
+				DB:            db,
+				Logger:        logger.Scoped("SSC Proxy"),
+				URLPrefix:     "/.api/ssc/proxy",
+			}
+			m.PathPrefix("/ssc/proxy/").Handler(&sscBackendProxy)
 		}
 	}
 
@@ -222,6 +244,7 @@ func NewHandler(
 	// add above repo paths.
 	repo := m.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/shield").Methods("GET").Handler(jsonHandler(serveRepoShield()))
+	repo.Path("/refresh").Methods("POST").Handler(jsonHandler(serveRepoRefresh(db)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
@@ -270,11 +293,11 @@ func RegisterInternalServices(
 		logger:          logger.Scoped("searchIndexerServer"),
 		gitserverClient: gsClient.Scoped("zoektindexerserver"),
 		ListIndexable:   backend.NewRepos(logger, db, gsClient.Scoped("zoektindexerserver")).ListIndexable,
-		RepoStore:       db.Repos(),
+		repoStore:       db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},
-		Indexers:               search.Indexers(),
+		indexers:               search.Indexers(),
 		Ranking:                rankingService,
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}

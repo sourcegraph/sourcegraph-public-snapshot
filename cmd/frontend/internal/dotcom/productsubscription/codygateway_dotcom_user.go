@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/sourcegraph/sourcegraph/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -53,7 +55,7 @@ type CodyGatewayDotcomUserResolver struct {
 
 func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.Context, args *graphqlbackend.CodyGatewayUsersByAccessTokenArgs) (graphqlbackend.CodyGatewayUser, error) {
 	// 🚨 SECURITY: Only site admins or the service accounts may check users.
-	grantReason, err := serviceAccountOrSiteAdmin(ctx, r.DB, false)
+	grantReason, err := hasRBACPermsOrSiteAdmin(ctx, r.DB, false)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +200,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 	intervalSeconds := int32(math.MaxInt32)
 
 	// Apply self-serve limits if available
-	cfg := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	cfg := conf.Get().SiteConfig().Embeddings
 	if cfg != nil {
 		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
@@ -228,7 +230,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 	}
 
 	return licensing.CodyGatewayRateLimit{
-		AllowedModels:   []string{"openai/text-embedding-ada-002"},
+		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/st-multi-qa-mpnet-base-dot-v1"},
 		Limit:           limit,
 		IntervalSeconds: intervalSeconds,
 	}, nil
@@ -348,6 +350,9 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 
 		if !isProUser {
 			return []string{
+				"anthropic/" + anthropic.Claude3Haiku,
+				"anthropic/" + anthropic.Claude3Sonnet,
+				// Remove after the Claude 3 rollout is complete
 				"anthropic/claude-2.0",
 				"anthropic/claude-instant-v1",
 				"anthropic/claude-instant-1.2",
@@ -356,6 +361,16 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 		}
 
 		return []string{
+			"anthropic/" + anthropic.Claude3Haiku,
+			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude3Opus,
+			"fireworks/" + fireworks.Mixtral8x7bInstruct,
+			"fireworks/" + fireworks.Mixtral8x22Instruct,
+			"openai/gpt-3.5-turbo",
+			"openai/gpt-4-turbo",
+			"openai/gpt-4-turbo-preview",
+
+			// Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",
 			"anthropic/claude-2.0",
 			"anthropic/claude-2.1",
@@ -363,20 +378,48 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"anthropic/claude-instant-1.2",
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
-			"openai/gpt-3.5-turbo",
-			"openai/gpt-4-1106-preview",
-			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 		}
 	case types.CompletionsFeatureCode:
 		return []string{
+			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
 			"anthropic/claude-instant-1.2-cyan",
 			"anthropic/claude-instant-1.2",
 			"fireworks/starcoder",
 			"fireworks/" + fireworks.Llama213bCode,
+			"fireworks/" + fireworks.StarcoderTwo15b,
+			"fireworks/" + fireworks.StarcoderTwo7b,
+			"fireworks/" + fireworks.Mixtral8x7bFineTunedModel,
 		}
 	default:
 		return []string{}
 	}
+}
+
+func (r CodyGatewayDotcomUserResolver) CodyGatewayRateLimitStatusByUserName(ctx context.Context, args *graphqlbackend.CodyGatewayRateLimitStatusByUserNameArgs) (*[]graphqlbackend.RateLimitStatus, error) {
+	user, err := r.DB.Users().GetByUsername(ctx, args.Username)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
+	// settings, because they may contain secrets or other sensitive data.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.DB, user.ID); err != nil {
+		return nil, err
+	}
+
+	limits, err := cody.GetGatewayRateLimits(ctx, user.ID, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	rateLimits := make([]graphqlbackend.RateLimitStatus, 0, len(limits))
+	for _, limit := range limits {
+		rateLimits = append(rateLimits, &graphqlbackend.CodyRateLimit{
+			RateLimitStatus: limit,
+		})
+	}
+
+	return &rateLimits, nil
 }

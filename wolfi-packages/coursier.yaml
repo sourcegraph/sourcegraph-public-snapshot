@@ -4,7 +4,7 @@
 package:
   name: coursier
   version: 2.0.13 # IMPORTANT: Coursier uses a non-standard release model, so updating this version alone will not update the package
-  epoch: 1
+  epoch: 3
   description: "Java dependency resolver"
   target-architecture:
     - x86_64
@@ -36,3 +36,6 @@ pipeline:
       mkdir -p ${{targets.destdir}}/usr/local/bin/
       chmod +x cs-x86_64-pc-linux
       cp cs-x86_64-pc-linux ${{targets.destdir}}/usr/local/bin/coursier
+
+update:
+  enabled: false # No easy way to get release hashes

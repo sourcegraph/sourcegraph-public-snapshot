@@ -1,0 +1,35 @@
+diff --git file1 file1
+new file mode 100644
+index 0000000000000000000000000000000000000000..05ff17d33e02a60d8344f762e584f8391675dce6
+--- /dev/null
++++ file1
+@@ -0,0 +1 @@
++my_content_1
+diff --git file1.1 file1.1
+new file mode 100644
+index 0000000000000000000000000000000000000000..05ff17d33e02a60d8344f762e584f8391675dce6
+--- /dev/null
++++ file1.1
+@@ -0,0 +1 @@
++my_content_1
+diff --git file2 file2
+new file mode 100644
+index 0000000000000000000000000000000000000000..97d1dc8b6de8aaf9c15a5a3e23c9141770e833da
+--- /dev/null
++++ file2
+@@ -0,0 +1 @@
++my_content_2
+diff --git file3 file3
+new file mode 100644
+index 0000000000000000000000000000000000000000..d51fef838ff05a7067923ace2d9b7b28cb3a1983
+--- /dev/null
++++ file3
+@@ -0,0 +1 @@
++my_content_3
+diff --git file3.3 file3.3
+new file mode 100644
+index 0000000000000000000000000000000000000000..d51fef838ff05a7067923ace2d9b7b28cb3a1983
+--- /dev/null
++++ file3.3
+@@ -0,0 +1 @@
++my_content_3

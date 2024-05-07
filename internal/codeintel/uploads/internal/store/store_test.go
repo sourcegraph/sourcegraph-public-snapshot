@@ -13,6 +13,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -23,7 +24,7 @@ import (
 )
 
 // insertNearestUploads populates the lsif_nearest_uploads table with the given upload metadata.
-func insertNearestUploads(t testing.TB, db database.DB, repositoryID int, uploads map[string][]commitgraph.UploadMeta) {
+func insertNearestUploads(t testing.TB, db database.DB, repositoryID int, uploads map[api.CommitID][]commitgraph.UploadMeta) {
 	var rows []*sqlf.Query
 	for commit, uploadMetas := range uploads {
 		uploadsByLength := make(map[int]int, len(uploadMetas))
@@ -63,7 +64,7 @@ func insertNearestUploads(t testing.TB, db database.DB, repositoryID int, upload
 // insertPackages populates the lsif_packages table with the given packages.
 func insertPackages(t testing.TB, store Store, packages []shared.Package) {
 	for _, pkg := range packages {
-		if err := store.UpdatePackages(context.Background(), pkg.DumpID, []precise.Package{
+		if err := store.UpdatePackages(context.Background(), pkg.UploadID, []precise.Package{
 			{
 				Scheme:  pkg.Scheme,
 				Manager: pkg.Manager,
@@ -79,7 +80,7 @@ func insertPackages(t testing.TB, store Store, packages []shared.Package) {
 // insertPackageReferences populates the lsif_references table with the given package references.
 func insertPackageReferences(t testing.TB, store Store, packageReferences []shared.PackageReference) {
 	for _, packageReference := range packageReferences {
-		if err := store.UpdatePackageReferences(context.Background(), packageReference.DumpID, []precise.PackageReference{
+		if err := store.UpdatePackageReferences(context.Background(), packageReference.UploadID, []precise.PackageReference{
 			{
 				Package: precise.Package{
 					Scheme:  packageReference.Scheme,

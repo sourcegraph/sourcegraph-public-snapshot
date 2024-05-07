@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/db"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/azureopenai"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/openai"
@@ -41,7 +40,6 @@ func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsC
 func EmbedRepo(
 	ctx context.Context,
 	client client.EmbeddingsClient,
-	inserter db.VectorInserter,
 	contextService ContextService,
 	readLister FileReadLister,
 	repo types.RepoIDName,
@@ -106,13 +104,6 @@ func EmbedRepo(
 		IsIncremental:  isIncremental,
 	}
 
-	insertDB := func(batch []embeddings.RepoEmbeddingRowMetadata, embeddings []float32, isCode bool) error {
-		return inserter.InsertChunks(ctx, db.InsertParams{
-			ModelID:     client.GetModelIdentifier(),
-			ChunkPoints: batchToChunkPoints(repo, opts.Revision, batch, embeddings, isCode),
-		})
-	}
-
 	insertIndex := func(index *embeddings.EmbeddingIndex, metadata []embeddings.RepoEmbeddingRowMetadata, vectors []float32) {
 		index.RowMetadata = append(index.RowMetadata, metadata...)
 		index.Embeddings = append(index.Embeddings, embeddings.Quantize(vectors, nil)...)
@@ -125,9 +116,8 @@ func EmbedRepo(
 	}
 
 	codeIndex := newIndex(len(codeFileNames))
-	insertCode := func(md []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error {
+	insertCode := func(md []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) {
 		insertIndex(&codeIndex, md, embeddings)
-		return insertDB(md, embeddings, true)
 	}
 
 	reportCodeProgress := func(codeIndexStats bgrepo.EmbedFilesStats) {
@@ -150,9 +140,8 @@ func EmbedRepo(
 	stats.CodeIndexStats = codeIndexStats
 
 	textIndex := newIndex(len(textFileNames))
-	insertText := func(md []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error {
+	insertText := func(md []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) {
 		insertIndex(&textIndex, md, embeddings)
-		return insertDB(md, embeddings, false)
 	}
 
 	reportTextProgress := func(textIndexStats bgrepo.EmbedFilesStats) {
@@ -214,7 +203,7 @@ type FileFilters struct {
 	MaxFileSizeBytes int
 }
 
-type batchInserter func(metadata []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error
+type batchInserter func(metadata []embeddings.RepoEmbeddingRowMetadata, embeddings []float32)
 
 type FlushResults struct {
 	size  int
@@ -270,7 +259,7 @@ func embedFiles(
 				// are better than no embeddings.
 				logger.Warn("error while getting embeddings", log.Error(err))
 				failed := make([]int, len(batchChunks))
-				for i := 0; i < len(batchChunks); i++ {
+				for i := range len(batchChunks) {
 					failed[i] = i
 				}
 				batchEmbeddings = &client.EmbeddingsResults{
@@ -335,9 +324,7 @@ func embedFiles(
 			cursor++
 		}
 
-		if err := insert(metadata, batchEmbeddings.Embeddings[:cursor*dimensions]); err != nil {
-			return nil, err
-		}
+		insert(metadata, batchEmbeddings.Embeddings[:cursor*dimensions])
 
 		batch = batch[:0] // reset batch
 		reportProgress(stats)
@@ -416,29 +403,6 @@ func embedFiles(
 	}
 
 	return stats, nil
-}
-
-func batchToChunkPoints(repo types.RepoIDName, revision api.CommitID, batch []embeddings.RepoEmbeddingRowMetadata, embeddings []float32, isCode bool) []db.ChunkPoint {
-	if len(batch) == 0 {
-		return nil
-	}
-
-	dimensions := len(embeddings) / len(batch)
-	points := make([]db.ChunkPoint, 0, len(batch))
-	for i, chunk := range batch {
-		payload := db.ChunkPayload{
-			RepoName:  repo.Name,
-			RepoID:    repo.ID,
-			Revision:  revision,
-			FilePath:  chunk.FileName,
-			StartLine: uint32(chunk.StartLine),
-			EndLine:   uint32(chunk.EndLine),
-			IsCode:    isCode,
-		}
-		point := db.NewChunkPoint(payload, embeddings[i*dimensions:(i+1)*dimensions])
-		points = append(points, point)
-	}
-	return points
 }
 
 type FileReadLister interface {

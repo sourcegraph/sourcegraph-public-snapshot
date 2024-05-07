@@ -11,12 +11,12 @@ import (
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	gh "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -70,6 +70,7 @@ func parseProvider(logger log.Logger, p *schema.GitHubAuthProvider, db database.
 				&oauth2Cfg,
 				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{
 					CodeHost:     codeHost,
+					logger:       log.Scoped("sessionIssuerHelper"),
 					db:           db,
 					clientID:     p.ClientID,
 					allowSignup:  p.AllowSignup,
@@ -115,7 +116,7 @@ func validateClientIDAndSecret(clientIDOrSecret string) (valid bool) {
 
 func requestedScopes(p *schema.GitHubAuthProvider) []string {
 	scopes := []string{"user:email"}
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		scopes = append(scopes, "repo")
 	}
 

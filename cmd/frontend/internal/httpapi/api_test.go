@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
@@ -20,6 +21,11 @@ func init() {
 }
 
 func newTest(t *testing.T) *httptestutil.Client {
+	conf.Mock(&conf.Unified{})
+	t.Cleanup(func() {
+		conf.Mock(nil)
+	})
+
 	logger := logtest.Scoped(t)
 	enterpriseServices := enterprise.DefaultServices()
 	rateLimitStore, _ := memstore.NewCtx(1024)

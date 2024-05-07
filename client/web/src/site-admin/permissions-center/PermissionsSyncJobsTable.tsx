@@ -3,8 +3,7 @@ import React, { type ChangeEvent, type FC, useCallback, useEffect, useRef, useSt
 import type { ApolloError } from '@apollo/client/errors'
 import { mdiCancel, mdiClose, mdiDetails, mdiMapSearch, mdiReload, mdiSecurity } from '@mdi/js'
 import classNames from 'classnames'
-import { intervalToDuration } from 'date-fns'
-import formatDuration from 'date-fns/formatDuration'
+import { intervalToDuration, formatDuration } from 'date-fns'
 import { capitalize, noop } from 'lodash'
 import { animated, useSpring } from 'react-spring'
 
@@ -111,7 +110,14 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
 }) => {
     useEffect(() => {
         telemetryService.logPageView('PermissionsSyncJobsTable')
-    }, [telemetryService])
+        if (userID) {
+            telemetryRecorder.recordEvent('user.permissionsCenter', 'view')
+        } else if (repoID) {
+            telemetryRecorder.recordEvent('repo.permissionsCenter', 'view')
+        } else {
+            telemetryRecorder.recordEvent('admin.permissionsCenter', 'view')
+        }
+    }, [telemetryService, telemetryRecorder, userID, repoID])
 
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
     const debouncedQuery = useDebounce(filters.query, 300)
@@ -191,7 +197,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     const handleTriggerPermsSync = useCallback(
         ([job]: PermissionsSyncJob[]) => {
             if (job.subject.__typename === 'Repository') {
-                telemetryRecorder.recordEvent('permissions-center.repository.sync', 'trigger', {
+                telemetryRecorder.recordEvent('admin.permissionsCenter.repository.sync', 'trigger', {
                     privateMetadata: { repo: job.subject.id },
                 })
                 triggerRepoSync({
@@ -204,7 +210,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                     noop
                 )
             } else {
-                telemetryRecorder.recordEvent('permissions-center.user.sync', 'trigger', {
+                telemetryRecorder.recordEvent('admin.permissionsCenter.user.sync', 'trigger', {
                     privateMetadata: { user: job.subject.id },
                 })
                 triggerUserSync({
@@ -233,11 +239,11 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
             )
 
             if (syncJob.subject.__typename === 'Repository') {
-                telemetryRecorder.recordEvent('permissions-center.repository.sync', 'cancel', {
+                telemetryRecorder.recordEvent('admin.permissionsCenter.repository.sync', 'cancel', {
                     privateMetadata: { repo: syncJob.subject.id },
                 })
             } else {
-                telemetryRecorder.recordEvent('permissions-center.user.sync', 'cancel', {
+                telemetryRecorder.recordEvent('admin.permissionsCenter.user.sync', 'cancel', {
                     privateMetadata: { user: syncJob.subject.id },
                 })
             }
@@ -251,11 +257,11 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
             setSelectedJob(syncJob)
 
             if (syncJob.subject.__typename === 'Repository') {
-                telemetryRecorder.recordEvent('permissions-center.repository.sync', 'view', {
+                telemetryRecorder.recordEvent('admin.permissionsCenter.repository.sync', 'view', {
                     privateMetadata: { repo: syncJob.subject.id },
                 })
             } else {
-                telemetryRecorder.recordEvent('permissions-center.user.sync', 'view', {
+                telemetryRecorder.recordEvent('admin.permissionsCenter.user.sync', 'view', {
                     privateMetadata: { user: syncJob.subject.id },
                 })
             }

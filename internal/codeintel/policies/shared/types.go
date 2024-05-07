@@ -49,9 +49,13 @@ type GetConfigurationPoliciesOptions struct {
 	// should be returned (or filtered).
 	ForDataRetention *bool
 
-	// ForIndexing indicates that configuration policies with indexing enabled should
+	// ForPreciseIndexing indicates that configuration policies with precise indexing enabled should
 	// be returned (or filtered).
-	ForIndexing *bool
+	ForPreciseIndexing *bool
+
+	// ForSyntacticIndexing indicates that configuration policies with syntactic indexing enabled should
+	// be returned (or filtered).
+	ForSyntacticIndexing *bool
 
 	// ForEmbeddings indicates that configuration policies with embeddings enabled
 	// should be returned (or filtered).

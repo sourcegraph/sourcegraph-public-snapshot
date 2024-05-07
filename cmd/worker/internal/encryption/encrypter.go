@@ -6,25 +6,24 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type recordEncrypter struct {
-	store   *database.RecordEncrypter
+type recordEncrypterRoutine struct {
+	store   *recordEncrypter
 	decrypt bool
 	metrics *metrics
 	logger  log.Logger
 }
 
 var (
-	_ goroutine.Handler      = &recordEncrypter{}
-	_ goroutine.ErrorHandler = &recordEncrypter{}
+	_ goroutine.Handler      = &recordEncrypterRoutine{}
+	_ goroutine.ErrorHandler = &recordEncrypterRoutine{}
 )
 
-func (e *recordEncrypter) Handle(ctx context.Context) (err error) {
-	for _, config := range database.EncryptionConfigs {
+func (e *recordEncrypterRoutine) Handle(ctx context.Context) (err error) {
+	for _, config := range encryptionConfigs {
 		if handleErr := e.handleBatch(ctx, config); handleErr != nil {
 			err = errors.CombineErrors(err, handleErr)
 		}
@@ -33,7 +32,7 @@ func (e *recordEncrypter) Handle(ctx context.Context) (err error) {
 	return err
 }
 
-func (e *recordEncrypter) handleBatch(ctx context.Context, config database.EncryptionConfig) error {
+func (e *recordEncrypterRoutine) handleBatch(ctx context.Context, config encryptionConfig) error {
 	if e.decrypt {
 		return e.handleDecryptBatch(ctx, config)
 	}
@@ -41,7 +40,7 @@ func (e *recordEncrypter) handleBatch(ctx context.Context, config database.Encry
 	return e.handleEncryptBatch(ctx, config)
 }
 
-func (e *recordEncrypter) handleEncryptBatch(ctx context.Context, config database.EncryptionConfig) error {
+func (e *recordEncrypterRoutine) handleEncryptBatch(ctx context.Context, config encryptionConfig) error {
 	count, err := e.store.EncryptBatch(ctx, config)
 	if err != nil || count == 0 {
 		return err
@@ -52,7 +51,7 @@ func (e *recordEncrypter) handleEncryptBatch(ctx context.Context, config databas
 	return nil
 }
 
-func (e *recordEncrypter) handleDecryptBatch(ctx context.Context, config database.EncryptionConfig) error {
+func (e *recordEncrypterRoutine) handleDecryptBatch(ctx context.Context, config encryptionConfig) error {
 	count, err := e.store.DecryptBatch(ctx, config)
 	if err != nil || count == 0 {
 		return err
@@ -63,7 +62,7 @@ func (e *recordEncrypter) handleDecryptBatch(ctx context.Context, config databas
 	return nil
 }
 
-func (e *recordEncrypter) HandleError(err error) {
+func (e *recordEncrypterRoutine) HandleError(err error) {
 	verb := "encrypt"
 	if e.decrypt {
 		verb = "decrypt"

@@ -4,11 +4,12 @@ import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Alert, Button, Code, Link, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import type { BatchSpecFields } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { MultiSelectContext } from '../MultiSelectContext'
 
 import { applyBatchChange, createBatchChange } from './backend'
@@ -16,7 +17,7 @@ import { BatchChangePreviewContext } from './BatchChangePreviewContext'
 
 import styles from './CreateUpdateBatchChangeAlert.module.scss'
 
-export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
+export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps, TelemetryV2Props {
     specID: string
     toBeArchived: number
     batchChange: BatchSpecFields['appliesToBatchChange']
@@ -25,7 +26,7 @@ export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
 
 export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
     React.PropsWithChildren<CreateUpdateBatchChangeAlertProps>
-> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, telemetryService }) => {
+> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, telemetryService, telemetryRecorder }) => {
     const navigate = useNavigate()
 
     const batchChangeID = batchChange?.id
@@ -73,10 +74,25 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                 navigate(batchChange.url)
             }
             telemetryService.logViewEvent(`BatchChangeDetailsPageAfter${batchChangeID ? 'Create' : 'Update'}`)
+            if (batchChangeID) {
+                telemetryRecorder.recordEvent('batchChange.detailsAfterUpdate', 'view')
+            } else {
+                telemetryRecorder.recordEvent('batchChange.detailsAfterCreate', 'view')
+            }
         } catch (error) {
             setIsLoading(error)
         }
-    }, [canApply, specID, setIsLoading, navigate, batchChangeID, telemetryService, toBeArchived, publicationStates])
+    }, [
+        canApply,
+        specID,
+        setIsLoading,
+        navigate,
+        batchChangeID,
+        telemetryService,
+        telemetryRecorder,
+        toBeArchived,
+        publicationStates,
+    ])
 
     return (
         <>
@@ -105,9 +121,11 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                             )}
                             onClick={() => {
                                 if (batchChange) {
-                                    eventLogger.log('batch_change_execution_preview:apply_update:clicked')
+                                    EVENT_LOGGER.log('batch_change_execution_preview:apply_update:clicked')
+                                    telemetryRecorder.recordEvent('batchChange.execution.updateAndApply', 'click')
                                 } else {
-                                    eventLogger.log('batch_change_execution_preview:apply:clicked')
+                                    EVENT_LOGGER.log('batch_change_execution_preview:apply:clicked')
+                                    telemetryRecorder.recordEvent('batchChange.execution.createAndApply', 'click')
                                 }
                                 return onApply()
                             }}

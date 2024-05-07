@@ -11,6 +11,7 @@
         'info',
         'merged',
         'outlineSecondary',
+        'link',
     ] as const
 
     export type BadgeVariantType = typeof BADGE_VARIANTS[number]
@@ -39,7 +40,7 @@
 
 <!--TODO: support non-branded badges -->
 <slot name="custom" class={cls}>
-    <span class={cls}>
+    <span class={cls} data-badge>
         <slot />
     </span>
 </slot>

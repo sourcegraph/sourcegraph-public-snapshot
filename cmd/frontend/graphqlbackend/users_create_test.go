@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"testing"
 
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -24,7 +24,7 @@ type mockFuncs struct {
 	userEmailStore *dbmocks.MockUserEmailsStore
 }
 
-func makeUsersCreateTestDB(t *testing.T) mockFuncs {
+func makeUsersCreateTestDB() mockFuncs {
 	users := dbmocks.NewMockUserStore()
 	// This is the created user that is returned via the GraphQL API.
 	users.CreateFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
@@ -50,7 +50,7 @@ func makeUsersCreateTestDB(t *testing.T) mockFuncs {
 }
 
 func TestCreateUser(t *testing.T) {
-	mocks := makeUsersCreateTestDB(t)
+	mocks := makeUsersCreateTestDB()
 
 	RunTests(t, []*Test{
 		{
@@ -91,7 +91,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 	})
 
 	t.Run("with SMTP disabled", func(t *testing.T) {
-		mocks := makeUsersCreateTestDB(t)
+		mocks := makeUsersCreateTestDB()
 
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
@@ -146,7 +146,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 			txemail.MockSend = nil
 		})
 
-		mocks := makeUsersCreateTestDB(t)
+		mocks := makeUsersCreateTestDB()
 
 		RunTests(t, []*Test{
 			{
@@ -200,7 +200,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 			txemail.MockSend = nil
 		})
 
-		mocks := makeUsersCreateTestDB(t)
+		mocks := makeUsersCreateTestDB()
 
 		RunTests(t, []*Test{
 			{

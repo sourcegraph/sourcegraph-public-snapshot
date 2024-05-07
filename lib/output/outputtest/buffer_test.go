@@ -6,13 +6,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestBuffer_Lines(t *testing.T) {
 	buf := &Buffer{}
 
 	out := output.NewOutput(buf, output.OutputOpts{
-		ForceTTY:    true,
+		ForceTTY:    pointers.Ptr(true),
 		ForceColor:  true,
 		ForceHeight: 25,
 		ForceWidth:  80,

@@ -5,9 +5,13 @@ import (
 	"fmt"
 	"testing"
 
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -16,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -312,6 +317,38 @@ func TestGetAndSaveUser(t *testing.T) {
 				expCalledCreateUserSyncJob:       true,
 				expNewUserCreated:                false,
 			},
+			{
+				description: "single identity per user mode rejects multiple external identities from same provider",
+				op: GetAndSaveUserOp{
+					ExternalAccount:       ext("st1", "s1", "c1", "s1/u1-new"),
+					UserProps:             userProps("u1", "u1@example.com"), // This user exists in the DB already and has an external account for st1, s1, c1
+					SingleIdentityPerUser: true,
+				},
+				createIfNotExistIrrelevant:       true,
+				expSafeErr:                       "Another identity for this user from this provider already exists. Remove the link to the other identity from your account.",
+				expErr:                           errors.New("duplicate identity for single identity provider"),
+				expCalledGrantPendingPermissions: false,
+				expCalledCreateUserSyncJob:       false,
+				expNewUserCreated:                false,
+				expSavedExtAccts:                 map[int32][]extsvc.AccountSpec{},
+			},
+			{
+				description: "single identity per user mode accepts the same external identity from same provider",
+				actorUID:    1,
+				op: GetAndSaveUserOp{
+					ExternalAccount:       ext("st1", "s1", "c1", "s1/u1"),
+					UserProps:             userProps("u1", "u1@example.com"), // This user exists in the DB already and has an external account for st1, s1, c1
+					SingleIdentityPerUser: true,
+				},
+				createIfNotExistIrrelevant: true,
+				expUserID:                  1,
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+					1: {ext("st1", "s1", "c1", "s1/u1")},
+				},
+				expCalledGrantPendingPermissions: true,
+				expCalledCreateUserSyncJob:       true,
+				expNewUserCreated:                false,
+			},
 		},
 	}
 	errorCases := []outerCase{
@@ -415,8 +452,8 @@ func TestGetAndSaveUser(t *testing.T) {
 					if len(createIfNotExistVals) == 2 {
 						description = fmt.Sprintf("%s, createIfNotExist=%v", description, createIfNotExist)
 					}
-					t.Run("", func(t *testing.T) {
-						t.Logf("Description: %q", description)
+					t.Run(description, func(t *testing.T) {
+						t.Logf("Description: %q", description) // for readability
 						m := newMocks(t, oc.mock)
 
 						ctx := context.Background()
@@ -425,7 +462,12 @@ func TestGetAndSaveUser(t *testing.T) {
 						}
 						op := c.op
 						op.CreateIfNotExist = createIfNotExist
-						newUserCreated, userID, safeErr, err := GetAndSaveUser(ctx, m.DB(), op)
+
+						recorder, eventsStore := telemetrytest.NewRecorder()
+
+						logger := logtest.ScopedWith(t, logtest.LoggerOptions{Level: log.LevelDebug})
+						newUserCreated, userID, safeErr, err := GetAndSaveUser(
+							ctx, logger, m.DB(), recorder, op)
 
 						if userID != c.expUserID {
 							t.Errorf("mismatched userID, want: %v, but got %v", c.expUserID, userID)
@@ -461,6 +503,42 @@ func TestGetAndSaveUser(t *testing.T) {
 
 						if newUserCreated != c.expNewUserCreated {
 							t.Errorf("mismatched newUserCreated, want %v but got %v", c.expNewUserCreated, newUserCreated)
+						}
+
+						// All telemetry should have the expected user (or lack
+						// of user) attached, and all code paths should generate
+						// at least 1 user event.
+						gotEvents := eventsStore.CollectStoredEvents()
+						assert.NotEmpty(t, gotEvents)
+						for _, ev := range gotEvents {
+							switch {
+							// We are expecting a specific user ID
+							case c.expUserID != 0:
+								assert.Equalf(t, int64(c.expUserID), ev.GetUser().GetUserId(),
+									"Event '%s#%s' does not have expected user ID", ev.GetFeature(), ev.GetAction())
+
+							// Scenarios where we should have a user found
+							case oc.mock.updateErr != nil ||
+								oc.mock.getByIDErr != nil ||
+								oc.mock.upsertErr != nil ||
+								c.op.SingleIdentityPerUser:
+								assert.NotEmptyf(t, ev.GetUser().GetUserId(),
+									"Event '%s#%s' should have a user ID", ev.GetFeature(), ev.GetAction())
+
+							// Scenarios where we should not have any user found
+							case oc.mock.getByUsernameErr != nil ||
+								oc.mock.getByVerifiedEmailErr != nil ||
+								oc.mock.externalAccountUpdateErr != nil ||
+								oc.mock.createWithExternalAccountErr != nil ||
+								!c.op.CreateIfNotExist:
+								assert.Nil(t, ev.GetUser(),
+									"Event '%s#%s' should not have user ID, found: %s",
+									ev.GetFeature(), ev.GetAction(), ev.GetUser().GetUserId())
+
+							default:
+								assert.Failf(t, "no telemetry handling available for test case",
+									"got event: %s", ev.String())
+							}
 						}
 					})
 				}
@@ -499,9 +577,13 @@ func TestGetAndSaveUser(t *testing.T) {
 		db.TelemetryEventsExportQueueFunc.SetDefaultReturn(dbmocks.NewMockTelemetryEventsExportQueueStore())
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncJobsStore)
 
+		recorder, eventsStore := telemetrytest.NewRecorder()
+
 		_, _, _, err := GetAndSaveUser(
 			ctx,
+			logtest.Scoped(t),
 			db,
+			recorder,
 			GetAndSaveUserOp{
 				UserProps: database.NewUser{
 					EmailIsVerified: true,
@@ -515,6 +597,14 @@ func TestGetAndSaveUser(t *testing.T) {
 		)
 		require.NoError(t, err)
 		mockrequire.Called(t, usersStore.CreateWithExternalAccountFunc)
+
+		// All telemetry should have the expected user attached
+		gotEvents := eventsStore.CollectStoredEvents()
+		assert.NotEmpty(t, gotEvents)
+		for _, ev := range gotEvents {
+			assert.Equalf(t, int64(1), ev.GetUser().GetUserId(),
+				"Event '%s#%s' does not have expected user ID", ev.GetFeature(), ev.GetAction())
+		}
 	})
 }
 
@@ -624,7 +714,8 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 				ExternalAccount: ext("github", "fake-service", "fake-client", "account-u1"),
 				UserProps:       database.NewUser{DisplayName: test.displayName, AvatarURL: test.avatarURL},
 			}
-			if _, _, _, err := GetAndSaveUser(ctx, db, op); err != nil {
+			recorder := telemetrytest.NewDebugRecorder(t)
+			if _, _, _, err := GetAndSaveUser(ctx, logtest.Scoped(t), db, recorder, op); err != nil {
 				t.Fatal(err)
 			}
 			if user.DisplayName != test.wantDisplayName {
@@ -681,6 +772,37 @@ func (m *mocks) DB() database.DB {
 	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.UpdateFunc.SetDefaultHook(m.ExternalAccountUpdate)
 	externalAccounts.UpsertFunc.SetDefaultHook(m.Upsert)
+	externalAccounts.ListFunc.SetDefaultHook(func(ctx context.Context, ealo database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+		for _, ui := range m.mockParams.userInfos {
+			if ealo.UserID != 0 && ui.user.ID != ealo.UserID {
+				continue
+			}
+			eas := make([]*extsvc.Account, 0)
+			for _, acc := range ui.extAccts {
+				if ealo.ServiceType != "" && ealo.ServiceType != acc.ServiceType {
+					continue
+				}
+				if ealo.ServiceID != "" && ealo.ServiceID != acc.ServiceID {
+					continue
+				}
+				if ealo.ClientID != "" && ealo.ClientID != acc.ClientID {
+					continue
+				}
+				eas = append(eas, &extsvc.Account{
+					UserID: ealo.UserID,
+					AccountSpec: extsvc.AccountSpec{
+						ServiceType: acc.ServiceType,
+						ServiceID:   acc.ServiceID,
+						AccountID:   acc.AccountID,
+						ClientID:    acc.ClientID,
+					},
+				})
+			}
+			return eas, nil
+		}
+
+		return nil, errors.New("no ext accts for user")
+	})
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(m.GetByID)

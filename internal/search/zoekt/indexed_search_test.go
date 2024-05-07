@@ -598,6 +598,18 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 				Start: zoekt.Location{LineNumber: 20, Column: 38},
 			}},
 			SymbolInfo: []*zoekt.Symbol{symbolInfo("baz")},
+		}, {
+			// Test we dedup when we have two results for foobar.
+			Content:      []byte("symbol foobar symbol bam"),
+			ContentStart: zoekt.Location{LineNumber: 25, Column: 1},
+			Ranges: []zoekt.Range{{
+				Start: zoekt.Location{LineNumber: 25, Column: 8},
+			}, {
+				Start: zoekt.Location{LineNumber: 25, Column: 11},
+			}, {
+				Start: zoekt.Location{LineNumber: 25, Column: 23},
+			}},
+			SymbolInfo: []*zoekt.Symbol{symbolInfo("foobar"), symbolInfo("foobar"), symbolInfo("bam")},
 		}},
 	}
 
@@ -623,6 +635,14 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		Name:      "baz",
 		Line:      20,
 		Character: 37,
+	}, {
+		Name:      "foobar",
+		Line:      25,
+		Character: 7,
+	}, {
+		Name:      "bam",
+		Line:      25,
+		Character: 22,
 	},
 	}
 	for i := range want {

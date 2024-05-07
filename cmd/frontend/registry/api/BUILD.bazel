@@ -11,8 +11,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api",
     visibility = ["//visibility:public"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/frontend/registry/client",
+        "//internal/dotcom",
         "//lib/errors",
     ],
 )

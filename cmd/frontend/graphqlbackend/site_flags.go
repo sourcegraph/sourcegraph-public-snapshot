@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -12,10 +13,6 @@ import (
 )
 
 func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, error) {
-	if envvar.SourcegraphDotComMode() {
-		return false, nil
-	}
-
 	// 🚨 SECURITY: The site alerts may contain sensitive data, so only site
 	// admins may view them.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -46,7 +43,7 @@ func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, er
 func (*siteResolver) SendsEmailVerificationEmails() bool { return conf.EmailVerificationRequired() }
 
 func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		return false, nil
 	}
 

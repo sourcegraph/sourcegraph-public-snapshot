@@ -14,12 +14,12 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
         "//cmd/frontend/internal/app/router",
         "//cmd/frontend/internal/app/ui",
         "//cmd/frontend/internal/app/ui/router",
         "//internal/actor",
+        "//internal/dotcom",
         "//internal/env",
         "//internal/trace",
         "//lib/errors",

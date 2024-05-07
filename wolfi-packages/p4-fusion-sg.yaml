@@ -3,7 +3,7 @@
 package:
   name: p4-fusion-sg
   version: 1.13.2
-  epoch: 0
+  epoch: 4
   description: "A fast Perforce to Git conversion tool, Sourcegraph fork"
   target-architecture:
     - x86_64
@@ -55,9 +55,9 @@ pipeline:
   # Download Helix Core C++ API
   - uses: fetch
     with:
-      uri: https://cdist2.perforce.com/perforce/r23.1/bin.linux26x86_64/p4api-glibc2.3-openssl1.1.1.tgz
-      # Hash occasionally changes, available at https://filehost.perforce.com/perforce/r22.1/bin.linux26x86_64/SHA256SUMS (check version)
-      expected-sha256: 640898f7d001ab7d071db17fb41442dce319203e636550d562eaab6212f6a595
+      uri: https://filehost.perforce.com/perforce/r23.1/bin.linux26x86_64/p4api-glibc2.3-openssl1.1.1.tgz
+      # Hash occasionally changes, available at https://filehost.perforce.com/perforce/r23.1/bin.linux26x86_64/SHA256SUMS (check version)
+      expected-sha256: b6e391a2b288f363693aeae2620188500f3e555d4382bcc2356d7721085a9062 # based on url
       extract: false
   - runs: |
       mkdir -p p4-fusion-src/vendor/helix-core-api/linux
@@ -83,4 +83,7 @@ pipeline:
   # Copy p4-fusion binary
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/local/bin/
-      cp p4-fusion-src/build/p4-fusion/p4-fusion ${{targets.destdir}}/usr/local/bin/p4-fusion-binary
+      cp p4-fusion-src/build/p4-fusion/p4-fusion ${{targets.destdir}}/usr/local/bin/p4-fusion
+
+update:
+  enabled: false # Our p4-fusion fork does not provide releases or tags

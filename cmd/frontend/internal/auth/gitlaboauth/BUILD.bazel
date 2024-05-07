@@ -28,6 +28,7 @@ go_library(
         "//internal/extsvc",
         "//internal/extsvc/gitlab",
         "//internal/licensing",
+        "//internal/telemetry/telemetryrecorder",
         "//lib/errors",
         "//schema",
         "@com_github_dghubble_gologin_v2//:gologin",
@@ -53,7 +54,6 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/auth",
-        "//cmd/frontend/envvar",
         "//cmd/frontend/external/session",
         "//cmd/frontend/internal/auth/oauth",
         "//internal/actor",
@@ -61,6 +61,7 @@ go_test(
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",
+        "//internal/dotcom",
         "//internal/extsvc",
         "//internal/extsvc/gitlab",
         "//lib/errors",

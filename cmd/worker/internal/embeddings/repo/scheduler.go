@@ -8,6 +8,7 @@ import (
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
@@ -51,10 +52,17 @@ func newRepoEmbeddingScheduler(
 ) goroutine.BackgroundRoutine {
 	enqueueActive := goroutine.HandlerFunc(
 		func(ctx context.Context) error {
+			if !conf.EmbeddingsEnabled() {
+				return nil
+			}
+
 			opts := repo.GetEmbeddableRepoOpts()
 			embeddableRepos, err := repoEmbeddingJobsStore.GetEmbeddableRepos(ctx, opts)
 			if err != nil {
 				return err
+			}
+			if len(embeddableRepos) == 0 {
+				return nil
 			}
 
 			var repoIDs []api.RepoID

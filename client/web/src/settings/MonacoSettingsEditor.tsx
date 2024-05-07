@@ -7,6 +7,7 @@ import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
 
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
+import type { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import jsonSchemaMetaSchema from '../../../../schema/json-schema-draft-07.schema.json'
@@ -212,13 +213,15 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         label: string,
         id: string,
         run: ConfigInsertionFunction,
-        telemetryService: TelemetryService
+        telemetryService: TelemetryService,
+        telemetryRecorder: TelemetryRecorder
     ): void {
         inputEditor.addAction({
             label,
             id,
             run: editor => {
                 telemetryService.log('SiteConfigurationActionExecuted')
+                telemetryRecorder.recordEvent('settingsEditor.action', 'execute')
                 editor.focus()
                 editor.pushUndoStop()
                 const { edits, selectText, cursorOffset } = run(editor.getValue())
@@ -364,11 +367,41 @@ declare global {
 // Manually configure the MonacoEnvironment for the Monaco editor.
 if (!window.MonacoEnvironment) {
     window.MonacoEnvironment = {
-        getWorkerUrl(_moduleId: string, label: string): string {
+        /* eslint-disable @typescript-eslint/ban-ts-comment */
+
+        // NOTE: We used to use `getWorkerUrl` to load the worker, but that stopped working when
+        // we switched to using bazel to build the Monaco editor. If we wanted to use `getWorkerUrl`
+        // we would have to add the two workers below as entry points to an esbuild build.
+        // We cannot use the same build that builds the webapp because the output file names
+        // currently contain the content hash of the file, which would make it impossible to know
+        // the file name of the worker. Specifying a different file name pattern for the workers only
+        // doesn't seem to be possible with esbuild.
+        // We could add a separate bazel build target for the workers only, but using `getWorker` with
+        // the workerPlugin allows us to have a single build target for the webapp, and ensures that
+        // bazel and non-bazel builds work the same way.
+
+        // Returning Promise<Worker> works, but it appears that the type definition does not
+        // reflect that. We have to dynamically import these modules because they are converted
+        // to "inline workers" via the workerPlugin for esbuild.
+        // Ignoring the error is necessary for the bazel build to work.
+        // @ts-ignore
+        async getWorker(_moduleId: string, label: string): Promise<Worker> {
             if (label === 'json') {
-                return window.context.assetsRoot + '/scripts/json.worker.bundle.js'
+                // There are no type definitions for this file. The workerPlugin for esbuild converts
+                // this file to a module which exports a function that returns a worker.
+                // See build-config/src/esbuild/workerPlugin.ts.
+                // Ignoring the error is necessary for the bazel build to work.
+                // @ts-ignore
+                return (await import('monaco-editor/esm/vs/language/json/json.worker')).default()
             }
-            return window.context.assetsRoot + '/scripts/editor.worker.bundle.js'
+            // There are no type definitions for this file. The workerPlugin for esbuild converts
+            // this file to a module which exports a function that returns a worker.
+            // See build-config/src/esbuild/workerPlugin.ts.
+            // Ignoring the error is necessary for the bazel build to work.
+            // @ts-ignore
+            return (await import('monaco-editor/esm/vs/editor/editor.worker')).default()
         },
+
+        /* eslint-enable @typescript-eslint/ban-ts-comment */
     }
 }

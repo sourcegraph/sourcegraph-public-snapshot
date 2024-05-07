@@ -8,6 +8,7 @@ package images
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -15,7 +16,18 @@ const (
 	// SourcegraphDockerDevRegistry is a private registry for dev images, and requires authentication to pull from.
 	SourcegraphDockerDevRegistry = "us.gcr.io/sourcegraph-dev"
 	// SourcegraphDockerPublishRegistry is a public registry for final images, and does not require authentication to pull from.
+	// TODO RFC795: safeguard
 	SourcegraphDockerPublishRegistry = "index.docker.io/sourcegraph"
+	// SourcegraphArtifactRegistryPublicRegistry is a public registry for storing public images.
+	// It is a migitation for the upcoming Docker Hub rate limits on GCP starting July 15, 2024
+	SourcegraphArtifactRegistryPublicRegistry = "us-docker.pkg.dev/sourcegraph-public-images/sourcegraph-public-images"
+	// SourcegraphInternalReleaseRegistry is a private registry storing internal releases.
+	SourcegraphInternalReleaseRegistry = "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal"
+	// SourcegraphPublicReleaseRegistry is a currently private registry for storing public releases.
+	SourcegraphPublicReleaseRegistry = "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-public"
+
+	// CloudEphemeralRegistry is the registry where images get published too which should be used for Cloud Ephemeral deployments
+	CloudEphemeralRegistry = "us-central1-docker.pkg.dev/sourcegraph-ci/cloud-ephemeral"
 )
 
 // DevRegistryImage returns the name of the image for the given app and tag on the
@@ -25,10 +37,22 @@ func DevRegistryImage(app, tag string) string {
 	return maybeTaggedImage(root, tag)
 }
 
+// InternalReleaseRegistry returns the name of the image for the given app and tag on the
+// internal releases private registry.
+func InternalReleaseRegistry(app, tag string) string {
+	root := fmt.Sprintf("%s/%s", SourcegraphInternalReleaseRegistry, app)
+	return maybeTaggedImage(root, tag)
+}
+
 // PublishedRegistryImage returns the name of the image for the given app and tag on the
 // publish registry.
 func PublishedRegistryImage(app, tag string) string {
 	root := fmt.Sprintf("%s/%s", SourcegraphDockerPublishRegistry, app)
+	return maybeTaggedImage(root, tag)
+}
+
+func CloudEphemeralRegistryImage(app, tag string) string {
+	root := fmt.Sprintf("%s/%s", CloudEphemeralRegistry, app)
 	return maybeTaggedImage(root, tag)
 }
 
@@ -58,7 +82,6 @@ var SourcegraphDockerImages = append(append(SourcegraphDockerImagesTestDeps, Dep
 // base deployment, nor do they require a special bazel toolchain ie: musl
 var SourcegraphDockerImagesMisc = []string{
 	"batcheshelper",
-	"blobstore2",
 	"bundled-executor",
 	"dind",
 	"embeddings",
@@ -84,22 +107,24 @@ var DeploySourcegraphDockerImages = []string{
 	"alpine-3.14",
 	"postgres-12-alpine",
 	"blobstore",
+	"caddy",
 	"cadvisor",
 	"codeinsights-db",
 	"codeintel-db",
 	"embeddings",
+	"executor",
+	"executor-kubernetes",
 	"frontend",
 	"gitserver",
 	"grafana",
 	"indexed-searcher",
+	"jaeger-all-in-one",
 	"migrator",
 	"node-exporter",
 	"opentelemetry-collector",
 	"postgres_exporter",
 	"precise-code-intel-worker",
 	"prometheus",
-	"prometheus-gcp",
-	"qdrant",
 	"redis-cache",
 	"redis-store",
 	"redis_exporter",
@@ -127,6 +152,7 @@ func CandidateImageTag(commit string, buildNumber int) string {
 // - latest tag omitted if empty
 // - branch name omitted when `main`
 func BranchImageTag(now time.Time, commit string, buildNumber int, branchName, latestTag string) string {
+	branchName = sanitizeBranchForDockerTag(branchName)
 	commitSuffix := fmt.Sprintf("%.12s", commit)
 	if latestTag != "" {
 		commitSuffix = latestTag + "-" + commitSuffix
@@ -138,4 +164,10 @@ func BranchImageTag(now time.Time, commit string, buildNumber int, branchName, l
 	}
 
 	return tag
+}
+
+func sanitizeBranchForDockerTag(branch string) string {
+	branch = strings.ReplaceAll(branch, "/", "-")
+	branch = strings.ReplaceAll(branch, "+", "-")
+	return branch
 }

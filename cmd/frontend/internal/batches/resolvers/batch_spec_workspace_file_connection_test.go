@@ -29,7 +29,7 @@ func TestBatchSpecWorkspaceFileConnectionResolver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 	specID, err := createBatchSpec(t, db, ctx, bstore)
 	require.NoError(t, err)
 
@@ -173,7 +173,7 @@ func createBatchSpec(t *testing.T, db database.DB, ctx context.Context, bstore *
 }
 
 func createBatchSpecWorkspaceFiles(ctx context.Context, bstore *store.Store, specID int64, count int) error {
-	for i := 0; i < count; i++ {
+	for i := range count {
 		file := &btypes.BatchSpecWorkspaceFile{
 			BatchSpecID: specID,
 			FileName:    fmt.Sprintf("hello-%d.txt", i),

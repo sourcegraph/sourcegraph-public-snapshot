@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 
 import type { AuthenticatedUser } from '../../auth'
 
 import { SurveyToastContent } from './SurveyToastContent'
 
-interface SurveyToastTriggerProps {
+interface SurveyToastTriggerProps extends TelemetryV2Props {
     /**
      * For Storybook only
      */
@@ -17,6 +18,7 @@ interface SurveyToastTriggerProps {
 export const SurveyToastTrigger: React.FunctionComponent<React.PropsWithChildren<SurveyToastTriggerProps>> = ({
     forceVisible,
     authenticatedUser,
+    telemetryRecorder,
 }) => {
     const [temporarilyDismissed, setTemporarilyDismissed] = useTemporarySetting(
         'npsSurvey.hasTemporarilyDismissed',
@@ -69,6 +71,7 @@ export const SurveyToastTrigger: React.FunctionComponent<React.PropsWithChildren
             shouldTemporarilyDismiss={() => setTemporarilyDismissed(true)}
             shouldPermanentlyDismiss={() => setPermanentlyDismissed(true)}
             hideToast={() => setShouldShow(false)}
+            telemetryRecorder={telemetryRecorder}
         />
     )
 }

@@ -2,12 +2,16 @@ package search
 
 import (
 	"context"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
+	"golang.org/x/exp/slices"
 
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -91,14 +95,57 @@ func ListAllIndexed(ctx context.Context, zs zoekt.Searcher) (*ZoektAllIndexed, e
 
 func Indexers() *backend.Indexers {
 	indexersOnce.Do(func() {
+		// Using Fields instead of Split avoids a slice with an empty string
+		// as well as cleaning up extra whitespace.
+		toDrain := strings.FieldsFunc(os.Getenv("INDEXED_SEARCH_DRAIN_SERVERS"), func(r rune) bool { return r == ',' || r == ' ' })
+
 		indexers = &backend.Indexers{
-			Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+			Map: newEndpointMapDrain(func(conns conftypes.ServiceConnections) []string {
 				return conns.Zoekts
-			}),
+			}, toDrain),
 			Indexed: reposAtEndpoint(getIndexedDialer()),
 		}
 	})
 	return indexers
+}
+
+// newEndpointMapDrain will return an ConfBased EndpointMap which will not map
+// anything to the endpoints in endpointsDrain, but will include them in the
+// list of Endpoints.
+func newEndpointMapDrain(getter endpoint.ConfBasedGetter, endpointsDrain []string) backend.EndpointMap {
+	if len(endpointsDrain) == 0 {
+		return endpoint.ConfBased(getter)
+	}
+
+	endpointsDrainSet := collections.NewSet(endpointsDrain...)
+
+	activeMap := endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+		all := collections.NewSet(getter(conns)...)
+		return all.Difference(endpointsDrainSet).Values()
+	})
+
+	return &endpointMapDrain{
+		activeMap:      activeMap,
+		endpointsDrain: endpointsDrain,
+	}
+}
+
+type endpointMapDrain struct {
+	activeMap      *endpoint.Map
+	endpointsDrain []string
+}
+
+func (m *endpointMapDrain) Endpoints() ([]string, error) {
+	activeEps, err := m.activeMap.Endpoints()
+	if err != nil {
+		return nil, err
+	}
+	// Not allowed to mutate return of Endpoints, so make copy
+	return append(slices.Clone(activeEps), m.endpointsDrain...), nil
+}
+
+func (m *endpointMapDrain) Get(s string) (string, error) {
+	return m.activeMap.Get(s)
 }
 
 func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, string) zoekt.ReposMap {

@@ -1,0 +1,195 @@
+module some.module
+
+amends "fileB.pkl"
+
+import "fileA.pkl" as fileA
+
+import* "globbed/*.pkl"
+
+impExp = import("fileC.pkl")
+
+// Single-line comment
+
+/*
+  Multiline
+  comment
+*/
+
+
+// Strings and interpolation
+name = "Dodo"
+greeting = "Hi, \(name)!"
+x = 42
+message1 = "\(x + 2) plus \(x * 2) is \(0x80)"
+message2 = """
+Although the \(name) is extinct,
+the species will be remembered.
+"""
+
+message3 = #" \\\\\ \#n \#u{12AF} \#(name) """"" "#
+message4 = ##"""
+\\\\\ \#\#\# """""
+multi-line with custom escape
+"""##
+
+
+strLength = "dodo".length
+reversedStr = "dodo".reverse()
+hasAx = "dodo".contains("alive")
+
+
+// Functions
+addToA = (b: Number) -> a + b
+list = List(1, 2, 3).map(addToA)
+
+
+// Operators
+comparison1 = 5 == 2
+
+// Numbers
+num1 = 123
+num2 = 0x012AFF
+
+
+// Floats
+f1: Float(isFinite) = 1.0
+f2: Float(isBetween(0, 10e6))
+f3 = .23
+notANumber = NaN
+positiveInfinity = Infinity
+
+// Booleans
+b1 = true && false
+b3 = true.xor(false)
+
+
+// Durations
+duration1 = 5.min
+xySeconds = (x + y).s
+
+
+// Data Sizes
+datasize1 = 5.b  // bytes (smallest unit)
+
+
+// Consts
+const laysEggs: Boolean = true
+
+const examples: Listing<String> = new {
+  "Pigeon"
+  "Hawk"
+}
+
+// Classes
+
+class BunchOfTypes {
+  someString: String
+  someInt: Int
+  hidden someHiddenString: String
+  local someLocalThing = ","
+}
+
+class Bird {
+  name: String(length >= 3)
+  lifespan: UInt8
+  function isOlderThan(bird: Bird): Boolean = lifespan > bird.lifespan
+  fixed species: String
+}
+
+class Osprey extends Bird {
+  fixed species: "Pandion haliaetus"
+}
+
+typealias Adult = Bird(lifespan >= 2)
+
+function Infant(_name: String): Bird = new { name = _name; lifespan = 0 }
+
+pigeon: Bird = new {
+  name = "Pigeon"
+}
+
+@Deprecated { message = "Replace with \(pigeonName)" }
+oldPigeonName: String
+
+class Project {
+  local emailAddress = (str) -> str.matches(Regex(#".+@.+"#))
+  // constrain the nullable type's element type
+  type: String(contains("source"))?
+  // constrain the map type and its key/value types
+  contacts: Map<String(!isEmpty), String(emailAddress)>(length <= 5)
+}
+
+project: Project = new {
+  contacts = Map("Pigeon", "pigeon@example.com")
+}
+
+
+// Mixins
+withDietTyped = new Mixin<Bird> {
+  diet = "Seeds"
+}
+
+// Generators
+
+parrot {
+  lifespan = 20
+  for (_name in names) {
+    new {
+      name = _name
+      lifespan = 42
+    }
+  }
+  when (isSinger) {
+    idol = "Aretha Franklin"
+  } else {
+    idol = "Wolfgang Amadeus Mozart"
+  }
+}
+
+
+// Let bindings
+name = let (_ = trace("defining name")) "Eagle"
+
+
+// Spreading
+entries1 {
+  ["Pigeon"] = "Piggy the Pigeon"
+}
+
+entries2 {
+  ...entries1
+}
+
+// Member Predicates
+environmentVariables {
+  new { name = "PARROT"; value = "parrot-value" }
+}
+
+updated = (environmentVariables) {
+  [[name == "PARROT"]] {
+    value = "new-value"
+  }
+}
+
+/// Doc comments
+// showing amending
+woodPigeon (parrot) {
+  name = "Common wood pigeon"
+  taxonomy {
+    `class` = "Aves"
+  }
+}
+
+// Transforming objects
+res = woodPigeon
+    .toMap()
+    .remove("name")
+
+
+// dynamic object with object body parameters
+birds = new Dynamic {
+  default { _ ->
+    species = "Bird"
+  }
+  ["Falcon"] {}
+}

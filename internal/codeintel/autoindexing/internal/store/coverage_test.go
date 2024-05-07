@@ -22,7 +22,7 @@ func TestTopRepositoriesToConfigure(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertEvent := func(name string, repositoryID int, maxAge time.Duration) {
 		query := `
@@ -34,13 +34,13 @@ func TestTopRepositoriesToConfigure(t *testing.T) {
 		}
 	}
 
-	for i := 0; i < 50; i++ {
+	for i := range 50 {
 		insertRepo(t, db, 50+i, fmt.Sprintf("test%d", i))
 	}
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		insertEvent("codeintel.searchHover", 60+i%3, 1)
 	}
-	for j := 0; j < 10; j++ {
+	for j := range 10 {
 		insertEvent("codeintel.searchHover", 70+j, 1)
 	}
 
@@ -73,7 +73,7 @@ func TestRepositoryIDsWithConfiguration(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	testIndexerList := map[string]uploadsshared.AvailableIndexer{
 		"test-indexer": {
@@ -84,7 +84,7 @@ func TestRepositoryIDsWithConfiguration(t *testing.T) {
 		},
 	}
 
-	for i := 0; i < 20; i++ {
+	for i := range 20 {
 		insertRepo(t, db, 50+i, fmt.Sprintf("test%d", i))
 
 		if err := store.SetConfigurationSummary(ctx, 50+i, i*300, testIndexerList); err != nil {
@@ -119,7 +119,7 @@ func TestGetLastIndexScanForRepository(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	ts, err := store.GetLastIndexScanForRepository(ctx, 50)
 	if err != nil {

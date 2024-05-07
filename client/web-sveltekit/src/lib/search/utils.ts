@@ -1,8 +1,4 @@
-import type { ContentMatch, MatchGroup, ChunkMatch, LineMatch, Filter } from '$lib/shared'
-
-export interface SidebarFilter extends Filter {
-    runImmediately?: boolean
-}
+import type { ContentMatch, MatchGroup, ChunkMatch, LineMatch } from '$lib/shared'
 
 /**
  * A context object provided on pages with the main search input to interact
@@ -16,38 +12,6 @@ export function resultToMatchGroups(result: ContentMatch): MatchGroup[] {
     return result.chunkMatches?.map(chunkToMatchGroup) || result.lineMatches?.map(lineToMatchGroup) || []
 }
 
-type FilterGroups = Record<Filter['kind'], Filter[]>
-
-export function groupFilters(filters: Filter[] | null | undefined): FilterGroups {
-    const groupedFilters: FilterGroups = {
-        type: [],
-        file: [],
-        repo: [],
-        lang: [],
-        utility: [],
-        author: [],
-        'commit date': [],
-        'symbol type': [],
-    }
-    if (filters) {
-        for (const filter of filters) {
-            switch (filter.kind) {
-                case 'commit date':
-                case 'symbol type':
-                case 'author':
-                case 'utility':
-                case 'repo':
-                case 'file':
-                case 'lang': {
-                    groupedFilters[filter.kind].push(filter)
-                    break
-                }
-            }
-        }
-    }
-    return groupedFilters
-}
-
 export function chunkToMatchGroup(chunk: ChunkMatch): MatchGroup {
     const matches = chunk.ranges.map(range => ({
         startLine: range.start.line,
@@ -55,7 +19,7 @@ export function chunkToMatchGroup(chunk: ChunkMatch): MatchGroup {
         endLine: range.end.line,
         endCharacter: range.end.column,
     }))
-    const plaintextLines = chunk.content.split(/\r?\n/)
+    const plaintextLines = chunk.content.replace(/\r?\n$/, '').split(/\r?\n/)
     return {
         plaintextLines,
         highlightedHTMLRows: undefined, // populated lazily

@@ -64,7 +64,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 	inferenceService := NewMockInferenceService()
 
 	service := newService(
-		&observation.TestContext,
+		observation.TestContextTB(t),
 		mockDBStore,
 		inferenceService,
 		defaultMockRepoStore(), // repoStore
@@ -162,7 +162,7 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 	inferenceService := NewMockInferenceService()
 
 	service := newService(
-		&observation.TestContext,
+		observation.TestContextTB(t),
 		mockDBStore,
 		inferenceService,
 		defaultMockRepoStore(), // repoStore
@@ -265,7 +265,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 	inferenceService := NewMockInferenceService()
 
 	service := newService(
-		&observation.TestContext,
+		observation.TestContextTB(t),
 		mockDBStore,
 		inferenceService,
 		defaultMockRepoStore(), // repoStore
@@ -351,7 +351,7 @@ func TestQueueIndexesInferred(t *testing.T) {
 	})
 
 	service := newService(
-		&observation.TestContext,
+		observation.TestContextTB(t),
 		mockDBStore,
 		inferenceService,
 		defaultMockRepoStore(), // repoStore
@@ -439,7 +439,7 @@ func TestQueueIndexesForPackage(t *testing.T) {
 	})
 
 	service := newService(
-		&observation.TestContext,
+		observation.TestContextTB(t),
 		mockDBStore,
 		inferenceService,
 		mockRepoStore, // repoStore

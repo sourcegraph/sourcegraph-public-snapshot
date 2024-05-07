@@ -81,21 +81,29 @@ export const userAreaRoutes: readonly UserAreaRoute[] = [
     },
     {
         path: 'batch-changes/:batchChangeName/edit',
-        render: props => <EditBatchSpecPage {...props} />,
+        render: props => <EditBatchSpecPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />,
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
         fullPage: true,
     },
     {
         path: 'batch-changes/:batchChangeName/executions/:batchSpecID/*',
-        render: props => <ExecuteBatchSpecPage {...props} />,
+        render: props => (
+            <ExecuteBatchSpecPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+        ),
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
         fullPage: true,
     },
     {
         path: 'batch-changes/*',
-        render: props => <NamespaceBatchChangesArea {...props} namespaceID={props.user.id} />,
+        render: props => (
+            <NamespaceBatchChangesArea
+                {...props}
+                namespaceID={props.user.id}
+                telemetryRecorder={props.platformContext.telemetryRecorder}
+            />
+        ),
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
 ]

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -51,13 +53,51 @@ var bazelCommand = &cli.Command{
 	HideHelpCommand: true,
 	Usage:           "Proxies the bazel CLI with custom commands for local dev convenience",
 	Category:        category.Dev,
-	Action: func(ctx *cli.Context) error {
-		if slices.Equal(ctx.Args().Slice(), []string{"help"}) || slices.Equal(ctx.Args().Slice(), []string{"--help"}) || slices.Equal(ctx.Args().Slice(), []string{"-h"}) {
+	Action: func(cctx *cli.Context) error {
+		if slices.Equal(cctx.Args().Slice(), []string{"help"}) || slices.Equal(cctx.Args().Slice(), []string{"--help"}) || slices.Equal(cctx.Args().Slice(), []string{"-h"}) {
 			fmt.Println("Additional commands from sg:")
 			fmt.Println("  configure           Wrappers around some commands to generate various files required by Bazel")
+			fmt.Println("Additional flags from sg:")
+			fmt.Println("  --disable-remote-cache           Disable use of the remote cache for local env.")
 		}
 
-		cmd := exec.CommandContext(ctx.Context, "bazel", ctx.Args().Slice()...)
+		// Walk the args, looking for our custom flag to disable the remote cache.
+		// If we find it, we take not of it, but do not append it to the final args
+		// that will be passed to the bazel command. Everything else is passed as-is.
+		var disableRemoteCache bool
+		args := make([]string, 0, len(cctx.Args().Slice()))
+		for _, arg := range cctx.Args().Slice() {
+			switch arg {
+			case "--disable-remote-cache":
+				disableRemoteCache = true
+			case "--disable-remote-cache=true":
+				disableRemoteCache = true
+			case "--disable-remote-cache=false":
+				disableRemoteCache = false
+			default:
+				args = append(args, arg)
+			}
+		}
+
+		// If we end up running `sg bazel` in CI, we don't want to use the remote cache for local environment,
+		// so we force disable the flag explicilty.
+		if os.Getenv("CI") == "true" || os.Getenv("BUILDKITE") == "true" {
+			disableRemoteCache = true
+		}
+
+		if !disableRemoteCache {
+			rootDir, err := root.RepositoryRoot()
+			if err != nil {
+				return errors.Wrap(err, "getting repository root")
+			}
+			newArgs := make([]string, 0, len(args)+1)
+			// Bazelrc flags must be added before the actual command (build, run, test ...)
+			newArgs = append(newArgs, fmt.Sprintf("--bazelrc=%s", filepath.Join(rootDir, ".aspect/bazelrc/remote_cache_for_local.bazelrc")))
+			newArgs = append(newArgs, args...)
+			args = newArgs
+		}
+
+		cmd := exec.CommandContext(cctx.Context, "bazel", args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
@@ -99,7 +139,7 @@ If no categories are referenced, then 'builds' is assumed as the default.`,
 					categories = []bzlgenTarget{bzlgenTargets["builds"]}
 					categoryNames = []string{"builds"}
 				} else {
-					for i := 0; i < ctx.NArg(); i++ {
+					for i := range ctx.NArg() {
 						categories = append(categories, bzlgenTargets[ctx.Args().Get(i)])
 						categoryNames = append(categoryNames, ctx.Args().Get(i))
 					}

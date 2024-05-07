@@ -934,6 +934,22 @@
       "default": -1,
       "group": "External services"
     },
+    "codeMonitors": {
+      "description": "Configuration options for code monitors",
+      "type": "object",
+      "properties": {
+        "pollInterval": {
+          "description": "The interval at which a monitor checks for new changes. Increase to reduce average load.",
+          "type": "string",
+          "default": "5m"
+        },
+        "concurrency": {
+          "description": "The number of code monitor jobs allowed to run concurrenctly. Decrease to reduce peak load.",
+          "type": "integer",
+          "default": 4
+        }
+      }
+    },
     "syntaxHighlighting": {
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
@@ -1144,11 +1160,6 @@
           "url": "https://sourcegraph.example.com"
         }
       ]
-    },
-    "auth.dailyEmailDomainSignupLimit": {
-      "type": "integer",
-      "default": 0,
-      "description": "The maximum number of users that can sign from Google using the same email domain in a 24 hour period."
     },
     "auth.accessTokens": {
       "description": "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
@@ -2239,6 +2250,30 @@
               "type": "string"
             }
           }
+        },
+        "codyProConfig": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "stripePublishableKey": {
+              "type": "string",
+              "default": null,
+              "description": "Stripe Publishable Key for use in Stripe Checkout, Stripe Elements. This is not considered a secret.",
+              "examples": ["pk_test_...", "pk_live_..."]
+            },
+            "samsBackendOrigin": {
+              "type": "string",
+              "default": "",
+              "description": "Origin of the SAMS backend. (Must match the SAMS OIDC registration in auth.providers.)",
+              "examples": ["https://accounts.sourcegraph.com"]
+            },
+            "sscBackendOrigin": {
+              "type": "string",
+              "default": "",
+              "description": "Origin of the Self-serve Cody backend.",
+              "examples": ["https://accounts.sourcegraph.com"]
+            }
+          }
         }
       },
       "group": "Sourcegraph.com"
@@ -2575,6 +2610,31 @@
       },
       "group": "Cody"
     },
+    "cody.contextFilters": {
+      "description": "Rules defining the repositories that will never be shared by Cody with third-party LLM providers.",
+      "type": "object",
+      "properties": {
+        "include": {
+          "description": "List of rules specifying repositories that Cody may include as context in requests to third-party LLMs. If defined, only repositories matching these rules will be considered for sharing. If not defined, all repositories may be shared.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CodyContextFilterItem"
+          },
+          "minItems": 1
+        },
+        "exclude": {
+          "description": "List of rules specifying repositories that Cody should excluded from context in requests to third-party LLMs. These rules are applied only to repositories matching the include rules.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CodyContextFilterItem"
+          },
+          "minItems": 1
+        }
+      },
+      "minProperties": 1,
+      "additionalProperties": false,
+      "group": "Cody"
+    },
     "cody.permissions": {
       "description": "Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://sourcegraph.com/docs/admin/access_control",
       "type": "boolean",
@@ -2742,116 +2802,6 @@
             "pointer": true
           },
           "default": true
-        },
-        "qdrant": {
-          "description": "Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.",
-          "type": "object",
-          "$comment": "Skipped fields from HnswConfigDiff: MaxIndexingThreads",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": false
-            },
-            "hnsw": {
-              "description": "Overrides for the HNSW index config.",
-              "type": "object",
-              "properties": {
-                "m": {
-                  "description": "Number of edges per node in the index graph. Larger the value - more accurate the search, more space required.",
-                  "type": "integer",
-                  "minimum": 0,
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": 8
-                },
-                "efConstruct": {
-                  "description": "Number of neighbours to consider during the index building. Larger the value, more accurate the search, more time required to build the index.",
-                  "type": "integer",
-                  "minimum": 0,
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": 100
-                },
-                "fullScanThreshold": {
-                  "description": "Minimal size (in KiloBytes) of vectors for additional payload-based indexing.",
-                  "type": "integer",
-                  "minimum": 0,
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": 1000
-                },
-                "onDisk": {
-                  "description": "Store HNSW index on disk.",
-                  "type": "boolean",
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": true
-                },
-                "payloadM": {
-                  "description": "Number of edges per node in the index graph. Larger the value, more accurate the search, more space required.",
-                  "type": "integer",
-                  "minimum": 0,
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": 8
-                }
-              }
-            },
-            "quantization": {
-              "description": "Overrides for quantization config.",
-              "type": "object",
-              "$comment": "Skipped fields from ScalarQuantization: AlwaysRam",
-              "properties": {
-                "enabled": {
-                  "description": "Whether to enable int8 scalar quantization",
-                  "type": "boolean",
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": true
-                },
-                "quantile": {
-                  "description": "Any values that lie outside the quantile range will be truncated",
-                  "type": "number",
-                  "minimum": 0,
-                  "maximum": 1,
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": 0.98
-                }
-              }
-            },
-            "optimizers": {
-              "type": "object",
-              "$comment": "Skipped fields from OptimizersConfigDiff: DeletedThreshold, VacuumMinVectorNumber, DefaultSegmentNumber, MaxSegmentSize, FlushIntervalSec, MaxOptimizationThreads",
-              "properties": {
-                "indexingThreshold": {
-                  "description": "Maximum size (in kilobytes) of vectors allowed for plain index, exceeding this threshold will enable vector indexing. Set to 0 to disable indexing",
-                  "type": "integer",
-                  "minimum": 0,
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": 0
-                },
-                "memmapThreshold": {
-                  "description": "Maximum size (in kilobytes) of vectors to store in-memory per segment.",
-                  "type": "integer",
-                  "minimum": 0,
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": 100
-                }
-              }
-            }
-          }
         }
       },
       "examples": [
@@ -2882,24 +2832,34 @@
           "type": "string"
         },
         "fastChatModel": {
-          "description": "The model used for fast chat completions.",
-          "type": "string"
+          "description": "The model used for fast chat completions. \n NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommed using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison ",
+          "type": "string",
+          "not": {
+            "enum": ["claude-2", "claude-instant-1"]
+          }
         },
         "fastChatModelMaxTokens": {
           "description": "The maximum number of tokens to use as client when talking to fastChatModel. If not set, clients need to set their own limit.",
           "type": "integer"
         },
         "chatModel": {
-          "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.",
-          "type": "string"
+          "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.\n NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommed using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison ",
+          "type": "string",
+          "not": {
+            "enum": ["claude-2", "claude-instant-1"]
+          },
+          "errorMessage": "The substring 'cumber' is not allowed because it is a bad idea and may lead to unexpected issues."
         },
         "chatModelMaxTokens": {
           "description": "The maximum number of tokens to use as client when talking to chatModel. If not set, clients need to set their own limit.",
           "type": "integer"
         },
         "completionModel": {
-          "description": "The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.",
-          "type": "string"
+          "description": "The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.\n NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommed using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison ",
+          "type": "string",
+          "not": {
+            "enum": ["claude-2", "claude-instant-1"]
+          }
         },
         "completionModelMaxTokens": {
           "description": "The maximum number of tokens to use as client when talking to completionModel. If not set, clients need to set their own limit.",
@@ -2917,7 +2877,7 @@
         },
         "endpoint": {
           "type": "string",
-          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"sourcegraph\", \"openai\" and \"anthropic\". The default values are \"https://cody-gateway.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/complete\" for Sourcegraph, OpenAI, and Anthropic, respectively."
+          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"sourcegraph\", \"openai\" and \"anthropic\". The default values are \"https://cody-gateway.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/messages\" for Sourcegraph, OpenAI, and Anthropic, respectively."
         },
         "perUserDailyLimit": {
           "description": "If > 0, limits the number of completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.",
@@ -3084,6 +3044,9 @@
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
         },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
+        },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
         },
@@ -3118,6 +3081,11 @@
           "!go": {
             "pointer": true
           }
+        },
+        "singleIdentityPerUser": {
+          "description": "When true, any user can connect exactly one identity from the identity provider.",
+          "type": "boolean",
+          "default": false
         }
       }
     },
@@ -3151,6 +3119,9 @@
         },
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
         },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
@@ -3233,6 +3204,14 @@
           "description": "Name of the SAML assertion attribute that holds group membership for allowGroups setting",
           "type": "string",
           "default": "groups"
+        },
+        "usernameAttributeNames": {
+          "description": "Names of the SAML assertions attributes to check for a user's username. Checked in the order the names are provided.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
@@ -3297,6 +3276,9 @@
         },
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
         },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
@@ -3379,6 +3361,9 @@
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
         },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
+        },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
         },
@@ -3455,6 +3440,9 @@
         },
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
         },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
@@ -3534,6 +3522,9 @@
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
         },
+        "noSignIn": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/noSignIn"
+        },
         "order": {
           "$ref": "#/definitions/AuthProviderCommon/properties/order"
         },
@@ -3568,6 +3559,11 @@
       "properties": {
         "hidden": {
           "description": "Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.",
+          "type": "boolean",
+          "default": false
+        },
+        "noSignIn": {
+          "description": "Hides the configured auth provider from the sign in page, but still allows users to connect an external account using their Account Security page to enable permissions syncing.",
           "type": "boolean",
           "default": false
         },
@@ -3853,6 +3849,17 @@
         "text": {
           "description": "Optional template for plain-text body. If not provided, a plain-text body will be automatically generated from the HTML template.",
           "type": "string"
+        }
+      }
+    },
+    "CodyContextFilterItem": {
+      "type": "object",
+      "required": ["repoNamePattern"],
+      "properties": {
+        "repoNamePattern": {
+          "description": "Regular expression which matches a set of repository names. The pattern is evaluated using Go regular expression syntax (https://golang.org/pkg/regexp/). By default, the pattern matches partially. Use \\\"^...$\\\" for whole-string matching.",
+          "type": "string",
+          "format": "regex"
         }
       }
     }

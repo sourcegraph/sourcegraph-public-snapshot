@@ -32,25 +32,33 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
     },
     {
         path: '/-/code-graph/*',
-        render: context => <RepositoryCodeIntelArea {...context} />,
+        render: context => (
+            <RepositoryCodeIntelArea {...context} telemetryRecorder={context.platformContext.telemetryRecorder} />
+        ),
     },
     {
         path: '/-/embeddings/*',
-        render: context => <CodyRepoArea {...context} />,
+        render: context => <CodyRepoArea {...context} telemetryRecorder={context.platformContext.telemetryRecorder} />,
     },
     {
         path: '/-/batch-changes',
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
-        render: context => <RepositoryBatchChangesArea {...context} />,
+        render: context => (
+            <RepositoryBatchChangesArea {...context} telemetryRecorder={context.platformContext.telemetryRecorder} />
+        ),
     },
     {
         path: '/-/own/*',
         condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom,
-        render: context => <RepositoryOwnPage {...context} />,
+        render: context => (
+            <RepositoryOwnPage {...context} telemetryRecorder={context.platformContext.telemetryRecorder} />
+        ),
     },
     {
         path: '/-/own/edit',
         condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom,
-        render: context => <RepositoryOwnEditPage {...context} />,
+        render: context => (
+            <RepositoryOwnEditPage {...context} telemetryRecorder={context.platformContext.telemetryRecorder} />
+        ),
     },
 ]

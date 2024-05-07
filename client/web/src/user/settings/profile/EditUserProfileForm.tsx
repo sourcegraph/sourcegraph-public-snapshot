@@ -1,13 +1,15 @@
 import React, { useCallback, useState } from 'react'
 
 import { useNavigate } from 'react-router-dom'
+import { lastValueFrom } from 'rxjs'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Container, Button, Alert, Form } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
 import type { EditUserProfilePage, UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 
 import { UserProfileFormFields, type UserProfileFormFieldsValue } from './UserProfileFormFields'
 
@@ -22,7 +24,7 @@ export const UPDATE_USER = gql`
     }
 `
 
-interface Props {
+interface Props extends TelemetryV2Props {
     user: Pick<EditUserProfilePage, 'id' | 'viewerCanChangeUsername' | 'scimControlled'>
     initialValue: UserProfileFormFieldsValue
     after?: React.ReactNode
@@ -35,21 +37,24 @@ export const EditUserProfileForm: React.FunctionComponent<React.PropsWithChildre
     user,
     initialValue,
     after,
+    telemetryRecorder,
 }) => {
     const navigate = useNavigate()
     const [updateUser, { data, loading, error }] = useMutation<UpdateUserResult, UpdateUserVariables>(UPDATE_USER, {
         onCompleted: ({ updateUser }) => {
-            eventLogger.log('UserProfileUpdated')
+            EVENT_LOGGER.log('UserProfileUpdated')
+            telemetryRecorder.recordEvent('settings.profile', 'update')
             navigate(`/users/${updateUser.username}/settings/profile`, { replace: true })
 
             // In case the edited user is the current user, immediately reflect the changes in the
             // UI.
             // TODO: Migrate this to use the Apollo cache
-            refreshAuthenticatedUser()
-                .toPromise()
-                .finally(() => {})
+            lastValueFrom(refreshAuthenticatedUser(), { defaultValue: undefined }).finally(() => {})
         },
-        onError: () => eventLogger.log('UpdateUserFailed'),
+        onError: () => {
+            EVENT_LOGGER.log('UpdateUserFailed')
+            telemetryRecorder.recordEvent('settings.profile', 'updateFail')
+        },
     })
 
     const [userFields, setUserFields] = useState<UserProfileFormFieldsValue>(initialValue)
@@ -61,7 +66,7 @@ export const EditUserProfileForm: React.FunctionComponent<React.PropsWithChildre
     const onSubmit = useCallback<React.FormEventHandler>(
         event => {
             event.preventDefault()
-            eventLogger.log('UpdateUserClicked')
+            EVENT_LOGGER.log('UpdateUserClicked')
             return updateUser({
                 variables: {
                     user: user.id,

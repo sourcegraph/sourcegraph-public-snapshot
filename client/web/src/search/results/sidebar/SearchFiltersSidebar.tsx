@@ -5,9 +5,9 @@ import {
     useCallback,
     useMemo,
     forwardRef,
-    HTMLAttributes,
-    ComponentType,
-    PropsWithChildren,
+    type HTMLAttributes,
+    type ComponentType,
+    type PropsWithChildren,
 } from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
@@ -29,6 +29,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
 
@@ -43,7 +44,11 @@ interface GenericSidebarProps extends HTMLAttributes<HTMLElement> {
     onClose: () => void
 }
 
-export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCascadeProps, HTMLAttributes<HTMLElement> {
+export interface SearchFiltersSidebarProps
+    extends TelemetryProps,
+        SettingsCascadeProps,
+        HTMLAttributes<HTMLElement>,
+        TelemetryV2Props {
     as?: ComponentType<PropsWithChildren<GenericSidebarProps>>
     liveQuery: string
     submittedURLQuery: string
@@ -56,6 +61,17 @@ export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCasca
     onNavbarQueryChange: (queryState: QueryStateUpdate) => void
     onSearchSubmit: (updates: QueryUpdate[], updatedSearchQuery?: string) => void
     setSidebarCollapsed: (collapsed: boolean) => void
+}
+
+const V2KindTypes: { [key in Filter['kind']]: number } = {
+    file: 1,
+    repo: 2,
+    lang: 3,
+    utility: 4,
+    author: 5,
+    'commit date': 6,
+    'symbol type': 7,
+    type: 8,
 }
 
 export const SearchFiltersSidebar = forwardRef<HTMLElement, PropsWithChildren<SearchFiltersSidebarProps>>(props => {
@@ -73,6 +89,7 @@ export const SearchFiltersSidebar = forwardRef<HTMLElement, PropsWithChildren<Se
         onSearchSubmit,
         setSidebarCollapsed,
         telemetryService,
+        telemetryRecorder,
         settingsCascade,
         children,
         ...attributes
@@ -89,19 +106,23 @@ export const SearchFiltersSidebar = forwardRef<HTMLElement, PropsWithChildren<Se
     const repoName = useLastRepoName(liveQuery, repoFilters)
 
     const onDynamicFilterClicked = useCallback(
-        (value: string, kind?: string) => {
+        (value: string, kind?: Filter['kind']) => {
             telemetryService.log('DynamicFilterClicked', { search_filter: { kind } })
+            telemetryRecorder.recordEvent('search.dynamicFilter', 'click', {
+                metadata: { kind: kind ? V2KindTypes[kind] : 0 },
+            })
             onSearchSubmit([{ type: 'toggleSubquery', value }])
         },
-        [telemetryService, onSearchSubmit]
+        [telemetryService, onSearchSubmit, telemetryRecorder]
     )
 
     const onSnippetClicked = useCallback(
         (value: string) => {
             telemetryService.log('SearchSnippetClicked')
+            telemetryRecorder.recordEvent('search.snippet', 'click')
             onSearchSubmit([{ type: 'toggleSubquery', value }])
         },
-        [telemetryService, onSearchSubmit]
+        [telemetryService, onSearchSubmit, telemetryRecorder]
     )
 
     const handleAggregationBarLinkClick = useCallback(
@@ -114,8 +135,9 @@ export const SearchFiltersSidebar = forwardRef<HTMLElement, PropsWithChildren<Se
     const handleGroupedByToggle = useCallback(
         (open: boolean): void => {
             telemetryService.log(open ? GroupResultsPing.ExpandSidebarSection : GroupResultsPing.CollapseSidebarSection)
+            telemetryRecorder.recordEvent('search.group.results', open ? 'expand' : 'collapse')
         },
-        [telemetryService]
+        [telemetryService, telemetryRecorder]
     )
 
     return (
@@ -129,7 +151,12 @@ export const SearchFiltersSidebar = forwardRef<HTMLElement, PropsWithChildren<Se
                         <SearchSidebarSection
                             sectionId={SectionID.GROUPED_BY}
                             header="Group results by"
-                            postHeader={<CustomAggregationHeading telemetryService={props.telemetryService} />}
+                            postHeader={
+                                <CustomAggregationHeading
+                                    telemetryService={props.telemetryService}
+                                    telemetryRecorder={telemetryRecorder}
+                                />
+                            }
                             // SearchAggregations content contains component that makes a few API network requests
                             // in order to prevent these calls if this section is collapsed we turn off force render
                             // for collapse section component
@@ -142,6 +169,7 @@ export const SearchFiltersSidebar = forwardRef<HTMLElement, PropsWithChildren<Se
                                 proactive={proactiveSearchAggregations}
                                 caseSensitive={caseSensitive}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 onQuerySubmit={handleAggregationBarLinkClick}
                             />
                         </SearchSidebarSection>
@@ -218,13 +246,16 @@ const getRepoFilterNoResultText = (repoFilterLinks: ReactElement[]): ReactNode =
     </span>
 )
 
-const CustomAggregationHeading: FC<TelemetryProps> = ({ telemetryService }) => (
+const CustomAggregationHeading: FC<TelemetryProps & TelemetryV2Props> = ({ telemetryService, telemetryRecorder }) => (
     <Tooltip content="Aggregation is based on results with no count limitation (count:all).">
         <Icon
             aria-label="(Aggregation is based on results with no count limitation (count:all).)"
             size="md"
             svgPath={mdiInformationOutline}
-            onMouseEnter={() => telemetryService.log(GroupResultsPing.InfoIconHover)}
+            onMouseEnter={() => {
+                telemetryService.log(GroupResultsPing.InfoIconHover)
+                telemetryRecorder.recordEvent('search.group.results.infoIcon', 'hover')
+            }}
         />
     </Tooltip>
 )

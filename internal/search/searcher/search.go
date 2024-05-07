@@ -120,11 +120,11 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 						clients.Logger.Warn("searchFilesInRepo failed", log.Error(err), log.String("repo", string(repo.Name)))
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
-					status, limitHit, err := search.HandleRepoSearchResult(repo.ID, []string{rev}, repoLimitHit, false, err)
+					status, err := search.HandleRepoSearchResult(repo.ID, []string{rev}, repoLimitHit, false, err)
 					stream.Send(streaming.SearchEvent{
 						Stats: streaming.Stats{
 							Status:     status,
-							IsLimitHit: limitHit,
+							IsLimitHit: repoLimitHit,
 						},
 					})
 					return err
@@ -195,7 +195,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commit, err := client.ResolveRevision(ctx, gitserverRepo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	commit, err := client.ResolveRevision(ctx, gitserverRepo, rev, gitserver.ResolveRevisionOptions{EnsureRevision: false})
 	if err != nil {
 		return false, err
 	}
@@ -268,12 +268,8 @@ func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, se
 				Repo:     repo,
 				CommitID: commit,
 				InputRev: rev,
-
-				// We do not have a precise language from searcher yet.
-				// TODO(camdencheek): return the language from searcher,
-				// where we have access to the file contents for more
-				// precise detection.
-				PreciseLanguage: "",
+				// Pass on the detected language. It's not always available and may be empty.
+				PreciseLanguage: fm.Language,
 			},
 			ChunkMatches: chunkMatches,
 			PathMatches:  pathMatches,

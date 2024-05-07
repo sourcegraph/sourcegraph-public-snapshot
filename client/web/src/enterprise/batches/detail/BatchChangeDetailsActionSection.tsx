@@ -6,15 +6,16 @@ import { useNavigate } from 'react-router-dom'
 import { isErrorLike, asError } from '@sourcegraph/common'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import type { Scalars } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 
 import { deleteBatchChange as _deleteBatchChange } from './backend'
 
-export interface BatchChangeDetailsActionSectionProps extends SettingsCascadeProps<Settings> {
+export interface BatchChangeDetailsActionSectionProps extends SettingsCascadeProps<Settings>, TelemetryV2Props {
     batchChangeID: Scalars['ID']
     batchChangeClosed: boolean
     batchChangeNamespaceURL: string
@@ -33,6 +34,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
     batchChangeURL,
     settingsCascade,
     deleteBatchChange = _deleteBatchChange,
+    telemetryRecorder,
 }) => {
     const showEditButton = isBatchChangesExecutionEnabled(settingsCascade)
     const navigate = useNavigate()
@@ -79,7 +81,8 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
                     variant="secondary"
                     as={Link}
                     onClick={() => {
-                        eventLogger.log('batch_change_details:edit:clicked')
+                        EVENT_LOGGER.log('batch_change_details:edit:clicked')
+                        telemetryRecorder.recordEvent('batchChange.details', 'edit')
                     }}
                 >
                     <Icon aria-hidden={true} svgPath={mdiPencil} /> Edit
@@ -93,7 +96,8 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
                     outline={true}
                     as={Link}
                     onClick={() => {
-                        eventLogger.log('batch_change_details:close:clicked')
+                        EVENT_LOGGER.log('batch_change_details:close:clicked')
+                        telemetryRecorder.recordEvent('batchChange.details', 'close')
                     }}
                 >
                     <Icon aria-hidden={true} svgPath={mdiClose} /> Close

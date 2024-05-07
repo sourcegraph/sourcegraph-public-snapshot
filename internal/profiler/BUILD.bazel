@@ -6,11 +6,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/profiler",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
-        "//internal/conf/deploy",
         "//internal/env",
         "//internal/version",
-        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_sourcegraph_log//:log",
         "@com_google_cloud_go_profiler//:profiler",
     ],
 )

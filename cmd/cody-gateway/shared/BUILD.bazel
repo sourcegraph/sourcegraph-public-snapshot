@@ -20,6 +20,7 @@ go_library(
         "//cmd/cody-gateway/internal/events",
         "//cmd/cody-gateway/internal/httpapi",
         "//cmd/cody-gateway/internal/httpapi/completions",
+        "//cmd/cody-gateway/internal/httpapi/featurelimiter",
         "//cmd/cody-gateway/internal/limiter",
         "//cmd/cody-gateway/internal/notify",
         "//cmd/cody-gateway/shared/config",

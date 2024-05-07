@@ -15,6 +15,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//cmd/frontend/backend",
+        "//internal/actor",
+        "//internal/api",
         "//internal/conf",
         "//internal/database",
         "//internal/errcode",
@@ -37,12 +40,21 @@ go_test(
     srcs = [
         "github_test.go",
         "gitlab_test.go",
+        "middleware_test.go",
         "mocks_test.go",
     ],
     embed = [":auth"],
     deps = [
+        "//cmd/frontend/backend",
+        "//internal/actor",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/extsvc/github",
+        "//internal/observation",
+        "//internal/types",
         "//lib/errors",
+        "//schema",
         "@com_github_tomnomnom_linkheader//:linkheader",
     ],
 )

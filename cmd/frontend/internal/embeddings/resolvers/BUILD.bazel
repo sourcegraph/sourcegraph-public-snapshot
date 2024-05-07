@@ -10,12 +10,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/embeddings/resolvers",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/backend",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//cmd/frontend/internal/cody",
         "//internal/api",
         "//internal/auth",
-        "//internal/cody",
         "//internal/conf",
         "//internal/database",
         "//internal/embeddings",
@@ -40,7 +39,6 @@ go_test(
     embed = [":resolvers"],
     tags = ["requires-network"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//internal/actor",
         "//internal/api",

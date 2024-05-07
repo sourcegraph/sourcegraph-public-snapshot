@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/build"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/config"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestGetBuild(t *testing.T) {
@@ -23,7 +26,7 @@ func TestGetBuild(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodGet, "/-/debug/1234", nil)
 	req = mux.SetURLVars(req, map[string]string{"buildNumber": "1234"})
 	t.Run("401 Unauthorized when in production mode and incorrect credentials", func(t *testing.T) {
-		server := NewServer(logger, config.Config{Production: true, DebugPassword: "this is a test"})
+		server := NewServer(":8080", logger, config.Config{Production: true, DebugPassword: "this is a test"})
 		rec := httptest.NewRecorder()
 		server.handleGetBuild(rec, req)
 
@@ -36,7 +39,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("404 for build that does not exist", func(t *testing.T) {
-		server := NewServer(logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{})
 		rec := httptest.NewRecorder()
 		server.handleGetBuild(rec, req)
 
@@ -44,7 +47,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("get marshalled json for build", func(t *testing.T) {
-		server := NewServer(logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{})
 		rec := httptest.NewRecorder()
 
 		num := 1234
@@ -97,7 +100,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("200 with valid credentials in production mode", func(t *testing.T) {
-		server := NewServer(logger, config.Config{Production: true, DebugPassword: "this is a test"})
+		server := NewServer(":8080", logger, config.Config{Production: true, DebugPassword: "this is a test"})
 		rec := httptest.NewRecorder()
 
 		req.SetBasicAuth("devx", server.config.DebugPassword)
@@ -129,7 +132,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 	}
 
 	t.Run("All old builds get removed", func(t *testing.T) {
-		server := NewServer(logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{})
 		b := finishedBuild(1, "passed", time.Now().AddDate(-1, 0, 0))
 		server.store.Set(b)
 
@@ -139,9 +142,10 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		b = finishedBuild(3, "failed", time.Now().AddDate(0, 0, -1))
 		server.store.Set(b)
 
-		stopFunc := server.startCleaner(10*time.Millisecond, 24*time.Hour)
+		ctx, cancel := context.WithCancel(context.Background())
+		go goroutine.MonitorBackgroundRoutines(ctx, deleteOldBuilds(logger, server.store, 10*time.Millisecond, 24*time.Hour))
 		time.Sleep(20 * time.Millisecond)
-		stopFunc()
+		cancel()
 
 		builds := server.store.FinishedBuilds()
 
@@ -150,7 +154,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		}
 	})
 	t.Run("1 build left after old builds are removed", func(t *testing.T) {
-		server := NewServer(logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{})
 		b := finishedBuild(1, "canceled", time.Now().AddDate(-1, 0, 0))
 		server.store.Set(b)
 
@@ -160,9 +164,10 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		b = finishedBuild(3, "failed", time.Now())
 		server.store.Set(b)
 
-		stopFunc := server.startCleaner(10*time.Millisecond, 24*time.Hour)
+		ctx, cancel := context.WithCancel(context.Background())
+		go goroutine.MonitorBackgroundRoutines(ctx, deleteOldBuilds(logger, server.store, 10*time.Millisecond, 24*time.Hour))
 		time.Sleep(20 * time.Millisecond)
-		stopFunc()
+		cancel()
 
 		builds := server.store.FinishedBuilds()
 
@@ -170,7 +175,6 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 			t.Errorf("Expected one build to be left over. Got %d, wanted %d", len(builds), 1)
 		}
 	})
-
 }
 
 type MockNotificationClient struct {
@@ -211,31 +215,33 @@ func TestProcessEvent(t *testing.T) {
 		state := "done"
 		pipelineID := "pipeline"
 		pipeline := &buildkite.Pipeline{
-			ID:   &pipelineID,
-			Name: &pipelineID,
+			ID:         &pipelineID,
+			Name:       &pipelineID,
+			Repository: pointers.Ptr("banana"),
 		}
 		jobState := build.JobPassedState
 		if jobExitCode != 0 {
 			jobState = build.JobFailedState
 		}
 		job := buildkite.Job{Name: &name, ExitStatus: &jobExitCode, State: &jobState}
-		return &build.Event{Name: build.EventJobFinished, Build: buildkite.Build{State: &state, Number: &buildNumber, Pipeline: pipeline}, Job: job}
+		return &build.Event{Name: build.EventJobFinished, Build: buildkite.Build{State: &state, Number: &buildNumber, Pipeline: pipeline}, Job: job, Pipeline: *pipeline}
 	}
-	newBuildEvent := func(name string, buildNumber int, state string, jobExitCode int) *build.Event {
+	newBuildEvent := func(name string, buildNumber int, state string, branch string, jobExitCode int) *build.Event {
 		job := newJobEvent(name, buildNumber, jobExitCode)
 		pipelineID := "pipeline"
 		pipeline := &buildkite.Pipeline{
-			ID:   &pipelineID,
-			Name: &pipelineID,
+			ID:         &pipelineID,
+			Name:       &pipelineID,
+			Repository: pointers.Ptr("banana"),
 		}
-		return &build.Event{Name: build.EventBuildFinished, Build: buildkite.Build{State: &state, Number: &buildNumber, Pipeline: pipeline}, Job: job.Job}
+		return &build.Event{Name: build.EventBuildFinished, Build: buildkite.Build{State: &state, Branch: &branch, Number: &buildNumber, Pipeline: pipeline}, Job: job.Job, Pipeline: *pipeline}
 	}
 	t.Run("no send notification on unfinished builds", func(t *testing.T) {
-		server := NewServer(logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{})
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
-		buildStartedEvent := newBuildEvent("test 2", buildNumber, "failed", 1)
+		buildStartedEvent := newBuildEvent("test 2", buildNumber, "failed", "main", 1)
 		buildStartedEvent.Name = "build.started"
 		server.processEvent(buildStartedEvent)
 		require.Equal(t, 0, mockNotifyClient.sendCalled)
@@ -248,12 +254,12 @@ func TestProcessEvent(t *testing.T) {
 	})
 
 	t.Run("failed build sends notification", func(t *testing.T) {
-		server := NewServer(logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{})
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
 		server.processEvent(newJobEvent("test", buildNumber, 0))
-		server.processEvent(newBuildEvent("test 2", buildNumber, "failed", 1))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "failed", "main", 1))
 
 		require.Equal(t, 1, mockNotifyClient.sendCalled)
 
@@ -264,12 +270,12 @@ func TestProcessEvent(t *testing.T) {
 	})
 
 	t.Run("passed build sends notification", func(t *testing.T) {
-		server := NewServer(logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{})
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
 		server.processEvent(newJobEvent("test", buildNumber, 0))
-		server.processEvent(newBuildEvent("test 2", buildNumber, "passed", 0))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "passed", "main", 0))
 
 		require.Equal(t, 0, mockNotifyClient.sendCalled)
 
@@ -280,13 +286,13 @@ func TestProcessEvent(t *testing.T) {
 	})
 
 	t.Run("failed build, then passed build sends fixed notification", func(t *testing.T) {
-		server := NewServer(logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{})
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
 
 		server.processEvent(newJobEvent("test 1", buildNumber, 1))
-		server.processEvent(newBuildEvent("test 2", buildNumber, "failed", 1))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "failed", "main", 1))
 
 		require.Equal(t, 1, mockNotifyClient.sendCalled)
 
@@ -296,7 +302,7 @@ func TestProcessEvent(t *testing.T) {
 		require.Equal(t, "failed", *builds[0].State)
 
 		server.processEvent(newJobEvent("test 1", buildNumber, 0))
-		server.processEvent(newBuildEvent("test 2", buildNumber, "passed", 0))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "passed", "main", 0))
 
 		builds = server.store.FinishedBuilds()
 		require.Equal(t, 1, len(builds))

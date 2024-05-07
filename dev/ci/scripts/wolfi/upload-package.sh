@@ -4,7 +4,8 @@ set -eu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
-# TODO: Manage these variables properly
+echo "~~~ :package: :airplane_departure: Upload package to repository"
+
 GCP_PROJECT="sourcegraph-ci"
 GCS_BUCKET="package-repository"
 TARGET_ARCH="x86_64"
@@ -21,9 +22,6 @@ fi
 cd wolfi-packages/packages/$TARGET_ARCH
 
 # Check that this exact package does not already exist in the repo - fail if so
-
-echo " * Uploading package to repository"
-
 # List all .apk files under wolfi-packages/packages/$TARGET_ARCH/
 error="false"
 package_usage_list=""
@@ -72,7 +70,7 @@ done
 # Show package usage message on branches
 if [[ "$IS_MAIN" != "true" ]]; then
   if [[ -n "$BUILDKITE" ]]; then
-    echo -e "Use this package locally by adding the following to your base image config under \`wolfi-images/\`:
+    echo -e "Test this package locally by adding the following to your base image config under \`wolfi-images/\`:
 \`\`\`
 contents:
   keyring:
@@ -81,7 +79,13 @@ contents:
     - '@branch https://packages.sgdev.org/${BRANCH_PATH}'
   packages:
 $package_usage_list
-  \`\`\`" | ../../../dev/ci/scripts/annotate.sh -m -t "info"
+  \`\`\`
+
+Then test the package locally:
+- Build the base image using: \`sg wolfi image <image>\`
+- Build the full image using: \`sg wolfi lock <image> && bazel run //<image-build-path>:image\`
+
+  " | ../../../dev/ci/scripts/annotate.sh -m -t "info"
   fi
 fi
 

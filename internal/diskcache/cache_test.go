@@ -18,7 +18,7 @@ func TestOpen(t *testing.T) {
 	store := &store{
 		dir:       dir,
 		component: "test",
-		observe:   newOperations(&observation.TestContext, "test"),
+		observe:   newOperations(observation.TestContextTB(t), "test"),
 	}
 
 	do := func() (*File, bool) {
@@ -68,7 +68,7 @@ func TestMultiKeyEviction(t *testing.T) {
 	store := &store{
 		dir:       dir,
 		component: "test",
-		observe:   newOperations(&observation.TestContext, "test"),
+		observe:   newOperations(observation.TestContextTB(t), "test"),
 	}
 
 	f, err := store.Open(context.Background(), []string{"key1", "key2"}, func(ctx context.Context) (io.ReadCloser, error) {
@@ -94,7 +94,7 @@ func TestEvict(t *testing.T) {
 	store := &store{
 		dir:       dir,
 		component: "test",
-		observe:   newOperations(&observation.TestContext, "test"),
+		observe:   newOperations(observation.TestContextTB(t), "test"),
 	}
 
 	for _, name := range []string{

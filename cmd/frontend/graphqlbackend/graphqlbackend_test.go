@@ -11,7 +11,6 @@ import (
 	"reflect"
 	"testing"
 
-	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
@@ -21,9 +20,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -49,7 +48,7 @@ func BenchmarkPrometheusFieldName(b *testing.B) {
 	for i, t := range tests {
 		typeName, fieldName, want := t[0], t[1], t[2]
 		b.Run(fmt.Sprintf("test-%v", i), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				got := prometheusFieldName(typeName, fieldName)
 				if got != want {
 					b.Fatalf("got %q want %q", got, want)
@@ -104,17 +103,20 @@ func TestRecloneRepository(t *testing.T) {
 
 	repoID := MarshalRepositoryID(1)
 
-	gc := gitserver.NewMockClient()
-	gc.RequestRepoCloneFunc.SetDefaultReturn(&protocol.RepoCloneResponse{}, nil)
-	r := newSchemaResolver(db, gc)
+	called := false
+	backend.Mocks.Repos.RecloneRepository = func(ctx context.Context, repoID api.RepoID) error {
+		called = true
+		return nil
+	}
+	t.Cleanup(func() {
+		backend.Mocks = backend.MockServices{}
+	})
+	r := newSchemaResolver(db, gitserver.NewStrictMockClient())
 
 	_, err := r.RecloneRepository(context.Background(), &struct{ Repo graphql.ID }{Repo: repoID})
 	require.NoError(t, err)
 
-	// To reclone, we first make a request to delete the repository, followed by a request
-	// to clone the repository again.
-	mockassert.CalledN(t, gc.RemoveFunc, 1)
-	mockassert.CalledN(t, gc.RequestRepoCloneFunc, 1)
+	assert.True(t, called)
 }
 
 func TestDeleteRepositoryFromDisk(t *testing.T) {
@@ -124,7 +126,10 @@ func TestDeleteRepositoryFromDisk(t *testing.T) {
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
+	called := backend.Mocks.Repos.MockRecloneRepository(t, 1)
+	t.Cleanup(func() {
+		backend.Mocks = backend.MockServices{}
+	})
 
 	gitserverRepos := dbmocks.NewMockGitserverRepoStore()
 	gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{RepoID: 1, CloneStatus: "cloned"}, nil)
@@ -180,7 +185,7 @@ func TestResolverTo(t *testing.T) {
 	for _, r := range resolvers {
 		typ := reflect.TypeOf(r)
 		t.Run(typ.Name(), func(t *testing.T) {
-			for i := 0; i < typ.NumMethod(); i++ {
+			for i := range typ.NumMethod() {
 				if name := typ.Method(i).Name; re.MatchString(name) {
 					reflect.ValueOf(r).MethodByName(name).Call(nil)
 				}
@@ -213,8 +218,4 @@ func TestResolverTo(t *testing.T) {
 			t.Errorf("expected treeEntry to be tree")
 		}
 	})
-}
-
-func boolPointer(b bool) *bool {
-	return &b
 }

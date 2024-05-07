@@ -53,7 +53,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 			return nil, errors.New("The 'codycontext' patterntype is not compatible with Smart Search")
 		}
 
-		newJobTree, err := codycontext.NewSearchJob(plan, newJob)
+		newJobTree, err := codycontext.NewSearchJob(plan, inputs, newJob)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +84,9 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	if len(fileContainsPatterns) > 0 {
 		newNodes := make([]query.Node, 0, len(fileContainsPatterns)+1)
 		for _, pat := range fileContainsPatterns {
-			newNodes = append(newNodes, query.Pattern{Value: pat})
+			node := query.Pattern{Value: pat}
+			node.Annotation.Labels.Set(query.Regexp)
+			newNodes = append(newNodes, node)
 		}
 		if b.Pattern != nil {
 			newNodes = append(newNodes, b.Pattern)
@@ -96,7 +98,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		// This block generates jobs that can be built directly from
 		// a basic query rather than first being expanded into
 		// flat queries.
-		resultTypes := computeResultTypes(b, inputs.PatternType)
+		resultTypes := computeResultTypes(b, inputs.PatternType, defaultResultTypes)
 		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.DefaultLimit()))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
@@ -136,8 +138,6 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 					})
 				}
 
-				// searcher to use full deadline if timeout: set or we are not batch.
-
 				searcherJob := NewTextSearchJob(b, inputs, resultTypes, repoOptions)
 				addJob(searcherJob)
 			}
@@ -171,13 +171,22 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 			diff := resultTypes.Has(result.TypeDiff)
 			repoOptionsCopy := repoOptions
 			repoOptionsCopy.OnlyCloned = true
-			addJob(&commit.SearchJob{
+
+			commitSearchJob := &commit.SearchJob{
 				Query:                commit.QueryToGitQuery(originalQuery, diff),
-				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
-			})
+				Concurrency:          4,
+			}
+
+			addJob(
+				&repoPagerJob{
+					child:            &reposPartialJob{commitSearchJob},
+					repoOpts:         repoOptionsCopy,
+					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
+					skipPartitioning: true,
+				})
 		}
 
 		addJob(&searchrepos.ComputeExcludedJob{
@@ -354,7 +363,7 @@ func orderRacingJobs(j job.Job) job.Job {
 // NewFlatJob creates all jobs that are built from a query.Flat.
 func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	maxResults := f.MaxResults(searchInputs.DefaultLimit())
-	resultTypes := computeResultTypes(f.ToBasic(), searchInputs.PatternType)
+	resultTypes := computeResultTypes(f.ToBasic(), searchInputs.PatternType, defaultResultTypes)
 
 	// searcher to use full deadline if timeout: set or we are not batch.
 	useFullDeadline := f.GetTimeout() != nil || f.Count() != nil || searchInputs.Protocol != search.Batch
@@ -373,7 +382,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 		if resultTypes.Has(result.TypeSymbol) {
 			// Create Symbol Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				request, err := toSymbolSearchRequest(f)
+				request, err := toSymbolSearchRequest(f, searchInputs.Features)
 				if err != nil {
 					return nil, err
 				}
@@ -398,12 +407,16 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 				Features:        *searchInputs.Features,
 			}
 
-			addJob(&structural.SearchJob{
-				SearcherArgs:     searcherArgs,
-				UseIndex:         f.Index(),
-				ContainsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
-				RepoOpts:         repoOptions,
-				BatchRetry:       searchInputs.Protocol == search.Batch,
+			structuralSearchJob := &structural.SearchJob{
+				SearcherArgs: searcherArgs,
+				UseIndex:     f.Index(),
+				BatchRetry:   searchInputs.Protocol == search.Batch,
+			}
+
+			addJob(&repoPagerJob{
+				child:            &reposPartialJob{structuralSearchJob},
+				repoOpts:         repoOptions,
+				containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 			})
 		}
 
@@ -510,7 +523,7 @@ func getPathRegexps(b query.Basic, p *search.TextPatternInfo) (pathRegexps []*re
 		if p.IsCaseSensitive {
 			pathRegexps = append(pathRegexps, regexp.MustCompile(pattern))
 		} else {
-			pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+pattern))
+			pathRegexps = append(pathRegexps, regexp.MustCompile(query.CaseInsensitiveRegExp(pattern)))
 		}
 	}
 
@@ -526,7 +539,7 @@ func getPathRegexps(b query.Basic, p *search.TextPatternInfo) (pathRegexps []*re
 			if p.IsCaseSensitive {
 				pathRegexps = append(pathRegexps, regexp.MustCompile(pattern))
 			} else {
-				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+pattern))
+				pathRegexps = append(pathRegexps, regexp.MustCompile(query.CaseInsensitiveRegExp(pattern)))
 			}
 		})
 	}
@@ -588,7 +601,7 @@ func contributorsAsRegexp(contributors []string, isCaseSensitive bool) (res []*r
 		if isCaseSensitive {
 			res = append(res, regexp.MustCompile(pattern))
 		} else {
-			res = append(res, regexp.MustCompile(`(?i)`+pattern))
+			res = append(res, regexp.MustCompile(query.CaseInsensitiveRegExp(pattern)))
 		}
 	}
 	return res
@@ -629,7 +642,7 @@ func mapSlice(values []string, f func(string) string) []string {
 	return res
 }
 
-func toSymbolSearchRequest(f query.Flat) (*searcher.SymbolSearchRequest, error) {
+func toSymbolSearchRequest(f query.Flat, feat *search.Features) (*searcher.SymbolSearchRequest, error) {
 	if f.Pattern != nil && f.Pattern.Negated {
 		return nil, &query.UnsupportedError{
 			Msg: "symbol search does not support negation.",
@@ -640,17 +653,29 @@ func toSymbolSearchRequest(f query.Flat) (*searcher.SymbolSearchRequest, error) 
 	// assumes that a literal pattern is an escaped regular expression.
 	regexpPattern := f.ToBasic().PatternString()
 
+	// Handle file: and -file: filters.
 	filesInclude, filesExclude := f.IncludeExcludeValues(query.FieldFile)
-	langInclude, langExclude := f.IncludeExcludeValues(query.FieldLang)
 
-	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
-	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
+	// Handle lang: and -lang: filters.
+	langAliasInclude, langAliasExclude := f.IncludeExcludeValues(query.FieldLang)
+	var langInclude, langExclude []string
+	if feat.ContentBasedLangFilters {
+		langInclude = toLangFilters(langAliasInclude)
+		langExclude = toLangFilters(langAliasExclude)
+	} else {
+		// If the 'search-content-based-lang-detection' feature is disabled, then we convert the filters
+		// to file path regexes and do not pass any explicit language filters to the backend.
+		filesInclude = append(filesInclude, mapSlice(langAliasInclude, query.LangToFileRegexp)...)
+		filesExclude = append(filesExclude, mapSlice(langAliasExclude, query.LangToFileRegexp)...)
+	}
 
 	return &searcher.SymbolSearchRequest{
 		RegexpPattern:   regexpPattern,
 		IsCaseSensitive: f.IsCaseSensitive(),
 		IncludePatterns: filesInclude,
 		ExcludePattern:  query.UnionRegExps(filesExclude),
+		IncludeLangs:    langInclude,
+		ExcludeLangs:    langExclude,
 	}, nil
 }
 
@@ -705,9 +730,11 @@ func toLangFilters(aliases []string) []string {
 	return filters
 }
 
+const defaultResultTypes = result.TypeFile | result.TypePath | result.TypeRepo
+
 // computeResultTypes returns result types based three inputs: `type:...` in the query,
 // the `pattern`, and top-level `searchType` (coming from a GQL value).
-func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types {
+func computeResultTypes(b query.Basic, searchType query.SearchType, defaultTypes result.Types) result.Types {
 	if searchType == query.SearchTypeStructural && !b.IsEmptyPattern() {
 		return result.TypeStructural
 	}
@@ -715,18 +742,22 @@ func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types
 	types, _ := b.IncludeExcludeValues(query.FieldType)
 
 	if len(types) == 0 && b.Pattern != nil {
-		if p, ok := b.Pattern.(query.Pattern); ok {
-			annot := p.Annotation
-			if annot.Labels.IsSet(query.IsAlias) {
-				// This query set the pattern via `content:`, so we
-				// imply that only content should be searched.
-				return result.TypeFile
-			}
+		// When the pattern is set via `content:`, we set the annotation on
+		// the pattern to IsContent. So if all Patterns are from content: we
+		// should only search TypeFile.
+		hasPattern := false
+		allIsContent := true
+		query.VisitPattern([]query.Node{b.Pattern}, func(value string, negated bool, annotation query.Annotation) {
+			hasPattern = true
+			allIsContent = allIsContent && annotation.Labels.IsSet(query.IsContent)
+		})
+		if hasPattern && allIsContent {
+			return result.TypeFile
 		}
 	}
 
 	if len(types) == 0 {
-		return result.TypeFile | result.TypePath | result.TypeRepo
+		return defaultTypes
 	}
 
 	var rts result.Types
@@ -902,7 +933,7 @@ func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
 				if typedQ.CaseSensitive {
 					res = append(res, regexp.MustCompile(typedQ.Regexp.String()))
 				} else {
-					res = append(res, regexp.MustCompile(`(?i)`+typedQ.Regexp.String()))
+					res = append(res, regexp.MustCompile(query.CaseInsensitiveRegExp(typedQ.Regexp.String())))
 				}
 			}
 		case *zoektquery.Substring:
@@ -910,7 +941,7 @@ func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
 				if typedQ.CaseSensitive {
 					res = append(res, regexp.MustCompile(regexp.QuoteMeta(typedQ.Pattern)))
 				} else {
-					res = append(res, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(typedQ.Pattern)))
+					res = append(res, regexp.MustCompile(query.CaseInsensitiveRegExp(regexp.QuoteMeta(typedQ.Pattern))))
 				}
 			}
 		}

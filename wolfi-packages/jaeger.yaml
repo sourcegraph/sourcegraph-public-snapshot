@@ -4,7 +4,7 @@
 package:
   name: jaeger
   version: 1.45.0 # Keep in sync with version in sg.config.yaml
-  epoch: 5
+  epoch: 8
   description: "Distributed Tracing Platform"
   target-architecture:
     - x86_64
@@ -53,3 +53,9 @@ subpackages:
           set -x
           mkdir -p "${{targets.subpkgdir}}/usr/local/bin/"
           cp "${{targets.destdir}}/usr/local/bin/jaeger-all-in-one" "${{targets.subpkgdir}}/usr/local/bin/"
+
+update:
+  enabled: true
+  github:
+    identifier: jaegertracing/jaeger
+    strip-prefix: "v"

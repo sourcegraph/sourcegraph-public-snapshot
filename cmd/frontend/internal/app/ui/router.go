@@ -15,14 +15,14 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/githubapp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
@@ -80,6 +80,13 @@ var aboutRedirects = map[string]string{
 	"help/terms": "terms",
 }
 
+type staticPageInfo struct {
+	// Specify either path OR pathPrefix.
+	path, pathPrefix string
+	name, title      string
+	index            bool
+}
+
 // Router returns the router that serves pages for our web app.
 func Router() *mux.Router {
 	return uirouter.Router
@@ -111,13 +118,8 @@ func InitRouter(db database.DB) {
 	ghAppRouter := r.PathPrefix("/githubapp/").Subrouter()
 	githubapp.SetupGitHubAppRoutes(ghAppRouter, db)
 
-	// Basic pages with static titles
-	for _, p := range []struct {
-		// Specify either path OR pathPrefix.
-		path, pathPrefix string
-		name, title      string
-		index            bool
-	}{
+	// Basic pages with static titles.
+	staticPages := []staticPageInfo{
 		// with index:
 		{pathPrefix: "/insights", name: "insights", title: "Insights", index: true},
 		{pathPrefix: "/search-jobs", name: "search-jobs", title: "Search Jobs", index: true},
@@ -160,7 +162,8 @@ func InitRouter(db database.DB) {
 		{path: "/survey", name: "survey", title: "Survey", index: false},
 		{path: "/survey/{score}", name: "survey-score", title: "Survey", index: false},
 		{path: "/welcome", name: "welcome", title: "Welcome", index: false},
-	} {
+	}
+	for _, p := range staticPages {
 		var handler http.Handler
 		if p.index {
 			handler = brandedIndex(p.title)
@@ -194,7 +197,7 @@ func InitRouter(db database.DB) {
 		Handler(handler(db, serveBasicPage(db, func(_ *Common, r *http.Request) string {
 			shortQuery := limitString(r.URL.Query().Get("q"), 25, true)
 			if shortQuery == "" {
-				return globals.Branding().BrandName
+				return conf.Branding().BrandName
 			}
 			// e.g. "myquery - Sourcegraph"
 			return brandNameSubtitle(shortQuery)
@@ -204,7 +207,7 @@ func InitRouter(db database.DB) {
 	// search badge
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge).Handler(searchBadgeHandler())
 
-	if envvar.SourcegraphDotComMode() {
+	if dotcom.SourcegraphDotComMode() {
 		// sourcegraph.com subdomain
 		r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").
 			Name(routeAboutSubdomain).
@@ -243,7 +246,7 @@ func InitRouter(db database.DB) {
 		return brandNameSubtitle(repoShortName(c.Repo.Name))
 	}))
 	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
-	r.Path(repoRevPath).Methods("GET").Name(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	repoRoot := r.Path(repoRevPath).Methods("GET").Name(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
 		if env.InsecureDev && r.URL.Path == "/__errorTest" {
 			handler(db, serveErrorTest(db)).ServeHTTP(w, r)
@@ -257,9 +260,10 @@ func InitRouter(db database.DB) {
 		serveRepoHandler.ServeHTTP(w, r)
 	}))
 
-	// tree
+	// We don't need to know about repo subroutes
+	sveltekit.RegisterSvelteKit(r, repoRoot)
+
 	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
-	repoRev.PathPrefix("/commits").Methods("GET").Name("repo-commits").Handler(brandedNoIndex("Commits"))
 	// tree
 	repoRev.Path("/tree{Path:.*}").Methods("GET").
 		Name(routeTree).
@@ -281,15 +285,15 @@ func InitRouter(db database.DB) {
 	// raw
 	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw).Handler(handler(db, serveRaw(logger, db, gitserver.NewClient("http.raw"))))
 
-	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
-
-	repo.PathPrefix("/batch-changes").Methods("GET").Name("repo-batch-changes").Handler(brandedIndex("Batch Changes"))
+	// batch changes - branded
+	repoRev.PathPrefix("/batch-changes").Methods("GET").Name("repo-batch-changes").Handler(brandedIndex("Batch Changes"))
 
 	for _, p := range []struct {
 		pathPrefix, name, title string
 	}{
 		{pathPrefix: "/settings", name: "repo-settings", title: "Repository settings"},
 		{pathPrefix: "/code-graph", name: "repo-code-intelligence", title: "Code graph"},
+		{pathPrefix: "/commits", name: "repo-commits", title: "Commits"},
 		{pathPrefix: "/commit", name: "repo-commit", title: "Commit"},
 		{pathPrefix: "/branches", name: "repo-branches", title: "Branches"},
 		{pathPrefix: "/tags", name: "repo-tags", title: "Tags"},
@@ -297,12 +301,12 @@ func InitRouter(db database.DB) {
 		{pathPrefix: "/stats", name: "repo-stats", title: "Stats"},
 		{pathPrefix: "/own", name: "repo-own", title: "Ownership"},
 	} {
-		repo.PathPrefix(p.pathPrefix).Methods("GET").Name(p.name).Handler(brandedNoIndex(p.title))
+		repoRev.PathPrefix(p.pathPrefix).Methods("GET").Name(p.name).Handler(brandedNoIndex(p.title))
 	}
 
 	// legacy redirects
-	if envvar.SourcegraphDotComMode() {
-		repo.Path("/info").Methods("GET").Name("page.repo.landing").Handler(handler(db, serveRepoLanding(db)))
+	if dotcom.SourcegraphDotComMode() {
+		repoRev.Path("/info").Methods("GET").Name("page.repo.landing").Handler(handler(db, serveRepoLanding(db)))
 		repoRev.Path("/{dummy:def|refs}/" + routevar.Def).Methods("GET").Name("page.def.redirect").Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
 		repoRev.Path("/info/" + routevar.Def).Methods("GET").Name(routeLegacyDefLanding).Handler(handler(db, serveDefLanding))
 		repoRev.Path("/land/" + routevar.Def).Methods("GET").Name("page.def.landing.old").Handler(http.HandlerFunc(serveOldRouteDefLanding))
@@ -322,7 +326,7 @@ var mockServeRepo func(w http.ResponseWriter, r *http.Request)
 // last title component. This function indirectly calls conf.Get(), so should not be invoked from
 // any function that is invoked by an init function.
 func brandNameSubtitle(titles ...string) string {
-	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
+	return strings.Join(append(titles, conf.Branding().BrandName), " - ")
 }
 
 // staticRedirectHandler returns an HTTP handler that redirects all requests to
@@ -432,7 +436,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 	if tr := trace.FromContext(r.Context()); tr.IsRecording() {
 		tr.SetError(err)
 		tr.SetAttributes(attribute.String("error-id", errorID))
-		traceURL = trace.URL(trace.ID(r.Context()), conf.DefaultClient())
+		traceURL = trace.URL(trace.ID(r.Context()))
 	}
 	logFields := []log.Field{
 		log.String("method", r.Method),

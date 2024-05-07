@@ -41,6 +41,9 @@ export const enum EventName {
     DOWNLOAD_IDE = 'DownloadIDE',
     DOWNLOAD_APP = 'DownloadApp',
 
+    CODY_EDITOR_SETUP_VIEWED = 'CodyEditorSetUpViewed',
+    CODY_EDITOR_SETUP_OPEN_MARKETPLACE = 'CodyEditorSetUpOpenMarketplace',
+    CODY_EDITOR_FEATURES_VIEWED = 'CodyEditorFeaturesViewed',
     CODY_MANAGEMENT_PAGE_VIEWED = 'CodyManageViewed',
     CODY_SUBSCRIPTION_PAGE_VIEWED = 'CodyPlanSelectionViewed',
     CODY_SUBSCRIPTION_PLAN_CLICKED = 'CodyPlanSelectionClicked',
@@ -53,6 +56,7 @@ export const enum EventName {
     CODY_ONBOARDING_CHOOSE_EDITOR_VIEWED = 'CodyEditorViewed',
     CODY_ONBOARDING_CHOOSE_EDITOR_SKIPPED = 'CodyEditorSkipped',
     CODY_ONBOARDING_CHOOSE_EDITOR_SELECTED = 'CodyEditorSelected',
+    CODY_HANDRAISER_TEST_ENROLLMENT = 'HubspotFormFromWorkPersonalToHandRaiserTestEnrollment',
 }
 
 export const enum EventLocation {

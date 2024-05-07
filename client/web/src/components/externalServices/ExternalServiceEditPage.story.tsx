@@ -2,6 +2,7 @@ import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -94,6 +95,7 @@ export const ViewConfig: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock(externalService)}>
         <ExternalServiceEditPage
             telemetryService={NOOP_TELEMETRY_SERVICE}
+            telemetryRecorder={noOpTelemetryRecorder}
             autoFocusForm={false}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
@@ -107,6 +109,7 @@ export const ConfigWithInvalidUrl: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock({ ...externalService, config: '{"url": "invalid-url"}' })}>
         <ExternalServiceEditPage
             telemetryService={NOOP_TELEMETRY_SERVICE}
+            telemetryRecorder={noOpTelemetryRecorder}
             autoFocusForm={false}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
@@ -120,6 +123,7 @@ export const ConfigWithWarning: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}>
         <ExternalServiceEditPage
             telemetryService={NOOP_TELEMETRY_SERVICE}
+            telemetryRecorder={noOpTelemetryRecorder}
             autoFocusForm={false}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
@@ -133,6 +137,7 @@ export const EditingDisabled: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}>
         <ExternalServiceEditPage
             telemetryService={NOOP_TELEMETRY_SERVICE}
+            telemetryRecorder={noOpTelemetryRecorder}
             autoFocusForm={false}
             externalServicesFromFile={true}
             allowEditExternalServicesWithFile={false}

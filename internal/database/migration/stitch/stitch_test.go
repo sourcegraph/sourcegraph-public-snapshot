@@ -257,7 +257,7 @@ func testStitchApplication(t *testing.T, schemaName string, from, to int) {
 		db := dbtest.NewRawDB(logger, t)
 		migrationsTableName := "testing"
 
-		storeShim := connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTableName))
+		storeShim := connections.NewStoreShim(store.NewWithDB(observation.TestContextTB(t), db, migrationsTableName))
 		if err := storeShim.EnsureSchemaTable(ctx); err != nil {
 			t.Fatalf("failed to prepare store: %s", err)
 		}

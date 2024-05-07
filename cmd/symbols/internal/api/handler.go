@@ -11,17 +11,14 @@ import (
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-const maxNumSymbolResults = 500
 
 type grpcService struct {
 	searchFunc   types.SearchFunc
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error)
-	ctagsBinary  string
 	proto.UnimplementedSymbolsServiceServer
 	logger logger.Logger
 }
@@ -30,18 +27,24 @@ func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*prot
 	var response proto.SearchResponse
 
 	params := r.ToInternal()
-	symbols, err := s.searchFunc(ctx, params)
+	res, err := s.searchFunc(ctx, params)
 	if err != nil {
 		s.logger.Error("symbol search failed",
 			logger.String("arguments", fmt.Sprintf("%+v", params)),
 			logger.Error(err),
 		)
 
+		var limitErr *limitHitError
+		if errors.As(err, &limitErr) {
+			response.FromInternal(&search.SymbolsResponse{Symbols: res, LimitHit: true})
+			return &response, nil
+		}
+
 		response.FromInternal(&search.SymbolsResponse{Err: err.Error()})
-	} else {
-		response.FromInternal(&search.SymbolsResponse{Symbols: symbols})
+		return &response, nil
 	}
 
+	response.FromInternal(&search.SymbolsResponse{Symbols: res})
 	return &response, nil
 }
 
@@ -58,25 +61,14 @@ func NewHandler(
 	searchFunc types.SearchFunc,
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error),
 	handleStatus func(http.ResponseWriter, *http.Request),
-	ctagsBinary string,
 ) http.Handler {
-	searchFuncWrapper := func(ctx context.Context, args search.SymbolsParameters) (result.Symbols, error) {
-		// Massage the arguments to ensure that First is set to a reasonable value.
-		if args.First < 0 || args.First > maxNumSymbolResults {
-			args.First = maxNumSymbolResults
-		}
-
-		return searchFunc(ctx, args)
-	}
-
 	rootLogger := logger.Scoped("symbolsServer")
 
 	// Initialize the gRPC server
 	grpcServer := defaults.NewServer(rootLogger)
 	proto.RegisterSymbolsServiceServer(grpcServer, &grpcService{
-		searchFunc:   searchFuncWrapper,
+		searchFunc:   searchFunc,
 		readFileFunc: readFileFunc,
-		ctagsBinary:  ctagsBinary,
 		logger:       rootLogger.Scoped("grpc"),
 	})
 

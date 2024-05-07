@@ -3,6 +3,7 @@ package monitoring
 import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringalertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
@@ -14,13 +15,16 @@ func createCommonAlerts(
 	id resourceid.ID,
 	vars Variables,
 	channels alertpolicy.NotificationChannels,
-) error {
+) ([]monitoringalertpolicy.MonitoringAlertPolicy, error) {
 	// Convert a spec.ServiceKind into a alertpolicy.ServiceKind
 	serviceKind := alertpolicy.CloudRunService
 	kind := vars.Service.GetKind()
 	if kind == spec.ServiceKindJob {
 		serviceKind = alertpolicy.CloudRunJob
 	}
+
+	// Collect all alerts to aggregate in a dashboard
+	var alerts []monitoringalertpolicy.MonitoringAlertPolicy
 
 	// Iterate over a list of Redis alert configurations. Custom struct defines
 	// the field we expect to vary between each.
@@ -87,7 +91,7 @@ func createCommonAlerts(
 		config.ThresholdAggregation.ResourceKind = serviceKind
 		config.ThresholdAggregation.ResourceName = vars.Service.ID
 
-		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+		alert, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			// Alert policy
 			ID:                   config.ID,
 			Name:                 config.Name,
@@ -99,10 +103,12 @@ func createCommonAlerts(
 			EnvironmentID:        vars.EnvironmentID,
 			ProjectID:            vars.ProjectID,
 			NotificationChannels: channels,
-		}); err != nil {
-			return errors.Wrap(err, config.ID)
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, config.ID)
 		}
+		alerts = append(alerts, alert.AlertPolicy)
 	}
 
-	return nil
+	return alerts, nil
 }

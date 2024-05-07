@@ -108,7 +108,9 @@ func (j *exporterJob) Handle(ctx context.Context) error {
 		return nil
 	}
 
-	logger.Debug("exporting events", log.Int("count", len(batch)))
+	logger.Debug("exporting events",
+		log.Int("count", len(batch)),
+		log.String("address", ConfigInst.ExportAddress.String()))
 
 	// Send out events
 	succeeded, exportErr := exporter.ExportEvents(ctx, batch)

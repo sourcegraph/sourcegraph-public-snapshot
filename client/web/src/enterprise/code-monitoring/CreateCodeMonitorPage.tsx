@@ -4,6 +4,8 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import { useLocation } from 'react-router-dom'
 import type { Observable } from 'rxjs'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -11,13 +13,12 @@ import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
 import type { CodeMonitorFields } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { convertActionsForCreate } from './action-converters'
 import { createCodeMonitor as _createCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-interface CreateCodeMonitorPageProps {
+interface CreateCodeMonitorPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
 
     createCodeMonitor?: typeof _createCodeMonitor
@@ -27,7 +28,7 @@ interface CreateCodeMonitorPageProps {
 
 const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
     React.PropsWithChildren<CreateCodeMonitorPageProps>
-> = ({ authenticatedUser, createCodeMonitor = _createCodeMonitor, isSourcegraphDotCom }) => {
+> = ({ authenticatedUser, createCodeMonitor = _createCodeMonitor, isSourcegraphDotCom, telemetryRecorder }) => {
     const location = useLocation()
 
     const triggerQuery = useMemo(
@@ -40,18 +41,20 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
         [location.search]
     )
 
-    useEffect(
-        () =>
-            eventLogger.logPageView('CreateCodeMonitorPage', {
-                hasTriggerQuery: !!triggerQuery,
-                hasDescription: !!description,
-            }),
-        [triggerQuery, description]
-    )
+    useEffect(() => {
+        EVENT_LOGGER.logPageView('CreateCodeMonitorPage', {
+            hasTriggerQuery: !!triggerQuery,
+            hasDescription: !!description,
+        })
+        telemetryRecorder.recordEvent('codeMonitor.create', 'view', {
+            metadata: { hasTriggerQuery: triggerQuery ? 1 : 0, hasDescription: description ? 1 : 0 },
+        })
+    }, [triggerQuery, description, telemetryRecorder])
 
     const createMonitorRequest = useCallback(
         (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> => {
-            eventLogger.log('CreateCodeMonitorFormSubmitted')
+            EVENT_LOGGER.log('CreateCodeMonitorFormSubmitted')
+            telemetryRecorder.recordEvent('codeMonitor.create', 'submit')
             return createCodeMonitor({
                 monitor: {
                     namespace: authenticatedUser.id,
@@ -63,7 +66,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
                 actions: convertActionsForCreate(codeMonitor.actions.nodes, authenticatedUser.id),
             })
         },
-        [authenticatedUser.id, createCodeMonitor]
+        [authenticatedUser.id, createCodeMonitor, telemetryRecorder]
     )
 
     return (

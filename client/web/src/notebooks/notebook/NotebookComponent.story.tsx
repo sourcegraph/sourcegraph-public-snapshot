@@ -2,6 +2,7 @@ import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { HIGHLIGHTED_FILE_LINES_LONG, NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
@@ -47,6 +48,7 @@ export const Default: StoryFn = () => (
                 searchContextsEnabled={true}
                 ownEnabled={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 streamSearch={() => NEVER}
                 fetchHighlightedFileLineRanges={() => of([HIGHLIGHTED_FILE_LINES_LONG])}
                 onSerializeBlocks={() => {}}
@@ -71,6 +73,7 @@ export const DefaultReadOnly: StoryFn = () => (
                 searchContextsEnabled={true}
                 ownEnabled={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 streamSearch={() => NEVER}
                 fetchHighlightedFileLineRanges={() => of([HIGHLIGHTED_FILE_LINES_LONG])}
                 onSerializeBlocks={() => {}}

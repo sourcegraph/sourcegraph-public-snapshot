@@ -11,9 +11,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
-	"github.com/sourcegraph/zoekt/stream"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -60,10 +60,10 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	var mu sync.Mutex
 	dedupper := dedupper{}
 
-	ch := make(chan error, len(clients))
-	for endpoint, c := range clients {
-		go func(endpoint string, c zoekt.Streamer) {
-			err := c.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
+	pl := pool.New().WithErrors()
+	for endpoint, client := range clients {
+		pl.Go(func() error {
+			err := client.StreamSearch(ctx, q, opts, zoekt.SenderFunc(func(sr *zoekt.SearchResult) {
 				// This shouldn't happen, but skip event if sr is nil.
 				if sr == nil {
 					return
@@ -78,28 +78,15 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 
 			if isZoektRolloutError(ctx, err) {
 				flushSender.Send(endpoint, crashEvent())
-				err = nil
+				return nil
 			}
 
 			flushSender.SendDone(endpoint)
-			ch <- err
-		}(endpoint, c)
+			return err
+		})
 	}
 
-	var errs errors.MultiError
-	for i := 0; i < cap(ch); i++ {
-		errs = errors.Append(errs, <-ch)
-	}
-
-	return errs
-}
-
-type queueSearchResult struct {
-	*zoekt.SearchResult
-
-	// optimization: It can be expensive to calculate sizeBytes, hence we cache it
-	// in the queue.
-	sizeBytes uint64
+	return pl.Wait()
 }
 
 // Search aggregates search over every endpoint in Map.
@@ -150,10 +137,10 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 	}
 	results := make(chan result, len(clients))
 	for _, c := range clients {
-		go func(c zoekt.Streamer) {
+		go func() {
 			rl, err := c.List(ctx, q, opts)
 			results <- result{rl: rl, err: err}
-		}(c)
+		}()
 	}
 
 	// PERF: We don't deduplicate Repos since the only user of List already

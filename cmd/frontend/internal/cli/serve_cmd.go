@@ -157,9 +157,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// Run enterprise setup hook
 	enterpriseServices := enterpriseSetupHook(db, conf.DefaultClient())
 
-	if err != nil {
-		return errors.Wrap(err, "Failed to create sub-repo client")
-	}
 	ui.InitRouter(db)
 
 	if len(os.Args) >= 2 {
@@ -209,14 +206,13 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	globals.WatchBranding()
 	globals.WatchExternalURL()
-	globals.WatchPermissionsUserMapping()
 
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), logger, db) })
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), logger, db) })
+	goroutine.Go(func() { bg.ScheduleStoreTokenUsage(ctx, db) })
 	goroutine.Go(func() { bg.UpdatePermissions(ctx, logger, db) })
 	goroutine.Go(func() { updatecheck.Start(logger, db) })
 	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })

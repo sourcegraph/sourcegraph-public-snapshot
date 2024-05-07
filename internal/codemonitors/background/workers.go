@@ -33,7 +33,7 @@ func newTriggerQueryRunner(ctx context.Context, observationCtx *observation.Cont
 	options := workerutil.WorkerOptions{
 		Name:                 "code_monitors_trigger_jobs_worker",
 		Description:          "runs trigger queries for code monitors",
-		NumHandlers:          4,
+		NumHandlers:          conf.CodeMonitors().Concurrency,
 		Interval:             5 * time.Second,
 		HeartbeatInterval:    15 * time.Second,
 		Metrics:              metrics.workerMetrics,
@@ -42,7 +42,7 @@ func newTriggerQueryRunner(ctx context.Context, observationCtx *observation.Cont
 
 	store := createDBWorkerStoreForTriggerJobs(observationCtx, db)
 
-	worker := dbworker.NewWorker[*database.TriggerJob](ctx, store, &queryRunner{db: db}, options)
+	worker := dbworker.NewWorker(ctx, store, &queryRunner{db: db}, options)
 	return worker
 }
 
@@ -103,7 +103,7 @@ func newActionRunner(ctx context.Context, observationCtx *observation.Context, s
 
 	store := createDBWorkerStoreForActionJobs(observationCtx, s)
 
-	worker := dbworker.NewWorker[*database.ActionJob](ctx, store, &actionRunner{s}, options)
+	worker := dbworker.NewWorker(ctx, store, &actionRunner{s}, options)
 	return worker
 }
 
@@ -181,11 +181,11 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob 
 	ctx = actor.WithActor(ctx, actor.FromUser(m.UserID))
 	ctx = featureflag.WithFlags(ctx, r.db.FeatureFlags())
 
-	results, searchErr := codemonitors.Search(ctx, logger, r.db, q.QueryString, m.ID)
+	results, searchErr := codemonitors.Search(ctx, logger, r.db, q.QueryString, m.ID, triggerJob.ID)
 
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, searchErr)
-	err = cm.SetQueryTriggerNextRun(ctx, q.ID, cm.Clock()().Add(5*time.Minute), newLatestResult.UTC())
+	err = cm.SetQueryTriggerNextRun(ctx, q.ID, cm.Clock()().Add(conf.CodeMonitors().PollInterval), newLatestResult.UTC())
 	if err != nil {
 		return err
 	}

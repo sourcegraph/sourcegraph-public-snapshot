@@ -86,9 +86,7 @@ func regexSearch(
 	}
 	defer cancel()
 
-	var (
-		files = zf.Files
-	)
+	files := zf.Files
 
 	var (
 		lastFileIdx   = atomic.NewInt32(-1)
@@ -108,7 +106,7 @@ func regexSearch(
 	defer func() { cancel(); <-done }()
 
 	// Start workers. They read from files and write to matches.
-	for i := 0; i < numWorkers; i++ {
+	for range numWorkers {
 		l := fileLoader{zf: zf, isCaseSensitive: isCaseSensitive}
 		var f *srcFile
 
@@ -133,12 +131,6 @@ func regexSearch(
 					filesSkipped.Inc()
 					continue
 				}
-
-				// Apply language filters
-				if !lm.Matches(f.Name, getContent) {
-					filesSkipped.Inc()
-					continue
-				}
 				filesSearched.Inc()
 
 				// Check pattern against file path and contents
@@ -148,13 +140,12 @@ func regexSearch(
 					LimitHit: false,
 				}
 
-				// Check if the pattern matches
 				if patternMatchesPaths {
 					match = m.MatchesString(f.Name)
 				}
 
 				if !match && patternMatchesContent {
-					if _, ok := m.(allMatchTree); ok {
+					if _, ok := m.(*allMatchTree); ok {
 						// Avoid loading the file if this pattern always matches
 						match = true
 					} else {
@@ -168,7 +159,12 @@ func regexSearch(
 				}
 
 				if match {
-					sender.Send(fm)
+					// Apply language filters and send result
+					langMatch, lang := lm.Matches(f.Name, getContent)
+					if langMatch {
+						fm.Language = lang
+						sender.Send(fm)
+					}
 				}
 			}
 			return nil

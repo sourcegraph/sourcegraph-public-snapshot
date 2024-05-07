@@ -93,6 +93,9 @@ message FileMatch {
   // file. Indicates that the results for this file
   // may not be complete.
   bool limit_hit = 3;
+
+  // The file's detected language
+  bytes language = 4;
 }
 
 // ChunkMatch is a matched chunk of a file.

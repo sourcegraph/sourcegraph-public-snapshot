@@ -4,9 +4,8 @@ import (
 	"context"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -104,17 +103,11 @@ const numAncestors = 100
 // the graph. This will not always produce the full set of visible commits - some responses may not contain
 // all results while a subsequent request made after the lsif_nearest_uploads has been updated to include
 // this commit will.
-func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []shared.Dump, err error) {
-	ctx, _, endObservation := s.operations.inferClosestUploads.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.String("commit", commit),
-		attribute.String("path", path),
-		attribute.Bool("exactPath", exactPath),
-		attribute.String("indexer", indexer),
-	}})
+func (s *Service) InferClosestUploads(ctx context.Context, opts shared.UploadMatchingOptions) (_ []shared.CompletedUpload, err error) {
+	ctx, _, endObservation := s.operations.inferClosestUploads.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
 
-	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
+	repo, err := s.repoStore.Get(ctx, api.RepoID(opts.RepositoryID))
 	if err != nil {
 		return nil, err
 	}
@@ -123,21 +116,21 @@ func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, com
 	// that can answer queries for a directory (e.g. diagnostics), we want any dump that happens
 	// to intersect the target directory. If we're looking for dumps that can answer queries for
 	// a single file, then we need a dump with a root that properly encloses that file.
-	if dumps, err := s.store.FindClosestDumps(ctx, repositoryID, commit, path, exactPath, indexer); err != nil {
-		return nil, errors.Wrap(err, "store.FindClosestDumps")
-	} else if len(dumps) != 0 {
-		return dumps, nil
+	if uploads, err := s.store.FindClosestCompletedUploads(ctx, opts); err != nil {
+		return nil, errors.Wrap(err, "store.FindClosestCompletedUploads")
+	} else if len(uploads) != 0 {
+		return uploads, nil
 	}
 
 	// Repository has no LSIF data at all
-	if repositoryExists, err := s.store.HasRepository(ctx, repositoryID); err != nil {
+	if repositoryExists, err := s.store.HasRepository(ctx, opts.RepositoryID); err != nil {
 		return nil, errors.Wrap(err, "dbstore.HasRepository")
 	} else if !repositoryExists {
 		return nil, nil
 	}
 
 	// Commit is known and the empty dumps list explicitly means nothing is visible
-	if commitExists, err := s.store.HasCommit(ctx, repositoryID, commit); err != nil {
+	if commitExists, err := s.store.HasCommit(ctx, opts.RepositoryID, opts.Commit); err != nil {
 		return nil, errors.Wrap(err, "dbstore.HasCommit")
 	} else if commitExists {
 		return nil, nil
@@ -148,32 +141,35 @@ func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, com
 	// and try to link it with what we have in the database. Then mark the repository's commit
 	// graph as dirty so it's updated for subsequent requests.
 
-	graph, err := s.gitserverClient.CommitGraph(ctx, repo.Name, gitserver.CommitGraphOptions{
-		Commit: commit,
-		Limit:  numAncestors,
+	commits, err := s.gitserverClient.Commits(ctx, repo.Name, gitserver.CommitsOptions{
+		Range: opts.Commit,
+		N:     numAncestors,
+		Order: gitserver.CommitsOrderTopoDate,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "gitserverClient.CommitGraph")
+		return nil, errors.Wrap(err, "gitserverClient.Commits")
 	}
 
-	dumps, err := s.store.FindClosestDumpsFromGraphFragment(ctx, repositoryID, commit, path, exactPath, indexer, graph)
+	graph := commitgraph.ParseCommitGraph(commits)
+
+	uploads, err := s.store.FindClosestCompletedUploadsFromGraphFragment(ctx, opts, graph)
 	if err != nil {
-		return nil, errors.Wrap(err, "dbstore.FindClosestDumpsFromGraphFragment")
+		return nil, errors.Wrap(err, "dbstore.FindClosestCompletedUploadsFromGraphFragment")
 	}
 
-	if err := s.store.SetRepositoryAsDirty(ctx, repositoryID); err != nil {
+	if err := s.store.SetRepositoryAsDirty(ctx, opts.RepositoryID); err != nil {
 		return nil, errors.Wrap(err, "dbstore.MarkRepositoryAsDirty")
 	}
 
-	return dumps, nil
+	return uploads, nil
 }
 
-func (s *Service) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) ([]shared.Dump, error) {
-	return s.store.GetDumpsWithDefinitionsForMonikers(ctx, monikers)
+func (s *Service) GetCompletedUploadsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error) {
+	return s.store.GetCompletedUploadsWithDefinitionsForMonikers(ctx, monikers)
 }
 
-func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) ([]shared.Dump, error) {
-	return s.store.GetDumpsByIDs(ctx, ids)
+func (s *Service) GetCompletedUploadsByIDs(ctx context.Context, ids []int) ([]shared.CompletedUpload, error) {
+	return s.store.GetCompletedUploadsByIDs(ctx, ids)
 }
 
 func (s *Service) ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error) {

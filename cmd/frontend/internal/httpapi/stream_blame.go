@@ -91,7 +91,6 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			tr.AddEvent("write", attrs...)
 		}
 
-		parentsCache := map[api.CommitID][]api.CommitID{}
 		authorCache := map[string]*BlameHunkUserResponse{}
 
 		for {
@@ -105,20 +104,6 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 				return
 			}
 
-			var parents []api.CommitID
-			if p, ok := parentsCache[h.CommitID]; ok {
-				parents = p
-			} else {
-				c, err := gitserverClient.GetCommit(ctx, repo.Name, h.CommitID)
-				if err != nil {
-					tr.SetError(err)
-					http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
-					return
-				}
-				parents = c.Parents
-				parentsCache[h.CommitID] = c.Parents
-			}
-
 			blameResponse := BlameHunkResponse{
 				StartLine: h.StartLine,
 				EndLine:   h.EndLine,
@@ -127,8 +112,8 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 				Message:   h.Message,
 				Filename:  h.Filename,
 				Commit: BlameHunkCommitResponse{
-					Parents: parents,
-					URL:     fmt.Sprintf("%s/-/commit/%s", repo.Name, h.CommitID),
+					Previous: h.PreviousCommit,
+					URL:      fmt.Sprintf("%s/-/commit/%s", repo.Name, h.CommitID),
 				},
 			}
 
@@ -182,8 +167,8 @@ type BlameHunkResponse struct {
 }
 
 type BlameHunkCommitResponse struct {
-	Parents []api.CommitID `json:"parents"`
-	URL     string         `json:"url"`
+	Previous *gitdomain.PreviousCommit `json:"previous,omitempty"`
+	URL      string                    `json:"url"`
 }
 
 type BlameHunkUserResponse struct {

@@ -1,8 +1,10 @@
 import { type FC, useState } from 'react'
 
+import {
+    debugEventLoggingEnabled,
+    setDebugEventLoggingEnabled,
+} from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Checkbox } from '@sourcegraph/wildcard'
-
-import { debugEventLoggingEnabled, setDebugEventLoggingEnabled } from '../../tracking/eventLogger'
 
 export const EventLoggingDebugToggle: FC<{}> = () => {
     const [enabled, setEnabled] = useState(debugEventLoggingEnabled())

@@ -176,6 +176,11 @@ func (r *globalRateLimiter) waitn(ctx context.Context, n int, requestTime time.T
 		n,
 	)
 	if err != nil {
+		// Check if context has been canceled. If so, we don't attempt to wait for
+		// the default limiter and intead return immediately.
+		if err := ctx.Err(); err != nil {
+			return 0, err
+		}
 		metricLimiterFailedAcquire.WithLabelValues(r.bucketName).Inc()
 		r.logger.Error("failed to acquire global rate limiter, falling back to default in-memory limiter", log.Error(err))
 		// If using the real global limiter fails, we fall back to the in-memory registry
@@ -218,7 +223,7 @@ const (
 )
 
 func invokeScriptWithRetries(ctx context.Context, script *redis.Script, c redis.Conn, keysAndArgs ...any) (result any, err error) {
-	for i := 0; i < scriptInvocationMaxRetries; i++ {
+	for range scriptInvocationMaxRetries {
 		result, err = script.DoContext(ctx, c, keysAndArgs...)
 		if err == nil {
 			// If no error, return the result.

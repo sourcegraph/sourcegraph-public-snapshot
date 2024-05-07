@@ -23,10 +23,6 @@ go_binary(
     name = "frontend",
     embed = [":frontend_lib"],
     visibility = ["//visibility:public"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )
 
 pkg_tar(
@@ -36,7 +32,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_base",
+    base = "//wolfi-images/sourcegraph-base:base_image",
     cmd = ["serve"],
     entrypoint = [
         "/sbin/tini",
@@ -56,7 +52,12 @@ oci_image(
         "CODEINTEL_PGSSLMODE": "disable",
         "CODEINTEL_PGUSER": "sg",
     },
-    tars = [":tar_frontend"],
+    tars = [
+        ":tar_frontend",
+        # Needed so the "Upgrade readiness" page in the site-admin
+        # can find locally the current schema.
+        "//cmd/migrator:tar_current_schema_descriptions",
+    ],
     user = "sourcegraph",
 )
 
@@ -64,6 +65,7 @@ oci_tarball(
     name = "image_tarball",
     image = ":image",
     repo_tags = ["frontend:candidate"],
+    visibility = ["//testing/tools/upgradetest:__pkg__"],
 )
 
 container_structure_test(

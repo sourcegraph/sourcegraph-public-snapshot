@@ -1,5 +1,6 @@
-import type { ApolloQueryResult, ObservableQuery } from '@apollo/client'
-import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
+import type { ApolloClient, ApolloQueryResult, ObservableQuery } from '@apollo/client'
+import { from, ReplaySubject } from 'rxjs'
+import { map, share, shareReplay } from 'rxjs/operators'
 
 import { createAggregateError, asError, logger } from '@sourcegraph/common'
 import { fromObservableQueryPromise, getDocumentNode } from '@sourcegraph/http-client'
@@ -8,6 +9,7 @@ import type { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
 import { gqlToCascade, type SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     toPrettyBlobURL,
     type RepoFile,
@@ -20,7 +22,6 @@ import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
 import type { TelemetryRecorderProvider } from '../telemetry'
-import { eventLogger } from '../tracking/eventLogger'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
@@ -40,8 +41,12 @@ export function createPlatformContext(props: {
             map(mapViewerSettingsResult),
             shareReplay(1),
             map(gqlToCascade),
-            publishReplay(1),
-            refCount()
+            share({
+                connector: () => new ReplaySubject(1),
+                resetOnError: false,
+                resetOnComplete: false,
+                resetOnRefCountZero: false,
+            })
         ),
         updateSettings: async (subject, edit) => {
             const settingsQueryWatcher = await settingsQueryWatcherPromise
@@ -86,7 +91,7 @@ export function createPlatformContext(props: {
         urlToFile: toPrettyWebBlobURL,
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
-        telemetryService: eventLogger,
+        telemetryService: EVENT_LOGGER,
         telemetryRecorder: props.telemetryRecorderProvider.getRecorder(
             window.context.debug
                 ? [
@@ -133,4 +138,27 @@ async function watchViewerSettingsQuery(): Promise<ObservableQuery<ViewerSetting
     return graphQLClient.watchQuery<ViewerSettingsResult, ViewerSettingsVariables>({
         query: getDocumentNode(viewerSettingsQuery),
     })
+}
+
+/**
+ * Helper function to create a function that works like {@link requestGraphQL} but uses Apollo Client.
+ * This can be used in places that expect to be passed {@link PlatformContext['requestGraphQL']}.
+ *
+ * Don't use this for new code. Instead, use Apollo Client directly.
+ */
+export function requestGraphQLAdapter(client: ApolloClient<any>): PlatformContext['requestGraphQL'] {
+    return ({ request, variables }) =>
+        from(
+            client
+                .query({
+                    query: getDocumentNode(request),
+                    variables,
+                })
+                .then(result => {
+                    if (result.error) {
+                        throw result.error
+                    }
+                    return result
+                })
+        )
 }

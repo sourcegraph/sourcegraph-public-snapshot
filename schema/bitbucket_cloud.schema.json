@@ -113,6 +113,15 @@
       "items": { "type": "string", "pattern": "^[\\w-]+$" },
       "examples": [["name"], ["kubernetes", "golang", "facebook"]]
     },
+    "repos": {
+      "description": "An array of repository \"projectKey/repositorySlug\" strings specifying repositories to mirror on Sourcegraph.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^~?[\\w-]+/[\\w.-]+$"
+      },
+      "examples": [["myproject/myrepo", "myproject/myotherrepo"]]
+    },
     "exclude": {
       "description": "A list of repositories to never mirror from Bitbucket Cloud. Takes precedence over \"teams\" configuration.\n\nSupports excluding by name ({\"name\": \"myorg/myrepo\"}) or by UUID ({\"uuid\": \"{fceb73c7-cef6-4abe-956d-e471281126bd}\"}).",
       "type": "array",

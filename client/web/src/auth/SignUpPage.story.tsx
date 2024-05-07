@@ -25,6 +25,8 @@ const authProviders: SourcegraphContext['authProviders'] = [
         serviceType: 'builtin',
         authenticationURL: '',
         serviceID: '',
+        noSignIn: false,
+        requiredForAuthz: false,
     },
     {
         clientID: '002',
@@ -33,6 +35,8 @@ const authProviders: SourcegraphContext['authProviders'] = [
         isBuiltin: false,
         authenticationURL: '/.auth/github/login?pc=f00bar',
         serviceID: 'https://github.com',
+        noSignIn: false,
+        requiredForAuthz: false,
     },
     {
         clientID: '003',
@@ -41,6 +45,8 @@ const authProviders: SourcegraphContext['authProviders'] = [
         isBuiltin: false,
         authenticationURL: '/.auth/gitlab/login?pc=f00bar',
         serviceID: 'https://gitlab.com',
+        noSignIn: false,
+        requiredForAuthz: false,
     },
 ]
 
@@ -56,6 +62,7 @@ export const Default: StoryFn = () => (
                     authMinPasswordLength: 12,
                     authPasswordPolicy: {},
                     sourcegraphDotComMode: false,
+                    externalURL: 'https://sourcegraph.test:3443',
                 }}
                 authenticatedUser={null}
                 telemetryRecorder={noOpTelemetryRecorder}

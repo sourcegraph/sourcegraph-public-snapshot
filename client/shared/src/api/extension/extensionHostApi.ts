@@ -1,6 +1,6 @@
 import { proxy } from 'comlink'
 import { castArray, isEqual } from 'lodash'
-import { combineLatest, concat, type Observable, of, type Subscribable } from 'rxjs'
+import { combineLatest, concat, type Observable, of } from 'rxjs'
 import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import type { ProviderResult } from 'sourcegraph'
 
@@ -16,7 +16,7 @@ import type { Context } from '@sourcegraph/template-parser'
 
 import type { ReferenceContext, DocumentSelector } from '../../codeintel/legacy-extensions/api'
 import { getModeFromPath } from '../../languages'
-import { parseRepoURI } from '../../util/url'
+import { parseRepoGitURI } from '../../util/url'
 import { match } from '../client/types/textDocument'
 import type { FlatExtensionHostAPI } from '../contract'
 import type { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerTypes'
@@ -319,7 +319,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                         })
                     ),
                     state.settings,
-                    state.context as Subscribable<Context<unknown>>,
+                    state.context as Observable<Context<unknown>>,
                 ]).pipe(
                     map(([multiContributions, activeEditor, settings, context]) => {
                         // Merge in extra context.
@@ -379,7 +379,7 @@ export function providersForDocument<P>(
     return entries.filter(provider =>
         match(selector(provider), {
             uri: document.uri,
-            languageId: getModeFromPath(parseRepoURI(document.uri).filePath || ''),
+            languageId: getModeFromPath(parseRepoGitURI(document.uri).filePath || ''),
         })
     )
 }
@@ -431,7 +431,7 @@ export function callProviders<TRegisteredProvider, TProviderResult, TMergedResul
                         concat(
                             [LOADING],
                             providerResultToObservable(safeInvokeProvider(provider)).pipe(
-                                defaultIfEmpty<typeof LOADING | TProviderResult | null | undefined>(null),
+                                defaultIfEmpty(null),
                                 catchError(error => {
                                     logError(error)
                                     return [null]
@@ -443,7 +443,7 @@ export function callProviders<TRegisteredProvider, TProviderResult, TMergedResul
             )
         )
         .pipe(
-            defaultIfEmpty<(typeof LOADING | TProviderResult | null | undefined)[]>([]),
+            defaultIfEmpty([]),
             map(results => ({
                 isLoading: results.some(hover => hover === LOADING),
                 result: mergeResult(results),

@@ -9,8 +9,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	protobuf "google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 )
 
 func TestMessage(t *testing.T) {
@@ -187,22 +189,30 @@ func TestRoundTripBlameHunk(t *testing.T) {
 func TestRoundTripCommit(t *testing.T) {
 	diff := ""
 
-	err := quick.Check(func(id api.CommitID, message Message, parents []api.CommitID, authorName, authorEmail, committerName, committerEmail string, authorDate, committerDate fuzzTime) bool {
+	err := quick.Check(func(id api.CommitID, message []byte, parents []api.CommitID, authorName, authorEmail, committerName, committerEmail []byte, authorDate, committerDate fuzzTime) bool {
 		original := &Commit{
 			ID:      id,
-			Message: message,
+			Message: Message(message),
 			Parents: parents,
 			Author: Signature{
-				Name:  authorName,
-				Email: authorEmail,
+				Name:  string(authorName),
+				Email: string(authorEmail),
 				Date:  time.Time(authorDate),
 			},
 			Committer: &Signature{
-				Name:  committerName,
-				Email: committerEmail,
+				Name:  string(committerName),
+				Email: string(committerEmail),
 				Date:  time.Time(committerDate),
 			},
 		}
+		p := original.ToProto()
+
+		// try encoding message to protobuf to ensure no errors occur
+		_, err := protobuf.Marshal(p)
+		if err != nil {
+			t.Fatalf("unexpected error when marshalling protobuf message: %v", err)
+		}
+
 		converted := CommitFromProto(original.ToProto())
 		if diff = cmp.Diff(original, converted); diff != "" {
 			return false
@@ -226,3 +236,146 @@ func (fuzzTime) Generate(rand *rand.Rand, _ int) reflect.Value {
 }
 
 var _ quick.Generator = fuzzTime{}
+
+func TestRefTypeFromProto(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    proto.GitRef_RefType
+		expected RefType
+	}{
+		{
+			name:     "branch",
+			input:    proto.GitRef_REF_TYPE_BRANCH,
+			expected: RefTypeBranch,
+		},
+		{
+			name:     "tag",
+			input:    proto.GitRef_REF_TYPE_TAG,
+			expected: RefTypeTag,
+		},
+		{
+			name:     "unknown",
+			input:    proto.GitRef_REF_TYPE_UNSPECIFIED,
+			expected: RefTypeUnknown,
+		},
+		{
+			name:     "invalid",
+			input:    proto.GitRef_RefType(999),
+			expected: RefTypeUnknown,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := RefTypeFromProto(test.input)
+			if got != test.expected {
+				t.Errorf("RefTypeFromProto(%v) = %v, want %v", test.input, got, test.expected)
+			}
+		})
+	}
+}
+
+func TestRefTypeToProto(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    RefType
+		expected proto.GitRef_RefType
+	}{
+		{
+			name:     "branch",
+			input:    RefTypeBranch,
+			expected: proto.GitRef_REF_TYPE_BRANCH,
+		},
+		{
+			name:     "tag",
+			input:    RefTypeTag,
+			expected: proto.GitRef_REF_TYPE_TAG,
+		},
+		{
+			name:     "unknown",
+			input:    RefTypeUnknown,
+			expected: proto.GitRef_REF_TYPE_UNSPECIFIED,
+		},
+		{
+			name:     "invalid",
+			input:    RefType(999),
+			expected: proto.GitRef_REF_TYPE_UNSPECIFIED,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := test.input.ToProto()
+			if got != test.expected {
+				t.Errorf("%v.ToProto() = %v, want %v", test.input, got, test.expected)
+			}
+		})
+	}
+}
+
+func TestRoundTripRef(t *testing.T) {
+	diff := ""
+
+	err := quick.Check(func(name, shortName string, isHead bool, typ RefType, commitID, refOID api.CommitID, createdDate fuzzTime) bool {
+		original := Ref{
+			Name:        name,
+			ShortName:   shortName,
+			IsHead:      isHead,
+			Type:        RefTypeFromProto(proto.GitRef_RefType(typ)),
+			CommitID:    commitID,
+			RefOID:      refOID,
+			CreatedDate: time.Time(createdDate),
+		}
+		converted := RefFromProto(original.ToProto())
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}, nil)
+	if err != nil {
+		t.Fatalf("unexpected diff (-want +got):\n%s", diff)
+	}
+}
+
+func TestRoundTripContributorCount(t *testing.T) {
+	diff := ""
+
+	err := quick.Check(func(name, email string, count int32) bool {
+		original := ContributorCount{
+			Name:  name,
+			Email: email,
+			Count: count,
+		}
+		converted := ContributorCountFromProto(original.ToProto())
+		if diff = cmp.Diff(&original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}, nil)
+	if err != nil {
+		t.Fatalf("unexpected diff (-want +got):\n%s", diff)
+	}
+}
+
+func TestRoundTripBehindAhead(t *testing.T) {
+	diff := ""
+
+	err := quick.Check(func(behind, ahead uint32) bool {
+		original := BehindAhead{
+			Behind: behind,
+			Ahead:  ahead,
+		}
+		converted := BehindAheadFromProto(original.ToProto())
+		if diff = cmp.Diff(&original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}, nil)
+
+	if err != nil {
+		t.Fatalf("unexpected diff (-want +got):\n%s", diff)
+	}
+}

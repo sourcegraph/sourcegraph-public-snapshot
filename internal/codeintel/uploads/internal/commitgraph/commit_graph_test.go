@@ -10,11 +10,12 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
@@ -32,21 +33,21 @@ func TestCalculateVisibleUploads(t *testing.T) {
 	//                         +--- g
 	//
 	// NOTE: The input to ParseCommitGraph must match the order and format
-	// of `git log --topo-sort`.
-	testGraph := gitdomain.ParseCommitGraph([]string{
-		"n l",
-		"m k",
-		"k h",
-		"j b h",
-		"h f",
-		"l i",
-		"i f",
-		"f e",
-		"g e",
-		"e c",
-		"d c",
-		"c a",
-		"b a",
+	// of `git log --pretty="%H %P" --topo-order`.
+	testGraph := ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit("n", "l"),
+		gitCommit("m", "k"),
+		gitCommit("k", "h"),
+		gitCommit("j", "b", "h"),
+		gitCommit("h", "f"),
+		gitCommit("l", "i"),
+		gitCommit("i", "f"),
+		gitCommit("f", "e"),
+		gitCommit("g", "e"),
+		gitCommit("e", "c"),
+		gitCommit("d", "c"),
+		gitCommit("c", "a"),
+		gitCommit("b", "a"),
 	})
 
 	commitGraphView := NewCommitGraphView()
@@ -61,7 +62,7 @@ func TestCalculateVisibleUploads(t *testing.T) {
 
 	visibleUploads, links := makeTestGraph(testGraph, commitGraphView)
 
-	expectedVisibleUploads := map[string][]UploadMeta{
+	expectedVisibleUploads := map[api.CommitID][]UploadMeta{
 		"a": {{UploadID: 50, Distance: 0}},
 		"b": {{UploadID: 50, Distance: 1}},
 		"c": {{UploadID: 50, Distance: 1}, {UploadID: 52, Distance: 0}},
@@ -76,7 +77,7 @@ func TestCalculateVisibleUploads(t *testing.T) {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]LinkRelationship{
+	expectedLinks := map[api.CommitID]LinkRelationship{
 		"d": {Commit: "d", AncestorCommit: "c", Distance: 1},
 		"e": {Commit: "e", AncestorCommit: "c", Distance: 1},
 		"g": {Commit: "g", AncestorCommit: "c", Distance: 2},
@@ -101,22 +102,22 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 	//
 	// NOTE: The input to ParseCommitGraph must match the order and format
 	// of `git log --topo-sort`.
-	testGraph := gitdomain.ParseCommitGraph([]string{
-		"q o",
-		"p n",
-		"o l m",
-		"n l",
-		"m k",
-		"l k",
-		"k j",
-		"j i",
-		"i h",
-		"h g",
-		"g f",
-		"f d e",
-		"e c",
-		"d b c",
-		"c a",
+	testGraph := ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit("q", "o"),
+		gitCommit("p", "n"),
+		gitCommit("o", "l", "m"),
+		gitCommit("n", "l"),
+		gitCommit("m", "k"),
+		gitCommit("l", "k"),
+		gitCommit("k", "j"),
+		gitCommit("j", "i"),
+		gitCommit("i", "h"),
+		gitCommit("h", "g"),
+		gitCommit("g", "f"),
+		gitCommit("f", "d", "e"),
+		gitCommit("e", "c"),
+		gitCommit("d", "b", "c"),
+		gitCommit("c", "a"),
 	})
 
 	commitGraphView := NewCommitGraphView()
@@ -127,7 +128,7 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 
 	visibleUploads, links := makeTestGraph(testGraph, commitGraphView)
 
-	expectedVisibleUploads := map[string][]UploadMeta{
+	expectedVisibleUploads := map[api.CommitID][]UploadMeta{
 		"a": {{UploadID: 50, Distance: 0}},
 		"b": {{UploadID: 51, Distance: 0}},
 		"c": {{UploadID: 50, Distance: 1}},
@@ -146,7 +147,7 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]LinkRelationship{
+	expectedLinks := map[api.CommitID]LinkRelationship{
 		"j": {Commit: "j", AncestorCommit: "i", Distance: 1},
 		"k": {Commit: "k", AncestorCommit: "i", Distance: 2},
 		"n": {Commit: "n", AncestorCommit: "l", Distance: 1},
@@ -186,13 +187,27 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 
 const customer = "customer1"
 
-func readBenchmarkCommitGraph() (*gitdomain.CommitGraph, error) {
+func readBenchmarkCommitGraph() (*CommitGraph, error) {
 	contents, err := readBenchmarkFile(filepath.Join("testdata", customer, "commits.txt.gz"))
 	if err != nil {
 		return nil, err
 	}
 
-	return gitdomain.ParseCommitGraph(strings.Split(string(contents), "\n")), nil
+	commits := []*gitdomain.Commit{}
+	lr := byteutils.NewLineReader(contents)
+	for lr.Scan() {
+		line := lr.Line()
+		parts := bytes.Split(line, []byte(" "))
+		commit := &gitdomain.Commit{
+			ID: api.CommitID(parts[0]),
+		}
+		for _, parent := range parts[1:] {
+			commit.Parents = append(commit.Parents, api.CommitID(parent))
+		}
+		commits = append(commits, commit)
+	}
+
+	return ParseCommitGraph(commits), nil
 }
 
 func readBenchmarkCommitGraphView() (*CommitGraphView, error) {
@@ -221,7 +236,7 @@ func readBenchmarkCommitGraphView() (*CommitGraphView, error) {
 
 		commitGraphView.Add(
 			UploadMeta{UploadID: id},             // meta
-			record[1],                            // commit
+			api.CommitID(record[1]),              // commit
 			fmt.Sprintf("%s:lsif-go", record[2]), // token = hash({root}:{indexer})
 		)
 	}
@@ -252,7 +267,7 @@ func readBenchmarkFile(path string) ([]byte, error) {
 
 // makeTestGraph calls Gather on a new graph then sorts the uploads deterministically
 // for easier comparison. Order of the upload list is not relevant to production flows.
-func makeTestGraph(commitGraph *gitdomain.CommitGraph, commitGraphView *CommitGraphView) (uploads map[string][]UploadMeta, links map[string]LinkRelationship) {
+func makeTestGraph(commitGraph *CommitGraph, commitGraphView *CommitGraphView) (uploads map[api.CommitID][]UploadMeta, links map[api.CommitID]LinkRelationship) {
 	uploads, links = NewGraph(commitGraph, commitGraphView).Gather()
 	for _, us := range uploads {
 		sort.Slice(us, func(i, j int) bool {
@@ -261,4 +276,15 @@ func makeTestGraph(commitGraph *gitdomain.CommitGraph, commitGraphView *CommitGr
 	}
 
 	return uploads, links
+}
+
+func gitCommit(id string, parents ...string) *gitdomain.Commit {
+	parentIDs := make([]api.CommitID, len(parents))
+	for i, parent := range parents {
+		parentIDs[i] = api.CommitID(parent)
+	}
+	return &gitdomain.Commit{
+		ID:      api.CommitID(id),
+		Parents: parentIDs,
+	}
 }

@@ -2,6 +2,7 @@ import type { Meta, StoryFn, Decorator } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { H3 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -90,6 +91,7 @@ export const AllStates: StoryFn = args => {
                                 search: null,
                                 state: null,
                             }}
+                            telemetryRecorder={noOpTelemetryRecorder}
                         />
                     </MultiSelectContextProvider>
                     <hr />
@@ -110,6 +112,7 @@ export const AllStates: StoryFn = args => {
                                 search: null,
                                 state: null,
                             }}
+                            telemetryRecorder={noOpTelemetryRecorder}
                         />
                     </MultiSelectContextProvider>
                     <hr />
@@ -130,6 +133,7 @@ export const AllStates: StoryFn = args => {
                                 search: null,
                                 state: null,
                             }}
+                            telemetryRecorder={noOpTelemetryRecorder}
                         />
                     </MultiSelectContextProvider>
                     <hr />
@@ -150,6 +154,7 @@ export const AllStates: StoryFn = args => {
                                 search: null,
                                 state: null,
                             }}
+                            telemetryRecorder={noOpTelemetryRecorder}
                         />
                     </MultiSelectContextProvider>
                     <hr />
@@ -170,6 +175,7 @@ export const AllStates: StoryFn = args => {
                                 search: null,
                                 state: null,
                             }}
+                            telemetryRecorder={noOpTelemetryRecorder}
                         />
                     </MultiSelectContextProvider>
                     <hr />
@@ -190,6 +196,7 @@ export const AllStates: StoryFn = args => {
                                 search: null,
                                 state: null,
                             }}
+                            telemetryRecorder={noOpTelemetryRecorder}
                         />
                     </MultiSelectContextProvider>
                     <hr />
@@ -210,6 +217,7 @@ export const AllStates: StoryFn = args => {
                                 search: null,
                                 state: null,
                             }}
+                            telemetryRecorder={noOpTelemetryRecorder}
                         />
                     </MultiSelectContextProvider>
                     <hr />
@@ -233,6 +241,7 @@ export const AllStates: StoryFn = args => {
                                 search: null,
                                 state: null,
                             }}
+                            telemetryRecorder={noOpTelemetryRecorder}
                         />
                     </MultiSelectContextProvider>
                     <hr />
@@ -253,6 +262,7 @@ export const AllStates: StoryFn = args => {
                                 search: null,
                                 state: null,
                             }}
+                            telemetryRecorder={noOpTelemetryRecorder}
                         />
                     </MultiSelectContextProvider>
                     <hr />
@@ -273,6 +283,7 @@ export const AllStates: StoryFn = args => {
                                 search: null,
                                 state: null,
                             }}
+                            telemetryRecorder={noOpTelemetryRecorder}
                         />
                     </MultiSelectContextProvider>
                     <hr />
@@ -296,6 +307,7 @@ export const AllStates: StoryFn = args => {
                                 search: null,
                                 state: null,
                             }}
+                            telemetryRecorder={noOpTelemetryRecorder}
                         />
                     </MultiSelectContextProvider>
                     <hr />
@@ -321,6 +333,7 @@ export const AllStates: StoryFn = args => {
                                 search: null,
                                 state: null,
                             }}
+                            telemetryRecorder={noOpTelemetryRecorder}
                         />
                     </MultiSelectContextProvider>
                     <hr />

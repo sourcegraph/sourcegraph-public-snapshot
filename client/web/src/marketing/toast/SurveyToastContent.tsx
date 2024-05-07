@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react'
 
 import { gql, useMutation } from '@apollo/client'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
+
 import type { AuthenticatedUser } from '../../auth'
 import type { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { SurveySuccessToast } from './SurveySuccessToast'
 import { SurveyUseCaseToast } from './SurveyUseCaseToast'
@@ -31,7 +33,7 @@ enum ToastSteps {
     thankYou = 3,
 }
 
-interface SurveyToastContentProps {
+interface SurveyToastContentProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     shouldTemporarilyDismiss: () => void
     shouldPermanentlyDismiss: () => void
@@ -43,6 +45,7 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
     shouldTemporarilyDismiss,
     shouldPermanentlyDismiss,
     hideToast,
+    telemetryRecorder,
 }) => {
     const [togglePermanentlyDismiss, setTogglePermanentlyDismiss] = useState(false)
     const [toggleErrorMessage, setToggleErrorMessage] = useState<boolean>(false)
@@ -55,8 +58,9 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
     })
 
     useEffect(() => {
-        eventLogger.log('SurveyReminderViewed')
-    }, [])
+        EVENT_LOGGER.log('SurveyReminderViewed')
+        telemetryRecorder.recordEvent('surveyNPS.toast', 'view')
+    }, [telemetryRecorder])
 
     /**
      * We set dismissal state when either:
@@ -100,12 +104,14 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
             // No need to submit, but we want to ensure user isn't bothered by the toast again before exiting
             setFutureVisibility()
         }
+        telemetryRecorder.recordEvent('surveyNPS', 'dismiss')
 
         hideToast()
     }
 
     const handleUseCaseDone = async (): Promise<void> => {
         await submitSurvey({ variables: { input: userFeedback } })
+        telemetryRecorder.recordEvent('surveyNPS', 'submit')
         handleContinue()
     }
 
@@ -119,6 +125,7 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
                     onContinue={handleContinue}
                     setToggledPermanentlyDismiss={setTogglePermanentlyDismiss}
                     toggleErrorMessage={toggleErrorMessage}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )
         }

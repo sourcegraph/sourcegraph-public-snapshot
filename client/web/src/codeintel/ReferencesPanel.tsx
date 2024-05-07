@@ -9,21 +9,20 @@ import VisibilitySensor from 'react-visibility-sensor'
 import type { Observable } from 'rxjs'
 
 import { CodeExcerpt } from '@sourcegraph/branded'
-import { type ErrorLike, logger, pluralize } from '@sourcegraph/common'
+import { type ErrorLike, logger, pluralize, SourcegraphURL } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     type RepoSpec,
     type RevisionSpec,
     type FileSpec,
     type ResolvedRevisionSpec,
-    parseQueryAndHash,
     toPrettyBlobURL,
 } from '@sourcegraph/shared/src/util/url'
 import {
@@ -50,7 +49,7 @@ import type { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
 import type { CodeIntelligenceProps } from '.'
-import { type Location, LocationsGroup, type LocationsGroupedByRepo, type LocationsGroupedByFile } from './location'
+import type { Location, LocationsGroup, LocationsGroupedByRepo, LocationsGroupedByFile } from './location'
 import { newSettingsGetter } from './settings'
 import { SideBlob, type SideBlobProps } from './SideBlob'
 import { findSearchToken, type ZeroBasedPosition } from './token'
@@ -69,8 +68,8 @@ export interface ReferencesPanelProps
         PlatformContextProps,
         Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         TelemetryProps,
+        TelemetryV2Props,
         HoverThresholdProps,
-        ExtensionsControllerProps,
         HighlightedFileLineRangesProps {
     /** Whether to show the first loaded reference in mini code view */
     jumpToFirst?: boolean
@@ -103,8 +102,11 @@ interface OneBasedPosition {
 }
 
 function createStateFromLocation(location: H.Location): null | State {
-    const { hash, pathname, search } = location
-    const { line, character, endLine, endCharacter, viewState } = parseQueryAndHash(search, hash)
+    const { pathname, search } = location
+    const {
+        lineRange: { line, character, endLine, endCharacter },
+        viewState,
+    } = SourcegraphURL.from(location)
     const { filePath, repoName, revision } = parseBrowserRepoURL(pathname)
 
     // If we don't have enough information in the URL, we can't render the panel

@@ -5,13 +5,13 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Badge, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import type { AuthProviderFields, AuthProvidersResult } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 
 interface AuthProviderNodeProps {
     /** The auth provider to display in this item. */
@@ -58,7 +58,7 @@ interface Props {}
  */
 export class SiteAdminAuthenticationProvidersPage extends React.Component<Props> {
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminAuthentication')
+        EVENT_LOGGER.logViewEvent('SiteAdminAuthentication')
     }
 
     public render(): JSX.Element | null {

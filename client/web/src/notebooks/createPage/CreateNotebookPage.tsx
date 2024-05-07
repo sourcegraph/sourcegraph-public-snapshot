@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react'
 
 import { Navigate } from 'react-router-dom'
-import { catchError, startWith } from 'rxjs/operators'
+import { catchError, startWith, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
@@ -15,8 +16,8 @@ import { createNotebook } from '../backend'
 const LOADING = 'loading' as const
 
 export const CreateNotebookPage: React.FunctionComponent<
-    React.PropsWithChildren<TelemetryProps & { authenticatedUser: AuthenticatedUser }>
-> = ({ telemetryService, authenticatedUser }) => {
+    React.PropsWithChildren<TelemetryProps & TelemetryV2Props & { authenticatedUser: AuthenticatedUser }>
+> = ({ telemetryService, authenticatedUser, telemetryRecorder }) => {
     const notebookOrError = useObservable(
         useMemo(
             () =>
@@ -24,14 +25,19 @@ export const CreateNotebookPage: React.FunctionComponent<
                     notebook: { title: 'New Notebook', blocks: [], public: false, namespace: authenticatedUser.id },
                 }).pipe(
                     startWith(LOADING),
-                    catchError(error => [asError(error)])
+                    catchError(error => [asError(error)]),
+                    tap(value => {
+                        if (value !== LOADING && !isErrorLike(value)) {
+                            telemetryService.log('SearchNotebookCreated')
+                            telemetryRecorder.recordEvent('notebook', 'create')
+                        }
+                    })
                 ),
-            [authenticatedUser]
+            [authenticatedUser, telemetryService, telemetryRecorder]
         )
     )
 
     if (notebookOrError && !isErrorLike(notebookOrError) && notebookOrError !== LOADING) {
-        telemetryService.log('SearchNotebookCreated')
         return <Navigate to={PageRoutes.Notebook.replace(':id', notebookOrError.id)} replace={true} />
     }
 

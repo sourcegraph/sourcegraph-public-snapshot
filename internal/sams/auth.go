@@ -24,18 +24,18 @@ func (a *Authenticator) RequireScopes(requiredScopes []Scope, next http.Handler)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger := trace.Logger(r.Context(), a.Logger)
 		token, err := authbearer.ExtractBearer(r.Header)
-		if err != nil {
+		if err != nil || token == "" {
 			logger.Error("error extracting bearer token", log.Error(err))
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
+			const unauthorized = http.StatusUnauthorized
+			http.Error(w, http.StatusText(unauthorized), unauthorized)
 			return
 		}
 
 		introspectionResponse, err := a.SAMSClient.IntrospectToken(r.Context(), token)
-		if err != nil {
+		if err != nil || introspectionResponse == nil {
 			logger.Error("error introspecting token", log.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			const ise = http.StatusInternalServerError
+			http.Error(w, http.StatusText(ise), ise)
 			return
 		}
 
@@ -43,8 +43,8 @@ func (a *Authenticator) RequireScopes(requiredScopes []Scope, next http.Handler)
 			logger.Error(
 				"attempt to authenticate with inactive SAMS token",
 				log.String("client", introspectionResponse.ClientID))
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("inactive token"))
+			const unauthorized = http.StatusUnauthorized
+			http.Error(w, "Unauthorized: Inactive token", unauthorized)
 			return
 		}
 
@@ -55,8 +55,7 @@ func (a *Authenticator) RequireScopes(requiredScopes []Scope, next http.Handler)
 					"attempt to authenticate using SAMS token without required scope",
 					log.Strings("gotScopes", gotScopes),
 					log.String("requiredScope", string(requiredScope)))
-				w.WriteHeader(http.StatusForbidden)
-				w.Write([]byte("missing required scope"))
+				http.Error(w, "Forbidden: Missing required scope", http.StatusForbidden)
 				return
 			}
 		}

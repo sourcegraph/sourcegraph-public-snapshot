@@ -8,7 +8,6 @@ import (
 	"path"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -18,8 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -34,11 +33,12 @@ type vcsPackagesSyncer struct {
 	// placeholder is used to set GIT_AUTHOR_NAME for git commands that don't create
 	// commits or tags. The name of this dependency should never be publicly visible,
 	// so it can have any random value.
-	placeholder reposource.VersionedPackage
-	configDeps  []string
-	source      packagesSource
-	svc         dependenciesService
-	reposDir    string
+	placeholder        reposource.VersionedPackage
+	configDeps         []string
+	source             packagesSource
+	svc                dependenciesService
+	fs                 gitserverfs.FS
+	getRemoteURLSource func(ctx context.Context, name api.RepoName) (RemoteURLSource, error)
 }
 
 var _ VCSSyncer = &vcsPackagesSyncer{}
@@ -70,7 +70,7 @@ type dependenciesService interface {
 	IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error)
 }
 
-func (s *vcsPackagesSyncer) IsCloneable(_ context.Context, _ api.RepoName, _ *vcs.URL) error {
+func (s *vcsPackagesSyncer) IsCloneable(_ context.Context, _ api.RepoName) error {
 	return nil
 }
 
@@ -78,14 +78,10 @@ func (s *vcsPackagesSyncer) Type() string {
 	return s.typ
 }
 
-func (s *vcsPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
-	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
-}
-
 // Clone writes a package and all requested versions of it into a synthetic git
 // repo at tmpPath by creating one head per version.
 // It reports redacted progress logs via the progressWriter.
-func (s *vcsPackagesSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL *vcs.URL, targetDir common.GitDir, tmpPath string, progressWriter io.Writer) (err error) {
+func (s *vcsPackagesSyncer) Clone(ctx context.Context, repo api.RepoName, _ common.GitDir, tmpPath string, progressWriter io.Writer) (err error) {
 	// First, make sure the tmpPath exists.
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
 		return errors.Wrapf(err, "clone failed to create tmp dir")
@@ -100,95 +96,38 @@ func (s *vcsPackagesSyncer) Clone(ctx context.Context, repo api.RepoName, remote
 
 	// The Fetch method is responsible for cleaning up temporary directories.
 	// TODO: We should have more fine-grained progress reporting here.
-	tryWrite(s.logger, progressWriter, "Fetching package revisions\n")
-	if _, err := s.Fetch(ctx, remoteURL, "", common.GitDir(tmpPath), ""); err != nil {
+	if err := s.Fetch(ctx, repo, common.GitDir(tmpPath), progressWriter); err != nil {
 		return errors.Wrapf(err, "failed to fetch repo for %s", repo)
 	}
 
 	return nil
 }
 
-func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ api.RepoName, dir common.GitDir, revspec string) ([]byte, error) {
-	var pkg reposource.Package
-	pkg, err := s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
+func (s *vcsPackagesSyncer) Fetch(ctx context.Context, repo api.RepoName, dir common.GitDir, progressWriter io.Writer) error {
+	tryWrite(s.logger, progressWriter, "Fetching package revisions\n")
+	source, err := s.getRemoteURLSource(ctx, repo)
 	if err != nil {
-		return nil, err
+		return errors.Wrap(err, "getting remote URL source")
+	}
+
+	remoteURL, err := source.RemoteURL(ctx)
+	if err != nil {
+		return errors.Wrap(err, "getting remote URL") // This should never happen for Perforce
+	}
+
+	var pkg reposource.Package
+	pkg, err = s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
+	if err != nil {
+		return err
 	}
 	name := pkg.PackageSyntax()
 
 	versions, err := s.versions(ctx, name)
 	if err != nil {
-		return nil, err
-	}
-
-	if revspec != "" {
-		return nil, s.fetchRevspec(ctx, name, dir, versions, revspec)
-	}
-
-	return nil, s.fetchVersions(ctx, name, dir, versions)
-}
-
-// fetchRevspec fetches the given revspec if it's not contained in
-// existingVersions. If download and upserting the new version into database
-// succeeds, it calls s.fetchVersions with the newly-added version and the old
-// ones, to possibly update the "latest" tag.
-func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.PackageName, dir common.GitDir, existingVersions []string, revspec string) error {
-	// Optionally try to resolve the version of the user-provided revspec (formatted as `"v${VERSION}^0"`).
-	// This logic lives inside `vcsPackagesSyncer` meaning this repo must be a package repo where all
-	// the git tags are created by our npm/crates/pypi/maven integrations (no human commits/branches/tags).
-	// Package repos only create git tags using the format `"v${VERSION}"`.
-	//
-	// Unlike other versions, we silently ignore all errors from resolving requestedVersion because it could
-	// be any random user-provided string, with no guarantee that it's a valid version string that resolves
-	// to an existing dependency version.
-	//
-	// We assume the revspec is formatted as `"v${VERSION}^0"` but it could be any random string or
-	// a git commit SHA. It should be harmless if the string is invalid, worst case the resolution fails
-	// and we silently ignore the error.
-	requestedVersion := strings.TrimSuffix(strings.TrimPrefix(revspec, "v"), "^0")
-
-	for _, existingVersion := range existingVersions {
-		if existingVersion == requestedVersion {
-			return nil
-		}
-	}
-
-	dep, err := s.source.ParseVersionedPackageFromNameAndVersion(name, requestedVersion)
-	if err != nil {
-		// Invalid version. Silently ignore error, see comment above why.
-		return nil
-	}
-
-	// if the next check passes, we know that any filters added/updated before this timestamp did not block it
-	instant := time.Now()
-
-	if allowed, err := s.svc.IsPackageRepoVersionAllowed(ctx, s.scheme, dep.PackageSyntax(), dep.PackageVersion()); !allowed || err != nil {
-		// if err == nil && !allowed, this will return nil
-		return errors.Wrap(err, "error checking if package repo version is allowed")
-	}
-
-	err = s.gitPushDependencyTag(ctx, string(dir), dep)
-	if err != nil {
-		// Package could not be downloaded. Silently ignore error, see comment above why.
-		return nil
-	}
-
-	if _, _, err = s.svc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
-		{
-			Scheme:        dep.Scheme(),
-			Name:          dep.PackageSyntax(),
-			Versions:      []dependencies.MinimalPackageRepoRefVersion{{Version: dep.PackageVersion(), LastCheckedAt: &instant}},
-			LastCheckedAt: &instant,
-		},
-	}); err != nil {
-		// We don't want to ignore when writing to the database failed, since
-		// we've already downloaded the package successfully.
 		return err
 	}
 
-	existingVersions = append(existingVersions, requestedVersion)
-
-	return s.fetchVersions(ctx, name, dir, existingVersions)
+	return s.fetchVersions(ctx, name, dir, versions)
 }
 
 // fetchVersions checks whether the given versions are all valid version
@@ -252,6 +191,15 @@ func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.P
 
 	// Return error if at least one version failed to download.
 	if errs != nil {
+		// TEMP: For dotcom, we don't want to hard fail for missing versions.
+		// Currently, our DB does not contain valid versions only, and attempting
+		// to download versions over and over again clogs out large clone queue.
+		// TODO(eseliger): Remove this branch! Also make sure to remove all the
+		// existing packages from gitserver disks.
+		if dotcom.SourcegraphDotComMode() {
+			s.logger.Error("failed to fetch some dependency versions", log.Error(errs))
+			return nil
+		}
 		return errs
 	}
 
@@ -290,7 +238,7 @@ func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.P
 // gitPushDependencyTag is responsible for cleaning up temporary directories
 // created in the process.
 func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.VersionedPackage) error {
-	workDir, err := gitserverfs.TempDir(s.reposDir, s.Type())
+	workDir, err := s.fs.TempDir(s.Type())
 	if err != nil {
 		return err
 	}

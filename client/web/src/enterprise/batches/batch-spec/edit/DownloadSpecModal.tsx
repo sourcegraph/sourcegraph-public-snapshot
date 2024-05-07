@@ -4,13 +4,14 @@ import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Link, Modal, H3, H4, Text, Icon } from '@sourcegraph/wildcard'
 
 import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 
 import styles from './DownloadSpecModal.module.scss'
 
-export interface DownloadSpecModalProps {
+export interface DownloadSpecModalProps extends TelemetryV2Props {
     name: string
     originalInput: string
     setIsDownloadSpecModalOpen: (condition: boolean) => void
@@ -22,6 +23,7 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
     originalInput,
     setIsDownloadSpecModalOpen,
     setDownloadSpecModalDismissed,
+    telemetryRecorder,
 }) => (
     <Modal
         onDismiss={() => {
@@ -88,7 +90,12 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
                 >
                     Cancel
                 </Button>
-                <BatchSpecDownloadLink name={name} originalInput={originalInput} asButton={false}>
+                <BatchSpecDownloadLink
+                    name={name}
+                    originalInput={originalInput}
+                    asButton={false}
+                    telemetryRecorder={telemetryRecorder}
+                >
                     <Button
                         variant="primary"
                         onClick={() => {

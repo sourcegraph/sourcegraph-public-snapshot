@@ -16,7 +16,7 @@ type gitRevSpecExpr struct {
 func (r *gitRevSpecExpr) Expr() string { return r.expr }
 
 func (r *gitRevSpecExpr) Object(ctx context.Context) (*gitObject, error) {
-	oid, err := r.repo.gitserverClient.ResolveRevision(ctx, r.repo.RepoName(), r.expr, gitserver.ResolveRevisionOptions{})
+	oid, err := r.repo.gitserverClient.ResolveRevision(ctx, r.repo.RepoName(), r.expr, gitserver.ResolveRevisionOptions{EnsureRevision: true})
 	if err != nil {
 		return nil, err
 	}

@@ -10,11 +10,11 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	approuter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 )
 
 type featureFlagStore interface {
@@ -52,7 +52,7 @@ func displayRepoName(repoName string) string {
 }
 
 func canServeOpenGraphMetadata(req *http.Request) bool {
-	return !envvar.SourcegraphDotComMode() && !actor.FromContext(req.Context()).IsAuthenticated() && isValidOpenGraphRequesterUserAgent(req.UserAgent())
+	return !dotcom.SourcegraphDotComMode() && !actor.FromContext(req.Context()).IsAuthenticated() && isValidOpenGraphRequesterUserAgent(req.UserAgent())
 }
 
 func getOpenGraphTemplateData(req *http.Request, ffs featureFlagStore) *openGraphTemplateData {

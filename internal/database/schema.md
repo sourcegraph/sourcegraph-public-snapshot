@@ -39,6 +39,7 @@ Indexes:
     "access_tokens_pkey" PRIMARY KEY, btree (id)
     "access_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
     "access_tokens_lookup" hash (value_sha256) WHERE deleted_at IS NULL
+    "access_tokens_lookup_double_hash" hash (digest(value_sha256, 'sha256'::text)) WHERE deleted_at IS NULL
 Foreign-key constraints:
     "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
@@ -778,6 +779,7 @@ Slack webhook actions configured on code monitors
  search_results    | jsonb                    |           |          | 
  queued_at         | timestamp with time zone |           |          | now()
  cancel            | boolean                  |           | not null | false
+ logs              | json[]                   |           |          | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
     "cm_trigger_jobs_finished_at" btree (finished_at)
@@ -1582,6 +1584,7 @@ Referenced by:
  queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "exhaustive_search_jobs_pkey" PRIMARY KEY, btree (id)
+    "exhaustive_search_jobs_state" btree (state)
 Foreign-key constraints:
     "exhaustive_search_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
 Referenced by:
@@ -1613,6 +1616,7 @@ Referenced by:
  queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "exhaustive_search_repo_jobs_pkey" PRIMARY KEY, btree (id)
+    "exhaustive_search_repo_jobs_state" btree (state)
 Foreign-key constraints:
     "exhaustive_search_repo_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "exhaustive_search_repo_jobs_search_job_id_fkey" FOREIGN KEY (search_job_id) REFERENCES exhaustive_search_jobs(id) ON DELETE CASCADE
@@ -1644,6 +1648,7 @@ Referenced by:
  queued_at          | timestamp with time zone |           |          | now()
 Indexes:
     "exhaustive_search_repo_revision_jobs_pkey" PRIMARY KEY, btree (id)
+    "exhaustive_search_repo_revision_jobs_state" btree (state)
 Foreign-key constraints:
     "exhaustive_search_repo_revision_jobs_search_repo_job_id_fkey" FOREIGN KEY (search_repo_job_id) REFERENCES exhaustive_search_repo_jobs(id) ON DELETE CASCADE
 
@@ -1799,7 +1804,6 @@ Indexes:
 Check constraints:
     "feature_flag_overrides_has_org_or_user_id" CHECK (namespace_org_id IS NOT NULL OR namespace_user_id IS NOT NULL)
 Foreign-key constraints:
-    "feature_flag_overrides_flag_name_fkey" FOREIGN KEY (flag_name) REFERENCES feature_flags(flag_name) ON UPDATE CASCADE ON DELETE CASCADE
     "feature_flag_overrides_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
 
@@ -1832,8 +1836,6 @@ CASE
     WHEN flag_type <> 'rollout'::feature_flag_type AND rollout IS NOT NULL THEN 0
     ELSE 1
 END)
-Referenced by:
-    TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_flag_name_fkey" FOREIGN KEY (flag_name) REFERENCES feature_flags(flag_name) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2121,6 +2123,7 @@ Stores data points for a code insight that do not need to be queried directly, b
  repository_patterns         | text[]                   |           |          | 
  last_resolved_at            | timestamp with time zone |           |          | 
  embeddings_enabled          | boolean                  |           | not null | false
+ syntactic_indexing_enabled  | boolean                  |           | not null | false
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
@@ -4050,6 +4053,21 @@ Stores metadata about a code intel syntactic index job.
 **enqueuer_user_id**: ID of the user who scheduled this index. Records with a non-NULL user ID are prioritised over the rest
 
 **execution_logs**: An array of [log entries](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/internal/workerutil/store.go#L48:6) (encoded as JSON) from the most recent execution.
+
+# Table "public.syntactic_scip_last_index_scan"
+```
+       Column       |           Type           | Collation | Nullable | Default 
+--------------------+--------------------------+-----------+----------+---------
+ repository_id      | integer                  |           | not null | 
+ last_index_scan_at | timestamp with time zone |           | not null | 
+Indexes:
+    "syntactic_scip_last_index_scan_pkey" PRIMARY KEY, btree (repository_id)
+
+```
+
+Tracks the last time repository was checked for syntactic indexing job scheduling.
+
+**last_index_scan_at**: The last time uploads of this repository were considered for syntactic indexing job scheduling.
 
 # Table "public.team_members"
 ```

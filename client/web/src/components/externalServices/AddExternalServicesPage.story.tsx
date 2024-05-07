@@ -1,5 +1,6 @@
 import type { Decorator, StoryFn, Meta } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../WebStory'
@@ -28,6 +29,7 @@ export const Overview: StoryFn = () => (
             <AddExternalServicesPage
                 {...webProps}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 codeHostExternalServices={codeHostExternalServices}
                 nonCodeHostExternalServices={nonCodeHostExternalServices}
                 autoFocusForm={false}
@@ -44,6 +46,7 @@ export const AddConnectionBykind: StoryFn = () => (
             <AddExternalServicesPage
                 {...webProps}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 codeHostExternalServices={codeHostExternalServices}
                 nonCodeHostExternalServices={nonCodeHostExternalServices}
                 autoFocusForm={false}

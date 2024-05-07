@@ -5,9 +5,10 @@ import { NEVER, type Observable } from 'rxjs'
 import { catchError, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike, isMobile, pluralize } from '@sourcegraph/common'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Text, ErrorAlert, Card, H1, H2, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, Card, ErrorAlert, H1, H2, Link, Text, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
@@ -20,7 +21,10 @@ import { createAccessToken } from './create'
 
 import styles from './UserSettingsCreateAccessTokenCallbackPage.module.scss'
 
-interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>, TelemetryProps {
+interface Props
+    extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>,
+        TelemetryProps,
+        TelemetryV2Props {
     /**
      * Called when a new access token is created and should be temporarily displayed to the user.
      */
@@ -45,6 +49,12 @@ interface TokenRequester {
     onlyDotCom?: boolean
     /** If true, it will forward the `destination` param to the redirect URL if it starts with / */
     forwardDestination?: boolean
+    /**
+     * If true, will attempt to POST the newly created auth token to the URL supplied via the
+     * tokenReceiverUrl param. This enables the clients to continue the authentication process
+     * even if the redirect is not working as expected.
+     */
+    postTokenToReceiverUrl?: boolean
 }
 
 // SECURITY: Only accept callback requests from requesters on this allowed list
@@ -64,6 +74,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
+        postTokenToReceiverUrl: true,
     },
     CODY_VSCODIUM: {
         name: 'Cody - VSCodium Extension',
@@ -71,6 +82,15 @@ const REQUESTERS: Record<string, TokenRequester> = {
         successMessage: 'Now opening VS Code...',
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
+        callbackType: 'new-tab',
+        postTokenToReceiverUrl: true,
+    },
+    CODY_CURSOR: {
+        name: 'Cody - Cursor Extension',
+        redirectURL: 'cursor://sourcegraph.cody-ai?code=$TOKEN',
+        successMessage: 'Now opening Cursor...',
+        infoMessage:
+            'Please make sure you have Cursor running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
     },
     CODY_INSIDERS: {
@@ -80,6 +100,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
+        postTokenToReceiverUrl: true,
     },
     JETBRAINS: {
         name: 'JetBrains IDE',
@@ -117,6 +138,7 @@ function isRedirectable(name: string | null): boolean {
  */
 export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     telemetryService,
+    telemetryRecorder,
     onDidCreateAccessToken,
     user,
     isSourcegraphDotCom,
@@ -127,10 +149,12 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     const defaultAccessTokenExpiryDays = window.context.accessTokensExpirationDaysDefault
     useEffect(() => {
         telemetryService.logPageView('NewAccessTokenCallback')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('settings.tokens.newAccessToken', 'callback')
+    }, [telemetryService, telemetryRecorder])
     /** Get the requester, port, and destination from the url parameters */
     const urlSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
     let requestFrom = useMemo(() => urlSearchParams.get('requestFrom'), [urlSearchParams])
+    const tokenReceiverUrl = useMemo(() => urlSearchParams.get('tokenReceiverUrl'), [urlSearchParams])
     let port = useMemo(() => urlSearchParams.get('port'), [urlSearchParams])
 
     // Allow a single query parameter `requestFrom=JETBRAIN-PORT_NUMBER`. The motivation for this parameter encoding is that
@@ -206,15 +230,16 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                 click.pipe(
                     switchMap(() =>
                         (requester
-                            ? createAccessToken(
-                                  user.id,
-                                  [AccessTokenScopes.UserAll],
+                            ? createAccessToken({
+                                  user: user.id,
+                                  scopes: [AccessTokenScopes.UserAll],
                                   note,
-                                  defaultAccessTokenExpiryDays * 86400 // days to seconds
-                              )
+                                  durationSeconds: defaultAccessTokenExpiryDays * 86400, // days to seconds
+                                  telemetryRecorder,
+                              })
                             : NEVER
                         ).pipe(
-                            tap(result => {
+                            tap(async result => {
                                 // SECURITY: If the request was from a valid requester and from a non-mobile device,
                                 // redirect to the allowlisted redirect URL. (https://github.com/sourcegraph/security-issues/issues/361)
                                 // SECURITY: Local context ONLY
@@ -224,6 +249,10 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                     let uri = replacePlaceholder(requester?.redirectURL, 'TOKEN', result.token)
                                     if (isRedirectable(requestFrom) && port) {
                                         uri = replacePlaceholder(uri, 'PORT', port)
+                                    }
+
+                                    if (requester.postTokenToReceiverUrl && tokenReceiverUrl) {
+                                        await postTokenToReceiverUrl(tokenReceiverUrl, result.token)
                                     }
 
                                     switch (requester.callbackType) {
@@ -253,6 +282,8 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                 onDidCreateAccessToken,
                 requestFrom,
                 port,
+                tokenReceiverUrl,
+                telemetryRecorder,
             ]
         )
     )
@@ -330,4 +361,23 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
 function replacePlaceholder(subject: string, search: string, replace: string): string {
     // %24 is the URL encoded version of $
     return subject.replace('$' + search, replace).replace('%24' + search, replace)
+}
+
+async function postTokenToReceiverUrl(tokenReceiverUrl: string, accessToken: string): Promise<void> {
+    const url = new URL(tokenReceiverUrl)
+
+    // Do not post data on anything but the local computer
+    if (url.hostname !== '127.0.0.1') {
+        return
+    }
+
+    try {
+        await fetch(tokenReceiverUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessToken }),
+        })
+    } catch {
+        // Ignore eventual errors
+    }
 }

@@ -19,7 +19,7 @@ Engineers should budget an appropriate amount of time for ensuring [test plans](
 
 **All pull requests must provide test plans** that indicate what has been done to test the changes being introduced. This can be done with a "Test plan" section within a pull request's description.
 
-These plans are here to demonstrate we're complying with industry standards which are critical for our customers. They may be read by auditors, customers, who are seeking to understand if with we uphold these standards. 
+These plans are here to demonstrate we're complying with industry standards which are critical for our customers. They may be read by auditors, customers, who are seeking to understand if with we uphold these standards.
 Therefore, it's perfectly fine to be succint as long as the substance is here. And because the audience for these test plans are engineers, they will understand the context. Changing a README for example can simply covered by stating you rendered it locally and it was fine.
 
 Some pull requests may not require a rigorous test plan in certain situations, see [Exceptions](#exceptions).
@@ -105,8 +105,6 @@ Examples:
 
 Visual testing is useful to catch visual regressions and verify designs for new features. [More info about visual testing philosophy](testing_web_code.md#visual-regressions)
 
-We use [Chromatic Storybook](https://www.chromatic.com/) to detect visual changes in specific React components. Post a message in #dev-chat that you need access to Chromatic, and someone will add you to our organization (you will also receive an invitation via e-mail). You should sign into Chromatic with your GitHub account. If a PR you author has visual changes, a UI Review in Chromatic will be generated. It is recommended that a designer approves the UI review.
-
 We use [Percy](https://percy.io/) to detect visual changes in Sourcegraph features during browser-based tests (client integration tests and end-to-end tests). You may need permissions to update screenshots if your feature introduces visual changes. Post a message in #dev-chat that you need access to Percy, and someone will add you to our organization (you will also receive an invitation via e-mail). Once you've been invited to the Sourcegraph organization and created a Percy account, you should then link it to your GitHub account.
 
 ### Other testing strategies
@@ -129,7 +127,7 @@ If for a situational reason, a pull request needs to be exempted from the testin
 
 ### Why does it matter?
 
-In order to comply with industry standards that we share with our customers, we have to demonstrate that even when we're deviating from the standard process we're taking the necessary actions. This exception process is what gives us the flexibility to deal with edge cases when the normal process would slow us down to land some changes that we need to be merged right now. This automated exception mechanism gives us flexibility rather than forcing us to blindly comply with the process even if the situation clearly requires to go around it. 
+In order to comply with industry standards that we share with our customers, we have to demonstrate that even when we're deviating from the standard process we're taking the necessary actions. This exception process is what gives us the flexibility to deal with edge cases when the normal process would slow us down to land some changes that we need to be merged right now. This automated exception mechanism gives us flexibility rather than forcing us to blindly comply with the process even if the situation clearly requires to go around it.
 
 Remember that auditors may look at these exception explanations, and might eventually ask you about what happened exactly six month from now. It's a small price to pay for a bit of flexibility. The created issues contains example on how to explain the most common scenarios to help you write a good explanation.
 
@@ -173,10 +171,10 @@ When fixing a flaky test, make sure to re-run the test in a loop to assess wheth
 
 Other kinds of flakes include [flaky steps](ci/index.md#flaky-steps) and [flaky infrastructure](ci/index.md#laky-infrastructure)
 
-#### Analytics about flakes 
+#### Analytics about flakes
 
-Our pipeline exports test results to Buildkite Test Analytics. Rather than doing it at the individual test level, we record them at the test suite level (Bazel test targets). Therefore, any kind of test suite running with Bazel is recorded. 
-You can find the statistics for all targets in the [`sourcegraph-bazel`](https://buildkite.com/organizations/sourcegraph/analytics/suites/sourcegraph-bazel?branch=main) dashboard. 
+Our pipeline exports test results to Buildkite Test Analytics. Rather than doing it at the individual test level, we record them at the test suite level (Bazel test targets). Therefore, any kind of test suite running with Bazel is recorded.
+You can find the statistics for all targets in the [`sourcegraph-bazel`](https://buildkite.com/organizations/sourcegraph/analytics/suites/sourcegraph-bazel?branch=main) dashboard.
 
 These numbers are extremely useful to prioritize work toward making a test suite more stable: you can instantly see if a test suite is failing often and costs time to every engineer, or if that's a rare occurence.
 

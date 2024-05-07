@@ -4,6 +4,7 @@ import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql-operations'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../components/WebStory'
@@ -44,7 +45,7 @@ export const Unstarted: StoryFn = args => (
                     batchSpec={args.batchSpec ? mockBatchSpec() : mockBatchSpec({ originalInput: 'not-valid' })}
                     refetchBatchChange={() => Promise.resolve()}
                 >
-                    <WorkspacesPreview />
+                    <WorkspacesPreview telemetryRecorder={noOpTelemetryRecorder} />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}
@@ -69,7 +70,7 @@ export const UnstartedWithCachedConnectionResult: StoryFn = args => (
                     batchSpec={args.batchSpec ? mockBatchSpec() : mockBatchSpec({ originalInput: 'not-valid' })}
                     refetchBatchChange={() => Promise.resolve()}
                 >
-                    <WorkspacesPreview />
+                    <WorkspacesPreview telemetryRecorder={noOpTelemetryRecorder} />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}
@@ -127,7 +128,7 @@ export const QueuedInProgress: StoryFn = args => {
                         batchSpec={args.batchSpec ? mockBatchSpec() : mockBatchSpec({ originalInput: 'not-valid' })}
                         refetchBatchChange={() => Promise.resolve()}
                     >
-                        <WorkspacesPreview />
+                        <WorkspacesPreview telemetryRecorder={noOpTelemetryRecorder} />
                     </BatchSpecContextProvider>
                 </MockedTestProvider>
             )}
@@ -193,7 +194,7 @@ export const QueuedInProgressWithCachedConnectionResult: StoryFn = args => {
                         batchSpec={mockBatchSpec()}
                         refetchBatchChange={() => Promise.resolve()}
                     >
-                        <WorkspacesPreview />
+                        <WorkspacesPreview telemetryRecorder={noOpTelemetryRecorder} />
                     </BatchSpecContextProvider>
                 </MockedTestProvider>
             )}
@@ -258,7 +259,7 @@ export const FailedErrored: StoryFn = args => {
                         batchSpec={mockBatchSpec()}
                         refetchBatchChange={() => Promise.resolve()}
                     >
-                        <WorkspacesPreview />
+                        <WorkspacesPreview telemetryRecorder={noOpTelemetryRecorder} />
                     </BatchSpecContextProvider>
                 </MockedTestProvider>
             )}
@@ -323,7 +324,7 @@ export const FailedErroredWithCachedConnectionResult: StoryFn = args => {
                         batchSpec={mockBatchSpec()}
                         refetchBatchChange={() => Promise.resolve()}
                     >
-                        <WorkspacesPreview />
+                        <WorkspacesPreview telemetryRecorder={noOpTelemetryRecorder} />
                     </BatchSpecContextProvider>
                 </MockedTestProvider>
             )}
@@ -367,7 +368,7 @@ export const Succeeded: StoryFn = () => (
                         },
                     }}
                 >
-                    <WorkspacesPreview />
+                    <WorkspacesPreview telemetryRecorder={noOpTelemetryRecorder} />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}
@@ -396,7 +397,7 @@ export const CacheDisabled: StoryFn = () => (
                         },
                     }}
                 >
-                    <WorkspacesPreview />
+                    <WorkspacesPreview telemetryRecorder={noOpTelemetryRecorder} />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}
@@ -412,7 +413,7 @@ export const ReadOnly: StoryFn = () => (
                     batchSpec={mockBatchSpec()}
                     refetchBatchChange={() => Promise.resolve()}
                 >
-                    <WorkspacesPreview isReadOnly={true} />
+                    <WorkspacesPreview isReadOnly={true} telemetryRecorder={noOpTelemetryRecorder} />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}
@@ -443,7 +444,7 @@ export const SucceededWithScaleAlert: StoryFn = () => (
                         },
                     }}
                 >
-                    <WorkspacesPreview />
+                    <WorkspacesPreview telemetryRecorder={noOpTelemetryRecorder} />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}
@@ -461,7 +462,7 @@ export const ReadOnlyWithScaleAlert: StoryFn = () => (
                     batchSpec={mockBatchSpec()}
                     refetchBatchChange={() => Promise.resolve()}
                 >
-                    <WorkspacesPreview {...props} isReadOnly={true} />
+                    <WorkspacesPreview {...props} isReadOnly={true} telemetryRecorder={noOpTelemetryRecorder} />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}
@@ -481,7 +482,7 @@ export const UnstartedWithLicenseAlertConnectionResult: StoryFn = () => (
                     batchSpec={mockBatchSpec()}
                     refetchBatchChange={() => Promise.resolve()}
                 >
-                    <WorkspacesPreview {...props} isReadOnly={false} />
+                    <WorkspacesPreview {...props} isReadOnly={false} telemetryRecorder={noOpTelemetryRecorder} />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}
@@ -501,7 +502,7 @@ export const ReadOnlyWithLicenseAlert: StoryFn = () => (
                     batchSpec={mockBatchSpec()}
                     refetchBatchChange={() => Promise.resolve()}
                 >
-                    <WorkspacesPreview {...props} isReadOnly={true} />
+                    <WorkspacesPreview {...props} isReadOnly={true} telemetryRecorder={noOpTelemetryRecorder} />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}

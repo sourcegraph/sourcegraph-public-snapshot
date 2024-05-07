@@ -3,7 +3,6 @@ package scheduler
 import (
 	"context"
 	"fmt"
-	"math"
 	"sync"
 	"time"
 
@@ -56,8 +55,6 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		MaxNumRetries:     3,
 	})
 
-	handlerConfig := newHandlerConfig()
-
 	task := &inProgressHandler{
 		workerStore:        workerStore,
 		backfillStore:      backfillStore,
@@ -66,7 +63,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		backfillRunner:     config.BackfillRunner,
 		repoStore:          config.RepoStore,
 		clock:              glock.NewRealClock(),
-		config:             handlerConfig,
+		config:             newHandlerConfig,
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*BaseJob](task), workerutil.WorkerOptions{
@@ -84,28 +81,6 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		Metrics:  dbworker.NewResetterMetrics(config.ObservationCtx, name),
 	})
 
-	configLogger := log.Scoped("insightsInProgressConfigWatcher")
-	mu := sync.Mutex{}
-	conf.Watch(func() {
-		mu.Lock()
-		defer mu.Unlock()
-		oldVal := task.config.interruptAfter
-		newVal := getInterruptAfter()
-		task.config.interruptAfter = newVal
-
-		oldPageSize := task.config.pageSize
-		newPageSize := getPageSize()
-		task.config.pageSize = newPageSize
-
-		oldRepoConcurrency := task.config.repoConcurrency
-		newRepoConcurrency := getRepoConcurrency()
-		task.config.repoConcurrency = newRepoConcurrency
-
-		configLogger.Info("insights backfiller interrupt time changed", log.Duration("old", oldVal), log.Duration("new", newVal))
-		configLogger.Info("insights backfiller repo page size changed", log.Int("old", oldPageSize), log.Int("new", newPageSize))
-		configLogger.Info("insights backfiller repo concurrency changed", log.Int("old", oldRepoConcurrency), log.Int("new", newRepoConcurrency))
-	})
-
 	return worker, resetter, workerStore
 }
 
@@ -116,7 +91,7 @@ type inProgressHandler struct {
 	repoStore          database.RepoStore
 	insightsStore      store.Interface
 	backfillRunner     pipeline.Backfiller
-	config             handlerConfig
+	config             func() handlerConfig
 
 	clock glock.Clock
 }
@@ -141,7 +116,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, job *
 	if err != nil {
 		return err
 	}
-	execution.config = h.config
+	execution.config = h.config()
 
 	logger.Info("insights backfill progress handler loaded",
 		log.Int("recordId", job.RecordID()),
@@ -167,7 +142,9 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, job *
 type nextNFunc func(pageSize int, config iterator.IterationConfig) ([]api.RepoID, bool, iterator.FinishNFunc)
 
 func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfillExecution) (interrupt bool, err error) {
-	timeExpired := h.clock.After(h.config.interruptAfter)
+	config := h.config()
+
+	timeExpired := h.clock.After(config.interruptAfter)
 
 	itrConfig := iterator.IterationConfig{
 		MaxFailures: 3,
@@ -208,7 +185,7 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 				p := pool.New().WithContext(ctx).WithMaxGoroutines(concurrency)
 				repoErrors := map[int32]error{}
 				startPage := time.Now()
-				for i := 0; i < len(repoIds); i++ {
+				for i := range len(repoIds) {
 					repoId := repoIds[i]
 					p.Go(func(ctx context.Context) error {
 						repo, repoErr := h.repoStore.Get(ctx, repoId)
@@ -255,10 +232,10 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 	}
 
 	execution.logger.Debug("starting primary loop", log.Int("seriesId", execution.series.ID), log.Int("backfillId", execution.backfill.Id))
-	if interrupted, err := itrLoop(h.config.pageSize, h.config.repoConcurrency, execution.itr.NextPageWithFinish); err != nil {
+	if interrupted, err := itrLoop(config.pageSize, config.repoConcurrency, execution.itr.NextPageWithFinish); err != nil {
 		return false, errors.Wrap(err, "InProgressHandler.PrimaryLoop")
 	} else if interrupted {
-		execution.logger.Info("interrupted insight series backfill", execution.logFields(log.Duration("interruptAfter", h.config.interruptAfter))...)
+		execution.logger.Info("interrupted insight series backfill", execution.logFields(log.Duration("interruptAfter", config.interruptAfter))...)
 		return true, nil
 	}
 
@@ -266,7 +243,7 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 	if interrupted, err := itrLoop(1, 1, retryAdapter(execution.itr.NextRetryWithFinish)); err != nil {
 		return false, errors.Wrap(err, "InProgressHandler.RetryLoop")
 	} else if interrupted {
-		execution.logger.Info("interrupted insight series backfill retry", execution.logFields(log.Duration("interruptAfter", h.config.interruptAfter))...)
+		execution.logger.Info("interrupted insight series backfill retry", execution.logFields(log.Duration("interruptAfter", config.interruptAfter))...)
 		return true, nil
 	}
 
@@ -410,7 +387,7 @@ func getInterruptAfter() time.Duration {
 func getPageSize() int {
 	val := conf.Get().InsightsBackfillRepositoryGroupSize
 	if val > 0 {
-		return int(math.Min(float64(val), 100))
+		return min(val, 100)
 	}
 	return 10
 }
@@ -418,7 +395,7 @@ func getPageSize() int {
 func getRepoConcurrency() int {
 	val := conf.Get().InsightsBackfillRepositoryConcurrency
 	if val > 0 {
-		return int(math.Min(float64(val), 10))
+		return min(val, 10)
 	}
 	return 3
 }

@@ -31,8 +31,9 @@ type capabilities struct {
 // is done at all.
 func detectCapabilities(opts OutputOpts) (caps capabilities, err error) {
 	// Set atty
-	caps.Isatty = opts.ForceTTY
-	if !opts.ForceTTY {
+	if opts.ForceTTY != nil {
+		caps.Isatty = *opts.ForceTTY
+	} else {
 		caps.Isatty = isatty.IsTerminal(os.Stdout.Fd())
 	}
 

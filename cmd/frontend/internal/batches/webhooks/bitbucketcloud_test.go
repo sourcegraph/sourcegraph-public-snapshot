@@ -400,7 +400,7 @@ func bitbucketCloudTestSetup(t *testing.T, sqlDB *sql.DB) *bstore.Store {
 	// transactions within the test.
 	db := database.NewDBWith(logger, basestore.NewWithHandle(&nestedTx{basestore.NewHandleWithTx(tx, sql.TxOptions{})}))
 
-	return bstore.NewWithClock(db, &observation.TestContext, nil, clock.Now)
+	return bstore.NewWithClock(db, observation.TestContextTB(t), nil, clock.Now)
 }
 
 // createBitbucketCloudExternalService creates a mock Bitbucket Cloud service

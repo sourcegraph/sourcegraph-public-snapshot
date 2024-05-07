@@ -8,7 +8,7 @@
 package:
   name: gke-gcloud-auth-plugin
   version: 0.0.2
-  epoch: 0
+  epoch: 1
   description: 'kubectl plugin for GKE authentication'
   copyright:
     - license: Apache-2.0

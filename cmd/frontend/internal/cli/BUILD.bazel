@@ -53,6 +53,7 @@ go_library(
         "//internal/database/migration/store",
         "//internal/database/postgresdsn",
         "//internal/deviceid",
+        "//internal/dotcom",
         "//internal/encryption/keyring",
         "//internal/endpoint",
         "//internal/env",

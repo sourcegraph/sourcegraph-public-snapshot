@@ -41,7 +41,6 @@ import { ActionContainer } from '../../../repo/settings/components/ActionContain
 import { scheduleRepositoryPermissionsSync } from '../../../site-admin/backend'
 import { PermissionsSyncJobsTable } from '../../../site-admin/permissions-center/PermissionsSyncJobsTable'
 import { Table, type IColumn } from '../../../site-admin/UserManagement/components/Table'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { PermissionReasonBadgeProps } from '../../settings/permissons'
 
 import { RepoPermissionsInfoQuery } from './backend'
@@ -62,7 +61,9 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
     telemetryService,
     telemetryRecorder,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('RepoSettingsPermissions'))
+    useEffect(() => {
+        telemetryRecorder.recordEvent('repo.settings.permissions', 'view')
+    }, [telemetryRecorder])
 
     const [{ query }, setSearchQuery] = useURLSyncedState({ query: '' })
     const debouncedQuery = useDebounce(query, 300)
@@ -283,6 +284,6 @@ class ScheduleRepositoryPermissionsSyncActionContainer extends React.PureCompone
     }
 
     private scheduleRepositoryPermissions = async (): Promise<void> => {
-        await scheduleRepositoryPermissionsSync({ repository: this.props.repo.id }).toPromise()
+        await scheduleRepositoryPermissionsSync({ repository: this.props.repo.id })
     }
 }

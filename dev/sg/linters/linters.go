@@ -57,14 +57,6 @@ var Targets = []Target{
 		},
 	},
 	{
-		Name:        "docs",
-		Description: "Documentation checks",
-		Checks: []*linter{
-			onlyLocal(bazelExec("Docsite lint (bazel)", "test //doc:test")),
-			timeCheck(docChangesLint()),
-		},
-	},
-	{
 		Name:        "dockerfiles",
 		Description: "Check Dockerfiles for Sourcegraph best practices",
 		Checks: []*linter{
@@ -117,6 +109,8 @@ var Targets = []Target{
 	Formatting,
 }
 
+// Formatting is set aside from Targets so that we can reference it directly.
+// e.g. to include it automatically when running other linters.
 var Formatting = Target{
 	Name:        "format",
 	Description: "Check client code and docs for formatting errors",
@@ -198,11 +192,4 @@ func bazelExec(name, args string) *linter {
 //	warning Workspaces can only be enabled in private projects.
 func pnpmInstallFilter() pipeline.Pipeline {
 	return pipeline.Filter(func(line []byte) bool { return !bytes.Contains(line, []byte("warning")) })
-}
-
-// disabled can be used to mark a category or check as disabled.
-func disabled(reason string) check.EnableFunc[*repo.State] {
-	return func(context.Context, *repo.State) error {
-		return errors.Newf("disabled: %s", reason)
-	}
 }

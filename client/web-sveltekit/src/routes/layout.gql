@@ -18,12 +18,27 @@ query EvaluatedFeatureFlagsQuery {
     }
 }
 
+query GlobalAlertsSiteFlags {
+    site {
+        ...GlobalNotifications
+    }
+}
+
+mutation DisableSveltePrototype($userID: ID!) {
+    overrideWebNext: createFeatureFlagOverride(namespace: $userID, flagName: "web-next", value: false) {
+        __typename
+    }
+    overrideRollout: createFeatureFlagOverride(namespace: $userID, flagName: "web-next-rollout", value: false) {
+        __typename
+    }
+}
+
 fragment FeatureFlag on EvaluatedFeatureFlag {
     name
     value
 }
 
 fragment AuthenticatedUser on User {
-    ...Header_User
+    ...GlobalNavigation_User
     ...SearchInput_AuthenticatedUser
 }

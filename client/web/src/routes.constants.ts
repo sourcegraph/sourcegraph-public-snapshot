@@ -41,5 +41,18 @@ export enum PageRoutes {
     CodyChat = '/cody/chat',
     CodyManagement = '/cody/manage',
     CodySubscription = '/cody/subscription',
+    CodySwitchAccount = '/cody/switch-account/:username',
     Own = '/own',
+}
+
+export enum CommunityPageRoutes {
+    Kubernetes = '/kubernetes',
+    Stackstorm = '/stackstorm',
+    Temporal = '/temporal',
+    O3de = '/o3de',
+    ChakraUI = '/chakraui',
+    Stanford = '/stanford',
+    Cncf = '/cncf',
+    Julia = '/julia',
+    Backstage = '/backstage',
 }

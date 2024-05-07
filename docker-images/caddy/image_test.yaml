@@ -1,0 +1,14 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "caddy is runnable"
+    command: "caddy"
+    args:
+      - version
+
+fileExistenceTests:
+- name: '/etc/caddy/Caddyfile'
+  path: '/etc/caddy/Caddyfile'
+  shouldExist: true
+  uid: 0
+  gid: 0

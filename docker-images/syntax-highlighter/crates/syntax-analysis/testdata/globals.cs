@@ -33,13 +33,16 @@ namespace Longer.Namespace
 
         public struct Coords
         {
-            public Coords(double x, double y)
+            public Coords(double x, [Flags] double y)
             {
                 X = x;
                 Y = y;
             }
 
             public double X { get; }
+
+
+            [Flags]
             public double Y { get; }
 
             public override string ToString() => $"({X}, {Y})";
@@ -75,15 +78,20 @@ namespace Longer.Namespace
             FullPackage = Errors | Comptime | BuildSystem | CoolCommunity
         }
 
-        public static void Syntax() {}
+        [Flags]
+        public static void Syntax() { }
     }
 }
 
 namespace OneClass
 {
+    [Flags]
     public class TheClass
     {
+        [Flags]
         public Clickable ClickAction { get; set; }
+
+
         public string Text { get; set; }
     }
 }

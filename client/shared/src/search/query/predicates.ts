@@ -1,5 +1,5 @@
 /* eslint-disable no-template-curly-in-string */
-import { type Completion, resolveFieldAlias } from './filters'
+import { type Completion, resolveFieldAlias, FilterType } from './filters'
 
 interface Access {
     name: string
@@ -56,6 +56,15 @@ export const PREDICATES: Access[] = [
             {
                 name: 'has',
                 fields: [{ name: 'content' }, { name: 'owner' }],
+            },
+        ],
+    },
+    {
+        name: 'rev',
+        fields: [
+            {
+                name: 'at',
+                fields: [{ name: 'time' }],
             },
         ],
     },
@@ -173,7 +182,7 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
     return { path, parameters }
 }
 
-export const predicateCompletion = (field: string): Completion[] => {
+export const predicateCompletion = (field: FilterType): Completion[] => {
     if (field === 'repo') {
         return [
             {
@@ -240,6 +249,17 @@ export const predicateCompletion = (field: string): Completion[] => {
                 insertText: 'has.contributor(${1})',
                 asSnippet: true,
                 description: 'Search only inside files that have a contributor that matches a pattern',
+            },
+        ]
+    }
+    if (field === 'rev') {
+        return [
+            {
+                label: 'at.time(...)',
+                insertText: 'at.time(${1:1 year ago})',
+                asSnippet: true,
+                description:
+                    'Search repos at a specific time in history. Optionally, a base revision can be specified as a second parameter like rev:at.time(yesterday, my-branch)',
             },
         ]
     }

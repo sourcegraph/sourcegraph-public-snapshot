@@ -23,6 +23,8 @@ func TestToBuildNotification(t *testing.T) {
 				Message: &msg,
 				WebURL:  &url,
 				Creator: &buildkite.Creator{
+					Name:      "William Bezuidenhout",
+					Email:     "william.bezuidenhout@sourcegraph.com",
 					AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
 				},
 				Pipeline: &buildkite.Pipeline{
@@ -251,6 +253,60 @@ func TestToBuildNotification(t *testing.T) {
 		// All Jobs are fixed, so build should be in fixed state
 		if notification.BuildStatus != string(build.BuildFixed) {
 			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildFixed)
+		}
+	})
+	t.Run("correct author is used depending on if the build is a release build or not", func(t *testing.T) {
+		b := &build.Build{
+			Build: buildkite.Build{
+				Message: &msg,
+				WebURL:  &url,
+				Creator: &buildkite.Creator{
+					Name:      "Release William Bezuidenhout",
+					Email:     "realse.william.bezuidenhout@sourcegraph.com",
+					AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
+				},
+				Pipeline: &buildkite.Pipeline{
+					ID:   &pipelineID,
+					Name: &pipelineID,
+				},
+				Author: &buildkite.Author{
+					Name:  "William Bezuidenhout",
+					Email: "william.bezuidenhout@sourcegraph.com",
+				},
+				Number: &num,
+				URL:    &url,
+				Commit: &commit,
+				Env: map[string]interface{}{
+					"RELEASE_INTERNAL": "true",
+				},
+			},
+			Pipeline: &build.Pipeline{buildkite.Pipeline{
+				Name: &pipelineID,
+			}},
+			Steps: map[string]*build.Step{
+				":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", 999)),
+				":two: fake step": build.NewStepFromJob(newJob(t, ":two: fake step", 999)),
+			},
+		}
+
+		notification := determineBuildStatusNotification(logtest.NoOp(t), b)
+		if notification.AuthorName != "Release William Bezuidenhout" {
+			t.Errorf("got %s, wanted %s for Author Name in Notification when build is an internal release build", notification.AuthorName, "Release William Bezuidenhout")
+		}
+
+		// Check when the release is PUBLIC
+		delete(b.Env, "RELEASE_INTERNAL")
+		b.Env["RELEASE_PUBLIC"] = "true"
+		notification = determineBuildStatusNotification(logtest.NoOp(t), b)
+		if notification.AuthorName != "Release William Bezuidenhout" {
+			t.Errorf("got %s, wanted %s for Author Name in Notification when build is an internal release build", notification.AuthorName, "Release William Bezuidenhout")
+		}
+
+		// Now check when it is just a normal build
+		delete(b.Env, "RELEASE_PUBLIC")
+		notification = determineBuildStatusNotification(logtest.NoOp(t), b)
+		if notification.AuthorName != "William Bezuidenhout" {
+			t.Errorf("got %s, wanted %s for Author Name in Notification when build is an internal release build", notification.AuthorName, "Release William Bezuidenhout")
 		}
 	})
 }

@@ -1,11 +1,12 @@
-import type { ReactElement } from 'react'
-import React, { useEffect, useState } from 'react'
+import React, { type ReactElement, useEffect } from 'react'
 
 import { mdiArrowLeft, mdiInformationOutline, mdiTrendingUp, mdiCreditCardOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Badge,
     Button,
@@ -23,56 +24,36 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { CodySubscriptionPlan, CodySubscriptionStatus } from '../../graphql-operations'
+import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
-import { useArePaymentsEnabled, useHasTrialEnded, useIsCodyPaymentsTestingMode } from '../featureFlags'
 import { isCodyEnabled } from '../isCodyEnabled'
+import { manageSubscriptionRedirectURL } from '../util'
 
-import { CancelProModal } from './CancelProModal'
 import { USER_CODY_PLAN } from './queries'
-import { UpgradeToProModal } from './UpgradeToProModal'
 
 import styles from './CodySubscriptionPage.module.scss'
 
-interface CodySubscriptionPageProps {
+interface CodySubscriptionPageProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
     authenticatedUser?: AuthenticatedUser | null
-}
-
-export const useCodyPaymentsUrl = (): string => {
-    const isCodyPaymentsTestingMode = useIsCodyPaymentsTestingMode()
-
-    if (isCodyPaymentsTestingMode) {
-        return 'https://accounts.sgdev.org'
-    }
-
-    return 'https://accounts.sourcegraph.com'
 }
 
 export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({
     isSourcegraphDotCom,
     authenticatedUser,
+    telemetryRecorder,
 }) => {
     const parameters = useSearchParameters()
 
     const utm_source = parameters.get('utm_source')
-
-    const arePaymentsEnabled = useArePaymentsEnabled()
-    const hasTrialEnded = useHasTrialEnded()
-    const codyPaymentsUrl = useCodyPaymentsUrl()
-    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
-
     useEffect(() => {
-        eventLogger.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
-    }, [utm_source])
+        EVENT_LOGGER.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
+        telemetryRecorder.recordEvent('cody.planSelection', 'view')
+    }, [utm_source, telemetryRecorder])
 
     const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
-
-    const [showUpgradeToPro, setShowUpgradeToPro] = useState<boolean>(false)
-    const [showCancelPro, setShowCancelPro] = useState<boolean>(false)
 
     const navigate = useNavigate()
 
@@ -91,7 +72,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     }
 
     const isProUser = data.currentUser.codySubscription?.plan === CodySubscriptionPlan.PRO
-    const hasAddedCreditCard = data.currentUser.codySubscription?.status !== CodySubscriptionStatus.PENDING
 
     return (
         <>
@@ -100,13 +80,11 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                 <PageHeader
                     className="mb-4"
                     actions={
-                        isProUser &&
-                        arePaymentsEnabled &&
-                        hasAddedCreditCard && (
+                        isProUser && (
                             <Button
                                 variant="primary"
                                 onClick={() => {
-                                    eventLogger.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
+                                    EVENT_LOGGER.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
                                     window.location.href = manageSubscriptionRedirectURL
                                 }}
                             >
@@ -122,12 +100,10 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         </div>
                     </PageHeader.Heading>
                 </PageHeader>
-
                 <Link to="/cody/manage" className="my-4">
                     <Icon className="mr-1 text-link" svgPath={mdiArrowLeft} aria-hidden={true} />
                     Back to Cody Dashboard
                 </Link>
-
                 <div className={classNames('d-flex mt-4', styles.responsiveContainer)}>
                     <div className="border d-flex flex-column flex-1 bg-1 rounded">
                         <div className="p-4">
@@ -180,7 +156,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
+                                            aria-label="More info"
                                         />
                                     </Tooltip>
                                 </Text>
@@ -190,7 +166,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
+                                            aria-label="More info"
                                         />
                                     </Tooltip>
                                 </Text>
@@ -200,7 +176,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
+                                            aria-label="More info"
                                         />
                                     </Tooltip>
                                 </Text>
@@ -227,100 +203,38 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     <H2 className="text-muted d-inline mb-0">$9</H2>
                                     <Text className="mb-0 text-muted d-inline">/month</Text>
                                 </div>
-                                {!hasTrialEnded && (
-                                    <Text className="mb-3 text-muted" size="small">
-                                        {/* The free trial has not ended, but we are not yet accepting payments. */}
-                                        {!arePaymentsEnabled && (
-                                            <strong>Free until Feb 2024, no credit card needed</strong>
-                                        )}
-                                        {/* The free trial has not ended, but we ARE accepting payments. */}
-                                        {arePaymentsEnabled && !hasTrialEnded && (
-                                            <strong>Free until February 21, 2024.</strong>
-                                        )}
-                                        {arePaymentsEnabled && hasTrialEnded && (
-                                            <strong>Billed monthly. Cancel anytime.</strong>
-                                        )}
-                                    </Text>
-                                )}
                                 {isProUser ? (
-                                    arePaymentsEnabled ? (
-                                        hasAddedCreditCard ? (
-                                            <Text
-                                                className="mb-0 text-muted d-inline cursor-pointer"
-                                                size="small"
-                                                onClick={() => {
-                                                    eventLogger.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
-                                                    window.location.href = manageSubscriptionRedirectURL
-                                                }}
-                                            >
-                                                Manage subscription
-                                            </Text>
-                                        ) : (
-                                            <Button
-                                                className="flex-1 mt-1"
-                                                variant="primary"
-                                                onClick={() => {
-                                                    eventLogger.log(EventName.CODY_SUBSCRIPTION_ADD_CREDIT_CARD_CLICKED)
-                                                    window.location.href = manageSubscriptionRedirectURL
-                                                }}
-                                            >
-                                                <Icon
-                                                    svgPath={mdiCreditCardOutline}
-                                                    className="mr-1"
-                                                    aria-hidden={true}
-                                                />
-                                                Add credit card
-                                            </Button>
-                                        )
-                                    ) : (
-                                        <div>
-                                            <Text
-                                                className="mb-0 text-muted d-inline cursor-pointer"
-                                                size="small"
-                                                onClick={() => {
-                                                    eventLogger.log(
-                                                        EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
-                                                        {
-                                                            tier: 'free',
-                                                        },
-                                                        {
-                                                            tier: 'free',
-                                                        }
-                                                    )
-                                                    if (arePaymentsEnabled) {
-                                                        window.location.href = manageSubscriptionRedirectURL
-                                                        return
-                                                    }
-
-                                                    setShowCancelPro(true)
-                                                }}
-                                            >
-                                                {arePaymentsEnabled ? 'Manage' : 'Cancel'} subscription
-                                            </Text>
-                                        </div>
-                                    )
+                                    <Text
+                                        className="mb-0 text-muted d-inline cursor-pointer"
+                                        size="small"
+                                        onClick={() => {
+                                            EVENT_LOGGER.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
+                                            telemetryRecorder.recordEvent('cody.planSelection', 'click', {
+                                                metadata: { tier: 0 },
+                                            })
+                                            window.location.href = manageSubscriptionRedirectURL
+                                        }}
+                                    >
+                                        Manage subscription
+                                    </Text>
                                 ) : (
                                     <Button
                                         className="flex-1"
                                         variant="primary"
                                         onClick={() => {
-                                            eventLogger.log(
+                                            EVENT_LOGGER.log(
                                                 EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
                                                 { tier: 'pro' },
                                                 { tier: 'pro' }
                                             )
-                                            if (arePaymentsEnabled) {
-                                                window.location.href = manageSubscriptionRedirectURL
-                                                return
-                                            }
-
-                                            setShowUpgradeToPro(true)
+                                            telemetryRecorder.recordEvent('cody.planSelection', 'click', {
+                                                metadata: { tier: 1 },
+                                            })
+                                            window.location.href = manageSubscriptionRedirectURL
                                         }}
                                     >
                                         <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
-                                        {!arePaymentsEnabled && 'Get Pro'}
-                                        {arePaymentsEnabled && !hasTrialEnded && 'Get Pro trial'}
-                                        {arePaymentsEnabled && hasTrialEnded && 'Purchase Cody Pro'}
+                                        <span>Purchase Cody Pro</span>
                                     </Button>
                                 )}
                             </div>
@@ -355,7 +269,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
+                                            aria-label="More info"
                                         />
                                     </Tooltip>
                                 </Text>
@@ -372,7 +286,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
+                                            aria-label="More info"
                                         />
                                     </Tooltip>
                                 </Text>
@@ -382,7 +296,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
+                                            aria-label="More info"
                                         />
                                     </Tooltip>
                                 </Text>
@@ -392,7 +306,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
-                                            aria-hidden={true}
+                                            aria-label="More info"
                                         />
                                     </Tooltip>
                                 </Text>
@@ -405,7 +319,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </div>
                         </div>
                     </div>
-                    <div className="border d-flex flex-column flex-1 bg-1 border p-3 rounded">
+                    <div className="border d-flex flex-column flex-1 bg-1 p-3 rounded">
                         <div className="border-bottom pb-4">
                             <H1 className="mb-1 d-flex align-items-center">Enterprise</H1>
                             <Text className="mb-0" size="small">
@@ -424,11 +338,14 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 to="https://sourcegraph.com/contact/request-info?utm_source=cody_subscription_page"
                                 target="_blank"
                                 onClick={() => {
-                                    eventLogger.log(
+                                    EVENT_LOGGER.log(
                                         EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
                                         { tier: 'enterprise' },
                                         { tier: 'enterprise' }
                                     )
+                                    telemetryRecorder.recordEvent('cody.planSelection', 'click', {
+                                        metadata: { tier: 2 },
+                                    })
                                 }}
                             >
                                 Request info
@@ -465,7 +382,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     <Icon
                                         className="ml-1 text-muted"
                                         svgPath={mdiInformationOutline}
-                                        aria-hidden={true}
+                                        aria-label="More info"
                                     />
                                 </Tooltip>
                             </Text>
@@ -475,7 +392,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     <Icon
                                         className="ml-1 text-muted"
                                         svgPath={mdiInformationOutline}
-                                        aria-hidden={true}
+                                        aria-label="More info"
                                     />
                                 </Tooltip>
                             </Text>
@@ -499,7 +416,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     <Icon
                                         className="ml-1 text-muted"
                                         svgPath={mdiInformationOutline}
-                                        aria-hidden={true}
+                                        aria-label="More info"
                                     />
                                 </Tooltip>
                             </Text>
@@ -507,26 +424,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                     </div>
                 </div>
             </Page>
-            {showUpgradeToPro && (
-                <UpgradeToProModal
-                    onSuccess={() => {
-                        setShowUpgradeToPro(false)
-                        navigate('/cody/manage')
-                    }}
-                    onClose={() => {
-                        setShowUpgradeToPro(false)
-                    }}
-                    authenticatedUser={authenticatedUser}
-                />
-            )}
-            {showCancelPro && (
-                <CancelProModal
-                    onClose={() => {
-                        setShowCancelPro(false)
-                    }}
-                    authenticatedUser={authenticatedUser}
-                />
-            )}
         </>
     )
 }

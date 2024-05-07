@@ -12,7 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -92,7 +91,7 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 
 	var ex repoExcluder
 	for _, r := range c.Exclude {
-		rule := ex.AddRule().
+		rule := NewRule().
 			Exact(r.Name).
 			Pattern(r.Pattern)
 
@@ -108,6 +107,8 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 				return false
 			})
 		}
+
+		ex.AddRule(rule)
 	}
 	if err := ex.RuleErrors(); err != nil {
 		return nil, err
@@ -129,16 +130,14 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 		client = provider.GetPATClient(c.Token, "")
 	}
 
-	if !envvar.SourcegraphDotComMode() || svc.CloudDefault {
-		client.ExternalRateLimiter().SetCollector(&ratelimit.MetricsCollector{
-			Remaining: func(n float64) {
-				gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(n)
-			},
-			WaitDuration: func(n time.Duration) {
-				gitlabRatelimitWaitCounter.WithLabelValues("rest", svc.DisplayName).Add(n.Seconds())
-			},
-		})
-	}
+	client.ExternalRateLimiter().SetCollector(&ratelimit.MetricsCollector{
+		Remaining: func(n float64) {
+			gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(n)
+		},
+		WaitDuration: func(n time.Duration) {
+			gitlabRatelimitWaitCounter.WithLabelValues("rest", svc.DisplayName).Add(n.Seconds())
+		},
+	})
 
 	return &GitLabSource{
 		svc:                       svc,
@@ -274,7 +273,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 	var wg sync.WaitGroup
 
 	projch := make(chan *schema.GitLabProject)
-	for i := 0; i < 5; i++ { // 5 concurrent requests
+	for range 5 { // 5 concurrent requests
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -327,7 +326,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 
 		const perPage = 100
 		wg.Add(1)
-		go func(projectQuery string) {
+		go func() {
 			defer wg.Done()
 
 			urlStr, err := projectQueryToURL(projectQuery, perPage) // first page URL
@@ -352,7 +351,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 				}
 				urlStr = *nextPageURL
 			}
-		}(projectQuery)
+		}()
 	}
 
 	go func() {

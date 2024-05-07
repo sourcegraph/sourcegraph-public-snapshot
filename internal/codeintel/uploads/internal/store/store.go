@@ -6,6 +6,7 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -22,12 +23,12 @@ type Store interface {
 	// Upload records
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) ([]shared.Upload, int, error)
 	GetUploadByID(ctx context.Context, id int) (shared.Upload, bool, error)
-	GetDumpsByIDs(ctx context.Context, ids []int) ([]shared.Dump, error)
+	GetCompletedUploadsByIDs(ctx context.Context, ids []int) ([]shared.CompletedUpload, error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) ([]shared.Upload, error)
 	GetUploadsByIDsAllowDeleted(ctx context.Context, ids ...int) ([]shared.Upload, error)
 	GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int, trace observation.TraceLogger) ([]int, int, int, error)
 	GetVisibleUploadsMatchingMonikers(ctx context.Context, repositoryID int, commit string, orderedMonikers []precise.QualifiedMonikerData, limit, offset int) (shared.PackageReferenceScanner, int, error)
-	GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) ([]shared.Dump, error)
+	GetCompletedUploadsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) ([]shared.CompletedUpload, error)
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]shared.UploadLog, error)
 	DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) error
 	DeleteUploadByID(ctx context.Context, id int) (bool, error)
@@ -48,13 +49,13 @@ type Store interface {
 	AddUploadPart(ctx context.Context, uploadID, partIndex int) error
 	MarkQueued(ctx context.Context, id int, uploadSize *int64) error
 	MarkFailed(ctx context.Context, id int, reason string) error
-	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
+	DeleteOverlappingCompletedUploads(ctx context.Context, repositoryID int, commit, root, indexer string) error
 	WorkerutilStore(observationCtx *observation.Context) dbworkerstore.Store[shared.Upload]
 
 	// Dependencies
 	ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error)
-	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) error
-	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) error
+	UpdatePackages(ctx context.Context, uploadID int, packages []precise.Package) error
+	UpdatePackageReferences(ctx context.Context, uploadID int, references []precise.PackageReference) error
 
 	// Summary
 	GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error)
@@ -66,10 +67,10 @@ type Store interface {
 	// Commit graph
 	SetRepositoryAsDirty(ctx context.Context, repositoryID int) error
 	GetDirtyRepositories(ctx context.Context) ([]shared.DirtyRepository, error)
-	UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *gitdomain.CommitGraph, refDescriptions map[string][]gitdomain.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
+	UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *commitgraph.CommitGraph, refs map[string][]gitdomain.Ref, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
 	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) ([]string, *string, error)
-	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]shared.Dump, error)
-	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) ([]shared.Dump, error)
+	FindClosestCompletedUploads(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error)
+	FindClosestCompletedUploadsFromGraphFragment(_ context.Context, _ shared.UploadMatchingOptions, commitGraph *commitgraph.CommitGraph) ([]shared.CompletedUpload, error)
 	GetRepositoriesMaxStaleAge(ctx context.Context) (time.Duration, error)
 	GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, _ error)
 

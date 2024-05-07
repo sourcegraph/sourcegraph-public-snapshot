@@ -1,51 +1,61 @@
-query BlobDiffQuery($repoName: String!, $revspec: String!, $paths: [String!]) {
+query BlobDiffViewCommitQuery($repoName: String!, $revspec: String!, $path: String!) {
     repository(name: $repoName) {
         id
         commit(rev: $revspec) {
             id
-            diff {
-                fileDiffs(paths: $paths) {
-                    nodes {
-                        ...FileDiff_Diff
-                    }
-                }
+
+            blob(path: $path) {
+                ...DiffViewGitBlob
             }
+
+            ...DiffViewCommit
         }
     }
 }
 
-query BlobPageQuery($repoName: String!, $revspec: String!, $path: String!) {
+query BlobFileViewBlobQuery($repoName: String!, $revspec: String!, $path: String!) {
     repository(name: $repoName) {
         id
+
         commit(rev: $revspec) {
             id
             oid
             blob(path: $path) {
-                ...BlobPage_Blob
+                ...FileViewGitBlob
             }
         }
     }
 }
 
-fragment BlobPage_Blob on GitBlob {
-    canonicalURL
-    content
-    richHTML
-    languages
-}
-
-query BlobSyntaxHighlightQuery($repoName: String!, $revspec: String!, $path: String!, $disableTimeout: Boolean!) {
+query BlobFileViewHighlightedFileQuery(
+    $repoName: String!
+    $revspec: String!
+    $path: String!
+    $disableTimeout: Boolean!
+    $format: HighlightResponseFormat = JSON_SCIP
+) {
     repository(name: $repoName) {
         id
         commit(rev: $revspec) {
             id
             blob(path: $path) {
                 canonicalURL
-                highlight(disableTimeout: $disableTimeout) {
-                    aborted
-                    lsif
+                highlight(disableTimeout: $disableTimeout, format: $format) {
+                    ...FileViewHighlightedFile
                 }
             }
         }
     }
+}
+
+query BlobFileViewCommitQuery_revisionOverride($repoName: String!, $revspec: String!) {
+    repository(name: $repoName) {
+        commit(rev: $revspec) {
+            ...FileViewCommit
+        }
+    }
+}
+
+fragment BlobPage_ResolvedRevision on Repository {
+    ...FileView_ResolvedRevision
 }

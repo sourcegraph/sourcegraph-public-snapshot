@@ -1,15 +1,15 @@
 <script lang="ts">
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
+    import Avatar from '$lib/Avatar.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Paginator from '$lib/Paginator.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
-    import Avatar from '$lib/Avatar.svelte'
     import { createPromiseStore } from '$lib/utils'
     import { Alert, Button, ButtonGroup } from '$lib/wildcard'
-    import type { ContributorConnection } from './page.gql'
 
     import type { PageData } from './$types'
+    import type { ContributorConnection } from './page.gql'
 
     export let data: PageData
 
@@ -80,10 +80,9 @@
                         {@const commit = contributor.commits.nodes[0]}
                         <tr>
                             <td
-                                ><span><Avatar avatar={contributor.person} /></span>&nbsp;<span
-                                    >{contributor.person.displayName}</span
-                                ></td
-                            >
+                                ><span><Avatar avatar={contributor.person} --avatar-size="1.5rem" /></span>&nbsp;
+                                <span>{contributor.person.displayName}</span>
+                            </td>
                             <td
                                 ><Timestamp date={new Date(commit.author.date)} strict />:
                                 <a href={commit.canonicalURL}>{commit.subject}</a></td

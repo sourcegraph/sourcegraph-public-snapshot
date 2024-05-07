@@ -78,6 +78,10 @@ type EnvironmentSpec struct {
 	// target project will be automatically granted.
 	SecretEnv map[string]string `yaml:"secretEnv,omitempty"`
 
+	// SecretVolumes configures volumes to mount from secrets. Keys are used
+	// as volume names.
+	SecretVolumes map[string]EnvironmentSecretVolume `yaml:"secretVolumes,omitempty"`
+
 	// Resources configures additional resources that a service may depend on.
 	Resources *EnvironmentResourcesSpec `yaml:"resources,omitempty"`
 
@@ -121,6 +125,12 @@ func (s EnvironmentSpec) Validate() []error {
 	errs = append(errs, s.Deploy.Validate()...)
 	errs = append(errs, s.Resources.Validate()...)
 	errs = append(errs, s.Instances.Validate()...)
+	for k, v := range s.SecretVolumes {
+		if k == "" {
+			errs = append(errs, errors.New("secretVolumes key cannot be empty"))
+		}
+		errs = append(errs, v.Validate()...)
+	}
 
 	// Validate service-specific specs
 	errs = append(errs, s.EnvironmentServiceSpec.Validate()...)
@@ -639,6 +649,36 @@ func (s *EnvironmentJobScheduleSpec) FindMaxCronInterval() (*time.Duration, erro
 	return &maxGap, nil
 }
 
+type EnvironmentSecretVolume struct {
+	// MountPath is the path within the container where the secret will be
+	// mounted. The mounted file is read-only.
+	MountPath string `yaml:"mountPath"`
+	// Secret is name of the secret in the service's project to populate in the
+	// environment.
+	//
+	// To point to a secret in another project, use the format
+	// 'projects/{project}/secrets/{secretName}' in the value. Access to the
+	// target project will be automatically granted.
+	Secret string `yaml:"secret"`
+}
+
+func (v EnvironmentSecretVolume) Validate() []error {
+	var errs []error
+	if v.MountPath == "" {
+		errs = append(errs, errors.New("mountPath is required"))
+	}
+	if !filepath.IsAbs(v.MountPath) {
+		errs = append(errs, errors.Newf("mountPath must be abs file path, got %q", v.MountPath))
+	}
+	if dir, file := filepath.Split(v.MountPath); dir == "" || file == "" {
+		errs = append(errs, errors.Newf("mountPath may be malformed, got %q", v.MountPath))
+	}
+	if v.Secret == "" {
+		errs = append(errs, errors.New("secret is required"))
+	}
+	return errs
+}
+
 type EnvironmentResourcesSpec struct {
 	// Redis, if provided, provisions a Redis instance backed by Cloud Memorystore.
 	// Details for using this Redis instance is automatically provided in
@@ -697,10 +737,19 @@ func (s *EnvironmentResourcesSpec) Validate() []error {
 }
 
 type EnvironmentResourceRedisSpec struct {
-	// Defaults to STANDARD_HA.
-	Tier *string `yaml:"tier,omitempty"`
-	// Defaults to 1.
+	// MemoryGB defaults to 1.
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
+	// HighAvailability is disabled by default. Enabling it toggles regional
+	// replicas for the Redis instance without adding read replicas for ~double
+	// the price. It should be enabled for our most critical services, but as
+	// Redis is fairly affordable, if you run into Redis stability issues there
+	// is no blocker to enabling this.
+	//
+	//  - https://cloud.google.com/memorystore/docs/redis/high-availability-for-memorystore-for-redis
+	//  - https://cloud.google.com/memorystore/docs/redis/pricing#instance_pricing_with_no_read_replicas
+	//
+	// Also see: https://sourcegraph.notion.site/655e89d164b24727803f5e5a603226d8
+	HighAvailability *bool `yaml:"highAvailability,omitempty"`
 }
 
 func (EnvironmentResourceRedisSpec) ResourceKind() string { return "Redis" }
@@ -708,13 +757,23 @@ func (EnvironmentResourceRedisSpec) ResourceKind() string { return "Redis" }
 type EnvironmentResourcePostgreSQLSpec struct {
 	// Databases to provision - required.
 	Databases []string `yaml:"databases"`
-	// Defaults to 1. Must be 1, or an even number between 2 and 96.
+	// CPU defaults to 1. Must be 1, or an even number between 2 and 96.
 	CPU *int `yaml:"cpu,omitempty"`
-	// Defaults to 4 (to meet CloudSQL minimum). You must request 0.9 to 6.5 GB
-	// per vCPU.
+	// MemoryGB defaults to 4 (to meet CloudSQL minimum). You must request 0.9
+	// to 6.5 GB per vCPU.
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
-	// Defaults to whatever CloudSQL provides. Must be between 14 and 262143.
+	// MaxConnections defaults to whatever CloudSQL provides. Must be between
+	// 14 and 262143.
 	MaxConnections *int `yaml:"maxConnections,omitempty"`
+	// HighAvailability is disabled by default. Enabling it provisions Cloud SQL
+	// HA configuration for ~double the price and additional point-in-time-recovery
+	// backup expenses, and should only be enabled for our most critical services.
+	//
+	//  - https://cloud.google.com/sql/docs/postgres/high-availability
+	//  - https://cloud.google.com/sql/pricing
+	//
+	// Also see: https://sourcegraph.notion.site/655e89d164b24727803f5e5a603226d8
+	HighAvailability *bool `yaml:"highAvailability,omitempty"`
 }
 
 func (EnvironmentResourcePostgreSQLSpec) ResourceKind() string { return "PostgreSQL instance" }

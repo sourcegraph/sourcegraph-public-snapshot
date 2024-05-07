@@ -31,13 +31,17 @@ var (
 	lineFormat    = "%s%s[%+" + strconv.Itoa(maxNameLength) + "s]%s %s"
 )
 
-// newCmdLogger returns a new process.Logger with a unique color based on the name of the cmd.
-func newCmdLogger(ctx context.Context, name string, out *output.Output) *process.Logger {
+// newBufferedCmdLogger returns a new process.Logger with a unique color based on the name of the cmd
+// that blocks until the given start signal and writes logs to the given output.Output.
+func newBufferedCmdLogger(ctx context.Context, name string, out *output.Output, start <-chan struct{}) *process.Logger {
 	name = compactName(name)
 	color := nameToColor(name)
 
 	sink := func(data string) {
-		out.Writef(lineFormat, output.StyleBold, color, name, output.StyleReset, data)
+		go func() {
+			<-start
+			out.Writef(lineFormat, output.StyleBold, color, name, output.StyleReset, data)
+		}()
 	}
 
 	return process.NewLogger(ctx, sink)

@@ -2,7 +2,6 @@ package iterator
 
 import (
 	"context"
-	"math"
 	"time"
 
 	"github.com/derision-test/glock"
@@ -184,7 +183,7 @@ func (p *PersistentRepoIterator) NextPageWithFinish(pageSize int, config Iterati
 	}
 	itrStart := p.glock.Now()
 	repoIds := make([]api.RepoID, 0, len(currentRepos))
-	for i := 0; i < len(currentRepos); i++ {
+	for i := range len(currentRepos) {
 		repoIds = append(repoIds, api.RepoID(currentRepos[i]))
 	}
 	return repoIds, true, func(ctx context.Context, store *basestore.Store, maybeErrs map[int32]error) error {
@@ -328,7 +327,7 @@ func peekN(offset, num int, repos []int32) ([]int32, bool) {
 	if offset >= len(repos) {
 		return []int32{}, false
 	}
-	end := int32(math.Min(float64(offset+num), float64(len(repos))))
+	end := int32(min(offset+num, len(repos)))
 	return repos[offset:end], true
 }
 
@@ -375,7 +374,7 @@ func (p *PersistentRepoIterator) doFinishN(ctx context.Context, store *basestore
 			errorsCount++
 		}
 	}
-	successfulRepoCount := int(math.Max(float64(len(repos)-errorsCount), 0))
+	successfulRepoCount := max(len(repos)-errorsCount, 0)
 	if isRetry {
 		cursorOffset = 0
 	}

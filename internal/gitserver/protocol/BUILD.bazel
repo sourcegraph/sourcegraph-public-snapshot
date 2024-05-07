@@ -4,7 +4,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "protocol",
     srcs = [
-        "gitolite_phabricator.go",
         "gitserver.go",
         "search.go",
         "search_reduce.go",
@@ -18,7 +17,6 @@ go_library(
         "//internal/gitserver/v1:gitserver",
         "//internal/search/result",
         "//lib/errors",
-        "@org_golang_google_protobuf//types/known/durationpb",
         "@org_golang_google_protobuf//types/known/timestamppb",
     ],
 )

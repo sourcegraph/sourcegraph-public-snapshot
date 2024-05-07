@@ -18,7 +18,7 @@ import (
 func TestInsertUploadUploading(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertRepo(t, db, 50, "", false)
 
@@ -68,7 +68,7 @@ func TestInsertUploadUploading(t *testing.T) {
 func TestInsertUploadQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertRepo(t, db, 50, "", false)
 
@@ -121,7 +121,7 @@ func TestInsertUploadQueued(t *testing.T) {
 func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertRepo(t, db, 50, "", false)
 
@@ -178,7 +178,7 @@ func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 func TestAddUploadPart(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
 
@@ -202,7 +202,7 @@ func TestAddUploadPart(t *testing.T) {
 func TestMarkQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
 
@@ -229,7 +229,7 @@ func TestMarkQueued(t *testing.T) {
 func TestMarkQueuedNoSize(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
 
@@ -251,7 +251,7 @@ func TestMarkQueuedNoSize(t *testing.T) {
 func TestMarkFailed(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
 
@@ -277,11 +277,11 @@ func TestMarkFailed(t *testing.T) {
 	}
 }
 
-func TestDeleteOverlappingDumps(t *testing.T) {
+func TestDeleteOverlappingCompletedUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db, shared.Upload{
 		ID:      1,
@@ -290,7 +290,7 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 		Indexer: "lsif-go",
 	})
 
-	err := store.DeleteOverlappingDumps(context.Background(), 50, makeCommit(1), "cmd/", "lsif-go")
+	err := store.DeleteOverlappingCompletedUploads(context.Background(), 50, makeCommit(1), "cmd/", "lsif-go")
 	if err != nil {
 		t.Fatalf("unexpected error deleting dump: %s", err)
 	}
@@ -303,11 +303,11 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 	}
 }
 
-func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
+func TestDeleteOverlappingCompletedUploadsNoMatches(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db, shared.Upload{
 		ID:      1,
@@ -327,25 +327,25 @@ func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		err := store.DeleteOverlappingDumps(context.Background(), 50, testCase.commit, testCase.root, testCase.indexer)
+		err := store.DeleteOverlappingCompletedUploads(context.Background(), 50, testCase.commit, testCase.root, testCase.indexer)
 		if err != nil {
 			t.Fatalf("unexpected error deleting dump: %s", err)
 		}
 	}
 
 	// Original dump still exists
-	if dumps, err := store.GetDumpsByIDs(context.Background(), []int{1}); err != nil {
+	if uploads, err := store.GetCompletedUploadsByIDs(context.Background(), []int{1}); err != nil {
 		t.Fatalf("unexpected error getting dump: %s", err)
-	} else if len(dumps) != 1 {
+	} else if len(uploads) != 1 {
 		t.Fatal("expected dump record to still exist")
 	}
 }
 
-func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
+func TestDeleteOverlappingCompletedUploadsIgnoresIncompleteUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db, shared.Upload{
 		ID:      1,
@@ -355,7 +355,7 @@ func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
 		State:   "queued",
 	})
 
-	err := store.DeleteOverlappingDumps(context.Background(), 50, makeCommit(1), "cmd/", "lsif-go")
+	err := store.DeleteOverlappingCompletedUploads(context.Background(), 50, makeCommit(1), "cmd/", "lsif-go")
 	if err != nil {
 		t.Fatalf("unexpected error deleting dump: %s", err)
 	}

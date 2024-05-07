@@ -3,22 +3,19 @@ package profiler
 import (
 	"cloud.google.com/go/profiler"
 
-	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
+	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 var gcpProfilerEnabled = env.MustGetBool("GOOGLE_CLOUD_PROFILER_ENABLED", false, "If true, enable Google Cloud Profiler. See https://cloud.google.com/profiler/docs/profiling-go")
 
-// Init starts the Google Cloud Profiler if configured.
-// Will enable when in sourcegraph.com mode in production, or when
+// Init starts the Google Cloud Profiler if the environment variable
 // GOOGLE_CLOUD_PROFILER_ENABLED is truthy.
 // See https://cloud.google.com/profiler/docs/profiling-go.
-func Init() {
-	if !shouldEnableProfiler() {
+func Init(logger log.Logger) {
+	if !gcpProfilerEnabled {
 		return
 	}
 
@@ -29,21 +26,6 @@ func Init() {
 		AllocForceGC:   true,
 	})
 	if err != nil {
-		log15.Error("profiler.Init google cloud profiler", "error", err)
+		logger.Error("profiler.Init google cloud profiler", log.Error(err))
 	}
-}
-
-func shouldEnableProfiler() bool {
-	// Force overwrite.
-	if gcpProfilerEnabled {
-		return true
-	}
-	if envvar.SourcegraphDotComMode() {
-		// SourcegraphDotComMode can be true in dev, so check we are in a k8s
-		// cluster.
-		if deploy.IsDeployTypeKubernetes(deploy.Type()) {
-			return true
-		}
-	}
-	return false
 }

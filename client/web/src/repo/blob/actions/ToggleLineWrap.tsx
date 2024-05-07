@@ -5,9 +5,9 @@ import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { WrapDisabledIcon } from '@sourcegraph/shared/src/components/icons'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Icon, Button } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
 import type { RepoHeaderContext } from '../../RepoHeader'
 
@@ -50,7 +50,7 @@ export class ToggleLineWrap extends React.PureComponent<
     public componentDidMount(): void {
         this.subscriptions.add(
             this.updates.subscribe(value => {
-                eventLogger.log(value ? 'WrappedCode' : 'UnwrappedCode')
+                EVENT_LOGGER.log(value ? 'WrappedCode' : 'UnwrappedCode')
                 ToggleLineWrap.setValue(value)
                 this.setState({ value })
                 this.props.onDidUpdate(value)

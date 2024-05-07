@@ -1,8 +1,9 @@
-import React, { type FC, useCallback, useMemo } from 'react'
+import React, { type FC, useCallback, useMemo, useEffect } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container, PageHeader, H3, H5, Icon } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
@@ -17,27 +18,34 @@ import { BatchSpecNode, type BatchSpecNodeProps } from './BatchSpecNode'
 
 import styles from './BatchSpecsPage.module.scss'
 
-export interface BatchSpecsPageProps {
+export interface BatchSpecsPageProps extends TelemetryV2Props {
     queryBatchSpecs?: typeof _queryBatchSpecs
 
     /** For testing purposes only. Sets the current date */
     now?: () => Date
 }
 
-export const BatchSpecsPage: FC<BatchSpecsPageProps> = props => (
-    <>
-        <PageTitle title="Batch specs" />
-        <PageHeader
-            headingElement="h2"
-            path={[{ text: 'Batch specs' }]}
-            description="All batch specs that currently exist."
-            className="mb-3"
-        />
-        <Container>
-            <BatchSpecList queryBatchSpecs={props.queryBatchSpecs} now={props.now} />
-        </Container>
-    </>
-)
+export const BatchSpecsPage: FC<BatchSpecsPageProps> = props => {
+    useEffect(() => props.telemetryRecorder.recordEvent('admin.batchSpecs', 'view'), [props.telemetryRecorder])
+    return (
+        <>
+            <PageTitle title="Batch specs" />
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Batch specs' }]}
+                description="All batch specs that currently exist."
+                className="mb-3"
+            />
+            <Container>
+                <BatchSpecList
+                    queryBatchSpecs={props.queryBatchSpecs}
+                    now={props.now}
+                    telemetryRecorder={props.telemetryRecorder}
+                />
+            </Container>
+        </>
+    )
+}
 
 export interface BatchChangeBatchSpecListProps extends Omit<BatchSpecListProps, 'queryBatchSpecs'> {
     batchChangeID: Scalars['ID']
@@ -47,13 +55,26 @@ export interface BatchChangeBatchSpecListProps extends Omit<BatchSpecListProps, 
 
 export const BatchChangeBatchSpecList: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeBatchSpecListProps>
-> = ({ batchChangeID, currentSpecID, queryBatchChangeBatchSpecs = _queryBatchChangeBatchSpecs, now }) => {
+> = ({
+    batchChangeID,
+    currentSpecID,
+    queryBatchChangeBatchSpecs = _queryBatchChangeBatchSpecs,
+    now,
+    telemetryRecorder,
+}) => {
     const query = useMemo(() => queryBatchChangeBatchSpecs(batchChangeID), [queryBatchChangeBatchSpecs, batchChangeID])
 
-    return <BatchSpecList queryBatchSpecs={query} currentSpecID={currentSpecID} now={now} />
+    return (
+        <BatchSpecList
+            queryBatchSpecs={query}
+            currentSpecID={currentSpecID}
+            now={now}
+            telemetryRecorder={telemetryRecorder}
+        />
+    )
 }
 
-export interface BatchSpecListProps {
+export interface BatchSpecListProps extends TelemetryV2Props {
     currentSpecID?: Scalars['ID']
     queryBatchSpecs?: typeof _queryBatchSpecs
     /** For testing purposes only. Sets the current date */
@@ -64,6 +85,7 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
     currentSpecID,
     queryBatchSpecs = _queryBatchSpecs,
     now,
+    telemetryRecorder,
 }) => {
     const query = useCallback(
         (args: FilteredConnectionQueryArguments) => {
@@ -80,7 +102,7 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
     return (
         <FilteredConnection<BatchSpecListFields, Omit<BatchSpecNodeProps, 'node'>>
             nodeComponent={BatchSpecNode}
-            nodeComponentProps={{ currentSpecID, now }}
+            nodeComponentProps={{ currentSpecID, now, telemetryRecorder }}
             queryConnection={query}
             hideSearch={true}
             defaultFirst={20}

@@ -1,0 +1,35 @@
+fragment CommitsPage_GitCommitConnection on GitCommitConnection {
+    nodes {
+        canonicalURL
+        oid
+        abbreviatedOID
+        externalURLs {
+            serviceKind
+            url
+        }
+
+        ...Commit
+    }
+    pageInfo {
+        hasNextPage
+        endCursor
+    }
+}
+
+query CommitsPage_CommitsQuery(
+    $repoName: String!
+    $revision: String!
+    $first: Int
+    $path: String
+    $afterCursor: String
+) {
+    repository(name: $repoName) {
+        id
+        commit(rev: $revision) {
+            id
+            ancestors(first: $first, afterCursor: $afterCursor, path: $path) {
+                ...CommitsPage_GitCommitConnection
+            }
+        }
+    }
+}

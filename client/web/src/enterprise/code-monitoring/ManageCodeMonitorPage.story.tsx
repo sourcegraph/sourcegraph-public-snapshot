@@ -2,6 +2,8 @@ import type { Meta, StoryFn } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 import { fake } from 'sinon'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import { WebStory } from '../../components/WebStory'
 
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
@@ -30,6 +32,7 @@ export const ManageCodeMonitorPageStory: StoryFn = () => (
                 fetchCodeMonitor={fake(() => of(mockCodeMonitor))}
                 deleteCodeMonitor={fake(() => NEVER)}
                 isSourcegraphDotCom={false}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )}
     </WebStory>

@@ -5,13 +5,14 @@ go_library(
     name = "guardrails",
     srcs = [
         "attribution_filter.go",
+        "attribution_filter2.go",
         "attribution_threshold.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/guardrails",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/completions/types",
+        "//internal/dotcom",
         "//lib/errors",
     ],
 )
@@ -22,7 +23,6 @@ go_test(
     deps = [
         ":guardrails",
         "//internal/completions/types",
-        "//lib/errors",
         "@com_github_stretchr_testify//require",
     ],
 )

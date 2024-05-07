@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -49,21 +48,4 @@ func handleEnabledCheck(logger log.Logger, w http.ResponseWriter) (handled bool)
 		return true
 	}
 	return false
-}
-
-func init() {
-	conf.ContributeValidator(validateConfig)
-}
-
-func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-	var builtinAuthProviders int
-	for _, p := range c.SiteConfig().AuthProviders {
-		if p.Builtin != nil {
-			builtinAuthProviders++
-		}
-	}
-	if builtinAuthProviders >= 2 {
-		problems = append(problems, conf.NewSiteProblem(`at most 1 builtin auth provider may be used`))
-	}
-	return problems
 }

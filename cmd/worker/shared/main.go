@@ -11,7 +11,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/auth"
 	workerauthz "github.com/sourcegraph/sourcegraph/cmd/worker/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/batches"
@@ -114,7 +113,6 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
 		"codeintel-ranking-file-reference-counter":    codeintel.NewRankingFileReferenceCounter(),
 		"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
-		"codeintel-sentinel-cve-scanner":              codeintel.NewSentinelCVEScannerJob(),
 		"codeintel-package-filter-applicator":         codeintel.NewPackagesFilterApplicatorJob(),
 
 		"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
@@ -343,7 +341,7 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 		wg.Add(1)
 		jobLogger.Debug("Running job")
 
-		go func(name string) {
+		go func() {
 			defer wg.Done()
 
 			routines, err := jobs[name].Routines(ctx, observationCtx)
@@ -361,7 +359,7 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 			} else {
 				cancel()
 			}
-		}(name)
+		}()
 	}
 
 	wg.Wait()
@@ -391,10 +389,7 @@ func setAuthzProviders(ctx context.Context, observationCtx *observation.Context)
 		return
 	}
 
-	// authz also relies on UserMappings being setup.
-	globals.WatchPermissionsUserMapping()
-
-	for range time.NewTicker(providers.RefreshInterval()).C {
+	for range time.NewTicker(providers.RefreshInterval(conf.Get())).C {
 		allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}

@@ -28,5 +28,12 @@ go_test(
     timeout = "short",
     srcs = ["client_test.go"],
     embed = [":gitserver"],
-    deps = ["@com_github_google_go_cmp//cmp"],
+    deps = [
+        "//internal/api",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/observation",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//require",
+    ],
 )

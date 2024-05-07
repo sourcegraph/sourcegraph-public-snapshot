@@ -67,3 +67,53 @@ sh_binary(
     }),
     visibility = ["//visibility:public"],
 )
+
+sh_binary(
+    name = "gh",
+    srcs = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@gh_darwin-amd64//:gh"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@gh_darwin-arm64//:gh"],
+        "@bazel_tools//src/conditions:linux_x86_64": ["@gh_linux-amd64//:gh"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "pg_dump",
+    srcs = select({
+        "@bazel_tools//src/conditions:linux_x86_64": ["@pg_dump-linux-amd64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@pg_dump-darwin-amd64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@pg_dump-darwin-arm64//file:downloaded"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "createdb",
+    srcs = select({
+        "@bazel_tools//src/conditions:linux_x86_64": ["@createdb-linux-amd64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@createdb-darwin-amd64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@createdb-darwin-arm64//file:downloaded"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "dropdb",
+    srcs = select({
+        "@bazel_tools//src/conditions:linux_x86_64": ["@dropdb-linux-amd64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@dropdb-darwin-amd64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@dropdb-darwin-arm64//file:downloaded"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "kubebuilder-assets",
+    actual = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": "@kubebuilder-assets-darwin-amd64//:kubebuilder-assets",
+        "@bazel_tools//src/conditions:darwin_arm64": "@kubebuilder-assets-darwin-arm64//:kubebuilder-assets",
+        "@bazel_tools//src/conditions:linux_x86_64": "@kubebuilder-assets-linux-amd64//:kubebuilder-assets",
+    }),
+    visibility = ["//visibility:public"],
+)

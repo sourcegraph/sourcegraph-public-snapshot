@@ -31,6 +31,7 @@ interface FeedbackPromptContentProps extends FeedbackPromptAuthenticatedUserProp
     /** Boolean for displaying the Join Research link */
     productResearchEnabled?: boolean
     onSubmit: FeedbackPromptSubmitEventHandler
+    initialValue?: string
 }
 const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
 
@@ -39,8 +40,9 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
     productResearchEnabled,
     onSubmit,
     authenticatedUser,
+    initialValue,
 }) => {
-    const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
+    const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, initialValue || '')
     const textAreaReference = useRef<HTMLInputElement>(null)
     const handleTextChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => setText(event.target.value),
@@ -172,6 +174,7 @@ interface FeedbackPromptProps extends FeedbackPromptContentProps {
     modal?: boolean
     modalLabelId?: string
     children?: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptTriggerProps>> | ReactNode
+    initialValue?: string
 }
 
 export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
@@ -184,6 +187,7 @@ export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
     modalLabelId = 'sourcegraph-feedback-modal',
     productResearchEnabled,
     authenticatedUser,
+    initialValue,
 }) => {
     const [isOpen, setIsOpen] = useState(() => !!openByDefault)
     const ChildrenComponent = typeof children === 'function' && children
@@ -204,6 +208,7 @@ export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
             productResearchEnabled={productResearchEnabled}
             onClose={handleClosePrompt}
             authenticatedUser={authenticatedUser}
+            initialValue={initialValue}
         />
     )
 

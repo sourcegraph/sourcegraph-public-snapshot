@@ -7,7 +7,6 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
-        "//cmd/frontend/envvar",
         "//cmd/frontend/internal/auth",
         "//cmd/frontend/internal/dotcom/productsubscription",
         "//cmd/frontend/internal/licensing/enforcement",
@@ -16,6 +15,7 @@ go_library(
         "//internal/codeintel",
         "//internal/conf/conftypes",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/goroutine",
         "//internal/observation",
         "@com_github_sourcegraph_log//:log",

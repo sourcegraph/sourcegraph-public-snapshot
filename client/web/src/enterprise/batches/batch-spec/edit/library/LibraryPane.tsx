@@ -4,10 +4,11 @@ import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiOpenInNew } from '@mdi/
 import { useLocation } from 'react-router-dom'
 import { animated, useSpring } from 'react-spring'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, useLocalStorage, H3, H4, Icon, Link, Text, VIEWPORT_XL } from '@sourcegraph/wildcard'
 
 import type { Scalars } from '../../../../../graphql-operations'
-import { eventLogger } from '../../../../../tracking/eventLogger'
 import { createRenderTemplate } from '../../../create/useSearchTemplate'
 import { insertNameIntoLibraryItem } from '../../yaml-util'
 
@@ -58,7 +59,10 @@ type LibraryPaneProps =
           isReadOnly: true
       }
 
-export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<LibraryPaneProps>> = ({ name, ...props }) => {
+export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<LibraryPaneProps & TelemetryV2Props>> = ({
+    name,
+    ...props
+}) => {
     // Remember the last collapsed state of the pane
     const [defaultCollapsed, setDefaultCollapsed] = useLocalStorage(LIBRARY_PANE_DEFAULT_COLLAPSED, false)
     // Start with the library collapsed by default if the batch spec is read-only, or if
@@ -130,7 +134,8 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
         if (selectedItem && !('isReadOnly' in props && props.isReadOnly)) {
             const codeWithName = updateTemplateWithQueryAndName(selectedItem.code)
             const templateName = selectedItem.name
-            eventLogger.log('batch_change_editor:template:loaded', { template: templateName })
+            EVENT_LOGGER.log('batch_change_editor:template:loaded', { template: templateName })
+            props.telemetryRecorder.recordEvent('batchChange.editor.template', 'load')
             props.onReplaceItem(codeWithName)
             setSelectedItem(undefined)
         }
@@ -185,7 +190,10 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                             target="_blank"
                             rel="noopener noreferrer"
                             to="https://github.com/sourcegraph/batch-change-examples"
-                            onClick={() => eventLogger.log('batch_change_editor:view_more_examples:clicked')}
+                            onClick={() => {
+                                EVENT_LOGGER.log('batch_change_editor:view_more_examples:clicked')
+                                props.telemetryRecorder.recordEvent('batchChange.editor.viewMoreExamples', 'click')
+                            }}
                         >
                             View more examples <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                         </Link>

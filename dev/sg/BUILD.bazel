@@ -12,6 +12,7 @@ go_library(
         "os.go",
         "sg_analytics.go",
         "sg_audit.go",
+        "sg_backport.go",
         "sg_bazel.go",
         "sg_cloud.go",
         "sg_db.go",
@@ -20,6 +21,7 @@ go_library(
         "sg_embeddings_qa.go",
         "sg_generate.go",
         "sg_help.go",
+        "sg_images.go",
         "sg_insights.go",
         "sg_install.go",
         "sg_lint.go",
@@ -29,7 +31,6 @@ go_library(
         "sg_monitoring.go",
         "sg_ops.go",
         "sg_page.go",
-        "sg_release.go",
         "sg_rfc.go",
         "sg_run.go",
         "sg_secret.go",
@@ -43,6 +44,7 @@ go_library(
         "sg_version.go",
         "sg_wolfi.go",
     ],
+    embedsrcs = ["sg.doctor.yaml"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg",
     visibility = ["//visibility:private"],
     deps = [
@@ -52,8 +54,10 @@ go_library(
         "//dev/sg/dependencies",
         "//dev/sg/internal/analytics",
         "//dev/sg/internal/background",
+        "//dev/sg/internal/backport",
         "//dev/sg/internal/category",
         "//dev/sg/internal/check",
+        "//dev/sg/internal/cloud",
         "//dev/sg/internal/db",
         "//dev/sg/internal/generate",
         "//dev/sg/internal/generate/golang",
@@ -106,10 +110,10 @@ go_library(
         "@com_github_jackc_pgx_v4//:pgx",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_masterminds_semver//:semver",
+        "@com_github_mitchellh_hashstructure_v2//:hashstructure",
         "@com_github_opsgenie_opsgenie_go_sdk_v2//alert",
         "@com_github_opsgenie_opsgenie_go_sdk_v2//client",
         "@com_github_slack_go_slack//:slack",
-        "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_run//:run",
         "@com_github_urfave_cli_v2//:cli",
@@ -133,10 +137,6 @@ go_binary(
         "//conditions:default": [],
     }),
     visibility = ["//visibility:public"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )
 
 go_test(
@@ -144,6 +144,7 @@ go_test(
     timeout = "short",
     srcs = [
         "main_test.go",
+        "sg_images_test.go",
         "sg_start_test.go",
     ],
     # Required by func findRoot() to check if sg is running in sourcegraph/sourcegraph

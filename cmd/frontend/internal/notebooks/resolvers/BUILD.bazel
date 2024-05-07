@@ -11,10 +11,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/notebooks/resolvers",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/errcode",
         "//internal/gqlutil",
         "//internal/notebooks",

@@ -4,12 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
+	"unicode/utf8"
 
 	"github.com/amit7itz/goset"
 	pg "github.com/lib/pq"
 	"k8s.io/utils/lru"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -17,8 +20,16 @@ import (
 )
 
 func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err error) {
+	s.metrics.indexRunning.Inc()
 	threadStatus := s.status.NewThreadStatus(fmt.Sprintf("indexing %s@%s", repo, givenCommit))
-	defer threadStatus.End()
+	defer func(start time.Time) {
+		threadStatus.End()
+		s.metrics.indexRunning.Dec()
+		if err != nil {
+			s.metrics.indexFailed.Inc()
+		}
+		s.metrics.indexDuration.Observe(time.Since(start).Seconds())
+	}(time.Now())
 
 	tasklog := threadStatus.Tasklog
 
@@ -126,6 +137,15 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 		deletedPaths := []string{}
 		addedPaths := []string{}
 		for _, pathStatus := range entry.PathStatuses {
+			if !utf8.ValidString(pathStatus.Path) {
+				s.logger.Warn(
+					"Rockskip skipping file due to path not being utf-8 encoded",
+					log.String("repo", repo),
+					log.String("path", pathStatus.Path),
+				)
+				continue
+			}
+
 			if pathStatus.Status == gitdomain.DeletedAMD || pathStatus.Status == gitdomain.ModifiedAMD {
 				deletedPaths = append(deletedPaths, pathStatus.Path)
 			}
@@ -330,7 +350,8 @@ type repoCommit struct {
 
 type indexRequest struct {
 	repoCommit
-	done chan struct{}
+	dateAddedToQueue time.Time
+	done             chan struct{}
 }
 
 type pathSymbol struct {

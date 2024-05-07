@@ -1536,6 +1536,7 @@ pre.chroma.sgquery button {
 
      #content > .breadcrumbs {
         display:flex;
+        margin-top:2rem;
     }
 }
 

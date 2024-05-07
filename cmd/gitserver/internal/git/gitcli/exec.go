@@ -37,11 +37,11 @@ var (
 		"archive":      {"--worktree-attributes", "--format", "-0", "HEAD", "--"},
 		"ls-tree":      {"--name-only", "HEAD", "--long", "--full-name", "--object-only", "--", "-z", "-r", "-t"},
 		"ls-files":     {"--with-tree", "-z"},
-		"for-each-ref": {"--format", "--points-at"},
+		"for-each-ref": {"--format", "--points-at", "--contains", "--sort", "-creatordate", "-refname", "-HEAD"},
 		"tag":          {"--list", "--sort", "-creatordate", "--format", "--points-at"},
 		"merge-base":   {"--"},
 		"show-ref":     {"--heads"},
-		"shortlog":     {"-s", "-n", "-e", "--no-merges", "--after", "--before"},
+		"shortlog":     {"--summary", "--numbered", "--email", "--no-merges", "--after", "--before"},
 		"cat-file":     {"-p", "-t"},
 		"lfs":          {},
 

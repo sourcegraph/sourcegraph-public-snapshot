@@ -2,6 +2,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:msp_delivery.bzl", "msp_delivery")
 
 go_library(
     name = "pings_lib",
@@ -18,10 +19,6 @@ go_binary(
     name = "pings",
     embed = [":pings_lib"],
     visibility = ["//visibility:public"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )
 
 pkg_tar(
@@ -31,7 +28,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_base",
+    base = "//wolfi-images/sourcegraph-base:base_image",
     entrypoint = [
         "/sbin/tini",
         "--",
@@ -63,4 +60,11 @@ oci_push(
     name = "candidate_push",
     image = ":image",
     repository = image_repository("pings"),
+)
+
+msp_delivery(
+    name = "msp_deploy",
+    gcp_project = "pings-prod-2f4f73edf1db",
+    msp_service_id = "pings",
+    repository = "index.docker.io/sourcegraph/pings",
 )

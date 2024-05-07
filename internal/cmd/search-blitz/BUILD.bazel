@@ -39,10 +39,6 @@ go_binary(
     name = "search-blitz",
     embed = [":search-blitz_lib"],
     visibility = ["//:__subpackages__"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )
 
 go_test(

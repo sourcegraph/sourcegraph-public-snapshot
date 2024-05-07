@@ -5,6 +5,7 @@ import { noop } from 'lodash'
 import { animated, useSpring } from 'react-spring'
 
 import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Button,
     Icon,
@@ -33,7 +34,7 @@ import { PermissionsList } from './Permissions'
 
 import styles from './RoleNode.module.scss'
 
-interface RoleNodeProps {
+interface RoleNodeProps extends TelemetryV2Props {
     node: RoleFields
     refetch: () => void
     allPermissions: PermissionsMap
@@ -45,7 +46,12 @@ interface RoleNodePermissionsFormValues {
 
 const SUCCESS_ALERT_BANNER_DURATION_S = 4
 
-const ModifiableRoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch, allPermissions }) => {
+const ModifiableRoleNode: React.FunctionComponent<RoleNodeProps> = ({
+    node,
+    refetch,
+    allPermissions,
+    telemetryRecorder,
+}) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState<boolean>(false)
     const [showAlert, setShowAlert] = useState<boolean>(false)
@@ -85,9 +91,10 @@ const ModifiableRoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refe
     const onDelete = useCallback<React.FormEventHandler>(
         async event => {
             event.preventDefault()
+            telemetryRecorder.recordEvent('admin.roles', 'delete')
             await deleteRole({ variables: { role: node.id } })
         },
-        [deleteRole, node.id]
+        [deleteRole, node.id, telemetryRecorder]
     )
 
     const { nodes: permissionNodes } = node.permissions
@@ -102,6 +109,7 @@ const ModifiableRoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refe
     const onSubmit = (values: RoleNodePermissionsFormValues): SubmissionResult => {
         // We handle any error by destructuring the query result directly
         setPermissions({ variables: { role: node.id, permissions: values.permissions } }).catch(noop)
+        telemetryRecorder.recordEvent('admin.roles', 'update')
     }
     const defaultFormValues: RoleNodePermissionsFormValues = { permissions: rolePermissionIDs }
     const { formAPI, ref, handleSubmit } = useForm({
@@ -271,11 +279,21 @@ const LockedRoleNode: React.FunctionComponent<Pick<RoleNodeProps, 'node' | 'allP
     )
 }
 
-export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refetch, allPermissions }) =>
+export const RoleNode: React.FunctionComponent<RoleNodeProps> = ({
+    node,
+    refetch,
+    allPermissions,
+    telemetryRecorder,
+}) =>
     node.system && node.name === 'SITE_ADMINISTRATOR' ? (
         <LockedRoleNode node={node} allPermissions={allPermissions} />
     ) : (
-        <ModifiableRoleNode node={node} refetch={refetch} allPermissions={allPermissions} />
+        <ModifiableRoleNode
+            node={node}
+            refetch={refetch}
+            allPermissions={allPermissions}
+            telemetryRecorder={telemetryRecorder}
+        />
     )
 
 const SystemLabel: React.FunctionComponent = () => (

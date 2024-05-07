@@ -1,6 +1,7 @@
 fragment HistoryPanel_HistoryConnection on GitCommitConnection {
     nodes {
         id
+        oid
         abbreviatedOID
         subject
         author {

@@ -32,7 +32,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 
 	user := bt.CreateTestUser(t, db, true)
 	spec := bt.CreateBatchSpec(t, ctx, bstore, "test-batch-change", user.ID, 0)

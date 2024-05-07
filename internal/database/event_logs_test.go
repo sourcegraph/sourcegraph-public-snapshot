@@ -141,7 +141,7 @@ func TestEventLogs_CountUsersWithSetting(t *testing.T) {
 	settingsStore := db.TemporarySettings()
 	eventLogsStore := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
 
-	for i := 0; i < 24; i++ {
+	for i := range 24 {
 		user, err := usersStore.Create(ctx, NewUser{Username: fmt.Sprintf("u%d", i)})
 		if err != nil {
 			t.Fatal(err)
@@ -302,7 +302,7 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 	for _, day := range days {
 		for _, user := range users {
 			for _, name := range names {
-				for i := 0; i < 25; i++ {
+				for range 25 {
 					e := &Event{
 						UserID:    user,
 						Name:      name,
@@ -400,7 +400,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		for _, user := range data.users {
 			for _, name := range data.names {
 				for _, source := range data.sources {
-					for i := 0; i < 5; i++ {
+					for range 5 {
 						e := &Event{
 							UserID: user,
 							Name:   name,
@@ -528,7 +528,7 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 		for _, userID := range data.userIDs {
 			for _, name := range data.names {
 				for _, source := range data.sources {
-					for i := 0; i < 5; i++ {
+					for range 5 {
 						e := &Event{
 							UserID: userID,
 							Name:   name,
@@ -844,7 +844,7 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 
 	for _, name := range names {
 		for _, day := range days {
-			for i := 0; i < 25; i++ {
+			for i := range 25 {
 				e := &Event{
 					UserID:   1,
 					Name:     name,
@@ -909,7 +909,7 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 	for _, user := range users {
 		for _, name := range names {
 			for _, day := range days {
-				for i := 0; i < 25; i++ {
+				for i := range 25 {
 					e := &Event{
 						UserID:   user,
 						Name:     name,
@@ -973,7 +973,7 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 	// time that falls too near the edge of a week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		e := &Event{
 			UserID:    1,
 			Name:      "codeintel.searchReferences.xrepo",
@@ -1049,7 +1049,7 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 	for _, user := range users {
 		for _, name := range names {
 			for _, day := range days {
-				for i := 0; i < 25; i++ {
+				for range 25 {
 					e := &Event{
 						UserID: user,
 						Name:   name,
@@ -1105,7 +1105,7 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 	// time that falls too near the edge of a week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		e := &Event{
 			UserID: 1,
 			Name:   "search.latencies.structural",
@@ -1187,7 +1187,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 		for _, name := range names {
 			for _, duration := range durations {
 				for _, day := range days {
-					for i := 0; i < 25; i++ {
+					for range 25 {
 						durationOffset++
 
 						e := &Event{
@@ -1321,7 +1321,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 	}
 }
 
-func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
+func TestEventLogs_AggregatedCodyUsage(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1335,9 +1335,13 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 	// time that falls too near the edge of a week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	codyEventNames := []string{
+	codyNonProductEventNames := []string{
+		"CodyVSCodeExtension:completion:suggested",
+		"non-cody-event",
+	}
+	codyProductEventNames := []string{
 		"CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
-		"CodyVSCodeExtension:recipe:explain-code-high-level:executed",
+		"CodyVSCodeExtension:recipe:context-search:executed",
 	}
 	users := []uint32{1, 2}
 
@@ -1345,30 +1349,52 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 		now,                          // Today
 		now.Add(-time.Hour * 24 * 3), // This week
 		now.Add(-time.Hour * 24 * 4), // This week
-		now.Add(-time.Hour * 24 * 6), // This month
+		now.Add(-time.Hour * 24 * 9), // This month
+	}
+
+	clients := []string{
+		"VSCODE_CODY_EXTENSION",
+		"JETBRAINS_CODY_EXTENSION",
 	}
 
 	g, gctx := errgroup.WithContext(ctx)
 
 	// add some Cody events
-	for _, user := range users {
-		for _, name := range codyEventNames {
-			for _, day := range days {
-				for i := 0; i < 25; i++ {
-					e := &Event{
-						UserID: user,
-						Name:   name,
-						URL:    "http://sourcegraph.com",
-						Source: "test",
-						// Jitter current time +/- 30 minutes
-						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
-					}
-
-					g.Go(func() error {
-						//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
-						return db.EventLogs().Insert(gctx, e)
-					})
+	for _, day := range days {
+		for _, name := range codyNonProductEventNames {
+			for range 15 {
+				e := &Event{
+					UserID: users[0],
+					Name:   name,
+					URL:    "http://sourcegraph.com",
+					Source: "test",
+					Client: &clients[0],
+					// Jitter current time +/- 30 minutes
+					Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 				}
+
+				g.Go(func() error {
+					//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
+					return db.EventLogs().Insert(gctx, e)
+				})
+			}
+		}
+		for _, name := range codyProductEventNames {
+			for range 15 {
+				e := &Event{
+					UserID: users[1],
+					Name:   name,
+					URL:    "http://sourcegraph.com",
+					Source: "test",
+					Client: &clients[1],
+					// Jitter current time +/- 30 minutes
+					Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+				}
+
+				g.Go(func() error {
+					//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
+					return db.EventLogs().Insert(gctx, e)
+				})
 			}
 		}
 	}
@@ -1377,46 +1403,32 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	events, err := db.EventLogs().AggregatedCodyEvents(ctx, now)
+	usage, err := db.EventLogs().AggregatedCodyUsage(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expectedEvents := []types.CodyAggregatedEvent{
-		{
-			Name:               "CodyVSCodeExtension:recipe:explain-code-high-level:executed",
-			Month:              time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:               now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
-			Day:                now.Truncate(time.Hour * 24),
-			TotalMonth:         200,
-			TotalWeek:          150,
-			TotalDay:           50,
-			UniquesMonth:       2,
-			UniquesWeek:        2,
-			UniquesDay:         2,
-			CodeGenerationWeek: 150,
-			CodeGenerationDay:  0,
-			ExplanationMonth:   200,
-			ExplanationWeek:    150,
-			ExplanationDay:     50,
-		},
-		{
-			Name:                "CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
-			Month:               time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:                now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
-			Day:                 now.Truncate(time.Hour * 24),
-			TotalMonth:          200,
-			TotalWeek:           150,
-			TotalDay:            50,
-			UniquesMonth:        2,
-			UniquesWeek:         2,
-			UniquesDay:          2,
-			CodeGenerationMonth: 200,
-			CodeGenerationDay:   50,
-		},
+	expectedUsage := &types.CodyAggregatedUsage{
+		Month:                      time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                       now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
+		Day:                        now.Truncate(time.Hour * 24),
+		TotalMonth:                 180,
+		TotalWeek:                  135,
+		TotalDay:                   45,
+		UniquesMonth:               2,
+		UniquesWeek:                2,
+		UniquesDay:                 2,
+		ProductUsersMonth:          1,
+		ProductUsersWeek:           1,
+		ProductUsersDay:            1,
+		VSCodeProductUsersMonth:    0,
+		JetBrainsProductUsersMonth: 1,
+		NeovimProductUsersMonth:    0,
+		EmacsProductUsersMonth:     0,
+		WebProductUsersMonth:       0,
 	}
 
-	if diff := cmp.Diff(expectedEvents, events); diff != "" {
+	if diff := cmp.Diff(expectedUsage, usage); diff != "" {
 		t.Fatal(diff)
 	}
 }

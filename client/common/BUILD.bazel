@@ -46,6 +46,7 @@ ts_project(
         "src/util/path.ts",
         "src/util/rxjs/asObservable.ts",
         "src/util/rxjs/combineLatestOrDefault.ts",
+        "src/util/rxjs/fromSubscribable.ts",
         "src/util/rxjs/index.ts",
         "src/util/rxjs/memoizeObservable.ts",
         "src/util/rxjs/repeatUntil.ts",
@@ -55,7 +56,6 @@ ts_project(
     ],
     tsconfig = ":tsconfig",
     deps = [
-        ":node_modules/@sourcegraph/extension-api-types",
         "//:node_modules/@types/dompurify",
         "//:node_modules/@types/highlight.js",
         "//:node_modules/@types/history",
@@ -71,7 +71,9 @@ ts_project(
         "//:node_modules/marked",
         "//:node_modules/react-router-dom",
         "//:node_modules/rxjs",
+        "//:node_modules/sourcegraph",
         "//:node_modules/utility-types",
+        "//client/wildcard:wildcard_lib",
     ],
 )
 

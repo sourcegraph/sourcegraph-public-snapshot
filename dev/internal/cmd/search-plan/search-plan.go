@@ -10,8 +10,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -43,7 +43,7 @@ func run(w io.Writer, args []string) error {
 
 	// Sourcegraph infra we need
 	conf.Mock(&conf.Unified{})
-	envvar.MockSourcegraphDotComMode(*dotCom)
+	dotcom.MockSourcegraphDotComMode(fakeTB{}, *dotCom)
 	logger := log.Scoped("search-plan")
 
 	cli := client.Mocked(job.RuntimeClients{Logger: logger})
@@ -72,6 +72,10 @@ func run(w io.Writer, args []string) error {
 
 	return nil
 }
+
+type fakeTB struct{}
+
+func (fakeTB) Cleanup(func()) {}
 
 func main() {
 	liblog := log.Init(log.Resource{Name: "search-plan"})

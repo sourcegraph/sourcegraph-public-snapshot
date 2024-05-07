@@ -202,6 +202,8 @@ export interface TeamMatch extends BaseOwnerMatch {
  * Should be replaced when a new ones come in.
  */
 export interface Progress {
+    // No more progress to be tracked
+    done?: boolean
     /**
      * The number of repositories matching the repo: filter. Is set once they
      * are resolved.
@@ -239,7 +241,7 @@ export interface Skipped {
      * - repository-cloning :: we could not search a repository because it is not cloned.
      * - repository-missing :: we could not search a repository because it is not cloned and we failed to find it on the remote code host.
      * - backend-missing :: we may be missing results due to a backend being transiently down.
-     * - excluded-fork :: we did not search a repository because it is a fork.
+     * - repository-fork :: we did not search a repository because it is a fork.
      * - excluded-archive :: we did not search a repository because it is archived.
      * - display :: we hit the display limit, so we stopped sending results from the backend.
      */
@@ -250,8 +252,8 @@ export interface Skipped {
         | 'shard-timedout'
         | 'repository-cloning'
         | 'repository-missing'
+        | 'repository-fork'
         | 'backend-missing'
-        | 'excluded-fork'
         | 'excluded-archive'
         | 'display'
         | 'error'
@@ -285,7 +287,7 @@ export interface Filter {
 export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
 export type AlertKind = SmartSearchAlertKind | 'unowned-results'
 
-interface Alert {
+export interface Alert {
     title: string
     description?: string | null
     kind?: AlertKind | null

@@ -7,7 +7,8 @@ import { SearchBox, LegacyToggles } from '@sourcegraph/branded'
 import { Toggles } from '@sourcegraph/branded/src/search-ui/input/toggles/Toggles'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
-import { type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Form } from '@sourcegraph/wildcard'
 
@@ -23,6 +24,7 @@ interface Props
     extends SettingsCascadeProps,
         SearchContextInputProps,
         TelemetryProps,
+        TelemetryV2Props,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
@@ -64,10 +66,11 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 location,
                 source: 'nav',
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
+                telemetryRecorder: props.telemetryRecorder,
                 ...parameters,
             })
         },
-        [submitSearch, navigate, location, props.selectedSearchContextSpec]
+        [submitSearch, navigate, location, props.selectedSearchContextSpec, props.telemetryRecorder]
     )
     const submitSearchOnChangeRef = useRef(submitSearchOnChange)
     useEffect(() => {
@@ -89,6 +92,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 <LazyV2SearchInput
                     visualMode="compact"
                     telemetryService={props.telemetryService}
+                    telemetryRecorder={props.telemetryRecorder}
                     patternType={searchPatternType}
                     interpretComments={false}
                     queryState={queryState}

@@ -4,13 +4,14 @@ import { limitHit } from '@sourcegraph/branded'
 import { asError } from '@sourcegraph/common'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry } from '@sourcegraph/shared/src/search/query/transformer'
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { useNavbarQueryState } from '../../stores'
 import { smartSearchEvent } from '../suggestion/SmartSearch'
 
-interface useStreamingSearchPingsProps extends TelemetryProps {
+interface useStreamingSearchPingsProps extends TelemetryProps, TelemetryV2Props {
     isAuauthenticated: boolean
     isSourcegraphDotCom: boolean
     results: AggregateStreamingSearchResults | undefined
@@ -21,7 +22,7 @@ interface StreamingSearchPingsAPI {
 }
 
 export function useStreamingSearchPings(props: useStreamingSearchPingsProps): StreamingSearchPingsAPI {
-    const { isAuauthenticated, isSourcegraphDotCom, results, telemetryService } = props
+    const { isAuauthenticated, isSourcegraphDotCom, results, telemetryService, telemetryRecorder } = props
 
     const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
 
@@ -29,6 +30,7 @@ export function useStreamingSearchPings(props: useStreamingSearchPingsProps): St
     useEffect(
         () => {
             telemetryService.logViewEvent('SearchResults')
+            telemetryRecorder.recordEvent('search.results', 'view')
         },
         // Only log view on initial load
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -69,6 +71,7 @@ export function useStreamingSearchPings(props: useStreamingSearchPingsProps): St
                 },
             }
         )
+        telemetryRecorder.recordEvent('search.results', 'query')
         // Only log when the query changes
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [submittedURLQuery])
@@ -90,6 +93,15 @@ export function useStreamingSearchPings(props: useStreamingSearchPingsProps): St
                     },
                 },
             })
+            telemetryRecorder.recordEvent('search.results', 'fetch', {
+                metadata: {
+                    resultsCount: results.progress.matchCount,
+                    limitHit: limitHit(results.progress) ? 1 : 0,
+                    anyCloning: results.progress.skipped.some(skipped => skipped.reason === 'repository-cloning')
+                        ? 1
+                        : 0,
+                },
+            })
             if (results.results.length > 0) {
                 telemetryService.log('SearchResultsNonEmpty')
             }
@@ -97,8 +109,9 @@ export function useStreamingSearchPings(props: useStreamingSearchPingsProps): St
             telemetryService.log('SearchResultsFetchFailed', {
                 code_search: { error_message: asError(results.error).message },
             })
+            telemetryRecorder.recordEvent('search.results', 'fetchFailed')
         }
-    }, [results, submittedURLQuery, telemetryService])
+    }, [results, submittedURLQuery, telemetryService, telemetryRecorder])
 
     useEffect(() => {
         if (
@@ -127,8 +140,14 @@ export function useStreamingSearchPings(props: useStreamingSearchPingsProps): St
                 type,
                 resultsLength,
             })
+            telemetryRecorder.recordEvent('search.result.area', 'click', {
+                metadata: {
+                    index,
+                    resultsLength,
+                },
+            })
         },
-        [telemetryService]
+        [telemetryService, telemetryRecorder]
     )
 
     return { logSearchResultClicked }

@@ -11,11 +11,10 @@ import {
     type Observable,
     of,
     Subject,
-    type Subscribable,
-    type SubscribableOrPromise,
     Subscription,
     race,
     type MonoTypeOperatorFunction,
+    ObservableInput,
 } from 'rxjs'
 import {
     catchError,
@@ -24,7 +23,6 @@ import {
     filter,
     first,
     map,
-    mapTo,
     observeOn,
     share,
     switchMap,
@@ -75,7 +73,7 @@ export interface HoverifierOptions<C extends object, D, A> {
     /**
      * Emit the HoverOverlay element on this after it was rerendered when its content changed and it needs to be repositioned.
      */
-    hoverOverlayRerenders: Subscribable<{
+    hoverOverlayRerenders: ObservableInput<{
         /**
          * The HoverOverlay element
          */
@@ -89,13 +87,13 @@ export interface HoverifierOptions<C extends object, D, A> {
 
     pinOptions?: {
         /** Emit on this Observable to pin the popover. */
-        pins: Subscribable<void>
+        pins: ObservableInput<void>
 
         /** * Emit on this Observable when the close button in the HoverOverlay was clicked */
-        closeButtonClicks: Subscribable<void>
+        closeButtonClicks: ObservableInput<void>
     }
 
-    hoverOverlayElements: Subscribable<HTMLElement | null>
+    hoverOverlayElements: ObservableInput<HTMLElement | null>
 
     /**
      * Called to get the data to display in the hover.
@@ -199,7 +197,7 @@ export interface AdjustPositionProps<C extends object> {
  *
  * @template C Extra context for the hovered token.
  */
-export type PositionAdjuster<C extends object> = (props: AdjustPositionProps<C>) => SubscribableOrPromise<Position>
+export type PositionAdjuster<C extends object> = (props: AdjustPositionProps<C>) => ObservableInput<Position>
 
 /**
  * HoverifyOptions that need to be included internally with every event
@@ -235,13 +233,13 @@ export interface EventOptions<C extends object> {
  */
 export interface HoverifyOptions<C extends object>
     extends Pick<EventOptions<C>, Exclude<keyof EventOptions<C>, 'codeViewId'>> {
-    positionEvents: Subscribable<PositionEvent>
+    positionEvents: ObservableInput<PositionEvent>
 
     /**
      * Emit on this Observable to trigger the overlay on a position in this code view.
      * This Observable is intended to be used to trigger a Hover after a URL change with a position.
      */
-    positionJumps?: Subscribable<PositionJump>
+    positionJumps?: ObservableInput<PositionJump>
 }
 
 /**
@@ -388,7 +386,7 @@ export const MOUSEOVER_DELAY = 50
  */
 export type HoverProvider<C extends object, D> = (
     position: HoveredToken & C
-) => Subscribable<MaybeLoadingResult<(HoverAttachment & D) | null>> | PromiseLike<(HoverAttachment & D) | null>
+) => Observable<MaybeLoadingResult<(HoverAttachment & D) | null>> | PromiseLike<(HoverAttachment & D) | null>
 
 /**
  * Function that returns a Subscribable or PromiseLike of the ranges to be highlighted in the document.
@@ -399,13 +397,13 @@ export type HoverProvider<C extends object, D> = (
  */
 export type DocumentHighlightProvider<C extends object> = (
     position: HoveredToken & C
-) => Subscribable<DocumentHighlight[]> | PromiseLike<DocumentHighlight[]>
+) => ObservableInput<DocumentHighlight[]>
 
 /**
  * @template C Extra context for the hovered token.
  * @template A The type of an action.
  */
-export type ActionsProvider<C extends object, A> = (position: HoveredToken & C) => SubscribableOrPromise<A[] | null>
+export type ActionsProvider<C extends object, A> = (position: HoveredToken & C) => ObservableInput<A[] | null>
 
 /**
  * Function responsible for resolving the position of a hovered token
@@ -460,11 +458,11 @@ export function createHoverifier<C extends object, D, A>({
                     overlayElement === null
                         ? of(value)
                         : race(
-                              fromEvent(overlayElement, 'mouseover').pipe(mapTo('suppress')),
+                              fromEvent(overlayElement, 'mouseover').pipe(map(() => 'suppress')),
                               of('emit').pipe(delay(MOUSEOVER_DELAY))
                           ).pipe(
                               filter(action => action === 'emit'),
-                              mapTo(value)
+                              map(() => value)
                           )
                 )
             )
@@ -745,14 +743,14 @@ export function createHoverifier<C extends object, D, A>({
             scrollEvents.pipe(
                 filter(() => scrollBoundaries.some(elementOverlaps(hoveredTokenElement))),
                 first(),
-                mapTo({
+                map(() => ({
                     ...rest,
                     hoveredTokenElement,
                     pinned: false,
                     hoverOrError: undefined,
                     hoveredToken: undefined,
                     actionsOrError: undefined,
-                })
+                }))
             )
         )
     }
@@ -1050,7 +1048,9 @@ export function createHoverifier<C extends object, D, A>({
     }
 
     // Pin on request.
-    subscription.add(pinOptions?.pins.subscribe(() => container.update({ pinned: true })))
+    if (pinOptions) {
+        subscription.add(from(pinOptions.pins).subscribe(() => container.update({ pinned: true })))
+    }
 
     // Unpin on close, ESC, or click.
     subscription.add(

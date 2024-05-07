@@ -172,61 +172,61 @@ func Test_addContext(t *testing.T) {
 			"\n",
 			0,
 			r(l(0, 0, 0), l(0, 0, 0)),
-			"",
+			"\n",
 		},
 		{
 			"\n",
 			1,
 			r(l(0, 0, 0), l(0, 0, 0)),
-			"",
+			"\n",
 		},
 		{
 			"\n\n\n",
 			0,
 			r(l(1, 1, 0), l(1, 1, 0)),
-			"",
+			"\n",
 		},
 		{
 			"\n\n\n\n",
 			1,
-			r(l(1, 1, 0), l(1, 1, 0)),
-			"\n\n",
-		},
-		{
-			"\n\n\n\n",
-			2,
 			r(l(1, 1, 0), l(1, 1, 0)),
 			"\n\n\n",
 		},
 		{
+			"\n\n\n\n",
+			2,
+			r(l(1, 1, 0), l(1, 1, 0)),
+			"\n\n\n\n",
+		},
+		{
 			"abc\ndef\nghi\n",
 			0,
 			r(l(1, 0, 1), l(1, 0, 1)),
-			"abc",
+			"abc\n",
 		},
 		{
 			"abc\ndef\nghi\n",
 			1,
 			r(l(1, 0, 1), l(1, 0, 1)),
-			"abc\ndef",
+			"abc\ndef\n",
 		},
 		{
 			"abc\ndef\nghi\n",
 			2,
 			r(l(1, 0, 1), l(1, 0, 1)),
-			"abc\ndef\nghi",
+			"abc\ndef\nghi\n",
 		},
 		{
 			"abc\ndef\nghi",
 			0,
 			r(l(1, 0, 1), l(1, 0, 1)),
-			"abc",
+			"abc\n",
 		},
 		{
 			"abc\ndef\nghi",
 			1,
 			r(l(1, 0, 1), l(1, 0, 1)),
-			"abc\ndef",
+			"abc\ndef\n",
 		},
 		{
 			"abc\ndef\nghi",
@@ -256,7 +256,7 @@ func Test_addContext(t *testing.T) {
 			"abc\r\ndef\r\nghi\r\n",
 			1,
 			r(l(1, 0, 1), l(2, 0, 2)),
-			"abc\r\ndef",
+			"abc\r\ndef\r\n",
 		},
 		{
 			"abc\r\ndef\r\nghi",
@@ -268,19 +268,19 @@ func Test_addContext(t *testing.T) {
 			"\r\n",
 			0,
 			r(l(0, 0, 0), l(0, 0, 0)),
-			"",
+			"\r\n",
 		},
 		{
 			"\r\n",
 			1,
 			r(l(0, 0, 0), l(0, 0, 0)),
-			"",
+			"\r\n",
 		},
 		{
 			"abc\nd\xE2\x9D\x89f\nghi",
 			0,
 			r(l(4, 1, 0), l(5, 1, 1)),
-			"d\xE2\x9D\x89f",
+			"d\xE2\x9D\x89f\n",
 		},
 		{
 			"abc\nd\xE2\x9D\x89f\nghi",
@@ -363,7 +363,7 @@ func BenchmarkColumnHelper(b *testing.B) {
 
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		columnHelper := columnHelper{data: data}
 
 		lineOffset := 0

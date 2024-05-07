@@ -6,13 +6,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestRequestedScopes(t *testing.T) {
-	defer envvar.MockSourcegraphDotComMode(false)
-
 	tests := []struct {
 		dotComMode bool
 		schema     *schema.GitHubAuthProvider
@@ -56,7 +54,7 @@ func TestRequestedScopes(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
-			envvar.MockSourcegraphDotComMode(test.dotComMode)
+			dotcom.MockSourcegraphDotComMode(t, test.dotComMode)
 			scopes := requestedScopes(test.schema)
 			sort.Strings(scopes)
 			if diff := cmp.Diff(test.expScopes, scopes); diff != "" {

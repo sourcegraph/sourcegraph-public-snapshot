@@ -11,14 +11,15 @@ import (
 // language filters
 type langMatcher interface {
 	// Matches checks whether a file's language matches. It accepts a callback
-	// to fetch the content to avoid loading content when it's not needed.
-	Matches(path string, getContent func() ([]byte, error)) bool
+	// to fetch the content to avoid loading content when it's not needed. It
+	// returns whether the file matches, plus the detected language when available.
+	Matches(path string, getContent func() ([]byte, error)) (bool, string)
 }
 
 type allLangMatcher struct{}
 
-func (am *allLangMatcher) Matches(_ string, _ func() ([]byte, error)) bool {
-	return true
+func (am *allLangMatcher) Matches(_ string, _ func() ([]byte, error)) (bool, string) {
+	return true, ""
 }
 
 // enryLangMatcher uses go-ery to check whether files match the language
@@ -30,29 +31,29 @@ type enryLangMatcher struct {
 	OnlyExcludes bool
 }
 
-func (em *enryLangMatcher) Matches(path string, getContent func() ([]byte, error)) bool {
+func (em *enryLangMatcher) Matches(path string, getContent func() ([]byte, error)) (bool, string) {
 	// We use Sourcegraph's wrapper around enry because it supports lazily fetching
 	// content and contains some optimizations for ambiguous extensions.
 	langs, err := languages.GetLanguages(path, getContent)
 
 	// In practice err will always be nil, because we never error when fetching content
 	if err != nil {
-		return false
+		return false, ""
 	}
 
 	// It's fine if file has no detected language, as long as there are no include filters
 	if len(langs) == 0 {
-		return em.OnlyExcludes
+		return em.OnlyExcludes, ""
 	}
 
 	// Choose the most likely language
 	lang := langs[0]
 	for _, includeLang := range em.IncludeLangs {
 		if lang != includeLang {
-			return false
+			return false, ""
 		}
 	}
-	return !slices.Contains(em.ExcludeLangs, lang)
+	return !slices.Contains(em.ExcludeLangs, lang), lang
 }
 
 func toLangMatcher(p *protocol.PatternInfo) langMatcher {

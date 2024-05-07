@@ -58,3 +58,18 @@ func TestClient_do(t *testing.T) {
 		require.Equal(t, "value", respStruct.Key)
 	})
 }
+
+func TestClient_GetSSHInfo(t *testing.T) {
+	cli, save := NewTestClient(t, "GetSSHInfo", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	hostname, port, err := cli.GetSSHInfo(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	require.Equal(t, "gerrit-ssh.sgdev.org", hostname)
+	require.Equal(t, 29418, port)
+}

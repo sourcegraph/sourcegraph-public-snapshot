@@ -3,7 +3,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "byteutils",
-    srcs = ["linereader.go"],
+    srcs = [
+        "linereader.go",
+        "nullscanner.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/byteutils",
     visibility = ["//:__subpackages__"],
 )

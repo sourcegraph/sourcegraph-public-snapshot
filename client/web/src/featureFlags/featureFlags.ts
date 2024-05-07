@@ -8,17 +8,13 @@ export const FEATURE_FLAGS = [
     'admin-onboarding',
     'auditlog-expansion',
     'blob-page-switch-areas-shortcuts',
-    'clone-progress-logging',
     'cody-chat-mock-test',
     'cody-web-search',
     'contrast-compliant-syntax-highlighting',
     'enable-ownership-panels',
     'enable-simple-search',
-    // TODO(fkling): Remove this flag
-    'enable-sveltekit',
-    // TODO(fkling): Remove this flag
-    'enable-sveltekit-toggle',
     'web-next',
+    'web-next-rollout',
     'web-next-toggle',
     'end-user-onboarding',
     'insight-polling-enabled',
@@ -32,9 +28,8 @@ export const FEATURE_FLAGS = [
     'search-debug',
     'signup-survey-enabled',
     'sourcegraph-operator-site-admin-hide-maintenance',
-    'use-ssc-for-cody-subscription-on-web',
-    'cody-pro-trial-ended',
-    'cody-payments-testing-mode',
+    'ab-hubspot-form-workpersonal-to-handraiser',
+    'external-accounts-modal',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

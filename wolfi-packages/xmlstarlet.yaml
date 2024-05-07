@@ -1,7 +1,7 @@
 package:
   name: xmlstarlet
   version: 1.6.1
-  epoch: 1
+  epoch: 3
   description: ""
   target-architecture:
     - x86_64
@@ -41,3 +41,8 @@ pipeline:
       mkdir -p ${{targets.destdir}}/usr/bin/
       cp /usr/local/bin/xml ${{targets.destdir}}/usr/bin/
       ln -s /usr/bin/xml ${{targets.destdir}}/usr/bin/xmlstarlet
+
+update:
+  enabled: true
+  release-monitor:
+    identifier: 5201 # https://release-monitoring.org/project/5201/

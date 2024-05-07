@@ -1,15 +1,10 @@
-import { type FC, type PropsWithChildren, useState, useMemo } from 'react'
+import { type FC, type PropsWithChildren, useState, useMemo, useEffect } from 'react'
 
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
-import type {
-    OnboardingTourConfigMutationResult,
-    OnboardingTourConfigMutationVariables,
-    OnboardingTourConfigResult,
-    OnboardingTourConfigVariables,
-} from 'src/graphql-operations'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -26,6 +21,12 @@ import {
 import onboardingSchemaJSON from '../../../../schema/onboardingtour.schema.json'
 import { PageTitle } from '../components/PageTitle'
 import { SaveToolbar } from '../components/SaveToolbar'
+import type {
+    OnboardingTourConfigMutationResult,
+    OnboardingTourConfigMutationVariables,
+    OnboardingTourConfigResult,
+    OnboardingTourConfigVariables,
+} from '../graphql-operations'
 import { MonacoSettingsEditor } from '../settings/MonacoSettingsEditor'
 import {
     ONBOARDING_TOUR_MUTATION,
@@ -49,9 +50,9 @@ const DEFAULT_VALUE = JSON.stringify(
 const ajv = new AJV({ strict: false })
 addFormats(ajv)
 
-interface Props extends TelemetryProps {}
+interface Props extends TelemetryProps, TelemetryV2Props {}
 
-export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
+export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = ({ telemetryRecorder }) => {
     const isLightTheme = useIsLightTheme()
     const [value, setValue] = useState<string | null>(null)
     const { data, loading, error, previousData } = useQuery<OnboardingTourConfigResult, OnboardingTourConfigVariables>(
@@ -62,6 +63,10 @@ export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
     const initialLoad = loading && !previousData
     const config = loading ? value ?? '' : value ?? existingConfiguration ?? DEFAULT_VALUE
     const dirty = !loading && config !== existingConfiguration
+
+    useEffect(() => {
+        telemetryRecorder.recordEvent('admin.endUserOnboarding', 'view')
+    }, [telemetryRecorder])
 
     const discard = (): void => {
         if (dirty && window.confirm('Discard onboarding tour changes?')) {

@@ -6,15 +6,14 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -71,23 +70,18 @@ func NewRootResolver(
 
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
 func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.GitBlobLSIFDataArgs) (_ resolverstubs.GitBlobLSIFDataResolver, err error) {
-	ctx, _, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repoID", int(args.Repo.ID)),
-		args.Commit.Attr(),
-		attribute.String("path", args.Path),
-		attribute.Bool("exactPath", args.ExactPath),
-		attribute.String("toolName", args.ToolName),
-	}})
+	opts := args.Options()
+	ctx, _, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	uploads, err := r.svc.GetClosestDumpsForBlob(ctx, int(args.Repo.ID), string(args.Commit), args.Path, args.ExactPath, args.ToolName)
+	uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, opts)
 	if err != nil || len(uploads) == 0 {
 		return nil, err
 	}
 
 	if len(uploads) == 0 {
 		// If we're on sourcegraph.com and it's a rust package repo, index it on-demand
-		if envvar.SourcegraphDotComMode() && strings.HasPrefix(string(args.Repo.Name), "crates/") {
+		if dotcom.SourcegraphDotComMode() && strings.HasPrefix(string(args.Repo.Name), "crates/") {
 			err = r.autoindexingSvc.QueueRepoRev(ctx, int(args.Repo.ID), string(args.Commit))
 		}
 
@@ -177,13 +171,14 @@ func (r *gitBlobLSIFDataResolver) VisibleIndexes(ctx context.Context) (_ *[]reso
 
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(visibleUploads))
 	for _, u := range visibleUploads {
+		upload := u.ConvertToUpload()
 		resolver, err := r.indexResolverFactory.Create(
 			ctx,
 			r.uploadLoader,
 			r.indexLoader,
 			r.locationResolver,
 			traceErrs,
-			dumpToUpload(u),
+			&upload,
 			nil,
 		)
 		if err != nil {
@@ -193,25 +188,4 @@ func (r *gitBlobLSIFDataResolver) VisibleIndexes(ctx context.Context) (_ *[]reso
 	}
 
 	return &resolvers, nil
-}
-
-func dumpToUpload(expected uploadsshared.Dump) *uploadsshared.Upload {
-	return &uploadsshared.Upload{
-		ID:                expected.ID,
-		Commit:            expected.Commit,
-		Root:              expected.Root,
-		UploadedAt:        expected.UploadedAt,
-		State:             expected.State,
-		FailureMessage:    expected.FailureMessage,
-		StartedAt:         expected.StartedAt,
-		FinishedAt:        expected.FinishedAt,
-		ProcessAfter:      expected.ProcessAfter,
-		NumResets:         expected.NumResets,
-		NumFailures:       expected.NumFailures,
-		RepositoryID:      expected.RepositoryID,
-		RepositoryName:    expected.RepositoryName,
-		Indexer:           expected.Indexer,
-		IndexerVersion:    expected.IndexerVersion,
-		AssociatedIndexID: expected.AssociatedIndexID,
-	}
 }

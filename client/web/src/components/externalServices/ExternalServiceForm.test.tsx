@@ -2,6 +2,7 @@ import * as H from 'history'
 import { noop } from 'rxjs'
 import { describe, expect, test, vi } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
@@ -37,6 +38,7 @@ describe('ExternalServiceForm', () => {
                 mode="create"
                 loading={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )
         expect(component.asFragment()).toMatchSnapshot()
@@ -53,6 +55,7 @@ describe('ExternalServiceForm', () => {
                 mode="create"
                 loading={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )
         expect(component.asFragment()).toMatchSnapshot()
@@ -69,6 +72,7 @@ describe('ExternalServiceForm', () => {
                 mode="create"
                 loading={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )
         expect(component.asFragment()).toMatchSnapshot()

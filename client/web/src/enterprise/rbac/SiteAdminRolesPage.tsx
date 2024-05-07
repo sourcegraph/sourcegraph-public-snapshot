@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { mdiPlus } from '@mdi/js'
 import { groupBy, noop } from 'lodash'
 
-import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { PageHeader, Button, Icon, ProductStatusBadge, ErrorAlert, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -14,14 +14,14 @@ import { RoleNode } from './components/RoleNode'
 
 import styles from './SiteAdminRolesPage.module.scss'
 
-export interface SiteAdminRolesPageProps extends TelemetryProps {}
+export interface SiteAdminRolesPageProps extends TelemetryV2Props {}
 
 export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren<SiteAdminRolesPageProps>> = ({
-    telemetryService,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
-        telemetryService.logPageView('SiteAdminRoles')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('admin.roles', 'view')
+    }, [telemetryRecorder])
 
     const [permissions, setPermissions] = useState<PermissionsMap>({} as PermissionsMap)
 
@@ -59,9 +59,8 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
                     <>
                         Roles are a part of the{' '}
                         <Link to="/help/admin/access_control">Role-Based Access Control system</Link> for Sourcegraph
-                        and represent a set of in-product permissions. Roles are currently only available for Batch
-                        Changes functionality. Use the <Link to="/site-admin/users">user administration page</Link> to
-                        assign roles.
+                        and represent a set of in-product permissions. Use the{' '}
+                        <Link to="/site-admin/users">user administration page</Link> to assign roles.
                     </>
                 }
                 actions={
@@ -78,7 +77,12 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
             </PageHeader>
 
             {showCreateRoleModal && !loading && (
-                <CreateRoleModal onCancel={closeModal} afterCreate={afterCreate} allPermissions={permissions} />
+                <CreateRoleModal
+                    onCancel={closeModal}
+                    afterCreate={afterCreate}
+                    allPermissions={permissions}
+                    telemetryRecorder={telemetryRecorder}
+                />
             )}
 
             {error && <ErrorAlert error={error} />}
@@ -86,7 +90,13 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
             {!loading && data && (
                 <ul className="list-unstyled">
                     {data.roles.nodes.map(node => (
-                        <RoleNode key={node.id} node={node} refetch={refetch} allPermissions={permissions} />
+                        <RoleNode
+                            key={node.id}
+                            node={node}
+                            refetch={refetch}
+                            allPermissions={permissions}
+                            telemetryRecorder={telemetryRecorder}
+                        />
                     ))}
                 </ul>
             )}

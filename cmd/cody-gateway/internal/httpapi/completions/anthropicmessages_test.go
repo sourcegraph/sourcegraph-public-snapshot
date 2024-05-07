@@ -1,0 +1,188 @@
+package completions
+
+import (
+	"context"
+	"encoding/json"
+	"strings"
+	"testing"
+
+	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
+
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
+)
+
+func TestIsFlaggedAnthropicMessagesRequest(t *testing.T) {
+	validPreamble := "You are cody-gateway."
+
+	cfg := config.FlaggingConfig{
+		PromptTokenFlaggingLimit:       18000,
+		PromptTokenBlockingLimit:       20000,
+		MaxTokensToSample:              0, // Not used within isFlaggedRequest.
+		MaxTokensToSampleFlaggingLimit: 4000,
+		ResponseTokenBlockingLimit:     4000,
+		RequestBlockingEnabled:         true,
+	}
+	cfgWithPreamble := config.FlaggingConfig{
+		PromptTokenFlaggingLimit:       18000,
+		PromptTokenBlockingLimit:       20000,
+		MaxTokensToSample:              0, // Not used within isFlaggedRequest.
+		MaxTokensToSampleFlaggingLimit: 4000,
+		ResponseTokenBlockingLimit:     4000,
+		RequestBlockingEnabled:         true,
+		AllowedPromptPatterns:          []string{strings.ToLower(validPreamble)},
+	}
+	tk, err := tokenizer.NewCL100kBaseTokenizer()
+	require.NoError(t, err)
+
+	// Helper function for calling the AnthropicMessageHandlerMethod's shouldFlagRequest, using the supplied
+	// request and configuration.
+	callShouldFlagRequest := func(t *testing.T, ar anthropicMessagesRequest, flaggingConfig config.FlaggingConfig) (*flaggingResult, error) {
+		t.Helper()
+		anthropicUpstream := &AnthropicMessagesHandlerMethods{
+			tokenizer: tk,
+			config: config.AnthropicConfig{
+				FlaggingConfig: flaggingConfig,
+			},
+		}
+		ctx := context.Background()
+		logger := logtest.NoOp(t)
+		return anthropicUpstream.shouldFlagRequest(ctx, logger, ar)
+	}
+
+	t.Run("works for known preamble", func(t *testing.T) {
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: validPreamble}}},
+		}}
+		result, err := callShouldFlagRequest(t, r, cfgWithPreamble)
+		require.NoError(t, err)
+		require.Nil(t, result)
+	})
+
+	t.Run("missing known preamble", func(t *testing.T) {
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: "some prompt without known preamble"}}},
+		}}
+		result, err := callShouldFlagRequest(t, r, cfgWithPreamble)
+		require.NoError(t, err)
+		require.True(t, result.IsFlagged())
+		require.False(t, result.shouldBlock)
+		require.Contains(t, result.reasons, "unknown_prompt")
+	})
+
+	t.Run("preamble not configured ", func(t *testing.T) {
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: "some prompt without known preamble"}}},
+		}}
+		result, err := callShouldFlagRequest(t, r, cfg)
+		require.NoError(t, err)
+		require.False(t, result.IsFlagged())
+	})
+
+	t.Run("high max tokens to sample", func(t *testing.T) {
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", MaxTokens: 10000, Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: validPreamble}}},
+		}}
+		result, err := callShouldFlagRequest(t, r, cfg)
+		require.NoError(t, err)
+		require.True(t, result.IsFlagged())
+		require.True(t, result.shouldBlock)
+		require.Contains(t, result.reasons, "high_max_tokens_to_sample")
+		require.Equal(t, int32(result.maxTokensToSample), r.MaxTokens)
+	})
+
+	t.Run("high prompt token count and bad phrase", func(t *testing.T) {
+		cfgWithBadPhrase := cfgWithPreamble
+		cfgWithBadPhrase.BlockedPromptPatterns = []string{"bad phrase"}
+		longPrompt := strings.Repeat("word ", cfg.PromptTokenFlaggingLimit+1)
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: validPreamble + " " + longPrompt + "bad phrase"}}},
+		}}
+		result, err := callShouldFlagRequest(t, r, cfgWithBadPhrase)
+		require.NoError(t, err)
+		require.True(t, result.IsFlagged())
+		require.True(t, result.shouldBlock)
+	})
+
+	t.Run("low prompt token count and bad phrase", func(t *testing.T) {
+		cfgWithBadPhrase := cfgWithPreamble
+		cfgWithBadPhrase.BlockedPromptPatterns = []string{"bad phrase"}
+		longPrompt := strings.Repeat("word ", 5)
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: validPreamble + " " + longPrompt + "bad phrase"}}},
+		}}
+		result, err := callShouldFlagRequest(t, r, cfgWithPreamble)
+		require.NoError(t, err)
+		// for now, we should not flag requests purely because of bad phrases
+		require.False(t, result.IsFlagged())
+	})
+
+	t.Run("high prompt token count (above block limit)", func(t *testing.T) {
+		tokenLengths, err := tk.Tokenize(validPreamble)
+		require.NoError(t, err)
+
+		validPreambleTokens := len(tokenLengths)
+		longPrompt := strings.Repeat("word ", cfg.PromptTokenFlaggingLimit+1)
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: validPreamble}}},
+			{Role: "user", Content: []anthropicMessageContent{{Type: "text", Text: longPrompt}}},
+		}}
+
+		result, err := callShouldFlagRequest(t, r, cfgWithPreamble)
+		require.NoError(t, err)
+		require.True(t, result.IsFlagged())
+		require.False(t, result.shouldBlock)
+		require.Contains(t, result.reasons, "high_prompt_token_count")
+		require.Equal(t, result.promptTokenCount, validPreambleTokens+3+cfg.PromptTokenFlaggingLimit+3, cfg)
+	})
+
+	t.Run("high prompt token count (below block limit)", func(t *testing.T) {
+		tokenLengths, err := tk.Tokenize(validPreamble)
+		require.NoError(t, err)
+
+		validPreambleTokens := len(tokenLengths)
+		longPrompt := strings.Repeat("word ", cfg.PromptTokenBlockingLimit+1)
+		r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+			{Role: "system", Content: []anthropicMessageContent{{Type: "text", Text: validPreamble}}},
+			{Role: "user", Content: []anthropicMessageContent{{Type: "text", Text: longPrompt}}},
+		}}
+
+		result, err := callShouldFlagRequest(t, r, cfgWithPreamble)
+		require.NoError(t, err)
+		require.True(t, result.IsFlagged())
+		require.True(t, result.shouldBlock)
+		require.Contains(t, result.reasons, "high_prompt_token_count")
+		require.Equal(t, result.promptTokenCount, validPreambleTokens+3+cfg.PromptTokenBlockingLimit+3, cfg)
+	})
+}
+
+func TestAnthropicMessagesRequestJSON(t *testing.T) {
+	_, err := tokenizer.NewCL100kBaseTokenizer()
+	require.NoError(t, err)
+
+	r := anthropicMessagesRequest{Model: "anthropic/claude-3-sonnet-20240229", Messages: []anthropicMessage{
+		{Role: "user", Content: []anthropicMessageContent{{Type: "text", Text: "Hello world"}}},
+	}}
+
+	b, err := json.MarshalIndent(r, "", "\t")
+	require.NoError(t, err)
+
+	autogold.Expect(`{
+"messages": [
+		{
+			"role": "user",
+			"content": [
+				{
+					"type": "text",
+					"text": "Hello world"
+				}
+			]
+		}
+],
+"model": "anthropic/claude-3-sonnet-20240229"
+}`).Equal(t, string(b))
+}

@@ -2,11 +2,12 @@ import * as React from 'react'
 
 import { Navigate } from 'react-router-dom'
 import { concat, type Observable, Subject, Subscription } from 'rxjs'
-import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLatestFrom } from 'rxjs/operators'
+import { catchError, concatMap, distinctUntilKeyChanged, map, tap, withLatestFrom } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { LoadingSpinner, Button, Link, Alert, H3, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
@@ -19,7 +20,6 @@ import type {
     RespondToOrganizationInvitationResult,
     RespondToOrganizationInvitationVariables,
 } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { OrgAvatar } from '../OrgAvatar'
 
@@ -51,7 +51,8 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
         private subscriptions = new Subscription()
 
         public componentDidMount(): void {
-            eventLogger.logViewEvent('OrgInvitation')
+            EVENT_LOGGER.logViewEvent('OrgInvitation')
+            this.props.telemetryRecorder.recordEvent('org.invitation', 'view')
 
             const orgChanges = this.componentUpdates.pipe(
                 distinctUntilKeyChanged('org'),
@@ -74,7 +75,8 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
                                     organizationInvitation: org.viewerPendingInvitation!.id,
                                     responseType,
                                 }).pipe(
-                                    tap(() => eventLogger.log('OrgInvitationRespondedTo')),
+                                    tap(() => EVENT_LOGGER.log('OrgInvitationRespondedTo')),
+                                    tap(() => this.props.telemetryRecorder.recordEvent('org.invitation', 'responded')),
                                     tap(() =>
                                         this.props.onDidRespondToInvitation(
                                             responseType === OrganizationInvitationResponseType.ACCEPT
@@ -204,6 +206,9 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
                     }
                 `,
                 args
-            ).pipe(map(dataOrThrowErrors), mapTo(undefined))
+            ).pipe(
+                map(dataOrThrowErrors),
+                map(() => undefined)
+            )
     }
 )

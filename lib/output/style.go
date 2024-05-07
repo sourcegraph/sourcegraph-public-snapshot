@@ -9,6 +9,14 @@ type Style struct{ code string }
 
 func (s Style) String() string { return s.code }
 
+// Line returns a FancyLine using this style as an alias for using output.Styledf(...)
+func (s Style) Line(format string) FancyLine { return Styled(s, format) }
+
+// Linef returns a FancyLine using this style as an alias for using output.Styledf(...)
+func (s Style) Linef(format string, args ...interface{}) FancyLine {
+	return Styledf(s, format, args...)
+}
+
 func CombineStyles(styles ...Style) Style {
 	sb := strings.Builder{}
 	for _, s := range styles {
@@ -62,4 +70,6 @@ var (
 	StyleGrey   = Fg256Color(8)
 	StyleYellow = Fg256Color(220)
 	StyleOrange = Fg256Color(202)
+	StyleRed    = Fg256Color(196)
+	StyleGreen  = Fg256Color(2)
 )

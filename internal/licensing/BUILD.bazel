@@ -5,7 +5,6 @@ go_library(
     name = "licensing",
     srcs = [
         "codygateway.go",
-        "conf.go",
         "constants.go",
         "data.go",
         "doc.go",
@@ -20,9 +19,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/licensing",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/conf",
         "//internal/conf/conftypes",
+        "//internal/dotcom",
         "//internal/env",
         "//internal/errcode",
         "//internal/license",

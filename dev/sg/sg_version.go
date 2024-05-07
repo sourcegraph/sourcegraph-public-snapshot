@@ -48,8 +48,13 @@ var (
 	}
 )
 
-func versionExec(ctx *cli.Context) error {
-	std.Out.Write(BuildCommit)
+func versionExec(c *cli.Context) error {
+	if verbose {
+		std.Out.Writef("Version: %s\nBuild commit: %s",
+			c.App.Version, BuildCommit)
+	} else {
+		std.Out.Write(c.App.Version)
+	}
 	return nil
 }
 
@@ -72,10 +77,10 @@ func changelogExec(ctx *cli.Context) error {
 		current := strings.TrimPrefix(BuildCommit, "dev-")
 		if versionChangelogNext {
 			logArgs = append(logArgs, current+"..origin/main")
-			title = fmt.Sprintf("Changes since sg release %s", BuildCommit)
+			title = fmt.Sprintf("Changes since sg release %s", ReleaseName)
 		} else {
 			logArgs = append(logArgs, current)
-			title = fmt.Sprintf("Changes in sg release %s", BuildCommit)
+			title = fmt.Sprintf("Changes in sg release %s", ReleaseName)
 		}
 	} else {
 		std.Out.WriteWarningf("Dev version detected - just showing recent changes.")

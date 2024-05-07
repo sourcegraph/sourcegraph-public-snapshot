@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 
 import type { RepoFile } from '@sourcegraph/shared/src/util/url'
 
-import { parseBrowserRepoURL, toTreeURL } from './url'
+import { getURLToFileCommit, parseBrowserRepoURL, toTreeURL } from './url'
 
 /**
  * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the
@@ -26,6 +26,17 @@ describe('toTreeURL', () => {
     })
 
     // other cases are gratuitous given tests for other URL functions
+})
+
+describe('getURLToFileCommit', () => {
+    test('should return valid URL', () => {
+        const newURL = getURLToFileCommit(
+            'https://sourcegraph.com/github.com/gorilla/mux@foo/baz/bar/-/blob/mux.go',
+            'newfile.go',
+            'somerev'
+        )
+        expect(newURL).toEqual('/github.com/gorilla/mux@somerev/-/blob/newfile.go')
+    })
 })
 
 describe('parseBrowserRepoURL', () => {

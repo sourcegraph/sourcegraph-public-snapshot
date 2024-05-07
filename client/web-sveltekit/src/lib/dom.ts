@@ -1,8 +1,84 @@
-import { createPopper, type Instance, type Options } from '@popperjs/core'
+import {
+    autoUpdate,
+    computePosition,
+    flip,
+    shift,
+    arrow,
+    type Placement,
+    type Middleware,
+    offset,
+    type OffsetOptions,
+    type ShiftOptions,
+    type FlipOptions,
+} from '@floating-ui/dom'
 import type { ActionReturn, Action } from 'svelte/action'
 import * as uuid from 'uuid'
 
 import { highlightNode } from '$lib/common'
+
+/**
+ * Finds the previous sibling element that matches the provided selector. Can optionally wrap around.
+ *
+ * @param element The element to start the search from.
+ * @param selector The selector to match the sibling against.
+ * @param wrap Whether to wrap around to the last sibling if no match is found.
+ * @returns The previous sibling element that matches the selector, or null if no match is found.
+ */
+export function previousSibling(element: Element, selector: string, wrap = false): Element | null {
+    let sibling = element.previousElementSibling
+    while (true) {
+        while (sibling) {
+            if (sibling.matches(selector)) {
+                return sibling
+            }
+
+            // Prevents infinite loop when wrapping around
+            if (sibling === element) {
+                return null
+            }
+
+            sibling = sibling.previousElementSibling
+        }
+
+        if (wrap) {
+            sibling = element.parentElement?.lastElementChild ?? null
+        } else {
+            return null
+        }
+    }
+}
+
+/**
+ * Finds the next sibling element that matches the provided selector. Can optionally wrap around.
+ *
+ * @param element The element to start the search from.
+ * @param selector The selector to match the sibling against.
+ * @param wrap Whether to wrap around to the first sibling if no match is found.
+ * @returns The next sibling element that matches the selector, or null if no match is found.
+ */
+export function nextSibling(element: Element, selector: string, wrap = false): Element | null {
+    let sibling = element.nextElementSibling
+    while (true) {
+        while (sibling) {
+            if (sibling.matches(selector)) {
+                return sibling
+            }
+
+            // Prevents infinite loop when wrapping around
+            if (sibling === element) {
+                return null
+            }
+
+            sibling = sibling.nextElementSibling
+        }
+
+        if (wrap) {
+            sibling = element.parentElement?.firstElementChild ?? null
+        } else {
+            return null
+        }
+    }
+}
 
 /**
  * Returns a unique ID to be used with accessible elements.
@@ -37,44 +113,72 @@ export function onClickOutside(
     }
 }
 
-interface PopperReturnValue {
+interface PopoverOptions {
     /**
-     * Force update positioning and layout of the popover.
+     * The placement of the popover relative to the reference element.
      */
-    update: () => void
-
+    placement?: Placement
     /**
-     * Attach this action to the element that represents the popover content.
-     * "Target" is the element that triggers the popover.
+     * Options for @floatin-ui's offset middleware.
+     * The middleware is only enabled if this option is provided.
      */
-    popover: Action<HTMLElement, { target: Element; options: Partial<Options> }>
+    offset?: OffsetOptions
+    /**
+     * Options for @floatin-ui's shift middleware.
+     * The middleware is always enabled.
+     */
+    shift?: ShiftOptions
+    /**
+     * Options for @floatin-ui's flip middleware.
+     * The middleware is always enabled.
+     */
+    flip?: FlipOptions
 }
 
 /**
- * Returns an action that converts an element into a popover.
+ * An action that converts the attached element into a popover using @floating-ui.
+ * If the popover element contains an element with the attribute `data-arrow`, it will be used as the arrow
+ * and the arrow middleware will be enabled.
  */
-export function createPopover(): PopperReturnValue {
-    let popperInstance: Instance | null
-    return {
-        update: () => popperInstance?.update(),
-        popover: (node, { target, options }) => {
-            popperInstance = createPopper(target, node, options)
+export const popover: Action<HTMLElement, { reference: Element; options: PopoverOptions }> = (popover, parameters) => {
+    let cleanup: (() => void) | null = null
 
-            return {
-                update(parameter) {
-                    if (parameter.target !== target) {
-                        popperInstance?.destroy()
-                        popperInstance = createPopper(parameter.target, node, parameter.options)
-                    } else {
-                        popperInstance?.setOptions(parameter.options)
-                        popperInstance?.update()
-                    }
-                },
-                destroy() {
-                    popperInstance?.destroy()
-                    popperInstance = null
-                },
-            }
+    function update(popover: HTMLElement, { reference, options }: { reference: Element; options: PopoverOptions }) {
+        const arrowElement = popover.querySelector('[data-arrow]') as HTMLElement | null
+        const middleware: Middleware[] = []
+        if (options.offset !== undefined) {
+            middleware.push(offset(options.offset))
+        }
+        middleware.push(shift(options.shift), flip(options.flip))
+        if (arrowElement) {
+            middleware.push(arrow({ element: arrowElement }))
+        }
+        return autoUpdate(reference, popover, () => {
+            computePosition(reference, popover, {
+                placement: options.placement ?? 'bottom',
+                middleware,
+            }).then(({ x, y, placement, middlewareData }) => {
+                popover.style.left = `${x}px`
+                popover.style.top = `${y}px`
+
+                if (middlewareData.arrow && arrowElement) {
+                    const { x, y } = middlewareData.arrow
+                    arrowElement.style.left = x !== undefined ? `${x}px` : ''
+                    arrowElement.style.top = y !== undefined ? `${y}px` : ''
+                    arrowElement.dataset.placement = placement
+                }
+            })
+        })
+    }
+
+    cleanup = update(popover, parameters)
+    return {
+        update(parameter) {
+            cleanup?.()
+            cleanup = update(popover, parameter)
+        },
+        destroy() {
+            cleanup?.()
         },
     }
 }
@@ -144,14 +248,19 @@ export const computeFit: Action<HTMLElement, void, ComputeFitAttributes> = node 
     // Holds the cumulative width of all elements up to element i.
     const widths: number[] = [0]
 
+    // Used to compute the "end" of each child relative to the parent container.
+    // This ensures that the logic here still works when the parent node is moved
+    // or when it is scrolled inside a scroll container.
+    const offset = node.getBoundingClientRect().left
+
     for (let i = 0; i < node.children.length; i++) {
-        widths[i + 1] = node.children[i].getBoundingClientRect().right
+        widths[i + 1] = node.children[i].getBoundingClientRect().right - offset
     }
 
     function compute(): void {
-        const right = node.getBoundingClientRect().right
+        const nodeWidth = node.getBoundingClientRect().width
         for (let i = widths.length - 1; i >= 0; i--) {
-            if (widths[i] < right) {
+            if (widths[i] < nodeWidth) {
                 node.dispatchEvent(new CustomEvent('fit', { detail: { itemCount: i } }))
                 return
             }
@@ -193,5 +302,122 @@ export const classNames: Action<HTMLElement, string | string[]> = (node, classes
         destroy() {
             node.classList.remove(...classes)
         },
+    }
+}
+
+/**
+ * An action by default to move the attached element to the end
+ * of the document body, optionally if container node is passed
+ * attach current node element to the container instead.
+ */
+export const portal: Action<HTMLElement, { container?: HTMLElement | null } | undefined> = (target, options) => {
+    const root = options?.container ?? window.document.body
+
+    root.appendChild(target)
+
+    return {
+        update(options) {
+            const root = options?.container ?? window.document.body
+            root.appendChild(target)
+        },
+        destroy() {
+            target.parentElement?.removeChild(target)
+        },
+    }
+}
+
+/**
+ * An action that messures the width of the element and adds the provided CSS class when the
+ * content overflows (and vice versa). The assumption is that the CSS class will hide some elements
+ * when the content overflows, therefore changing the size of the element. It's the responsibility
+ * of the caller to ensure that the element is styled accordingly.
+ *
+ * However, there are situations where the "overflowing size" cannot be properly determined. In this
+ * case a "measure" CSS class can be provided, which should ensure that the element is rendered in a
+ * way that all of its content is visible. The action will measure the size of the element with and
+ * without the class applied.
+ *
+ * If `measureClass` is not provided, the action will use `scrollWidth` to determine the size of the
+ * content.
+ *
+ * Using this action should not cause any content flashes because the calculation is done synchronously
+ * before painting.
+ *
+ * @param target The element to measure.
+ * @param className The CSS class to add when the content overflows.
+ * @param measureClass The CSS class to apply for measuring the size of the content.
+ * @returns An action that updates the overflow state of the element.
+ */
+export const overflow: Action<HTMLElement, { class: string; measureClass?: string }> = (
+    target,
+    { class: className, measureClass }
+) => {
+    let ignoreResizeEvent = false
+
+    const observer = new ResizeObserver(() => {
+        if (!ignoreResizeEvent) {
+            update()
+        }
+    })
+
+    // Actions don't provide an API to be notified when the subtree changes so we have to handle this ourselves.
+    const mutationObserver = new MutationObserver(() => {
+        update()
+    })
+
+    function update(): void {
+        // Ignore resize events triggered by this action. It's possible that ResizeObserver
+        // already handles this but we want to be sure.
+        ignoreResizeEvent = true
+
+        target.classList.remove(className)
+
+        // Default to scrollWidth to determine whether the content overflows.
+        let fullWidth = target.scrollWidth
+
+        // This doesn't work in all situations (e.g. flex: 1 and overflow:hidden),
+        // so this is a fallback to the clientWidth.
+        if (measureClass) {
+            target.classList.add(measureClass)
+            fullWidth = target.scrollWidth
+            target.classList.remove(measureClass)
+        }
+
+        const overflows = fullWidth > target.clientWidth
+
+        if (overflows) {
+            target.classList.add(className)
+        }
+
+        ignoreResizeEvent = false
+    }
+
+    update()
+
+    observer.observe(target)
+    mutationObserver.observe(target, { childList: true, subtree: true })
+
+    return {
+        update(parameter) {
+            target.classList.remove(className)
+            className = parameter.class
+            update()
+        },
+        destroy() {
+            observer.disconnect()
+            mutationObserver.disconnect()
+        },
+    }
+}
+
+/**
+ * This action scrolls the associated element into view when it is mounted and the argument is true.
+ *
+ * @param node The element to scroll into view.
+ * @param scroll Whether to scroll the element into view.
+ */
+export const scrollIntoViewOnMount: Action<HTMLElement, boolean> = (node: HTMLElement, scroll: boolean) => {
+    if (scroll) {
+        window.requestAnimationFrame(() => node.scrollIntoView({ block: 'center' }))
     }
 }

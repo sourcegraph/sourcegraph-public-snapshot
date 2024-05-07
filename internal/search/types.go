@@ -128,6 +128,10 @@ type SymbolsParameters struct {
 	// need to match to get included in the result
 	ExcludePattern string
 
+	// IncludeLangs and ExcludeLangs hold the language filters to apply.
+	IncludeLangs []string
+	ExcludeLangs []string
+
 	// First indicates that only the first n symbols should be returned.
 	First int
 
@@ -140,6 +144,10 @@ type SymbolsParameters struct {
 type SymbolsResponse struct {
 	Symbols result.Symbols `json:"symbols,omitempty"`
 	Err     string         `json:"error,omitempty"`
+
+	// LimitHit is true if the search results are incomplete due to limits
+	// imposed by the service.
+	LimitHit bool `json:"limitHit,omitempty"`
 }
 
 type IndexedRequestType string
@@ -393,6 +401,15 @@ type Features struct {
 	// options. This should be used for quick interactive experiments only. An
 	// invalid JSON string or unknown fields will be ignored.
 	ZoektSearchOptionsOverride string
+
+	// Experimental fields for Cody context search, for internal use only.
+	CodyContextCodeCount int `json:"-"`
+	CodyContextTextCount int `json:"-"`
+
+	// CodyFileMatcher is used to pass down "Cody ignore" filters. This matcher returns true if
+	// the given repo and path are allowed to be returned. NOTE: we should eventually switch
+	// to standard repo and file filters instead of having this custom 'postfiltering' logic.
+	CodyFileMatcher func(repo api.RepoID, path string) bool `json:"-"`
 }
 
 func (f *Features) String() string {

@@ -145,6 +145,7 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'hh':
         case 'h':
         case 'hpp':
+        case 'hxx':
         // https://github.com/sourcegraph/customer/issues/124
         case 'pc':
         case 'pcc': {

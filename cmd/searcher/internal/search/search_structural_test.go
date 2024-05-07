@@ -500,14 +500,14 @@ func bar() {
 		expected := []protocol.FileMatch{{
 			Path: "main.go",
 			ChunkMatches: []protocol.ChunkMatch{{
-				Content:      "func foo() {\n    fmt.Println(\"foo\")\n}",
+				Content:      "func foo() {\n    fmt.Println(\"foo\")\n}\n",
 				ContentStart: protocol.Location{Offset: 1, Line: 1},
 				Ranges: []protocol.Range{{
 					Start: protocol.Location{Offset: 12, Line: 1, Column: 11},
 					End:   protocol.Location{Offset: 38, Line: 3, Column: 1},
 				}},
 			}, {
-				Content:      "func bar() {\n    fmt.Println(\"bar\")\n}",
+				Content:      "func bar() {\n    fmt.Println(\"bar\")\n}\n",
 				ContentStart: protocol.Location{Offset: 40, Line: 5},
 				Ranges: []protocol.Range{{
 					Start: protocol.Location{Offset: 51, Line: 5, Column: 11},

@@ -155,12 +155,14 @@ Hello world example in go`, typeFile},
 		Want: `
 added.md:1:1:
 hello world I am added
+// No newline at end of chunk
 changed.go:6:6:
 	fmt.Println("Hello world")
 unchanged.md:1:1:
 # Hello World
 unchanged.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `,
 	}, {
 		Name: "added",
@@ -171,6 +173,7 @@ Hello world example in go
 		Want: `
 added.md:1:1:
 hello world I am added
+// No newline at end of chunk
 `,
 	}, {
 		Name: "example",
@@ -180,6 +183,7 @@ hello world I am added
 		Want: `
 unchanged.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `,
 	}, {
 		Name: "boolean query",
@@ -199,6 +203,7 @@ Hello world example in go
 		Want: `
 added.md:1:1:
 hello world I am added
+// No newline at end of chunk
 changed.go:1:1:
 package main
 changed.go:6:6:
@@ -207,6 +212,7 @@ unchanged.md:1:1:
 # Hello World
 unchanged.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `,
 	}, {
 		Name: "negated-pattern-example",
@@ -268,6 +274,7 @@ unchanged.md
 changed.go
 unchanged.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `,
 	}, {
 		Name: "negated-pattern-path",

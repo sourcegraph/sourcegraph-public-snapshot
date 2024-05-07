@@ -7,8 +7,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/internal/cmd/search-plan",
     visibility = ["//visibility:private"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/conf",
+        "//internal/dotcom",
         "//internal/search",
         "//internal/search/client",
         "//internal/search/job",

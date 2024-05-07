@@ -19,6 +19,8 @@ func (x *SearchRequest) FromInternal(p *search.SymbolsParameters) {
 		IsCaseSensitive: p.IsCaseSensitive,
 		IncludePatterns: p.IncludePatterns,
 		ExcludePattern:  p.ExcludePattern,
+		IncludeLangs:    p.IncludeLangs,
+		ExcludeLangs:    p.ExcludeLangs,
 
 		First:   int32(p.First),
 		Timeout: durationpb.New(p.Timeout),
@@ -34,6 +36,8 @@ func (x *SearchRequest) ToInternal() search.SymbolsParameters {
 		IsCaseSensitive: x.GetIsCaseSensitive(),
 		IncludePatterns: x.GetIncludePatterns(),
 		ExcludePattern:  x.GetExcludePattern(),
+		IncludeLangs:    x.GetIncludeLangs(),
+		ExcludeLangs:    x.GetExcludeLangs(),
 		First:           int(x.GetFirst()),
 		Timeout:         x.GetTimeout().AsDuration(),
 	}
@@ -55,8 +59,9 @@ func (x *SearchResponse) FromInternal(r *search.SymbolsResponse) {
 	}
 
 	*x = SearchResponse{
-		Symbols: symbols,
-		Error:   err,
+		Symbols:  symbols,
+		Error:    err,
+		LimitHit: r.LimitHit,
 	}
 }
 
@@ -68,8 +73,9 @@ func (x *SearchResponse) ToInternal() search.SymbolsResponse {
 	}
 
 	return search.SymbolsResponse{
-		Symbols: symbols,
-		Err:     x.GetError(),
+		Symbols:  symbols,
+		Err:      x.GetError(),
+		LimitHit: x.GetLimitHit(),
 	}
 }
 

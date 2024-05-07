@@ -6,6 +6,7 @@ import (
 	"context"
 	"net/http"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
@@ -16,14 +17,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -40,12 +44,14 @@ var BillingPublishableKey string
 
 type authProviderInfo struct {
 	IsBuiltin         bool    `json:"isBuiltin"`
+	NoSignIn          bool    `json:"noSignIn"`
 	DisplayName       string  `json:"displayName"`
 	DisplayPrefix     *string `json:"displayPrefix"`
 	ServiceType       string  `json:"serviceType"`
 	AuthenticationURL string  `json:"authenticationURL"`
 	ServiceID         string  `json:"serviceID"`
 	ClientID          string  `json:"clientID"`
+	RequiredForAuthz  bool    `json:"requiredForAuthz"`
 }
 
 // GenericPasswordPolicy a generic password policy that holds password requirements
@@ -253,6 +259,8 @@ type JSContext struct {
 	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
 
 	RunningOnMacOS bool `json:"runningOnMacOS"`
+
+	SvelteKit sveltekit.JSContext `json:"svelteKit"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -280,23 +288,35 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	// Auth providers
 	var authProviders []authProviderInfo
+	_, authzProviders := authz.GetProviders()
 	for _, p := range providers.SortedProviders() {
 		commonConfig := providers.GetAuthProviderCommon(p)
 		if commonConfig.Hidden {
 			continue
 		}
+
 		info := p.CachedInfo()
-		if info != nil {
-			authProviders = append(authProviders, authProviderInfo{
-				IsBuiltin:         p.Config().Builtin != nil,
-				DisplayName:       commonConfig.DisplayName,
-				DisplayPrefix:     commonConfig.DisplayPrefix,
-				ServiceType:       p.ConfigID().Type,
-				AuthenticationURL: info.AuthenticationURL,
-				ServiceID:         info.ServiceID,
-				ClientID:          info.ClientID,
-			})
+		if info == nil {
+			continue
 		}
+
+		requiredForAuthz := slices.ContainsFunc(authzProviders, func(authzProvider authz.Provider) bool {
+			return authzProvider.ServiceID() == info.ServiceID && authzProvider.ServiceType() == p.ConfigID().Type
+		})
+
+		providerInfo := authProviderInfo{
+			IsBuiltin:         p.Config().Builtin != nil,
+			NoSignIn:          commonConfig.NoSignIn,
+			DisplayName:       commonConfig.DisplayName,
+			DisplayPrefix:     commonConfig.DisplayPrefix,
+			ServiceType:       p.ConfigID().Type,
+			AuthenticationURL: info.AuthenticationURL,
+			ServiceID:         info.ServiceID,
+			ClientID:          info.ClientID,
+			RequiredForAuthz:  requiredForAuthz,
+		}
+
+		authProviders = append(authProviders, providerInfo)
 	}
 
 	pp := conf.AuthPasswordPolicy()
@@ -373,7 +393,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		DeployType:        deploy.Type(),
 
-		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		SourcegraphDotComMode: dotcom.SourcegraphDotComMode(),
 
 		BillingPublishableKey: BillingPublishableKey,
 
@@ -396,7 +416,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		AuthAccessRequest: conf.Get().AuthAccessRequest,
 
-		Branding: globals.Branding(),
+		Branding: conf.Branding(),
 
 		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
@@ -443,6 +463,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
 
 		RunningOnMacOS: runningOnMacOS,
+
+		SvelteKit: sveltekit.GetJSContext(req.Context()),
 	}
 
 	// If the license a Sourcegraph instance is running under does not support Code Search features
@@ -640,7 +662,7 @@ func isBot(userAgent string) bool {
 }
 
 func licenseInfo() (info LicenseInfo) {
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		bcFeature := &licensing.FeatureBatchChanges{}
 		if err := licensing.Check(bcFeature); err == nil {
 			if bcFeature.Unrestricted {

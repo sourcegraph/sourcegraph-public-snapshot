@@ -29,7 +29,7 @@ func walk(node *sitter.Node, f func(node *sitter.Node)) {
 // children if it returns true.
 func walkFilter(node *sitter.Node, f func(node *sitter.Node) bool) {
 	if f(node) {
-		for i := 0; i < int(node.ChildCount()); i++ {
+		for i := range int(node.ChildCount()) {
 			walkFilter(node.Child(i), f)
 		}
 	}
@@ -49,25 +49,12 @@ func getRoot(node *sitter.Node) *sitter.Node {
 	return top
 }
 
-// isLessRange compares ranges.
-func isLessRange(a, b types.Range) bool {
-	if a.Row == b.Row {
-		return a.Column < b.Column
-	}
-	return a.Row < b.Row
-}
-
-// tabsToSpaces converts tabs to spaces.
-func tabsToSpaces(s string) string {
-	return strings.ReplaceAll(s, "\t", "    ")
-}
-
 const tabSize = 4
 
 // lengthInSpaces returns the length of the string in spaces (using tabSize).
 func lengthInSpaces(s string) int {
 	total := 0
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if s[i] == '\t' {
 			total += tabSize
 		} else {
@@ -80,7 +67,7 @@ func lengthInSpaces(s string) int {
 // spacesToColumn measures the length in spaces from the start of the string to the given column.
 func spacesToColumn(s string, column int) int {
 	total := 0
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if total >= column {
 			return i
 		}
@@ -93,9 +80,6 @@ func spacesToColumn(s string, column int) int {
 	}
 	return total
 }
-
-// colorSprintfFunc is a color printing function.
-type colorSprintfFunc func(a ...any) string
 
 // bracket prefixes all the lines of the given string with pretty brackets.
 func bracket(text string) string {
@@ -329,7 +313,7 @@ func children(node *sitter.Node) []*sitter.Node {
 		return nil
 	}
 	var children []*sitter.Node
-	for i := 0; i < int(node.NamedChildCount()); i++ {
+	for i := range int(node.NamedChildCount()) {
 		children = append(children, node.NamedChild(i))
 	}
 	return children

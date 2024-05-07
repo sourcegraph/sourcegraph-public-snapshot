@@ -1,7 +1,0 @@
-stateDiagram-v2
-    QUEUED_FOR_INDEXING --> INDEXING: Dequeued by executor
-    INDEXING            --> INDEXING_COMPLETED: Finished processing
-    INDEXING            --> INDEXING_ERRORED: Failed processing (retryable)
-    ERRORED             --> INDEXING: Retry
-    INDEXING            --> INDEXING_ERRORED: Failed processing (non-retryable)
-    PROCESSING          --> QUEUED_FOR_INDEXING: Record reset from dead executor

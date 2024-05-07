@@ -2,6 +2,8 @@ import React, { type FC, useState, useCallback, useRef, useEffect } from 'react'
 
 import { noop } from 'lodash'
 
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Alert,
     Container,
@@ -16,7 +18,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { GitHubAppDomain } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { PageTitle } from '../PageTitle'
 
 interface StateResponse {
@@ -31,7 +32,7 @@ interface FormOptions {
     webhookURL?: string
 }
 
-export interface CreateGitHubAppPageProps {
+export interface CreateGitHubAppPageProps extends TelemetryV2Props {
     /** The events that the new GitHub App should subscribe to by default. */
     defaultEvents: string[]
     /** The permissions that the new GitHub App will request by default. */
@@ -77,6 +78,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     defaultAppName = 'Sourcegraph',
     baseURL,
     validateURL,
+    telemetryRecorder,
 }) => {
     const ref = useRef<HTMLFormElement>(null)
     const formInput = useRef<HTMLInputElement>(null)
@@ -88,7 +90,10 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     const [isPublic, setIsPublic] = useState<boolean>(false)
     const [error, setError] = useState<string>()
 
-    useEffect(() => eventLogger.logPageView('SiteAdminCreateGiHubApp'), [])
+    useEffect(() => {
+        EVENT_LOGGER.logPageView('SiteAdminCreateGiHubApp')
+        telemetryRecorder.recordEvent('admin.GitHubApp.create', 'view')
+    }, [telemetryRecorder])
 
     const originURL = window.location.origin
     const getManifest = useCallback(

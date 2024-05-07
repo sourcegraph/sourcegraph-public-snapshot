@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/paths"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/paths"
 )
 
 func TestExcludingFilePaths(t *testing.T) {
@@ -154,6 +155,47 @@ func Test_isEmbeddableFileContent(t *testing.T) {
 			emeddable, skipReason := isEmbeddableFileContent(tc.content)
 			require.Equal(t, tc.embeddable, emeddable)
 			require.Equal(t, tc.reason, skipReason)
+		})
+	}
+}
+
+func TestIsValidTextFile(t *testing.T) {
+	tests := []struct {
+		fileName string
+		want     bool
+	}{
+		{
+			fileName: "docs.asciidoc",
+			want:     true,
+		},
+		{
+			fileName: "CHANGELOG.md",
+			want:     true,
+		},
+		{
+			fileName: "LICENSE.txt",
+			want:     true,
+		},
+		{
+			fileName: "License.MD",
+			want:     true,
+		},
+		{
+			fileName: "data.bin",
+			want:     false,
+		},
+		{
+			fileName: "rst.java",
+			want:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.fileName, func(t *testing.T) {
+			got := IsValidTextFile(tt.fileName)
+			if got != tt.want {
+				t.Errorf("IsValidTextFile() got = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

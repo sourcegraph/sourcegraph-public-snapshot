@@ -1,9 +1,44 @@
-load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
+load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
+
+expand_template(
+    name = "label_stamps",
+    out = "labels.txt",
+    stamp_substitutions = {
+        "COMMIT_SHA": "{{BUILDKITE_COMMIT}}",
+        "DATE": "{{VERSION_TIMESTAMP_RFC3339}}",
+        "STABLE_VERSION": "{{STABLE_VERSION}}",
+    },
+    template = [
+        "org.opencontainers.image.revision=COMMIT_SHA",
+        "org.opencontainers.image.created=DATE",
+        "org.opencontainers.image.version=STABLE_VERSION",
+        "org.opencontainers.image.url=https://sourcegraph.com/",
+        "org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/",
+        "org.opencontainers.image.documentation=https://sourcegraph.com/docs/",
+        "com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/COMMIT_SHA",
+    ],
+)
+
+pkg_tar(
+    name = "tar_whiteout",
+    srcs = [],
+    empty_files = [
+        # we can't run rm <file> so we use whiteout files to do it - see the following link for more info
+        # https://github.com/opencontainers/image-spec/blob/main/layer.md#whiteouts
+        "/usr/local/libexec/docker/cli-plugins/.wh.docker-compose",
+        "/usr/local/libexec/docker/cli-plugins/.wh.docker-buildx",
+    ],
+)
 
 oci_image(
     name = "image",
-    base = "@legacy_dind_base",
+    base = "@upstream_dind_base",
+    cmd = [],
+    entrypoint = ["dockerd-entrypoint.sh"],
+    labels = ":label_stamps",
+    tars = [":tar_whiteout"],
 )
 
 oci_tarball(

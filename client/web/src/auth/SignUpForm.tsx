@@ -7,7 +7,8 @@ import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     useInputValidation,
     type ValidationOptions,
@@ -17,7 +18,6 @@ import { Link, Icon, Label, Text, Button, AnchorLink, LoaderInput, ErrorAlert } 
 
 import { LoaderButton } from '../components/LoaderButton'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
-import { eventLogger } from '../tracking/eventLogger'
 import { EventName, V2AuthProviderTypes } from '../util/constants'
 import { validatePassword, getPasswordRequirements } from '../util/security'
 
@@ -110,14 +110,14 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                 email: emailState.value,
                 username: usernameState.value,
                 password: passwordState.value,
-                anonymousUserId: eventLogger.user.anonymousUserID,
-                firstSourceUrl: eventLogger.session.getFirstSourceURL(),
-                lastSourceUrl: eventLogger.session.getLastSourceURL(),
+                anonymousUserId: EVENT_LOGGER.user.anonymousUserID,
+                firstSourceUrl: EVENT_LOGGER.session.getFirstSourceURL(),
+                lastSourceUrl: EVENT_LOGGER.session.getLastSourceURL(),
             }).catch(error => {
                 setError(asError(error))
                 setLoading(false)
             })
-            eventLogger.log('InitiateSignUp')
+            EVENT_LOGGER.log('InitiateSignUp')
             telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes.builtin } })
         },
         [onSignUp, disabled, emailState, usernameState, passwordState, telemetryRecorder]
@@ -129,7 +129,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
         (type: AuthProvider['serviceType']) => () => {
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
-            eventLogger.log(EventName.AUTH_INITIATED, { type }, { type })
+            EVENT_LOGGER.log(EventName.AUTH_INITIATED, { type }, { type })
             telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes[type] } })
         },
         [telemetryRecorder]

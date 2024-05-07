@@ -11,7 +11,7 @@ import {
     MetaSelectorKind,
     type MetaPredicate,
 } from './decoratedToken'
-import { Pattern } from './token'
+import type { Pattern } from './token'
 
 const toRegexpHover = (token: MetaRegexp): string => {
     switch (token.kind) {
@@ -234,6 +234,9 @@ const toPredicateHover = (token: MetaPredicate): string => {
         }
         case 'has.owner': {
             return '**Built-in predicate**. Search only inside files that are owned by the given person or team'
+        }
+        case 'at.time': {
+            return '**Built-in predicate**. Search a repo at a specific time'
         }
     }
     return ''

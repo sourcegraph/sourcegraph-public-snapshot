@@ -43,14 +43,24 @@ func TestHandler(t *testing.T) {
 		pathToEntries := map[string][]*ctags.Entry{
 			"a.js": {
 				{
-					Name: "x",
-					Path: "a.js",
-					Line: 1, // ctags line numbers are 1-based
+					Name:     "x",
+					Path:     "a.js",
+					Language: "JavaScript",
+					Line:     1, // ctags line numbers are 1-based
 				},
 				{
-					Name: "y",
-					Path: "a.js",
-					Line: 2,
+					Name:     "y",
+					Path:     "a.js",
+					Language: "JavaScript",
+					Line:     2,
+				},
+			},
+			".zshrc": {
+				{
+					Name:     "z",
+					Path:     ".zshrc",
+					Language: "Zsh",
+					Line:     1,
 				},
 			},
 		}
@@ -62,15 +72,16 @@ func TestHandler(t *testing.T) {
 	}
 
 	files := map[string]string{
-		"a.js": "var x = 1\nvar y = 2",
+		"a.js":   "var x = 1\nvar y = 2",
+		".zshrc": "z=42",
 	}
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(files))
 
-	symbolParser := parser.NewParser(&observation.TestContext, parserPool, fetcher.NewRepositoryFetcher(&observation.TestContext, gitserverClient, 1000, 1_000_000), 0, 10)
+	symbolParser := parser.NewParser(observation.TestContextTB(t), parserPool, fetcher.NewRepositoryFetcher(observation.TestContextTB(t), gitserverClient, 1000, 1_000_000), 0, 10)
 	databaseWriter := writer.NewDatabaseWriter(observation.TestContextTB(t), tmpDir, gitserverClient, symbolParser, semaphore.NewWeighted(1))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	handler := NewHandler(MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, dbmocks.NewMockDB()), func(ctx context.Context, rcp types.RepoCommitPath) ([]byte, error) { return nil, nil }, nil, "")
+	handler := NewHandler(MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, dbmocks.NewMockDB()), func(ctx context.Context, rcp types.RepoCommitPath) ([]byte, error) { return nil, nil }, nil)
 
 	server := httptest.NewServer(handler)
 	defer server.Close()
@@ -83,15 +94,16 @@ func TestHandler(t *testing.T) {
 		GRPCConnectionCache: connectionCache,
 	}
 
-	x := result.Symbol{Name: "x", Path: "a.js", Line: 0, Character: 4}
-	y := result.Symbol{Name: "y", Path: "a.js", Line: 1, Character: 4}
+	x := result.Symbol{Name: "x", Path: "a.js", Language: "JavaScript", Line: 0, Character: 4}
+	y := result.Symbol{Name: "y", Path: "a.js", Language: "JavaScript", Line: 1, Character: 4}
+	z := result.Symbol{Name: "z", Path: ".zshrc", Language: "Zsh", Line: 0, Character: 0}
 
 	testCases := map[string]struct {
 		args     search.SymbolsParameters
 		expected result.Symbols
 	}{
 		"simple": {
-			args:     search.SymbolsParameters{First: 10},
+			args:     search.SymbolsParameters{IncludePatterns: []string{"^a.js$"}, First: 10},
 			expected: []result.Symbol{x, y},
 		},
 		"onematch": {
@@ -128,17 +140,31 @@ func TestHandler(t *testing.T) {
 		},
 		"exclude": {
 			args:     search.SymbolsParameters{ExcludePattern: "a.js", IsCaseSensitive: true, First: 10},
-			expected: nil,
+			expected: []result.Symbol{z},
+		},
+		"include lang filters": {
+			args:     search.SymbolsParameters{Query: ".*", IncludeLangs: []string{"Javascript"}, IsCaseSensitive: true, First: 10},
+			expected: []result.Symbol{x, y},
+		},
+		"include lang filters with ctags conversion": {
+			args:     search.SymbolsParameters{Query: ".*", IncludeLangs: []string{"Shell"}, IsCaseSensitive: true, First: 10},
+			expected: []result.Symbol{z},
+		},
+		"exclude lang filters": {
+			args:     search.SymbolsParameters{Query: ".*", ExcludeLangs: []string{"Javascript"}, IsCaseSensitive: true, First: 10},
+			expected: []result.Symbol{z},
 		},
 	}
 
 	for label, testCase := range testCases {
 		t.Run(label, func(t *testing.T) {
-			resultSymbols, err := client.Search(context.Background(), testCase.args)
+			resultSymbols, limitHit, err := client.Search(context.Background(), testCase.args)
 			if err != nil {
 				t.Fatalf("unexpected error performing search: %s", err)
 			}
-
+			if limitHit {
+				t.Fatalf("unexpected limitHit")
+			}
 			if resultSymbols == nil {
 				if testCase.expected != nil {
 					t.Errorf("unexpected search result. want=%+v, have=nil", testCase.expected)

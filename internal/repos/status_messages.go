@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -93,7 +93,7 @@ func FetchStatusMessages(ctx context.Context, db database.DB, gitserverClient gi
 	// determining the index status a bit more complicated than for other
 	// instances.
 	// So for now we don't return the indexing message on sourcegraph.com.
-	if !envvar.SourcegraphDotComMode() {
+	if !dotcom.SourcegraphDotComMode() {
 		zoektRepoStats, err := db.ZoektRepos().GetStatistics(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "loading repo statistics")

@@ -6,17 +6,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 func TestServeHelp(t *testing.T) {
 	t.Run("unreleased dev version", func(t *testing.T) {
-		{
-			orig := envvar.SourcegraphDotComMode()
-			envvar.MockSourcegraphDotComMode(false)
-			defer envvar.MockSourcegraphDotComMode(orig) // reset
-		}
+		dotcom.MockSourcegraphDotComMode(t, false)
+
 		{
 			orig := version.Version()
 			version.Mock("0.0.0+dev")
@@ -31,17 +28,14 @@ func TestServeHelp(t *testing.T) {
 		if want := http.StatusTemporaryRedirect; rw.Code != want {
 			t.Errorf("got %d, want %d", rw.Code, want)
 		}
-		if got, want := rw.Header().Get("Location"), "http://localhost:5080/foo/bar"; got != want {
+		if got, want := rw.Header().Get("Location"), "http://localhost:3000/foo/bar"; got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	})
 
 	t.Run("released version", func(t *testing.T) {
-		{
-			orig := envvar.SourcegraphDotComMode()
-			envvar.MockSourcegraphDotComMode(false)
-			defer envvar.MockSourcegraphDotComMode(orig) // reset
-		}
+		dotcom.MockSourcegraphDotComMode(t, false)
+
 		{
 			orig := version.Version()
 			version.Mock("3.39.1")
@@ -61,9 +55,7 @@ func TestServeHelp(t *testing.T) {
 	})
 
 	t.Run("Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		rw := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/help/foo/bar", nil)

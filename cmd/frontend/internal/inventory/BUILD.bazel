@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "inventory",
+    srcs = [
+        "context.go",
+        "entries.go",
+        "inventory.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_go_enry_go_enry_v2//:go-enry",
+        "@com_github_go_enry_go_enry_v2//data",
+        "@com_github_sourcegraph_conc//iter",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "inventory_test",
+    srcs = [
+        "entries_test.go",
+        "inventory_test.go",
+    ],
+    embed = [":inventory"],
+    deps = [
+        "//internal/fileutil",
+        "//lib/errors",
+        "@com_github_go_enry_go_enry_v2//:go-enry",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

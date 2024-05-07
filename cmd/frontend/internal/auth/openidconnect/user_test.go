@@ -9,12 +9,16 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -22,9 +26,10 @@ func TestAllowSignup(t *testing.T) {
 	allow := true
 	disallow := false
 	tests := map[string]struct {
-		allowSignup       *bool
-		usernamePrefix    string
-		shouldAllowSignup bool
+		allowSignup          *bool
+		usernamePrefix       string
+		shouldAllowSignup    bool
+		additionalProperties telemetry.EventMetadata
 	}{
 		"nil": {
 			allowSignup:       nil,
@@ -43,6 +48,11 @@ func TestAllowSignup(t *testing.T) {
 			shouldAllowSignup: false,
 			usernamePrefix:    "sourcegraph-operator-",
 		},
+		"with metadata": {
+			allowSignup:          &allow,
+			shouldAllowSignup:    true,
+			additionalProperties: telemetry.EventMetadata{"foo": 1},
+		},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -55,6 +65,8 @@ func TestAllowSignup(t *testing.T) {
 				)
 				return false, 0, "", nil
 			}
+			db := dbmocks.NewStrictMockDB()
+			_ = telemetrytest.AddDBMocks(db)
 			p := &Provider{
 				config: schema.OpenIDConnectAuthProvider{
 					ClientID:           testClientID,
@@ -67,7 +79,8 @@ func TestAllowSignup(t *testing.T) {
 			}
 			_, _, _, err := getOrCreateUser(
 				context.Background(),
-				dbmocks.NewStrictMockDB(),
+				logtest.Scoped(t),
+				db,
 				p,
 				&oauth2.Token{},
 				&oidc.IDToken{},
@@ -77,9 +90,10 @@ func TestAllowSignup(t *testing.T) {
 				},
 				&userClaims{},
 				test.usernamePrefix,
+				test.additionalProperties,
+
 				&hubspot.ContactProperties{
 					AnonymousUserID: "anonymous-user-id-123",
-					FirstSourceURL:  "https://example.com/",
 					LastSourceURL:   "https://example.com/",
 				})
 			require.NoError(t, err)

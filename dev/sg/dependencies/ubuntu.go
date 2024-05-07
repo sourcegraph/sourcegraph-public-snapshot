@@ -33,7 +33,8 @@ var Ubuntu = []category{
 				Name:  "git",
 				Check: checkAction(check.Git),
 				Fix:   aptGetInstall("git", "sudo add-apt-repository -y ppa:git-core/ppa"),
-			}, {
+			},
+			{
 				Name:  "pcre",
 				Check: checkAction(check.HasUbuntuLibrary("libpcre3-dev")),
 				Fix:   aptGetInstall("libpcre3-dev"),
@@ -169,7 +170,10 @@ var Ubuntu = []category{
 			{
 				Name:  "Install Postgres",
 				Check: checkAction(check.InPath("psql")),
-				Fix:   aptGetInstall("postgresql postgresql-contrib"),
+				Fix: aptGetInstall(
+					"postgresql-12",
+					"DEBIAN_FRONTEND=noninteractive curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg && echo \"deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main\" | sudo tee  /etc/apt/sources.list.d/pgdg.list",
+				),
 			},
 			{
 				Name: "Start Postgres",

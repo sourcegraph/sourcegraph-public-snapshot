@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Output is a wrapper with convenience functions for sg output.
@@ -51,7 +52,7 @@ func NewFixedOutput(dst io.Writer, verbose bool) *Output {
 // TTY and color, useful for testing and getting simpler output.
 func NewSimpleOutput(dst io.Writer, verbose bool) *Output {
 	opts := newStaticOutputOptions(verbose)
-	opts.ForceTTY = false
+	opts.ForceTTY = pointers.Ptr(false)
 	opts.ForceColor = false
 
 	return &Output{
@@ -64,7 +65,7 @@ func NewSimpleOutput(dst io.Writer, verbose bool) *Output {
 func newStaticOutputOptions(verbose bool) output.OutputOpts {
 	return output.OutputOpts{
 		ForceColor:          true,
-		ForceTTY:            true,
+		ForceTTY:            pointers.Ptr(true),
 		Verbose:             verbose,
 		ForceWidth:          80,
 		ForceHeight:         25,
@@ -150,6 +151,11 @@ func (o *Output) WriteNoticef(fmtStr string, args ...any) {
 // Promptf prints a prompt for user input, and should be followed by an fmt.Scan or similar.
 func (o *Output) Promptf(fmtStr string, args ...any) {
 	l := output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...)
+	o.FancyPrompt(l)
+}
+
+// FancyPrompt prints a prompt for user input, and should be followed by an fmt.Scan or similar.
+func (o *Output) FancyPrompt(l output.FancyLine) {
 	l.Prompt = true
 	o.WriteLine(l)
 }

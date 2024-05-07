@@ -5,13 +5,12 @@ import type { Observable } from 'rxjs'
 
 import { limitHit, useUrlFilters } from '@sourcegraph/branded'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, type StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import type { SearchAggregationProps, SearchStreamingProps } from '..'
@@ -40,8 +39,7 @@ export interface StreamingSearchResultsProps
         CodeInsightsProps,
         SearchAggregationProps,
         CodeMonitoringProps,
-        OwnConfigProps,
-        ExtensionsControllerProps {
+        OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -56,7 +54,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         searchAggregationEnabled,
         codeMonitoringEnabled,
         platformContext,
-        extensionsController,
     } = props
 
     const location = useLocation()
@@ -106,6 +103,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         options,
         streamSearch,
         telemetryService,
+        telemetryRecorder: platformContext.telemetryRecorder,
     })
 
     const { logSearchResultClicked } = useStreamingSearchPings({
@@ -113,6 +111,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         isSourcegraphDotCom,
         results,
         isAuauthenticated: !!authenticatedUser,
+        telemetryRecorder: platformContext.telemetryRecorder,
     })
 
     useEffect(() => {
@@ -130,8 +129,12 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     const onExpandAllResultsToggle = useCallback(() => {
         setAllExpanded(oldValue => !oldValue)
-        telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
-    }, [allExpanded, telemetryService])
+        platformContext.telemetryRecorder.recordEvent(
+            'search.resultsInfoBar.allResults',
+            !allExpanded ? 'expand' : 'collapse'
+        )
+        telemetryService.log(!allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
+    }, [allExpanded, telemetryService, platformContext.telemetryRecorder])
 
     useEffect(() => {
         setAllExpanded(false) // Reset expanded state when new search is started
@@ -157,16 +160,18 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         ...location,
                         search: updatedSearchQuery || location.search,
                     },
+                    telemetryRecorder: platformContext.telemetryRecorder,
                 },
                 updates
             )
         },
-        [submitQuerySearch, props.selectedSearchContextSpec, navigate, location]
+        [submitQuerySearch, props.selectedSearchContextSpec, navigate, location, platformContext.telemetryRecorder]
     )
 
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
             telemetryService.log('SearchSkippedResultsAgainClicked')
+            platformContext.telemetryRecorder.recordEvent('search.resultsInfoBar.skippedResultsSearchAgain', 'click')
 
             const { selectedSearchContextSpec } = props
             submitSearch({
@@ -177,9 +182,19 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 patternType,
                 query: applyAdditionalFilters(submittedURLQuery, additionalFilters),
                 source: 'excludedResults',
+                telemetryRecorder: platformContext.telemetryRecorder,
             })
         },
-        [telemetryService, props, navigate, location, caseSensitive, patternType, submittedURLQuery]
+        [
+            telemetryService,
+            props,
+            navigate,
+            location,
+            caseSensitive,
+            patternType,
+            submittedURLQuery,
+            platformContext.telemetryRecorder,
+        ]
     )
 
     /**
@@ -201,6 +216,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             patternType,
             query,
             source: 'nav',
+            telemetryRecorder: platformContext.telemetryRecorder,
         })
     }
 
@@ -214,8 +230,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             patternType: SearchPatternType.standard,
             query: submittedURLQuery,
             source: 'smartSearchDisabled',
+            telemetryRecorder: platformContext.telemetryRecorder,
         })
-    }, [caseSensitive, location, navigate, props, submittedURLQuery])
+    }, [caseSensitive, location, navigate, props, submittedURLQuery, platformContext.telemetryRecorder])
 
     const onTogglePatternType = useCallback(
         (patternType: SearchPatternType) => {
@@ -232,9 +249,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 patternType: newPatternType,
                 query: submittedURLQuery,
                 source: 'nav',
+                telemetryRecorder: platformContext.telemetryRecorder,
             })
         },
-        [caseSensitive, location, navigate, props, submittedURLQuery]
+        [caseSensitive, location, navigate, props, submittedURLQuery, platformContext.telemetryRecorder]
     )
 
     const hasResultsToAggregate = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
@@ -273,7 +291,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             settingsCascade={props.settingsCascade}
             telemetryService={telemetryService}
             platformContext={platformContext}
-            extensionsController={extensionsController}
         />
     )
 }

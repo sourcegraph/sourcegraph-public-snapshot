@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import type { AuthProvider } from 'src/jscontext'
 
 import type { ErrorLike } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 
 import { defaultExternalAccounts } from '../../../components/externalAccounts/externalAccounts'
 
@@ -22,7 +23,7 @@ export interface NormalizedExternalAccount {
     }
 }
 
-interface Props {
+interface Props extends TelemetryV2Props {
     accounts: UserExternalAccount[]
     authProviders: AuthProvider[]
     onDidRemove: (id: string, name: string) => void
@@ -84,6 +85,7 @@ export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChil
     onDidRemove,
     onDidError,
     onDidAdd,
+    telemetryRecorder,
 }) => {
     const accountGroups = authProviders.map(authProvider => ({
         authProvider,
@@ -97,6 +99,7 @@ export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChil
                 className={classNames('list-group-item', styles.externalAccount)}
             >
                 <ExternalAccount
+                    telemetryRecorder={telemetryRecorder}
                     account={account}
                     authProvider={account.authProvider}
                     onDidRemove={onDidRemove}
