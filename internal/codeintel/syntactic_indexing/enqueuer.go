@@ -62,7 +62,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 	m := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
 			observationCtx.Registerer,
-			"codeintel_autoindexing_store",
+			"codeintel_syntactic_indexing_enqueuer",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of method invocations."),
 		)

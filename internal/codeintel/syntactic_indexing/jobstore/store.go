@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -20,8 +21,9 @@ type SyntacticIndexingJobStore interface {
 }
 
 type syntacticIndexingJobStoreImpl struct {
-	store dbworkerstore.Store[*SyntacticIndexingJob]
-	db    *basestore.Store
+	store      dbworkerstore.Store[*SyntacticIndexingJob]
+	db         *basestore.Store
+	operations *operations
 }
 
 var _ SyntacticIndexingJobStore = &syntacticIndexingJobStoreImpl{}
@@ -62,17 +64,18 @@ func NewStoreWithDB(observationCtx *observation.Context, db *sql.DB) (SyntacticI
 
 	handle := basestore.NewHandleWithDB(observationCtx.Logger, db, sql.TxOptions{})
 	return &syntacticIndexingJobStoreImpl{
-		store: dbworkerstore.New(observationCtx, handle, storeOptions),
-		db:    basestore.NewWithHandle(handle),
+		store:      dbworkerstore.New(observationCtx, handle, storeOptions),
+		db:         basestore.NewWithHandle(handle),
+		operations: newOperations(observationCtx),
 	}, nil
 }
 
-func (s *syntacticIndexingJobStoreImpl) InsertIndexes(ctx context.Context, indexes []SyntacticIndexingJob) ([]SyntacticIndexingJob, error) {
+func (s *syntacticIndexingJobStoreImpl) InsertIndexes(ctx context.Context, indexes []SyntacticIndexingJob) (jobs []SyntacticIndexingJob, err error) {
 
-	// ctx, _, endObservation := s.operations.insertIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-	// 	attribute.Int("numIndexes", len(indexes)),
-	// }})
-	// endObservation(1, observation.Args{})
+	ctx, _, endObservation := s.operations.insertIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numIndexes", len(indexes)),
+	}})
+	endObservation(1, observation.Args{})
 
 	if len(indexes) == 0 {
 		return nil, nil
@@ -92,7 +95,7 @@ func (s *syntacticIndexingJobStoreImpl) InsertIndexes(ctx context.Context, index
 	}
 
 	indexes = []SyntacticIndexingJob{}
-	err := s.db.WithTransact(ctx, func(tx *basestore.Store) error {
+	err = s.db.WithTransact(ctx, func(tx *basestore.Store) error {
 		ids, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(insertIndexQuery, sqlf.Join(values, ","))))
 		if err != nil {
 			return err
