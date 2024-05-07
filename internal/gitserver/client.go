@@ -448,9 +448,6 @@ type Client interface {
 	// If either the base or head <tree-ish> id does not exist, a gitdomain.RevisionNotFoundError is returned.
 	ChangedFiles(ctx context.Context, repo api.RepoName, base, head string) (ChangedFilesIterator, error)
 
-	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
-	DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
-
 	// Commits returns all commits matching the options.
 	Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error)
 

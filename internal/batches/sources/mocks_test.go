@@ -11013,9 +11013,6 @@ type MockGitserverClient struct {
 	// DiffFunc is an instance of a mock function object controlling the
 	// behavior of the method Diff.
 	DiffFunc *GitserverClientDiffFunc
-	// DiffSymbolsFunc is an instance of a mock function object controlling
-	// the behavior of the method DiffSymbols.
-	DiffSymbolsFunc *GitserverClientDiffSymbolsFunc
 	// FirstEverCommitFunc is an instance of a mock function object
 	// controlling the behavior of the method FirstEverCommit.
 	FirstEverCommitFunc *GitserverClientFirstEverCommitFunc
@@ -11164,11 +11161,6 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		DiffFunc: &GitserverClientDiffFunc{
 			defaultHook: func(context.Context, api.RepoName, gitserver.DiffOptions) (r0 *gitserver.DiffFileIterator, r1 error) {
-				return
-			},
-		},
-		DiffSymbolsFunc: &GitserverClientDiffSymbolsFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (r0 []byte, r1 error) {
 				return
 			},
 		},
@@ -11384,11 +11376,6 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.Diff")
 			},
 		},
-		DiffSymbolsFunc: &GitserverClientDiffSymbolsFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error) {
-				panic("unexpected invocation of MockGitserverClient.DiffSymbols")
-			},
-		},
 		FirstEverCommitFunc: &GitserverClientFirstEverCommitFunc{
 			defaultHook: func(context.Context, api.RepoName) (*gitdomain.Commit, error) {
 				panic("unexpected invocation of MockGitserverClient.FirstEverCommit")
@@ -11579,9 +11566,6 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		},
 		DiffFunc: &GitserverClientDiffFunc{
 			defaultHook: i.Diff,
-		},
-		DiffSymbolsFunc: &GitserverClientDiffSymbolsFunc{
-			defaultHook: i.DiffSymbols,
 		},
 		FirstEverCommitFunc: &GitserverClientFirstEverCommitFunc{
 			defaultHook: i.FirstEverCommit,
@@ -12908,120 +12892,6 @@ func (c GitserverClientDiffFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientDiffFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverClientDiffSymbolsFunc describes the behavior when the
-// DiffSymbols method of the parent MockGitserverClient instance is invoked.
-type GitserverClientDiffSymbolsFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error)
-	history     []GitserverClientDiffSymbolsFuncCall
-	mutex       sync.Mutex
-}
-
-// DiffSymbols delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitserverClient) DiffSymbols(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 api.CommitID) ([]byte, error) {
-	r0, r1 := m.DiffSymbolsFunc.nextHook()(v0, v1, v2, v3)
-	m.DiffSymbolsFunc.appendCall(GitserverClientDiffSymbolsFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the DiffSymbols method
-// of the parent MockGitserverClient instance is invoked and the hook queue
-// is empty.
-func (f *GitserverClientDiffSymbolsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DiffSymbols method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientDiffSymbolsFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientDiffSymbolsFunc) SetDefaultReturn(r0 []byte, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientDiffSymbolsFunc) PushReturn(r0 []byte, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientDiffSymbolsFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, api.CommitID) ([]byte, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientDiffSymbolsFunc) appendCall(r0 GitserverClientDiffSymbolsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientDiffSymbolsFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientDiffSymbolsFunc) History() []GitserverClientDiffSymbolsFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientDiffSymbolsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientDiffSymbolsFuncCall is an object that describes an
-// invocation of method DiffSymbols on an instance of MockGitserverClient.
-type GitserverClientDiffSymbolsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.CommitID
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 api.CommitID
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []byte
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientDiffSymbolsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientDiffSymbolsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
