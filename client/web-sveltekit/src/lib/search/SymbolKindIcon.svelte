@@ -144,5 +144,11 @@
                 --icon-color: var(--oc-blue-6);
             }
         }
+
+        :global(svg) {
+            height: var(--icon-size, 16px);
+            width: var(--icon-size, 16px);
+            flex: none;
+        }
     }
 </style>

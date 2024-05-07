@@ -41,7 +41,7 @@
             {#each result.symbols as symbol, index}
                 <a href={symbol.url}>
                     <div class="result">
-                        <SymbolKind symbolKind={symbol.kind} --icon-size="1em" />
+                        <SymbolKind symbolKind={symbol.kind} />
                         {#await highlightedHTMLRows then result}
                             <CodeExcerpt
                                 startLine={symbol.line}
