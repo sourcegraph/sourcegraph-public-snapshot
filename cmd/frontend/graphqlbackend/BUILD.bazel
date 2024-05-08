@@ -426,7 +426,6 @@ go_test(
         "recorded_commands_test.go",
         "repositories_test.go",
         "repository_comparison_test.go",
-        "repository_contributors_test.go",
         "repository_cursor_test.go",
         "repository_metadata_test.go",
         "repository_mirror_test.go",
