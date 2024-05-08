@@ -1,12 +1,14 @@
-import type { GraphQLClient } from '$lib/graphql'
-import { CachedAsyncCompletionSource } from '$lib/web'
-import { FuzzyFinderQuery, type FuzzyFinderFileMatch } from './FuzzyFinder.gql'
-import { mapOrThrow } from '$lib/graphql'
 import { Fzf, type FzfOptions, type FzfResultItem } from 'fzf'
-import { readable, type Readable } from 'svelte/store'
-import type { Loadable } from '$lib/utils'
 import { Observable, Subject } from 'rxjs'
 import { throttleTime, switchMap } from 'rxjs/operators'
+import { readable, type Readable } from 'svelte/store'
+
+import type { GraphQLClient } from '$lib/graphql'
+import { mapOrThrow } from '$lib/graphql'
+import type { Loadable } from '$lib/utils'
+import { CachedAsyncCompletionSource } from '$lib/web'
+
+import { FuzzyFinderQuery, type FuzzyFinderFileMatch } from './FuzzyFinder.gql'
 
 interface SymbolMatch {
     type: 'symbol'
