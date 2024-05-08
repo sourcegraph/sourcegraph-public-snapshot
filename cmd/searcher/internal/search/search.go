@@ -46,7 +46,7 @@ type Service struct {
 	Indexed zoekt.Streamer
 
 	// GitChangedFiles returns an iterator that yields list of changed files that have changed in between commitA and commitB in the given
-	// repo.
+	// repo. The returned statuses will be one of StatusAdded, StatusRemoved, StatusModified, or StatusTypeChanged
 	GitChangedFiles func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (gitserver.ChangedFilesIterator, error)
 
 	// MaxTotalPathsLength is the maximum sum of lengths of all paths in a

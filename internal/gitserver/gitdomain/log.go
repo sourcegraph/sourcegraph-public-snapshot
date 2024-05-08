@@ -26,7 +26,7 @@ func (s *PathStatus) String() string {
 func PathStatusFromProto(p *proto.ChangedFile) PathStatus {
 	return PathStatus{
 		Path:   string(p.Path),
-		Status: StatusAMDFromProto(p.Status),
+		Status: StatusFromProto(p.Status),
 	}
 }
 
@@ -37,30 +37,18 @@ func (p *PathStatus) ToProto() *proto.ChangedFile {
 	}
 }
 
-type Status int
+type Status byte
 
 const (
 	StatusUnspecified Status = 'X'
 	StatusAdded       Status = 'A'
 	StatusModified    Status = 'M'
 	StatusDeleted     Status = 'D'
-	// TODO: add other possible statuses here
+	StatusTypeChanged Status = 'T'
+	// TODO: add other possible statuses here (see man git-diff-tree)
 )
 
-func (s Status) String() string {
-	switch s {
-	case StatusAdded:
-		return "Added"
-	case StatusModified:
-		return "Modified"
-	case StatusDeleted:
-		return "Deleted"
-	default:
-		return "Unspecified"
-	}
-}
-
-func StatusAMDFromProto(s proto.ChangedFile_Status) Status {
+func StatusFromProto(s proto.ChangedFile_Status) Status {
 	switch s {
 	case proto.ChangedFile_STATUS_ADDED:
 		return StatusAdded
@@ -68,6 +56,8 @@ func StatusAMDFromProto(s proto.ChangedFile_Status) Status {
 		return StatusModified
 	case proto.ChangedFile_STATUS_DELETED:
 		return StatusDeleted
+	case proto.ChangedFile_STATUS_TYPE_CHANGED:
+		return StatusTypeChanged
 	default:
 		return StatusUnspecified
 	}
@@ -81,6 +71,8 @@ func (s Status) ToProto() proto.ChangedFile_Status {
 		return proto.ChangedFile_STATUS_MODIFIED
 	case StatusDeleted:
 		return proto.ChangedFile_STATUS_DELETED
+	case StatusTypeChanged:
+		return proto.ChangedFile_STATUS_TYPE_CHANGED
 	default:
 		return proto.ChangedFile_STATUS_UNSPECIFIED
 	}

@@ -57,7 +57,7 @@ func TestStatusAMD_RoundTrip(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			converted := StatusAMDFromProto(test.amd.ToProto())
+			converted := StatusFromProto(test.amd.ToProto())
 
 			if diff := cmp.Diff(test.amd, converted); diff != "" {
 				t.Errorf("StatusAMD roundtrip mismatch (-want +got):\n%s", diff)

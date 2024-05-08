@@ -136,6 +136,8 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 				case gitdomain.StatusAdded:
 					// doesn't exist in "indexed"
 					unindexedSearch = append(unindexedSearch, c.Path)
+				default:
+					// ignore any other statuses
 				}
 			}
 

@@ -262,6 +262,8 @@ func (r *revisionFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
 		case gitdomain.StatusAdded:
 			// Added in "r.revision"
 			changedNew = append(changedNew, f.Path)
+		default:
+			// ignore other status types (should only be StatusTypeChanged)
 		}
 	}
 

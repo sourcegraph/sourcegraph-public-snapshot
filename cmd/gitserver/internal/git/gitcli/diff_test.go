@@ -281,6 +281,45 @@ func TestGitCLIBackend_ChangedFiles(t *testing.T) {
 		}
 
 	})
+
+	t.Run("changed type", func(t *testing.T) {
+		// Prepare repo state:
+		backend := BackendWithRepoCommands(t,
+			"echo line1 > f1",
+			"git add -A",
+			"git commit -m foo --author='Foo Author <foo@sourcegraph.com>'",
+
+			"mv f1 f2",
+			"ln -s f2 f1",
+			"git add -A",
+			"git commit -m bar --author='Bar Author <foo@sourcegraph.com>'",
+		)
+
+		iterator, err := backend.ChangedFiles(ctx, "", "HEAD")
+		require.NoError(t, err)
+		defer iterator.Close()
+
+		var actualChanges []gitdomain.PathStatus
+		for {
+			change, err := iterator.Next()
+			if err == io.EOF {
+				break
+			}
+
+			require.NoError(t, err)
+			actualChanges = append(actualChanges, change)
+		}
+
+		expectedChanges := []gitdomain.PathStatus{
+			{Path: "f1", Status: gitdomain.StatusTypeChanged},
+			{Path: "f2", Status: gitdomain.StatusAdded},
+		}
+
+		if diff := cmp.Diff(expectedChanges, actualChanges, cmpopts.EquateEmpty()); diff != "" {
+			t.Errorf("unexpected changes (-want +got):\n%s", diff)
+		}
+
+	})
 }
 
 const NUL byte = 0
