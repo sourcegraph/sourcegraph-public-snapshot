@@ -9,8 +9,8 @@ const signale = require('signale')
     __dirname,
     '../../../cmd/frontend/internal/codycontext/testdata/enterprise_filter_test_data.json'
   )
-  const datasetDest = path.join(__dirname, './dataset.json')
-  const packageJSONPath = path.join(__dirname, './package.json')
+  const datasetDest = path.join(__dirname, '../dataset.json')
+  const packageJSONPath = path.join(__dirname, '../package.json')
 
   const copyDatasetFileResult = shelljs.cp(datasetSource, datasetDest)
   if (copyDatasetFileResult.code !== 0) {
