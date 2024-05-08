@@ -47,6 +47,14 @@ service GitserverService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
+
+  // GetObject returns the object with the given OID in the given repository.
+  //
+  // If the object is not found, an error with a RevisionNotFoundPayload is
+  // returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
   rpc GetObject(GetObjectRequest) returns (GetObjectResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }

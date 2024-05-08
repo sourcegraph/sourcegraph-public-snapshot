@@ -18,6 +18,8 @@ type GitBackend interface {
 	// Config returns a backend for interacting with git configuration at .git/config.
 	Config() GitConfigBackend
 	// GetObject allows to read a git object from the git object database.
+	//
+	// If the object specified by objectName does not exist, a RevisionNotFoundError is returned.
 	GetObject(ctx context.Context, objectName string) (*gitdomain.GitObject, error)
 	// MergeBase finds the merge base commit for the given base and head revspecs.
 	// Returns an empty string and no error if no common merge-base was found.

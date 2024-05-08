@@ -696,6 +696,88 @@ func TestGRPCServer_RevAtTime(t *testing.T) {
 	})
 }
 
+func TestGRPCServer_GetObject(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &grpcServer{}
+		t.Run("repo must be specified", func(t *testing.T) {
+			_, err := gs.GetObject(ctx, &v1.GetObjectRequest{})
+			require.ErrorContains(t, err, "repo must be specified")
+			assertGRPCStatusCode(t, err, codes.InvalidArgument)
+		})
+
+		t.Run("object name must be specified", func(t *testing.T) {
+			_, err := gs.GetObject(ctx, &v1.GetObjectRequest{Repo: "therepo"})
+			require.ErrorContains(t, err, "object name must be specified")
+			assertGRPCStatusCode(t, err, codes.InvalidArgument)
+		})
+	})
+
+	t.Run("checks for uncloned repo", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
+		_, err := gs.GetObject(ctx, &v1.GetObjectRequest{Repo: "therepo", ObjectName: "deadbeef"})
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		require.Contains(t, err.Error(), "repo not found")
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
+	})
+
+	t.Run("e2e", func(t *testing.T) {
+		expectedID := gitdomain.OID{0xde, 0xad, 0xbe, 0xef, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+
+		fs := gitserverfs.NewMockFS()
+		// Repo is cloned, proceed!
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
+		b := git.NewMockGitBackend()
+
+		b.GetObjectFunc.SetDefaultReturn(&gitdomain.GitObject{
+			ID:   expectedID,
+			Type: gitdomain.ObjectTypeBlob,
+		}, nil)
+		gs := &grpcServer{
+			svc:    NewMockService(),
+			fs:     fs,
+			logger: logtest.Scoped(t),
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				return b
+			},
+		}
+
+		cli := spawnServer(t, gs)
+
+		res, err := cli.GetObject(ctx, &v1.GetObjectRequest{
+			Repo:       "therepo",
+			ObjectName: "deadbeef",
+		})
+		require.NoError(t, err)
+		if diff := cmp.Diff(&proto.GetObjectResponse{
+			Object: &proto.GitObject{
+				Id:   expectedID[:],
+				Type: proto.GitObject_OBJECT_TYPE_BLOB,
+			},
+		}, res, protocmp.Transform()); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+
+		b.GetObjectFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{Repo: "therepo", Spec: "deadbeef"})
+		_, err = cli.GetObject(ctx, &v1.GetObjectRequest{
+			Repo:       "therepo",
+			ObjectName: "deadbeef",
+		})
+
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RevisionNotFoundPayload{})
+	})
+}
+
 func TestGRPCServer_ListRefs(t *testing.T) {
 	ctx := context.Background()
 	mockSS := gitserver.NewMockGitserverService_ListRefsServer()
