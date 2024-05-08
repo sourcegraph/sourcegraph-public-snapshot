@@ -268,7 +268,7 @@ promoteToPublic:
           echo "Posting slack notification for release"
           tag="{{tag}}"
           changelog_version="${tag//./}"
-          webhooks=("$SLACK_WEBHOOK_URL" "$SLACK_WEBHOOK_URL_CLOUD_OPS")
+          webhooks=("$ANNOUNCE_ENG_SLACK_WEBHOOK_URL" "$CLOUD_OPS_SLACK_WEBHOOK_URL")
           for webhook in "${webhooks[@]}"
           do
             body=$(wget --content-on-error -O- --header="Content-Type: application/json" --post-data '{
