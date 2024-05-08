@@ -45,6 +45,7 @@
     .root {
         display: inline-flex;
         gap: 0.125rem;
+        margin-left: 0.25rem;
     }
 
     .square {
