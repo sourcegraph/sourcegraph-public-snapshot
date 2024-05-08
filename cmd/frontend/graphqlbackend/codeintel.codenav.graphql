@@ -47,6 +47,139 @@ extend type GitBlob {
     Experimental: This API is likely to change in the future.
     """
     symbolInfo(line: Int!, character: Int!): SymbolInfo
+
+    """
+    Return the code graph data associated with this blob.
+
+    If there are multiple tools (i.e. name and version pairs) which
+    have uploaded precise indexes for this blob, then this API will
+    return multiple results even if
+    filter == { provenance: { equals: Precise } }.
+
+    Commit matching is done based on graph order.
+    For merge commits or their children, it is possible that the
+    same blob may have code graph data at different ancestors,
+    in which case this API will return multiple results.
+
+    EXPERIMENTAL: This API may change in the future.
+    """
+    codeGraphData(filter: CodeGraphDataFilter): [CodeGraphData!]
+}
+
+"""
+EXPERIMENTAL: This type may change in a backwards-incompatible way.
+"""
+input CodeGraphDataFilter {
+    """
+    If this field is not set, then the codeGraphData API
+    will go through each provenance each provenance one by one
+    in the order Precise -> Syntactic -> SearchBased
+    and stop when some data is available.
+    """
+    provenance: CodeGraphDataProvenanceComparator
+}
+
+"""
+EXPERIMENTAL: This type may change in a backwards-incompatible way.
+"""
+input CodeGraphDataProvenanceComparator {
+    equals: CodeGraphDataProvenance
+}
+
+"""
+EXPERIMENTAL: This type may change in a backwards-incompatible way.
+"""
+type CodeGraphData {
+    provenance: CodeGraphDataProvenance!
+
+    """
+    The commit associated with this code graph data.
+
+    In general, this will be an ancestor of the commit at which code
+    graph data was requested, as code graph data may not be available
+    at the exact commit for the blob.
+    """
+    commit: String!
+
+    """
+    Information about the tool which generated this code graph data
+    """
+    toolInfo: CodeGraphToolInfo
+
+    """
+    Occurrences are guaranteed to be sorted by range.
+    """
+    occurrences(first: Int, after: String): SCIPOccurrenceConnection
+}
+
+type CodeGraphToolInfo {
+    name: String
+    version: String
+}
+
+type SCIPOccurrenceConnection {
+    """
+    A list of locations within a file.
+    """
+    nodes: [SCIPOccurrence!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+EXPERIMENTAL: This type may change in a backwards-incompatible way.
+"""
+enum CodeGraphDataProvenance {
+    """
+    Based on a compiler, a type-checker or a similar data source
+    which doesn't have false positives.
+    Generally, the results are specific to a particular build configuration,
+    such as for a specific OS or CPU, which can matter for
+    codebases having a large amount of platform-specific code.
+    """
+    Precise,
+    """
+    Based on a data source that uses an abstract or concrete syntax
+    tree, but without access to reliable type information.
+    """
+    Syntactic,
+    """
+    Based on a data source that only does textual analysis, say
+    using regular expressions.
+    """
+    SearchBased,
+}
+
+"""
+EXPERIMENTAL: This type may change in a backwards-incompatible way.
+"""
+type SCIPOccurrence {
+    """
+    Symbol name using syntax specified by the SCIP schema.
+    https://github.com/sourcegraph/scip/blob/main/scip.proto#L147-L188
+    This value will generally be used in conjunction with
+    the `usagesBySymbol` API.
+    """
+    symbol: String
+    range: Range!
+    roles: [SymbolRole!]
+    # We can add diagnostics etc. here in the future if needed.
+}
+
+"""
+EXPERIMENTAL: This type may change in a backwards-compatible way.
+"""
+enum SymbolRole {
+    Definition,
+    Reference,
+    """
+    Applicable for forward declarations in languages with header files (C, C++ etc.)
+    as well as standalone signatures in languages with separate interface files (OCaml etc.).
+    """
+    ForwardDefinition,
 }
 
 """

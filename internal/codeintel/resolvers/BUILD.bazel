@@ -15,6 +15,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/api",
         "//internal/codeintel/uploads/shared",
         "//internal/gitserver/gitdomain",
@@ -25,5 +26,6 @@ go_library(
         "//lib/pointers",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
