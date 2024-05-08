@@ -78,7 +78,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			attribute.Bool("opts.chunk_matches", opts.ChunkMatches),
 			attribute.Bool("opts.use_document_ranks", opts.UseDocumentRanks),
 			attribute.Float64("opts.document_ranks_weight", opts.DocumentRanksWeight),
-			attribute.Bool("opts.use_keyword_scoring", opts.UseKeywordScoring),
+			attribute.Bool("opts.use_bm25_scoring", opts.UseBM25Scoring),
 			attribute.Bool("opts.debug_score", opts.DebugScore),
 		)...)
 	}

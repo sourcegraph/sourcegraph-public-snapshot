@@ -30,6 +30,7 @@ go_library(
         "//internal/actor",
         "//internal/api",
         "//internal/bytesize",
+        "//internal/byteutils",
         "//internal/gitserver/gitdomain",
         "//internal/honey",
         "//internal/lazyregexp",
@@ -64,6 +65,7 @@ go_test(
         "util_test.go",
     ],
     embed = [":gitcli"],
+    embedsrcs = ["fixtures/git-diff-java-langserver/output.hex"],
     deps = [
         "//cmd/gitserver/internal/common",
         "//cmd/gitserver/internal/git",
@@ -73,6 +75,7 @@ go_test(
         "//internal/wrexec",
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

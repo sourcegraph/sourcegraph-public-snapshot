@@ -187,7 +187,7 @@ func (s *Service) getUploadsWithDefinitionsForMonikers(ctx context.Context, orde
 	uploadsCopy := copyUploads(uploads)
 	requestState.dataLoader.SetUploadInCacheMap(uploadsCopy)
 
-	uploadsWithResolvableCommits, err := s.removeUploadsWithUnknownCommits(ctx, uploadsCopy, requestState)
+	uploadsWithResolvableCommits, err := filterUploadsWithCommits(ctx, requestState.commitCache, uploadsCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -339,7 +339,7 @@ func (s *Service) getUploadsByIDs(ctx context.Context, ids []int, requestState R
 		return nil, errors.Wrap(err, "service.GetCompletedUploadsByIDs")
 	}
 
-	uploadsWithResolvableCommits, err := s.removeUploadsWithUnknownCommits(ctx, uploads, requestState)
+	uploadsWithResolvableCommits, err := filterUploadsWithCommits(ctx, requestState.commitCache, uploads)
 	if err != nil {
 		return nil, nil
 	}
@@ -348,32 +348,6 @@ func (s *Service) getUploadsByIDs(ctx context.Context, ids []int, requestState R
 	allUploads := append(existingUploads, uploadsWithResolvableCommits...)
 
 	return allUploads, nil
-}
-
-// removeUploadsWithUnknownCommits removes uploads for commits which are unknown to gitserver from the given
-// slice. The slice is filtered in-place and returned (to update the slice length).
-func (s *Service) removeUploadsWithUnknownCommits(ctx context.Context, uploads []uploadsshared.CompletedUpload, requestState RequestState) ([]uploadsshared.CompletedUpload, error) {
-	rcs := make([]RepositoryCommit, 0, len(uploads))
-	for _, upload := range uploads {
-		rcs = append(rcs, RepositoryCommit{
-			RepositoryID: upload.RepositoryID,
-			Commit:       upload.Commit,
-		})
-	}
-
-	exists, err := requestState.commitCache.AreCommitsResolvable(ctx, rcs)
-	if err != nil {
-		return nil, err
-	}
-
-	filtered := uploads[:0]
-	for i, upload := range uploads {
-		if exists[i] {
-			filtered = append(filtered, upload)
-		}
-	}
-
-	return filtered, nil
 }
 
 // getBulkMonikerLocations returns the set of locations (within the given uploads) with an attached moniker
@@ -836,14 +810,14 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		return nil, nil
 	}
 
-	dump := uploads[0]
+	upload := uploads[0]
 
-	document, err := s.lsifstore.SCIPDocument(ctx, dump.ID, strings.TrimPrefix(path, dump.Root))
+	document, err := s.lsifstore.SCIPDocument(ctx, upload.ID, strings.TrimPrefix(path, upload.Root))
 	if err != nil || document == nil {
 		return nil, err
 	}
 
-	r, err := s.gitserver.NewFileReader(ctx, api.RepoName(dump.RepositoryName), api.CommitID(dump.Commit), path)
+	r, err := s.gitserver.NewFileReader(ctx, api.RepoName(upload.RepositoryName), api.CommitID(upload.Commit), path)
 	if err != nil {
 		return nil, err
 	}
@@ -856,7 +830,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 	// client-side normalizes the file to LF, so normalize CRLF files to that so the offsets are correct
 	file = bytes.ReplaceAll(file, []byte("\r\n"), []byte("\n"))
 
-	repo, err := s.repoStore.Get(ctx, api.RepoID(dump.RepositoryID))
+	repo, err := s.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return nil, err
 	}
@@ -948,7 +922,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 			}
 		}
 
-		_, newRange, ok, err := gittranslator.GetTargetCommitPositionFromSourcePosition(ctx, dump.Commit, shared.Position{
+		_, newRange, ok, err := gittranslator.GetTargetCommitPositionFromSourcePosition(ctx, upload.Commit, shared.Position{
 			Line:      int(originalRange.Start.Line),
 			Character: int(originalRange.Start.Character),
 		}, false)

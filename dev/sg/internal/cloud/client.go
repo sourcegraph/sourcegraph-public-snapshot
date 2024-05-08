@@ -3,7 +3,6 @@ package cloud
 import (
 	"context"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -16,6 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+// ErrInstanceNotFound is returned when an instance is not found.
+var ErrInstanceNotFound error = errors.New("instance not found")
 
 // HeaderUserToken is the header name for the user token when communicating with the Cloud API.
 const HeaderUserToken = "X-GCP-User-Token"
@@ -44,15 +46,17 @@ type Client struct {
 type DeploymentSpec struct {
 	Name             string
 	Version          string
+	License          string
 	InstanceFeatures map[string]string
 }
 
-func NewDeploymentSpec(name, version string) *DeploymentSpec {
+func NewDeploymentSpec(name, version, license string) *DeploymentSpec {
 	features := newInstanceFeatures()
 	features.SetEphemeralInstance(true)
 	return &DeploymentSpec{
 		Name:             name,
 		Version:          version,
+		License:          license,
 		InstanceFeatures: features.Value(),
 	}
 }
@@ -104,6 +108,11 @@ func (c *Client) GetInstance(ctx context.Context, name string) (*Instance, error
 
 	resp, err := c.client.GetInstance(ctx, req)
 	if err != nil {
+		// the error received doesn't unpack properly into grpc Status or connErr, so for now we just check that the
+		// string representation contains "not found" for the instance
+		if strings.Contains(err.Error(), "not found") {
+			return nil, ErrInstanceNotFound
+		}
 		return nil, errors.Wrapf(err, "failed to get instance %q", name)
 	}
 
@@ -131,8 +140,7 @@ func (c *Client) ListInstances(ctx context.Context, all bool) ([]*Instance, erro
 }
 
 func (c *Client) CreateInstance(ctx context.Context, spec *DeploymentSpec) (*Instance, error) {
-	// TODO(burmudar): Better method to get LicenseKeys
-	licenseKey := os.Getenv("EPHEMERAL_LICENSE_KEY")
+	licenseKey := spec.License
 	if licenseKey == "" {
 		return nil, errors.New("no license key - the env var 'EPHEMERAL_LICENSE_KEY' is empty")
 	}

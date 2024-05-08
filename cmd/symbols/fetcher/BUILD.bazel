@@ -32,6 +32,7 @@ go_test(
     deps = [
         "//cmd/symbols/gitserver",
         "//internal/api",
+        "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/search",

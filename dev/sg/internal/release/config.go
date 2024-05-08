@@ -329,7 +329,7 @@ func (r *releaseRunner) CreateRelease(ctx context.Context) error {
 }
 
 func (r *releaseRunner) InternalFinalize(ctx context.Context) error {
-	if err := r.checkRequirements(ctx, stageInternalCreate); err != nil {
+	if err := r.checkRequirements(ctx, stageInternalFinalize); err != nil {
 		return err
 	}
 

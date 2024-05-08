@@ -25,7 +25,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search",
     visibility = ["//cmd/searcher:__subpackages__"],
     deps = [
-        "//cmd/searcher/diff",
         "//cmd/searcher/protocol",
         "//internal/api",
         "//internal/comby",
@@ -33,6 +32,7 @@ go_library(
         "//internal/diskcache",
         "//internal/errcode",
         "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
         "//internal/lazyregexp",
         "//internal/limiter",
         "//internal/metrics",
@@ -141,6 +141,7 @@ go_test(
         "//internal/conf",
         "//internal/errcode",
         "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
         "//internal/grpc",
         "//internal/grpc/defaults",
         "//internal/observation",

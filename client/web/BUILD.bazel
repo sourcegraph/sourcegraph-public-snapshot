@@ -228,6 +228,8 @@ ts_project(
         "src/cody/management/CodyManagementPage.tsx",
         "src/cody/management/SubscriptionStats.tsx",
         "src/cody/management/UseCodyInEditorSection.tsx",
+        "src/cody/management/subscription/new/CodyProCheckoutForm.tsx",
+        "src/cody/management/subscription/new/NewCodyProSubscriptionPage.tsx",
         "src/cody/onboarding/CodyOnboarding.tsx",
         "src/cody/onboarding/EditorStep.tsx",
         "src/cody/onboarding/PurposeStep.tsx",
@@ -1077,9 +1079,7 @@ ts_project(
         "src/fuzzyFinder/SearchValue.ts",
         "src/fuzzyFinder/SearchValueRankingCache.ts",
         "src/fuzzyFinder/WordSensitiveFuzzySearch.ts",
-        "src/get-cody/DownloadAppButton.tsx",
         "src/get-cody/GetCodyPage.tsx",
-        "src/get-cody/GetCodyPageIcon.tsx",
         "src/global/GlobalAlert.tsx",
         "src/global/GlobalAlerts.tsx",
         "src/global/Notices.tsx",
@@ -1780,6 +1780,8 @@ ts_project(
         "//:node_modules/@reach/visually-hidden",
         "//:node_modules/@sentry/browser",
         "//:node_modules/@sourcegraph/extension-api-classes",
+        "//:node_modules/@stripe/react-stripe-js",
+        "//:node_modules/@stripe/stripe-js",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",
@@ -2108,7 +2110,6 @@ ESBUILD_CONFIG_DEPS = [
 BUNDLE_DATA_DEPS = [
     ":module_styles",
     ":package_styles",
-    "src/get-cody/SourceSans3VF-Upright.ttf.woff2",
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
     "src/enterprise/codeintel/configuration/schema.json",
     ":enterprise-yaml",

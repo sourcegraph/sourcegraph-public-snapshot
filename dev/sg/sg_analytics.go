@@ -36,7 +36,7 @@ var analyticsCommand = &cli.Command{
 				// hidden thing, most users will want to just send to Honeycomb
 				//
 				honeyToken, err := sec.GetExternal(cmd.Context, secrets.ExternalSecret{
-					Project: "sourcegraph-local-dev",
+					Project: secrets.LocalDevProject,
 					Name:    "SG_ANALYTICS_HONEYCOMB_TOKEN",
 				})
 				if err != nil {

@@ -28,7 +28,6 @@ type operations struct {
 	readDir                  *observation.Operation
 	resolveRevision          *observation.Operation
 	revAtTime                *observation.Operation
-	revList                  *observation.Operation
 	search                   *observation.Operation
 	stat                     *observation.Operation
 	streamBlameFile          *observation.Operation
@@ -54,6 +53,7 @@ type operations struct {
 	diffSymbols              *observation.Operation
 	commitLog                *observation.Operation
 	diff                     *observation.Operation
+	changedFiles             *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -117,7 +117,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		readDir:                  op("ReadDir"),
 		resolveRevision:          resolveRevisionOperation,
 		revAtTime:                op("RevAtTime"),
-		revList:                  op("RevList"),
 		search:                   op("Search"),
 		stat:                     op("Stat"),
 		streamBlameFile:          op("StreamBlameFile"),
@@ -143,6 +142,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		diffSymbols:              op("DiffSymbols"),
 		commitLog:                op("CommitLog"),
 		diff:                     op("Diff"),
+		changedFiles:             op("ChangedFiles"),
 	}
 }
 

@@ -246,7 +246,7 @@ func (g *SubprocessGit) RevList(ctx context.Context, repo string, commit string,
 	for {
 		var commits []api.CommitID
 		var err error
-		commits, nextCursor, err = g.gs.RevList(ctx, api.RepoName(repo), nextCursor, 100)
+		commits, nextCursor, err = g.paginatedRevList(ctx, api.RepoName(repo), nextCursor, 100)
 		if err != nil {
 			return err
 		}
@@ -263,6 +263,30 @@ func (g *SubprocessGit) RevList(ctx context.Context, repo string, commit string,
 			return nil
 		}
 	}
+}
+
+func (g *SubprocessGit) paginatedRevList(ctx context.Context, repo api.RepoName, commit string, count int) (_ []api.CommitID, nextCursor string, _ error) {
+	commits, err := g.gs.Commits(ctx, repo, gitserver.CommitsOptions{
+		N:           uint(count + 1),
+		Range:       commit,
+		FirstParent: true,
+	})
+	if err != nil {
+		return nil, "", err
+	}
+
+	commitIDs := make([]api.CommitID, 0, count+1)
+
+	for _, commit := range commits {
+		commitIDs = append(commitIDs, commit.ID)
+	}
+
+	if len(commitIDs) > count {
+		nextCursor = string(commitIDs[len(commitIDs)-1])
+		commitIDs = commitIDs[:count]
+	}
+
+	return commitIDs, nextCursor, nil
 }
 
 func newMockRepositoryFetcher(git *SubprocessGit) fetcher.RepositoryFetcher {

@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -303,24 +302,120 @@ func parseTimestamp(timestamp string) (time.Time, error) {
 // the root commit.
 const DevNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
-// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
-func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ []byte, err error) {
-	ctx, _, endObservation := c.operations.diffSymbols.With(ctx, &err, observation.Args{
+func (c *clientImplementor) ChangedFiles(ctx context.Context, repo api.RepoName, base, head string) (iterator ChangedFilesIterator, err error) {
+	ctx, _, endObservation := c.operations.changedFiles.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
-			attribute.String("commitA", string(commitA)),
-			attribute.String("commitB", string(commitB)),
+			attribute.String("base", base),
+			attribute.String("head", head),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
-	command := c.gitCommand(repo, "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
-	out, err := command.Output(ctx)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to run git diff on %s between %s and %s", repo, commitA, commitB)
+		return nil, err
 	}
+
+	ctx, cancel := context.WithCancel(ctx)
+
+	stream, err := client.ChangedFiles(ctx, &proto.ChangedFilesRequest{
+		RepoName: string(repo),
+		Base:     []byte(base),
+		Head:     []byte(head),
+	})
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+
+	fetchFunc := func() ([]gitdomain.PathStatus, error) {
+		resp, err := stream.Recv()
+		if err != nil {
+			cancel()
+			return nil, err
+		}
+
+		protoFiles := resp.GetFiles()
+
+		changes := make([]gitdomain.PathStatus, 0, len(protoFiles))
+		for _, p := range protoFiles {
+			changes = append(changes, gitdomain.PathStatusFromProto(p))
+		}
+
+		return changes, nil
+	}
+
+	closeFunc := func() {
+		cancel()
+	}
+
+	return newChangedFilesIterator(fetchFunc, closeFunc), nil
+}
+
+func newChangedFilesIterator(fetchFunc func() ([]gitdomain.PathStatus, error), closeFunc func()) *changedFilesIterator {
+	return &changedFilesIterator{
+		fetchFunc: fetchFunc,
+		closeFunc: closeFunc,
+		closeChan: make(chan struct{}),
+	}
+}
+
+type changedFilesIterator struct {
+	// fetchFunc is the function that will be invoked when the buffer is empty.
+	//
+	// The function should return the next batch of data, or an error if the fetch
+	// failed.
+	//
+	// fetchFunc should return an io.EOF error when there is no more data to fetch.
+	fetchFunc func() ([]gitdomain.PathStatus, error)
+	fetchErr  error
+
+	closeOnce sync.Once
+	closeFunc func()
+	closeChan chan struct{}
+
+	buffer []gitdomain.PathStatus
+	index  int
+}
+
+func (i *changedFilesIterator) Next() (gitdomain.PathStatus, error) {
+	select {
+	case <-i.closeChan:
+		return gitdomain.PathStatus{}, io.EOF
+	default:
+	}
+
+	if i.fetchErr != nil {
+		return gitdomain.PathStatus{}, i.fetchErr
+	}
+
+	for len(i.buffer) == 0 { // If we've exhausted the buffer, fetch more data
+		// If we've exhausted the buffer, fetch more data
+		//
+		// We keep trying until we get a non-empty buffer since it's technically possible for the fetchFunc to return an empty slice
+		// even if there is more data to fetch.
+
+		i.buffer, i.fetchErr = i.fetchFunc()
+		if i.fetchErr != nil { // Check if there was an error fetching the data
+			return gitdomain.PathStatus{}, i.fetchErr
+		}
+	}
+
+	out := i.buffer[0]
+	i.buffer = i.buffer[1:]
+
 	return out, nil
+}
+
+func (i *changedFilesIterator) Close() {
+	i.closeOnce.Do(func() {
+		if i.closeFunc != nil {
+			i.closeFunc()
+		}
+		close(i.closeChan)
+	})
 }
 
 // ReadDir reads the contents of the named directory at commit.
@@ -1063,53 +1158,6 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, ba
 	return api.CommitID(res.GetMergeBaseCommitSha()), nil
 }
 
-func (c *clientImplementor) RevList(ctx context.Context, repo api.RepoName, commit string, count int) (_ []api.CommitID, nextCursor string, err error) {
-	ctx, _, endObservation := c.operations.revList.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("commit", commit),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	command := c.gitCommand(repo, revListArgs(count, commit)...)
-
-	stdout, err := command.Output(ctx)
-	if err != nil {
-		return nil, "", err
-	}
-
-	commits := make([]api.CommitID, 0, count+1)
-
-	lr := byteutils.NewLineReader(stdout)
-	for lr.Scan() {
-		line := lr.Line()
-		line = bytes.TrimSpace(line)
-		if len(line) == 0 {
-			continue
-		}
-		commit := api.CommitID(line)
-		commits = append(commits, commit)
-	}
-
-	if len(commits) > count {
-		nextCursor = string(commits[len(commits)-1])
-		commits = commits[:count]
-	}
-
-	return commits, nextCursor, nil
-}
-
-func revListArgs(count int, givenCommit string) []string {
-	return []string{
-		"rev-list",
-		"--first-parent",
-		fmt.Sprintf("--max-count=%d", count+1),
-		givenCommit,
-	}
-}
-
 // BehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
 func (c *clientImplementor) BehindAhead(ctx context.Context, repo api.RepoName, left, right string) (_ *gitdomain.BehindAhead, err error) {
@@ -1306,6 +1354,14 @@ type CommitsOptions struct {
 	Path string // only commits modifying the given path are selected (optional)
 
 	Follow bool // follow the history of the path beyond renames (works only for a single path)
+
+	// When finding commits to include, follow only the first parent commit upon
+	// seeing a merge commit. This option can give a better overview when viewing
+	// the evolution of a particular topic branch, because merges into a topic
+	// branch tend to be only about adjusting to updated upstream from time to time,
+	// and this option allows you to ignore the individual commits brought in to
+	// your history by such a merge.
+	FirstParent bool
 
 	// When true return the names of the files changed in the commit
 	NameOnly bool
@@ -1745,6 +1801,10 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 
 	if opt.MessageQuery != "" {
 		args = append(args, "--fixed-strings", "--regexp-ignore-case", "--grep="+opt.MessageQuery)
+	}
+
+	if opt.FirstParent {
+		args = append(args, "--first-parent")
 	}
 
 	if opt.Range != "" {

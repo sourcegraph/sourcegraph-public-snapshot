@@ -23,12 +23,13 @@ var (
 	// gitCmdAllowlist are commands and arguments that are allowed to execute and are
 	// checked by IsAllowedGitCmd
 	gitCmdAllowlist = map[string][]string{
-		"log":    append([]string{}, gitCommonAllowlist...),
-		"show":   append([]string{}, gitCommonAllowlist...),
-		"remote": {"-v"},
-		"diff":   append([]string{}, gitCommonAllowlist...),
-		"blame":  {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
-		"branch": {"-r", "-a", "--contains", "--merged", "--format"},
+		"log":       append([]string{}, gitCommonAllowlist...),
+		"show":      append([]string{}, gitCommonAllowlist...),
+		"remote":    {"-v"},
+		"diff":      append([]string{}, gitCommonAllowlist...),
+		"diff-tree": append([]string{"--root"}, gitCommonAllowlist...),
+		"blame":     {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
+		"branch":    {"-r", "-a", "--contains", "--merged", "--format"},
 
 		"rev-parse":    {"--abbrev-ref", "--symbolic-full-name", "--glob", "--exclude"},
 		"rev-list":     {"--first-parent", "--max-parents", "--reverse", "--max-count", "--count", "--after", "--before", "--", "-n", "--date-order", "--skip", "--left-right"},
@@ -227,6 +228,15 @@ func IsAllowedGitCmd(logger log.Logger, args []string, dir common.GitDir) bool {
 				// (arg == "-F" && len(args) > i+2 && args[i+2] == "-") || (arg == "-" && args[i] == "-F")
 				if arg == "-F" {
 					checkFileInput = true
+					continue
+				}
+			}
+
+			if cmd == "diff-tree" {
+				if arg == "-r" {
+					// Using -r tells diff-tree to recurse into subdirectories, this is allowed
+					//
+					// See https://git-scm.com/docs/git-diff-tree
 					continue
 				}
 			}

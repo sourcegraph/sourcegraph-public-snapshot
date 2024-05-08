@@ -108,6 +108,8 @@ type internalContract struct {
 	logger log.Logger
 	// service is a reference to the service that is being configured.
 	service ServiceMetadataProvider
+	// environmentID is the ID of the MSP environment this service is deployed in.
+	environmentID string
 }
 
 // New returns a new Contract instance from configuration parsed from the Env
@@ -115,14 +117,15 @@ type internalContract struct {
 func New(logger log.Logger, service ServiceMetadataProvider, env *Env) Contract {
 	defaultGCPProjectID := pointers.Deref(env.GetOptional("GOOGLE_CLOUD_PROJECT", "GCP project ID"), "")
 	internal := internalContract{
-		logger:  logger,
-		service: service,
+		logger:        logger,
+		service:       service,
+		environmentID: env.Get("ENVIRONMENT_ID", "unknown", "MSP Service Environment ID"),
 	}
 	isMSP := env.GetBool("MSP", "false", "indicates if we are running in a MSP environment")
 
 	return Contract{
 		MSP:             isMSP,
-		EnvironmentID:   env.Get("ENVIRONMENT_ID", "unknown", "MSP Service Environment ID"),
+		EnvironmentID:   internal.environmentID,
 		Port:            env.GetInt("PORT", "", "service port"),
 		ExternalDNSName: env.GetOptional("EXTERNAL_DNS_NAME", "external DNS name provisioned for the service"),
 		RedisEndpoint:   env.GetOptional("REDIS_ENDPOINT", "full Redis address, including any prerequisite authentication"),

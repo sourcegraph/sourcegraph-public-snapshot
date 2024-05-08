@@ -1,6 +1,7 @@
 <svelte:options immutable />
 
 <script lang="ts">
+    // @sg EnableRollout
     import { onMount } from 'svelte'
 
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'

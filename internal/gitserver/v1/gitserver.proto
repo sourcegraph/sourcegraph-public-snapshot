@@ -248,6 +248,20 @@ service GitserverService {
   rpc BehindAhead(BehindAheadRequest) returns (BehindAheadResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+
+  // ChangedFiles returns the list of files that have been added, modified, or
+  // deleted in the entire repository between the two given <tree-ish> identifiers (e.g., commit, branch, tag).
+  //
+  // - Renamed files are represented as a deletion of the old path and an addition of the new path.
+  // - No copy detection is performed.
+  // - The only file status codes returned are 'A' (added), 'M' (modified), or 'D' (deleted).
+  //
+  // If `base` is omitted, the parent of `head` is used as the base.
+  //
+  // If either the `base` or `head` <tree-ish> id does not exist, an error with a `RevisionNotFoundPayload` is returned.
+  rpc ChangedFiles(ChangedFilesRequest) returns (stream ChangedFilesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message ContributorCountsRequest {
@@ -1083,4 +1097,33 @@ message BehindAheadResponse {
   uint32 behind = 1;
   // ahead is the number of commits that are solely reachable in "right" but not "left".
   uint32 ahead = 2;
+}
+
+message ChangedFilesRequest {
+  // repo_name is the name of the repo to get the changed files for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // base is a <tree-ish> id, for now, we allow non-utf8 revspecs.
+  //
+  // If base is empty, the parent of the head is used.
+  optional bytes base = 3;
+  // head is a <tree-ish> id, for now, we allow non-utf8 revspecs.
+  bytes head = 4;
+}
+
+message ChangedFilesResponse {
+  repeated ChangedFile files = 1;
+}
+
+message ChangedFile {
+  // path is the file path of the file that the status is for.
+  bytes path = 1;
+  // status is the status of the path.
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_ADDED = 1;
+    STATUS_MODIFIED = 2;
+    STATUS_DELETED = 3;
+  }
+  Status status = 2;
 }
