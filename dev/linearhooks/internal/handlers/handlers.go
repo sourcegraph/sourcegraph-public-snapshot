@@ -106,7 +106,7 @@ func (h *Handler) HandleIssueMover(w http.ResponseWriter, r *http.Request) {
 
 func moveIssue(logger log.Logger, client graphql.Client, rules []RuleSpec, issue linearschema.IssueData) error {
 	for _, r := range rules {
-		if newTeamId := r.moveToNewTeam(issue); newTeamId != nil {
+		if newTeamId := r.identifyTeamToMoveTo(issue); newTeamId != nil {
 			logger.Info("moving issue",
 				log.String("from.id", issue.Team.Key),
 				log.String("to", r.Dst.TeamID),
@@ -146,7 +146,7 @@ func moveIssueToTeam(ctx context.Context, c graphql.Client, issueId, teamId stri
 	return err
 }
 
-func (r *RuleSpec) moveToNewTeam(issueData linearschema.IssueData) (newTeamId *string) {
+func (r *RuleSpec) identifyTeamToMoveTo(issueData linearschema.IssueData) (newTeamId *string) {
 	if len(r.Src.Labels) == 0 {
 		// This should never happen as we perform validation on startup, but if it does, we should panic.
 		panic("Expected non-empty label set for RuleSet")
