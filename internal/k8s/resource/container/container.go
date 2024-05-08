@@ -118,61 +118,11 @@ func EnvVarsOtel() []corev1.EnvVar {
 
 func EnvVarsPostgres(secretName string) []corev1.EnvVar {
 	return []corev1.EnvVar{
-		{
-			Name: "POSTGRES_DATABASE",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "database",
-				},
-			},
-		},
-		{
-			Name: "POSTGRES_HOST",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "host",
-				},
-			},
-		},
-		{
-			Name: "POSTGRES_PASSWORD",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "password",
-				},
-			},
-		},
-		{
-			Name: "POSTGRES_PORT",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "port",
-				},
-			},
-		},
-		{
-			Name: "POSTGRES_USER",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "user",
-				},
-			},
-		},
+		NewEnvVarSecretKeyRef("POSTGRES_DATABASE", secretName, "database"),
+		NewEnvVarSecretKeyRef("POSTGRES_HOST", secretName, "host"),
+		NewEnvVarSecretKeyRef("POSTGRES_PASSWORD", secretName, "password"),
+		NewEnvVarSecretKeyRef("POSTGRES_PORT", secretName, "port"),
+		NewEnvVarSecretKeyRef("POSTGRES_USER", secretName, "user"),
 		{
 			Name:  "POSTGRES_DB",
 			Value: "$(POSTGRES_DATABASE)",
@@ -182,50 +132,10 @@ func EnvVarsPostgres(secretName string) []corev1.EnvVar {
 
 func EnvVarsPostgresExporter(secretName string) []corev1.EnvVar {
 	return []corev1.EnvVar{
-		{
-			Name: "DATA_SOURCE_DB",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "database",
-				},
-			},
-		},
-		{
-			Name: "DATA_SOURCE_PASS",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "password",
-				},
-			},
-		},
-		{
-			Name: "DATA_SOURCE_PORT",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "port",
-				},
-			},
-		},
-		{
-			Name: "DATA_SOURCE_USER",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "user",
-				},
-			},
-		},
+		NewEnvVarSecretKeyRef("DATA_SOURCE_DB", secretName, "database"),
+		NewEnvVarSecretKeyRef("DATA_SOURCE_PASS", secretName, "password"),
+		NewEnvVarSecretKeyRef("DATA_SOURCE_PORT", secretName, "port"),
+		NewEnvVarSecretKeyRef("DATA_SOURCE_USER", secretName, "user"),
 		{
 			Name:  "DATA_SOURCE_URI",
 			Value: "localhost:$(DATA_SOURCE_PORT)/$(DATA_SOURCE_DB)?sslmode=disable",

@@ -67,11 +67,7 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *Sourcegr
 		},
 	})
 
-	databaseSecretName := cfg.DatabaseSecret
-	if databaseSecretName == "" {
-		databaseSecretName = "pgsql-auth"
-	}
-
+	databaseSecretName := "pgsql-auth"
 	ctr.Env = append(ctr.Env, container.EnvVarsPostgres(databaseSecretName)...)
 
 	ctr.Ports = []corev1.ContainerPort{{Name: name, ContainerPort: 5432}}
@@ -113,8 +109,7 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *Sourcegr
 		return err
 	}
 
-	// TODO figure out method to override container image
-	initCtr := container.NewContainer("correct-data-dir-permissions", nil, config.ContainerConfig{
+	initCtr := container.NewContainer("correct-data-dir-permissions", cfg, config.ContainerConfig{
 		Image: initCtrImage,
 		Resources: &corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{
@@ -136,8 +131,7 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *Sourcegr
 		return err
 	}
 
-	// TODO figure out method to override container image
-	pgExpCtr := container.NewContainer("pgsql-exporter", nil, config.ContainerConfig{
+	pgExpCtr := container.NewContainer("pgsql-exporter", cfg, config.ContainerConfig{
 		Image: pgExpCtrImage,
 		Resources: &corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{
@@ -177,6 +171,7 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *Sourcegr
 	}
 
 	podTemplate := pod.NewPodTemplate(name, cfg)
+	podTemplate.Template.Spec.TerminationGracePeriodSeconds = pointers.Ptr[int64](120)
 	podTemplate.Template.Spec.InitContainers = []corev1.Container{initCtr}
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr, pgExpCtr}
 	podTemplate.Template.Spec.ServiceAccountName = name
@@ -202,7 +197,7 @@ func (r *Reconciler) reconcilePGSQLPersistentVolumeClaim(ctx context.Context, sg
 
 func (r *Reconciler) reconcilePGSQLConfigMap(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
 	cm := configmap.NewConfigMap("pgsql-conf", sg.Namespace)
-	cm.Data = map[string]string{"postgresql.conf": config.PostgresqlConfig()}
+	cm.Data = map[string]string{"postgresql.conf": config.DefaultPGSQLConfig()}
 
 	return reconcileObject(ctx, r, sg.Spec.PGSQL, &cm, &corev1.ConfigMap{}, sg, owner)
 }

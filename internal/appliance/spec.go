@@ -141,9 +141,6 @@ type IndexedSearchIndexerSpec struct {
 type PGSQLSpec struct {
 	config.StandardConfig
 
-	// DatabaseSecret is the name of an existing secret to use for Postgres connection string.
-	DatabaseSecret string `json:"databaseSecret,omitempty"`
-
 	// DatabaseConnection allows for custom database connection details.
 	DatabaseConnection *DatabaseConnectionSpec `json:"database,omitempty"`
 

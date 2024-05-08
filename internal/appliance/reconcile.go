@@ -66,7 +66,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// Sourcegraph is a kubebuilder-scaffolded custom type, but we do not
-	// actually ask operators to install CRDs. Therefore we set its namespace
+	// actually ask operators to install CRDs. Therefore, we set its namespace
 	// based on the actual object being reconciled, so that more deeply-nested
 	// code can treat it like a CRD.
 	sourcegraph.Namespace = applianceSpec.GetNamespace()

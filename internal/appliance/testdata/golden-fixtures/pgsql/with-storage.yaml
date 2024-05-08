@@ -205,7 +205,7 @@ resources:
           runAsUser: 100
         serviceAccount: pgsql
         serviceAccountName: pgsql
-        terminationGracePeriodSeconds: 30
+        terminationGracePeriodSeconds: 120
         volumes:
         - emptyDir: {}
           name: lockdir
