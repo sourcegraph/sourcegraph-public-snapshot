@@ -90,6 +90,7 @@ BUILD_DEPS = [
     ":node_modules/@sveltejs/vite-plugin-svelte",
     ":node_modules/@types/prismjs",
     ":node_modules/@urql/core",
+    ":node_modules/fzf",
     ":node_modules/graphql",
     ":node_modules/hotkeys-js",
     ":node_modules/prismjs",
