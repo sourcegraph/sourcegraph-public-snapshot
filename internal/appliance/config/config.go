@@ -35,7 +35,7 @@ type ContainerConfig struct {
 	Resources     *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
-// Config that applies to all Pod templates produced by a Service. If this needs
+// PodTemplateConfig is a config that applies to all Pod templates produced by a Service. If this needs
 // to differ between pod templates, split another service definition.
 type PodTemplateConfig struct {
 	Affinity         *corev1.Affinity              `json:"affinity,omitempty"`

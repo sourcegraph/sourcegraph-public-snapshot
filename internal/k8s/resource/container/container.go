@@ -115,3 +115,124 @@ func EnvVarsOtel() []corev1.EnvVar {
 		{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://$(OTEL_AGENT_HOST):4317"},
 	}
 }
+
+func EnvVarsPostgres(secretName string) []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name: "POSTGRES_DATABASE",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+					Key: "database",
+				},
+			},
+		},
+		{
+			Name: "POSTGRES_HOST",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+					Key: "host",
+				},
+			},
+		},
+		{
+			Name: "POSTGRES_PASSWORD",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+					Key: "password",
+				},
+			},
+		},
+		{
+			Name: "POSTGRES_PORT",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+					Key: "port",
+				},
+			},
+		},
+		{
+			Name: "POSTGRES_USER",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+					Key: "user",
+				},
+			},
+		},
+		{
+			Name:  "POSTGRES_DB",
+			Value: "$(POSTGRES_DATABASE)",
+		},
+	}
+}
+
+func EnvVarsPostgresExporter(secretName string) []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name: "DATA_SOURCE_DB",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+					Key: "database",
+				},
+			},
+		},
+		{
+			Name: "DATA_SOURCE_PASS",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+					Key: "password",
+				},
+			},
+		},
+		{
+			Name: "DATA_SOURCE_PORT",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+					Key: "port",
+				},
+			},
+		},
+		{
+			Name: "DATA_SOURCE_USER",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+					Key: "user",
+				},
+			},
+		},
+		{
+			Name:  "DATA_SOURCE_URI",
+			Value: "localhost:$(DATA_SOURCE_PORT)/$(DATA_SOURCE_DB)?sslmode=disable",
+		},
+		{
+			Name:  "PG_EXPORTER_EXTEND_QUERY_PATH",
+			Value: "/config/queries.yaml",
+		},
+	}
+}
