@@ -3,7 +3,7 @@ resources:
   kind: StatefulSet
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: 116cb9c50fec8642c86ed3f18226a07bb8c2c95323cda9e1c31bff0f99eb7dac
+      appliance.sourcegraph.com/configHash: 76d8bfd89d72c07b04aed10ff0e6c0a90928d82a505dd6c0d508adb7ef855dc3
     creationTimestamp: "2024-04-19T00:00:00Z"
     generation: 1
     labels:
@@ -150,7 +150,7 @@ resources:
                 key: user
                 name: pgsql-auth
           - name: DATA_SOURCE_URI
-            value: localhost:$(DATA_SOURCE_PORT)/$(DATA_SOURCE_DB)?sslmode=disable
+            value: 127.0.0.1:$(DATA_SOURCE_PORT)/$(DATA_SOURCE_DB)?sslmode=disable
           - name: PG_EXPORTER_EXTEND_QUERY_PATH
             value: /config/queries.yaml
           image: index.docker.io/sourcegraph/postgres_exporter:5.3.2@sha256:b9fa66fbcb4cc2d466487259db4ae2deacd7651dac4a9e28c9c7fc36523699d0
@@ -288,7 +288,7 @@ resources:
   kind: ConfigMap
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: 116cb9c50fec8642c86ed3f18226a07bb8c2c95323cda9e1c31bff0f99eb7dac
+      appliance.sourcegraph.com/configHash: 76d8bfd89d72c07b04aed10ff0e6c0a90928d82a505dd6c0d508adb7ef855dc3
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
       deploy: sourcegraph
@@ -376,7 +376,7 @@ resources:
   kind: PersistentVolumeClaim
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: 116cb9c50fec8642c86ed3f18226a07bb8c2c95323cda9e1c31bff0f99eb7dac
+      appliance.sourcegraph.com/configHash: 76d8bfd89d72c07b04aed10ff0e6c0a90928d82a505dd6c0d508adb7ef855dc3
     creationTimestamp: "2024-04-19T00:00:00Z"
     finalizers:
     - kubernetes.io/pvc-protection
@@ -414,7 +414,7 @@ resources:
   kind: Secret
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: 116cb9c50fec8642c86ed3f18226a07bb8c2c95323cda9e1c31bff0f99eb7dac
+      appliance.sourcegraph.com/configHash: 76d8bfd89d72c07b04aed10ff0e6c0a90928d82a505dd6c0d508adb7ef855dc3
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
       deploy: sourcegraph
@@ -434,7 +434,7 @@ resources:
   kind: ServiceAccount
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: 116cb9c50fec8642c86ed3f18226a07bb8c2c95323cda9e1c31bff0f99eb7dac
+      appliance.sourcegraph.com/configHash: 76d8bfd89d72c07b04aed10ff0e6c0a90928d82a505dd6c0d508adb7ef855dc3
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
       deploy: sourcegraph
@@ -453,8 +453,8 @@ resources:
   kind: Service
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: 116cb9c50fec8642c86ed3f18226a07bb8c2c95323cda9e1c31bff0f99eb7dac
-      prometheus.io/port: "6060"
+      appliance.sourcegraph.com/configHash: 76d8bfd89d72c07b04aed10ff0e6c0a90928d82a505dd6c0d508adb7ef855dc3
+      prometheus.io/port: "9187"
       sourcegraph.prometheus/scrape: "true"
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
