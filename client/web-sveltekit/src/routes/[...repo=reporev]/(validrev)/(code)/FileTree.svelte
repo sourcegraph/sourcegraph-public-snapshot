@@ -2,9 +2,8 @@
 
 <script lang="ts">
     import { mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
-    import { onMount } from 'svelte'
 
-    import { afterNavigate, goto } from '$app/navigation'
+    import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntry } from '$lib/repo/api/tree'
     import FileIcon from '$lib/repo/FileIcon.svelte'
@@ -78,22 +77,7 @@
         $treeState = { focused: path, selected: path, expandedNodes: nodesCopy }
     }
 
-    function scrollSelectedItemIntoView() {
-        treeView.scrollSelectedItemIntoView(
-            // Only scroll the active tree entry into the 'center' if the selected entry changed
-            // by something other than user interaction. If we always 'center' then the sidebar
-            // will "jump" as the user selects an entry with the keyboard or mouse, which is
-            // disorienting.
-            // But if we never 'center' then going back and forth might position the selected
-            // entry at the top or bottom of the sidebar, which is not very visible.
-            // So we only 'center' if focus is not on the tree container, which likely means
-            // that the user is not interacting with the tree.
-            container?.contains(document.activeElement) ? 'nearest' : 'center'
-        )
-    }
-
     let container: HTMLElement | undefined
-    let treeView: TreeView<FileTreeNodeValue>
     // Since context is only set once when the component is created
     // we need to dynamically sync any changes to the corresponding
     // file tree state store
@@ -106,18 +90,10 @@
     $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoName))
     // Update open and selected nodes when the path changes.
     $: markSelected(selectedPath)
-
-    // Always scroll the selected item into view when we navigate to a different one.
-    // NOTE: At the moment this won't always work because the file tree might not be
-    // fully loaded after navigation.
-    afterNavigate(scrollSelectedItemIntoView)
-    // The documentation says afterNavigate will also run on mount but
-    // that doesn't seem to be the case
-    onMount(scrollSelectedItemIntoView)
 </script>
 
 <div tabindex="-1" bind:this={container}>
-    <TreeView bind:this={treeView} {treeProvider} on:select={event => handleSelect(event.detail)}>
+    <TreeView {treeProvider} on:select={event => handleSelect(event.detail)}>
         <svelte:fragment let:entry let:expanded>
             {@const isRoot = entry === treeRoot}
             {#if entry === NODE_LIMIT}
