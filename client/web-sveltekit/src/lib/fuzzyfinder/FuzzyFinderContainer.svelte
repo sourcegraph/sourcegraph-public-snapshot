@@ -15,26 +15,32 @@
     registerHotkey({
         keys: reposHotkey,
         ignoreInputFields: false,
-        handler: () => {
+        handler: event => {
+            event.stopPropagation()
             open = true
             finder?.selectTab('repos')
+            return false
         },
     })
     registerHotkey({
         keys: symbolsHotkey,
         ignoreInputFields: false,
-        handler: () => {
+        handler: event => {
+            event.stopPropagation()
             open = true
             finder?.selectTab('symbols')
+            return false
         },
     })
 
     registerHotkey({
         keys: filesHotkey,
         ignoreInputFields: false,
-        handler: () => {
+        handler: event => {
+            event.stopPropagation()
             open = true
             finder?.selectTab('files')
+            return false
         },
     })
 

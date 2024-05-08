@@ -2,6 +2,8 @@
     import { mdiClose } from '@mdi/js'
     import { tick } from 'svelte'
 
+    import { isMacPlatform } from '@sourcegraph/common'
+
     import { nextSibling, onClickOutside, previousSibling } from '$lib/dom'
     import { getGraphQLClient } from '$lib/graphql'
     import { formatShortcut } from '$lib/Hotkey'
@@ -45,51 +47,62 @@
         { id: 'files', title: 'Files', source: createFileSource(client, () => scope) },
     ]
 
-    async function handleKeyboardEvent(event: KeyboardEvent) {
+    function selectNext() {
+        let next: HTMLElement | null = null
+        const current = listbox?.querySelector('[aria-selected="true"]')
+        if (current) {
+            next = nextSibling(current, '[role="option"]', true) as HTMLElement | null
+        } else {
+            next = listbox?.querySelector('[role="option"]') as HTMLElement | null
+        }
+
+        if (next) {
+            selectOption(next)
+        }
+    }
+
+    function selectPrevious() {
+        let prev: HTMLElement | null = null
+        const current = listbox?.querySelector('[aria-selected="true"]')
+        if (current) {
+            prev = previousSibling(current, '[role="option"]', true) as HTMLElement | null
+        } else {
+            prev = listbox?.querySelector('[role="option"]:last-child') as HTMLElement | null
+        }
+
+        if (prev) {
+            selectOption(prev)
+        }
+    }
+
+    function selectOption(node: HTMLElement): void {
+        if (node.dataset.index) {
+            selectedOption = +node.dataset.index
+            tick().then(() => node.scrollIntoView({ block: 'nearest' }))
+        }
+    }
+
+    function handleKeyboardEvent(event: KeyboardEvent): void {
         switch (event.key) {
             // Select the next/first option
             case 'ArrowDown': {
                 event.preventDefault()
-                let next: HTMLElement | null = null
-                const current = listbox?.querySelector('[aria-selected="true"]')
-                if (current) {
-                    next = nextSibling(current, '[role="option"]', true) as HTMLElement | null
-                } else {
-                    next = listbox?.querySelector('[role="option"]') as HTMLElement | null
-                }
-
-                if (next?.dataset.index) {
-                    selectedOption = +next.dataset.index
-                    await tick()
-                    next.scrollIntoView({ block: 'nearest' })
-                }
+                selectNext()
                 break
             }
             // Select previous/last option
             case 'ArrowUp': {
                 event.preventDefault()
-                let prev: HTMLElement | null = null
-                const current = listbox?.querySelector('[aria-selected="true"]')
-                if (current) {
-                    prev = previousSibling(current, '[role="option"]', true) as HTMLElement | null
-                } else {
-                    prev = listbox?.querySelector('[role="option"]:last-child') as HTMLElement | null
-                }
-
-                if (prev?.dataset.index) {
-                    selectedOption = +prev.dataset.index
-                    await tick()
-                    prev.scrollIntoView({ block: 'nearest' })
-                }
+                selectPrevious()
                 break
             }
             // Select first option
             case 'Home': {
+                event.preventDefault()
                 const option = listbox?.querySelector('[role="option"]')
                 if (option) {
                     selectedOption = 0
-                    await tick()
-                    option.scrollIntoView({ block: 'nearest' })
+                    tick().then(() => option.scrollIntoView({ block: 'nearest' }))
                 }
                 break
             }
@@ -98,8 +111,7 @@
                 const options = listbox?.querySelectorAll('[role="option"]')
                 if (options && options.length > 0) {
                     selectedOption = options.length - 1
-                    await tick()
-                    options[selectedOption].scrollIntoView({ block: 'nearest' })
+                    tick().then(() => options[selectedOption].scrollIntoView({ block: 'nearest' }))
                 }
                 break
             }
@@ -111,6 +123,25 @@
                     current.querySelector('a')?.click()
                     dialog?.close()
                 }
+                break
+            }
+        }
+    }
+
+    function handleMacOSKeyboardEvent(event: KeyboardEvent): void {
+        if (!event.ctrlKey) {
+            return
+        }
+
+        switch (event.key) {
+            case 'n': {
+                event.preventDefault()
+                selectNext()
+                break
+            }
+            case 'p': {
+                event.preventDefault()
+                selectPrevious()
                 break
             }
         }
@@ -185,6 +216,7 @@
                     }}
                     loading={$source.pending}
                     on:keydown={handleKeyboardEvent}
+                    on:keydown={isMacPlatform() ? handleMacOSKeyboardEvent : undefined}
                 />
                 {#if useScope}
                     <div class="scope">Searching in <code>{scope}</code></div>
@@ -312,13 +344,19 @@
     }
 
     header {
-        padding: 0 1rem;
-    }
-
-    header {
-        border-bottom: 1px solid var(--border-color);
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        padding: 0 1rem;
+
+        &::before {
+            content: '';
+            position: absolute;
+            border-bottom: 1px solid var(--border-color);
+            width: 100%;
+            bottom: 0;
+            left: 0;
+        }
     }
 </style>
