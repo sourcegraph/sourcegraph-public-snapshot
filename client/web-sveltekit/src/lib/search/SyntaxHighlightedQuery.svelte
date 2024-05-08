@@ -8,7 +8,7 @@
     $: decorations = decorateQuery(query)
 </script>
 
-<span class="text-monospace search-query-link">
+<code class="search-query-link">
     {#if decorations}
         {#each decorations as { key, className, value, token } (key)}
             <span class={className}>
@@ -20,4 +20,4 @@
     {:else}
         {query}
     {/if}
-</span>
+</code>

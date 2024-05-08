@@ -657,11 +657,6 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 	return dedupeRanges(sortedRanges), nil
 }
 
-// TODO(#48681) - do not proxy this
-func (s *Service) GetCompletedUploadsByIDs(ctx context.Context, ids []int) ([]uploadsshared.CompletedUpload, error) {
-	return s.uploadSvc.GetCompletedUploadsByIDs(ctx, ids)
-}
-
 func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, opts uploadsshared.UploadMatchingOptions) (_ []uploadsshared.CompletedUpload, err error) {
 	ctx, trace, endObservation := s.operations.getClosestCompletedUploadsForBlob.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
@@ -671,51 +666,34 @@ func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, opts up
 		return nil, err
 	}
 
-	uploadCandidates := copyUploads(candidates)
-	trace.AddEvent("TODO Domain Owner",
+	trace.AddEvent("InferClosestUploads",
 		attribute.Int("numCandidates", len(candidates)),
-		attribute.String("candidates", uploadIDsToString(uploadCandidates)))
+		attribute.String("candidates", uploadIDsToString(candidates)))
 
 	commitChecker := NewCommitCache(s.repoStore, s.gitserver)
 	commitChecker.SetResolvableCommit(opts.RepositoryID, opts.Commit)
 
-	candidatesWithCommits, err := filterUploadsWithCommits(ctx, commitChecker, uploadCandidates)
+	candidatesWithExistingCommits, err := filterUploadsWithCommits(ctx, commitChecker, candidates)
 	if err != nil {
 		return nil, err
 	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numCandidatesWithCommits", len(candidatesWithCommits)),
-		attribute.String("candidatesWithCommits", uploadIDsToString(candidatesWithCommits)))
+	trace.AddEvent("filterUploadsWithCommits",
+		attribute.Int("numCandidatesWithExistingCommits", len(candidatesWithExistingCommits)),
+		attribute.String("candidatesWithExistingCommits", uploadIDsToString(candidatesWithExistingCommits)))
 
-	// Filter in-place
-	filtered := candidatesWithCommits[:0]
-
-	for i := range candidatesWithCommits {
-		switch opts.RootToPathMatching {
-		case uploadsshared.RootMustEnclosePath:
-			// TODO - this breaks if the file was renamed in git diff
-			pathExists, err := s.lsifstore.GetPathExists(ctx, candidates[i].ID, strings.TrimPrefix(opts.Path, candidates[i].Root))
-			if err != nil {
-				return nil, errors.Wrap(err, "lsifStore.Exists")
-			}
-			if !pathExists {
-				continue
-			}
-		case uploadsshared.RootEnclosesPathOrPathEnclosesRoot:
-			// TODO(efritz) - ensure there's a valid document path for this condition as well
-		}
-
-		filtered = append(filtered, uploadCandidates[i])
+	candidatesWithExistingCommitsAndPaths, err := filterUploadsWithPaths(ctx, s.lsifstore, opts, candidatesWithExistingCommits)
+	if err != nil {
+		return nil, errors.Wrap(err, "filtering uploads based on paths")
 	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numFiltered", len(filtered)),
-		attribute.String("filtered", uploadIDsToString(filtered)))
+	trace.AddEvent("filterUploadsWithPaths",
+		attribute.Int("numFiltered", len(candidatesWithExistingCommitsAndPaths)),
+		attribute.String("filtered", uploadIDsToString(candidatesWithExistingCommitsAndPaths)))
 
-	return filtered, nil
+	return candidatesWithExistingCommitsAndPaths, nil
 }
 
-// filterUploadsWithCommits removes the uploads for commits which are unknown to gitserver from the given
-// slice. The slice is filtered in-place and returned (to update the slice length).
+// filterUploadsWithCommits only keeps the uploads for commits which are known to gitserver.
+// A fresh slice is returned without modifying the original slice.
 func filterUploadsWithCommits(ctx context.Context, commitCache CommitCache, uploads []uploadsshared.CompletedUpload) ([]uploadsshared.CompletedUpload, error) {
 	rcs := make([]RepositoryCommit, 0, len(uploads))
 	for _, upload := range uploads {
@@ -729,13 +707,39 @@ func filterUploadsWithCommits(ctx context.Context, commitCache CommitCache, uplo
 		return nil, err
 	}
 
-	filtered := uploads[:0]
+	filtered := make([]uploadsshared.CompletedUpload, 0, len(uploads))
 	for i, upload := range uploads {
 		if exists[i] {
 			filtered = append(filtered, upload)
 		}
 	}
 
+	return filtered, nil
+}
+
+func filterUploadsWithPaths(
+	ctx context.Context,
+	lsifstore lsifstore.LsifStore,
+	opts uploadsshared.UploadMatchingOptions,
+	candidates []uploadsshared.CompletedUpload,
+) ([]uploadsshared.CompletedUpload, error) {
+	filtered := make([]uploadsshared.CompletedUpload, 0, len(candidates))
+	for _, candidate := range candidates {
+		switch opts.RootToPathMatching {
+		case uploadsshared.RootMustEnclosePath:
+			// TODO - this breaks if the file was renamed in git diff
+			pathExists, err := lsifstore.GetPathExists(ctx, candidate.ID, strings.TrimPrefix(opts.Path, candidate.Root))
+			if err != nil {
+				return nil, errors.Wrap(err, "lsifStore.Exists")
+			}
+			if !pathExists {
+				continue
+			}
+		case uploadsshared.RootEnclosesPathOrPathEnclosesRoot:
+			// TODO(efritz) - ensure there's a valid document path for this condition as well
+		}
+		filtered = append(filtered, candidate)
+	}
 	return filtered, nil
 }
 
@@ -801,7 +805,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		}})
 	}()
 
-	uploads, err := s.GetCompletedUploadsByIDs(ctx, []int{uploadID})
+	uploads, err := s.uploadSvc.GetCompletedUploadsByIDs(ctx, []int{uploadID})
 	if err != nil {
 		return nil, err
 	}
