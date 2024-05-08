@@ -657,11 +657,6 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 	return dedupeRanges(sortedRanges), nil
 }
 
-// TODO(#48681) - do not proxy this
-func (s *Service) GetCompletedUploadsByIDs(ctx context.Context, ids []int) ([]uploadsshared.CompletedUpload, error) {
-	return s.uploadSvc.GetCompletedUploadsByIDs(ctx, ids)
-}
-
 func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, opts uploadsshared.UploadMatchingOptions) (_ []uploadsshared.CompletedUpload, err error) {
 	ctx, trace, endObservation := s.operations.getClosestCompletedUploadsForBlob.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
@@ -810,7 +805,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		}})
 	}()
 
-	uploads, err := s.GetCompletedUploadsByIDs(ctx, []int{uploadID})
+	uploads, err := s.uploadSvc.GetCompletedUploadsByIDs(ctx, []int{uploadID})
 	if err != nil {
 		return nil, err
 	}
