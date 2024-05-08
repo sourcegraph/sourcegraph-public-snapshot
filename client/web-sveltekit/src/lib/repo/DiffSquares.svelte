@@ -45,12 +45,13 @@
     .root {
         display: inline-flex;
         gap: 0.125rem;
+        margin-left: 0.25rem;
     }
 
     .square {
         display: inline-block;
         width: 0.5rem;
         height: 0.5rem;
-        background-color: var(--text-muted);
+        background-color: var(--color-bg-3);
     }
 </style>
