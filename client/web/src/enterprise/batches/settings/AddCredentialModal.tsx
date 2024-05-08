@@ -77,6 +77,14 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
 
 type Step = 'add-token' | 'get-ssh-key'
 
+const AuthenticationStrategy = {
+    NONE: 'NONE',
+    PERSONAL_ACCESS_TOKEN: 'PERSONAL_ACCESS_TOKEN',
+    GITHUB_APP: 'GITHUB_APP'
+} as const
+
+// type AuthenticationStrategy = (typeof AuthenticationStrategyEnum)[keyof typeof AuthenticationStrategyEnum]
+
 export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren<AddCredentialModalProps>> = ({
     onCancel,
     afterCreate,
@@ -148,7 +156,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
             ? 'App password'
             : 'Personal access token'
 
-    const isGitHubKind = externalServiceKind == ExternalServiceKind.GITHUB
+    const isGitHubKind = externalServiceKind === ExternalServiceKind.GITHUB
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
@@ -164,8 +172,9 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                         selectSize="sm"
                         label="Select an Authentication scheme for your credential"
                     >
-                        <option>Personal Access Token</option>
-                        <option>GitHub App</option>
+                        <option value={AuthenticationStrategy.NONE} defaultChecked={true}>None</option>
+                        <option value={AuthenticationStrategy.PERSONAL_ACCESS_TOKEN}>Personal Access Token</option>
+                        <option value={AuthenticationStrategy.GITHUB_APP}>GitHub App</option>
                     </Select>
                 )}
                 {requiresSSH && (
