@@ -5,7 +5,7 @@
 
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
-    import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntry } from '$lib/repo/api/tree'
+    import { type FileTreeProvider, NODE_LIMIT, type TreeEntry } from '$lib/repo/api/tree'
     import FileIcon from '$lib/repo/FileIcon.svelte'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
     import { replaceRevisionInURL } from '$lib/shared'
@@ -77,7 +77,6 @@
         $treeState = { focused: path, selected: path, expandedNodes: nodesCopy }
     }
 
-    let container: HTMLElement | undefined
     // Since context is only set once when the component is created
     // we need to dynamically sync any changes to the corresponding
     // file tree state store
@@ -92,7 +91,7 @@
     $: markSelected(selectedPath)
 </script>
 
-<div tabindex="-1" bind:this={container}>
+<div tabindex="-1">
     <TreeView {treeProvider} on:select={event => handleSelect(event.detail)}>
         <svelte:fragment let:entry let:expanded>
             {@const isRoot = entry === treeRoot}
