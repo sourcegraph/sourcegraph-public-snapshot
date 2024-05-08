@@ -12,6 +12,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -294,7 +296,7 @@ LIMIT %s
 // It is possible for some dumps to overlap theoretically, e.g. if someone uploads one dump covering the repository root and then later
 // splits the repository into multiple dumps. For this reason, the returned dumps are always sorted in most-recently-finished order to
 // prevent returning data from stale dumps.
-func (s *store) FindClosestCompletedUploads(ctx context.Context, opts shared.UploadMatchingOptions) (_ []shared.CompletedUpload, err error) {
+func (s *store) FindClosestCompletedUploads(ctx context.Context, opts shared.UploadMatchingOptions) (_ shared.ClosestUploads, err error) {
 	ctx, trace, endObservation := s.operations.findClosestCompletedUploads.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -304,11 +306,16 @@ func (s *store) FindClosestCompletedUploads(ctx context.Context, opts shared.Upl
 
 	uploads, err := scanCompletedUploads(s.db.Query(ctx, query))
 	if err != nil {
-		return nil, err
+		return shared.ClosestUploads{}, err
 	}
 	trace.AddEvent("TODO Domain Owner", attribute.Int("numUploads", len(uploads)))
 
-	return uploads, nil
+	groupedUploads, warnings := shared.NewClosestUploads(uploads)
+	for _, err := range warnings.Errors() {
+		s.logger.Warn("scanCompletedUploads invariant violation", log.Error(err))
+	}
+
+	return groupedUploads, nil
 }
 
 const findClosestCompletedUploadsQuery = `
@@ -340,13 +347,13 @@ ORDER BY u.finished_at DESC
 
 // FindClosestCompletedUploadsFromGraphFragment returns the set of uploads that can most accurately answer queries for the given repository, commit,
 // path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestCompletedUploads for additional details.
-func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context, opts shared.UploadMatchingOptions, commitGraph *commitgraph.CommitGraph) (_ []shared.CompletedUpload, err error) {
+func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context, opts shared.UploadMatchingOptions, commitGraph *commitgraph.CommitGraph) (_ shared.ClosestUploads, err error) {
 	ctx, trace, endObservation := s.operations.findClosestCompletedUploadsFromGraphFragment.With(ctx, &err,
 		observation.Args{Attrs: append(opts.Attrs(), attribute.Int("numCommitGraphKeys", len(commitGraph.Order())))})
 	defer endObservation(1, observation.Args{})
 
 	if len(commitGraph.Order()) == 0 {
-		return nil, nil
+		return shared.ClosestUploads{}, nil
 	}
 
 	commitQueries := make([]*sqlf.Query, 0, len(commitGraph.Graph()))
@@ -362,7 +369,7 @@ func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context
 		sqlf.Join(commitQueries, ", "),
 	)))
 	if err != nil {
-		return nil, err
+		return shared.ClosestUploads{}, err
 	}
 	trace.AddEvent("TODO Domain Owner",
 		attribute.Int("numCommitGraphViewMetaKeys", len(commitGraphView.Meta)),
@@ -373,7 +380,7 @@ func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context
 		ids = append(ids, sqlf.Sprintf("%d", uploadMeta.UploadID))
 	}
 	if len(ids) == 0 {
-		return nil, nil
+		return shared.ClosestUploads{}, nil
 	}
 
 	conds := makeFindClosestProcessUploadsConditions(opts)
@@ -382,11 +389,16 @@ func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context
 
 	uploads, err := scanCompletedUploads(s.db.Query(ctx, query))
 	if err != nil {
-		return nil, err
+		return shared.ClosestUploads{}, err
 	}
 	trace.AddEvent("TODO Domain Owner", attribute.Int("numUploads", len(uploads)))
 
-	return uploads, nil
+	groupedUploads, warnings := shared.NewClosestUploads(uploads)
+	for _, err := range warnings.Errors() {
+		s.logger.Warn("scanCompletedUploads invariant violation", log.Error(err))
+	}
+
+	return groupedUploads, nil
 }
 
 const findClosestCompletedUploadsFromGraphFragmentCommitGraphQuery = `

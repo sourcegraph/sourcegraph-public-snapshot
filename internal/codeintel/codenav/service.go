@@ -672,8 +672,8 @@ func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, opts up
 	}
 
 	trace.AddEvent("InferClosestUploads",
-		attribute.Int("numCandidates", len(candidates)),
-		attribute.String("candidates", uploadIDsToString(candidates)))
+		attribute.Int("numCandidates", candidates.Len()),
+		attribute.String("candidates", uploadIDsToString2(candidates)))
 
 	commitChecker := NewCommitCache(s.repoStore, s.gitserver)
 	commitChecker.SetResolvableCommit(opts.RepositoryID, opts.Commit)
@@ -683,8 +683,8 @@ func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, opts up
 		return nil, err
 	}
 	trace.AddEvent("filterUploadsWithCommits",
-		attribute.Int("numCandidatesWithExistingCommits", len(candidatesWithExistingCommits)),
-		attribute.String("candidatesWithExistingCommits", uploadIDsToString(candidatesWithExistingCommits)))
+		attribute.Int("numCandidatesWithExistingCommits", candidatesWithExistingCommits.Len()),
+		attribute.String("candidatesWithExistingCommits", uploadIDsToString2(candidatesWithExistingCommits)))
 
 	candidatesWithExistingCommitsAndPaths, err := filterUploadsWithPaths(ctx, s.lsifstore, opts, candidatesWithExistingCommits)
 	if err != nil {
@@ -699,7 +699,7 @@ func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, opts up
 
 // filterUploadsWithCommits only keeps the uploads for commits which are known to gitserver.
 // A fresh slice is returned without modifying the original slice.
-func filterUploadsWithCommits(ctx context.Context, commitCache CommitCache, uploads []uploadsshared.CompletedUpload) ([]uploadsshared.CompletedUpload, error) {
+func filterUploadsWithCommits(ctx context.Context, commitCache CommitCache, uploads uploadsshared.ClosestUploads) (uploadsshared.ClosestUploads, error) {
 	rcs := make([]RepositoryCommit, 0, len(uploads))
 	for _, upload := range uploads {
 		rcs = append(rcs, RepositoryCommit{
@@ -726,16 +726,18 @@ func filterUploadsWithPaths(
 	ctx context.Context,
 	lsifstore lsifstore.LsifStore,
 	opts uploadsshared.UploadMatchingOptions,
-	candidates []uploadsshared.CompletedUpload,
-) ([]uploadsshared.CompletedUpload, error) {
-	filtered := make([]uploadsshared.CompletedUpload, 0, len(candidates))
-	for _, candidate := range candidates {
+	candidates uploadsshared.ClosestUploads,
+) (uploadsshared.ClosestUploads, error) {
+	filtered, _ := uploadsshared.NewClosestUploads(nil)
+	//filtered := make([]uploadsshared.CompletedUpload, 0, candidates.Len())
+	for pair := candidates.Oldest(); pair != nil; pair = pair.Next() {
+		candidate := pair.Value
 		switch opts.RootToPathMatching {
 		case uploadsshared.RootMustEnclosePath:
 			// TODO - this breaks if the file was renamed in git diff
 			pathExists, err := lsifstore.GetPathExists(ctx, candidate.ID, strings.TrimPrefix(opts.Path, candidate.Root))
 			if err != nil {
-				return nil, errors.Wrap(err, "lsifStore.Exists")
+				return uploadsshared.ClosestUploads{}, errors.Wrap(err, "lsifStore.Exists")
 			}
 			if !pathExists {
 				continue
@@ -743,7 +745,7 @@ func filterUploadsWithPaths(
 		case uploadsshared.RootEnclosesPathOrPathEnclosesRoot:
 			// TODO(efritz) - ensure there's a valid document path for this condition as well
 		}
-		filtered = append(filtered, candidate)
+		filtered.AddPairs(*pair)
 	}
 	return filtered, nil
 }

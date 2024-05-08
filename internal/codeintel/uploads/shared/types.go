@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/executor"
@@ -100,6 +101,34 @@ type CompletedUpload struct {
 	Indexer           string     `json:"indexer"`
 	IndexerVersion    string     `json:"indexerVersion"`
 	AssociatedIndexID *int       `json:"associatedIndex"`
+}
+
+// ClosestUploads is a type to better document the invariants guaranteed
+// by the functions which return the closest matching uploads to a given commit.
+//
+// The underlying 'visibleUploadsQuery' guarantees that there is at most one
+// upload returned for a given (indexer, root) pair. See NOTE(id: visible-uploads-uniquing).
+type ClosestUploads = orderedmap.OrderedMap[IndexerAndRoot, CompletedUpload]
+
+func NewClosestUploads(uploads []CompletedUpload) (out ClosestUploads, warnings errors.MultiError) {
+	out = *orderedmap.New[IndexerAndRoot, CompletedUpload]()
+	errs := []error{}
+	for _, u := range uploads {
+		key := IndexerAndRoot{Indexer: u.Indexer, Root: u.Root}
+		if _, found := out.Get(key); found {
+			errs = append(errs, errors.Newf("indexer, root pair (%s, %s) returned more than one upload",
+				errors.Safe(u.Indexer), u.Root))
+		} else {
+			out.AddPairs(orderedmap.Pair[IndexerAndRoot, CompletedUpload]{Key: key, Value: u})
+		}
+	}
+	warnings = errors.Append(nil, errs...)
+	return out, warnings
+}
+
+type IndexerAndRoot struct {
+	Indexer string
+	Root    string
 }
 
 func (u *CompletedUpload) ConvertToUpload() Upload {

@@ -69,8 +69,8 @@ type Store interface {
 	GetDirtyRepositories(ctx context.Context) ([]shared.DirtyRepository, error)
 	UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *commitgraph.CommitGraph, refs map[string][]gitdomain.Ref, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
 	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) ([]string, *string, error)
-	FindClosestCompletedUploads(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error)
-	FindClosestCompletedUploadsFromGraphFragment(_ context.Context, _ shared.UploadMatchingOptions, commitGraph *commitgraph.CommitGraph) ([]shared.CompletedUpload, error)
+	FindClosestCompletedUploads(context.Context, shared.UploadMatchingOptions) (shared.ClosestUploads, error)
+	FindClosestCompletedUploadsFromGraphFragment(_ context.Context, _ shared.UploadMatchingOptions, commitGraph *commitgraph.CommitGraph) (shared.ClosestUploads, error)
 	GetRepositoriesMaxStaleAge(ctx context.Context) (time.Duration, error)
 	GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, _ error)
 
