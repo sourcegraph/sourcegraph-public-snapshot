@@ -810,14 +810,14 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		return nil, nil
 	}
 
-	dump := uploads[0]
+	upload := uploads[0]
 
-	document, err := s.lsifstore.SCIPDocument(ctx, dump.ID, strings.TrimPrefix(path, dump.Root))
+	document, err := s.lsifstore.SCIPDocument(ctx, upload.ID, strings.TrimPrefix(path, upload.Root))
 	if err != nil || document == nil {
 		return nil, err
 	}
 
-	r, err := s.gitserver.NewFileReader(ctx, api.RepoName(dump.RepositoryName), api.CommitID(dump.Commit), path)
+	r, err := s.gitserver.NewFileReader(ctx, api.RepoName(upload.RepositoryName), api.CommitID(upload.Commit), path)
 	if err != nil {
 		return nil, err
 	}
@@ -830,7 +830,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 	// client-side normalizes the file to LF, so normalize CRLF files to that so the offsets are correct
 	file = bytes.ReplaceAll(file, []byte("\r\n"), []byte("\n"))
 
-	repo, err := s.repoStore.Get(ctx, api.RepoID(dump.RepositoryID))
+	repo, err := s.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return nil, err
 	}
@@ -922,7 +922,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 			}
 		}
 
-		_, newRange, ok, err := gittranslator.GetTargetCommitPositionFromSourcePosition(ctx, dump.Commit, shared.Position{
+		_, newRange, ok, err := gittranslator.GetTargetCommitPositionFromSourcePosition(ctx, upload.Commit, shared.Position{
 			Line:      int(originalRange.Start.Line),
 			Character: int(originalRange.Start.Character),
 		}, false)
