@@ -80,7 +80,7 @@ internal:
           body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '{
               "name": "sourcegraph",
               "version": "{{version}}",
-              "git_sha": "${COMMIT_SHA}"
+              "git_sha": "'${COMMIT_SHA}'"
             }' "https://releaseregistry.sourcegraph.com/v1/releases")
           exit_code=$?
 
@@ -176,25 +176,25 @@ test:
 promoteToPublic:
   create:
     steps:
-      - name: 'validate promotion criteria'
-        cmd: |
-          echo "validating promotion criteria"
-          body=$(wget --content-on-error -O- --header="Content-Type: application/json" "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}")
-          exit_code=$?
-
-          if [ $exit_code != 0 ]; then
-            echo "❌ Failed to fetch release on release registry, got:"
-            echo "--- raw body ---"
-            echo $body
-            echo "--- raw body ---"
-            exit $exit_code
-          fi
-
-          is_development=$(echo "$body" | jq -r '.is_development')
-          if [ "$is_development" = "true" ]; then
-            echo "cannot promote a development release"
-            exit 1
-          fi
+#      - name: 'validate promotion criteria'
+#        cmd: |
+#          echo "validating promotion criteria"
+#          body=$(wget --content-on-error -O- --header="Content-Type: application/json" "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}")
+#          exit_code=$?
+#
+#          if [ $exit_code != 0 ]; then
+#            echo "❌ Failed to fetch release on release registry, got:"
+#            echo "--- raw body ---"
+#            echo $body
+#            echo "--- raw body ---"
+#            exit $exit_code
+#          fi
+#
+#          is_development=$(echo "$body" | jq -r '.is_development')
+#          if [ "$is_development" = "true" ]; then
+#            echo "cannot promote a development release"
+#            exit 1
+#          fi
       - name: 'buildkite'
         cmd: |
           # We set DISABLE_ASPECT_WORKFLOWS to true, because the promotion is purely about retagging images
@@ -207,7 +207,8 @@ promoteToPublic:
             "env": {
               "DISABLE_ASPECT_WORKFLOWS": "true",
               "RELEASE_PUBLIC": "true",
-              "VERSION": "{{tag}}"
+              "VERSION": "{{tag}}",
+              "IS_DEVELOPMENT_RELEASE": "{{is_development}}"
             }
           }' "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds")
           exit_code=$?

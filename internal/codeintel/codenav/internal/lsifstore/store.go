@@ -33,7 +33,7 @@ type LsifStore interface {
 	// Metadata by position
 	GetHover(ctx context.Context, bundleID int, path string, line, character int) (string, shared.Range, bool, error)
 	GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]shared.Diagnostic, int, error)
-	SCIPDocument(ctx context.Context, id int, path string) (_ *scip.Document, err error)
+	SCIPDocument(ctx context.Context, uploadID int, path string) (_ *scip.Document, err error)
 
 	// Extraction methods
 	ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)

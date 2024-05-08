@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { mdiAccountMultiple, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
+import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Link, Icon, PageHeader, Container, useDebounce, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import type { UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
@@ -23,16 +24,20 @@ import type { ListTeamFields, ListTeamsOfParentResult, ListTeamsResult } from '.
 import { useChildTeams, useTeams } from './backend'
 import { TeamNode } from './TeamNode'
 
-export interface TeamListPageProps {}
+export interface TeamListPageProps extends TelemetryV2Props {}
 
 /**
  * A page displaying the teams on this site.
  */
-export const TeamListPage: React.FunctionComponent<React.PropsWithChildren<TeamListPageProps>> = () => {
+export const TeamListPage: React.FunctionComponent<React.PropsWithChildren<TeamListPageProps>> = ({
+    telemetryRecorder,
+}) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
 
     const connection = useTeams(query)
+
+    useEffect(() => telemetryRecorder.recordEvent('teams.list', 'view'), [telemetryRecorder])
 
     return (
         <Page className="mb-3">
@@ -61,13 +66,19 @@ export const TeamListPage: React.FunctionComponent<React.PropsWithChildren<TeamL
             </PageHeader>
 
             <Container className="mb-3">
-                <TeamList searchValue={searchValue} setSearchValue={setSearchValue} query={query} {...connection} />
+                <TeamList
+                    searchValue={searchValue}
+                    setSearchValue={setSearchValue}
+                    query={query}
+                    telemetryRecorder={telemetryRecorder}
+                    {...connection}
+                />
             </Container>
         </Page>
     )
 }
 
-export interface ChildTeamListPageProps {
+export interface ChildTeamListPageProps extends TelemetryV2Props {
     parentTeam: string
 }
 
@@ -76,6 +87,7 @@ export interface ChildTeamListPageProps {
  */
 export const ChildTeamListPage: React.FunctionComponent<React.PropsWithChildren<ChildTeamListPageProps>> = ({
     parentTeam,
+    telemetryRecorder,
 }) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
@@ -90,13 +102,21 @@ export const ChildTeamListPage: React.FunctionComponent<React.PropsWithChildren<
                 </Button>
             </div>
             <Container className="mb-3">
-                <TeamList searchValue={searchValue} setSearchValue={setSearchValue} query={query} {...connection} />
+                <TeamList
+                    searchValue={searchValue}
+                    setSearchValue={setSearchValue}
+                    query={query}
+                    telemetryRecorder={telemetryRecorder}
+                    {...connection}
+                />
             </Container>
         </>
     )
 }
 
-interface TeamListProps extends UseShowMorePaginationResult<ListTeamsResult | ListTeamsOfParentResult, ListTeamFields> {
+interface TeamListProps
+    extends UseShowMorePaginationResult<ListTeamsResult | ListTeamsOfParentResult, ListTeamFields>,
+        TelemetryV2Props {
     searchValue: string
     setSearchValue: (value: string) => void
     query: string
@@ -114,6 +134,7 @@ export const TeamList: React.FunctionComponent<TeamListProps> = ({
     setSearchValue,
     query,
     className,
+    telemetryRecorder,
 }) => (
     <ConnectionContainer className={classNames(className)}>
         <ConnectionForm
@@ -126,7 +147,7 @@ export const TeamList: React.FunctionComponent<TeamListProps> = ({
         {loading && !connection && <ConnectionLoading />}
         <ConnectionList as="ul" className="list-group" aria-label="Teams">
             {connection?.nodes?.map(node => (
-                <TeamNode key={node.id} node={node} refetchAll={refetchAll} />
+                <TeamNode key={node.id} node={node} refetchAll={refetchAll} telemetryRecorder={telemetryRecorder} />
             ))}
         </ConnectionList>
         {connection && (

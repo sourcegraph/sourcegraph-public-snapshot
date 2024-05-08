@@ -1,18 +1,18 @@
 import { getResizeEventCoordinates } from './event/getResizeEventCoordinates'
 import { intersects } from './rect/intersects'
-import { PanelGroupDirection, type ResizeHandlerAction, type ResizeEvent } from './types'
+import type { PanelGroupDirection, ResizeHandlerAction, ResizeEvent } from './types'
 import { resetGlobalCursorStyle, setGlobalCursorStyle } from './utils/cursor'
 import { getInputType } from './utils/getInputType'
 import { compare } from './vendor/stacking-order'
 
-export type PointerHitAreaMargins = {
+export interface PointerHitAreaMargins {
     coarse: number
     fine: number
 }
 
 export type SetResizeHandlerState = (action: ResizeHandlerAction, isActive: boolean, event: ResizeEvent) => void
 
-export type ResizeHandlerData = {
+export interface ResizeHandlerData {
     direction: PanelGroupDirection
     element: HTMLElement
     hitAreaMargins: PointerHitAreaMargins
@@ -27,6 +27,7 @@ export enum Exceed {
     VERTICAL_MAX = 0b1000,
 }
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class PanelResizeHandleRegistry {
     static isPointerDown = false
     static isCoarsePointer = getInputType() === 'coarse'
@@ -35,17 +36,17 @@ export class PanelResizeHandleRegistry {
     static panelConstraintFlags: Map<string, Exceed> = new Map()
     static registeredResizeHandlers = new Set<ResizeHandlerData>()
 
-    static reportConstraintsViolation(resizeHandleId: string, flag: Exceed) {
+    public static reportConstraintsViolation(resizeHandleId: string, flag: Exceed): void {
         PanelResizeHandleRegistry.panelConstraintFlags.set(resizeHandleId, flag)
     }
 
-    static registerResizeHandle(
+    public static registerResizeHandle(
         resizeHandleId: string,
         element: HTMLElement,
         direction: PanelGroupDirection,
         hitAreaMargins: PointerHitAreaMargins,
         setResizeHandlerState: SetResizeHandlerState
-    ) {
+    ): () => void {
         const { ownerDocument } = element
 
         const data: ResizeHandlerData = {
@@ -161,11 +162,15 @@ export class PanelResizeHandleRegistry {
             PanelResizeHandleRegistry.updateResizeHandlerStates('down', event)
 
             event.preventDefault()
+            event.stopImmediatePropagation()
         }
     }
 
     static handlePointerMove(event: ResizeEvent) {
         const { x, y } = getResizeEventCoordinates(event)
+
+        event.preventDefault()
+        event.stopImmediatePropagation()
 
         if (!PanelResizeHandleRegistry.isPointerDown) {
             const { target } = event
@@ -180,10 +185,6 @@ export class PanelResizeHandleRegistry {
 
         // Update cursor based on return value(s) from active handles
         PanelResizeHandleRegistry.updateCursor()
-
-        if (PanelResizeHandleRegistry.intersectingHandles.length > 0) {
-            event.preventDefault()
-        }
     }
 
     static updateResizeHandlerStates(action: ResizeHandlerAction, event: ResizeEvent) {

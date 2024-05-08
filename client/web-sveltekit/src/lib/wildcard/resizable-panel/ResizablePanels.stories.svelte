@@ -26,6 +26,17 @@
             }
         }
     }
+
+    // Collapsable panels example
+    let leftPanel: Panel
+
+    function handleExpandCollapsePanel() {
+        if (leftPanel.isCollapsed()) {
+            leftPanel.expand()
+        } else {
+            leftPanel.collapse()
+        }
+    }
 </script>
 
 <Story name="Horizontal panels">
@@ -125,6 +136,36 @@
     </section>
 </Story>
 
+<Story name="Collapsable panels">
+    <button on:click={handleExpandCollapsePanel}>Collapse/expand left panel</button>
+
+    <section class="root">
+        <PanelGroup id="main-group" direction="horizontal">
+            <Panel
+                id="first"
+                order={1}
+                minSize={40}
+                defaultSize={50}
+                collapsible
+                collapsedSize={15}
+                bind:this={leftPanel}
+            >
+                <svelte:fragment let:isCollapsed>
+                    <div class="item" class:isCollapsed>left</div>
+                </svelte:fragment>
+            </Panel>
+            <PanelResizeHandle />
+            <Panel minSize={20} id="second" order={2}>
+                <div class="item">middle</div>
+            </Panel>
+            <PanelResizeHandle />
+            <Panel defaultSize={30} minSize={20} id="third" order={3}>
+                <div class="item">right</div>
+            </Panel>
+        </PanelGroup>
+    </section>
+</Story>
+
 <style>
     .root {
         height: 40rem;
@@ -143,5 +184,9 @@
         display: flex;
         overflow: hidden;
         height: 100%;
+    }
+
+    .isCollapsed {
+        background-color: darkblue;
     }
 </style>

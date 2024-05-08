@@ -6,8 +6,8 @@ func (suite *ApplianceTestSuite) TestDeploySymbols() {
 	for _, tc := range []struct {
 		name string
 	}{
-		{name: "symbols-default"},
-		{name: "symbols-with-storage"},
+		{name: "symbols/default"},
+		{name: "symbols/with-storage"},
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMap(tc.name)

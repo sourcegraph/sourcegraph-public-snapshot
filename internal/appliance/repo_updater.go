@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/container"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/deployment"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pod"
@@ -45,19 +46,23 @@ func (r *Reconciler) reconcileRepoUpdaterDeployment(ctx context.Context, sg *Sou
 	cfg := sg.Spec.RepoUpdater
 	name := "repo-updater"
 
-	ctr := container.NewContainer(name, cfg, corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1"),
-			corev1.ResourceMemory: resource.MustParse("500Mi"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1"),
-			corev1.ResourceMemory: resource.MustParse("2Gi"),
+	defaultImage, err := getDefaultImage(sg, name)
+	if err != nil {
+		return err
+	}
+	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
+		Image: defaultImage,
+		Resources: &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("1"),
+				corev1.ResourceMemory: resource.MustParse("500Mi"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("1"),
+				corev1.ResourceMemory: resource.MustParse("2Gi"),
+			},
 		},
 	})
-
-	// TODO: https://github.com/sourcegraph/sourcegraph/issues/62076
-	ctr.Image = "index.docker.io/sourcegraph/repo-updater:5.3.2@sha256:5a414aa030c7e0922700664a43b449ee5f3fafa68834abef93988c5992c747c6"
 
 	ctr.Env = append(ctr.Env, container.EnvVarsRedis()...)
 	ctr.Env = append(ctr.Env, container.EnvVarsOtel()...)

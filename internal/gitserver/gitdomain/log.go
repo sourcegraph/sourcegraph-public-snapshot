@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -18,13 +19,71 @@ type PathStatus struct {
 	Status StatusAMD
 }
 
+func (s *PathStatus) String() string {
+	return fmt.Sprintf("%s %q", s.Status, s.Path)
+}
+
+func PathStatusFromProto(p *proto.ChangedFile) PathStatus {
+	return PathStatus{
+		Path:   string(p.Path),
+		Status: StatusAMDFromProto(p.Status),
+	}
+}
+
+func (p *PathStatus) ToProto() *proto.ChangedFile {
+	return &proto.ChangedFile{
+		Path:   []byte(p.Path),
+		Status: p.Status.ToProto(),
+	}
+}
+
 type StatusAMD int
 
 const (
-	AddedAMD    StatusAMD = 0
-	ModifiedAMD StatusAMD = 1
-	DeletedAMD  StatusAMD = 2
+	StatusUnspecifiedAMD StatusAMD = 0
+	AddedAMD             StatusAMD = 1
+	ModifiedAMD          StatusAMD = 2
+	DeletedAMD           StatusAMD = 3
 )
+
+func (s StatusAMD) String() string {
+	switch s {
+	case AddedAMD:
+		return "Added"
+	case ModifiedAMD:
+		return "Modified"
+	case DeletedAMD:
+		return "Deleted"
+	default:
+		return "Unspecified"
+	}
+}
+
+func StatusAMDFromProto(s proto.ChangedFile_Status) StatusAMD {
+	switch s {
+	case proto.ChangedFile_STATUS_ADDED:
+		return AddedAMD
+	case proto.ChangedFile_STATUS_MODIFIED:
+		return ModifiedAMD
+	case proto.ChangedFile_STATUS_DELETED:
+		return DeletedAMD
+	default:
+		return StatusUnspecifiedAMD
+	}
+}
+
+func (s StatusAMD) ToProto() proto.ChangedFile_Status {
+	switch s {
+	case AddedAMD:
+		return proto.ChangedFile_STATUS_ADDED
+	case ModifiedAMD:
+		return proto.ChangedFile_STATUS_MODIFIED
+	case DeletedAMD:
+		return proto.ChangedFile_STATUS_DELETED
+	default:
+		return proto.ChangedFile_STATUS_UNSPECIFIED
+	}
+}
 
 func LogReverseArgs(n int, givenCommit string) []string {
 	return []string{

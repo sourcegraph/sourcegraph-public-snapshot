@@ -213,7 +213,7 @@ func (f *InstanceFeatures) IsEphemeralInstance() bool {
 }
 
 func (f *InstanceFeatures) SetEphemeralInstance(v bool) {
-	f.features["ephemeral_instance"] = strconv.FormatBool(v)
+	f.features["ephemeral"] = strconv.FormatBool(v)
 }
 
 func (f *InstanceFeatures) SetEphemeralLeaseTime(expiresAt time.Time) {

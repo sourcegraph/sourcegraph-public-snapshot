@@ -13,7 +13,7 @@ Example usage:
 ```
 go run ./internal/appliance/dev/compare-helm \
   -component blobstore \
-  -golden-file internal/appliance/testdata/golden-fixtures/blobstore-default.yaml
+  -golden-file internal/appliance/testdata/golden-fixtures/blobstore/default.yaml
 ```
 
 Flags:

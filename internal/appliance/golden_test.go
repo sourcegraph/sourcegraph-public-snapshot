@@ -16,6 +16,8 @@ import (
 // creationTimestamp and uid need to be normalized
 var magicTime = metav1.NewTime(time.Date(2024, time.April, 19, 0, 0, 0, 0, time.UTC))
 
+const normalizedString = "NORMALIZED_FOR_TESTING"
+
 type goldenFile struct {
 	Resources []client.Object `json:"resources"`
 }
@@ -28,7 +30,9 @@ func (suite *ApplianceTestSuite) makeGoldenAssertions(namespace, goldenFileName 
 	obtainedBytes, err := yaml.Marshal(obtainedResources)
 	require.NoError(err)
 	if len(os.Args) > 0 && os.Args[len(os.Args)-1] == "appliance-update-golden-files" {
-		err := os.WriteFile(goldenFilePath, obtainedBytes, 0600)
+		err := os.MkdirAll(filepath.Dir(goldenFilePath), 0700)
+		require.NoError(err)
+		err = os.WriteFile(goldenFilePath, obtainedBytes, 0600)
 		require.NoError(err)
 	}
 
@@ -65,7 +69,7 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 	for _, obj := range ssets.Items {
 		obj := obj
 		for i := range obj.Spec.VolumeClaimTemplates {
-			obj.Spec.VolumeClaimTemplates[i].Namespace = "NORMALIZED_FOR_TESTING"
+			obj.Spec.VolumeClaimTemplates[i].Namespace = normalizedString
 		}
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "StatefulSet"})
 		normalizeObj(&obj)
@@ -122,8 +126,8 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 	suite.Require().NoError(err)
 	for _, obj := range svcs.Items {
 		obj := obj
-		obj.Spec.ClusterIP = "NORMALIZED_FOR_TESTING"
-		obj.Spec.ClusterIPs = []string{"NORMALIZED_FOR_TESTING"}
+		obj.Spec.ClusterIP = normalizedString
+		obj.Spec.ClusterIPs = []string{normalizedString}
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Service"})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
@@ -133,9 +137,17 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 }
 
 func normalizeObj(obj client.Object) {
-	obj.SetUID("NORMALIZED_FOR_TESTING")
+	obj.SetUID(normalizedString)
 	obj.SetCreationTimestamp(magicTime)
 	obj.SetManagedFields(nil)
-	obj.SetNamespace("NORMALIZED_FOR_TESTING")
-	obj.SetResourceVersion("NORMALIZED_FOR_TESTING")
+	obj.SetNamespace(normalizedString)
+	obj.SetResourceVersion(normalizedString)
+
+	ownerRefs := obj.GetOwnerReferences()
+	normalizedOwnerRefs := make([]metav1.OwnerReference, len(ownerRefs))
+	for i, ownerRef := range ownerRefs {
+		ownerRef.UID = normalizedString
+		normalizedOwnerRefs[i] = ownerRef
+	}
+	obj.SetOwnerReferences(normalizedOwnerRefs)
 }

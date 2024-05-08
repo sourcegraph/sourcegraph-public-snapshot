@@ -43,12 +43,12 @@
         </span>
     </div>
     {#if fileSearchQueryParams}
-        <p class="p-2 m-0">
+        <p>
             <a data-sveltekit-preload-data="tap" href="/search?{fileSearchQueryParams}">Show files</a>
         </p>
     {/if}
     {#if !result.user}
-        <p class="p-2 m-0">
+        <p>
             <small class="font-italic"> This owner is not associated with any Sourcegraph user </small>
         </p>
     {/if}
@@ -59,5 +59,10 @@
         border-left: 1px solid var(--border-color);
         margin-left: 0.5rem;
         padding-left: 0.5rem;
+    }
+
+    p {
+        padding: 0.5rem;
+        margin: 0;
     }
 </style>

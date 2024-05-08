@@ -45,6 +45,7 @@
         {placeholder}
         class:loading
         on:input={onInput}
+        on:keydown
         {...$$restProps}
     />
 

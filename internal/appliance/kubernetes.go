@@ -75,6 +75,10 @@ func createOrUpdateObject[R client.Object](
 	annotations[annotationKeyConfigHash] = cfgHash
 	obj.SetAnnotations(annotations)
 
+	if err := ctrl.SetControllerReference(owner, obj, r.Scheme); err != nil {
+		return errors.Newf("setting controller reference: %w", err)
+	}
+
 	existingRes := objKind
 	if err := r.Client.Get(ctx, namespacedName, existingRes); err != nil {
 		if kerrors.IsNotFound(err) {
@@ -88,10 +92,6 @@ func createOrUpdateObject[R client.Object](
 
 		logger.Error(err, "unexpected error getting object")
 		return err
-	}
-
-	if err := ctrl.SetControllerReference(owner, obj, r.Scheme); err != nil {
-		return errors.Newf("setting controller reference: %w", err)
 	}
 
 	if cfgHash != existingRes.GetAnnotations()[annotationKeyConfigHash] {

@@ -53,6 +53,8 @@ go_test(
     deps = [
         "//internal/completions/types",
         "//internal/conf",
+        "//internal/database/dbmocks",
+        "//internal/featureflag",
         "//schema",
         "@com_github_stretchr_testify//require",
     ],

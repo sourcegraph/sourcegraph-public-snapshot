@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//internal/appliance/config",
         "//lib/pointers",
+        "@com_github_grafana_regexp//:regexp",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/util/intstr",
     ],

@@ -1,4 +1,15 @@
-@import 'wildcard/src/global-styles/base.scss';
+@import 'wildcard/src/global-styles/colors';
+@import 'wildcard/src/global-styles/variables';
+
+@import 'wildcard/src/global-styles/reboot';
+@import '$lib/styles/utilities';
+@import '$lib/styles/dropdown';
+@import '$lib/styles/popover';
+@import 'wildcard/src/global-styles/typography';
+@import 'wildcard/src/global-styles/tables';
+@import 'wildcard/src/global-styles/code';
+@import 'wildcard/src/global-styles/forms';
+
 @import 'svelte-overrides.scss';
 
 .match-highlight {
@@ -10,6 +21,10 @@
 // NOTE: Since in svelte we use plain HTML tags for elements like
 // links, buttons, inputs, etc. We have to have some common "global"
 // styles for them (like focus ring).
+
+:focus {
+    outline: none;
+}
 
 a:focus-visible {
     // Inset is required here since we have a lot of links

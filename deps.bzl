@@ -3142,8 +3142,8 @@ def go_dependencies():
         name = "com_github_hashicorp_golang_lru_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/hashicorp/golang-lru/v2",
-        sum = "h1:Dwmkdr5Nc/oBiXgJS3CDHNhJtIHkuZ3DZF5twqnfBdU=",
-        version = "v2.0.2",
+        sum = "h1:a+bsQ5rvGLjzHuww6tVxozPZFVghXaHOwFs4luLUK2k=",
+        version = "v2.0.7",
     )
     go_repository(
         name = "com_github_hashicorp_hcl",
@@ -4187,6 +4187,13 @@ def go_dependencies():
         importpath = "github.com/matttproud/golang_protobuf_extensions/v2",
         sum = "h1:jWpvCLoY8Z/e3VKvlsiIGKtc+UG6U5vzxaoagmhXfyg=",
         version = "v2.0.0",
+    )
+    go_repository(
+        name = "com_github_maxbrunsfeld_counterfeiter_v6",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/maxbrunsfeld/counterfeiter/v6",
+        sum = "h1:NicmruxkeqHjDv03SfSxqmaLuisddudfP3h5wdXFbhM=",
+        version = "v6.8.1",
     )
     go_repository(
         name = "com_github_mazznoer_csscolorparser",
@@ -5241,6 +5248,13 @@ def go_dependencies():
         version = "v2.2.0",
     )
     go_repository(
+        name = "com_github_sclevine_spec",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sclevine/spec",
+        sum = "h1:z/Q9idDcay5m5irkZ28M7PtQM4aOISzOpj4bUPkDee8=",
+        version = "v1.4.0",
+    )
+    go_repository(
         name = "com_github_sean_seed",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sean-/seed",
@@ -5662,8 +5676,8 @@ def go_dependencies():
         patches = [
             "//third_party/com_github_sourcegraph_zoekt:x_defs_version.patch",
         ],
-        sum = "h1:aXHLpH1rhdvg4gQOiQWLkqVd3D/DG2li5Nnf6WE7mRs=",
-        version = "v0.0.0-20240501072156-72f95004e6d6",
+        sum = "h1:eQIFTvf8qZcSLhgu5NrprfwgtJEqU9tvGXG8sf1SSgU=",
+        version = "v0.0.0-20240507175742-4e674a49795c",
     )
     go_repository(
         name = "com_github_spaolacci_murmur3",

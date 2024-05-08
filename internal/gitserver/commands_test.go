@@ -2324,3 +2324,236 @@ func TestClient_GetBehindAhead(t *testing.T) {
 		})
 	})
 }
+
+func TestClient_ChangedFiles(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		expectedChanges := []gitdomain.PathStatus{
+			{Path: "file1.txt", Status: gitdomain.AddedAMD},
+			{Path: "file2.txt", Status: gitdomain.ModifiedAMD},
+			{Path: "file3.txt", Status: gitdomain.DeletedAMD},
+		}
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				ss := NewMockGitserverService_ChangedFilesClient()
+				ss.RecvFunc.SetDefaultReturn(nil, io.EOF)
+				ss.RecvFunc.PushReturn(&proto.ChangedFilesResponse{
+					Files: []*proto.ChangedFile{
+						{Path: []byte("file1.txt"), Status: proto.ChangedFile_STATUS_ADDED},
+						{Path: []byte("file2.txt"), Status: proto.ChangedFile_STATUS_MODIFIED},
+						{Path: []byte("file3.txt"), Status: proto.ChangedFile_STATUS_DELETED},
+					},
+				}, nil)
+				c.ChangedFilesFunc.SetDefaultReturn(ss, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		changedFilesIter, err := c.ChangedFiles(context.Background(), "repo", "base", "head")
+		require.NoError(t, err)
+
+		defer changedFilesIter.Close()
+
+		var actualChanges []gitdomain.PathStatus
+
+		for {
+			change, err := changedFilesIter.Next()
+			if err == io.EOF {
+				break
+			}
+
+			require.NoError(t, err)
+			actualChanges = append(actualChanges, change)
+		}
+
+		require.Equal(t, expectedChanges, actualChanges)
+	})
+
+	t.Run("returns well known error types", func(t *testing.T) {
+		t.Run("repository not found", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					s, err := status.New(codes.NotFound, "repository not found").WithDetails(&proto.RepoNotFoundPayload{Repo: "repo", CloneInProgress: true})
+					require.NoError(t, err)
+					c.ChangedFilesFunc.PushReturn(nil, s.Err())
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			// Should fail with clone error
+			iter, initialErr := c.ChangedFiles(context.Background(), "repo", "base", "head")
+
+			var iterErr error
+			if iter != nil {
+				defer iter.Close()
+				_, iterErr = iter.Next()
+			}
+
+			// Check to see if either the initial error or the error from the iterator is a RepoNotExistError
+			require.True(t,
+				errors.HasType(initialErr, &gitdomain.RepoNotExistError{}) ||
+					errors.HasType(iterErr, &gitdomain.RepoNotExistError{}))
+		})
+
+		t.Run("revision not found", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					ss := NewMockGitserverService_ChangedFilesClient()
+					s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "head"})
+					require.NoError(t, err)
+					ss.RecvFunc.PushReturn(nil, s.Err())
+					c.ChangedFilesFunc.SetDefaultReturn(ss, nil)
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			// Should fail with RevisionNotFoundError
+			iter, initialErr := c.ChangedFiles(context.Background(), "repo", "base", "head")
+
+			var iterErr error
+			if iter != nil {
+				defer iter.Close()
+				_, iterErr = iter.Next()
+			}
+
+			// Check to see if either the initial error or the error from the iterator is a RevisionNotFoundError
+			require.True(t,
+				errors.HasType(initialErr, &gitdomain.RevisionNotFoundError{}) ||
+					errors.HasType(iterErr, &gitdomain.RevisionNotFoundError{}))
+
+		})
+	})
+}
+
+func TestChangedFilesIterator(t *testing.T) {
+	t.Run("normal", func(t *testing.T) {
+		fetchCallCount := 0
+		fetchFunc := func() ([]gitdomain.PathStatus, error) {
+			if fetchCallCount > 0 {
+				return nil, io.EOF
+			}
+			fetchCallCount++
+
+			return []gitdomain.PathStatus{
+				{Path: "file1.txt", Status: gitdomain.AddedAMD},
+				{Path: "file2.txt", Status: gitdomain.ModifiedAMD},
+			}, nil
+		}
+		closeFunc := func() {}
+
+		iter := newChangedFilesIterator(fetchFunc, closeFunc)
+		defer iter.Close()
+
+		// Test fetching the first item
+		item, err := iter.Next()
+		require.NoError(t, err)
+		require.Equal(t, gitdomain.PathStatus{Path: "file1.txt", Status: gitdomain.AddedAMD}, item)
+
+		// Test fetching the second item
+		item, err = iter.Next()
+		require.NoError(t, err)
+		require.Equal(t, gitdomain.PathStatus{Path: "file2.txt", Status: gitdomain.ModifiedAMD}, item)
+
+		// Test fetching when there are no more items
+		_, err = iter.Next()
+		require.Equal(t, io.EOF, err)
+	})
+
+	t.Run("fetch called multiple times", func(t *testing.T) {
+		var emptySliceReturned bool
+
+		var fetchCount int
+		fetchFunc := func() ([]gitdomain.PathStatus, error) {
+			fetchCount++
+			switch fetchCount {
+			case 1:
+				return []gitdomain.PathStatus{
+					{Path: "file1.txt", Status: gitdomain.AddedAMD},
+					{Path: "file2.txt", Status: gitdomain.ModifiedAMD},
+				}, nil
+			case 2:
+				return []gitdomain.PathStatus{
+					{Path: "file3.txt", Status: gitdomain.AddedAMD},
+				}, nil
+			case 3:
+				// Ensure that fetch function is called if we returned no data
+				// but we haven't signaled the end of stream with io.EOF
+				emptySliceReturned = true
+				return nil, nil
+			default:
+				return nil, io.EOF
+			}
+		}
+		closeFunc := func() {}
+
+		iter := newChangedFilesIterator(fetchFunc, closeFunc)
+		defer iter.Close()
+
+		// Test fetching the first item
+		item, err := iter.Next()
+		require.NoError(t, err)
+		require.Equal(t, gitdomain.PathStatus{Path: "file1.txt", Status: gitdomain.AddedAMD}, item)
+		require.Equal(t, 1, fetchCount)
+
+		// Test fetching the second item
+		item, err = iter.Next()
+		require.NoError(t, err)
+		require.Equal(t, gitdomain.PathStatus{Path: "file2.txt", Status: gitdomain.ModifiedAMD}, item)
+		require.Equal(t, 1, fetchCount)
+
+		// Test fetching the third item (should trigger a new fetch)
+		item, err = iter.Next()
+		require.NoError(t, err)
+		require.Equal(t, gitdomain.PathStatus{Path: "file3.txt", Status: gitdomain.AddedAMD}, item)
+		require.Equal(t, 2, fetchCount)
+
+		// Test fetching when there are no more items (should trigger two new fetches (since the third fetch returns an empty slice)
+		_, err = iter.Next()
+		require.Equal(t, io.EOF, err)
+		require.True(t, emptySliceReturned)
+		require.Equal(t, 4, fetchCount)
+	})
+
+	t.Run("next returns an error", func(t *testing.T) {
+		fetchFunc := func() ([]gitdomain.PathStatus, error) {
+			return nil, io.ErrUnexpectedEOF
+		}
+		closeFunc := func() {}
+
+		iter := newChangedFilesIterator(fetchFunc, closeFunc)
+		defer iter.Close()
+
+		// Test fetching when an error occurs
+		_, err := iter.Next()
+		require.Equal(t, io.ErrUnexpectedEOF, err)
+	})
+
+	t.Run("close", func(t *testing.T) {
+		fetchFunc := func() ([]gitdomain.PathStatus, error) {
+			return nil, nil
+		}
+
+		closeCount := 0
+		closeFunc := func() {
+			closeCount++
+		}
+
+		iter := newChangedFilesIterator(fetchFunc, closeFunc)
+
+		// Test closing the iterator
+		iter.Close()
+		require.Equal(t, closeCount, 1)
+
+		// Test closing the iterator multiple times
+		iter.Close()
+		require.Equal(t, closeCount, 1)
+	})
+}

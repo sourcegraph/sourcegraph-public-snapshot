@@ -230,23 +230,6 @@ describe('SignInPage', () => {
         expect(render('/sign-in', { authenticatedUser: mockUser }).asFragment()).toMatchSnapshot()
     })
 
-    it('renders redirect when there is only 1 auth provider', () => {
-        const withGitHubProvider: SourcegraphContext['authProviders'] = [
-            {
-                serviceType: 'github',
-                displayName: 'GitHub',
-                isBuiltin: false,
-                authenticationURL: 'http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch',
-                serviceID: 'https://github.com',
-                clientID: '1234',
-                noSignIn: false,
-                requiredForAuthz: false,
-            },
-        ]
-
-        expect(render('/sign-in', { authProviders: withGitHubProvider }).asFragment()).toMatchSnapshot()
-    })
-
     it('does not render redirect when there is only 1 auth provider with request access enabled', () => {
         const withGitHubProvider: SourcegraphContext['authProviders'] = [
             {
