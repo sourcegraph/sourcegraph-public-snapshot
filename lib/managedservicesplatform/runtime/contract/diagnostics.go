@@ -32,6 +32,7 @@ type diagnosticsContract struct {
 	OpenTelemetry opentelemetry.Config
 	sentryDSN     *string
 
+	// only MSP jobs with a schedule configured will have these values
 	cronSchedule *string
 	cronDeadline *time.Duration
 
@@ -55,7 +56,9 @@ func loadDiagnosticsContract(
 				defaultGCPProjectID),
 			OtelSDKDisabled: env.GetBool("OTEL_SDK_DISABLED", "false", "disable OpenTelemetry SDK"),
 		},
-		sentryDSN:    env.GetOptional("SENTRY_DSN", "Sentry error reporting DSN"),
+		sentryDSN: env.GetOptional("SENTRY_DSN", "Sentry error reporting DSN"),
+
+		// only MSP jobs with a schedule configured will have these values
 		cronSchedule: env.GetOptional("JOB_EXECUTION_CRON_SCHEDULE", "Jobs: expected cron schedule for job executions"),
 		cronDeadline: env.GetOptionalInterval("JOB_EXECUTION_DEADLINE", "Jobs: maximum duration to wait for job executions"),
 
@@ -241,8 +244,10 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (func(err 
 	logger := opentelemetry.TracedLogger(ctx, c.internal.logger).
 		Scoped("execution.checkin").
 		With(
-			log.Bool("useSentryCronMonitor", useSentryCronMonitor),
 			log.String("executionID", executionID),
+			log.Bool("useSentryCronMonitor", useSentryCronMonitor),
+			log.Stringp("cronSchedule", c.cronSchedule),
+			log.Durationp("cronDeadline", c.cronDeadline),
 		)
 
 	start := time.Now()
