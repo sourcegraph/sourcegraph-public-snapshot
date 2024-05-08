@@ -20,7 +20,7 @@ type PathStatus struct {
 }
 
 func (s *PathStatus) String() string {
-	return fmt.Sprintf("%s %q", s.Status, s.Path)
+	return fmt.Sprintf("%s %q", string(s.Status), s.Path)
 }
 
 func PathStatusFromProto(p *proto.ChangedFile) PathStatus {
