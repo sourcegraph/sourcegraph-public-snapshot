@@ -28,7 +28,7 @@ var ListVersionsEphemeralCommand = cli.Command{
 		},
 		&cli.IntFlag{
 			Name:  "limit",
-			Usage: "limit the number of versions to list - to list everything set limt to a negative value",
+			Usage: "limit the number of versions to list - to list everything set limit to a negative value",
 			Value: 100,
 		},
 		&cli.StringFlag{

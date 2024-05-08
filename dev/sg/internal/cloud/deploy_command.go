@@ -24,13 +24,13 @@ var ErrDeploymentExists error = errors.New("deployment already exists")
 
 var DeployEphemeralCommand = cli.Command{
 	Name:        "deploy",
-	Usage:       "sg could deploy --branch <branch> --tag <tag>",
+	Usage:       "sg could deploy --name <name> --version <version>",
 	Description: "Deploy the specified branch or tag to an ephemeral Sourcegraph Cloud environment",
 	Action:      wipAction(deployCloudEphemeral),
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "name",
-			DefaultText: "the name of the ephemeral deployment. If not specified, the name will be derived from the branch name",
+			DefaultText: "the name of the ephemeral deployment. If none is specified, the name will be derived from the branch name",
 		},
 		&cli.StringFlag{
 			Name:        "version",
