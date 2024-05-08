@@ -208,15 +208,22 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 		for _, team := range []struct {
 			name                 string // only for reference
 			terraformCloudTeamID string
+			accessLevel          tfe.TeamProjectAccessType
 		}{
-			{name: "Core Services", terraformCloudTeamID: "team-gGtVVgtNRaCnkhKp"},
-			// Operators should use Entitle to request access to this team to
-			// get access to workspaces, if they aren't in Core Services
-			{name: "Managed Services Platform Operators", terraformCloudTeamID: "team-Wdejc42bWrRonQEY"},
+			{name: "Core Services", terraformCloudTeamID: "team-gGtVVgtNRaCnkhKp",
+				accessLevel: tfe.TeamProjectAccessWrite},
+			// Read-only access to anyone logging in via the company Okta SSO
+			{name: "sso", terraformCloudTeamID: "team-E5hRDE57eKcqcdnU",
+				accessLevel: tfe.TeamProjectAccessRead},
+			// Anyone who needs write access and isn't part of the Core Services
+			// team can request access to this "stub team" to get access to
+			// the relevant workspaces
+			{name: "Managed Services Platform Operators", terraformCloudTeamID: "team-Wdejc42bWrRonQEY",
+				accessLevel: tfe.TeamProjectAccessWrite},
 		} {
-			if err := c.ensureAccessForTeam(ctx, tfcProject, resp, team.terraformCloudTeamID); err != nil {
-				return nil, errors.Wrapf(err, "ensure access for %q Terraform Cloud team %q",
-					team.name, team.terraformCloudTeamID)
+			if err := c.ensureAccessForTeam(ctx, tfcProject, resp, team.terraformCloudTeamID, team.accessLevel); err != nil {
+				return nil, errors.Wrapf(err, "ensure %q access for %q Terraform Cloud team %q",
+					team.accessLevel, team.name, team.terraformCloudTeamID)
 			}
 		}
 	}
@@ -356,7 +363,13 @@ func (c *Client) DeleteWorkspaces(ctx context.Context, svc spec.ServiceSpec, env
 	return errs
 }
 
-func (c *Client) ensureAccessForTeam(ctx context.Context, project *tfe.Project, currentTeams *tfe.TeamProjectAccessList, teamID string) error {
+func (c *Client) ensureAccessForTeam(
+	ctx context.Context,
+	project *tfe.Project,
+	currentTeams *tfe.TeamProjectAccessList,
+	teamID string,
+	access tfe.TeamProjectAccessType,
+) error {
 	var existingAccessID string
 	for _, a := range currentTeams.Items {
 		if a.Team.ID == teamID {
@@ -365,7 +378,7 @@ func (c *Client) ensureAccessForTeam(ctx context.Context, project *tfe.Project, 
 	}
 	if existingAccessID != "" {
 		_, err := c.client.TeamProjectAccess.Update(ctx, existingAccessID, tfe.TeamProjectAccessUpdateOptions{
-			Access: pointers.Ptr(tfe.TeamProjectAccessWrite),
+			Access: pointers.Ptr(access),
 		})
 		if err != nil {
 			return errors.Wrap(err, "TeamAccess.Update")
@@ -374,7 +387,7 @@ func (c *Client) ensureAccessForTeam(ctx context.Context, project *tfe.Project, 
 		_, err := c.client.TeamProjectAccess.Add(ctx, tfe.TeamProjectAccessAddOptions{
 			Project: &tfe.Project{ID: project.ID},
 			Team:    &tfe.Team{ID: teamID},
-			Access:  tfe.TeamProjectAccessWrite,
+			Access:  access,
 		})
 		if err != nil {
 			return errors.Wrap(err, "TeamAccess.Add")
