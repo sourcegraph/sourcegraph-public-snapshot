@@ -97,7 +97,7 @@ func Test_moveIssue(t *testing.T) {
 	}
 }
 
-func Test_moveToNewTeam(t *testing.T) {
+func Test_identifyTeamToMoveTo(t *testing.T) {
 	t.Parallel()
 
 	defaultDstSpec := DstSpec{TeamID: "dst-team-uuid"}
@@ -161,7 +161,7 @@ func Test_moveToNewTeam(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			require.NoError(t, tc.r.Validate())
-			got := tc.r.moveToNewTeam(
+			got := tc.r.identifyTeamToMoveTo(
 				linearschema.IssueData{
 					Team:   linearschema.IssueTeamData{ID: tc.issueTeamID, Key: tc.issueTeamKey},
 					Labels: labelsToLabelData(tc.issueLabels),
