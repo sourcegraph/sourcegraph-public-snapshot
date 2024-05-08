@@ -6,11 +6,13 @@ import "google/protobuf/duration.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codygateway/v1";
 
-// EnterprisePortalCodyGatewayService is an extension to Enterprise Portal that
-// provides Cody Gateway access management capbilities (e.g. access quotas).
+// CodyGatewayService is an extension to Enterprise Portal that serves Cody
+// Gateway access management capbilities (e.g. access quotas). It is not the
+// Cody Gateway service API itself - it serves capabilities that Cody Gateway
+// depends on.
 //
 // DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
-service EnterprisePortalCodyGatewayService {
+service CodyGatewayService {
   // Retrieve Cody Gateway access granted to an Enterprise subscription.
   //
   // For classic licenses, properties may be inferred from the active license,
@@ -78,7 +80,7 @@ message CodyGatewayAccess {
   // subscription corresponding to this Cody Gateway access description.
   string subscription_id = 1;
 
-  // Whether or not a subscription has Cody Gateway access.
+  // Whether or not a subscription has Cody Gateway access enabled.
   bool enabled = 2;
 
   // Rate limit for chat completions access, or null if not enabled.
@@ -89,12 +91,12 @@ message CodyGatewayAccess {
   optional CodyGatewayRateLimit embeddings_rate_limt = 5;
 
   // The most preferable Sourcegraph access token to use for authenticating as
-  // the subscription holder with managed Sourcegraph services.
+  // the subscription holder with Cody Gateway.
   // Null only if creating a token failed, for example when no active license
   // exists.
   optional CodyGatewayAccessToken current_access_token = 6;
   // Available access tokens for authenticating as the subscription holder with
-  // managed Sourcegraph services.
+  // Cody Gateway.
   repeated CodyGatewayAccessToken access_tokens = 7;
 }
 

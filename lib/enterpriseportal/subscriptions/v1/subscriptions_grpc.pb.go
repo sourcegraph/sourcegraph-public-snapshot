@@ -19,15 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	EnterprisePortalSubscriptionsService_GetEnterpriseSubscription_FullMethodName          = "/enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService/GetEnterpriseSubscription"
-	EnterprisePortalSubscriptionsService_ListEnterpriseSubscriptions_FullMethodName        = "/enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService/ListEnterpriseSubscriptions"
-	EnterprisePortalSubscriptionsService_ListEnterpriseSubscriptionLicenses_FullMethodName = "/enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService/ListEnterpriseSubscriptionLicenses"
+	SubscriptionsService_GetEnterpriseSubscription_FullMethodName          = "/enterpriseportal.subscriptions.v1.SubscriptionsService/GetEnterpriseSubscription"
+	SubscriptionsService_ListEnterpriseSubscriptions_FullMethodName        = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptions"
+	SubscriptionsService_ListEnterpriseSubscriptionLicenses_FullMethodName = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptionLicenses"
 )
 
-// EnterprisePortalSubscriptionsServiceClient is the client API for EnterprisePortalSubscriptionsService service.
+// SubscriptionsServiceClient is the client API for SubscriptionsService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type EnterprisePortalSubscriptionsServiceClient interface {
+type SubscriptionsServiceClient interface {
 	// GetSubscription retrieves an exact match on an Enterprise subscription.
 	GetEnterpriseSubscription(ctx context.Context, in *GetEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*EnterpriseSubscription, error)
 	// ListEnterpriseSubscriptions queries for Enterprise subscriptions.
@@ -36,153 +36,152 @@ type EnterprisePortalSubscriptionsServiceClient interface {
 	ListEnterpriseSubscriptionLicenses(ctx context.Context, in *ListEnterpriseSubscriptionLicensesRequest, opts ...grpc.CallOption) (*ListEnterpriseSubscriptionLicensesResponse, error)
 }
 
-type enterprisePortalSubscriptionsServiceClient struct {
+type subscriptionsServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewEnterprisePortalSubscriptionsServiceClient(cc grpc.ClientConnInterface) EnterprisePortalSubscriptionsServiceClient {
-	return &enterprisePortalSubscriptionsServiceClient{cc}
+func NewSubscriptionsServiceClient(cc grpc.ClientConnInterface) SubscriptionsServiceClient {
+	return &subscriptionsServiceClient{cc}
 }
 
-func (c *enterprisePortalSubscriptionsServiceClient) GetEnterpriseSubscription(ctx context.Context, in *GetEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*EnterpriseSubscription, error) {
+func (c *subscriptionsServiceClient) GetEnterpriseSubscription(ctx context.Context, in *GetEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*EnterpriseSubscription, error) {
 	out := new(EnterpriseSubscription)
-	err := c.cc.Invoke(ctx, EnterprisePortalSubscriptionsService_GetEnterpriseSubscription_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, SubscriptionsService_GetEnterpriseSubscription_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *enterprisePortalSubscriptionsServiceClient) ListEnterpriseSubscriptions(ctx context.Context, in *ListEnterpriseSubscriptionsRequest, opts ...grpc.CallOption) (*ListEnterpriseSubscriptionsResponse, error) {
+func (c *subscriptionsServiceClient) ListEnterpriseSubscriptions(ctx context.Context, in *ListEnterpriseSubscriptionsRequest, opts ...grpc.CallOption) (*ListEnterpriseSubscriptionsResponse, error) {
 	out := new(ListEnterpriseSubscriptionsResponse)
-	err := c.cc.Invoke(ctx, EnterprisePortalSubscriptionsService_ListEnterpriseSubscriptions_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, SubscriptionsService_ListEnterpriseSubscriptions_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *enterprisePortalSubscriptionsServiceClient) ListEnterpriseSubscriptionLicenses(ctx context.Context, in *ListEnterpriseSubscriptionLicensesRequest, opts ...grpc.CallOption) (*ListEnterpriseSubscriptionLicensesResponse, error) {
+func (c *subscriptionsServiceClient) ListEnterpriseSubscriptionLicenses(ctx context.Context, in *ListEnterpriseSubscriptionLicensesRequest, opts ...grpc.CallOption) (*ListEnterpriseSubscriptionLicensesResponse, error) {
 	out := new(ListEnterpriseSubscriptionLicensesResponse)
-	err := c.cc.Invoke(ctx, EnterprisePortalSubscriptionsService_ListEnterpriseSubscriptionLicenses_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, SubscriptionsService_ListEnterpriseSubscriptionLicenses_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// EnterprisePortalSubscriptionsServiceServer is the server API for EnterprisePortalSubscriptionsService service.
-// All implementations must embed UnimplementedEnterprisePortalSubscriptionsServiceServer
+// SubscriptionsServiceServer is the server API for SubscriptionsService service.
+// All implementations must embed UnimplementedSubscriptionsServiceServer
 // for forward compatibility
-type EnterprisePortalSubscriptionsServiceServer interface {
+type SubscriptionsServiceServer interface {
 	// GetSubscription retrieves an exact match on an Enterprise subscription.
 	GetEnterpriseSubscription(context.Context, *GetEnterpriseSubscriptionRequest) (*EnterpriseSubscription, error)
 	// ListEnterpriseSubscriptions queries for Enterprise subscriptions.
 	ListEnterpriseSubscriptions(context.Context, *ListEnterpriseSubscriptionsRequest) (*ListEnterpriseSubscriptionsResponse, error)
 	// ListEnterpriseSubscriptionLicenses queries for Enterprise subscription licenses.
 	ListEnterpriseSubscriptionLicenses(context.Context, *ListEnterpriseSubscriptionLicensesRequest) (*ListEnterpriseSubscriptionLicensesResponse, error)
-	mustEmbedUnimplementedEnterprisePortalSubscriptionsServiceServer()
+	mustEmbedUnimplementedSubscriptionsServiceServer()
 }
 
-// UnimplementedEnterprisePortalSubscriptionsServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedEnterprisePortalSubscriptionsServiceServer struct {
+// UnimplementedSubscriptionsServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedSubscriptionsServiceServer struct {
 }
 
-func (UnimplementedEnterprisePortalSubscriptionsServiceServer) GetEnterpriseSubscription(context.Context, *GetEnterpriseSubscriptionRequest) (*EnterpriseSubscription, error) {
+func (UnimplementedSubscriptionsServiceServer) GetEnterpriseSubscription(context.Context, *GetEnterpriseSubscriptionRequest) (*EnterpriseSubscription, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnterpriseSubscription not implemented")
 }
-func (UnimplementedEnterprisePortalSubscriptionsServiceServer) ListEnterpriseSubscriptions(context.Context, *ListEnterpriseSubscriptionsRequest) (*ListEnterpriseSubscriptionsResponse, error) {
+func (UnimplementedSubscriptionsServiceServer) ListEnterpriseSubscriptions(context.Context, *ListEnterpriseSubscriptionsRequest) (*ListEnterpriseSubscriptionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListEnterpriseSubscriptions not implemented")
 }
-func (UnimplementedEnterprisePortalSubscriptionsServiceServer) ListEnterpriseSubscriptionLicenses(context.Context, *ListEnterpriseSubscriptionLicensesRequest) (*ListEnterpriseSubscriptionLicensesResponse, error) {
+func (UnimplementedSubscriptionsServiceServer) ListEnterpriseSubscriptionLicenses(context.Context, *ListEnterpriseSubscriptionLicensesRequest) (*ListEnterpriseSubscriptionLicensesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListEnterpriseSubscriptionLicenses not implemented")
 }
-func (UnimplementedEnterprisePortalSubscriptionsServiceServer) mustEmbedUnimplementedEnterprisePortalSubscriptionsServiceServer() {
-}
+func (UnimplementedSubscriptionsServiceServer) mustEmbedUnimplementedSubscriptionsServiceServer() {}
 
-// UnsafeEnterprisePortalSubscriptionsServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to EnterprisePortalSubscriptionsServiceServer will
+// UnsafeSubscriptionsServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SubscriptionsServiceServer will
 // result in compilation errors.
-type UnsafeEnterprisePortalSubscriptionsServiceServer interface {
-	mustEmbedUnimplementedEnterprisePortalSubscriptionsServiceServer()
+type UnsafeSubscriptionsServiceServer interface {
+	mustEmbedUnimplementedSubscriptionsServiceServer()
 }
 
-func RegisterEnterprisePortalSubscriptionsServiceServer(s grpc.ServiceRegistrar, srv EnterprisePortalSubscriptionsServiceServer) {
-	s.RegisterService(&EnterprisePortalSubscriptionsService_ServiceDesc, srv)
+func RegisterSubscriptionsServiceServer(s grpc.ServiceRegistrar, srv SubscriptionsServiceServer) {
+	s.RegisterService(&SubscriptionsService_ServiceDesc, srv)
 }
 
-func _EnterprisePortalSubscriptionsService_GetEnterpriseSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SubscriptionsService_GetEnterpriseSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetEnterpriseSubscriptionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EnterprisePortalSubscriptionsServiceServer).GetEnterpriseSubscription(ctx, in)
+		return srv.(SubscriptionsServiceServer).GetEnterpriseSubscription(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EnterprisePortalSubscriptionsService_GetEnterpriseSubscription_FullMethodName,
+		FullMethod: SubscriptionsService_GetEnterpriseSubscription_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EnterprisePortalSubscriptionsServiceServer).GetEnterpriseSubscription(ctx, req.(*GetEnterpriseSubscriptionRequest))
+		return srv.(SubscriptionsServiceServer).GetEnterpriseSubscription(ctx, req.(*GetEnterpriseSubscriptionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EnterprisePortalSubscriptionsService_ListEnterpriseSubscriptions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SubscriptionsService_ListEnterpriseSubscriptions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListEnterpriseSubscriptionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EnterprisePortalSubscriptionsServiceServer).ListEnterpriseSubscriptions(ctx, in)
+		return srv.(SubscriptionsServiceServer).ListEnterpriseSubscriptions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EnterprisePortalSubscriptionsService_ListEnterpriseSubscriptions_FullMethodName,
+		FullMethod: SubscriptionsService_ListEnterpriseSubscriptions_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EnterprisePortalSubscriptionsServiceServer).ListEnterpriseSubscriptions(ctx, req.(*ListEnterpriseSubscriptionsRequest))
+		return srv.(SubscriptionsServiceServer).ListEnterpriseSubscriptions(ctx, req.(*ListEnterpriseSubscriptionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EnterprisePortalSubscriptionsService_ListEnterpriseSubscriptionLicenses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SubscriptionsService_ListEnterpriseSubscriptionLicenses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListEnterpriseSubscriptionLicensesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EnterprisePortalSubscriptionsServiceServer).ListEnterpriseSubscriptionLicenses(ctx, in)
+		return srv.(SubscriptionsServiceServer).ListEnterpriseSubscriptionLicenses(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EnterprisePortalSubscriptionsService_ListEnterpriseSubscriptionLicenses_FullMethodName,
+		FullMethod: SubscriptionsService_ListEnterpriseSubscriptionLicenses_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EnterprisePortalSubscriptionsServiceServer).ListEnterpriseSubscriptionLicenses(ctx, req.(*ListEnterpriseSubscriptionLicensesRequest))
+		return srv.(SubscriptionsServiceServer).ListEnterpriseSubscriptionLicenses(ctx, req.(*ListEnterpriseSubscriptionLicensesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// EnterprisePortalSubscriptionsService_ServiceDesc is the grpc.ServiceDesc for EnterprisePortalSubscriptionsService service.
+// SubscriptionsService_ServiceDesc is the grpc.ServiceDesc for SubscriptionsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var EnterprisePortalSubscriptionsService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService",
-	HandlerType: (*EnterprisePortalSubscriptionsServiceServer)(nil),
+var SubscriptionsService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "enterpriseportal.subscriptions.v1.SubscriptionsService",
+	HandlerType: (*SubscriptionsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetEnterpriseSubscription",
-			Handler:    _EnterprisePortalSubscriptionsService_GetEnterpriseSubscription_Handler,
+			Handler:    _SubscriptionsService_GetEnterpriseSubscription_Handler,
 		},
 		{
 			MethodName: "ListEnterpriseSubscriptions",
-			Handler:    _EnterprisePortalSubscriptionsService_ListEnterpriseSubscriptions_Handler,
+			Handler:    _SubscriptionsService_ListEnterpriseSubscriptions_Handler,
 		},
 		{
 			MethodName: "ListEnterpriseSubscriptionLicenses",
-			Handler:    _EnterprisePortalSubscriptionsService_ListEnterpriseSubscriptionLicenses_Handler,
+			Handler:    _SubscriptionsService_ListEnterpriseSubscriptionLicenses_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -1289,8 +1289,7 @@ var file_subscriptions_proto_rawDesc = []byte{
 	0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x30, 0x0a, 0x2c, 0x45, 0x4e, 0x54,
 	0x45, 0x52, 0x50, 0x52, 0x49, 0x53, 0x45, 0x5f, 0x53, 0x55, 0x42, 0x53, 0x43, 0x52, 0x49, 0x50,
 	0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x4c, 0x49, 0x43, 0x45, 0x4e, 0x53, 0x45, 0x5f, 0x54, 0x59, 0x50,
-	0x45, 0x5f, 0x43, 0x4c, 0x41, 0x53, 0x53, 0x49, 0x43, 0x10, 0x01, 0x32, 0xc6, 0x04, 0x0a, 0x24,
-	0x45, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x50, 0x6f, 0x72, 0x74, 0x61, 0x6c,
+	0x45, 0x5f, 0x43, 0x4c, 0x41, 0x53, 0x53, 0x49, 0x43, 0x10, 0x01, 0x32, 0xb6, 0x04, 0x0a, 0x14,
 	0x53, 0x75, 0x62, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x53, 0x65, 0x72,
 	0x76, 0x69, 0x63, 0x65, 0x12, 0xa0, 0x01, 0x0a, 0x19, 0x47, 0x65, 0x74, 0x45, 0x6e, 0x74, 0x65,
 	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x53, 0x75, 0x62, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69,
@@ -1380,12 +1379,12 @@ var file_subscriptions_proto_depIdxs = []int32{
 	11, // 10: enterpriseportal.subscriptions.v1.ListEnterpriseSubscriptionLicensesRequest.filters:type_name -> enterpriseportal.subscriptions.v1.ListEnterpriseSubscriptionLicensesFilter
 	7,  // 11: enterpriseportal.subscriptions.v1.ListEnterpriseSubscriptionLicensesResponse.licenses:type_name -> enterpriseportal.subscriptions.v1.EnterpriseSubscriptionLicense
 	15, // 12: enterpriseportal.subscriptions.v1.EnterpriseSubscriptionLicenseClassic.Info.expire_time:type_name -> google.protobuf.Timestamp
-	8,  // 13: enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService.GetEnterpriseSubscription:input_type -> enterpriseportal.subscriptions.v1.GetEnterpriseSubscriptionRequest
-	9,  // 14: enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService.ListEnterpriseSubscriptions:input_type -> enterpriseportal.subscriptions.v1.ListEnterpriseSubscriptionsRequest
-	12, // 15: enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService.ListEnterpriseSubscriptionLicenses:input_type -> enterpriseportal.subscriptions.v1.ListEnterpriseSubscriptionLicensesRequest
-	4,  // 16: enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService.GetEnterpriseSubscription:output_type -> enterpriseportal.subscriptions.v1.EnterpriseSubscription
-	10, // 17: enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService.ListEnterpriseSubscriptions:output_type -> enterpriseportal.subscriptions.v1.ListEnterpriseSubscriptionsResponse
-	13, // 18: enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService.ListEnterpriseSubscriptionLicenses:output_type -> enterpriseportal.subscriptions.v1.ListEnterpriseSubscriptionLicensesResponse
+	8,  // 13: enterpriseportal.subscriptions.v1.SubscriptionsService.GetEnterpriseSubscription:input_type -> enterpriseportal.subscriptions.v1.GetEnterpriseSubscriptionRequest
+	9,  // 14: enterpriseportal.subscriptions.v1.SubscriptionsService.ListEnterpriseSubscriptions:input_type -> enterpriseportal.subscriptions.v1.ListEnterpriseSubscriptionsRequest
+	12, // 15: enterpriseportal.subscriptions.v1.SubscriptionsService.ListEnterpriseSubscriptionLicenses:input_type -> enterpriseportal.subscriptions.v1.ListEnterpriseSubscriptionLicensesRequest
+	4,  // 16: enterpriseportal.subscriptions.v1.SubscriptionsService.GetEnterpriseSubscription:output_type -> enterpriseportal.subscriptions.v1.EnterpriseSubscription
+	10, // 17: enterpriseportal.subscriptions.v1.SubscriptionsService.ListEnterpriseSubscriptions:output_type -> enterpriseportal.subscriptions.v1.ListEnterpriseSubscriptionsResponse
+	13, // 18: enterpriseportal.subscriptions.v1.SubscriptionsService.ListEnterpriseSubscriptionLicenses:output_type -> enterpriseportal.subscriptions.v1.ListEnterpriseSubscriptionLicensesResponse
 	16, // [16:19] is the sub-list for method output_type
 	13, // [13:16] is the sub-list for method input_type
 	13, // [13:13] is the sub-list for extension type_name

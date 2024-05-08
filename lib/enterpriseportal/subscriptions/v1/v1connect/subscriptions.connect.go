@@ -21,9 +21,8 @@ import (
 const _ = connect.IsAtLeastVersion1_13_0
 
 const (
-	// EnterprisePortalSubscriptionsServiceName is the fully-qualified name of the
-	// EnterprisePortalSubscriptionsService service.
-	EnterprisePortalSubscriptionsServiceName = "enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService"
+	// SubscriptionsServiceName is the fully-qualified name of the SubscriptionsService service.
+	SubscriptionsServiceName = "enterpriseportal.subscriptions.v1.SubscriptionsService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -34,29 +33,28 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// EnterprisePortalSubscriptionsServiceGetEnterpriseSubscriptionProcedure is the fully-qualified
-	// name of the EnterprisePortalSubscriptionsService's GetEnterpriseSubscription RPC.
-	EnterprisePortalSubscriptionsServiceGetEnterpriseSubscriptionProcedure = "/enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService/GetEnterpriseSubscription"
-	// EnterprisePortalSubscriptionsServiceListEnterpriseSubscriptionsProcedure is the fully-qualified
-	// name of the EnterprisePortalSubscriptionsService's ListEnterpriseSubscriptions RPC.
-	EnterprisePortalSubscriptionsServiceListEnterpriseSubscriptionsProcedure = "/enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService/ListEnterpriseSubscriptions"
-	// EnterprisePortalSubscriptionsServiceListEnterpriseSubscriptionLicensesProcedure is the
-	// fully-qualified name of the EnterprisePortalSubscriptionsService's
-	// ListEnterpriseSubscriptionLicenses RPC.
-	EnterprisePortalSubscriptionsServiceListEnterpriseSubscriptionLicensesProcedure = "/enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService/ListEnterpriseSubscriptionLicenses"
+	// SubscriptionsServiceGetEnterpriseSubscriptionProcedure is the fully-qualified name of the
+	// SubscriptionsService's GetEnterpriseSubscription RPC.
+	SubscriptionsServiceGetEnterpriseSubscriptionProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/GetEnterpriseSubscription"
+	// SubscriptionsServiceListEnterpriseSubscriptionsProcedure is the fully-qualified name of the
+	// SubscriptionsService's ListEnterpriseSubscriptions RPC.
+	SubscriptionsServiceListEnterpriseSubscriptionsProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptions"
+	// SubscriptionsServiceListEnterpriseSubscriptionLicensesProcedure is the fully-qualified name of
+	// the SubscriptionsService's ListEnterpriseSubscriptionLicenses RPC.
+	SubscriptionsServiceListEnterpriseSubscriptionLicensesProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptionLicenses"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	enterprisePortalSubscriptionsServiceServiceDescriptor                                  = v1.File_subscriptions_proto.Services().ByName("EnterprisePortalSubscriptionsService")
-	enterprisePortalSubscriptionsServiceGetEnterpriseSubscriptionMethodDescriptor          = enterprisePortalSubscriptionsServiceServiceDescriptor.Methods().ByName("GetEnterpriseSubscription")
-	enterprisePortalSubscriptionsServiceListEnterpriseSubscriptionsMethodDescriptor        = enterprisePortalSubscriptionsServiceServiceDescriptor.Methods().ByName("ListEnterpriseSubscriptions")
-	enterprisePortalSubscriptionsServiceListEnterpriseSubscriptionLicensesMethodDescriptor = enterprisePortalSubscriptionsServiceServiceDescriptor.Methods().ByName("ListEnterpriseSubscriptionLicenses")
+	subscriptionsServiceServiceDescriptor                                  = v1.File_subscriptions_proto.Services().ByName("SubscriptionsService")
+	subscriptionsServiceGetEnterpriseSubscriptionMethodDescriptor          = subscriptionsServiceServiceDescriptor.Methods().ByName("GetEnterpriseSubscription")
+	subscriptionsServiceListEnterpriseSubscriptionsMethodDescriptor        = subscriptionsServiceServiceDescriptor.Methods().ByName("ListEnterpriseSubscriptions")
+	subscriptionsServiceListEnterpriseSubscriptionLicensesMethodDescriptor = subscriptionsServiceServiceDescriptor.Methods().ByName("ListEnterpriseSubscriptionLicenses")
 )
 
-// EnterprisePortalSubscriptionsServiceClient is a client for the
-// enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService service.
-type EnterprisePortalSubscriptionsServiceClient interface {
+// SubscriptionsServiceClient is a client for the
+// enterpriseportal.subscriptions.v1.SubscriptionsService service.
+type SubscriptionsServiceClient interface {
 	// GetSubscription retrieves an exact match on an Enterprise subscription.
 	GetEnterpriseSubscription(context.Context, *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.EnterpriseSubscription], error)
 	// ListEnterpriseSubscriptions queries for Enterprise subscriptions.
@@ -65,69 +63,69 @@ type EnterprisePortalSubscriptionsServiceClient interface {
 	ListEnterpriseSubscriptionLicenses(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionLicensesResponse], error)
 }
 
-// NewEnterprisePortalSubscriptionsServiceClient constructs a client for the
-// enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService service. By default, it
-// uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
-// uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
+// NewSubscriptionsServiceClient constructs a client for the
+// enterpriseportal.subscriptions.v1.SubscriptionsService service. By default, it uses the Connect
+// protocol with the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed
+// requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
 // connect.WithGRPCWeb() options.
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewEnterprisePortalSubscriptionsServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) EnterprisePortalSubscriptionsServiceClient {
+func NewSubscriptionsServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) SubscriptionsServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	return &enterprisePortalSubscriptionsServiceClient{
+	return &subscriptionsServiceClient{
 		getEnterpriseSubscription: connect.NewClient[v1.GetEnterpriseSubscriptionRequest, v1.EnterpriseSubscription](
 			httpClient,
-			baseURL+EnterprisePortalSubscriptionsServiceGetEnterpriseSubscriptionProcedure,
-			connect.WithSchema(enterprisePortalSubscriptionsServiceGetEnterpriseSubscriptionMethodDescriptor),
+			baseURL+SubscriptionsServiceGetEnterpriseSubscriptionProcedure,
+			connect.WithSchema(subscriptionsServiceGetEnterpriseSubscriptionMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listEnterpriseSubscriptions: connect.NewClient[v1.ListEnterpriseSubscriptionsRequest, v1.ListEnterpriseSubscriptionsResponse](
 			httpClient,
-			baseURL+EnterprisePortalSubscriptionsServiceListEnterpriseSubscriptionsProcedure,
-			connect.WithSchema(enterprisePortalSubscriptionsServiceListEnterpriseSubscriptionsMethodDescriptor),
+			baseURL+SubscriptionsServiceListEnterpriseSubscriptionsProcedure,
+			connect.WithSchema(subscriptionsServiceListEnterpriseSubscriptionsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listEnterpriseSubscriptionLicenses: connect.NewClient[v1.ListEnterpriseSubscriptionLicensesRequest, v1.ListEnterpriseSubscriptionLicensesResponse](
 			httpClient,
-			baseURL+EnterprisePortalSubscriptionsServiceListEnterpriseSubscriptionLicensesProcedure,
-			connect.WithSchema(enterprisePortalSubscriptionsServiceListEnterpriseSubscriptionLicensesMethodDescriptor),
+			baseURL+SubscriptionsServiceListEnterpriseSubscriptionLicensesProcedure,
+			connect.WithSchema(subscriptionsServiceListEnterpriseSubscriptionLicensesMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
-// enterprisePortalSubscriptionsServiceClient implements EnterprisePortalSubscriptionsServiceClient.
-type enterprisePortalSubscriptionsServiceClient struct {
+// subscriptionsServiceClient implements SubscriptionsServiceClient.
+type subscriptionsServiceClient struct {
 	getEnterpriseSubscription          *connect.Client[v1.GetEnterpriseSubscriptionRequest, v1.EnterpriseSubscription]
 	listEnterpriseSubscriptions        *connect.Client[v1.ListEnterpriseSubscriptionsRequest, v1.ListEnterpriseSubscriptionsResponse]
 	listEnterpriseSubscriptionLicenses *connect.Client[v1.ListEnterpriseSubscriptionLicensesRequest, v1.ListEnterpriseSubscriptionLicensesResponse]
 }
 
 // GetEnterpriseSubscription calls
-// enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService.GetEnterpriseSubscription.
-func (c *enterprisePortalSubscriptionsServiceClient) GetEnterpriseSubscription(ctx context.Context, req *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.EnterpriseSubscription], error) {
+// enterpriseportal.subscriptions.v1.SubscriptionsService.GetEnterpriseSubscription.
+func (c *subscriptionsServiceClient) GetEnterpriseSubscription(ctx context.Context, req *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.EnterpriseSubscription], error) {
 	return c.getEnterpriseSubscription.CallUnary(ctx, req)
 }
 
 // ListEnterpriseSubscriptions calls
-// enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService.ListEnterpriseSubscriptions.
-func (c *enterprisePortalSubscriptionsServiceClient) ListEnterpriseSubscriptions(ctx context.Context, req *connect.Request[v1.ListEnterpriseSubscriptionsRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionsResponse], error) {
+// enterpriseportal.subscriptions.v1.SubscriptionsService.ListEnterpriseSubscriptions.
+func (c *subscriptionsServiceClient) ListEnterpriseSubscriptions(ctx context.Context, req *connect.Request[v1.ListEnterpriseSubscriptionsRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionsResponse], error) {
 	return c.listEnterpriseSubscriptions.CallUnary(ctx, req)
 }
 
 // ListEnterpriseSubscriptionLicenses calls
-// enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService.ListEnterpriseSubscriptionLicenses.
-func (c *enterprisePortalSubscriptionsServiceClient) ListEnterpriseSubscriptionLicenses(ctx context.Context, req *connect.Request[v1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionLicensesResponse], error) {
+// enterpriseportal.subscriptions.v1.SubscriptionsService.ListEnterpriseSubscriptionLicenses.
+func (c *subscriptionsServiceClient) ListEnterpriseSubscriptionLicenses(ctx context.Context, req *connect.Request[v1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionLicensesResponse], error) {
 	return c.listEnterpriseSubscriptionLicenses.CallUnary(ctx, req)
 }
 
-// EnterprisePortalSubscriptionsServiceHandler is an implementation of the
-// enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService service.
-type EnterprisePortalSubscriptionsServiceHandler interface {
+// SubscriptionsServiceHandler is an implementation of the
+// enterpriseportal.subscriptions.v1.SubscriptionsService service.
+type SubscriptionsServiceHandler interface {
 	// GetSubscription retrieves an exact match on an Enterprise subscription.
 	GetEnterpriseSubscription(context.Context, *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.EnterpriseSubscription], error)
 	// ListEnterpriseSubscriptions queries for Enterprise subscriptions.
@@ -136,59 +134,58 @@ type EnterprisePortalSubscriptionsServiceHandler interface {
 	ListEnterpriseSubscriptionLicenses(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionLicensesResponse], error)
 }
 
-// NewEnterprisePortalSubscriptionsServiceHandler builds an HTTP handler from the service
-// implementation. It returns the path on which to mount the handler and the handler itself.
+// NewSubscriptionsServiceHandler builds an HTTP handler from the service implementation. It returns
+// the path on which to mount the handler and the handler itself.
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewEnterprisePortalSubscriptionsServiceHandler(svc EnterprisePortalSubscriptionsServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	enterprisePortalSubscriptionsServiceGetEnterpriseSubscriptionHandler := connect.NewUnaryHandler(
-		EnterprisePortalSubscriptionsServiceGetEnterpriseSubscriptionProcedure,
+func NewSubscriptionsServiceHandler(svc SubscriptionsServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	subscriptionsServiceGetEnterpriseSubscriptionHandler := connect.NewUnaryHandler(
+		SubscriptionsServiceGetEnterpriseSubscriptionProcedure,
 		svc.GetEnterpriseSubscription,
-		connect.WithSchema(enterprisePortalSubscriptionsServiceGetEnterpriseSubscriptionMethodDescriptor),
+		connect.WithSchema(subscriptionsServiceGetEnterpriseSubscriptionMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
-	enterprisePortalSubscriptionsServiceListEnterpriseSubscriptionsHandler := connect.NewUnaryHandler(
-		EnterprisePortalSubscriptionsServiceListEnterpriseSubscriptionsProcedure,
+	subscriptionsServiceListEnterpriseSubscriptionsHandler := connect.NewUnaryHandler(
+		SubscriptionsServiceListEnterpriseSubscriptionsProcedure,
 		svc.ListEnterpriseSubscriptions,
-		connect.WithSchema(enterprisePortalSubscriptionsServiceListEnterpriseSubscriptionsMethodDescriptor),
+		connect.WithSchema(subscriptionsServiceListEnterpriseSubscriptionsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
-	enterprisePortalSubscriptionsServiceListEnterpriseSubscriptionLicensesHandler := connect.NewUnaryHandler(
-		EnterprisePortalSubscriptionsServiceListEnterpriseSubscriptionLicensesProcedure,
+	subscriptionsServiceListEnterpriseSubscriptionLicensesHandler := connect.NewUnaryHandler(
+		SubscriptionsServiceListEnterpriseSubscriptionLicensesProcedure,
 		svc.ListEnterpriseSubscriptionLicenses,
-		connect.WithSchema(enterprisePortalSubscriptionsServiceListEnterpriseSubscriptionLicensesMethodDescriptor),
+		connect.WithSchema(subscriptionsServiceListEnterpriseSubscriptionLicensesMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
-	return "/enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return "/enterpriseportal.subscriptions.v1.SubscriptionsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case EnterprisePortalSubscriptionsServiceGetEnterpriseSubscriptionProcedure:
-			enterprisePortalSubscriptionsServiceGetEnterpriseSubscriptionHandler.ServeHTTP(w, r)
-		case EnterprisePortalSubscriptionsServiceListEnterpriseSubscriptionsProcedure:
-			enterprisePortalSubscriptionsServiceListEnterpriseSubscriptionsHandler.ServeHTTP(w, r)
-		case EnterprisePortalSubscriptionsServiceListEnterpriseSubscriptionLicensesProcedure:
-			enterprisePortalSubscriptionsServiceListEnterpriseSubscriptionLicensesHandler.ServeHTTP(w, r)
+		case SubscriptionsServiceGetEnterpriseSubscriptionProcedure:
+			subscriptionsServiceGetEnterpriseSubscriptionHandler.ServeHTTP(w, r)
+		case SubscriptionsServiceListEnterpriseSubscriptionsProcedure:
+			subscriptionsServiceListEnterpriseSubscriptionsHandler.ServeHTTP(w, r)
+		case SubscriptionsServiceListEnterpriseSubscriptionLicensesProcedure:
+			subscriptionsServiceListEnterpriseSubscriptionLicensesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
 	})
 }
 
-// UnimplementedEnterprisePortalSubscriptionsServiceHandler returns CodeUnimplemented from all
-// methods.
-type UnimplementedEnterprisePortalSubscriptionsServiceHandler struct{}
+// UnimplementedSubscriptionsServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedSubscriptionsServiceHandler struct{}
 
-func (UnimplementedEnterprisePortalSubscriptionsServiceHandler) GetEnterpriseSubscription(context.Context, *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.EnterpriseSubscription], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService.GetEnterpriseSubscription is not implemented"))
+func (UnimplementedSubscriptionsServiceHandler) GetEnterpriseSubscription(context.Context, *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.EnterpriseSubscription], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.GetEnterpriseSubscription is not implemented"))
 }
 
-func (UnimplementedEnterprisePortalSubscriptionsServiceHandler) ListEnterpriseSubscriptions(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionsRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService.ListEnterpriseSubscriptions is not implemented"))
+func (UnimplementedSubscriptionsServiceHandler) ListEnterpriseSubscriptions(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionsRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.ListEnterpriseSubscriptions is not implemented"))
 }
 
-func (UnimplementedEnterprisePortalSubscriptionsServiceHandler) ListEnterpriseSubscriptionLicenses(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionLicensesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.EnterprisePortalSubscriptionsService.ListEnterpriseSubscriptionLicenses is not implemented"))
+func (UnimplementedSubscriptionsServiceHandler) ListEnterpriseSubscriptionLicenses(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionLicensesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.ListEnterpriseSubscriptionLicenses is not implemented"))
 }

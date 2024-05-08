@@ -301,7 +301,7 @@ type CodyGatewayAccess struct {
 	// The external, prefixed UUID-format identifier for the Enterprise
 	// subscription corresponding to this Cody Gateway access description.
 	SubscriptionId string `protobuf:"bytes,1,opt,name=subscription_id,json=subscriptionId,proto3" json:"subscription_id,omitempty"`
-	// Whether or not a subscription has Cody Gateway access.
+	// Whether or not a subscription has Cody Gateway access enabled.
 	Enabled bool `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	// Rate limit for chat completions access, or null if not enabled.
 	ChatCompletionsRateLimit *CodyGatewayRateLimit `protobuf:"bytes,3,opt,name=chat_completions_rate_limit,json=chatCompletionsRateLimit,proto3,oneof" json:"chat_completions_rate_limit,omitempty"`
@@ -310,12 +310,12 @@ type CodyGatewayAccess struct {
 	// Rate limit for embedding text chunks, or null if not enabled.
 	EmbeddingsRateLimt *CodyGatewayRateLimit `protobuf:"bytes,5,opt,name=embeddings_rate_limt,json=embeddingsRateLimt,proto3,oneof" json:"embeddings_rate_limt,omitempty"`
 	// The most preferable Sourcegraph access token to use for authenticating as
-	// the subscription holder with managed Sourcegraph services.
+	// the subscription holder with Cody Gateway.
 	// Null only if creating a token failed, for example when no active license
 	// exists.
 	CurrentAccessToken *CodyGatewayAccessToken `protobuf:"bytes,6,opt,name=current_access_token,json=currentAccessToken,proto3,oneof" json:"current_access_token,omitempty"`
 	// Available access tokens for authenticating as the subscription holder with
-	// managed Sourcegraph services.
+	// Cody Gateway.
 	AccessTokens []*CodyGatewayAccessToken `protobuf:"bytes,7,rep,name=access_tokens,json=accessTokens,proto3" json:"access_tokens,omitempty"`
 }
 
@@ -629,8 +629,7 @@ var file_codygateway_proto_rawDesc = []byte{
 	0x5f, 0x53, 0x4f, 0x55, 0x52, 0x43, 0x45, 0x5f, 0x4f, 0x56, 0x45, 0x52, 0x52, 0x49, 0x44, 0x45,
 	0x10, 0x01, 0x12, 0x27, 0x0a, 0x23, 0x43, 0x4f, 0x44, 0x59, 0x5f, 0x47, 0x41, 0x54, 0x45, 0x57,
 	0x41, 0x59, 0x5f, 0x52, 0x41, 0x54, 0x45, 0x5f, 0x4c, 0x49, 0x4d, 0x49, 0x54, 0x5f, 0x53, 0x4f,
-	0x55, 0x52, 0x43, 0x45, 0x5f, 0x50, 0x4c, 0x41, 0x4e, 0x10, 0x02, 0x32, 0xd8, 0x02, 0x0a, 0x22,
-	0x45, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x50, 0x6f, 0x72, 0x74, 0x61, 0x6c,
+	0x55, 0x52, 0x43, 0x45, 0x5f, 0x50, 0x4c, 0x41, 0x4e, 0x10, 0x02, 0x32, 0xc8, 0x02, 0x0a, 0x12,
 	0x43, 0x6f, 0x64, 0x79, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x53, 0x65, 0x72, 0x76, 0x69,
 	0x63, 0x65, 0x12, 0x8d, 0x01, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x64, 0x79, 0x47, 0x61,
 	0x74, 0x65, 0x77, 0x61, 0x79, 0x41, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12, 0x3c, 0x2e, 0x65, 0x6e,
@@ -692,10 +691,10 @@ var file_codygateway_proto_depIdxs = []int32{
 	3,  // 5: enterpriseportal.codygateway.v1.CodyGatewayAccess.current_access_token:type_name -> enterpriseportal.codygateway.v1.CodyGatewayAccessToken
 	3,  // 6: enterpriseportal.codygateway.v1.CodyGatewayAccess.access_tokens:type_name -> enterpriseportal.codygateway.v1.CodyGatewayAccessToken
 	4,  // 7: enterpriseportal.codygateway.v1.ListCodyGatewayAccessesResponse.accesses:type_name -> enterpriseportal.codygateway.v1.CodyGatewayAccess
-	1,  // 8: enterpriseportal.codygateway.v1.EnterprisePortalCodyGatewayService.GetCodyGatewayAccess:input_type -> enterpriseportal.codygateway.v1.GetCodyGatewayAccessRequest
-	5,  // 9: enterpriseportal.codygateway.v1.EnterprisePortalCodyGatewayService.ListCodyGatewayAccesses:input_type -> enterpriseportal.codygateway.v1.ListCodyGatewayAccessesRequest
-	4,  // 10: enterpriseportal.codygateway.v1.EnterprisePortalCodyGatewayService.GetCodyGatewayAccess:output_type -> enterpriseportal.codygateway.v1.CodyGatewayAccess
-	6,  // 11: enterpriseportal.codygateway.v1.EnterprisePortalCodyGatewayService.ListCodyGatewayAccesses:output_type -> enterpriseportal.codygateway.v1.ListCodyGatewayAccessesResponse
+	1,  // 8: enterpriseportal.codygateway.v1.CodyGatewayService.GetCodyGatewayAccess:input_type -> enterpriseportal.codygateway.v1.GetCodyGatewayAccessRequest
+	5,  // 9: enterpriseportal.codygateway.v1.CodyGatewayService.ListCodyGatewayAccesses:input_type -> enterpriseportal.codygateway.v1.ListCodyGatewayAccessesRequest
+	4,  // 10: enterpriseportal.codygateway.v1.CodyGatewayService.GetCodyGatewayAccess:output_type -> enterpriseportal.codygateway.v1.CodyGatewayAccess
+	6,  // 11: enterpriseportal.codygateway.v1.CodyGatewayService.ListCodyGatewayAccesses:output_type -> enterpriseportal.codygateway.v1.ListCodyGatewayAccessesResponse
 	10, // [10:12] is the sub-list for method output_type
 	8,  // [8:10] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
