@@ -13,10 +13,11 @@ import (
 )
 
 type LsifStore interface {
-	// Whole-document metadata
+	// Whole-document data
 	GetPathExists(ctx context.Context, bundleID int, path string) (bool, error)
 	GetStencil(ctx context.Context, bundleID int, path string) ([]shared.Range, error)
 	GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]shared.CodeIntelligenceRange, error)
+	SCIPDocument(ctx context.Context, uploadID int, path string) (_ *scip.Document, err error)
 
 	// Fetch symbol names by position
 	GetMonikersByPosition(ctx context.Context, uploadID int, path string, line, character int) ([][]precise.MonikerData, error)
@@ -33,7 +34,6 @@ type LsifStore interface {
 	// Metadata by position
 	GetHover(ctx context.Context, bundleID int, path string, line, character int) (string, shared.Range, bool, error)
 	GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]shared.Diagnostic, int, error)
-	SCIPDocument(ctx context.Context, uploadID int, path string) (_ *scip.Document, err error)
 
 	// Extraction methods
 	ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
