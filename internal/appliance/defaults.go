@@ -48,7 +48,7 @@ func newDefaultConfig() Sourcegraph {
 			},
 			PGSQL: PGSQLSpec{
 				StandardConfig: config.StandardConfig{
-					PrometheusPort: pointers.Ptr(6060),
+					PrometheusPort: pointers.Ptr(9187),
 				},
 				StorageSize: "200Gi",
 				DatabaseConnection: &DatabaseConnectionSpec{
