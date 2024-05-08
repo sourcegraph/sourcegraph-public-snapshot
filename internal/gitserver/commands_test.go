@@ -223,15 +223,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.label, func(t *testing.T) {
-				client := NewTestClient(t).WithClientSource(NewTestClientSource(t, []string{"test"}, func(o *TestClientSourceOptions) {
-					o.ClientFunc = func(conn *grpc.ClientConn) proto.GitserverServiceClient {
-						c := NewMockGitserverServiceClient()
-						c.ResolveRevisionFunc.SetDefaultReturn(&proto.ResolveRevisionResponse{
-							CommitSha: tc.revspec,
-						}, nil)
-						return c
-					}
-				}))
+				client := NewTestClient(t)
 
 				gitCommands := make([]string, len(tc.commitDates))
 				for i, date := range tc.commitDates {
@@ -740,41 +732,6 @@ func getTestSubRepoPermsChecker(noAccessPaths ...string) authz.SubRepoPermission
 	})
 	usePermissionsForFilePermissionsFunc(checker)
 	return checker
-}
-
-func getGitCommandsWithFileLists(filenamesPerCommit ...[]string) []string {
-	cmds := make([]string, 0, len(filenamesPerCommit)*3)
-	for i, filenames := range filenamesPerCommit {
-		for _, fn := range filenames {
-			cmds = append(cmds,
-				fmt.Sprintf("touch %s", fn),
-				fmt.Sprintf("echo my_content_%d > %s", i, fn),
-				fmt.Sprintf("git add %s", fn))
-		}
-		cmds = append(cmds,
-			fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05=%dZ git commit -m commit%d --author='a <a@a.com>' --date 2006-01-02T15:04:0%dZ", i, i, i))
-	}
-	return cmds
-}
-
-func getGitCommandsWithFiles(fileName1, fileName2 string) []string {
-	return []string{
-		fmt.Sprintf("touch %s", fileName1),
-		fmt.Sprintf("git add %s", fileName1),
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		fmt.Sprintf("touch %s", fileName2),
-		fmt.Sprintf("git add %s", fileName2),
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-	}
-}
-
-func mustParseDate(s string, t *testing.T) *time.Time {
-	t.Helper()
-	date, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		t.Fatalf("unexpected error parsing date string: %s", err)
-	}
-	return &date
 }
 
 func CommitsEqual(a, b *gitdomain.Commit) bool {
