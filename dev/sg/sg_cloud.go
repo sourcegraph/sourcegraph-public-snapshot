@@ -45,6 +45,7 @@ var cloudCommand = &cli.Command{
 				return nil
 			},
 		},
+		&cloud.BuildEphemeralCommand,
 		&cloud.DeleteEphemeralCommand,
 		&cloud.DeployEphemeralCommand,
 		&cloud.LeaseEphemeralCommand,

@@ -130,9 +130,9 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 }
 
 func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
-	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote", currRepo.Branch))
+	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote branch", currRepo.Branch))
 	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "branch is out of date with remote"))
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to check if branch is out of sync with remote branch"))
 		return nil, err
 	} else if isOutOfSync {
 		return nil, ErrBranchOutOfSync
