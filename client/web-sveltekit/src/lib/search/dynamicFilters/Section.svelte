@@ -86,11 +86,7 @@
         padding: 0 1rem;
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
-
-        h4 {
-            margin-bottom: 0.25rem;
-        }
+        gap: 0.25rem;
     }
 
     input {
