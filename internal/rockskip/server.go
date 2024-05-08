@@ -266,11 +266,10 @@ func DeleteOldRepos(ctx context.Context, db *sql.DB, maxRepos int, threadStatus 
 //
 // https://oeis.org/A007814
 func ruler(n int) int {
-	if n == 0 {
-		return 0
+	height := 0
+	for n > 0 && n%2 == 0 {
+		height++
+		n = n / 2
 	}
-	if n%2 != 0 {
-		return 0
-	}
-	return 1 + ruler(n/2)
+	return height
 }

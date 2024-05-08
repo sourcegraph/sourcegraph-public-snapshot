@@ -366,3 +366,30 @@ func (f *mockRepositoryFetcher) FetchRepositoryArchive(ctx context.Context, repo
 
 	return ch
 }
+
+func TestRuler(t *testing.T) {
+	testCases := []struct {
+		n    int
+		want int
+	}{
+		{0, 0},
+		{1, 0},
+		{2, 1},
+		{3, 0},
+		{4, 2},
+		{5, 0},
+		{6, 1},
+		{7, 0},
+		{8, 3},
+		{64, 6},
+		{96, 5},
+		{123, 0},
+	}
+
+	for _, tc := range testCases {
+		got := ruler(tc.n)
+		if got != tc.want {
+			t.Errorf("ruler(%d): got %d, want %d", tc.n, got, tc.want)
+		}
+	}
+}
