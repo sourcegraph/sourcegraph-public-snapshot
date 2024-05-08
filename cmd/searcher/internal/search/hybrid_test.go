@@ -120,9 +120,9 @@ Hello world example in go`, typeFile},
 			}
 
 			return gitserver.NewChangedFilesIteratorFromSlice([]gitdomain.PathStatus{
-				{Status: gitdomain.ModifiedAMD, Path: "changed.go"},
-				{Status: gitdomain.AddedAMD, Path: "added.md"},
-				{Status: gitdomain.DeletedAMD, Path: "removed.md"},
+				{Status: gitdomain.StatusModified, Path: "changed.go"},
+				{Status: gitdomain.StatusAdded, Path: "added.md"},
+				{Status: gitdomain.StatusDeleted, Path: "removed.md"},
 			}), nil
 		},
 		MaxTotalPathsLength: 100_000,

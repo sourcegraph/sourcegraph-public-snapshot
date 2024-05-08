@@ -16,7 +16,7 @@ type LogEntry struct {
 
 type PathStatus struct {
 	Path   string
-	Status StatusAMD
+	Status Status
 }
 
 func (s *PathStatus) String() string {
@@ -37,48 +37,49 @@ func (p *PathStatus) ToProto() *proto.ChangedFile {
 	}
 }
 
-type StatusAMD int
+type Status int
 
 const (
-	StatusUnspecifiedAMD StatusAMD = 0
-	AddedAMD             StatusAMD = 1
-	ModifiedAMD          StatusAMD = 2
-	DeletedAMD           StatusAMD = 3
+	StatusUnspecified Status = 'X'
+	StatusAdded       Status = 'A'
+	StatusModified    Status = 'M'
+	StatusDeleted     Status = 'D'
+	// TODO: add other possible statuses here
 )
 
-func (s StatusAMD) String() string {
+func (s Status) String() string {
 	switch s {
-	case AddedAMD:
+	case StatusAdded:
 		return "Added"
-	case ModifiedAMD:
+	case StatusModified:
 		return "Modified"
-	case DeletedAMD:
+	case StatusDeleted:
 		return "Deleted"
 	default:
 		return "Unspecified"
 	}
 }
 
-func StatusAMDFromProto(s proto.ChangedFile_Status) StatusAMD {
+func StatusAMDFromProto(s proto.ChangedFile_Status) Status {
 	switch s {
 	case proto.ChangedFile_STATUS_ADDED:
-		return AddedAMD
+		return StatusAdded
 	case proto.ChangedFile_STATUS_MODIFIED:
-		return ModifiedAMD
+		return StatusModified
 	case proto.ChangedFile_STATUS_DELETED:
-		return DeletedAMD
+		return StatusDeleted
 	default:
-		return StatusUnspecifiedAMD
+		return StatusUnspecified
 	}
 }
 
-func (s StatusAMD) ToProto() proto.ChangedFile_Status {
+func (s Status) ToProto() proto.ChangedFile_Status {
 	switch s {
-	case AddedAMD:
+	case StatusAdded:
 		return proto.ChangedFile_STATUS_ADDED
-	case ModifiedAMD:
+	case StatusModified:
 		return proto.ChangedFile_STATUS_MODIFIED
-	case DeletedAMD:
+	case StatusDeleted:
 		return proto.ChangedFile_STATUS_DELETED
 	default:
 		return proto.ChangedFile_STATUS_UNSPECIFIED
@@ -181,15 +182,15 @@ func ParseLogReverseEach(stdout io.Reader, onLogEntry func(entry LogEntry) error
 				path = path[:len(path)-1] // Drop the trailing NULL byte
 
 				// Inspect the status
-				var status StatusAMD
+				var status Status
 				statusByte := buf[97]
 				switch statusByte {
 				case 'A':
-					status = AddedAMD
+					status = StatusAdded
 				case 'M':
-					status = ModifiedAMD
+					status = StatusModified
 				case 'D':
-					status = DeletedAMD
+					status = StatusDeleted
 				case 'T':
 					// Type changed. Check if it changed from a file to a submodule or vice versa,
 					// treating submodules as empty.
@@ -204,13 +205,13 @@ func ParseLogReverseEach(stdout io.Reader, onLogEntry func(entry LogEntry) error
 
 					if isSubmodule(oldMode) && !isSubmodule(newMode) {
 						// It changed from a submodule to a file, so consider it added.
-						status = AddedAMD
+						status = StatusAdded
 						break
 					}
 
 					if !isSubmodule(oldMode) && isSubmodule(newMode) {
 						// It changed from a file to a submodule, so consider it deleted.
-						status = DeletedAMD
+						status = StatusDeleted
 						break
 					}
 
