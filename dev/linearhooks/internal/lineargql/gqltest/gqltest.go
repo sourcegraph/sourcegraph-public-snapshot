@@ -61,6 +61,13 @@ func MakeRequestResultStub[T any](mockRespData T) MakeRequestStub {
 	}
 }
 
+// MakeRequestErrorStub generates a stub that returns an error
+func MakeRequestResultErrStub(err error) MakeRequestStub {
+	return func(ctx context.Context, req *graphql.Request, resp *graphql.Response) error {
+		return err
+	}
+}
+
 // MakeRequestStubInvocations can be used to use different stubs for each invocation.
 // Stubs are used in order of invocation.
 //

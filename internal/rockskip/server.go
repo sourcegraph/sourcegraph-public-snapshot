@@ -214,30 +214,6 @@ func (s *Service) startCleanupLoop() {
 	}
 }
 
-func getHops(ctx context.Context, tx dbutil.DB, commit int, tasklog *TaskLog) ([]int, error) {
-	tasklog.Start("get hops")
-
-	current := commit
-	spine := []int{current}
-
-	for {
-		_, ancestor, _, present, err := GetCommitById(ctx, tx, current)
-		if err != nil {
-			return nil, errors.Wrap(err, "GetCommitById")
-		} else if !present {
-			break
-		} else {
-			if current == NULL {
-				break
-			}
-			current = ancestor
-			spine = append(spine, current)
-		}
-	}
-
-	return spine, nil
-}
-
 func DeleteOldRepos(ctx context.Context, db *sql.DB, maxRepos int, threadStatus *ThreadStatus) error {
 	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
 	// See doc/dev/background-information/sql/locking_behavior.md for more details.
@@ -256,6 +232,27 @@ func DeleteOldRepos(ctx context.Context, db *sql.DB, maxRepos int, threadStatus 
 		if !more {
 			return nil
 		}
+	}
+}
+
+func getHops(ctx context.Context, tx dbutil.DB, commit int, tasklog *TaskLog) ([]int, error) {
+	tasklog.Start("get hops")
+
+	current := commit
+	spine := []int{current}
+
+	for {
+		_, ancestor, _, present, err := GetCommitById(ctx, tx, current)
+		if err != nil {
+			return nil, errors.Wrap(err, "GetCommitById")
+		}
+
+		if !present || current == NULL {
+			return spine, nil
+		}
+
+		current = ancestor
+		spine = append(spine, current)
 	}
 }
 

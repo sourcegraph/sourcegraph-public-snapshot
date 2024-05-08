@@ -86,7 +86,7 @@
         padding: 0 1rem;
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.25rem;
     }
 
     input {
@@ -105,6 +105,9 @@
     }
 
     ul {
+        display: flex;
+        flex-flow: column nowrap;
+        gap: 0.125rem;
         margin: 0;
         padding: 0;
         list-style: none;

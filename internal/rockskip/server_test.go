@@ -393,3 +393,72 @@ func TestRuler(t *testing.T) {
 		}
 	}
 }
+
+func TestGetHops(t *testing.T) {
+	ctx := context.Background()
+	repoId := 42
+
+	db := dbtest.NewDB(t)
+	defer db.Close()
+
+	// Insert some initial commits.
+	commit0, err := InsertCommit(ctx, db, repoId, "0000", 0, NULL)
+	require.NoError(t, err)
+
+	commit1, err := InsertCommit(ctx, db, repoId, "1111", 0, commit0)
+	require.NoError(t, err)
+
+	commit2, err := InsertCommit(ctx, db, repoId, "2222", 1, commit0)
+	require.NoError(t, err)
+
+	commit3, err := InsertCommit(ctx, db, repoId, "3333", 0, commit2)
+	require.NoError(t, err)
+
+	commit4, err := InsertCommit(ctx, db, repoId, "4444", 2, NULL)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name   string
+		commit CommitId
+		want   []int
+	}{
+		{
+			name:   "commit0",
+			commit: commit0,
+			want:   []CommitId{commit0, NULL},
+		},
+		{
+			name:   "commit1",
+			commit: commit1,
+			want:   []CommitId{commit1, commit0, NULL},
+		},
+		{
+			name:   "commit2",
+			commit: commit2,
+			want:   []CommitId{commit2, commit0, NULL},
+		},
+		{
+			name:   "commit3",
+			commit: commit3,
+			want:   []CommitId{commit3, commit2, commit0, NULL},
+		},
+		{
+			name:   "commit4",
+			commit: commit4,
+			want:   []CommitId{commit4, NULL},
+		},
+		{
+			name:   "nonexistent",
+			commit: 42,
+			want:   []CommitId{42},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getHops(ctx, db, tt.commit, NewTaskLog())
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
