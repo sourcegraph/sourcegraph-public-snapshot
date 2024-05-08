@@ -694,32 +694,6 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	runCommitsTest(checker)
 }
 
-func TestCommitsUniqueToBranch(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
-	gitCommands := append([]string{"git checkout -b my-branch"}, getGitCommandsWithFiles("file1", "file2")...)
-	gitCommands = append(gitCommands, getGitCommandsWithFiles("file3", "file-with-no-access")...)
-	repo := MakeGitRepository(t, gitCommands...)
-
-	client := NewClient("test")
-	commits, err := client.CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{})
-	if err != nil {
-		t.Errorf("err calling CommitsUniqueToBranch: %s", err)
-	}
-	expectedCommits := map[string]time.Time{
-		"2775e60f523d3151a2a34ffdc659f500d0e73022": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-		"791ce7cd8ca2d855e12f47f8692a62bc42477edc": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-	}
-	if diff := cmp.Diff(expectedCommits, commits); diff != "" {
-		t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
-	}
-}
-
 func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantCommits []*gitdomain.Commit, t *testing.T) {
 	t.Helper()
 	client := NewTestClient(t).WithChecker(checker)

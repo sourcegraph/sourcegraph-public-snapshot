@@ -1120,43 +1120,6 @@ func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.
 	return false, nil
 }
 
-// CommitsUniqueToBranch returns a map from commits that exist on a particular
-// branch in the given repository to their committer date. This set of commits is
-// determined by listing `HEAD..{branchName}`, which is interpreted as: all
-// commits on {branchName} not also on the tip of the default branch. If the
-// supplied branch name is the default branch, then this method instead returns
-// all commits reachable from HEAD.
-func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
-	ctx, _, endObservation := c.operations.commitsUniqueToBranch.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("branch", branchName),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	branchRange := "HEAD"
-	if !isDefaultBranch {
-		branchRange = fmt.Sprintf("HEAD..%s", branchName)
-	}
-
-	commits, err := c.Commits(ctx, repo, CommitsOptions{
-		Range: branchRange,
-		After: maxAge.Format(time.RFC3339),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	commitMap := make(map[string]time.Time)
-	for _, commit := range commits {
-		commitMap[string(commit.ID)] = commit.Committer.Date
-	}
-
-	return commitMap, nil
-}
-
 // HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 // contains a commit past a specified date.
 func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string) (_ bool, err error) {

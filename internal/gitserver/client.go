@@ -464,14 +464,6 @@ type Client interface {
 	// into component parts separately.
 	CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error)
 
-	// CommitsUniqueToBranch returns a map from commits that exist on a particular
-	// branch in the given repository to their committer date. This set of commits is
-	// determined by listing `{branchName} ^HEAD`, which is interpreted as: all
-	// commits on {branchName} not also on the tip of the default branch. If the
-	// supplied branch name is the default branch, then this method instead returns
-	// all commits reachable from HEAD.
-	CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
-
 	// GetCommit returns the commit with the given commit ID, or RevisionNotFoundError if no such commit
 	// exists.
 	GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (*gitdomain.Commit, error)
