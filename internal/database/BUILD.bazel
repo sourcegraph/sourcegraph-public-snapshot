@@ -210,6 +210,7 @@ go_test(
         "feature_flags_test.go",
         "gitserver_repos_test.go",
         "global_state_test.go",
+        "helpers_test.go",
         "main_test.go",
         "namespace_permissions_test.go",
         "namespaces_test.go",

@@ -92,7 +92,7 @@ func (s *Service) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Durati
 // TODO(efritz) - make adjustable via site configuration
 const numAncestors = 100
 
-// inferClosestUploads will return the set of visible uploads for the given commit. If this commit is
+// InferClosestUploads will return the set of visible uploads for the given commit. If this commit is
 // newer than our last refresh of the lsif_nearest_uploads table for this repository, then we will mark
 // the repository as dirty and quickly approximate the correct set of visible uploads.
 //

@@ -84,7 +84,7 @@ func (s *repositoryContributorConnectionStore) ComputeNodes(ctx context.Context,
 	}
 
 	var start int
-	results, start, err = offsetBasedCursorSlice(results, args)
+	results, start, err = database.OffsetBasedCursorSlice(results, args)
 	if err != nil {
 		return nil, err
 	}
@@ -119,28 +119,4 @@ func (s *repositoryContributorConnectionStore) compute(ctx context.Context) ([]*
 		s.results, s.err = client.ContributorCount(ctx, s.repo.RepoName(), opt)
 	})
 	return s.results, s.err
-}
-
-func offsetBasedCursorSlice[T any](nodes []T, args *database.PaginationArgs) ([]T, int, error) {
-	start := 0
-	end := 0
-	total := len(nodes)
-	if args.First != nil {
-		if len(args.After) > 0 {
-			start = min(args.After[0].(int)+1, total)
-		}
-		end = min(start+*args.First, total)
-	} else if args.Last != nil {
-		end = total
-		if len(args.Before) > 0 {
-			end = max(args.Before[0].(int), 0)
-		}
-		start = max(end-*args.Last, 0)
-	} else {
-		return nil, 0, errors.New(`args.First and args.Last are nil`)
-	}
-
-	nodes = nodes[start:end]
-
-	return nodes, start, nil
 }
