@@ -8,6 +8,7 @@ go_library(
         "iface.go",
         "observability.go",
         "root_resolver.go",
+        "root_resolver_code_graph.go",
         "root_resolver_definitions.go",
         "root_resolver_diagnostics.go",
         "root_resolver_hover.go",
@@ -22,6 +23,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/api",
         "//internal/authz",
         "//internal/codeintel/codenav",
@@ -41,6 +43,8 @@ go_library(
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_sourcegraph_go_lsp//:go-lsp",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+        "@com_github_wk8_go_ordered_map_v2//:go-ordered-map",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )
@@ -65,7 +69,12 @@ go_test(
         "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/types",
+        "//lib/errors",
         "@com_github_derision_test_go_mockgen_v2//testutil/require",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+        "@com_github_sourcegraph_scip//cmd/scip/tests/reprolang/bindings/go/repro",
+        "@com_github_stretchr_testify//require",
     ],
 )
 
