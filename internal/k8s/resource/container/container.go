@@ -138,7 +138,7 @@ func EnvVarsPostgresExporter(secretName string) []corev1.EnvVar {
 		NewEnvVarSecretKeyRef("DATA_SOURCE_USER", secretName, "user"),
 		{
 			Name:  "DATA_SOURCE_URI",
-			Value: "localhost:$(DATA_SOURCE_PORT)/$(DATA_SOURCE_DB)?sslmode=disable",
+			Value: "127.0.0.1:$(DATA_SOURCE_PORT)/$(DATA_SOURCE_DB)?sslmode=disable",
 		},
 		{
 			Name:  "PG_EXPORTER_EXTEND_QUERY_PATH",
