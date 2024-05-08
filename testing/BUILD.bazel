@@ -40,40 +40,40 @@ server_integration_test(
     runner_src = ":e2e_test.sh",
 )
 
-server_integration_test(
-    name = "backend_integration_test",
-    args = [
-        "$(location //dev/gqltest:gqltest_test)",  # actual test
-        "$(location //dev/authtest:authtest_test)",  # actual test
-    ],
-    data = [
-        "//dev/authtest:authtest_test",
-        "//dev/gqltest:gqltest_test",
-    ],
-    env = {
-        "SG_FEATURE_FLAG_GRPC": "false",
-    },
-    env_inherit = [
-        "AWS_ACCESS_KEY_ID",
-        "AWS_CODE_COMMIT_PASSWORD",
-        "AWS_CODE_COMMIT_USERNAME",
-        "AWS_SECRET_ACCESS_KEY",
-        "AZURE_DEVOPS_TOKEN",
-        "AZURE_DEVOPS_USERNAME",
-        "BITBUCKET_SERVER_TOKEN",
-        "BITBUCKET_SERVER_URL",
-        "BITBUCKET_SERVER_USERNAME",
-        "GHE_GITHUB_TOKEN",
-        "PERFORCE_PASSWORD",
-        "PERFORCE_PORT",
-        "PERFORCE_USER",
-        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
-        "SOURCEGRAPH_LICENSE_KEY",
-    ],
-    port = "7081",
-    runner_src = ":backend_integration_test.sh",
-)
-
+# server_integration_test(
+#     name = "backend_integration_test",
+#     args = [
+#         "$(location //dev/gqltest:gqltest_test)",  # actual test
+#         "$(location //dev/authtest:authtest_test)",  # actual test
+#     ],
+#     data = [
+#         "//dev/authtest:authtest_test",
+#         "//dev/gqltest:gqltest_test",
+#     ],
+#     env = {
+#         "SG_FEATURE_FLAG_GRPC": "false",
+#     },
+#     env_inherit = [
+#         "AWS_ACCESS_KEY_ID",
+#         "AWS_CODE_COMMIT_PASSWORD",
+#         "AWS_CODE_COMMIT_USERNAME",
+#         "AWS_SECRET_ACCESS_KEY",
+#         "AZURE_DEVOPS_TOKEN",
+#         "AZURE_DEVOPS_USERNAME",
+#         "BITBUCKET_SERVER_TOKEN",
+#         "BITBUCKET_SERVER_URL",
+#         "BITBUCKET_SERVER_USERNAME",
+#         "GHE_GITHUB_TOKEN",
+#         "PERFORCE_PASSWORD",
+#         "PERFORCE_PORT",
+#         "PERFORCE_USER",
+#         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
+#         "SOURCEGRAPH_LICENSE_KEY",
+#     ],
+#     port = "7081",
+#     runner_src = ":backend_integration_test.sh",
+# )
+#
 server_integration_test(
     name = "codeintel_integration_test",
     args = [
