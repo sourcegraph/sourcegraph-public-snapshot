@@ -25,7 +25,7 @@ func TestRunner(t *testing.T) {
 		{ID: 1, Progress: 0.5},
 	}, nil)
 
-	runner := newRunner(&observation.TestContext, store, refreshTicker)
+	runner := newRunner(observation.TestContextTB(t), store, refreshTicker)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
@@ -55,7 +55,7 @@ func TestRunnerError(t *testing.T) {
 		{ID: 1, Progress: 0.5},
 	}, nil)
 
-	runner := newRunner(&observation.TestContext, store, refreshTicker)
+	runner := newRunner(observation.TestContextTB(t), store, refreshTicker)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
@@ -94,7 +94,7 @@ func TestRunnerRemovesCompleted(t *testing.T) {
 		{ID: 3, Progress: 0.9},
 	}, nil)
 
-	runner := newRunner(&observation.TestContext, store, refreshTicker)
+	runner := newRunner(observation.TestContextTB(t), store, refreshTicker)
 
 	// Makes no progress
 	migrator1 := NewMockMigrator()
@@ -345,7 +345,7 @@ func TestRunnerValidate(t *testing.T) {
 		{ID: 1, Introduced: NewVersion(3, 13), Progress: 0},
 	}, nil)
 
-	runner := newRunner(&observation.TestContext, store, nil)
+	runner := newRunner(observation.TestContextTB(t), store, nil)
 	statusErr := runner.Validate(context.Background(), NewVersion(3, 12), NewVersion(0, 0))
 	if statusErr != nil {
 		t.Errorf("unexpected status error: %s ", statusErr)
@@ -358,7 +358,7 @@ func TestRunnerValidateUnfinishedUp(t *testing.T) {
 		{ID: 1, Introduced: NewVersion(3, 11), Progress: 0.65, Deprecated: newVersionPtr(3, 12)},
 	}, nil)
 
-	runner := newRunner(&observation.TestContext, store, nil)
+	runner := newRunner(observation.TestContextTB(t), store, nil)
 	statusErr := runner.Validate(context.Background(), NewVersion(3, 12), NewVersion(0, 0))
 
 	if diff := cmp.Diff(wrapMigrationErrors(newMigrationStatusError(1, 1, 0.65)).Error(), statusErr.Error()); diff != "" {
@@ -372,7 +372,7 @@ func TestRunnerValidateUnfinishedDown(t *testing.T) {
 		{ID: 1, Introduced: NewVersion(3, 13), Progress: 0.15, Deprecated: newVersionPtr(3, 15), ApplyReverse: true},
 	}, nil)
 
-	runner := newRunner(&observation.TestContext, store, nil)
+	runner := newRunner(observation.TestContextTB(t), store, nil)
 	statusErr := runner.Validate(context.Background(), NewVersion(3, 12), NewVersion(0, 0))
 
 	if diff := cmp.Diff(wrapMigrationErrors(newMigrationStatusError(1, 0, 0.15)).Error(), statusErr.Error()); diff != "" {
@@ -394,7 +394,7 @@ func TestRunnerBoundsFilter(t *testing.T) {
 		{ID: 3, Progress: 0.5, Introduced: NewVersion(3, 6), Deprecated: &d3},
 	}, nil)
 
-	runner := newRunner(&observation.TestContext, store, refreshTicker)
+	runner := newRunner(observation.TestContextTB(t), store, refreshTicker)
 
 	migrator1 := NewMockMigrator()
 	migrator1.ProgressFunc.SetDefaultReturn(0.5, nil)

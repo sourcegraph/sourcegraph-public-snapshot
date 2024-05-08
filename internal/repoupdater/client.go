@@ -126,6 +126,18 @@ func (c *Client) RepoLookup(
 	return res, nil
 }
 
+func (c *Client) RecloneRepository(ctx context.Context, repoName api.RepoName) error {
+	client, err := c.grpcClient()
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RecloneRepository(ctx, &proto.RecloneRepositoryRequest{
+		RepoName: string(repoName),
+	})
+	return err
+}
+
 // MockEnqueueRepoUpdate mocks (*Client).EnqueueRepoUpdate for tests.
 var MockEnqueueRepoUpdate func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error)
 

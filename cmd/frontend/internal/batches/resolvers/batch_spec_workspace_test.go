@@ -32,7 +32,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)

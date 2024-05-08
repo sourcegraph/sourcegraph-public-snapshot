@@ -13,7 +13,6 @@ go_library(
         "//dev/ci/runtype",
         "//dev/sg/internal/bk",
         "//dev/sg/internal/category",
-        "//dev/sg/internal/loki",
         "//dev/sg/internal/open",
         "//dev/sg/internal/repo",
         "//dev/sg/internal/run",

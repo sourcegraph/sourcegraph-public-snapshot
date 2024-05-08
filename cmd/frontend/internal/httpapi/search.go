@@ -139,6 +139,24 @@ func (s *searchIndexerGRPCServer) UpdateIndexStatus(ctx context.Context, req *pr
 
 var _ proto.ZoektConfigurationServiceServer = &searchIndexerGRPCServer{}
 
+// indexers is the subset of searchbackend.Indexers methods we use. ReposSubset
+// is used by indexed-search to get the list of repositories to index. These
+// methods are used to return the correct subset for horizontal indexed search.
+// Declared as an interface for testing.
+type indexers interface {
+	// ReposSubset returns the subset of repoNames that hostname should
+	// index.
+	ReposSubset(ctx context.Context, hostname string, indexed zoekt.ReposMap, indexable []types.MinimalRepo) ([]types.MinimalRepo, error)
+	// Enabled is true if horizontal indexed search is enabled.
+	Enabled() bool
+}
+
+// repoStore is a subset of database.RepoStore used by searchIndexerServer.
+type repoStore interface {
+	List(context.Context, database.ReposListOptions) ([]*types.Repo, error)
+	StreamMinimalRepos(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error
+}
+
 // searchIndexerServer has handlers that zoekt-sourcegraph-indexserver
 // interacts with (search-indexer).
 type searchIndexerServer struct {
@@ -149,26 +167,11 @@ type searchIndexerServer struct {
 	// ListIndexable returns the repositories to index.
 	ListIndexable func(context.Context) ([]types.MinimalRepo, error)
 
-	// RepoStore is a subset of database.RepoStore used by searchIndexerServer.
-	RepoStore interface {
-		List(context.Context, database.ReposListOptions) ([]*types.Repo, error)
-		StreamMinimalRepos(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error
-	}
+	repoStore repoStore
 
 	SearchContextsRepoRevs func(context.Context, []api.RepoID) (map[api.RepoID][]string, error)
 
-	// Indexers is the subset of searchbackend.Indexers methods we
-	// use. reposListServer is used by indexed-search to get the list of
-	// repositories to index. These methods are used to return the correct
-	// subset for horizontal indexed search. Declared as an interface for
-	// testing.
-	Indexers interface {
-		// ReposSubset returns the subset of repoNames that hostname should
-		// index.
-		ReposSubset(ctx context.Context, hostname string, indexed zoekt.ReposMap, indexable []types.MinimalRepo) ([]types.MinimalRepo, error)
-		// Enabled is true if horizontal indexed search is enabled.
-		Enabled() bool
-	}
+	indexers indexers
 
 	// Ranking is a service that provides ranking scores for various code objects.
 	Ranking enterprise.RankingService
@@ -199,7 +202,7 @@ func (h *searchIndexerServer) doSearchConfiguration(ctx context.Context, paramet
 	}
 
 	// Preload repos to support fast lookups by repo ID.
-	repos, loadReposErr := h.RepoStore.List(ctx, database.ReposListOptions{
+	repos, loadReposErr := h.repoStore.List(ctx, database.ReposListOptions{
 		IDs: parameters.repoIDs,
 		// When minLastChanged is non-zero we will only return the
 		// repositories that have changed since minLastChanged. This takes
@@ -249,7 +252,7 @@ func (h *searchIndexerServer) doSearchConfiguration(ctx context.Context, paramet
 			metricGetVersion.Inc()
 			// Do not to trigger a repo-updater lookup since this is a batch job.
 			commitID, err := h.gitserverClient.ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
-				NoEnsureRevision: true,
+				EnsureRevision: false,
 			})
 			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
 				// GetIndexOptions wants an empty rev for a missing rev or empty
@@ -323,18 +326,18 @@ func (h *searchIndexerServer) doList(ctx context.Context, parameters *listParame
 		return nil, err
 	}
 
-	if h.Indexers.Enabled() {
+	if h.indexers.Enabled() {
 		indexed := make(zoekt.ReposMap, len(parameters.IndexedIDs))
 		add := func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = zoekt.MinimalRepoListEntry{} }
 		if len(parameters.IndexedIDs) > 0 {
 			opts := database.ReposListOptions{IDs: parameters.IndexedIDs}
-			err = h.RepoStore.StreamMinimalRepos(ctx, opts, add)
+			err = h.repoStore.StreamMinimalRepos(ctx, opts, add)
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		indexable, err = h.Indexers.ReposSubset(ctx, parameters.Hostname, indexed, indexable)
+		indexable, err = h.indexers.ReposSubset(ctx, parameters.Hostname, indexed, indexable)
 		if err != nil {
 			return nil, err
 		}

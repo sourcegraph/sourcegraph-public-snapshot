@@ -4,6 +4,7 @@ go_library(
     name = "repo",
     srcs = [
         "commit.go",
+        "git_repo.go",
         "repo.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/repo",

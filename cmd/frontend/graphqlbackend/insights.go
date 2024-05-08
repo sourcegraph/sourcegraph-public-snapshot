@@ -93,6 +93,7 @@ type InsightsDataPointResolver interface {
 	DateTime() gqlutil.DateTime
 	Value() float64
 	DiffQuery() (*string, error)
+	PointInTimeQuery() (*string, error)
 }
 
 type InsightViewDebugResolver interface {

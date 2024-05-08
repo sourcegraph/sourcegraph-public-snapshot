@@ -282,3 +282,4 @@ If you want to learn more about observability:
 ## Other resources
 
 - [Life of a ping](life-of-a-ping.md)
+- [Row level security (discontinued)](row_level_security.md)

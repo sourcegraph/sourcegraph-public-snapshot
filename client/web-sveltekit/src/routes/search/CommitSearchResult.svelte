@@ -40,7 +40,7 @@
     import Timestamp from '$lib/Timestamp.svelte'
 
     import RepoRev from './RepoRev.svelte'
-    import RepoStars from './RepoStars.svelte'
+    import RepoStars from '$lib/repo/RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
 
     export let result: CommitMatch

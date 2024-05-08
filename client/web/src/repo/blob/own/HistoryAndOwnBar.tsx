@@ -8,6 +8,7 @@ import { logger, pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, Button, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import type { FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables } from '../../../graphql-operations'
@@ -18,12 +19,20 @@ import { FETCH_OWNERS_AND_HISTORY } from './grapqlQueries'
 
 import styles from './HistoryAndOwnBar.module.scss'
 
-export const HistoryAndOwnBar: React.FunctionComponent<{
+interface Props extends TelemetryV2Props {
     repoID: string
     revision?: string
     filePath: string
     enableOwnershipPanel: boolean
-}> = ({ repoID, revision, filePath, enableOwnershipPanel }) => {
+}
+
+export const HistoryAndOwnBar: React.FunctionComponent<Props> = ({
+    repoID,
+    revision,
+    filePath,
+    enableOwnershipPanel,
+    telemetryRecorder,
+}) => {
     const navigate = useNavigate()
 
     const openOwnershipPanel = useCallback(() => {
@@ -87,6 +96,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                         extraCompact={true}
                         hideExpandCommitMessageBody={true}
                         className={styles.history}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 </div>
             )}

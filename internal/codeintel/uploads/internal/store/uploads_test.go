@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"fmt"
-	"math"
 	"sort"
 	"strings"
 	"testing"
@@ -14,6 +13,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -27,7 +27,7 @@ import (
 func TestGetUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 	ctx := context.Background()
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -207,7 +207,7 @@ func TestGetUploads(t *testing.T) {
 			runTest(testCase, 0, 0)
 		} else {
 			for lo := range n {
-				if numErrors := runTest(testCase, lo, int(math.Min(float64(lo)+3, float64(n)))); numErrors > 0 {
+				if numErrors := runTest(testCase, lo, min(lo+3, n)); numErrors > 0 {
 					break
 				}
 			}
@@ -246,7 +246,7 @@ func TestGetUploadByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// Upload does not exist initially
 	if _, exists, err := store.GetUploadByID(ctx, 1); err != nil {
@@ -314,7 +314,7 @@ func TestGetUploadByID(t *testing.T) {
 func TestGetUploadByIDDeleted(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// Upload does not exist initially
 	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
@@ -356,7 +356,7 @@ func TestGetUploadByIDDeleted(t *testing.T) {
 func TestGetCompletedUploadsByIDs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// Dumps do not exist initially
 	if uploads, err := store.GetCompletedUploadsByIDs(context.Background(), []int{1, 2}); err != nil {
@@ -428,7 +428,7 @@ func TestGetUploadsByIDs(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db,
 		shared.Upload{ID: 1},
@@ -487,7 +487,7 @@ func TestGetUploadsByIDs(t *testing.T) {
 func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db,
 		shared.Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},
@@ -497,29 +497,29 @@ func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 		shared.Upload{ID: 5, Commit: makeCommit(2), Root: "sub5/"},
 	)
 
-	insertNearestUploads(t, db, 50, map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {
+	insertNearestUploads(t, db, 50, map[api.CommitID][]commitgraph.UploadMeta{
+		api.CommitID(makeCommit(1)): {
 			{UploadID: 1, Distance: 1},
 			{UploadID: 2, Distance: 2},
 			{UploadID: 3, Distance: 3},
 			{UploadID: 4, Distance: 2},
 			{UploadID: 5, Distance: 1},
 		},
-		makeCommit(2): {
+		api.CommitID(makeCommit(2)): {
 			{UploadID: 1, Distance: 0},
 			{UploadID: 2, Distance: 1},
 			{UploadID: 3, Distance: 2},
 			{UploadID: 4, Distance: 1},
 			{UploadID: 5, Distance: 0},
 		},
-		makeCommit(3): {
+		api.CommitID(makeCommit(3)): {
 			{UploadID: 1, Distance: 1},
 			{UploadID: 2, Distance: 0},
 			{UploadID: 3, Distance: 1},
 			{UploadID: 4, Distance: 0},
 			{UploadID: 5, Distance: 1},
 		},
-		makeCommit(4): {
+		api.CommitID(makeCommit(4)): {
 			{UploadID: 1, Distance: 2},
 			{UploadID: 2, Distance: 1},
 			{UploadID: 3, Distance: 0},
@@ -614,7 +614,7 @@ func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 func TestDefinitionDumps(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	moniker1 := precise.QualifiedMonikerData{
 		MonikerData: precise.MonikerData{
@@ -760,7 +760,7 @@ func TestUploadAuditLogs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db, shared.Upload{ID: 1})
 	updateUploads(t, db, shared.Upload{ID: 1, State: "deleting"})
@@ -793,7 +793,7 @@ func transitionForColumn(t *testing.T, key string, transitions []map[string]*str
 func TestDeleteUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(time.Minute * 1)
@@ -842,7 +842,7 @@ func TestDeleteUploads(t *testing.T) {
 func TestDeleteUploadsWithIndexerKey(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// note: queued so we delete, not go to deleting state first (makes assertion simpler)
 	insertUploads(t, db, shared.Upload{ID: 1, State: "queued", Indexer: "sourcegraph/scip-go@sha256:123456"})
@@ -883,7 +883,7 @@ func TestDeleteUploadsWithIndexerKey(t *testing.T) {
 func TestDeleteUploadByID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db,
 		shared.Upload{ID: 1, RepositoryID: 50},
@@ -921,7 +921,7 @@ func TestDeleteUploadByID(t *testing.T) {
 func TestDeleteUploadByIDMissingRow(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error deleting upload: %s", err)
@@ -933,7 +933,7 @@ func TestDeleteUploadByIDMissingRow(t *testing.T) {
 func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db,
 		shared.Upload{ID: 1, RepositoryID: 50, State: "uploading"},
@@ -971,7 +971,7 @@ func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 func TestReindexUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db, shared.Upload{ID: 1, State: "completed"})
 	insertUploads(t, db, shared.Upload{ID: 2, State: "errored"})
@@ -997,7 +997,7 @@ func TestReindexUploads(t *testing.T) {
 func TestReindexUploadsWithIndexerKey(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db, shared.Upload{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
 	insertUploads(t, db, shared.Upload{ID: 2, Indexer: "sourcegraph/scip-go"})
@@ -1030,7 +1030,7 @@ func TestReindexUploadsWithIndexerKey(t *testing.T) {
 func TestReindexUploadByID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db, shared.Upload{ID: 1, State: "completed"})
 	insertUploads(t, db, shared.Upload{ID: 2, State: "errored"})

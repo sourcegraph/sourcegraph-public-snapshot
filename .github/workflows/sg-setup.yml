@@ -12,8 +12,8 @@ jobs:
         # See https://github.com/actions/virtual-environments#available-environments for
         # available environments.
         os:
-        - macos-12
-        - ubuntu-20.04
+        - macos-14
+        - ubuntu-22.04
       fail-fast: false
 
     runs-on: ${{ matrix.os }}

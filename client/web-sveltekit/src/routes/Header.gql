@@ -1,3 +1,0 @@
-fragment Header_User on User {
-    ...UserMenu_User
-}

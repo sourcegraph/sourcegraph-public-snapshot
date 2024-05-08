@@ -9,18 +9,18 @@
 <script lang="ts">
     import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
+    import CodeExcerpt from '$lib/CodeExcerpt.svelte'
     import { pluralize, SourcegraphURL } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
+    import RepoStars from '$lib/repo/RepoStars.svelte'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
-    import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
     import { rankContentMatch } from '$lib/search/results'
     import { getFileMatchUrl, type ContentMatch, rankByLine, rankPassthrough } from '$lib/shared'
     import { settings } from '$lib/stores'
 
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
     import PreviewButton from './PreviewButton.svelte'
-    import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
     import { getSearchResultsContext } from './searchResultsContext'
 
@@ -145,19 +145,21 @@
         }
 
         &:hover {
-            background-color: var(--subtle-bg-2);
+            background-color: var(--color-bg-2);
+            color: var(--text-title);
         }
     }
 
     .code {
         border-bottom: 1px solid var(--border-color);
+        background-color: var(--code-bg);
 
         &:last-child {
             border-bottom: none;
         }
 
         &:hover {
-            background-color: var(--subtle-bg-2);
+            background-color: var(--color-bg-2);
         }
 
         a {

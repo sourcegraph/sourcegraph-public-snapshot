@@ -31,11 +31,8 @@ func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Paramet
 		return nil, nil
 	}
 
-	patterns := []string{}
-	parameters := []query.Parameter{
-		// Only search file content
-		{Field: query.FieldType, Value: "file"},
-	}
+	var patterns []string
+	var parameters []query.Parameter
 
 	switch operator.Kind {
 	case query.And:
@@ -49,7 +46,7 @@ func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Paramet
 				if op.Field == query.FieldContent {
 					// Split any content field on white space into a set of patterns
 					patterns = append(patterns, strings.Fields(op.Value)...)
-				} else if op.Field != query.FieldCase && op.Field != query.FieldType {
+				} else if op.Field != query.FieldCase {
 					parameters = append(parameters, op)
 				}
 			case query.Pattern:
@@ -84,17 +81,16 @@ func transformPatterns(patterns []string) []string {
 	for _, pattern := range patterns {
 		pattern = strings.ToLower(pattern)
 		pattern = removePunctuation(pattern)
-		if len(pattern) < 3 || isCommonTerm(pattern) {
-			continue
+
+		terms := tokenize(pattern)
+		for _, term := range terms {
+			if len(term) < 3 || isCommonTerm(term) {
+				continue
+			}
+
+			term = stemTerm(term)
+			add(term)
 		}
-
-		pattern = stemTerm(pattern)
-		add(pattern)
-	}
-
-	// To maintain decent latency, limit the number of patterns we search.
-	if len(transformedPatterns) > maxTransformedPatterns {
-		transformedPatterns = transformedPatterns[:maxTransformedPatterns]
 	}
 
 	return transformedPatterns
@@ -113,6 +109,12 @@ func queryStringToKeywordQuery(queryString string) (*keywordQuery, error) {
 	patterns, parameters := nodeToPatternsAndParameters(rawParseTree[0])
 
 	transformedPatterns := transformPatterns(patterns)
+
+	// To maintain decent latency, limit the number of patterns we search.
+	if len(transformedPatterns) > maxTransformedPatterns {
+		transformedPatterns = transformedPatterns[:maxTransformedPatterns]
+	}
+
 	var nodes []query.Node
 	for _, p := range parameters {
 		nodes = append(nodes, p)

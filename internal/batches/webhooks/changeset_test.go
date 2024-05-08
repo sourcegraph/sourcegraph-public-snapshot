@@ -13,11 +13,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
@@ -37,7 +37,7 @@ func TestMarshalChangeset(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, true).ID
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 
 	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test", userID, 0)
 
@@ -47,10 +47,10 @@ func TestMarshalChangeset(t *testing.T) {
 	repos, _ := bt.CreateTestRepos(t, ctx, db, 3)
 
 	repoOne := repos[0]
-	repoOneID := gql.MarshalRepositoryID(repoOne.ID)
+	repoOneID := relay.MarshalID("Repository", repoOne.ID)
 
 	repoTwo := repos[1]
-	repoTwoID := gql.MarshalRepositoryID(repoTwo.ID)
+	repoTwoID := relay.MarshalID("Repository", repoTwo.ID)
 
 	uc := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:               repoOne.ID,
@@ -113,7 +113,7 @@ func TestMarshalChangeset(t *testing.T) {
 			want: &changeset{
 				ID:                 mucID,
 				ExternalID:         uc.ExternalID,
-				RepositoryID:       gql.MarshalRepositoryID(uc.RepoID),
+				RepositoryID:       relay.MarshalID("Repository", uc.RepoID),
 				CreatedAt:          now,
 				UpdatedAt:          now,
 				BatchChangeIDs:     []graphql.ID{mbID},
@@ -147,7 +147,7 @@ func TestMarshalChangeset(t *testing.T) {
 			want: &changeset{
 				ID:                 micID,
 				ExternalID:         uc.ExternalID,
-				RepositoryID:       gql.MarshalRepositoryID(ic.RepoID),
+				RepositoryID:       relay.MarshalID("Repository", ic.RepoID),
 				CreatedAt:          now,
 				UpdatedAt:          now,
 				BatchChangeIDs:     []graphql.ID{mbID},

@@ -63,9 +63,9 @@ func (info *Info) Plan() Plan {
 	return PlanFromTags(info.Tags)
 }
 
-// hasUnknownPlan returns an error if the plan is presented in the license tags
+// HasUnknownPlan returns an error if the plan is presented in the license tags
 // but unrecognizable. It returns nil if there is no tags found for plans.
-func (info *Info) hasUnknownPlan() error {
+func (info *Info) HasUnknownPlan() error {
 	for _, tag := range info.Tags {
 		// A tag that begins with "plan:" indicates the license's plan.
 		if !strings.HasPrefix(tag, planTagPrefix) {

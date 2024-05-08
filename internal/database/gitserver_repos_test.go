@@ -587,43 +587,6 @@ func TestSetCloneStatus(t *testing.T) {
 	}
 }
 
-func TestCloningProgress(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
-	ctx := context.Background()
-
-	t.Run("Default", func(t *testing.T) {
-		repo, _ := createTestRepo(ctx, t, db, "github.com/sourcegraph/defaultcloningprogress")
-		gotRepo, err := db.GitserverRepos().GetByName(ctx, repo.Name)
-		if err != nil {
-			t.Fatalf("GetByName: %s", err)
-		}
-		if got := gotRepo.CloningProgress; got != "" {
-			t.Errorf("GetByName.CloningProgress, got %q, want empty string", got)
-		}
-	})
-
-	t.Run("Set", func(t *testing.T) {
-		repo, gitserverRepo := createTestRepo(ctx, t, db, "github.com/sourcegraph/updatedcloningprogress")
-
-		gitserverRepo.CloningProgress = "Receiving objects: 97% (97/100)"
-		if err := db.GitserverRepos().SetCloningProgress(ctx, repo.Name, gitserverRepo.CloningProgress); err != nil {
-			t.Fatalf("SetCloningProgress: %s", err)
-		}
-		gotRepo, err := db.GitserverRepos().GetByName(ctx, repo.Name)
-		if err != nil {
-			t.Fatalf("GetByName: %s", err)
-		}
-		if diff := cmp.Diff(gitserverRepo, gotRepo, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
-			t.Errorf("SetCloningProgress->GetByName -want+got: %s", diff)
-		}
-	})
-}
-
 func TestLogCorruption(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

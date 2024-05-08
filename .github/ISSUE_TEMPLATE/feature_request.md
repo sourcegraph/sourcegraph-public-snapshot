@@ -1,24 +1,12 @@
 ---
-name: Feature request
-about: Suggest an idea for Sourcegraph
+name: '❌ Do not submit feature requests here'
+about: 'We do *not* accept feature requests through GitHub issues, please submit feature requests directly through your account teams or support engineering.'
 title: ''
-labels: ''
+labels: 'customer-feature-request'
 assignees: ''
 
 ---
 
-#### Feature request description
+# We do not accept feature requests on GitHub
 
-<!-- A description of what feature you would like. -->
-
-#### Is your feature request related to a problem? If so, please describe.
-
-<!-- A description of what the problem is. Ex. I'm always frustrated when [...] -->
-
-#### Describe alternatives you've considered.
-
-<!-- A description of any alternative solutions or features you've considered. -->
-
-#### Additional context
-
-<!-- Add any other context or other information you'd like to provide. -->
+Please reach out to account teams or support engineering.

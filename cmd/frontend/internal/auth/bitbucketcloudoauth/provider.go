@@ -68,6 +68,7 @@ func parseProvider(logger log.Logger, p *schema.BitbucketCloudAuthProvider, db d
 			return bitbucket.CallbackHandler(
 				&oauth2Cfg,
 				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{
+					logger:      logger.Scoped("sessionIssuerHelper"),
 					baseURL:     parsedURL,
 					db:          db,
 					clientKey:   p.ClientKey,

@@ -69,6 +69,7 @@ func (r *Resolver) SetPermissions(ctx context.Context, args gql.SetPermissionsAr
 	}
 
 	eventArgs := &rolePermissionEventArgs{RoleID: roleID, PermissionIDs: opts.Permissions}
+	r.logSecurityEvent(ctx, database.SecurityEventNameRBACPermissionSet, eventArgs)
 	r.logBackendEvent(ctx, "RolePermissionAssignment", eventArgs)
 	return &gql.EmptyResponse{}, nil
 }
@@ -97,6 +98,7 @@ func (r *Resolver) DeleteRole(ctx context.Context, args *gql.DeleteRoleArgs) (_ 
 
 	eventArg := &roleEventArg{RoleID: roleID}
 	r.logBackendEvent(ctx, "RoleDeleted", eventArg)
+	r.logSecurityEvent(ctx, database.SecurityEventNameRBACRoleRemoved, eventArg)
 	return &gql.EmptyResponse{}, nil
 }
 
@@ -138,6 +140,7 @@ func (r *Resolver) CreateRole(ctx context.Context, args *gql.CreateRoleArgs) (gq
 	}
 
 	r.logBackendEvent(ctx, "RoleCreated", eventArg)
+	r.logSecurityEvent(ctx, database.SecurityEventNameRBACRoleAdded, eventArg)
 	return gql.NewRoleResolver(r.db, role), nil
 }
 
@@ -169,6 +172,7 @@ func (r *Resolver) SetRoles(ctx context.Context, args *gql.SetRolesArgs) (*gql.E
 
 	eventArgs := &setRolesEventArgs{RoleIDs: opts.Roles, UserID: userID}
 	r.logBackendEvent(ctx, "UserRoleAssignment", eventArgs)
+	r.logSecurityEvent(ctx, database.SecurityEventNameRBACRoleSet, eventArgs)
 	return &gql.EmptyResponse{}, nil
 }
 
@@ -195,5 +199,12 @@ func (r *Resolver) logBackendEvent(ctx context.Context, eventName string, args a
 		); err != nil {
 			r.logger.Warn(fmt.Sprintf("Could not log event: %s", eventName), log.Error(err))
 		}
+	}
+}
+
+func (r *Resolver) logSecurityEvent(ctx context.Context, secEvent database.SecurityEventName, args any) {
+	if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, secEvent, "",
+		uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+		r.logger.Warn("Error logging security event", log.Error(err))
 	}
 }

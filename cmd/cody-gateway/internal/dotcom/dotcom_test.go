@@ -17,7 +17,7 @@ func TestOpInQuery(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := NewClient(srv.URL, "test-token")
+	c := NewClient(srv.URL, "test-token", "random", "dev")
 	// We don't care about the actual result of the call
 	_, _ = CheckAccessToken(context.Background(), c, "slk_foobar")
 	// But we do care that we did get through to the handler

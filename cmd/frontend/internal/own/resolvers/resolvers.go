@@ -110,12 +110,6 @@ func (o *ownershipReasonResolver) ToAssignedOwner() (res graphqlbackend.Assigned
 	return
 }
 
-func (o *ownershipReasonResolver) makesAnOwner() bool {
-	_, makesAnOwner := o.resolver.(*codeownersFileEntryResolver)
-	_, makesAnAssignedOwner := o.resolver.(*assignedOwner)
-	return makesAnOwner || makesAnAssignedOwner
-}
-
 func (r *ownResolver) GitBlobOwnership(
 	ctx context.Context,
 	blob *graphqlbackend.GitTreeEntryResolver,

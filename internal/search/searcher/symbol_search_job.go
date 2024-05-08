@@ -98,7 +98,7 @@ func searchInRepo(ctx context.Context, gitserverClient gitserver.Client, repoRev
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := gitserverClient.ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	commitID, err := gitserverClient.ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{EnsureRevision: false})
 	if err != nil {
 		return nil, false, err
 	}

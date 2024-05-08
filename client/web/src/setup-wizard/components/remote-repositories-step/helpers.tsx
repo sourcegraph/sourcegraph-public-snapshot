@@ -4,6 +4,8 @@ import { mdiAws, mdiBitbucket, mdiGit, mdiGithub, mdiGitlab, mdiMicrosoftAzure }
 import type { MdiReactIconComponentType } from 'mdi-react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon, type IconProps } from '@sourcegraph/wildcard'
 
 import { GerritIcon } from '../../../components/externalServices/GerritIcon'
@@ -133,9 +135,17 @@ export const getNextButtonLabel = (data?: GetCodeHostsResult): string => {
     return 'Next'
 }
 
-export const getNextButtonLogEvent = (data?: GetCodeHostsResult): string | null => {
+interface logEventOnNextButtonProps extends TelemetryProps, TelemetryV2Props {
+    data?: GetCodeHostsResult
+}
+
+export const logEventOnNextButton = ({
+    telemetryService,
+    telemetryRecorder,
+    data,
+}: logEventOnNextButtonProps): void => {
     if (!data) {
-        return null
+        return
     }
 
     const otherKindExternalServices = data.externalServices.nodes.filter(
@@ -147,8 +157,7 @@ export const getNextButtonLogEvent = (data?: GetCodeHostsResult): string | null 
     )
 
     if (otherKindExternalServices.length > 0 && nonOtherExternalServices.length === 0) {
-        return 'SetupWizardSkippedAddRemoteCode'
+        telemetryService.log('SetupWizardSkippedAddRemoteCode')
+        telemetryRecorder.recordEvent('setupWizard.addRemoteCode', 'skip')
     }
-
-    return null
 }

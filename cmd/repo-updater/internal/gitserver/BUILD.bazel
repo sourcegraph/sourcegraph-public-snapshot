@@ -1,0 +1,28 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gitserver",
+    srcs = [
+        "mocks_temp.go",
+        "repositoryservice.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver",
+    visibility = ["//cmd/repo-updater:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/gitserver/connection",
+        "//internal/gitserver/v1:gitserver",
+    ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_temp.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [":gitserver"],
+)

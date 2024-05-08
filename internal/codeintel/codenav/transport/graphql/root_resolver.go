@@ -70,16 +70,11 @@ func NewRootResolver(
 
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
 func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.GitBlobLSIFDataArgs) (_ resolverstubs.GitBlobLSIFDataResolver, err error) {
-	ctx, _, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repoID", int(args.Repo.ID)),
-		args.Commit.Attr(),
-		attribute.String("path", args.Path),
-		attribute.Bool("exactPath", args.ExactPath),
-		attribute.String("toolName", args.ToolName),
-	}})
+	opts := args.Options()
+	ctx, _, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, int(args.Repo.ID), string(args.Commit), args.Path, args.ExactPath, args.ToolName)
+	uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, opts)
 	if err != nil || len(uploads) == 0 {
 		return nil, err
 	}

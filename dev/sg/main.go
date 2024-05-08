@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/log"
@@ -15,7 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/ci"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/release"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -48,11 +51,13 @@ func main() {
 	}
 }
 
+// Values to be stamped at build time.
 var (
-	BuildCommit = "dev"
+	BuildCommit = "dev"     // git commit hash of build
+	ReleaseName = "unknown" // human-friendlier name for the release, e.g. '2024-04-24-16-44-3623ecb2'
+)
 
-	NoDevPrivateCheck = false
-
+var (
 	// configFile is the path to use with sgconf.Get - it must not be used before flag
 	// initialization.
 	configFile string
@@ -86,7 +91,7 @@ const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/n
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
 	Description: "Learn more: https://sourcegraph.com/docs/dev/background-information/sg",
-	Version:     BuildCommit,
+	Version:     ReleaseName, // use friendly name as version
 	Compiled:    time.Now(),
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
@@ -145,7 +150,7 @@ var sg = &cli.App{
 			Usage:       "disable checking for dev-private - only useful for automation or ci",
 			EnvVars:     []string{"SG_NO_DEV_PRIVATE"},
 			Value:       false,
-			Destination: &NoDevPrivateCheck,
+			Destination: &check.NoDevPrivateCheck,
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {
@@ -181,7 +186,7 @@ var sg = &cli.App{
 			}
 
 			// Ensure analytics are persisted
-			interrupt.Register(func() { analytics.Persist(cmd.Context) })
+			interrupt.Register(func() { _ = analytics.Persist(cmd.Context) })
 
 			// Add analytics to each command
 			addAnalyticsHooks([]string{"sg"}, cmd.App.Commands)
@@ -254,7 +259,7 @@ var sg = &cli.App{
 			// Wait for background jobs to finish up, iff not in autocomplete mode
 			background.Wait(cmd.Context, std.Out)
 			// Persist analytics
-			analytics.Persist(cmd.Context)
+			_ = analytics.Persist(cmd.Context)
 		}
 
 		return nil
@@ -283,6 +288,7 @@ var sg = &cli.App{
 		setupCommand,
 		srcCommand,
 		srcInstanceCommand,
+		imagesCommand,
 
 		// Company
 		teammateCommand,
@@ -351,4 +357,68 @@ func getConfig() (*sgconf.Config, error) {
 		return sgconf.GetWithoutOverwrites(configFile)
 	}
 	return sgconf.Get(configFile, configOverwriteFile)
+}
+
+// watchConfig starts a file watcher for the sg configuration files. It returns a channel
+// that will receive the updated configuration whenever the file changes to a valid configuration,
+// distinct from the last parsed value (invalid or unparseable updates will be dropped). The
+// initial configuration is read and sent on the channel before the function returns so it
+// can be read immediately.
+func watchConfig(ctx context.Context) (<-chan *sgconf.Config, error) {
+	conf, err := sgconf.GetUnbuffered(configFile, configOverwriteFile, disableOverwrite)
+	if err != nil {
+		return nil, err
+	}
+	// Create a hash to compare future reads against
+	hash, err := hashstructure.Hash(conf, hashstructure.FormatV2, nil)
+	if err != nil {
+		return nil, err
+	}
+	output := make(chan *sgconf.Config, 1)
+	output <- conf
+
+	// start file watcher on configuration files
+	paths := []string{configFile}
+	if !disableOverwrite && exists(configOverwriteFile) {
+		paths = append(paths, configOverwriteFile)
+	}
+	updates, err := run.WatchPaths(ctx, paths)
+	if err != nil {
+		return nil, err
+	}
+
+	// watch for configuration updates
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				close(output)
+				return
+			case <-updates:
+				conf, err = sgconf.GetUnbuffered(configFile, configOverwriteFile, disableOverwrite)
+				if err != nil {
+					std.Out.WriteWarningf("Failed to reload configuration: %s", err)
+					continue
+				}
+				newHash, err := hashstructure.Hash(conf, hashstructure.FormatV2, nil)
+				if err != nil {
+					std.Out.WriteWarningf("Failed to hash configuration: %s", err)
+					continue
+				}
+
+				// if this is a true update, send it on the channel and remember its hash
+				if newHash != hash {
+					hash = newHash
+					output <- conf
+				}
+			}
+		}
+	}()
+
+	return output, err
+}
+
+func exists(file string) bool {
+	_, err := os.Stat(file)
+	return !os.IsNotExist(err)
 }

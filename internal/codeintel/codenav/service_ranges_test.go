@@ -1,12 +1,13 @@
 package codenav
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
-	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
@@ -38,20 +39,16 @@ func TestRanges(t *testing.T) {
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
-	mockGitserverClient.DiffPathFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*godiff.Hunk, error) {
-		if path == "sub3/changed.go" {
-			fileDiff, err := godiff.ParseFileDiff([]byte(rangesDiff))
-			if err != nil {
-				return nil, err
-			}
-			return fileDiff.Hunks, nil
+	mockGitserverClient.DiffFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, opt gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
+		if len(opt.Paths) > 0 && opt.Paths[0] == "sub3/changed.go" {
+			return gitserver.NewDiffFileIterator(io.NopCloser(strings.NewReader(rangesDiff))), nil
 		}
-		return nil, nil
+		return gitserver.NewDiffFileIterator(io.NopCloser(bytes.NewReader([]byte{}))), nil
 	})
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}

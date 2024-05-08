@@ -1,5 +1,5 @@
 {
-  "checksum": "4ca31b1ef42ddb212ed96519749eaab3a549d07c9d3abf84dd3e36401f8733d0",
+  "checksum": "086e602854ce0a57688fe32a92865811f1faabff847fbfff558769af2f1f7573",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -13184,6 +13184,10 @@
               "target": "tree_sitter_cpp"
             },
             {
+              "id": "tree-sitter-dart 0.0.1",
+              "target": "tree_sitter_dart"
+            },
+            {
               "id": "tree-sitter-go 0.20.0",
               "target": "tree_sitter_go"
             },
@@ -13444,6 +13448,74 @@
         },
         "edition": "2021",
         "version": "0.20.3"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.83",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT"
+    },
+    "tree-sitter-dart 0.0.1": {
+      "name": "tree-sitter-dart",
+      "version": "0.0.1",
+      "repository": {
+        "Git": {
+          "remote": "https://github.com/UserNobody14/tree-sitter-dart",
+          "commitish": {
+            "Rev": "923fbe0d3e62340ea78422551166ce946bc05222"
+          }
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_dart",
+            "crate_root": "bindings/rust/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "bindings/rust/build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_dart",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.10",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-dart 0.0.1",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.0.1"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -17697,6 +17769,7 @@
     "tree-sitter-c 0.20.6",
     "tree-sitter-c-sharp 0.20.0",
     "tree-sitter-cpp 0.20.3",
+    "tree-sitter-dart 0.0.1",
     "tree-sitter-go 0.20.0",
     "tree-sitter-highlight 0.20.1",
     "tree-sitter-java 0.20.2",

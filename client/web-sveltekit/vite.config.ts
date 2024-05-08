@@ -37,6 +37,7 @@ export default defineConfig(({ mode }) => {
                         // (without it scss @import paths are always relative to the importing file)
                         join(__dirname, '..'),
                     ],
+                    additionalData: `@use '$lib/breakpoints.scss';`,
                 },
             },
             modules: {
@@ -51,7 +52,7 @@ export default defineConfig(({ mode }) => {
             proxy: {
                 // Proxy requests to specific endpoints to a real Sourcegraph
                 // instance.
-                '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights)': {
+                '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights)|(/-/raw/)': {
                     target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.com',
                     changeOrigin: true,
                     secure: false,

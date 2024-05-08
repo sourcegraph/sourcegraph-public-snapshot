@@ -1,71 +1,64 @@
-# MSP Testbed infrastructure operations
-
-<!--
-Generated from: unknown revision of https://github.com/sourcegraph/managed-services
--->
+> [!NOTE]
+> Generated from: unknown revision of [sourcegraph/managed-services](https://github.com/sourcegraph/managed-services)
 
 This document describes operational guidance for MSP Testbed infrastructure.
-This service is operated on the [Managed Services Platform (MSP)](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/).
+This service is operated on the [Managed Services Platform (MSP)](https://sourcegraph.notion.site/712a0389f54c4d3a90d069aa2d979a59).
 
 > [!IMPORTANT]
 > If this is your first time here, you must follow the [sourcegraph/managed-services 'Tooling setup' guide](https://github.com/sourcegraph/managed-services/blob/main/README.md) as well to clone the service definitions repository and set up the prerequisite tooling.
 
-If you need assistance with MSP infrastructure, reach out to the [Core Services](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/) team in #discuss-core-services.
+If you need assistance with MSP infrastructure, reach out to the [Core Services](https://sourcegraph.notion.site/ed8af5ecf15545b292816ebba261a93c) team in #discuss-core-services.
 
-## Service overview
+# Service overview
 
-|   PROPERTY   |                                                             DETAILS                                                              |
-|--------------|----------------------------------------------------------------------------------------------------------------------------------|
-| Service ID   | `msp-testbed` ([specification](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml))     |
-| Owners       |                                                                                                                                  |
-| Service kind | Cloud Run service                                                                                                                |
-| Environments | [test](#test)                                                                                                                    |
-| Docker image | `us.gcr.io/sourcegraph-dev/msp-example`                                                                                          |
-| Source code  | [`github.com/sourcegraph/sourcegraph` - `cmd/msp-example`](https://github.com/sourcegraph/sourcegraph/tree/HEAD/cmd/msp-example) |
-
-<!--
-Automatically generated from the service README: https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/README.md
--->
+- Service ID: `msp-testbed` ([specification](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml))
+- Owners: 
+- Service kind: Cloud Run service
+- Environments:
+  - [test](#test)
+- Docker image: `us.gcr.io/sourcegraph-dev/msp-example`
+- Source code: [`github.com/sourcegraph/sourcegraph` - `cmd/msp-example`](https://github.com/sourcegraph/sourcegraph/tree/HEAD/cmd/msp-example)
 
 This service does X, Y, Z. Refer to [here](sourcegraph.com) for more information.
 
-### Additional operations
+## Additional operations
 
 Some additional operations!
 
-## Environments
+*Automatically generated from the service README: https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/README.md*
 
-### test
+# Environments
 
-|      PROPERTY       |                                                    DETAILS                                                    |
-|---------------------|---------------------------------------------------------------------------------------------------------------|
-| Project ID          | [`msp-testbed-test-77589aae45d0`](https://console.cloud.google.com/run?project=msp-testbed-test-77589aae45d0) |
-| Category            | **test**                                                                                                      |
-| Deployment type     | `manual`                                                                                                      |
-| Resources           |                                                                                                               |
-| Slack notifications | [#alerts-msp-testbed-test](https://sourcegraph.slack.com/archives/alerts-msp-testbed-test)                    |
-| Alerts              | [GCP monitoring](https://console.cloud.google.com/monitoring/alerting?project=msp-testbed-test-77589aae45d0)  |
-| Errors              | [Sentry `msp-testbed-test`](https://sourcegraph.sentry.io/projects/msp-testbed-test/)                         |
+## test
+
+- Project ID: [`msp-testbed-test-77589aae45d0`](https://console.cloud.google.com/run?project=msp-testbed-test-77589aae45d0)
+- Category: **test**
+- Deployment type: `manual`
+- Resources: 
+  - none
+- Slack notifications: [#alerts-msp-testbed-test](https://sourcegraph.slack.com/archives/alerts-msp-testbed-test)
+- Alert policies: 
+  - [GCP Monitoring alert policies list](https://console.cloud.google.com/monitoring/alerting/policies?project=msp-testbed-test-77589aae45d0)
+  - [Dashboard](https://console.cloud.google.com/monitoring/dashboards?pageState=%28%22dashboards%22%3A%28%22t%22%3A%22All%22%29%2C%22dashboardList%22%3A%28%22f%22%3A%22%255B%257B_22k_22_3A_22Type_22_2C_22t_22_3A10_2C_22v_22_3A_22_5C_22Custom_5C_22_22_2C_22s_22_3Atrue_2C_22i_22_3A_22category_22%257D%255D%22%29%29&project=msp-testbed-test-77589aae45d0)
+- Errors: [Sentry `msp-testbed-test`](https://sourcegraph.sentry.io/projects/msp-testbed-test/)
+
+### test environment Entitle requests
 
 MSP infrastructure access needs to be requested using Entitle for time-bound privileges. Test environments may have less stringent requirements.
 
-|          ACCESS          |                                                                                                                                                                        ENTITLE REQUEST TEMPLATE                                                                                                                                                                        |
-|--------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| GCP project read access  | [Read-only Entitle request for the 'Engineering Projects' folder](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjIxNjAwIiwianVzdGlmaWNhdGlvbiI6IkVOVEVSIEpVU1RJRklDQVRJT04gSEVSRSIsInJvbGVJZHMiOlt7ImlkIjoiZGY3NWJkNWMtYmUxOC00MjhmLWEzNjYtYzlhYTU1MGIwODIzIiwidGhyb3VnaCI6ImRmNzViZDVjLWJlMTgtNDI4Zi1hMzY2LWM5YWE1NTBiMDgyMyIsInR5cGUiOiJyb2xlIn1dfQ%3D%3D)    |
-| GCP project write access | [Write access Entitle request for the 'Engineering Projects' folder](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjIxNjAwIiwianVzdGlmaWNhdGlvbiI6IkVOVEVSIEpVU1RJRklDQVRJT04gSEVSRSIsInJvbGVJZHMiOlt7ImlkIjoiYzJkMTUwOGEtMGQ0ZS00MjA1LWFiZWUtOGY1ODg1ZGY3ZDE4IiwidGhyb3VnaCI6ImMyZDE1MDhhLTBkNGUtNDIwNS1hYmVlLThmNTg4NWRmN2QxOCIsInR5cGUiOiJyb2xlIn1dfQ%3D%3D) |
+- GCP project read access: [Read-only Entitle request for the 'Engineering Projects' folder](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjIxNjAwIiwianVzdGlmaWNhdGlvbiI6IkVOVEVSIEpVU1RJRklDQVRJT04gSEVSRSIsInJvbGVJZHMiOlt7ImlkIjoiZGY3NWJkNWMtYmUxOC00MjhmLWEzNjYtYzlhYTU1MGIwODIzIiwidGhyb3VnaCI6ImRmNzViZDVjLWJlMTgtNDI4Zi1hMzY2LWM5YWE1NTBiMDgyMyIsInR5cGUiOiJyb2xlIn1dfQ%3D%3D)
+- GCP project write access: [Write access Entitle request for the 'Engineering Projects' folder](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjIxNjAwIiwianVzdGlmaWNhdGlvbiI6IkVOVEVSIEpVU1RJRklDQVRJT04gSEVSRSIsInJvbGVJZHMiOlt7ImlkIjoiYzJkMTUwOGEtMGQ0ZS00MjA1LWFiZWUtOGY1ODg1ZGY3ZDE4IiwidGhyb3VnaCI6ImMyZDE1MDhhLTBkNGUtNDIwNS1hYmVlLThmNTg4NWRmN2QxOCIsInR5cGUiOiJyb2xlIn1dfQ%3D%3D)
 
 For Terraform Cloud access, see [test Terraform Cloud](#test-terraform-cloud).
 
-#### test Cloud Run
+### test Cloud Run
 
 The MSP Testbed test service implementation is deployed on [Google Cloud Run](https://cloud.google.com/run).
 
-|    PROPERTY    |                                                                                                                                                                  DETAILS                                                                                                                                                                   |
-|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Console        | [Cloud Run service](https://console.cloud.google.com/run?project=msp-testbed-test-77589aae45d0)                                                                                                                                                                                                                                            |
-| Service logs   | [GCP logging](https://console.cloud.google.com/logs/query;query=resource.type%20%3D%20%22cloud_run_revision%22%20-logName%3D~%22logs%2Frun.googleapis.com%252Frequests%22;summaryFields=jsonPayload%252FInstrumentationScope,jsonPayload%252FBody,jsonPayload%252FAttributes%252Ferror:false:32:end?project=msp-testbed-test-77589aae45d0) |
-| Service traces | [Cloud Trace](https://console.cloud.google.com/traces/list?project=msp-testbed-test-77589aae45d0)                                                                                                                                                                                                                                          |
-| Service errors | [Sentry `msp-testbed-test`](https://sourcegraph.sentry.io/projects/msp-testbed-test/)                                                                                                                                                                                                                                                      |
+- Console: [Cloud Run service](https://console.cloud.google.com/run?project=msp-testbed-test-77589aae45d0)
+- Service logs: [GCP logging](https://console.cloud.google.com/logs/query;query=resource.type%20%3D%20%22cloud_run_revision%22%20-logName%3D~%22logs%2Frun.googleapis.com%252Frequests%22;summaryFields=jsonPayload%252FInstrumentationScope,jsonPayload%252FBody,jsonPayload%252FAttributes%252Ferror:false:32:end?project=msp-testbed-test-77589aae45d0)
+- Service traces: [Cloud Trace](https://console.cloud.google.com/traces/list?project=msp-testbed-test-77589aae45d0)
+- Service errors: [Sentry `msp-testbed-test`](https://sourcegraph.sentry.io/projects/msp-testbed-test/)
 
 You can also use `sg msp` to quickly open a link to your service logs:
 
@@ -73,7 +66,11 @@ You can also use `sg msp` to quickly open a link to your service logs:
 sg msp logs msp-testbed test
 ```
 
-#### test Terraform Cloud
+### test Architecture diagram
+
+View the [generated architecture diagram](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/diagrams/test.md) for this environment.
+
+### test Terraform Cloud
 
 This service's configuration is defined in [`sourcegraph/managed-services/services/msp-testbed/service.yaml`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml), and `sg msp generate msp-testbed test` generates the required infrastructure configuration for this environment in Terraform.
 Terraform Cloud (TFC) workspaces specific to each service then provisions the required infrastructure from this configuration.
@@ -81,9 +78,7 @@ You may want to check your service environment's TFC workspaces if a Terraform a
 
 > [!NOTE]
 > If you are looking for service logs, see the [test Cloud Run](#test-cloud-run) section instead. In general:
->
-> - check service logs ([test Cloud Run](#test-cloud-run)) if your service has gone down or is misbehaving
-> - check TFC workspaces for infrastructure provisioning or configuration issues
+> check service logs if your service has gone down or is misbehaving, and check TFC workspaces for infrastructure provisioning or configuration issues.
 
 To access this environment's Terraform Cloud workspaces, you will need to [log in to Terraform Cloud](https://app.terraform.io/app/sourcegraph) and then [request Entitle access to membership in the "Managed Services Platform Operator" TFC team](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjM2MDAiLCJqdXN0aWZpY2F0aW9uIjoiSlVTVElGSUNBVElPTiBIRVJFIiwicm9sZUlkcyI6W3siaWQiOiJiMzg3MzJjYy04OTUyLTQ2Y2QtYmIxZS1lZjI2ODUwNzIyNmIiLCJ0aHJvdWdoIjoiYjM4NzMyY2MtODk1Mi00NmNkLWJiMWUtZWYyNjg1MDcyMjZiIiwidHlwZSI6InJvbGUifV19).
 The "Managed Services Platform Operator" team has access to all MSP TFC workspaces.
@@ -97,3 +92,25 @@ The Terraform Cloud workspaces for this service environment are [grouped under t
 ```bash
 sg msp tfc view msp-testbed test
 ```
+
+# Alert Policies
+
+The following alert policies are defined for each of this service's environments. An overview dashboard is also available for each environment:
+
+- [Dashboard](https://console.cloud.google.com/monitoring/dashboards?pageState=%28%22dashboards%22%3A%28%22t%22%3A%22All%22%29%2C%22dashboardList%22%3A%28%22f%22%3A%22%255B%257B_22k_22_3A_22Type_22_2C_22t_22_3A10_2C_22v_22_3A_22_5C_22Custom_5C_22_22_2C_22s_22_3Atrue_2C_22i_22_3A_22category_22%257D%255D%22%29%29&project=msp-testbed-test-77589aae45d0) for "test" environment
+
+## High Container CPU Utilization
+
+Severity: ⚠️ `WARNING`
+
+Description:
+
+> High CPU Usage - it may be neccessary to reduce load or increase CPU allocation
+
+## High Container Memory Utilization
+
+Severity: ⚠️ `WARNING`
+
+Description:
+
+> High Memory Usage - it may be neccessary to reduce load or increase memory allocation

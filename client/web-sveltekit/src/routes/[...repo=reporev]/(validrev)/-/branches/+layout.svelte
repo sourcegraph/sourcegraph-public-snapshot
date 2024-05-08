@@ -9,39 +9,38 @@
 </script>
 
 <section>
-    <div>
-        <ul class="mb-3">
-            <li class:active={subpage === 'overview'}><a href="{data.repoURL}/-/branches">Overview</a></li>
-            <li class:active={subpage === 'all'}><a href="{data.repoURL}/-/branches/all">All branches</a></li>
-        </ul>
-        <slot />
-    </div>
+    <ul>
+        <li class:active={subpage === 'overview'}><a href="{data.repoURL}/-/branches">Overview</a></li>
+        <li class:active={subpage === 'all'}><a href="{data.repoURL}/-/branches/all">All branches</a></li>
+    </ul>
+    <slot />
 </section>
 
 <style lang="scss">
-    ul {
-        margin: 0;
-        padding: 0;
-        list-style: none;
+    section {
         display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    ul {
+        align-self: center;
+        max-width: var(--viewport-xl);
+        width: 100%;
+
+        padding: 1rem;
+        margin: 0;
+
+        display: flex;
+        gap: 1rem;
+
+        list-style: none;
 
         li {
-            margin-right: 1rem;
-
             &.active {
                 font-weight: bold;
             }
         }
-    }
-
-    section {
-        overflow: auto;
-        margin-top: 2rem;
-    }
-
-    div {
-        max-width: 54rem;
-        margin-left: auto;
-        margin-right: auto;
     }
 </style>

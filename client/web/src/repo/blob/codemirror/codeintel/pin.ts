@@ -42,7 +42,7 @@ export const pinnedRange = Facet.define<{ from: number; to: number } | null, { f
                 return [
                     // Show loading tooltip after 50ms if the hover tooltip is not yet available
                     merge(from(getHoverTooltip(state, range.from)), timer(50).pipe(map(() => loadingTooltip))).pipe(
-                        takeWhile(tooltip => tooltip !== loadingTooltip, true)
+                        takeWhile(tooltip => tooltip === loadingTooltip, true)
                     ),
                 ]
             }

@@ -18,6 +18,7 @@ go_library(
     ],
     deps = [
         "//internal/completions/tokenizer",
+        "//internal/completions/types",
         "//internal/rcache",
         "//lib/errors",
     ],
@@ -33,6 +34,7 @@ go_test(
     deps = [
         ":tokenusage",
         "//internal/completions/tokenizer",
+        "//internal/completions/types",
         "//internal/rcache",
     ],
 )

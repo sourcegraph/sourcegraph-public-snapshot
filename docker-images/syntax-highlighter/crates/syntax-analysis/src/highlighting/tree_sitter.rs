@@ -1,6 +1,7 @@
+use std::collections::HashMap;
+
 use paste::paste;
 use scip::types::{Document, Occurrence, SyntaxKind};
-use std::collections::HashMap;
 use tree_sitter_all_languages::ParserId;
 use tree_sitter_highlight::{
     Highlight, HighlightConfiguration, HighlightEvent, Highlighter as TSHighlighter,
@@ -9,7 +10,7 @@ use tree_sitter_highlight::{
 use crate::range::Range;
 
 macro_rules! include_scip_query {
-    ($lang: expr, $query: literal) => {
+    ($lang:expr, $query:literal) => {
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/queries/",
@@ -20,8 +21,9 @@ macro_rules! include_scip_query {
         ))
     };
 }
-use crate::highlighting::TreeSitterLanguageName;
 pub(crate) use include_scip_query;
+
+use crate::highlighting::TreeSitterLanguageName;
 
 #[rustfmt::skip]
 // This table serves two purposes.
@@ -65,7 +67,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("string",                  SyntaxKind::StringLiteral),
     ("string.special",          SyntaxKind::StringLiteral),
     ("string.escape",           SyntaxKind::StringLiteralEscape),
-    ("tag",                     SyntaxKind::UnspecifiedSyntaxKind),
+    ("tag",                     SyntaxKind::Tag),
     ("type",                    SyntaxKind::IdentifierType),
     ("identifier.type",         SyntaxKind::IdentifierType),
     ("type.builtin",            SyntaxKind::IdentifierBuiltinType),
@@ -143,6 +145,24 @@ macro_rules! create_configurations {
             m.insert(ParserId::Tsx, lang);
         }
 
+        {
+            let highlights = vec![
+                // We have a separate file for jsx since TypeScript inherits the base javascript highlights
+                // and if we include the query for jsx attributes it would fail since it is not in the tree-sitter
+                // grammar for TypeScript.
+                include_scip_query!("javascript", "highlights-jsx"),
+                include_scip_query!("javascript", "highlights"),
+            ];
+            let mut lang = HighlightConfiguration::new(
+                ParserId::Javascript.language(),
+                &highlights.join("\n"),
+                include_scip_query!("javascript", "injections"),
+                include_scip_query!("javascript", "locals"),
+            ).expect("parser for 'javascript' must be compiled");
+            lang.configure(&highlight_names);
+            m.insert(ParserId::Javascript, lang);
+        }
+
         m
     }}
 }
@@ -153,9 +173,12 @@ lazy_static::lazy_static! {
             (C, "c"),
             (Cpp, "cpp"),
             (C_Sharp, "c_sharp"),
+            (Dart, "dart"),
             (Go, "go"),
             (Java, "java"),
-            (Javascript, "javascript"),
+            // Skipping Javascript here as it is handled
+            // specially inside the macro implementation
+            // in order to include the jsx highlights.
             (Jsonnet, "jsonnet"),
             (Kotlin, "kotlin"),
             (Matlab, "matlab"),
@@ -402,10 +425,13 @@ mod test {
         io::Read,
     };
 
-    use super::*;
-    use crate::highlighting::FileInfo;
-    use crate::snapshot::{self, dump_document_with_config};
     use if_chain::if_chain;
+
+    use super::*;
+    use crate::{
+        highlighting::FileInfo,
+        snapshot::{self, dump_document_with_config},
+    };
 
     fn snapshot_treesitter_syntax_kinds(doc: &Document, source: &str) -> String {
         dump_document_with_config(

@@ -1,10 +1,9 @@
 import type { EditorView } from '@codemirror/view'
-import { Subject, from, of } from 'rxjs'
-import { switchMap, map, startWith, catchError } from 'rxjs/operators'
-import { get, type Readable, readable } from 'svelte/store'
+import { get } from 'svelte/store'
 
 import { goto as svelteGoto } from '$app/navigation'
 import { page } from '$app/stores'
+import { toPrettyBlobURL } from '$lib/shared'
 import {
     positionToOffset,
     type Definition,
@@ -13,8 +12,6 @@ import {
     locationToURL,
     type DocumentInfo,
 } from '$lib/web'
-
-import type { BlobPage_Blob } from '../../routes/[...repo=reporev]/(validrev)/(code)/-/blob/[...path]/page.gql'
 
 /**
  * The minimum number of milliseconds that must elapse before we handle a "Go to
@@ -94,13 +91,18 @@ export async function goToDefinition(
 
 export function openReferences(
     view: EditorView,
-    _documentInfo: DocumentInfo,
+    documentInfo: DocumentInfo,
     occurrence: Definition['occurrence']
 ): void {
-    const offset = positionToOffset(view.state.doc, occurrence.range.start)
-    if (offset) {
-        showTemporaryTooltip(view, 'Not supported yet: Find references', offset, 2000)
-    }
+    const url = toPrettyBlobURL({
+        repoName: documentInfo.repoName,
+        revision: documentInfo.revision,
+        commitID: documentInfo.commitID,
+        filePath: documentInfo.filePath,
+        range: occurrence.range.withIncrementedValues(),
+        viewState: 'references',
+    })
+    svelteGoto(url)
 }
 
 export function openImplementations(
@@ -111,82 +113,5 @@ export function openImplementations(
     const offset = positionToOffset(view.state.doc, occurrence.range.start)
     if (offset) {
         showTemporaryTooltip(view, 'Not supported yet: Find implementations', offset, 2000)
-    }
-}
-
-interface CombinedBlobData {
-    blob: BlobPage_Blob | null
-    /**
-     * JSON encoded highlighting information. Can be an empty string.
-     */
-    highlights: string
-    blobPending: boolean
-    highlightsPending: boolean
-    blobError: Error | null
-    highlightsError: Error | null
-}
-
-interface BlobDataHandler extends Readable<CombinedBlobData> {
-    set(blob: PromiseLike<BlobPage_Blob | null>, highlight: PromiseLike<string | undefined>): void
-}
-
-/**
- * This store synchronizes the state of the blob data and the highlights. While new blob data is
- * loading, the old blob and highlights data is still available. Once the blob data is loaded, the
- * highlights are updated.
- */
-export function createBlobDataHandler(): BlobDataHandler {
-    const input = new Subject<{ blob: PromiseLike<BlobPage_Blob | null>; highlight: PromiseLike<string | undefined> }>()
-
-    return {
-        ...readable<CombinedBlobData>(
-            {
-                blob: null,
-                highlights: '',
-                blobPending: false,
-                highlightsPending: false,
-                blobError: null,
-                highlightsError: null,
-            },
-            (_set, update) => {
-                const subscription = input
-                    .pipe(
-                        switchMap(({ blob, highlight }) => {
-                            return from(blob).pipe(
-                                switchMap(blob => {
-                                    return from(highlight).pipe(
-                                        map((highlights = '') => ({
-                                            highlights,
-                                            highlightsPending: false,
-                                            highlightsError: null,
-                                        })),
-                                        startWith({
-                                            blob,
-                                            blobPending: false,
-                                            blobError: null,
-                                            highlights: '',
-                                            highlightsPending: true,
-                                            highlightsError: null,
-                                        }),
-                                        catchError(error =>
-                                            of({ highlights: '', highlightsPending: false, highlightsError: error })
-                                        )
-                                    )
-                                }),
-                                startWith({ blobPending: true }),
-                                catchError(error => of({ blob: null, blobPending: false, blobError: error }))
-                            )
-                        })
-                    )
-                    .subscribe(updatedCombinedData => {
-                        update(combinedData => ({ ...combinedData, ...updatedCombinedData }))
-                    })
-                return () => subscription.unsubscribe()
-            }
-        ),
-
-        set(blob, highlight) {
-            input.next({ blob, highlight })
-        },
     }
 }

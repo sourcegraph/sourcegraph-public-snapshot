@@ -1,0 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "headings",
+    srcs = ["headings.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/internal/markdown/headings",
+    visibility = ["//dev/managedservicesplatform/operationdocs:__subpackages__"],
+)

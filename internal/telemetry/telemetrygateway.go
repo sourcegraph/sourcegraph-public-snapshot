@@ -6,8 +6,10 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+
+	telemetrygatewayevent "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/event"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 // newTelemetryGatewayEvent translates recording to raw events for storage and
@@ -26,7 +28,7 @@ func newTelemetryGatewayEvent(
 		parameters = &EventParameters{}
 	}
 
-	event := telemetrygatewayv1.NewEventWithDefaults(ctx, now, newUUID)
+	event := telemetrygatewayevent.New(ctx, now, newUUID)
 	event.Feature = string(feature)
 	event.Action = string(action)
 	event.Source = &telemetrygatewayv1.EventSource{

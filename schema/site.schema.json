@@ -934,6 +934,22 @@
       "default": -1,
       "group": "External services"
     },
+    "codeMonitors": {
+      "description": "Configuration options for code monitors",
+      "type": "object",
+      "properties": {
+        "pollInterval": {
+          "description": "The interval at which a monitor checks for new changes. Increase to reduce average load.",
+          "type": "string",
+          "default": "5m"
+        },
+        "concurrency": {
+          "description": "The number of code monitor jobs allowed to run concurrenctly. Decrease to reduce peak load.",
+          "type": "integer",
+          "default": 4
+        }
+      }
+    },
     "syntaxHighlighting": {
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
@@ -2234,6 +2250,30 @@
               "type": "string"
             }
           }
+        },
+        "codyProConfig": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "stripePublishableKey": {
+              "type": "string",
+              "default": null,
+              "description": "Stripe Publishable Key for use in Stripe Checkout, Stripe Elements. This is not considered a secret.",
+              "examples": ["pk_test_...", "pk_live_..."]
+            },
+            "samsBackendOrigin": {
+              "type": "string",
+              "default": "",
+              "description": "Origin of the SAMS backend. (Must match the SAMS OIDC registration in auth.providers.)",
+              "examples": ["https://accounts.sourcegraph.com"]
+            },
+            "sscBackendOrigin": {
+              "type": "string",
+              "default": "",
+              "description": "Origin of the Self-serve Cody backend.",
+              "examples": ["https://accounts.sourcegraph.com"]
+            }
+          }
         }
       },
       "group": "Sourcegraph.com"
@@ -2570,6 +2610,31 @@
       },
       "group": "Cody"
     },
+    "cody.contextFilters": {
+      "description": "Rules defining the repositories that will never be shared by Cody with third-party LLM providers.",
+      "type": "object",
+      "properties": {
+        "include": {
+          "description": "List of rules specifying repositories that Cody may include as context in requests to third-party LLMs. If defined, only repositories matching these rules will be considered for sharing. If not defined, all repositories may be shared.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CodyContextFilterItem"
+          },
+          "minItems": 1
+        },
+        "exclude": {
+          "description": "List of rules specifying repositories that Cody should excluded from context in requests to third-party LLMs. These rules are applied only to repositories matching the include rules.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CodyContextFilterItem"
+          },
+          "minItems": 1
+        }
+      },
+      "minProperties": 1,
+      "additionalProperties": false,
+      "group": "Cody"
+    },
     "cody.permissions": {
       "description": "Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://sourcegraph.com/docs/admin/access_control",
       "type": "boolean",
@@ -2737,116 +2802,6 @@
             "pointer": true
           },
           "default": true
-        },
-        "qdrant": {
-          "description": "Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.",
-          "type": "object",
-          "$comment": "Skipped fields from HnswConfigDiff: MaxIndexingThreads",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": false
-            },
-            "hnsw": {
-              "description": "Overrides for the HNSW index config.",
-              "type": "object",
-              "properties": {
-                "m": {
-                  "description": "Number of edges per node in the index graph. Larger the value - more accurate the search, more space required.",
-                  "type": "integer",
-                  "minimum": 0,
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": 8
-                },
-                "efConstruct": {
-                  "description": "Number of neighbours to consider during the index building. Larger the value, more accurate the search, more time required to build the index.",
-                  "type": "integer",
-                  "minimum": 0,
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": 100
-                },
-                "fullScanThreshold": {
-                  "description": "Minimal size (in KiloBytes) of vectors for additional payload-based indexing.",
-                  "type": "integer",
-                  "minimum": 0,
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": 1000
-                },
-                "onDisk": {
-                  "description": "Store HNSW index on disk.",
-                  "type": "boolean",
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": true
-                },
-                "payloadM": {
-                  "description": "Number of edges per node in the index graph. Larger the value, more accurate the search, more space required.",
-                  "type": "integer",
-                  "minimum": 0,
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": 8
-                }
-              }
-            },
-            "quantization": {
-              "description": "Overrides for quantization config.",
-              "type": "object",
-              "$comment": "Skipped fields from ScalarQuantization: AlwaysRam",
-              "properties": {
-                "enabled": {
-                  "description": "Whether to enable int8 scalar quantization",
-                  "type": "boolean",
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": true
-                },
-                "quantile": {
-                  "description": "Any values that lie outside the quantile range will be truncated",
-                  "type": "number",
-                  "minimum": 0,
-                  "maximum": 1,
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": 0.98
-                }
-              }
-            },
-            "optimizers": {
-              "type": "object",
-              "$comment": "Skipped fields from OptimizersConfigDiff: DeletedThreshold, VacuumMinVectorNumber, DefaultSegmentNumber, MaxSegmentSize, FlushIntervalSec, MaxOptimizationThreads",
-              "properties": {
-                "indexingThreshold": {
-                  "description": "Maximum size (in kilobytes) of vectors allowed for plain index, exceeding this threshold will enable vector indexing. Set to 0 to disable indexing",
-                  "type": "integer",
-                  "minimum": 0,
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": 0
-                },
-                "memmapThreshold": {
-                  "description": "Maximum size (in kilobytes) of vectors to store in-memory per segment.",
-                  "type": "integer",
-                  "minimum": 0,
-                  "!go": {
-                    "pointer": true
-                  },
-                  "default": 100
-                }
-              }
-            }
-          }
         }
       },
       "examples": [
@@ -3894,6 +3849,17 @@
         "text": {
           "description": "Optional template for plain-text body. If not provided, a plain-text body will be automatically generated from the HTML template.",
           "type": "string"
+        }
+      }
+    },
+    "CodyContextFilterItem": {
+      "type": "object",
+      "required": ["repoNamePattern"],
+      "properties": {
+        "repoNamePattern": {
+          "description": "Regular expression which matches a set of repository names. The pattern is evaluated using Go regular expression syntax (https://golang.org/pkg/regexp/). By default, the pattern matches partially. Use \\\"^...$\\\" for whole-string matching.",
+          "type": "string",
+          "format": "regex"
         }
       }
     }

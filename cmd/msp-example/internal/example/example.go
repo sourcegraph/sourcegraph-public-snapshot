@@ -50,17 +50,17 @@ func (s Service) Initialize(
 		if err := initPostgreSQL(ctx, contract); err != nil {
 			return nil, errors.Wrap(err, "initPostgreSQL")
 		}
-		logger.Info("postgresql database configured")
+		logger.Info("postgresql connection success")
 
 		if err := writeBigQueryEvent(ctx, contract, "service.initialized"); err != nil {
 			return nil, errors.Wrap(err, "writeBigQueryEvent")
 		}
-		logger.Info("bigquery connection checked")
+		logger.Info("bigquery connection success")
 
 		if err := testRedisConnection(ctx, contract); err != nil {
 			return nil, errors.Wrap(err, "newRedisConnection")
 		}
-		logger.Info("redis connection checked")
+		logger.Info("redis connection success")
 	}
 
 	requestCounter, err := getRequestCounter()

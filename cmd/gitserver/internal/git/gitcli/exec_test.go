@@ -34,7 +34,7 @@ func TestIsAllowedGitCmd(t *testing.T) {
 		{"commit", "--file=relative/path"},
 	}
 
-	logger := logtest.Scoped(t)
+	logger := logtest.NoOp(t)
 	for _, args := range isAllowed {
 		t.Run("", func(t *testing.T) {
 			if !IsAllowedGitCmd(logger, args, "/fake/path") {
@@ -76,7 +76,7 @@ func TestIsAllowedDiffGitCmd(t *testing.T) {
 		{args: []string{"diff", "a1c0f7d19f6e9eb76facc67c1c22c07bb2ad39c4...c70f79c26526ba74f38ecff2e1e686fc3e2bdcdd"}, pass: true},
 	}
 
-	logger := logtest.Scoped(t)
+	logger := logtest.NoOp(t)
 	for _, cmd := range allowed {
 		t.Run(fmt.Sprintf("%s returns %t", strings.Join(cmd.args, " "), cmd.pass), func(t *testing.T) {
 			assert.Equal(t, cmd.pass, IsAllowedGitCmd(logger, cmd.args, "/foo/baz"))

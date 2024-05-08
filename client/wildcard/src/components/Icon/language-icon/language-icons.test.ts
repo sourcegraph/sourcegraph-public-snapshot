@@ -1,18 +1,7 @@
 import { mdiFileCodeOutline, mdiFilePngBox, mdiLanguageJavascript } from '@mdi/js'
 import { describe, expect, it } from 'vitest'
 
-import { ALL_LANGUAGES } from '@sourcegraph/common'
-
-import { getFileIconInfo, FILE_ICONS_BY_LANGUAGE } from './language-icons'
-
-describe('checkValidLanguageNames', () => {
-    const allLanguagesSet = new Set(ALL_LANGUAGES)
-    for (const [languageName, _] of FILE_ICONS_BY_LANGUAGE) {
-        it(languageName, () => {
-            expect(allLanguagesSet.has(languageName)).toBeTruthy()
-        })
-    }
-})
+import { getFileIconInfo } from './language-icons'
 
 describe('getFileIconInfo', () => {
     const tests: {

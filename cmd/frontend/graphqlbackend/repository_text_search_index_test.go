@@ -56,7 +56,7 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 	want := []string{"refs/heads/main", "refs/heads/1.0"}
 	got := []string{}
 	for _, ref := range refs {
-		got = append(got, ref.ref.name)
+		got = append(got, ref.ref.Name())
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %+v, want %+v", got, want)

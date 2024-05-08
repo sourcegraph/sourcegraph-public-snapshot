@@ -3,7 +3,6 @@ package bitbucketcloudoauth
 import (
 	"context"
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -11,9 +10,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	bitbucketlogin "github.com/dghubble/gologin/v2/bitbucket"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -198,6 +201,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					t.Fatal(err)
 				}
 				s := &sessionIssuerHelper{
+					logger:      logtest.Scoped(t),
 					baseURL:     extsvc.NormalizeBaseURL(bbURL),
 					clientKey:   clientID,
 					allowSignup: ci.allowSignup,
@@ -279,6 +283,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := &sessionIssuerHelper{
+		logger:      logtest.Scoped(t),
 		baseURL:     extsvc.NormalizeBaseURL(bbURL),
 		clientKey:   clientID,
 		allowSignup: true,
@@ -357,6 +362,7 @@ func TestGetOrCreateUser_NoPanicOnEmailSlice(t *testing.T) {
 
 	// Create issuer helper
 	issuer := &sessionIssuerHelper{
+		logger:  logtest.Scoped(t),
 		baseURL: u,
 		client:  bbClient,
 	}

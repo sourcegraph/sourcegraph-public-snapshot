@@ -24,8 +24,7 @@ import (
 )
 
 var (
-	logScope       = "gRPC.internal.error.reporter"
-	logDescription = "logs gRPC errors that appear to come from the go-grpc implementation"
+	logScope = "gRPC.internal.error.reporter"
 
 	envLoggingEnabled        = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_ENABLED", true, "Enables logging of gRPC internal errors")
 	envLogStackTracesEnabled = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_STACK_TRACES", false, "Enables including stack traces in logs of gRPC internal errors")

@@ -108,6 +108,7 @@ ts_project(
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",
         "//:node_modules/react",
+        "//client/wildcard:wildcard_lib",
     ],
 )
 

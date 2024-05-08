@@ -65,8 +65,7 @@ import type { SearchStreamingProps } from '../../search'
 import { parseBrowserRepoURL, toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'
-import { useBlameHunks } from '../blame/useBlameHunks'
-import { useBlameVisibility } from '../blame/useBlameVisibility'
+import { useBlameHunks, useBlameVisibility } from '../blame/hooks'
 import { TryCodyWidget } from '../components/TryCodyWidget/TryCodyWidget'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
@@ -148,7 +147,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
-        props.telemetryRecorder.recordEvent('blob', 'view')
+        props.telemetryRecorder.recordEvent('repo.blob', 'view')
     }, [repoName, commitID, filePath, renderMode, props.telemetryService, props.telemetryRecorder])
 
     useBreadcrumb(
@@ -304,7 +303,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     }
 
     const [isBlameVisible] = useBlameVisibility(isPackage)
-    const blameHunks = useBlameHunks({ isPackage, repoName, revision, filePath }, props.platformContext.sourcegraphURL)
+    const blameHunks = useBlameHunks({ isPackage, repoName, revision, filePath })
 
     // OpenCodeGraph
     const [enableOpenCodeGraph] = useFeatureFlag('opencodegraph', false)
@@ -393,6 +392,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                         source="repoHeader"
                         renderMode={renderMode}
                         isPackage={isPackage}
+                        telemetryRecorder={props.telemetryRecorder}
                     />
                 )}
             </RepoHeaderContributionPortal>
@@ -466,6 +466,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                     revision={revision}
                     filePath={filePath}
                     enableOwnershipPanel={enableOwnershipPanel}
+                    telemetryRecorder={props.telemetryRecorder}
                 />
             )}
             {isErrorLike(blameHunks) && <ErrorAlert error={blameHunks} />}

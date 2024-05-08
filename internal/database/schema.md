@@ -1584,6 +1584,7 @@ Referenced by:
  queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "exhaustive_search_jobs_pkey" PRIMARY KEY, btree (id)
+    "exhaustive_search_jobs_state" btree (state)
 Foreign-key constraints:
     "exhaustive_search_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
 Referenced by:
@@ -1615,6 +1616,7 @@ Referenced by:
  queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "exhaustive_search_repo_jobs_pkey" PRIMARY KEY, btree (id)
+    "exhaustive_search_repo_jobs_state" btree (state)
 Foreign-key constraints:
     "exhaustive_search_repo_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "exhaustive_search_repo_jobs_search_job_id_fkey" FOREIGN KEY (search_job_id) REFERENCES exhaustive_search_jobs(id) ON DELETE CASCADE
@@ -1646,6 +1648,7 @@ Referenced by:
  queued_at          | timestamp with time zone |           |          | now()
 Indexes:
     "exhaustive_search_repo_revision_jobs_pkey" PRIMARY KEY, btree (id)
+    "exhaustive_search_repo_revision_jobs_state" btree (state)
 Foreign-key constraints:
     "exhaustive_search_repo_revision_jobs_search_repo_job_id_fkey" FOREIGN KEY (search_repo_job_id) REFERENCES exhaustive_search_repo_jobs(id) ON DELETE CASCADE
 

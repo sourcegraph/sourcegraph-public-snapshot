@@ -35,6 +35,8 @@ go_test(
     embed = [":gitserverfs"],
     deps = [
         "//cmd/gitserver/internal/common",
+        "//internal/api",
+        "//internal/observation",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
     ],

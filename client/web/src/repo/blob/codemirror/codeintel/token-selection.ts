@@ -246,7 +246,7 @@ const selectedToken = StateField.define<{
                         merge(
                             from(getHoverTooltip(view.state, selected.range.from)),
                             timer(50).pipe(map(() => loadingTooltip))
-                        ).pipe(takeWhile(tooltip => tooltip !== loadingTooltip, true))
+                        ).pipe(takeWhile(tooltip => tooltip === loadingTooltip, true))
                     )
                     return true
                 },

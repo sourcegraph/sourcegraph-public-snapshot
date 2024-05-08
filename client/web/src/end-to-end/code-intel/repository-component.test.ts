@@ -271,7 +271,8 @@ describe('Repository component', () => {
         })
     })
 
-    describe('symbol sidebar', () => {
+    // FLAKE: Disabled on 2024-04-18 because our E2E test suite is down to 69% reliability.
+    describe.skip('symbol sidebar', () => {
         const listSymbolsTests = [
             {
                 name: 'lists symbols in file for Go',

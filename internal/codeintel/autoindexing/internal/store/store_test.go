@@ -3,10 +3,8 @@ package store
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -18,7 +16,7 @@ func TestMarkRepoRevsAsProcessed(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	expected := []RepoRev{
 		{1, 50, "HEAD"},
@@ -56,21 +54,5 @@ func TestMarkRepoRevsAsProcessed(t *testing.T) {
 	}
 	if diff := cmp.Diff(expected[5:], repoRevs); diff != "" {
 		t.Errorf("unexpected repo revs (-want +got):\n%s", diff)
-	}
-}
-
-// removes default configuration policies
-func testStoreWithoutConfigurationPolicies(t *testing.T, db database.DB) Store {
-	if _, err := db.ExecContext(context.Background(), `TRUNCATE lsif_configuration_policies`); err != nil {
-		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
-	}
-
-	return New(&observation.TestContext, db)
-}
-
-func updateGitserverUpdatedAt(t *testing.T, db database.DB, now time.Time) {
-	gitserverReposQuery := sqlf.Sprintf(`UPDATE gitserver_repos SET last_changed = %s`, now.Add(-time.Hour*24))
-	if _, err := db.ExecContext(context.Background(), gitserverReposQuery.Query(sqlf.PostgresBindVar), gitserverReposQuery.Args()...); err != nil {
-		t.Fatalf("unexpected error while upodating gitserver_repos last updated time: %s", err)
 	}
 }

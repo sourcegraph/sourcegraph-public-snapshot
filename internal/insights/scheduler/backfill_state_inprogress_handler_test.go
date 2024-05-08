@@ -63,7 +63,7 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
 		InsightStore:   seriesStore,
-		ObservationCtx: &observation.TestContext,
+		ObservationCtx: observation.TestContextTB(t),
 		BackfillRunner: &noopBackfillRunner{},
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
@@ -140,7 +140,7 @@ func Test_PullsByEstimatedCostAge(t *testing.T) {
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
 		InsightStore:   seriesStore,
-		ObservationCtx: &observation.TestContext,
+		ObservationCtx: observation.TestContextTB(t),
 		BackfillRunner: &noopBackfillRunner{},
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
@@ -203,7 +203,7 @@ func Test_BackfillWithRetry(t *testing.T) {
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
 		InsightStore:   seriesStore,
-		ObservationCtx: &observation.TestContext,
+		ObservationCtx: observation.TestContextTB(t),
 		BackfillRunner: &noopBackfillRunner{},
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
@@ -282,7 +282,7 @@ func Test_BackfillWithRetryAndComplete(t *testing.T) {
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
 		InsightStore:   seriesStore,
-		ObservationCtx: &observation.TestContext,
+		ObservationCtx: observation.TestContextTB(t),
 		BackfillRunner: &noopBackfillRunner{},
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
@@ -370,7 +370,7 @@ func Test_BackfillWithRepoNotFound(t *testing.T) {
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
 		InsightStore:   seriesStore,
-		ObservationCtx: &observation.TestContext,
+		ObservationCtx: observation.TestContextTB(t),
 		BackfillRunner: &noopBackfillRunner{},
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
@@ -453,7 +453,7 @@ func Test_BackfillWithARepoError(t *testing.T) {
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
 		InsightStore:   seriesStore,
-		ObservationCtx: &observation.TestContext,
+		ObservationCtx: observation.TestContextTB(t),
 		BackfillRunner: &noopBackfillRunner{},
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
@@ -530,7 +530,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
 		InsightStore:   seriesStore,
-		ObservationCtx: &observation.TestContext,
+		ObservationCtx: observation.TestContextTB(t),
 		BackfillRunner: &noopBackfillRunner{},
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
@@ -617,7 +617,7 @@ func Test_BackfillCrossingErrorThreshold(t *testing.T) {
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
 		InsightStore:   seriesStore,
-		ObservationCtx: &observation.TestContext,
+		ObservationCtx: observation.TestContextTB(t),
 		BackfillRunner: &noopBackfillRunner{},
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}

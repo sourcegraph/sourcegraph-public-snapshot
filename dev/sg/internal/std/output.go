@@ -151,6 +151,11 @@ func (o *Output) WriteNoticef(fmtStr string, args ...any) {
 // Promptf prints a prompt for user input, and should be followed by an fmt.Scan or similar.
 func (o *Output) Promptf(fmtStr string, args ...any) {
 	l := output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...)
+	o.FancyPrompt(l)
+}
+
+// FancyPrompt prints a prompt for user input, and should be followed by an fmt.Scan or similar.
+func (o *Output) FancyPrompt(l output.FancyLine) {
 	l.Prompt = true
 	o.WriteLine(l)
 }

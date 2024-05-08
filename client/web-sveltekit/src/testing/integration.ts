@@ -119,8 +119,8 @@ class Sourcegraph {
      * the search results being received. The returned function will wait for the search results
      * page to be "ready" by waiting for the "Filter results" heading to be visible.
      */
-    public mockSearchStream(): MockSearchStream {
-        this.page.addInitScript(function () {
+    public async mockSearchStream(): Promise<MockSearchStream> {
+        await this.page.addInitScript(function () {
             window.$$sources = []
             window.EventSource = class MockEventSource {
                 static readonly CONNECTING = 0

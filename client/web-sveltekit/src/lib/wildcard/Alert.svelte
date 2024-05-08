@@ -21,9 +21,6 @@
         --alert-content-padding: 0.5rem;
         --alert-background-color: var(--color-bg-1);
 
-        display: flex;
-        align-items: center;
-        overflow: hidden;
         position: relative;
         margin-bottom: 1rem;
         color: var(--body-color);

@@ -5,6 +5,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import { animated } from 'react-spring'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Button,
     Checkbox,
@@ -20,7 +21,6 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../../../tracking/eventLogger'
 import type { ExecutionOptions } from '../BatchSpecContext'
 
 import styles from './RunBatchSpecButton.module.scss'
@@ -56,7 +56,7 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
                         variant="primary"
                         onClick={() => {
                             execute()
-                            eventLogger.log('batch_change_editor:run_batch_spec:clicked')
+                            EVENT_LOGGER.log('batch_change_editor:run_batch_spec:clicked')
                             telemetryRecorder.recordEvent('batchChange.editor.runSpec', 'click')
                         }}
                         aria-label={typeof isExecutionDisabled === 'string' ? isExecutionDisabled : undefined}

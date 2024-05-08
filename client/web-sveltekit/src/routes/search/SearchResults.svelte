@@ -16,21 +16,20 @@
 <script lang="ts">
     import { mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
-    import { tick } from 'svelte'
+    import { onMount, tick } from 'svelte'
     import { writable } from 'svelte/store'
 
     import { beforeNavigate, goto } from '$app/navigation'
     import { limitHit } from '$lib/branded'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
+    import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import type { URLQueryFilter } from '$lib/search/dynamicFilters'
     import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
-    import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
-    import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
-    import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
+    import type { QueryState } from '$lib/search/state'
     import {
         type AggregateStreamingSearchResults,
         type PathMatch,
@@ -38,8 +37,13 @@
         type SymbolMatch,
         type ContentMatch,
     } from '$lib/shared'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
+    import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
+    import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
+    import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
 
     import PreviewPanel from './PreviewPanel.svelte'
+    import SearchAlert from './SearchAlert.svelte'
     import { getSearchResultComponent } from './searchResultFactory'
     import { setSearchResultsContext } from './searchResultsContext'
     import StreamingProgress from './StreamingProgress.svelte'
@@ -97,8 +101,13 @@
         },
         queryState,
     })
+
     beforeNavigate(() => {
         cache.set(queryFromURL, { count, expanded: expandedSet, preview: $previewResult })
+    })
+
+    onMount(() => {
+        SVELTE_LOGGER.logViewEvent(SVELTE_TELEMETRY_EVENTS.ViewSearchResultsPage)
     })
 
     function loadMore(event: { detail: boolean }) {
@@ -119,15 +128,29 @@
         await tick()
         void goto(getQueryURL($queryState))
     }
+
+    function handleResultCopy(): void {
+        SVELTE_LOGGER.log(...codeCopiedEvent('search-result'))
+    }
+
+    function handleSearchResultClick(): void {
+        SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.SearchResultClick)
+    }
+
+    function handleSubmit(state: QueryState) {
+        SVELTE_LOGGER.log(
+            SVELTE_TELEMETRY_EVENTS.SearchSubmit,
+            { source: 'nav', query: state.query },
+            { source: 'nav', patternType: state.patternType }
+        )
+    }
 </script>
 
-<svelte:head>
-    <title>{queryFromURL} - Sourcegraph</title>
-</svelte:head>
-
-<div class="search">
-    <SearchInput {queryState} />
-</div>
+<GlobalHeaderPortal>
+    <div class="search-header">
+        <SearchInput {queryState} size="compat" onSubmit={handleSubmit} />
+    </div>
+</GlobalHeaderPortal>
 
 <div class="search-results">
     <PanelGroup id="search-results-panels">
@@ -146,7 +169,12 @@
                     <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
                 </aside>
                 <div class="result-list" bind:this={resultContainer}>
-                    <ol>
+                    {#if $stream.alert}
+                        <div class="message-container">
+                            <SearchAlert alert={$stream.alert} />
+                        </div>
+                    {/if}
+                    <ol on:click={handleSearchResultClick} on:copy={handleResultCopy}>
                         {#each resultsToShow as result, i}
                             {@const component = getSearchResultComponent(result)}
                             {#if i === resultsToShow.length - 1}
@@ -159,7 +187,7 @@
                         {/each}
                     </ol>
                     {#if resultsToShow.length === 0 && state !== 'loading'}
-                        <div class="no-result">
+                        <div class="message-container">
                             <Icon svgPath={mdiCloseOctagonOutline} />
                             <p>No results found</p>
                         </div>
@@ -178,11 +206,10 @@
 </div>
 
 <style lang="scss">
-    .search {
-        border-bottom: 1px solid var(--border-color);
-        align-self: stretch;
-        padding: 0.25rem;
-        // This ensures that suggestions are rendered above sticky search result headers
+    .search-header {
+        width: 100%;
+        // This ensures that the search suggestions panel is displayed above the
+        // search results panel.
         z-index: 1;
     }
 
@@ -207,8 +234,7 @@
 
         .actions {
             border-bottom: 1px solid var(--border-color);
-            padding: 0.5rem 0;
-            padding-left: 0.25rem;
+            padding: 0.5rem;
             display: flex;
             align-items: center;
             flex-shrink: 0;
@@ -224,12 +250,13 @@
             }
         }
 
-        .no-result {
+        .message-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             margin: auto;
             color: var(--text-muted);
+            margin: 2rem;
         }
     }
 </style>

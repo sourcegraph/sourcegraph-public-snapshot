@@ -60,7 +60,7 @@ func TestSyncerRun(t *testing.T) {
 			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
-			metrics:          makeMetrics(&observation.TestContext),
+			metrics:          makeMetrics(observation.TestContextTB(t)),
 		}
 		go syncer.Run(ctx)
 		select {
@@ -100,7 +100,7 @@ func TestSyncerRun(t *testing.T) {
 			logger:           logtest.Scoped(t),
 			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
-			metrics:          makeMetrics(&observation.TestContext),
+			metrics:          makeMetrics(observation.TestContextTB(t)),
 		}
 		syncer.Run(ctx)
 		if updateCalled {
@@ -132,7 +132,7 @@ func TestSyncerRun(t *testing.T) {
 			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
-			metrics:          makeMetrics(&observation.TestContext),
+			metrics:          makeMetrics(observation.TestContextTB(t)),
 		}
 		syncer.Run(ctx)
 		if syncCalled {
@@ -154,7 +154,7 @@ func TestSyncerRun(t *testing.T) {
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 			priorityNotify:   make(chan []int64, 1),
-			metrics:          makeMetrics(&observation.TestContext),
+			metrics:          makeMetrics(observation.TestContextTB(t)),
 		}
 		syncer.priorityNotify <- []int64{1}
 		go syncer.Run(ctx)
@@ -211,7 +211,7 @@ func TestSyncerRun(t *testing.T) {
 			logger:           capturingLogger,
 			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
-			metrics:          makeMetrics(&observation.TestContext),
+			metrics:          makeMetrics(observation.TestContextTB(t)),
 		}
 		syncer.Run(ctx)
 		assert.False(t, updateCalled)
@@ -251,7 +251,7 @@ func TestSyncRegistry_SyncCodeHosts(t *testing.T) {
 		return codeHosts, nil
 	})
 
-	reg := NewSyncRegistry(ctx, &observation.TestContext, syncStore, nil)
+	reg := NewSyncRegistry(ctx, observation.TestContextTB(t), syncStore, nil)
 
 	assertSyncerCount := func(t *testing.T, want int) {
 		t.Helper()
@@ -309,12 +309,12 @@ func TestSyncRegistry_EnqueueChangesetSyncs(t *testing.T) {
 			return nil
 		},
 		priorityNotify: make(chan []int64, 1),
-		metrics:        makeMetrics(&observation.TestContext),
+		metrics:        makeMetrics(observation.TestContextTB(t)),
 		cancel:         syncerCancel,
 	}
 	go syncer.Run(syncerCtx)
 
-	reg := NewSyncRegistry(ctx, &observation.TestContext, syncStore, nil)
+	reg := NewSyncRegistry(ctx, observation.TestContextTB(t), syncStore, nil)
 	reg.syncers[codeHostURL] = syncer
 
 	// Start handler in background, will be canceled when ctx is canceled

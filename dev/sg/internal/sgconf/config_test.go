@@ -1,12 +1,12 @@
 package sgconf
 
 import (
-	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 )
 
 func TestParseConfig(t *testing.T) {
@@ -53,7 +53,7 @@ commandsets:
 				Config: run.SGConfigCommandOptions{
 					Name:           "frontend",
 					Env:            map[string]string{"CONFIGURATION_MODE": "server"},
-					RepositoryRoot: os.Getenv("SG_FORCE_REPO_ROOT"),
+					RepositoryRoot: repositoryRoot(t),
 				},
 				Cmd:         "ulimit -n 10000 && .bin/frontend",
 				Install:     "go build -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend",
@@ -177,7 +177,7 @@ dockerCommands:
 				Env: map[string]string{
 					"COMMAND_VAR":          "command local",
 					"COMMAND_OVERRIDE_VAR": "command override"},
-				RepositoryRoot: os.Getenv("SG_FORCE_REPO_ROOT"),
+				RepositoryRoot: repositoryRoot(t),
 			},
 			Cmd:         ".bin/frontend",
 			Install:     "go build .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend",
@@ -196,7 +196,7 @@ dockerCommands:
 					"BAZEL_VAR":          "bazel command local",
 					"BAZEL_OVERRIDE_VAR": "bazel command override",
 				},
-				RepositoryRoot: os.Getenv("SG_FORCE_REPO_ROOT"),
+				RepositoryRoot: repositoryRoot(t),
 			},
 			Target:    "//cmd/frontend",
 			RunTarget: "//cmd/frontend-run",
@@ -209,7 +209,7 @@ dockerCommands:
 					"DOCKER_VAR":          "docker command local",
 					"DOCKER_OVERRIDE_VAR": "docker command override",
 				},
-				RepositoryRoot: os.Getenv("SG_FORCE_REPO_ROOT"),
+				RepositoryRoot: repositoryRoot(t),
 			},
 			Docker: run.DockerOptions{
 				Image: "grafana:update",
@@ -235,4 +235,13 @@ dockerCommands:
 	if diff := cmp.Diff(want, merged); diff != "" {
 		t.Fatalf("wrong config. (-want +got):\n%s", diff)
 	}
+}
+
+func repositoryRoot(t *testing.T) string {
+	t.Helper()
+	root, err := root.RepositoryRoot()
+	if err != nil {
+		t.Fatal("failed to find repository root", err)
+	}
+	return root
 }

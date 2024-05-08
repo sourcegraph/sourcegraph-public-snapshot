@@ -1,7 +1,8 @@
-import type { FC } from 'react'
+import { useEffect, type FC, useCallback } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { H2, Text, ButtonLink, Link, Icon } from '@sourcegraph/wildcard'
 
@@ -13,6 +14,8 @@ import { IntegrationsIcon } from './IntegrationsIcon'
 import { SearchExample } from './SearchExample'
 
 import styles from './SearchUpsellPage.module.scss'
+
+interface Props extends TelemetryV2Props {}
 
 interface SearchFeature {
     title: string
@@ -35,7 +38,17 @@ const searchFeatures: SearchFeature[] = [
     },
 ]
 
-export const SearchUpsellPage: FC = () => {
+export const SearchUpsellPage: FC<Props> = ({ telemetryRecorder }) => {
+    useEffect(() => telemetryRecorder.recordEvent('searchUpsell', 'view'), [telemetryRecorder])
+    const onClickExpertCTA = useCallback(
+        () => telemetryRecorder.recordEvent('searchUpsell.talkToAnExpertCTA', 'click'),
+        [telemetryRecorder]
+    )
+    const onClickFindOutMoreCTA = useCallback(
+        () => telemetryRecorder.recordEvent('searchUpsell.findOutMoreCTA', 'click'),
+        [telemetryRecorder]
+    )
+
     const isLightTheme = useIsLightTheme()
     const contactSalesLink = 'https://sourcegraph.com/contact/request-info'
     const findOutMoreLink = 'https://sourcegraph.com/code-search'
@@ -59,6 +72,7 @@ export const SearchUpsellPage: FC = () => {
                         className="py-2 px-3 rounded mr-4"
                         target="_blank"
                         rel="noreferrer"
+                        onClick={onClickExpertCTA}
                     >
                         Talk to a product expert
                     </ButtonLink>
@@ -69,6 +83,7 @@ export const SearchUpsellPage: FC = () => {
                         className="py-2 px-3 rounded"
                         target="_blank"
                         rel="noreferrer"
+                        onClick={onClickFindOutMoreCTA}
                     >
                         Find out more
                     </ButtonLink>

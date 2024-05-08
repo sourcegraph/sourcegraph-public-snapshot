@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "diagram",
+    srcs = [
+        "components.go",
+        "diagram.go",
+        "msp.go",
+        "options.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/diagram",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/managedservicesplatform/operationdocs/diagram/assets",
+        "//dev/managedservicesplatform/spec",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_terrastruct_oss_d2//d2format",
+        "@com_terrastruct_oss_d2//d2graph",
+        "@com_terrastruct_oss_d2//d2layouts/d2dagrelayout",
+        "@com_terrastruct_oss_d2//d2lib",
+        "@com_terrastruct_oss_d2//d2oracle",
+        "@com_terrastruct_oss_d2//d2renderers/d2svg",
+        "@com_terrastruct_oss_d2//d2target",
+        "@com_terrastruct_oss_d2//d2themes",
+        "@com_terrastruct_oss_d2//lib/log",
+        "@com_terrastruct_oss_d2//lib/textmeasure",
+        "@dev_cdr_slog//:slog",
+        "@dev_cdr_slog//sloggers/sloghuman",
+    ],
+)

@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/connection"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -56,7 +56,7 @@ func NewRepoStateSyncer(
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			gitServerAddrs := gitserver.NewGitserverAddresses(conf.Get())
+			gitServerAddrs := connection.NewGitserverAddresses(conf.Get())
 			addrs := gitServerAddrs.Addresses
 			// We turn addrs into a string here for easy comparison and storage of previous
 			// addresses since we'd need to take a copy of the slice anyway.
@@ -102,7 +102,7 @@ func syncRepoState(
 	locker RepositoryLocker,
 	shardID string,
 	fs gitserverfs.FS,
-	gitServerAddrs gitserver.GitserverAddresses,
+	gitServerAddrs connection.GitserverAddresses,
 	batchSize int,
 	perSecond int,
 	fullSync bool,
@@ -201,14 +201,14 @@ func syncRepoState(
 				// Failed to determine cloned state, we have to skip this record for now.
 				continue
 			}
-			_, cloning := locker.Status(repo.Name)
+			_, locked := locker.Status(repo.Name)
 
 			var shouldUpdate bool
 			if repo.ShardID != shardID {
 				repo.ShardID = shardID
 				shouldUpdate = true
 			}
-			cloneStatus := cloneStatus(cloned, cloning)
+			cloneStatus := cloneStatus(cloned, locked)
 			if repo.CloneStatus != cloneStatus {
 				repo.CloneStatus = cloneStatus
 				// Since the repo has been recloned or is being cloned

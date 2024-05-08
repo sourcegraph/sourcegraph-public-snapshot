@@ -316,7 +316,7 @@ func TestDatabaseReferences(t *testing.T) {
 func populateTestStore(t testing.TB) LsifStore {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, codeIntelDB)
+	store := New(observation.TestContextTB(t), codeIntelDB)
 
 	loadTestFile(t, codeIntelDB, "./testdata/code-intel-extensions@7802976b.sql")
 	return store

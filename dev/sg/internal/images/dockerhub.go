@@ -125,7 +125,7 @@ func (r *DockerHub) fetchDigest(repo string, tag string) (digest.Digest, error) 
 		return "", err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+	req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err

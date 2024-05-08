@@ -81,7 +81,7 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
 
     const onClick = (): void => {
         telemetryService.log('PermalinkClicked', { repoName, commitID })
-        telemetryRecorder.recordEvent('search.header.permalink', 'click')
+        telemetryRecorder.recordEvent('repo.header.permalink', 'click')
     }
 
     if (actionType === 'dropdown') {
@@ -95,7 +95,7 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
 
     const copyPermalink = (): void => {
         telemetryService.log('CopyPermalink')
-        telemetryRecorder.recordEvent('search.header.permalink', 'copy')
+        telemetryRecorder.recordEvent('repo.header.permalink', 'copy')
         copy(createUrl(rootUrl, permalinkURL))
         setCopiedPermalink(true)
         screenReaderAnnounce('Permalink copied to clipboard')
@@ -105,7 +105,7 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
 
     const copyLink = (): void => {
         telemetryService.log('CopyLink')
-        telemetryRecorder.recordEvent('search.header.link', 'click')
+        telemetryRecorder.recordEvent('repo.header.link', 'copy')
         copy(createUrl(rootUrl, linkURL))
         setCopiedLink(true)
         screenReaderAnnounce('Link copied to clipboard')

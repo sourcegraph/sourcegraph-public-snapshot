@@ -9,6 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -294,6 +296,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 
 				ctx := WithUser(context.Background(), ci.glUser)
 				s := &sessionIssuerHelper{
+					logger:      logtest.Scoped(t),
 					CodeHost:    codeHost,
 					clientID:    clientID,
 					allowSignup: ci.allowSignup,

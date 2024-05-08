@@ -1,0 +1,32 @@
+fragment FileViewGitBlob on GitBlob {
+    canonicalURL
+    binary
+    content
+    richHTML
+    languages
+    totalLines
+    byteSize
+
+    ...OpenInCodeHostAction
+    ...FileIcon_GitBlob
+}
+
+fragment FileViewHighlightedFile on HighlightedFile {
+    aborted
+    lsif
+}
+
+fragment FileView_ResolvedRevision on Repository {
+    externalRepository {
+        serviceType
+    }
+    externalURLs {
+        url
+        serviceKind
+    }
+}
+
+fragment FileViewCommit on GitCommit {
+    canonicalURL
+    abbreviatedOID
+}

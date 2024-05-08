@@ -44,6 +44,7 @@
 <style lang="scss">
     .root {
         display: inline-flex;
+        gap: 0.125rem;
     }
 
     .square {
@@ -51,6 +52,5 @@
         width: 0.5rem;
         height: 0.5rem;
         background-color: var(--text-muted);
-        margin-left: 0.125rem;
     }
 </style>

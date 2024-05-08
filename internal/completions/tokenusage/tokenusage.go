@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -20,17 +21,26 @@ type ModelData struct {
 
 func NewManager() *Manager {
 	return &Manager{
-		Cache: rcache.New("LLMUsage"),
+		Cache: rcache.NewWithRedisStore("LLMUsage"),
 	}
 }
 
-func (m *Manager) TokenizeAndCalculateUsage(inputText, outputText, model, feature string) error {
-	tokenizer, err := tokenizer.NewTokenizer(model)
+type Provider string
+
+const (
+	OpenAI      Provider = "openai"
+	AzureOpenAI Provider = "azureopenai"
+	AwsBedrock  Provider = "awsbedrock"
+	Anthropic   Provider = "anthropic"
+)
+
+func (m *Manager) TokenizeAndCalculateUsage(inputMessages []types.Message, outputText, model, feature string, provider Provider) error {
+	tokenizer, err := tokenizer.NewCL100kBaseTokenizer()
 	if err != nil {
 		return errors.Newf("failed to create tokenizer: %w", err)
 	}
 
-	inputTokens, err := tokenizer.Tokenize(inputText)
+	numInputTokens, err := tokenizer.NumTokenizeFromMessages(inputMessages)
 	if err != nil {
 		return errors.Newf("failed to tokenize input text: %w", err)
 	}
@@ -40,9 +50,9 @@ func (m *Manager) TokenizeAndCalculateUsage(inputText, outputText, model, featur
 		return errors.Newf("failed to tokenize output text: %w", err)
 	}
 
-	baseKey := fmt.Sprintf("%s:%s:", model, feature)
+	baseKey := fmt.Sprintf("%s:%s:%s:", provider, model, feature)
 
-	if err := m.updateTokenCounts(baseKey+"input", int64(len(inputTokens))); err != nil {
+	if err := m.updateTokenCounts(baseKey+"input", int64(numInputTokens)); err != nil {
 		return errors.Newf("failed to update input token counts: %w", err)
 	}
 	if err := m.updateTokenCounts(baseKey+"output", int64(len(outputTokens))); err != nil {
@@ -51,8 +61,8 @@ func (m *Manager) TokenizeAndCalculateUsage(inputText, outputText, model, featur
 	return nil
 }
 
-func (m *Manager) UpdateAnthropicModelUsage(inputTokens, outputTokens int, model, feature string) error {
-	baseKey := fmt.Sprintf("%s:%s:", model, feature)
+func (m *Manager) UpdateTokenCountsFromModelUsage(inputTokens, outputTokens int, model, feature string, provider Provider) error {
+	baseKey := fmt.Sprintf("%s:%s:%s:", provider, model, feature)
 
 	if err := m.updateTokenCounts(baseKey+"input", int64(inputTokens)); err != nil {
 		return errors.Newf("failed to update input token counts: %w", err)
@@ -85,10 +95,9 @@ func (m *Manager) RetrieveAndResetTokenUsageData() (map[string]interface{}, erro
 		}
 		modelsData = append(modelsData, modelData)
 	}
-
 	result := map[string]interface{}{
-		"llm_usage": map[string]interface{}{
-			"models": modelsData,
+		"llm_usage": []map[string]interface{}{
+			{"models": modelsData},
 		},
 	}
 	return result, nil

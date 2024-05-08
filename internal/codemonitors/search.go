@@ -114,7 +114,7 @@ func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query stri
 				return ctx.Err()
 			}
 
-			res, err := gs.ResolveRevision(ctx, args.Repo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+			res, err := gs.ResolveRevision(ctx, args.Repo, rev, gitserver.ResolveRevisionOptions{EnsureRevision: false})
 			// We don't want to fail the snapshot if a revision is not found. We log missing
 			// revisions when the job executes.
 			var revErr *gitdomain.RevisionNotFoundError
@@ -158,6 +158,7 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 			}
 			cp := *v
 			cp.CodeMonitorSearchWrapper = hook
+			cp.Concurrency = 1
 			return &cp
 		case *repos.ComputeExcludedJob, *jobutil.NoopJob:
 			// ComputeExcludedJob is fine for code monitor jobs, but should be
@@ -195,7 +196,7 @@ func hookWithID(
 			return ctx.Err()
 		}
 
-		res, err := gs.ResolveRevision(ctx, args.Repo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+		res, err := gs.ResolveRevision(ctx, args.Repo, rev, gitserver.ResolveRevisionOptions{EnsureRevision: false})
 		// If the revision is not found, update the trigger job with the error message
 		// and continue. This can happen for empty repos.
 		var revErr *gitdomain.RevisionNotFoundError

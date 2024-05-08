@@ -171,7 +171,6 @@ type handler struct {
 	db          database.DB
 	workerStore dbworkerstore.Store[*Job]
 	limiter     *ratelimit.InstrumentedLimiter
-	op          *observation.Operation
 }
 
 func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error {

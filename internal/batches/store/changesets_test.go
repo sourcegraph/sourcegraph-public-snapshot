@@ -2373,7 +2373,7 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
-	s := New(db, &observation.TestContext, nil)
+	s := New(db, observation.TestContextTB(t), nil)
 
 	user := bt.CreateTestUser(t, db, true)
 	spec := bt.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID, 0)
@@ -2516,7 +2516,7 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
-	s := New(db, &observation.TestContext, nil)
+	s := New(db, observation.TestContextTB(t), nil)
 
 	user := bt.CreateTestUser(t, db, true)
 	spec := bt.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID, 0)
@@ -2647,7 +2647,7 @@ func TestCleanDetachedChangesets(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
-	s := New(db, &observation.TestContext, nil)
+	s := New(db, observation.TestContextTB(t), nil)
 	rs := database.ReposWith(logger, s)
 	es := database.ExternalServicesWith(logger, s)
 

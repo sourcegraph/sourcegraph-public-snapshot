@@ -1,0 +1,285 @@
+// 🔔 IMPORTANT: Be VERY careful not to introduce breaking changes to this
+// spec - raw protocol buffer wire format messages are persisted to database
+// as a cache, and Sourcegraph instances rely on this format to emit telemetry
+// to the managed Sourcegraph Telemetry Gateway service.
+//
+// Tests in ./internal/telemetrygateway/backcompat_test.go can be used to
+// assert compatibility with snapshots created by older versions of this spec.
+
+syntax = "proto3";
+
+package telemetrygateway.v1;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1";
+
+service TelemeteryGatewayService {
+  // RecordEvents streams telemetry events in batches to the Telemetry Gateway
+  // service. Events should only be considered delivered if recording is
+  // acknowledged in RecordEventsResponse.
+  //
+  // This is the preferred mechanism for exporting large volumes of events in
+  // bulk.
+  //
+  // 🚨 SECURITY: Callers exporting for single-tenant Sourcegraph should check
+  // the attributes of the Event type to ensure that only the appropriate fields
+  // are exported, as some fields should only be exported on an allowlist basis.
+  rpc RecordEvents(stream RecordEventsRequest) returns (stream RecordEventsResponse) {}
+
+  // RecordEvent records a single telemetry event to the Telemetry Gateway service.
+  // If the RPC succeeds, then the event was successfully published.
+  //
+  // This RPC currently ONLY accepts events published by ManagedServiceIdentifier,
+  // as this mechanism is intended for low-volume managed services. Higher-volume
+  // use cases should implement a batching mechanism and use the RecordEvents
+  // RPC instead.
+  //
+  // 🚨 SECURITY: Callers exporting for single-tenant Sourcegraph should check
+  // the attributes of the Event type to ensure that only the appropriate fields
+  // are exported, as some fields should only be exported on an allowlist basis.
+  rpc RecordEvent(RecordEventRequest) returns (RecordEventResponse) {}
+}
+
+message Identifier {
+  message LicensedInstanceIdentifier {
+    // License key configured in the Sourcegraph instance emitting the event.
+    string license_key = 1;
+    // Self-reported Sourcegraph instance identifier.
+    string instance_id = 2;
+    // Instance external URL defined in the instance site configuration.
+    string external_url = 3;
+  }
+
+  message UnlicensedInstanceIdentifier {
+    // Self-reported Sourcegraph instance identifier.
+    string instance_id = 1;
+    // Instance external URL defined in the instance site configuration.
+    string external_url = 2;
+  }
+
+  message ManagedServiceIdentifier {
+    // Self-reported service identifier, for example 'my-service'.
+    string service_id = 1;
+    // Self-reported service environment, for example 'prod' or 'dev'.
+    optional string service_environment = 2;
+  }
+
+  oneof identifier {
+    // A licensed Sourcegraph instance.
+    LicensedInstanceIdentifier licensed_instance = 1;
+    // An unlicensed Sourcegraph instance.
+    UnlicensedInstanceIdentifier unlicensed_instance = 2;
+    // A service operated and managed by the Sourcegraph team, for example
+    // a service deployed by MSP: https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/
+    //
+    // Valid SAMS client credentials are required to publish events under a
+    // managed service identifier. The required scope is
+    // 'telemetry_gateway::events::publish'. See go/sams-client-credentials and
+    // go/sams-token-scopes for more information.
+    ManagedServiceIdentifier managed_service = 3;
+  }
+}
+
+message RecordEventsRequestMetadata {
+  // Client-provided request identifier for diagnostics purposes.
+  string request_id = 1;
+  // Telemetry publisher self-identification - for example, a Sourcegraph
+  // instance of some other kind of service.
+  Identifier identifier = 2;
+}
+
+message RecordEventsRequest {
+  message EventsPayload {
+    repeated Event events = 1;
+  }
+
+  oneof payload {
+    // Metadata about the events being recorded.
+    RecordEventsRequestMetadata metadata = 1;
+    // Batch of events to record in a single request. Clients should aim to
+    // batch large event backlogs into a series of smaller requests in the
+    // RecordEvents stream, being mindful of common limits in individual message
+    // sizes: https://protobuf.dev/programming-guides/api/#bound-req-res-sizes
+    EventsPayload events = 2;
+  }
+}
+
+message RecordEventsResponse {
+  // IDs of all events that were successfully recorded in the request.
+  //
+  // Note that if succeeded_events is a subset of events that were submitted,
+  // then some events failed to record and should be retried.
+  repeated string succeeded_events = 1;
+}
+
+message RecordEventRequest {
+  // Metadata about the events being recorded.
+  RecordEventsRequestMetadata metadata = 1;
+  // Event to record.
+  Event event = 2;
+}
+
+message RecordEventResponse {}
+
+message Event {
+  // Generated ID of the event, currently expected to be UUID v4.
+  string id = 1;
+  // Timestamp of when the original event was recorded.
+  google.protobuf.Timestamp timestamp = 2;
+  // Feature associated with the event in camelCase, e.g. 'myFeature'.
+  string feature = 3;
+  // Action associated with the event in camelCase, e.g. 'pageView'.
+  string action = 4;
+  // Source of the event.
+  EventSource source = 5;
+  // Parameters of the event.
+  EventParameters parameters = 6;
+  // Optional user associated with the event.
+  //
+  // This field should be hydrated by the Sourcegraph server, and not provided
+  // by clients.
+  optional EventUser user = 7;
+  // Optional feature flags configured in the context of the event.
+  optional EventFeatureFlags feature_flags = 8;
+  // Optional marketing campaign tracking parameters.
+  //
+  // 🚨 SECURITY: This metadata is NEVER exported from single-tenant Sourcegraph
+  // instances, and is only exported for events tracked in the public
+  // Sourcegraph.com instance and managed services.
+  optional EventMarketingTracking marketing_tracking = 9;
+  // Optional metadata identifying the interaction that generated the event.
+  optional EventInteraction interaction = 10;
+}
+
+message EventSource {
+  message Server {
+    // Version of the server emitting the event, corresponding to
+    // RecordEventsRequestMetadata.Identifier. For example, if the Identifier
+    // indicates the publisher is a Sourcegraph instance, the version represents
+    // the version of the Sourcegraph server.
+    string version = 1;
+  }
+  message Client {
+    // Source client of the event.
+    string name = 1;
+    // Version of the client.
+    optional string version = 2;
+  }
+
+  // Information about the server that is publishing the event, based on
+  // RecordEventsRequestMetadata.Identifier.
+  Server server = 1;
+  // Information about the client that generated the event.
+  optional Client client = 2;
+}
+
+message EventParameters {
+  // Version of the event parameters, used for indicating the "shape" of this
+  // event's metadata, beginning at 0. Useful for denoting if the shape of
+  // metadata has changed in any way.
+  int32 version = 1;
+
+  // DEPRECATED, legacy metadata format that only accepted int64 - use the new
+  // 'metadata' field instead, which accepts float values. Values sent through
+  // this proto field will be merged into the new metadata attributes.
+  //
+  // We don't use a [deprecated = true] tag because we use this field to handle
+  // accepting exporters sending metadata in this format.
+  map<string, int64> legacy_metadata = 2;
+  // Strictly typed metadata, restricted to integer values to avoid accidentally
+  // exporting sensitive or private data.
+  map<string, double> metadata = 5;
+
+  // Additional potentially sensitive metadata - i.e. not restricted to integer
+  // values.
+  //
+  // 🚨 SECURITY: This metadata is NOT exported from instances by default, as it
+  // can contain arbitrarily-shaped data that may accidentally contain sensitive
+  // or private contents.
+  //
+  // This metadata is only exported on an allowlist basis based on terms of
+  // use agreements and combinations of event feature and action, alongside
+  // careful audit of callsites.
+  optional google.protobuf.Struct private_metadata = 3;
+  // Optional billing-related metadata.
+  optional EventBillingMetadata billing_metadata = 4;
+}
+
+message EventBillingMetadata {
+  // Billing product ID associated with the event.
+  string product = 1;
+  // Billing category ID the event falls into.
+  string category = 2;
+}
+
+message EventUser {
+  // Sourcegraph instance database user ID of the user. User IDs are specific to
+  // a Sourcegraph instance, and are not universal across Sourcegraph instances.
+  //
+  // We use an int64 as an ID because in Sourcegraph, database user IDs are
+  // always integers.
+  optional int64 user_id = 1;
+  // Randomized unique identifier representing the user (typically stored in
+  // localstorage in web clients, or similar mechanisms elsewhere). This is
+  // often used for unauthenticated users, but can persist to authenticated
+  // users as well.
+  optional string anonymous_user_id = 2;
+  // Sourcegraph Accounts Management System (SAMS) account associated with the
+  // user, represented by a SAMS external user ID in a UUID format. This is only
+  // valid for services leveraging SAMS as an identity provider - in other words,
+  // traditional Sourcegraph instances will not provide this.
+  //
+  // Learn more about SAMS: https://handbook.sourcegraph.com/departments/engineering/teams/core-services/sams
+  optional string sams_external_id = 3;
+}
+
+message EventFeatureFlags {
+  // Evaluated feature flags. In Soucegraph we currently only support boolean
+  // feature flags, but in the API we allow arbitrary string values for future
+  // extensibility.
+  //
+  // This field should be hydrated by the Sourcegraph server, and not provided
+  // by clients.
+  map<string, string> flags = 1;
+}
+
+// Marketing campaign tracking metadata.
+//
+// 🚨 SECURITY: This metadata is NEVER exported from single-tenant Sourcegraph
+// instances, and is only exported for events tracked in the public
+// Sourcegraph.com instance and managed services.
+message EventMarketingTracking {
+  // URL the event occurred on.
+  optional string url = 1;
+  // Initial URL the user landed on.
+  optional string first_source_url = 2;
+  // Cohort ID to identify the user as part of a specific A/B test.
+  optional string cohort_id = 3;
+  // Referrer URL that refers the user to Sourcegraph.
+  optional string referrer = 4;
+  // Last source URL visited by the user.
+  optional string last_source_url = 5;
+  // Device session ID to identify the user's session.
+  optional string device_session_id = 6;
+  // Session referrer URL for the user.
+  optional string session_referrer = 7;
+  // First URL the user visited in their current session.
+  optional string session_first_url = 8;
+}
+
+message EventInteraction {
+  // OpenTelemetry trace ID representing the interaction associated with the event.
+  optional string trace_id = 1;
+  // Custom interaction ID representing the interaction associated with the event.
+  optional string interaction_id = 2;
+
+  message Geolocation {
+    // Inferred ISO 3166-1 alpha-2 or alpha-3 country code
+    string country_code = 1;
+  }
+  // Geolocation associated with the interaction, typically inferred from the
+  // originating client's IP address (which we do not collect).
+  optional Geolocation geolocation = 3;
+}

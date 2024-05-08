@@ -112,7 +112,6 @@ const mirrorRepositoryInfoFieldsFragment = gql`
     fragment MirrorRepositoryInfoFields on MirrorRepositoryInfo {
         cloned
         cloneInProgress
-        cloneProgress @include(if: $displayCloneProgress)
         updatedAt
         nextSyncAt
         isCorrupted
@@ -170,7 +169,6 @@ export const REPOSITORIES_QUERY = gql`
         $orderBy: RepositoryOrderBy
         $descending: Boolean
         $externalService: ID
-        $displayCloneProgress: Boolean = false
     ) {
         repositories(
             first: $first
@@ -657,13 +655,18 @@ export const SET_AUTO_UPGRADE = gql`
 `
 
 /**
- * Fetches all out-of-band migrations.
+ * Fetches out-of-band migrations.
+ *
+ * If excludeDeprecatedBeforeFirstVersion is true, exclude migrations which have not been deprecated,
+ * or were not deprecated before the Sourcegraph init version.
  */
-export function fetchAllOutOfBandMigrations(): Observable<OutOfBandMigrationFields[]> {
+export function fetchOutOfBandMigrations(
+    excludeDeprecatedBeforeFirstVersion?: boolean
+): Observable<OutOfBandMigrationFields[]> {
     return requestGraphQL<OutOfBandMigrationsResult, OutOfBandMigrationsVariables>(
         gql`
-            query OutOfBandMigrations {
-                outOfBandMigrations {
+            query OutOfBandMigrations($excludeDeprecatedBeforeFirstVersion: Boolean = false) {
+                outOfBandMigrations(ExcludeDeprecatedBeforeFirstVersion: $excludeDeprecatedBeforeFirstVersion) {
                     ...OutOfBandMigrationFields
                 }
             }
@@ -685,7 +688,8 @@ export function fetchAllOutOfBandMigrations(): Observable<OutOfBandMigrationFiel
                     created
                 }
             }
-        `
+        `,
+        { excludeDeprecatedBeforeFirstVersion }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.outOfBandMigrations)
@@ -1005,13 +1009,7 @@ const siteAdminPackageFieldsFragment = gql`
 `
 
 export const PACKAGES_QUERY = gql`
-    query Packages(
-        $kind: PackageRepoReferenceKind
-        $name: String
-        $first: Int!
-        $after: String
-        $displayCloneProgress: Boolean = false
-    ) {
+    query Packages($kind: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
         packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
             nodes {
                 ...SiteAdminPackageFields

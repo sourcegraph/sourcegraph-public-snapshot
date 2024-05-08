@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "calendar.go",
         "config.go",
+        "cut.go",
         "cve.go",
         "release.go",
     ],
@@ -14,11 +15,14 @@ go_library(
     deps = [
         "//dev/sg/internal/bk",
         "//dev/sg/internal/category",
+        "//dev/sg/internal/execute",
+        "//dev/sg/internal/repo",
         "//dev/sg/internal/std",
         "//internal/jsonc",
         "//lib/errors",
         "//lib/output",
         "@com_github_grafana_regexp//:regexp",
+        "@com_github_masterminds_semver//:semver",
         "@com_github_pkg_browser//:browser",
         "@com_github_sourcegraph_run//:run",
         "@com_github_urfave_cli_v2//:cli",

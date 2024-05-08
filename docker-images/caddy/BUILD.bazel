@@ -1,0 +1,42 @@
+load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//wolfi-images:defs.bzl", "wolfi_base")
+
+oci_image(
+    name = "image",
+    base = ":base_image",
+    entrypoint = [
+        "caddy",
+        "run",
+        "--config",
+        "/etc/caddy/Caddyfile",
+        "--adapter",
+        "caddyfile",
+    ],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["caddy:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("caddy"),
+)
+
+wolfi_base()

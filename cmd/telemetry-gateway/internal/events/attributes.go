@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 // extractPubSubAttributes extracts attributes from the event for use in the

@@ -27,15 +27,15 @@ import (
 func instrumentQuery(ctx context.Context, query string, numArguments int) (context.Context, string) {
 	hash := hash(query)
 
-	hashPrefix := fmt.Sprintf("-- query hash: %d", hash)
-	lengthPrefix := fmt.Sprintf("-- query length: %d (%d args)", len(query), numArguments)
+	hashPrefix := fmt.Sprintf("query hash: %d", hash)
+	lengthPrefix := fmt.Sprintf("query length: %d (%d args)", len(query), numArguments)
 	metadataLines := []string{hashPrefix, lengthPrefix}
 
 	callerPrefix, ok := getSourceMetadata(ctx)
 	if ok {
 		metadataLines = append(metadataLines, callerPrefix)
 	} else {
-		metadataLines = append(metadataLines, "-- (could not infer source)")
+		metadataLines = append(metadataLines, "(could not infer source)")
 	}
 
 	// Set the hash, caller, and query on the span.
@@ -50,7 +50,20 @@ func instrumentQuery(ctx context.Context, query string, numArguments int) (conte
 		// provide additional context if the truncation is too aggressive.
 		attribute.String("db.statement", truncateStringValue(strings.TrimSpace(query))))
 
-	return ctx, strings.Join(append(metadataLines, query), "\n")
+	return ctx, formatQueryWithMetadata(query, metadataLines)
+}
+
+// formatQueryWithMetadata returns a modified query text with front-loaded metadata that is
+// useful when looking at global queries in a Postgres instance such as with Cloud SQL
+// Query Insights.
+func formatQueryWithMetadata(query string, metadataLines []string) string {
+	escapedLines := make([]string, len(metadataLines))
+	for i, line := range metadataLines {
+		// Escape / with \/ so that the metadata lines cannot end the multiline
+		// comment accidentally.
+		escapedLines[i] = strings.ReplaceAll(line, "/", "\\/")
+	}
+	return fmt.Sprintf("/*%s*/\n%s", strings.Join(escapedLines, "\n"), query)
 }
 
 // hash returns the 32-bit FNV-1a hash of the given query text.
@@ -141,8 +154,8 @@ frameLoop:
 		file := filepath.Join(pathPrefix, filepath.Base(frame.File))
 
 		// Construct metadata values
-		callerLine := fmt.Sprintf("-- caller: %s", functionName)
-		sourceLine := fmt.Sprintf("-- source: %s:%d", file, frame.Line)
+		callerLine := fmt.Sprintf("caller: %s", functionName)
+		sourceLine := fmt.Sprintf("source: %s:%d", file, frame.Line)
 		return callerLine + "\n" + sourceLine, true
 	}
 

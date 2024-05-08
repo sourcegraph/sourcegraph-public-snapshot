@@ -86,6 +86,7 @@ func main() {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IsCaseSensitive: true},
 		want: autogold.Expect(`README.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 main.go:6:6:
 fmt.Println("Hello world")
 `),
@@ -95,6 +96,7 @@ fmt.Println("Hello world")
 		want: autogold.Expect(`README.md:2:3:
 
 Hello world example in go
+// No newline at end of chunk
 main.go:5:7:
 func main() {
 fmt.Println("Hello world")
@@ -107,6 +109,7 @@ fmt.Println("Hello world")
 # Hello World
 
 Hello world example in go
+// No newline at end of chunk
 main.go:4:7:
 
 func main() {
@@ -120,6 +123,7 @@ fmt.Println("Hello world")
 # Hello World
 
 Hello world example in go
+// No newline at end of chunk
 main.go:1:7:
 package main
 
@@ -135,6 +139,7 @@ fmt.Println("Hello world")
 # Hello World
 README.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 main.go:6:6:
 fmt.Println("Hello world")
 `),
@@ -169,6 +174,7 @@ fmt.Println("Hello world")
 # Hello World
 README.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: ""}, ExcludeLangs: []string{"Markdown"}},
@@ -185,10 +191,14 @@ symlink
 # Hello World
 README.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `),
 	}, {
-		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "w"}, IncludePaths: []string{`\.(md|txt)$`, `\.txt$`}},
-		want: autogold.Expect("abc.txt:1:1:\nw\n"),
+		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "w"}, IncludePaths: []string{`\.(md|txt)$`, `\.txt$`}},
+		want: autogold.Expect(`abc.txt:1:1:
+w
+// No newline at end of chunk
+`),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, ExcludePaths: "README\\.md"},
 		want: autogold.Expect(`main.go:6:6:
@@ -200,6 +210,7 @@ fmt.Println("Hello world")
 # Hello World
 README.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "w"}, IncludePaths: []string{"\\.(md|txt)", "README"}},
@@ -207,6 +218,7 @@ Hello world example in go
 # Hello World
 README.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePaths: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
@@ -290,7 +302,8 @@ func main() {
 # Hello World
 
 Hello world example in go
-main.go:1:8:
+// No newline at end of chunk
+main.go:1:7:
 package main
 
 import "fmt"
@@ -298,7 +311,6 @@ import "fmt"
 func main() {
 fmt.Println("Hello world")
 }
-
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "^$", IsRegExp: true}},
@@ -310,8 +322,10 @@ main.go:4:4:
 
 main.go:8:8:
 
+// No newline at end of chunk
 milton.png:1:1:
 
+// No newline at end of chunk
 `),
 	}, {
 		arg: protocol.PatternInfo{
@@ -324,6 +338,7 @@ milton.png:1:1:
 		},
 		want: autogold.Expect(`file++.plus:1:1:
 filename contains regex metachars
+// No newline at end of chunk
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "World", IsNegated: true}},
@@ -360,10 +375,10 @@ symlink
 `),
 	}, {
 		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "abc"}, PatternMatchesPath: true, PatternMatchesContent: true},
-		want: autogold.Expect("abc.txt\nsymlink:1:1:\nabc.txt\n"),
+		want: autogold.Expect("abc.txt\nsymlink:1:1:\nabc.txt\n// No newline at end of chunk\n"),
 	}, {
 		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "abc"}, PatternMatchesPath: false, PatternMatchesContent: true},
-		want: autogold.Expect("symlink:1:1:\nabc.txt\n"),
+		want: autogold.Expect("symlink:1:1:\nabc.txt\n// No newline at end of chunk\n"),
 	}, {
 		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "abc"}, PatternMatchesPath: true, PatternMatchesContent: false},
 		want: autogold.Expect("abc.txt\n"),
@@ -371,6 +386,7 @@ symlink
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "utf8"}, PatternMatchesPath: false, PatternMatchesContent: true},
 		want: autogold.Expect(`nonutf8.txt:1:1:
 file contains invalid utf8 � characters
+// No newline at end of chunk
 `),
 	}}
 
@@ -740,13 +756,17 @@ func toString(m []protocol.FileMatch) string {
 		for _, cm := range f.ChunkMatches {
 			buf.WriteString(f.Path)
 			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(int(cm.ContentStart.Line) + 1))
+			firstLine := int(cm.ContentStart.Line) + 1
+			lastLine := firstLine + strings.Count(strings.TrimSuffix(cm.Content, "\n"), "\n")
+			buf.WriteString(strconv.Itoa(firstLine))
 			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(int(cm.ContentStart.Line) + strings.Count(cm.Content, "\n") + 1))
+			buf.WriteString(strconv.Itoa(lastLine))
 			buf.WriteByte(':')
 			buf.WriteByte('\n')
 			buf.WriteString(cm.Content)
-			buf.WriteByte('\n')
+			if !strings.HasSuffix(cm.Content, "\n") {
+				buf.WriteString("\n// No newline at end of chunk\n")
+			}
 		}
 	}
 	return buf.String()

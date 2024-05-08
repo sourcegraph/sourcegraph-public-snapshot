@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+	"unicode/utf8"
 
 	"github.com/amit7itz/goset"
 	pg "github.com/lib/pq"
@@ -136,6 +137,15 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 		deletedPaths := []string{}
 		addedPaths := []string{}
 		for _, pathStatus := range entry.PathStatuses {
+			if !utf8.ValidString(pathStatus.Path) {
+				s.logger.Warn(
+					"Rockskip skipping file due to path not being utf-8 encoded",
+					log.String("repo", repo),
+					log.String("path", pathStatus.Path),
+				)
+				continue
+			}
+
 			if pathStatus.Status == gitdomain.DeletedAMD || pathStatus.Status == gitdomain.ModifiedAMD {
 				deletedPaths = append(deletedPaths, pathStatus.Path)
 			}

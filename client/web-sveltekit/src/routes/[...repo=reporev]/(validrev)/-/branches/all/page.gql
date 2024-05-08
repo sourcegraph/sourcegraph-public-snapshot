@@ -3,10 +3,11 @@ query AllBranchesPage_BranchesQuery(
     $first: Int!
     $withBehindAhead: Boolean!
     $revspec: String = ""
+    $query: String = ""
 ) {
     repository(name: $repoName) {
         id
-        branches(first: $first, orderBy: AUTHORED_OR_COMMITTED_AT) {
+        branches(first: $first, query: $query) {
             ...GitBranchesConnection
         }
     }
@@ -16,6 +17,9 @@ fragment GitBranchesConnection on GitRefConnection {
     nodes {
         id
         ...GitReference_Ref
+    }
+    pageInfo {
+        hasNextPage
     }
     totalCount
 }

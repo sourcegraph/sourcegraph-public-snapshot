@@ -50,6 +50,15 @@ export const selectedLines = StateField.define<SelectedLineRange>({
     create() {
         return null
     },
+    compare(a, b) {
+        if (a === b) {
+            return true
+        }
+        if (!a || !b) {
+            return false
+        }
+        return a.line === b.line && a.endLine === b.endLine
+    },
     update(value, transaction) {
         for (const effect of transaction.effects) {
             if (effect.is(setSelectedLines)) {
@@ -219,48 +228,48 @@ export const lineScrollEnforcing = Annotation.define<'scroll-enforcing'>()
  * View plugin responsible for scrolling the selected line(s) into view if/when
  * necessary.
  */
-const scrollIntoView = ViewPlugin.fromClass(
-    class implements PluginValue {
-        private lastSelectedLines: SelectedLineRange | null = null
-        constructor(private readonly view: EditorView) {
-            this.lastSelectedLines = this.view.state.field(selectedLines)
+class ScrollIntoView implements PluginValue {
+    private lastSelectedLines: SelectedLineRange | null = null
+    constructor(private readonly view: EditorView, config: SelectableLineNumbersConfig) {
+        this.lastSelectedLines = this.view.state.field(selectedLines)
+        if (!config.skipInitialScrollIntoView) {
             this.scrollIntoView(this.lastSelectedLines)
         }
+    }
 
-        public update(update: ViewUpdate): void {
-            const currentSelectedLines = update.state.field(selectedLines)
-            const isForcedScroll = update.transactions.some(
-                transaction => transaction.annotation(lineScrollEnforcing) === 'scroll-enforcing'
-            )
+    public update(update: ViewUpdate): void {
+        const currentSelectedLines = update.state.field(selectedLines)
+        const isForcedScroll = update.transactions.some(
+            transaction => transaction.annotation(lineScrollEnforcing) === 'scroll-enforcing'
+        )
 
-            const hasSelectedLineChanged = isForcedScroll ? true : this.lastSelectedLines !== currentSelectedLines
-            const isExternalTrigger = update.transactions.some(
-                transaction => transaction.annotation(lineSelectionSource) !== 'gutter'
-            )
+        const hasSelectedLineChanged = isForcedScroll ? true : this.lastSelectedLines !== currentSelectedLines
+        const isExternalTrigger = update.transactions.some(
+            transaction => transaction.annotation(lineSelectionSource) !== 'gutter'
+        )
 
-            if (hasSelectedLineChanged && isExternalTrigger) {
-                // Only scroll selected lines into view when the user isn't
-                // currently selecting lines themselves (as indicated by the
-                // presence of the "gutter" annotation). Otherwise, the scroll
-                // position might change while the user is selecting lines.
-                this.lastSelectedLines = currentSelectedLines
-                this.scrollIntoView(currentSelectedLines)
-            }
-        }
-
-        public scrollIntoView(selection: SelectedLineRange): void {
-            if (selection && shouldScrollIntoView(this.view, selection)) {
-                window.requestAnimationFrame(() => {
-                    this.view.dispatch({
-                        effects: EditorView.scrollIntoView(this.view.state.doc.line(selection.line).from, {
-                            y: 'center',
-                        }),
-                    })
-                })
-            }
+        if (hasSelectedLineChanged && isExternalTrigger) {
+            // Only scroll selected lines into view when the user isn't
+            // currently selecting lines themselves (as indicated by the
+            // presence of the "gutter" annotation). Otherwise, the scroll
+            // position might change while the user is selecting lines.
+            this.lastSelectedLines = currentSelectedLines
+            this.scrollIntoView(currentSelectedLines)
         }
     }
-)
+
+    public scrollIntoView(selection: SelectedLineRange): void {
+        if (selection && shouldScrollIntoView(this.view, selection)) {
+            window.requestAnimationFrame(() => {
+                this.view.dispatch({
+                    effects: EditorView.scrollIntoView(this.view.state.doc.line(selection.line).from, {
+                        y: 'center',
+                    }),
+                })
+            })
+        }
+    }
+}
 
 const selectedLineNumberTheme = EditorView.theme({
     '.cm-lineNumbers': {
@@ -282,6 +291,12 @@ interface SelectableLineNumbersConfig {
      * In this case `onSelection` will be ignored.
      */
     onLineClick?: (line: number) => void
+
+    /**
+     * If set to true, the initial selection will not be scrolled into view.
+     */
+    skipInitialScrollIntoView?: boolean
+
     // todo(fkling): Refactor this logic, maybe move into separate extensions
 }
 
@@ -300,7 +315,7 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
     let dragging = false
 
     return [
-        scrollIntoView,
+        ViewPlugin.define(view => new ScrollIntoView(view, config)),
         selectedLines.init(() => config.initialSelection),
         lineNumbers({
             domEventHandlers: {

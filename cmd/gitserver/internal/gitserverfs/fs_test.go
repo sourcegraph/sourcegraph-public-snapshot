@@ -2,13 +2,51 @@ package gitserverfs
 
 import (
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
+
+func TestGitserverFS_RepoDir(t *testing.T) {
+	fs := New(observation.TestContextTB(t), "/data/repos")
+
+	tts := []struct {
+		repoName api.RepoName
+		want     string
+	}{
+		{
+			repoName: "github.com/sourcegraph/sourcegraph",
+			want:     "/data/repos/github.com/sourcegraph/sourcegraph/.git",
+		},
+		{
+			repoName: "github.com/sourcegraph/sourcegraph.git",
+			want:     "/data/repos/github.com/sourcegraph/sourcegraph.git/.git",
+		},
+		{
+			repoName: "DELETED-123123.123123-github.com/sourcegraph/sourcegraph",
+			want:     "/data/repos/github.com/sourcegraph/sourcegraph/.git",
+		},
+		{
+			// This is invalid, but as a protection make sure that we still don't
+			// allow a path outside of /data/repos.
+			repoName: "github.com/sourcegraph/sourcegraph/../../../../../src-cli",
+			want:     "/data/repos/src-cli/.git",
+		},
+	}
+
+	for i, tt := range tts {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			got := fs.RepoDir(tt.repoName).Path()
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
 
 func TestIgnorePath(t *testing.T) {
 	reposDir := "/data/repos"

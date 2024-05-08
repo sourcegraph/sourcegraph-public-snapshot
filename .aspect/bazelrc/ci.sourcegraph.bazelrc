@@ -58,3 +58,12 @@ test --flaky_test_attempts=2
 # See https://github.com/aspect-build/rules_js/issues/1412
 # Sometimes the build fails due to some flakiness where a npm package fails to be copied
 common --noexperimental_merged_skyframe_analysis_execution
+
+test --build_event_binary_file=build_event_log.bin
+test --build_event_binary_file_path_conversion=false
+test --build_event_binary_file_upload_mode=wait_for_upload_complete
+test --build_event_publish_all_actions=true
+
+# These likely perform faster locally than the overhead of pulling/pushing from/to the remote cache,
+# as well as being able to reduce how much we push to the cache
+common --modify_execution_info=CopyDirectory=+no-remote,CopyToDirectory=+no-remote,CopyFile=+no-remote

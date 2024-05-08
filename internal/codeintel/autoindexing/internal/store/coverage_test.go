@@ -22,7 +22,7 @@ func TestTopRepositoriesToConfigure(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertEvent := func(name string, repositoryID int, maxAge time.Duration) {
 		query := `
@@ -73,7 +73,7 @@ func TestRepositoryIDsWithConfiguration(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	testIndexerList := map[string]uploadsshared.AvailableIndexer{
 		"test-indexer": {
@@ -119,7 +119,7 @@ func TestGetLastIndexScanForRepository(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	ts, err := store.GetLastIndexScanForRepository(ctx, 50)
 	if err != nil {

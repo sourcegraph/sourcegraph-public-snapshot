@@ -73,6 +73,7 @@ ts_project(
         "//:node_modules/rxjs",
         "//:node_modules/sourcegraph",
         "//:node_modules/utility-types",
+        "//client/wildcard:wildcard_lib",
     ],
 )
 

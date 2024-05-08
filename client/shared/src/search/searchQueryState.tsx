@@ -3,6 +3,7 @@ import React, { createContext } from 'react'
 import type { StoreApi, UseBoundStore } from 'zustand'
 
 import type { SearchPatternType } from '../graphql-operations'
+import { TelemetryV2Props } from '../telemetry'
 
 import { type QueryState, type SubmitSearchParameters, toggleSubquery } from './helpers'
 import type { FilterType } from './query/filters'
@@ -84,7 +85,9 @@ export interface SearchQueryState {
      * Note that this won't update `queryState` directly.
      */
     submitSearch: (
-        parameters: Omit<SubmitSearchParameters, 'query' | 'caseSensitive' | 'patternType'> & { query?: string },
+        parameters: Omit<SubmitSearchParameters, 'query' | 'caseSensitive' | 'patternType'> & {
+            query?: string
+        } & TelemetryV2Props,
         updates?: QueryUpdate[]
     ) => void
 }

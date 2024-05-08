@@ -115,8 +115,7 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
             syntax_set,
             line_length_limit: q.line_length_limit,
         };
-        let output = backend.highlight(&q.file_info())
-            .map_err(jsonify_err)?;
+        let output = backend.highlight(&q.file_info()).map_err(jsonify_err)?;
 
         debug_assert!(output.kind == PayloadKind::Html);
         Ok(json!({ "data": output.payload, "plaintext": &output.grammar == "Plain Text", }))

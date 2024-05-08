@@ -6,7 +6,7 @@ import (
 	"github.com/hexops/autogold/v2"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 func TestExtractPubSubAttributes(t *testing.T) {

@@ -4,10 +4,11 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Card, LoadingSpinner, H2, Text, H4, AnchorLink, LineChart, type Series } from '@sourcegraph/wildcard'
 
 import type { NotebooksStatisticsResult, NotebooksStatisticsVariables } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
@@ -21,8 +22,10 @@ import { NOTEBOOKS_STATISTICS } from './queries'
 
 import styles from './index.module.scss'
 
-export const AnalyticsNotebooksPage: React.FunctionComponent = () => {
-    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Notebooks' })
+interface Props extends TelemetryV2Props {}
+
+export const AnalyticsNotebooksPage: React.FunctionComponent<Props> = ({ telemetryRecorder }) => {
+    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Notebooks', telemetryRecorder })
     const { data, error, loading } = useQuery<NotebooksStatisticsResult, NotebooksStatisticsVariables>(
         NOTEBOOKS_STATISTICS,
         {
@@ -33,8 +36,9 @@ export const AnalyticsNotebooksPage: React.FunctionComponent = () => {
         }
     )
     useEffect(() => {
-        eventLogger.logPageView('AdminAnalyticsNotebooks')
-    }, [])
+        EVENT_LOGGER.logPageView('AdminAnalyticsNotebooks')
+        telemetryRecorder.recordEvent('admin.analytics.notebooks', 'view')
+    }, [telemetryRecorder])
     const [stats, legends, calculatorProps] = useMemo(() => {
         if (!data) {
             return []
@@ -111,10 +115,11 @@ export const AnalyticsNotebooksPage: React.FunctionComponent = () => {
             description:
                 'Notebooks reduce the time it takes to create living documentation and share it. Each notebook view accounts for time saved by both creators and consumers of notebooks.',
             temporarySettingsKey: 'search.notebooks.minSavedPerView',
+            telemetryRecorder,
         }
 
         return [stats, legends, calculatorProps]
-    }, [data, dateRange.value, aggregation.selected])
+    }, [data, dateRange.value, aggregation.selected, telemetryRecorder])
 
     if (error) {
         throw error

@@ -32,7 +32,7 @@ func (s *Server) EnsureRevision(ctx context.Context, repo api.RepoName, rev stri
 	}
 
 	// Revision not found, update before returning.
-	err := s.doRepoUpdate(ctx, repo, rev)
+	_, _, err := s.FetchRepository(ctx, repo)
 	if err != nil {
 		if ctx.Err() == nil {
 			ensureRevisionCounter.WithLabelValues("update_failed").Inc()

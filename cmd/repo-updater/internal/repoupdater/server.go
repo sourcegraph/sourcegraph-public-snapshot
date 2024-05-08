@@ -1,4 +1,3 @@
-// Package repoupdater implements the repo-updater service HTTP handler.
 package repoupdater
 
 import (
@@ -11,6 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
@@ -123,6 +123,39 @@ func (s *Server) EnqueueRepoUpdate(ctx context.Context, req *proto.EnqueueRepoUp
 		Id:   int32(repo.ID),
 		Name: string(repo.Name),
 	}, nil
+}
+
+func (s *Server) RecloneRepository(ctx context.Context, req *proto.RecloneRepositoryRequest) (*proto.RecloneRepositoryResponse, error) {
+	// NOTE: Internal actor is required to have full visibility of the repo table
+	// 	(i.e. bypass repository authorization).
+	ctx = actor.WithInternalActor(ctx)
+
+	repoName := api.RepoName(req.GetRepoName())
+	if repoName == "" {
+		return nil, status.Error(codes.InvalidArgument, "repo_name must be specified")
+	}
+
+	rs, err := s.Store.RepoStore().List(ctx, database.ReposListOptions{Names: []string{string(repoName)}})
+	if err != nil {
+		return nil, errors.Wrap(err, "store.list-repos")
+	}
+
+	if len(rs) != 1 {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("repo %q not found in store", repoName))
+	}
+
+	repo := rs[0]
+
+	svc := gitserver.NewRepositoryServiceClient()
+
+	if err := svc.DeleteRepository(ctx, repoName); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to delete repository %q: %s", repoName, err))
+	}
+
+	// Enqueue a reclone through scheduler.
+	s.Scheduler.UpdateOnce(repo.ID, repo.Name)
+
+	return &proto.RecloneRepositoryResponse{}, nil
 }
 
 func (s *Server) EnqueueChangesetSync(ctx context.Context, req *proto.EnqueueChangesetSyncRequest) (*proto.EnqueueChangesetSyncResponse, error) {

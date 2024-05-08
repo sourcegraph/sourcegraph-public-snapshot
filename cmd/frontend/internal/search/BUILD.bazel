@@ -20,7 +20,6 @@ go_library(
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel",
-        "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/gitserver",

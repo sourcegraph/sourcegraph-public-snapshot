@@ -29,7 +29,6 @@ func (e *OrgNotFoundError) NotFound() bool {
 var errOrgNameAlreadyExists = errors.New("organization name is already taken (by a user, team, or another organization)")
 
 type OrgStore interface {
-	AddOrgsOpenBetaStats(ctx context.Context, userID int32, data string) (string, error)
 	Count(context.Context, OrgsListOptions) (int, error)
 	Create(ctx context.Context, name string, displayName *string) (*types.Org, error)
 	Delete(ctx context.Context, id int32) (err error)
@@ -41,7 +40,6 @@ type OrgStore interface {
 	List(context.Context, *OrgsListOptions) ([]*types.Org, error)
 	Transact(context.Context) (OrgStore, error)
 	Update(ctx context.Context, id int32, displayName *string) (*types.Org, error)
-	UpdateOrgsOpenBetaStats(ctx context.Context, id string, orgID int32) error
 	With(basestore.ShareableStore) OrgStore
 	basestore.ShareableStore
 }
@@ -330,18 +328,4 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 	}
 
 	return nil
-}
-
-func (o *orgStore) AddOrgsOpenBetaStats(ctx context.Context, userID int32, data string) (id string, err error) {
-	query := sqlf.Sprintf("INSERT INTO orgs_open_beta_stats(user_id, data) VALUES(%d, %s) RETURNING id;", userID, data)
-
-	err = o.Handle().QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&id)
-	return id, err
-}
-
-func (o *orgStore) UpdateOrgsOpenBetaStats(ctx context.Context, id string, orgID int32) error {
-	query := sqlf.Sprintf("UPDATE orgs_open_beta_stats SET org_id=%d WHERE id=%s;", orgID, id)
-
-	_, err := o.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
-	return err
 }

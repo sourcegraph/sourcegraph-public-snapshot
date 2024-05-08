@@ -8,6 +8,8 @@ import %workspace%/.aspect/bazelrc/javascript.bazelrc
 import %workspace%/.aspect/bazelrc/performance.bazelrc
 import %workspace%/.aspect/bazelrc/rules_ts.bazelrc
 
+try-import %workspace%/.apko/.bazelrc
+
 ### YOUR PROJECT SPECIFIC SETTINGS GO HERE ###
 
 # Load any settings & overrides specific to the current user from `.aspect/bazelrc/user.bazelrc`.
@@ -40,8 +42,11 @@ test:go-verbose-test --test_env=GO_TEST_WRAP_TESTV=1
 # we instead disable it.
 common --noincompatible_disallow_empty_glob
 
-# Ensure clippy runs for rust targets
+# Ensure clippy and rustfmt run for Rust targets
 build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
 build --output_groups=+clippy_checks
+build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
+build --output_groups=+rustfmt_checks
+build --@rules_rust//:rustfmt.toml=//docker-images/syntax-highlighter:rustfmt.toml
 
 common --noenable_bzlmod

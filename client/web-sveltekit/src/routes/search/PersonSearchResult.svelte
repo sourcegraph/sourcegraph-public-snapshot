@@ -23,7 +23,12 @@
 <SearchResult>
     <div slot="title">
         <Avatar
-            avatar={{ displayName, username: result.user?.username ?? '', avatarURL: result.user?.avatarURL ?? null }}
+            avatar={{
+                __typename: 'User',
+                displayName,
+                username: result.user?.username ?? '',
+                avatarURL: result.user?.avatarURL ?? null,
+            }}
             --avatar-size="1.5rem"
         />
         &nbsp;

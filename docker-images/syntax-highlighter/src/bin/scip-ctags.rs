@@ -1,6 +1,6 @@
-use std::io::{BufReader, BufWriter};
+use std::io::{BufReader, BufWriter, Write};
 
-use syntax_analysis::ctags::ctags_runner;
+use syntax_analysis::ctags::{ctags_runner, Reply};
 
 fn main() {
     // Exits with a code zero if the environment variable SANITY_CHECK equals
@@ -20,6 +20,13 @@ fn main() {
     let mut stdout = BufWriter::new(std::io::stdout());
 
     if let Err(err) = ctags_runner(&mut stdin, &mut stdout) {
-        eprintln!("Error while executing: {}", err);
+        // If there's a top-level error, treat it as fatal. If an error is recoverable,
+        // we would've already handled it and included it in the ctags response.
+        Reply::Error {
+            message: err.to_string(),
+            fatal: true,
+        }
+        .write(&mut stdout);
+        stdout.flush().unwrap()
     }
 }

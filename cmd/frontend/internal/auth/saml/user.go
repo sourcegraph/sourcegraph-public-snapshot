@@ -9,11 +9,14 @@ import (
 
 	saml2 "github.com/russellhaering/gosaml2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -81,6 +84,8 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 // authenticated actor if successful; otherwise it returns an friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
 func getOrCreateUser(ctx context.Context, db database.DB, allowSignup bool, info *authnResponseInfo) (newUserCreated bool, _ *actor.Actor, safeErrMsg string, err error) {
+	logger := log.Scoped("saml") // TODO: propagate logger from callers
+
 	var data extsvc.AccountData
 	if err := SetExternalAccountData(&data, info); err != nil {
 		return false, nil, "", err
@@ -91,7 +96,8 @@ func getOrCreateUser(ctx context.Context, db database.DB, allowSignup bool, info
 		return false, nil, fmt.Sprintf("Error normalizing the username %q. See https://sourcegraph.com/docs/admin/auth/#username-normalization.", info.unnormalizedUsername), err
 	}
 
-	newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, db, auth.GetAndSaveUserOp{
+	recorder := telemetryrecorder.New(db)
+	newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, logger, db, recorder, auth.GetAndSaveUserOp{
 		UserProps: database.NewUser{
 			Username:        username,
 			Email:           info.email,

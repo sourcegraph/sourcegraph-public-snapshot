@@ -3,7 +3,7 @@
 package:
   name: http-server-stabilizer
   version: 1.1.0
-  epoch: 2
+  epoch: 3
   description: "HTTP server stabilizer for unruly servers"
   target-architecture:
     - x86_64
@@ -34,3 +34,9 @@ pipeline:
       packages: ./...
       prefix: /usr/local
       output: http-server-stabilizer
+
+update:
+  enabled: true
+  github:
+    identifier: sourcegraph/http-server-stabilizer
+    strip-prefix: "v"

@@ -159,6 +159,30 @@ func TestComputeGithubCheckState(t *testing.T) {
 			},
 			want: btypes.ChangesetCheckStateFailed,
 		},
+		{
+			name: "completed suites with a successful run",
+			events: []*btypes.ChangesetEvent{
+				commitEvent(1, "ctx1", "SUCCESS"),
+				checkSuiteEvent(1, "cs1", "COMPLETED", "SUCCESS"),
+			},
+			want: btypes.ChangesetCheckStatePassed,
+		},
+		{
+			name: "completed suites with a skipped run",
+			events: []*btypes.ChangesetEvent{
+				commitEvent(1, "ctx1", "SUCCESS"),
+				checkSuiteEvent(1, "cs1", "COMPLETED", "SKIPPED"),
+			},
+			want: btypes.ChangesetCheckStatePassed,
+		},
+		{
+			name: "completed suites with a failed run",
+			events: []*btypes.ChangesetEvent{
+				commitEvent(1, "ctx1", "SUCCESS"),
+				checkSuiteEvent(1, "cs1", "COMPLETED", "FAILURE"),
+			},
+			want: btypes.ChangesetCheckStatePassed,
+		},
 	}
 
 	for _, tc := range tests {

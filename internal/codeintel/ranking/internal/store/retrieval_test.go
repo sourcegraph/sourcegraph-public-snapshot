@@ -26,7 +26,7 @@ func TestGetStarRank(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO repo (name, stars)
@@ -73,7 +73,7 @@ func TestDocumentRanks(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 	repoName := api.RepoName("foo")
 
 	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
@@ -130,7 +130,7 @@ func TestGetReferenceCountStatistics(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
 
@@ -175,7 +175,7 @@ func TestCoverageCounts(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// Create three visible uploads and export a pair
 	if _, err := db.ExecContext(ctx, `
@@ -239,7 +239,7 @@ func TestLastUpdatedAt(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	now := time.Unix(1686695462, 0)
 	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
