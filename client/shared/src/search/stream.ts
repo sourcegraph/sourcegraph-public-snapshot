@@ -284,6 +284,17 @@ export interface Filter {
     kind: 'file' | 'repo' | 'lang' | 'utility' | 'author' | 'commit date' | 'symbol type' | 'type'
 }
 
+export const V2FilterTypes: { [key in Filter['kind']]: number } = {
+    file: 1,
+    repo: 2,
+    lang: 3,
+    utility: 4,
+    author: 5,
+    'commit date': 6,
+    'symbol type': 7,
+    type: 8,
+}
+
 export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
 export type AlertKind = SmartSearchAlertKind | 'unowned-results'
 

@@ -24,6 +24,8 @@ type Resolver struct {
 	rankingServiceResolver   RankingServiceResolver
 }
 
+var _ RootResolver = &Resolver{}
+
 func NewCodeIntelResolver(
 	autoIndexingRootResolver AutoindexingServiceResolver,
 	codenavResolver CodeNavServiceResolver,
