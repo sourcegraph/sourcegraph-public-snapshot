@@ -123,6 +123,7 @@ Hello world example in go`, typeFile},
 				{Status: gitdomain.StatusModified, Path: "changed.go"},
 				{Status: gitdomain.StatusAdded, Path: "added.md"},
 				{Status: gitdomain.StatusDeleted, Path: "removed.md"},
+				{Status: gitdomain.StatusTypeChanged, Path: "type_changed.md"},
 			}), nil
 		},
 		MaxTotalPathsLength: 100_000,
