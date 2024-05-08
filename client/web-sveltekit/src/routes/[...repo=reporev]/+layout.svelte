@@ -70,7 +70,7 @@
                         {#if entry.icon}
                             <Icon svgPath={entry.icon} inline />
                         {/if}
-                        <span class="ml-1">{entry.title}</span>
+                        <span>{entry.title}</span>
                     </a>
                 </li>
             {/each}
@@ -91,7 +91,7 @@
                         {#if entry.icon}
                             <Icon svgPath={entry.icon} inline />
                         {/if}
-                        <span class="ml-1">{entry.title}</span>
+                        <span>{entry.title}</span>
                     </span>
                 </MenuLink>
             {/each}
@@ -151,6 +151,7 @@
             padding: 0.25rem 0.5rem;
             border-radius: var(--border-radius);
             white-space: nowrap;
+            gap: 0.25rem;
 
             &:hover {
                 background-color: var(--color-bg-2);

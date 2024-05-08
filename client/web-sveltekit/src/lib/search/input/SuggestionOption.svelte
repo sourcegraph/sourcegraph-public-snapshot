@@ -39,12 +39,12 @@
 
 <li role="row" id="{groupIndex}x{rowIndex}" aria-selected={selected}>
     {#if option.icon}
-        <div class="pr-1 align-self-start">
+        <div class="icon">
             <Icon svgPath={option.icon} aria-hidden="true" inline />
         </div>
     {/if}
     <div class="inner-row">
-        <div class="d-flex flex-wrap">
+        <div class="content">
             <div role="gridcell" class="label test-option-label">
                 {#if field}
                     <span class="filter-option">
@@ -98,6 +98,7 @@
         font-family: var(--code-font-family);
         font-size: 0.75rem;
         min-height: 1.5rem;
+        gap: 0.25rem;
 
         &[aria-selected='true'] {
             background-color: var(--subtle-bg);
@@ -107,6 +108,10 @@
         &:hover {
             background-color: var(--color-bg-2);
             cursor: pointer;
+        }
+
+        .icon {
+            align-self: start;
         }
 
         // Used to make label and actions wrappable
@@ -120,6 +125,11 @@
                 align-items: start;
                 gap: 0.25rem;
             }
+        }
+
+        .content {
+            display: flex;
+            flex-wrap: wrap;
         }
 
         .label {
