@@ -19,7 +19,7 @@ service EnterprisePortalCodyGatewayService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
-  // List all Cody Gateway access granted to any Enterprise subscription.
+  // List all Cody Gateway accesses granted to any Enterprise subscription.
   rpc ListCodyGatewayAccesses(ListCodyGatewayAccessesRequest) returns (ListCodyGatewayAccessesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
