@@ -12,7 +12,7 @@ import (
 )
 
 var UpgradeEphemeralCommand = cli.Command{
-	Name:        "deploy",
+	Name:        "upgrade",
 	Usage:       "sg could upgrade --name <name> --version <version>",
 	Description: "Upgrade the given Ephemeral deployment with the specified version",
 	Action:      wipAction(upgradeCloudEphemeral),
@@ -51,7 +51,7 @@ func upgradeDeploymentForVersion(ctx context.Context, email, name, version strin
 			return errors.Wrapf(err, "failed to check if instance %q already exists", spec.Name)
 		}
 	}
-	inst, err := cloudClient.CreateInstance(ctx, spec)
+	inst, err := cloudClient.UpgradeInstance(ctx, spec)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Upgrade of %q failed", spec.Name))
 		return errors.Wrapf(err, "failed to issue upgrade of %q to version %s", spec.Name, spec.Version)
