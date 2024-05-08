@@ -103,13 +103,13 @@ const numAncestors = 100
 // the graph. This will not always produce the full set of visible commits - some responses may not contain
 // all results while a subsequent request made after the lsif_nearest_uploads has been updated to include
 // this commit will.
-func (s *Service) InferClosestUploads(ctx context.Context, opts shared.UploadMatchingOptions) (_ []shared.CompletedUpload, err error) {
+func (s *Service) InferClosestUploads(ctx context.Context, opts shared.UploadMatchingOptions) (_ shared.ClosestUploads, err error) {
 	ctx, _, endObservation := s.operations.inferClosestUploads.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
 
 	repo, err := s.repoStore.Get(ctx, api.RepoID(opts.RepositoryID))
 	if err != nil {
-		return nil, err
+		return shared.ClosestUploads{}, err
 	}
 
 	// The parameters exactPath and rootMustEnclosePath align here: if we're looking for dumps
@@ -117,23 +117,23 @@ func (s *Service) InferClosestUploads(ctx context.Context, opts shared.UploadMat
 	// to intersect the target directory. If we're looking for dumps that can answer queries for
 	// a single file, then we need a dump with a root that properly encloses that file.
 	if uploads, err := s.store.FindClosestCompletedUploads(ctx, opts); err != nil {
-		return nil, errors.Wrap(err, "store.FindClosestCompletedUploads")
-	} else if len(uploads) != 0 {
+		return shared.ClosestUploads{}, errors.Wrap(err, "store.FindClosestCompletedUploads")
+	} else if uploads.Len() != 0 {
 		return uploads, nil
 	}
 
 	// Repository has no LSIF data at all
 	if repositoryExists, err := s.store.HasRepository(ctx, opts.RepositoryID); err != nil {
-		return nil, errors.Wrap(err, "dbstore.HasRepository")
+		return shared.ClosestUploads{}, errors.Wrap(err, "dbstore.HasRepository")
 	} else if !repositoryExists {
-		return nil, nil
+		return shared.ClosestUploads{}, nil
 	}
 
 	// Commit is known and the empty dumps list explicitly means nothing is visible
 	if commitExists, err := s.store.HasCommit(ctx, opts.RepositoryID, opts.Commit); err != nil {
-		return nil, errors.Wrap(err, "dbstore.HasCommit")
+		return shared.ClosestUploads{}, errors.Wrap(err, "dbstore.HasCommit")
 	} else if commitExists {
-		return nil, nil
+		return shared.ClosestUploads{}, nil
 	}
 
 	// Otherwise, the repository has LSIF data but we don't know about the commit. This commit
@@ -147,18 +147,18 @@ func (s *Service) InferClosestUploads(ctx context.Context, opts shared.UploadMat
 		Order: gitserver.CommitsOrderTopoDate,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "gitserverClient.Commits")
+		return shared.ClosestUploads{}, errors.Wrap(err, "gitserverClient.Commits")
 	}
 
 	graph := commitgraph.ParseCommitGraph(commits)
 
 	uploads, err := s.store.FindClosestCompletedUploadsFromGraphFragment(ctx, opts, graph)
 	if err != nil {
-		return nil, errors.Wrap(err, "dbstore.FindClosestCompletedUploadsFromGraphFragment")
+		return shared.ClosestUploads{}, errors.Wrap(err, "dbstore.FindClosestCompletedUploadsFromGraphFragment")
 	}
 
 	if err := s.store.SetRepositoryAsDirty(ctx, opts.RepositoryID); err != nil {
-		return nil, errors.Wrap(err, "dbstore.MarkRepositoryAsDirty")
+		return shared.ClosestUploads{}, errors.Wrap(err, "dbstore.MarkRepositoryAsDirty")
 	}
 
 	return uploads, nil

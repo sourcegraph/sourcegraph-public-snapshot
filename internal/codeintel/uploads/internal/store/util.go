@@ -81,6 +81,8 @@ SELECT
 FROM (
 	SELECT
 		t.*,
+		-- NOTE(id: visible-uploads-uniquing): Only pick a single result for each
+		-- (root, indexer) pair (see also: WHERE clause at end of query)
 		row_number() OVER (PARTITION BY root, indexer ORDER BY distance) AS r
 	FROM (
 		-- Select the set of uploads visible from the given commit. This is done by looking

@@ -38,6 +38,15 @@ func uploadIDsToString(vs []uploadsshared.CompletedUpload) string {
 	return strings.Join(ids, ", ")
 }
 
+func uploadIDsToString2(vs uploadsshared.ClosestUploads) string {
+	ids := make([]string, 0, vs.Len())
+	for pair := vs.Oldest(); pair != nil; pair = pair.Next() {
+		ids = append(ids, strconv.Itoa(pair.Value.ID))
+	}
+
+	return strings.Join(ids, ", ")
+}
+
 func sortRanges(ranges []shared.Range) []shared.Range {
 	sort.Slice(ranges, func(i, j int) bool {
 		iStart := ranges[i].Start
