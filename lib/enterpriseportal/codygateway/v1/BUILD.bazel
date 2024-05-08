@@ -5,9 +5,10 @@ load("@rules_buf//buf:defs.bzl", "buf_lint_test")
 
 proto_library(
     name = "v1_proto",
-    srcs = ["cody.proto"],
-    strip_import_prefix = "/lib",  # keep
+    srcs = ["codygateway.proto"],
+    # strip_import_prefix = "//lib", # keep
     visibility = ["//visibility:public"],
+    deps = ["@com_google_protobuf//:duration_proto"],
 )
 
 go_proto_library(
@@ -16,15 +17,15 @@ go_proto_library(
         "//:gen-go-grpc",
         "@io_bazel_rules_go//proto:go_proto",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cody/v1",
+    importpath = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codygateway/v1",
     proto = ":v1_proto",
     visibility = ["//visibility:public"],
 )
 
 go_library(
-    name = "cody",
+    name = "codygateway",
     embed = [":v1_go_proto"],
-    importpath = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cody/v1",
+    importpath = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codygateway/v1",
     visibility = ["//visibility:public"],
 )
 
