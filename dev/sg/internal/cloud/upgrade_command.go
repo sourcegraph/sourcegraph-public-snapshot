@@ -38,6 +38,7 @@ func upgradeDeploymentForVersion(ctx context.Context, email, name, version strin
 	spec := NewDeploymentSpec(
 		sanitizeInstanceName(name),
 		version,
+		"", // we don't need a license during upgrade
 	)
 	cloudEmoji := "☁️"
 	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Upgrading deployment %q to version %q", spec.Name, spec.Version))
