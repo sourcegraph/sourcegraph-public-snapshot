@@ -17,6 +17,17 @@ var BuildEphemeralCommand = cli.Command{
 	Action:      wipAction(buildCloudEphemeral),
 }
 
+func writeAdditionalBuildCommandsSuggestion(version string) {
+	versionLine := fmt.Sprintf("The build will push images with the following tag/version: `%s`", version)
+	deployLine := fmt.Sprintf("create a deployment with this build by running `sg cloud deploy --version %s`", version)
+	upgradeLine := fmt.Sprintf("upgrade the existing deployment with this build by running `sg cloud upgrade --version %s`", version)
+	markdown := `%s
+Once this build completes, you can:
+* %s
+* %s`
+	std.Out.WriteMarkdown(fmt.Sprintf(markdown, versionLine, deployLine, upgradeLine))
+}
+
 func buildCloudEphemeral(ctx *cli.Context) error {
 	currentBranch, err := repo.GetCurrentBranch(ctx.Context)
 	if err != nil {
@@ -41,6 +52,6 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 	if err != nil {
 		return err
 	}
-	std.Out.WriteMarkdown(fmt.Sprintf("The build will push images with the following tag/version: `%s`", version))
+	writeAdditionalBuildCommandsSuggestion(version)
 	return nil
 }
