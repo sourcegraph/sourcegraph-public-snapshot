@@ -8,11 +8,6 @@ const config: PlaywrightTestConfig = {
     reporter: 'list',
     // note: if you proxy into a locally running vite preview, you may have to raise this to 60 seconds
     timeout: 5_000,
-    // webServer: {
-    //     command: 'npm run preview',
-    //     port: PORT,
-    //     reuseExistingServer: !process.env.CI,
-    // },
     use: {
         baseURL: `http://localhost:${PORT}`,
     },

@@ -1,3 +1,4 @@
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//client/web-sveltekit:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
 load("@npm//client/web-sveltekit:vite/package_json.bzl", vite_bin = "bin")
@@ -145,7 +146,6 @@ playwright_test_bin.playwright_test(
     ],
     local = True,
     tags = [
-        # "no-sandbox",
         "requires-network",
     ],
 )
@@ -156,35 +156,38 @@ PLAYWRIGHT_DEPS = [
     ":node_modules/@faker-js/faker",
     ":node_modules/graphql",
     "//:node_modules/glob",
+    "//:node_modules/lodash",
     "//:node_modules/mime-types",
 ]
+
+copy_to_directory(
+    name = "test_app_assets",
+    srcs = [
+        ":web-sveltekit",
+    ],
+)
 
 playwright_test_bin.playwright_test(
     name = "e2e_test",
     args = [
         "test",
-        "--config ./client/web-sveltekit/playwright.config.ts",
+        "--config $(location playwright.config.ts)",
     ],
-    data = glob([
-        "src/**/search/page.spec.ts",
-        "src/testing/*.ts",
-    ]) + [
+    data = glob(
+        [
+            "src/**/*.spec.ts",
+            "src/testing/*.ts",
+        ],
+    ) + [
         "playwright.config.ts",
-        # ":playwright_install",
-        ":web-sveltekit",
+        ":generate-graphql-types",
+        ":test_app_assets",
         "//cmd/frontend/graphqlbackend:graphql_schema",
     ] + PLAYWRIGHT_DEPS,
     env = {
         "BAZEL": "1",
-        # "NODE_DEBUG": "module",
+        "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/build/_sk",
     },
-    local = True,
-    log_level = "info",
-    preserve_symlinks_main = False,
-    tags = [
-        # "no-sandbox",
-        "requires-network",
-    ],
 )
 
 TESTS = glob([
@@ -247,8 +250,9 @@ OTHER_GRAPHQL_INPUT_FILES = glob(
         "src/**/*.ts",
     ],
     [
+        "src/**/*.spec.ts",
         "src/lib/graphql-*.ts",
-        "src/testing/graphql-type-mocks.ts",
+        "src/testing/**/*.ts",
         "src/**/*.gql.ts",
     ],
 )

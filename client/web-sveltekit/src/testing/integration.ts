@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import path from 'path'
 
 import { faker } from '@faker-js/faker'
@@ -73,11 +72,12 @@ interface MockSearchStream {
     close(): Promise<void>
 }
 
-const SCHEMA_DIR = path.resolve(
-    // path.join(path.dirname(fileURLToPath(import.meta.url)),
-    '../../../../cmd/frontend/graphqlbackend'
-    // )
-)
+const IS_BAZEL = process.env.BAZEL === '1'
+
+const SCHEMA_DIR = (IS_BAZEL ? '' : '../../') + 'cmd/frontend/graphqlbackend'
+
+const ASSETS_DIR = process.env.ASSETS_DIR || './build/'
+
 const typeDefs = glob
     .sync('**/*.graphql', { cwd: SCHEMA_DIR })
     .map(file => readFileSync(path.join(SCHEMA_DIR, file), 'utf8'))
@@ -99,18 +99,19 @@ class Sourcegraph {
                 route.fulfill({
                     status: 200,
                     contentType: 'text/html',
-                    body: readFileSync('./build/index.html'),
+                    body: readFileSync(path.join(ASSETS_DIR, 'index.html')),
                 })
             })
 
             // Intercept any asset calls and replace them with static files
-            await this.page.route('_app/**/*', route => {
-                const asset = new URL(route.request().url()).pathname
+            await this.page.route(/.assets|_app/, route => {
+                const assetPath = new URL(route.request().url()).pathname.replace('/.assets/', '')
+                const asset = joinDistinct(ASSETS_DIR, assetPath)
                 const contentType = mime.contentType(path.basename(asset)) || undefined
                 route.fulfill({
                     status: 200,
                     contentType,
-                    body: readFileSync(path.join('./build/', new URL(route.request().url()).pathname)),
+                    body: readFileSync(asset),
                     headers: {
                         'cache-control': 'public, max-age=31536000, immutable',
                     },
@@ -254,6 +255,21 @@ class Sourcegraph {
     }
 }
 
+// joins two URLs which may have overlapping paths, ensuring that the result is a valid URL
+function joinDistinct(baseURL: string, suffix: string): string {
+    const suffixSet = new Set(suffix.split('/'))
+
+    let url = ''
+    for (const part of baseURL.split('/')) {
+        if (suffixSet.has(part)) {
+            break
+        }
+        url = path.join(url, part)
+    }
+
+    return path.join(url, suffix)
+}
+
 interface Utils {
     scrollYAt(locator: Locator, distance: number): Promise<void>
 }
@@ -284,7 +300,7 @@ export const test = base.extend<{ sg: Sourcegraph; utils: Utils }, { graphqlMock
     graphqlMock: [
         async ({}, use) => {
             const graphqlMock = new GraphQLMockServer({
-                schema: buildSchema('type Query'), // typeDefs),
+                schema: buildSchema(typeDefs),
                 mocks: defaultMocks,
                 typePolicies: {
                     GitBlob: {
