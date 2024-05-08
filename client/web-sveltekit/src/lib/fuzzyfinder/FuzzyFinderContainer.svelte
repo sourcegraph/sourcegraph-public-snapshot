@@ -39,8 +39,11 @@
     })
 
     $: if ($page.params.repo) {
-        const { repoName } = parseRepoRevision($page.params.repo)
+        const { repoName, revision } = parseRepoRevision($page.params.repo)
         scope = `repo:^${escapeRegExp(repoName)}$`
+        if (revision) {
+            scope += `@${revision}`
+        }
     } else {
         scope = ''
     }
