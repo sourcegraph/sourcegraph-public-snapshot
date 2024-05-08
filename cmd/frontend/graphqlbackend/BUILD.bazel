@@ -295,7 +295,6 @@ go_library(
         "//internal/honey/search",
         "//internal/httpcli",
         "//internal/insights",
-        "//internal/inventory",
         "//internal/ipynb",
         "//internal/jsonc",
         "//internal/lazyregexp",
