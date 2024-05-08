@@ -23,6 +23,7 @@ go_library(
         "//dev/ci/images",
         "//dev/sg/internal/bk",
         "//dev/sg/internal/repo",
+        "//dev/sg/internal/secrets",
         "//dev/sg/internal/std",
         "//lib/errors",
         "//lib/output",
