@@ -144,7 +144,7 @@ func TestLogPartsPerCommitInSync(t *testing.T) {
 	require.Equal(t, partsPerCommit-1, strings.Count(logFormatWithoutRefs, "%x00"))
 }
 
-func TestRepository_HasCommitAfter(t *testing.T) {
+func TestCommits_After(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
@@ -230,9 +230,15 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 					gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
 				}
 				repo := MakeGitRepository(t, gitCommands...)
-				got, err := client.HasCommitAfter(ctx, repo, tc.after, tc.revspec)
-				if err != nil || got != tc.want {
-					t.Errorf("got %t hascommitafter, want %t", got, tc.want)
+				got, err := client.Commits(ctx, repo, CommitsOptions{
+					N:     2,
+					Range: tc.revspec,
+					After: tc.after,
+				})
+				require.NoError(t, err)
+
+				if len(got) > 0 != tc.want {
+					t.Errorf("got %t commits, want %t", len(got) > 0, tc.want)
 				}
 			})
 		}
@@ -251,23 +257,31 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 				checker := getTestSubRepoPermsChecker("file2")
 				client := NewTestClient(t).WithChecker(checker)
 				repo := MakeGitRepository(t, gitCommands...)
-				got, err := client.HasCommitAfter(ctx, repo, tc.after, tc.revspec)
+				got, err := client.Commits(ctx, repo, CommitsOptions{
+					N:     2,
+					After: tc.after,
+					Range: tc.revspec,
+				})
 				if err != nil {
 					t.Errorf("got error: %s", err)
 				}
-				if got != tc.want {
-					t.Errorf("got %t hascommitafter, want %t", got, tc.want)
+				if len(got) > 0 != tc.want {
+					t.Errorf("got %t commits, want %t", len(got) > 0, tc.want)
 				}
 
-				// Case where user can't view commit 1 or commit 2, which will mean in some cases since HasCommitAfter will be false due to those commits not being visible.
+				// Case where user can't view commit 1 or commit 2, which will mean in some cases since len(Commits)>0 will be false due to those commits not being visible.
 				checker = getTestSubRepoPermsChecker("file1", "file2")
 				client = NewTestClient(t).WithChecker(checker)
-				got, err = client.HasCommitAfter(ctx, repo, tc.after, tc.revspec)
+				got, err = client.Commits(ctx, repo, CommitsOptions{
+					N:     2,
+					After: tc.after,
+					Range: tc.revspec,
+				})
 				if err != nil {
 					t.Errorf("got error: %s", err)
 				}
-				if got != tc.wantSubRepoTest {
-					t.Errorf("got %t hascommitafter, want %t", got, tc.wantSubRepoTest)
+				if len(got) > 0 != tc.wantSubRepoTest {
+					t.Errorf("got %t commits, want %t", len(got) > 0, tc.wantSubRepoTest)
 				}
 			})
 		}

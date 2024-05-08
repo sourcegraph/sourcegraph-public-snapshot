@@ -371,10 +371,6 @@ type Client interface {
 	// GetObject fetches git object data in the supplied repo
 	GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
 
-	// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
-	// contains a commit past a specified date.
-	HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string) (bool, error)
-
 	// IsRepoCloneable returns nil if the repository is cloneable.
 	IsRepoCloneable(context.Context, api.RepoName) error
 

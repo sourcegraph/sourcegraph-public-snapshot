@@ -20,7 +20,6 @@ type operations struct {
 	firstEverCommit          *observation.Operation
 	behindAhead              *observation.Operation
 	getCommit                *observation.Operation
-	hasCommitAfter           *observation.Operation
 	listRefs                 *observation.Operation
 	lstat                    *observation.Operation
 	mergeBase                *observation.Operation
@@ -47,7 +46,6 @@ type operations struct {
 	getObject                *observation.Operation
 	getDefaultBranch         *observation.Operation
 	logReverseEach           *observation.Operation
-	diffSymbols              *observation.Operation
 	diff                     *observation.Operation
 	changedFiles             *observation.Operation
 }
@@ -105,7 +103,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		firstEverCommit:          op("FirstEverCommit"),
 		behindAhead:              op("BehindAhead"),
 		getCommit:                op("GetCommit"),
-		hasCommitAfter:           op("HasCommitAfter"),
 		listRefs:                 op("ListRefs"),
 		lstat:                    subOp("lStat"),
 		mergeBase:                op("MergeBase"),
@@ -132,7 +129,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getObject:                op("GetObject"),
 		getDefaultBranch:         op("GetDefaultBranch"),
 		logReverseEach:           op("LogReverseEach"),
-		diffSymbols:              op("DiffSymbols"),
 		diff:                     op("Diff"),
 		changedFiles:             op("ChangedFiles"),
 	}
