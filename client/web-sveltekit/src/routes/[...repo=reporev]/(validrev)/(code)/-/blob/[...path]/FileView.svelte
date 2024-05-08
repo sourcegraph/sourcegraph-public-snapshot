@@ -24,6 +24,7 @@
     import { codeCopiedEvent, SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import { createPromiseStore, formatBytes } from '$lib/utils'
     import { Alert, Badge, MenuButton, MenuLink } from '$lib/wildcard'
+    import jupyterStyles from '$lib/wildcard/Jupyter.module.scss'
     import markdownStyles from '$lib/wildcard/Markdown.module.scss'
 
     import type { PageData } from './$types'
@@ -233,7 +234,7 @@
             <a href="{repoURL}/-/raw/{filePath}" target="_blank" download>Download file</a>
         </Alert>
     {:else if blob && showFormattedView}
-        <div class={`rich ${markdownStyles.markdown}`}>
+        <div class={`rich ${markdownStyles.markdown} ${jupyterStyles.jp}`}>
             {@html blob.richHTML}
         </div>
     {:else if blob}

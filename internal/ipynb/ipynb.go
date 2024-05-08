@@ -23,6 +23,7 @@ func Render(content string) (string, error) {
 	if err := c.Convert(&buf, []byte(content)); err != nil {
 		return "", fmt.Errorf("ipynb.Render: %w", err)
 	}
+
 	return htmlutil.SanitizeReader(&buf).String(), nil
 }
 
