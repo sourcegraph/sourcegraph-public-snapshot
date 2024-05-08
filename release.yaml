@@ -204,7 +204,8 @@ promoteToPublic:
             "env": {
               "DISABLE_ASPECT_WORKFLOWS": "true",
               "RELEASE_PUBLIC": "true",
-              "VERSION": "{{tag}}"
+              "VERSION": "{{tag}}",
+              "IS_DEVELOPMENT_RELEASE": "{{is_development}}"
             }
           }' "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds")
           exit_code=$?
