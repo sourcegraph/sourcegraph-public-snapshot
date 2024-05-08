@@ -198,11 +198,11 @@ func (s *Service) getUploadsWithDefinitionsForMonikers(ctx context.Context, orde
 // monikerLimit is the maximum number of monikers that can be returned from orderedMonikers.
 const monikerLimit = 10
 
-func (r *Service) getOrderedMonikers(ctx context.Context, visibleUploads []visibleUpload, kinds ...string) ([]precise.QualifiedMonikerData, error) {
+func (s *Service) getOrderedMonikers(ctx context.Context, visibleUploads []visibleUpload, kinds ...string) ([]precise.QualifiedMonikerData, error) {
 	monikerSet := newQualifiedMonikerSet()
 
 	for i := range visibleUploads {
-		rangeMonikers, err := r.lsifstore.GetMonikersByPosition(
+		rangeMonikers, err := s.lsifstore.GetMonikersByPosition(
 			ctx,
 			visibleUploads[i].Upload.ID,
 			visibleUploads[i].TargetPathWithoutRoot,
@@ -219,7 +219,7 @@ func (r *Service) getOrderedMonikers(ctx context.Context, visibleUploads []visib
 					continue
 				}
 
-				packageInformationData, _, err := r.lsifstore.GetPackageInformation(
+				packageInformationData, _, err := s.lsifstore.GetPackageInformation(
 					ctx,
 					visibleUploads[i].Upload.ID,
 					visibleUploads[i].TargetPathWithoutRoot,
