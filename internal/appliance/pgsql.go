@@ -66,12 +66,16 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *Sourcegr
 			},
 		},
 	})
+	ctr.SecurityContext = &corev1.SecurityContext{
+		RunAsUser:                pointers.Ptr[int64](999),
+		RunAsGroup:               pointers.Ptr[int64](999),
+		AllowPrivilegeEscalation: pointers.Ptr(false),
+		ReadOnlyRootFilesystem:   pointers.Ptr(true),
+	}
 
 	databaseSecretName := "pgsql-auth"
 	ctr.Env = append(ctr.Env, container.EnvVarsPostgres(databaseSecretName)...)
-
 	ctr.Ports = []corev1.ContainerPort{{Name: name, ContainerPort: 5432}}
-
 	ctr.LivenessProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			Exec: &corev1.ExecAction{
@@ -96,7 +100,6 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *Sourcegr
 		FailureThreshold: 360,
 		PeriodSeconds:    10,
 	}
-
 	ctr.VolumeMounts = []corev1.VolumeMount{
 		{Name: "disk", MountPath: "/data"},
 		{Name: "pgsql-conf", MountPath: "/conf"},
@@ -122,7 +125,12 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *Sourcegr
 			},
 		},
 	})
-
+	initCtr.SecurityContext = &corev1.SecurityContext{
+		RunAsUser:                pointers.Ptr[int64](999),
+		RunAsGroup:               pointers.Ptr[int64](999),
+		AllowPrivilegeEscalation: pointers.Ptr(false),
+		ReadOnlyRootFilesystem:   pointers.Ptr(true),
+	}
 	initCtr.VolumeMounts = []corev1.VolumeMount{{Name: "disk", MountPath: "/data"}}
 	initCtr.Command = []string{"sh", "-c", "if [ -d /data/pgdata-12 ]; then chmod 750 /data/pgdata-12; fi"}
 
@@ -144,7 +152,12 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *Sourcegr
 			},
 		},
 	})
-
+	pgExpCtr.SecurityContext = &corev1.SecurityContext{
+		RunAsUser:                pointers.Ptr[int64](999),
+		RunAsGroup:               pointers.Ptr[int64](999),
+		AllowPrivilegeEscalation: pointers.Ptr(false),
+		ReadOnlyRootFilesystem:   pointers.Ptr(true),
+	}
 	pgExpCtr.Env = append(pgExpCtr.Env, container.EnvVarsPostgresExporter(databaseSecretName)...)
 
 	podVolumes := []corev1.Volume{
@@ -176,6 +189,12 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *Sourcegr
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr, pgExpCtr}
 	podTemplate.Template.Spec.ServiceAccountName = name
 	podTemplate.Template.Spec.Volumes = podVolumes
+	podTemplate.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+		FSGroup:             pointers.Ptr[int64](999),
+		RunAsUser:           pointers.Ptr[int64](999),
+		RunAsGroup:          pointers.Ptr[int64](999),
+		FSGroupChangePolicy: pointers.Ptr(corev1.FSGroupChangeOnRootMismatch),
+	}
 
 	sset := statefulset.NewStatefulSet(name, sg.Namespace, sg.Spec.RequestedVersion)
 	sset.Spec.Template = podTemplate.Template

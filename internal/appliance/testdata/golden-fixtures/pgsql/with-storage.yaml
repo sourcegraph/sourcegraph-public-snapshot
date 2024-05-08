@@ -107,8 +107,8 @@ resources:
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-            runAsGroup: 101
-            runAsUser: 100
+            runAsGroup: 999
+            runAsUser: 999
           startupProbe:
             exec:
               command:
@@ -166,8 +166,8 @@ resources:
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-            runAsGroup: 101
-            runAsUser: 100
+            runAsGroup: 999
+            runAsUser: 999
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: FallbackToLogsOnError
         dnsPolicy: ClusterFirst
@@ -189,8 +189,8 @@ resources:
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-            runAsGroup: 101
-            runAsUser: 100
+            runAsGroup: 999
+            runAsUser: 999
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: FallbackToLogsOnError
           volumeMounts:
@@ -199,10 +199,10 @@ resources:
         restartPolicy: Always
         schedulerName: default-scheduler
         securityContext:
-          fsGroup: 101
+          fsGroup: 999
           fsGroupChangePolicy: OnRootMismatch
-          runAsGroup: 101
-          runAsUser: 100
+          runAsGroup: 999
+          runAsUser: 999
         serviceAccount: pgsql
         serviceAccountName: pgsql
         terminationGracePeriodSeconds: 120
