@@ -1,3 +1,4 @@
 packages:
   - 'client/*'
+  - '!client/cody-context-filters-test-dataset'
   - 'schema'

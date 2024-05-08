@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 
-// eslint-disable-next-line import/extensions
 import { testCases } from '@sourcegraph/cody-context-filters-test-dataset/dataset.json'
 
 import { alwaysTrue, getFilterFnsFromCodyContextFilters } from './useCodyIgnore'
