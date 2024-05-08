@@ -49,24 +49,10 @@ enum CodyGatewayRateLimitSource {
 message CodyGatewayRateLimit {
   // The source of the rate limit configuration.
   CodyGatewayRateLimitSource source = 1;
-  // The models that are allowed for this rate limit bucket.
-  // Usually, customers will have two separate rate limits, one
-  // for chat completions and one for code completions. A usual
-  // config could include:
-  //
-  //     chatCompletionsRateLimit: {
-  //         allowedModels: [anthropic/claude-v1, anthropic/claude-v1.3]
-  //     },
-  //     codeCompletionsRateLimit: {
-  //         allowedModels: [anthropic/claude-instant-v1]
-  //     }
-  //
-  // In general, the model names are of the format "$PROVIDER/$MODEL_NAME".
-  repeated string allowed_models = 2;
   // Requests per time interval.
-  int64 limit = 3;
+  int64 limit = 2;
   // Interval for rate limiting.
-  google.protobuf.Duration interval_duration = 4;
+  google.protobuf.Duration interval_duration = 3;
 }
 
 message CodyGatewayAccessToken {
