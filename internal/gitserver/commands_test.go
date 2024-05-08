@@ -2557,3 +2557,69 @@ func TestChangedFilesIterator(t *testing.T) {
 		require.Equal(t, closeCount, 1)
 	})
 }
+
+func TestClient_GetObject(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		expectedID := gitdomain.OID{0xde, 0xad, 0xbe, 0xef, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.GetObjectFunc.SetDefaultReturn(&proto.GetObjectResponse{
+					Object: &proto.GitObject{
+						Id:   expectedID[:],
+						Type: proto.GitObject_OBJECT_TYPE_BLOB,
+					},
+				}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		object, err := c.GetObject(context.Background(), "repo", "deadbeef")
+		require.NoError(t, err)
+		require.Equal(t, &gitdomain.GitObject{
+			ID:   expectedID,
+			Type: gitdomain.ObjectTypeBlob,
+		}, object)
+	})
+
+	t.Run("returns well known error types", func(t *testing.T) {
+		t.Run("repository not found", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					s, err := status.New(codes.NotFound, "repository not found").WithDetails(&proto.RepoNotFoundPayload{Repo: "repo", CloneInProgress: true})
+					require.NoError(t, err)
+					c.GetObjectFunc.PushReturn(nil, s.Err())
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			_, err := c.GetObject(context.Background(), "repo", "deadbeef")
+			require.Error(t, err)
+			require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
+		})
+
+		t.Run("object not found", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					s, err := status.New(codes.NotFound, "object not found").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
+					require.NoError(t, err)
+					c.GetObjectFunc.SetDefaultReturn(nil, s.Err())
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			_, err := c.GetObject(context.Background(), "repo", "deadbeef")
+			require.Error(t, err)
+			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		})
+	})
+}
