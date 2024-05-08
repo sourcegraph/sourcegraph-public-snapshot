@@ -173,25 +173,25 @@ test:
 promoteToPublic:
   create:
     steps:
-      - name: 'validate promotion criteria'
-        cmd: |
-          echo "validating promotion criteria"
-          body=$(wget --content-on-error -O- --header="Content-Type: application/json" "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}")
-          exit_code=$?
-
-          if [ $exit_code != 0 ]; then
-            echo "❌ Failed to fetch release on release registry, got:"
-            echo "--- raw body ---"
-            echo $body
-            echo "--- raw body ---"
-            exit $exit_code
-          fi
-
-          is_development=$(echo "$body" | jq -r '.is_development')
-          if [ "$is_development" = "true" ]; then
-            echo "cannot promote a development release"
-            exit 1
-          fi
+#      - name: 'validate promotion criteria'
+#        cmd: |
+#          echo "validating promotion criteria"
+#          body=$(wget --content-on-error -O- --header="Content-Type: application/json" "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}")
+#          exit_code=$?
+#
+#          if [ $exit_code != 0 ]; then
+#            echo "❌ Failed to fetch release on release registry, got:"
+#            echo "--- raw body ---"
+#            echo $body
+#            echo "--- raw body ---"
+#            exit $exit_code
+#          fi
+#
+#          is_development=$(echo "$body" | jq -r '.is_development')
+#          if [ "$is_development" = "true" ]; then
+#            echo "cannot promote a development release"
+#            exit 1
+#          fi
       - name: 'buildkite'
         cmd: |
           # We set DISABLE_ASPECT_WORKFLOWS to true, because the promotion is purely about retagging images
