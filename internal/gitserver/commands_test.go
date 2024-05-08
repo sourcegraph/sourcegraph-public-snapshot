@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -1251,57 +1250,6 @@ func TestClient_GetCommit(t *testing.T) {
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 	})
-}
-
-func Test_CommitLog(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	tests := map[string]struct {
-		extraGitCommands []string
-		wantFiles        [][]string // put these in log reverse order
-		wantCommits      int
-		wantErr          string
-	}{
-		"commit changes files": {
-			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt", "file2.txt"}, []string{"file3.txt"}),
-			wantFiles:        [][]string{{"file3.txt"}, {"file1.txt", "file2.txt"}},
-			wantCommits:      2,
-		},
-		"no commits": {
-			wantErr: "gitCommand fatal: your current branch 'master' does not have any commits yet: exit status 128",
-		},
-		"one file two commits": {
-			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt"}, []string{"file1.txt"}),
-			wantFiles:        [][]string{{"file1.txt"}, {"file1.txt"}},
-			wantCommits:      2,
-		},
-		"one commit": {
-			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt"}),
-			wantFiles:        [][]string{{"file1.txt"}},
-			wantCommits:      1,
-		},
-	}
-
-	for label, test := range tests {
-		t.Run(label, func(t *testing.T) {
-			repo := MakeGitRepository(t, test.extraGitCommands...)
-			logResults, err := NewClient("test").CommitLog(context.Background(), repo, time.Time{})
-			if err != nil {
-				require.ErrorContains(t, err, test.wantErr)
-			}
-
-			t.Log(test)
-			for i, result := range logResults {
-				t.Log(result)
-				assert.Equal(t, "a@a.com", result.AuthorEmail)
-				assert.Equal(t, "a", result.AuthorName)
-				assert.Equal(t, 40, len(result.SHA))
-				assert.ElementsMatch(t, test.wantFiles[i], result.ChangedFiles)
-			}
-			assert.Equal(t, test.wantCommits, len(logResults))
-		})
-	}
 }
 
 func TestClient_ArchiveReader(t *testing.T) {

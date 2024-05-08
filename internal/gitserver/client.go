@@ -253,14 +253,6 @@ func (o *BlameRange) Attrs() []attribute.KeyValue {
 	}
 }
 
-type CommitLog struct {
-	AuthorEmail  string
-	AuthorName   string
-	Timestamp    time.Time
-	SHA          string
-	ChangedFiles []string
-}
-
 // ListRefsOpts are additional options passed to ListRefs.
 type ListRefsOpts struct {
 	// If true, only heads are returned. Can be combined with TagsOnly.
@@ -458,11 +450,6 @@ type Client interface {
 	// commits on a per-file basis. The iterator must be closed with Close when no
 	// longer required.
 	Diff(ctx context.Context, repo api.RepoName, opts DiffOptions) (*DiffFileIterator, error)
-
-	// CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
-	// is to separate the first line (the metadata line) from the remaining lines (the files), and then parse the metadata line
-	// into component parts separately.
-	CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error)
 
 	// GetCommit returns the commit with the given commit ID, or RevisionNotFoundError if no such commit
 	// exists.

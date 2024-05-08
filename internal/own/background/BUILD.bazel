@@ -69,6 +69,7 @@ go_test(
         "//internal/database/dbtest",
         "//internal/fileutil",
         "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/own/types",
         "//internal/rcache",
