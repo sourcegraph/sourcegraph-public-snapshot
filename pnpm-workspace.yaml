@@ -1,4 +1,5 @@
 packages:
   - 'client/*'
+  # The test dataset is generated and ignored by Git. Use the published version instead.
   - '!client/cody-context-filters-test-dataset'
   - 'schema'
