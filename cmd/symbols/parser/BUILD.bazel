@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -15,7 +16,6 @@ go_library(
         "//cmd/symbols/fetcher",
         "//cmd/symbols/types",
         "//internal/conf",
-        "//internal/conf/conftypes",
         "//internal/ctags_config",
         "//internal/metrics",
         "//internal/observation",
@@ -30,4 +30,11 @@ go_library(
         "@com_github_sourcegraph_log//std",
         "@io_opentelemetry_go_otel//attribute",
     ],
+)
+
+go_test(
+    name = "parser_test",
+    srcs = ["observability_test.go"],
+    embed = [":parser"],
+    deps = ["//internal/observation"],
 )

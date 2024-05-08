@@ -197,12 +197,6 @@ def oci_deps():
     )
 
     oci_pull(
-        name = "wolfi_qdrant_base",
-        digest = "sha256:6b0210c48107719494a6b59c9542817bb4222c47038ae3bf1cc29fed563770b3",
-        image = "index.docker.io/sourcegraph/wolfi-qdrant-base",
-    )
-
-    oci_pull(
         name = "scip-java",
         digest = "sha256:808b063b7376cfc0a4937d89ddc3d4dd9652d10609865fae3f3b34302132737a",
         image = "index.docker.io/sourcegraph/scip-java",
@@ -219,9 +213,9 @@ def oci_deps():
     )
 
     oci_pull(
-        name = "legacy_dind_base",
-        digest = "sha256:0893c2e6103cde39b609efea0ebd6423c7af8dafdf19d613debbc12b05fefd54",
-        image = "index.docker.io/sourcegraph/dind",
+        name = "upstream_dind_base",
+        digest = "sha256:b52760bc3766143ca050ab3f36f01108c30bbd6bc16094400855adfb9bd66f12",
+        image = "index.docker.io/library/docker",
     )
 
     oci_pull(

@@ -24,6 +24,7 @@ import {
 
 import type { ReposSelectorSearchResult, ReposSelectorSearchVariables } from '../../../graphql-operations'
 import { ExternalRepositoryIcon } from '../../../site-admin/components/ExternalRepositoryIcon'
+import { useCodyIgnore } from '../../useCodyIgnore'
 
 import { ReposSelectorSearchQuery } from './backend'
 import { Callout } from './Callout'
@@ -85,7 +86,12 @@ export const RepositoriesSelectorPopover: React.FC<{
         omitSuggestions: additionalRepositories,
     })
 
-    const searchResults = useMemo(() => searchResultsData?.repositories.nodes || [], [searchResultsData])
+    const { isRepoIgnored } = useCodyIgnore()
+    // Repo search results with ignored repositories filtered out.
+    const filteredSearchResults = useMemo(
+        () => searchResultsData?.repositories.nodes.filter(r => !isRepoIgnored(r.name)) || [],
+        [searchResultsData, isRepoIgnored]
+    )
 
     const onSearch = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -352,8 +358,8 @@ export const RepositoriesSelectorPopover: React.FC<{
                                         </Text>
                                     </div>
                                     <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
-                                        {searchResults.length ? (
-                                            searchResults.map(repository => (
+                                        {filteredSearchResults.length ? (
+                                            filteredSearchResults.map(repository => (
                                                 <SearchResultsListItem
                                                     additionalRepositories={additionalRepositories}
                                                     key={repository.id}

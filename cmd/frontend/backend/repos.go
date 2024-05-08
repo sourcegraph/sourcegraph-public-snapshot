@@ -3,7 +3,9 @@ package backend
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -11,6 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
@@ -19,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -34,8 +36,7 @@ type ReposService interface {
 	List(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error)
 	ListIndexable(ctx context.Context) ([]types.MinimalRepo, error)
 	GetInventory(ctx context.Context, repoName api.RepoName, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
-	DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) error
-	RequestRepositoryClone(ctx context.Context, repoID api.RepoID) error
+	RecloneRepository(ctx context.Context, repoID api.RepoID) error
 	ResolveRev(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error)
 }
 
@@ -250,6 +251,8 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 	})
 }
 
+var getInventoryTimeout, _ = strconv.Atoi(env.Get("GET_INVENTORY_TIMEOUT", "5", "Time in minutes before cancelling getInventory requests. Raise this if your repositories are large and need a long time to process."))
+
 func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
@@ -258,8 +261,7 @@ func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID ap
 	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo, "commitID": commitID}, &err)
 	defer done()
 
-	// Cap GetInventory operation to some reasonable time.
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(getInventoryTimeout)*time.Minute)
 	defer cancel()
 
 	invCtx, err := InventoryContext(s.logger, repo, s.gitserverClient, commitID, forceEnhancedLanguageDetection)
@@ -283,9 +285,9 @@ func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID ap
 	return &inv, nil
 }
 
-func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) (err error) {
-	if Mocks.Repos.DeleteRepositoryFromDisk != nil {
-		return Mocks.Repos.DeleteRepositoryFromDisk(ctx, repoID)
+func (s *repos) RecloneRepository(ctx context.Context, repoID api.RepoID) (err error) {
+	if Mocks.Repos.RecloneRepository != nil {
+		return Mocks.Repos.RecloneRepository(ctx, repoID)
 	}
 
 	repo, err := s.Get(ctx, repoID)
@@ -293,31 +295,10 @@ func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID)
 		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
 	}
 
-	ctx, done := startTrace(ctx, "DeleteRepositoryFromDisk", repoID, &err)
+	ctx, done := startTrace(ctx, "RecloneRepository", repoID, &err)
 	defer done()
 
-	err = s.gitserverClient.Remove(ctx, repo.Name)
-	return err
-}
-
-func (s *repos) RequestRepositoryClone(ctx context.Context, repoID api.RepoID) (err error) {
-	repo, err := s.Get(ctx, repoID)
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
-	}
-
-	ctx, done := startTrace(ctx, "RequestRepositoryClone", repoID, &err)
-	defer done()
-
-	resp, err := s.gitserverClient.RequestRepoClone(ctx, repo.Name)
-	if err != nil {
-		return err
-	}
-	if resp.Error != "" {
-		return errors.Newf("requesting clone for repo ID %d failed: %s", repoID, resp.Error)
-	}
-
-	return nil
+	return repoupdater.DefaultClient.RecloneRepository(ctx, repo.Name)
 }
 
 // ResolveRev will return the absolute commit for a commit-ish spec in a repo.
@@ -336,7 +317,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo api.RepoName, rev string) (
 	ctx, done := startTrace(ctx, "ResolveRev", map[string]any{"repo": repo, "rev": rev}, &err)
 	defer done()
 
-	return s.gitserverClient.ResolveRevision(ctx, repo, rev, gitserver.ResolveRevisionOptions{})
+	return s.gitserverClient.ResolveRevision(ctx, repo, rev, gitserver.ResolveRevisionOptions{EnsureRevision: true})
 }
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph

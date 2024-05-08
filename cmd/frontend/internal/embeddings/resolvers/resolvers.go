@@ -12,12 +12,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
@@ -47,7 +46,6 @@ type Resolver struct {
 	gitserverClient        gitserver.Client
 	embeddingsClient       embeddings.Client
 	repoEmbeddingJobsStore repobg.RepoEmbeddingJobsStore
-	emails                 backend.UserEmailsService
 }
 
 func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.EmbeddingsSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {
@@ -161,19 +159,6 @@ func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args gr
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
-}
-
-func (r *Resolver) MigrateToQdrant(ctx context.Context) (*graphqlbackend.EmptyResponse, error) {
-	if !conf.EmbeddingsEnabled() {
-		return nil, errors.New("embeddings are not configured or disabled")
-	}
-
-	ec := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
-	if ec == nil || !ec.Qdrant.Enabled {
-		return nil, errors.New("qdrant is not enabled")
-	}
-
-	return &graphqlbackend.EmptyResponse{}, r.repoEmbeddingJobsStore.RescheduleAllRepos(ctx)
 }
 
 func (r *Resolver) CancelRepoEmbeddingJob(ctx context.Context, args graphqlbackend.CancelRepoEmbeddingJobArgs) (*graphqlbackend.EmptyResponse, error) {

@@ -29,6 +29,7 @@ go_library(
         "//internal/lazyregexp",
         "//internal/licensing",
         "//internal/session",
+        "//internal/telemetry/telemetryrecorder",
         "//lib/errors",
         "//schema",
         "@com_github_dghubble_gologin_v2//:gologin",

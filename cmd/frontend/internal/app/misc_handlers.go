@@ -10,8 +10,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -59,7 +59,7 @@ func favicon(w http.ResponseWriter, r *http.Request) {
 	url.RawQuery = query.Encode()
 	path := strings.Replace(url.String(), "v2=", "v2", 1)
 
-	if branding := globals.Branding(); branding.Favicon != "" {
+	if branding := conf.Branding(); branding.Favicon != "" {
 		path = branding.Favicon
 	}
 	http.Redirect(w, r, path, http.StatusMovedPermanently)

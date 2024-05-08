@@ -3,9 +3,13 @@ package run
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/rjeczalik/notify"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SGConfigCommand interface {
@@ -38,8 +42,15 @@ func WatchPaths(ctx context.Context, paths []string, skipEvents ...notify.Event)
 	}
 
 	for _, path := range paths {
-		if err := notify.Watch(path+"/...", events, relevant); err != nil {
-			return nil, err
+		info, err := os.Stat(path)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to stat path %q", path)
+		}
+		if info.IsDir() {
+			path = filepath.Join(path, "...")
+		}
+		if err := notify.Watch(path, events, relevant); err != nil {
+			return nil, errors.Wrapf(err, "failed to watch path %q", path)
 		}
 	}
 	// Start watching for changes to the source tree

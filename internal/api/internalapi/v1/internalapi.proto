@@ -50,8 +50,8 @@ message ServiceConnections {
   // Embeddings is the addresses of embeddings instances that should be talked
   // to.
   repeated string embeddings = 7;
-  // Qdrant is the address of the Qdrant instance (or empty if disabled)
-  string qdrant = 8;
+  reserved 8;
+  reserved "qdrant";
   // Zoekts is the addresses of Zoekt instances to talk to.
   repeated string zoekts = 9;
   // ZoektListTTL is the TTL of the internal cache that Zoekt clients use to

@@ -100,7 +100,7 @@ type Mutation {
 
     Only authenticated users may perform this mutation.
     """
-    createOrganization(name: String!, displayName: String, statsID: ID): Org!
+    createOrganization(name: String!, displayName: String): Org!
     """
     Updates an organization.
 
@@ -1910,8 +1910,9 @@ type Query {
 
     """
     Retrieve all registered out-of-band migrations.
+    Optionally filter deprecated before first version out-of-band-migrations.
     """
-    outOfBandMigrations: [OutOfBandMigration!]!
+    outOfBandMigrations(ExcludeDeprecatedBeforeFirstVersion: Boolean): [OutOfBandMigration!]!
 
     """
     Retrieve the list of defined feature flags
@@ -2146,6 +2147,13 @@ type Query {
     Site-admin only.
     """
     gitservers: GitserverInstanceConnection!
+
+    """
+    Returns information pertaining to all indexed search instances associated with this Sourcegraph instance.
+
+    Site-admin only.
+    """
+    indexedSearchInstances: IndexedSearchInstanceConnection!
 }
 
 """
@@ -2189,6 +2197,39 @@ type GitserverInstance implements Node {
     The total amount of storage space on the gitserver instance, in bytes.
     """
     totalDiskSpaceBytes: BigInt!
+}
+
+"""
+A list of indexed search instances.
+"""
+type IndexedSearchInstanceConnection {
+    """
+    A list of instances.
+    """
+    nodes: [IndexedSearchInstance!]!
+    """
+    The total count of instances in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+IndexedSearchInstance contains information about a indexed search instance.
+"""
+type IndexedSearchInstance implements Node {
+    """
+    The unique identifier of the instance.
+    """
+    id: ID!
+
+    """
+    The address of the instance.
+    """
+    address: String!
 }
 
 """
@@ -3841,16 +3882,6 @@ type Repository implements Node & GenericSearchResultInterface {
         other Git refs.
         """
         type: GitRefType
-        """
-        Ordering for Git refs in the list.
-        """
-        orderBy: GitRefOrder
-        """
-        Ordering is an expensive operation that doesn't scale for lots of
-        references. If this is true we fallback on not ordering. This should
-        never be false in interactive API requests.
-        """
-        interactive: Boolean = true
     ): GitRefConnection!
     """
     The repository's Git branches.
@@ -3864,16 +3895,6 @@ type Repository implements Node & GenericSearchResultInterface {
         Return Git branches whose names match the query.
         """
         query: String
-        """
-        Ordering for Git branches in the list.
-        """
-        orderBy: GitRefOrder
-        """
-        Ordering is an expensive operation that doesn't scale for lots of
-        references. If this is true we fallback on not ordering. This should
-        never be false in interactive API requests.
-        """
-        interactive: Boolean = true
     ): GitRefConnection!
     """
     The repository's Git tags.
@@ -5051,16 +5072,6 @@ enum GitRefType {
     A Git ref that is neither a branch nor tag.
     """
     GIT_REF_OTHER
-}
-
-"""
-Ordering options for Git refs.
-"""
-enum GitRefOrder {
-    """
-    By the authored or committed at date, whichever is more recent.
-    """
-    AUTHORED_OR_COMMITTED_AT
 }
 
 """
@@ -6507,7 +6518,13 @@ type User implements Node & SettingsSubject & Namespace {
     """
     tosAccepted: Boolean!
     """
-    The user's usage statistics on Sourcegraph.
+    The user's recent usage statistics on Sourcegraph.
+
+    These statistics are aggregated from the user activity records in the event_logs table. That table only
+    records 93 days worth of history, however, so long-term aggregated statistics may not be accurate (e.g.
+    the lastActiveTime field may appear to be null, when in reality the user was active prior to 93 days ago).
+
+    See SiteUser.lastActiveAt for a GraphQL field that goes back further than 93 days.
     """
     usageStatistics: UserUsageStatistics!
     """
@@ -6641,11 +6658,6 @@ type User implements Node & SettingsSubject & Namespace {
     The Cody subscription details for the user.
     """
     codySubscription: CodySubscription
-    """
-    The rate limit status for the user stored in Cody Gateway.
-    On dotcom only the user and site admins can access this field.
-    """
-    codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
     """
     DEPRECATED
     Whether the user has enrolled for Cody Pro.
@@ -7247,6 +7259,27 @@ type DefaultSettings implements SettingsSubject {
 }
 
 """
+The version of the Cody context filters.
+"""
+enum CodyContextFiltersVersion {
+    """
+    Rules defining which repositories Cody may use as context in requests to third-party LLMs.
+    """
+    V1
+}
+
+"""
+Rules defining whether the matching repositories may be included (allowed) or should be excluded (ignored)
+from Cody context in requests to third-party LLMs.
+"""
+type CodyContextFilters {
+    """
+    Cody context filters value from the site configuration.
+    """
+    raw: JSONValue
+}
+
+"""
 A site is an installation of Sourcegraph that consists of one or more
 servers that share the same configuration and database.
 The site is a singleton; the API only ever returns the single global site.
@@ -7517,6 +7550,11 @@ type Site implements SettingsSubject {
     Site-admin only.
     """
     codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
+
+    """
+    Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
+    """
+    codyContextFilters(version: CodyContextFiltersVersion!): CodyContextFilters!
 }
 
 """
@@ -7953,30 +7991,38 @@ type Configuration {
 """
 UserUsageStatistics describes a user's usage statistics.
 This information is visible to all viewers.
+
+These statistics are aggregated from the user activity records in the event_logs table. That table only
+records 93 days worth of history, however, so long-term aggregated statistics may not be accurate (e.g.
+the lastActiveTime field may appear to be null, when in reality the user was active prior to 93 days ago).
+
+See SiteUser.lastActiveAt for a GraphQL field that goes back further than 93 days.
 """
 type UserUsageStatistics {
     """
-    The number of search queries that the user has performed.
+    The number of search queries that the user has performed in the last 93 days.
     """
     searchQueries: Int!
     """
-    The number of page views that the user has performed.
+    The number of page views that the user has performed in the last 93 days.
     """
     pageViews: Int!
     """
-    The number of code intelligence actions that the user has performed.
+    The number of code intelligence actions that the user has performed in the last 93 days.
     """
     codeIntelligenceActions: Int!
     """
-    The number of find-refs actions that the user has performed.
+    The number of find-refs actions that the user has performed in the last 93 days.
     """
     findReferencesActions: Int!
     """
-    The last time the user was active (any action, any platform).
+    The last time the user was active (any action, any platform) in the last 93 days.
+    Null if the user hasn't been active in that time.
     """
     lastActiveTime: String
     """
-    The last time the user was active on a code host integration.
+    The last time the user was active on a code host integration in the last 93 days.
+    Null if the user hasn't been active in that time.
     """
     lastActiveCodeHostIntegrationTime: String
 }
@@ -8449,6 +8495,12 @@ type SiteUser {
     createdAt: String!
     """
     The datetime when user was last active.
+
+    This is an aggregated metric that goes back to the beginning of the user's time
+    using this Sourcegraph instance.
+
+    This value is only updated every ~12 hours. For real-time data, see
+    UserUsageStatistics.lastActiveTime.
     """
     lastActiveAt: String
     """

@@ -11,17 +11,21 @@ tasks:
   # Checks that BUILD files are formatted
   - buildifier:
       queue: aspect-small
+      timeout_in_minutes: 3
   # Checks that BUILD file content is up-to-date with sources
   - gazelle:
       queue: aspect-small
       target: //:configure
       fix_target: //:configure
+      timeout_in_minutes: 5
   # Checks that all tests are passing
   - test:
       targets:
         - //...
         # exclude testing as it is executed in a seperate job
         - -//testing/...
+      artifact_paths:
+        - build_event_log.bin
   - test:
       name: Integration/E2E
       targets:
@@ -30,6 +34,8 @@ tasks:
         # evaluate Aspect Workflows it is ok
         # TODO(burmudar): Let this only run on main branch
         - //testing:codeintel_integration_test
+      artifact_paths:
+        - build_event_log.bin
   - delivery:
       auto_deliver: true
       icon: 'ship'

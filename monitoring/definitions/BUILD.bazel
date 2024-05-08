@@ -34,6 +34,9 @@ go_library(
         "//monitoring/definitions/shared",
         "//monitoring/monitoring",
         "@com_github_grafana_tools_sdk//:sdk",
+        "@com_github_iancoleman_strcase//:strcase",
         "@com_github_prometheus_common//model",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
     ],
 )

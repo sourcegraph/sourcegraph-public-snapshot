@@ -220,9 +220,6 @@ func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bo
 	)
 
 	for _, pkgPath := range pkgPaths {
-		// Do not capture loop variable in goroutine below
-		pkgPath := pkgPath
-
 		p.Go(func(ctx context.Context) error {
 			file := filepath.Base(pkgPath) // *.go
 			directory := filepath.Dir(pkgPath)

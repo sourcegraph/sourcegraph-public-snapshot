@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -126,17 +125,6 @@ func (r *repositoryMirrorInfoResolver) CloneInProgress(ctx context.Context) (boo
 }
 
 func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*string, error) {
-	if featureflag.FromContext(ctx).GetBoolOr("clone-progress-logging", false) {
-		info, err := r.computeGitserverRepo(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if info.CloneStatus != types.CloneStatusCloning {
-			return nil, nil
-		}
-		return strptr(info.CloningProgress), nil
-	}
-
 	progress, err := r.gitServerClient.RepoCloneProgress(ctx, r.repository.RepoName())
 	if err != nil {
 		return nil, err

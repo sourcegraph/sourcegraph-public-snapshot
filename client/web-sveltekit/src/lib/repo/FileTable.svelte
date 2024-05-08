@@ -3,11 +3,12 @@
 
     import Icon from '$lib/Icon.svelte'
     import type { TreeEntryWithCommitInfo } from './FileTable.gql'
-    import { replaceRevisionInURL } from '$lib/web'
+    import { replaceRevisionInURL } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
-    import type { TreeEntryFields } from './api/tree'
+    import { isFileEntry, type TreeEntry } from './api/tree'
+    import FileIcon from './FileIcon.svelte'
 
-    export let entries: readonly TreeEntryFields[]
+    export let entries: readonly TreeEntry[]
     export let commitInfo: readonly TreeEntryWithCommitInfo[]
     export let revision: string
 
@@ -29,7 +30,11 @@
         {#each entries as entry}
             <tr>
                 <td class="file-name">
-                    <Icon svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline} inline />
+                    {#if isFileEntry(entry)}
+                        <FileIcon file={entry} inline />
+                    {:else}
+                        <Icon svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline} inline />
+                    {/if}
                     <a href={replaceRevisionInURL(entry.canonicalURL, revision)}>{entry.name}</a>
                 </td>
                 {#if hasCommitInfo}

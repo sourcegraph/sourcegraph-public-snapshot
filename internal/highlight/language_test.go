@@ -155,3 +155,38 @@ func TestGetLanguageFromContent(t *testing.T) {
 		}
 	}
 }
+
+func TestGetLanguageFromPath(t *testing.T) {
+	type testCase struct {
+		Filename string
+		Expected string
+	}
+
+	// JSX is mapped to javascript but TSX is mapped to 'tsx' language
+	// because Linguist contains a separate language for TSX but not JSX
+	cases := []testCase{
+		{
+			Filename: "file.js",
+			Expected: "javascript",
+		},
+		{
+			Filename: "react.jsx",
+			Expected: "javascript",
+		},
+		{
+			Filename: "file.ts",
+			Expected: "typescript",
+		},
+		{
+			Filename: "react.tsx",
+			Expected: "tsx",
+		},
+	}
+
+	for _, testCase := range cases {
+		language, _ := getLanguage(testCase.Filename, "")
+		if language != testCase.Expected {
+			t.Fatalf("%s\nGot: %s, Expected: %s", testCase.Filename, language, testCase.Expected)
+		}
+	}
+}

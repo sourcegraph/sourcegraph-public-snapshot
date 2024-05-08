@@ -1,10 +1,10 @@
 <script lang="ts">
     import type { HTMLAnchorAttributes } from 'svelte/elements'
-    import { getContext } from './Menu.svelte'
+    import { getContext } from './DropdownMenu.svelte'
 
-    interface $$Props extends HTMLAnchorAttributes {
+    type $$Props = {
         href: HTMLAnchorAttributes['href']
-    }
+    } & HTMLAnchorAttributes
 
     const { item } = getContext()
 

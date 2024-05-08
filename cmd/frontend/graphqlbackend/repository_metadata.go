@@ -201,9 +201,6 @@ func (r *repoMetaResolver) Keys(ctx context.Context, args *RepoMetadataKeysArgs)
 	}
 
 	listOptions := &args.RepoKVPListKeysOptions
-	if listOptions == nil {
-		listOptions = &database.RepoKVPListKeysOptions{}
-	}
 	connectionStore := &repoMetaKeysConnectionStore{
 		db:          r.db,
 		listOptions: *listOptions,

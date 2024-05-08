@@ -15,9 +15,8 @@ import {
 import { debounce, type DebouncedFunc, isFunction } from 'lodash'
 import { noop } from 'rxjs'
 
-import { asError } from '@sourcegraph/common'
-
 import { useDeepMemo } from '../../../../hooks'
+import { asError } from '../../../../utils'
 
 // Special key for the submit error store.
 export const FORM_ERROR = 'useForm/submissionErrors'

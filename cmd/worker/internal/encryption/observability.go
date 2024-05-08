@@ -3,7 +3,6 @@ package encryption
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -70,7 +69,7 @@ func newMetrics(observationCtx *observation.Context) *metrics {
 		"The number of errors that occur during record encryption/decryption.",
 	)
 
-	for _, config := range database.EncryptionConfigs {
+	for _, config := range encryptionConfigs {
 		// Initialize counters to zero
 		numRecordsEncrypted.WithLabelValues(config.TableName).Add(0)
 		numRecordsDecrypted.WithLabelValues(config.TableName).Add(0)

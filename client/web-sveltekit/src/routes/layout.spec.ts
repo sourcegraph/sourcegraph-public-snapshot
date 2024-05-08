@@ -10,10 +10,12 @@ test('has sign in button', async ({ page }) => {
     await expect(page).toHaveURL('/sign-in')
 })
 
-test('has experimental web app toggle button', async ({ page }) => {
+test('has experimental opt out popover', async ({ sg, page }) => {
+    sg.signIn({ username: 'test' })
+
     await page.goto('/')
-    await page.getByLabel('Leave experimental web app').click()
-    await expect(page).toHaveURL(/\?feat=-web-next/)
+    await page.getByText('Experimental').hover()
+    await expect(page.getByRole('link', { name: 'opt out' })).toBeVisible()
 })
 
 test('has user menu', async ({ sg, page }) => {

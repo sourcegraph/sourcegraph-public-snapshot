@@ -116,7 +116,7 @@ const render = () => (
                     repositoriesCount: 2,
                     skipped: [
                         {
-                            reason: 'excluded-fork',
+                            reason: 'repository-fork',
                             message: '10k forked repositories excluded',
                             severity: 'info',
                             title: '10k forked repositories excluded',
@@ -153,7 +153,7 @@ const render = () => (
                     repositoriesCount: 2,
                     skipped: [
                         {
-                            reason: 'excluded-fork',
+                            reason: 'repository-fork',
                             message: '10k forked repositories excluded',
                             severity: 'info',
                             title: '10k forked repositories excluded',
@@ -190,7 +190,7 @@ const render = () => (
                     repositoriesCount: 2,
                     skipped: [
                         {
-                            reason: 'excluded-fork',
+                            reason: 'repository-fork',
                             message: '10k forked repositories excluded',
                             severity: 'info',
                             title: '10k forked repositories excluded',
@@ -237,7 +237,7 @@ const render = () => (
                     repositoriesCount: 2,
                     skipped: [
                         {
-                            reason: 'excluded-fork',
+                            reason: 'repository-fork',
                             message: '10k forked repositories excluded',
                             severity: 'info',
                             title: '10k forked repositories excluded',
@@ -286,7 +286,7 @@ const render = () => (
                     repositoriesCount: 2,
                     skipped: [
                         {
-                            reason: 'excluded-fork',
+                            reason: 'repository-fork',
                             message: '10k forked repositories excluded',
                             severity: 'info',
                             title: '10k forked repositories excluded',

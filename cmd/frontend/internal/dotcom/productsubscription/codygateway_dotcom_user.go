@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/sourcegraph/sourcegraph/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
@@ -364,8 +365,9 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"anthropic/" + anthropic.Claude3Sonnet,
 			"anthropic/" + anthropic.Claude3Opus,
 			"fireworks/" + fireworks.Mixtral8x7bInstruct,
+			"fireworks/" + fireworks.Mixtral8x22Instruct,
 			"openai/gpt-3.5-turbo",
-			"openai/gpt-4-1106-preview",
+			"openai/gpt-4-turbo",
 			"openai/gpt-4-turbo-preview",
 
 			// Remove after the Claude 3 rollout is complete
@@ -388,8 +390,36 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"fireworks/" + fireworks.Llama213bCode,
 			"fireworks/" + fireworks.StarcoderTwo15b,
 			"fireworks/" + fireworks.StarcoderTwo7b,
+			"fireworks/" + fireworks.Mixtral8x7bFineTunedModel,
 		}
 	default:
 		return []string{}
 	}
+}
+
+func (r CodyGatewayDotcomUserResolver) CodyGatewayRateLimitStatusByUserName(ctx context.Context, args *graphqlbackend.CodyGatewayRateLimitStatusByUserNameArgs) (*[]graphqlbackend.RateLimitStatus, error) {
+	user, err := r.DB.Users().GetByUsername(ctx, args.Username)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
+	// settings, because they may contain secrets or other sensitive data.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.DB, user.ID); err != nil {
+		return nil, err
+	}
+
+	limits, err := cody.GetGatewayRateLimits(ctx, user.ID, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	rateLimits := make([]graphqlbackend.RateLimitStatus, 0, len(limits))
+	for _, limit := range limits {
+		rateLimits = append(rateLimits, &graphqlbackend.CodyRateLimit{
+			RateLimitStatus: limit,
+		})
+	}
+
+	return &rateLimits, nil
 }

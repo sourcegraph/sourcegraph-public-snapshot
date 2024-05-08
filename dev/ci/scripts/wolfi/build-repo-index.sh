@@ -12,6 +12,11 @@ MAIN_BRANCH="main"
 BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
 IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
 
+echo "~~~ :aspect: :stethoscope: Agent Health check"
+/etc/aspect/workflows/bin/agent_health_check
+
+echo "~~~ :package: :card_index_dividers: Build repository index"
+
 # shellcheck disable=SC2001
 BRANCH_PATH=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9_-]/-/g')
 if [[ "$IS_MAIN" != "true" ]]; then
@@ -43,7 +48,11 @@ apkindex_build_dir=$(mktemp -d -t apkindex-build.XXXXXXXX)
 pushd "$apkindex_build_dir"
 
 # Fetch all APKINDEX fragments from bucket
-gsutil -m cp "gs://$GCS_BUCKET/$BRANCH_PATH/$TARGET_ARCH/*.APKINDEX.fragment" ./
+if ! gsutil -m cp "gs://$GCS_BUCKET/$BRANCH_PATH/$TARGET_ARCH/*.APKINDEX.fragment" ./; then
+  echo "No APKINDEX fragments found for $BRANCH_PATH/$TARGET_ARCH"
+  echo "This can occur when a package has been removed from the repository - soft-failing."
+  exit 222
+fi
 
 # Concat all fragments into a single APKINDEX and tar.gz it
 touch placeholder.APKINDEX.fragment

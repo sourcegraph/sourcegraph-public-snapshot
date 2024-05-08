@@ -24,8 +24,7 @@ func NewCodeIntelResolver(resolver *resolverstubs.Resolver) *Resolver {
 
 func (r *Resolver) NodeResolvers() map[string]NodeByIDFunc {
 	m := map[string]NodeByIDFunc{}
-	for name, f := range r.Resolver.NodeResolvers() {
-		resolverFunc := f // do not capture loop variable
+	for name, resolverFunc := range r.Resolver.NodeResolvers() {
 		m[name] = func(ctx context.Context, id graphql.ID) (Node, error) {
 			return resolverFunc(ctx, id)
 		}

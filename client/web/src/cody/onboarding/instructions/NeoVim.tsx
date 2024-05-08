@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react'
 import classNames from 'classnames'
 
 import type { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, ButtonLink, H2, Text } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../../tracking/eventLogger'
 import { EventName } from '../../../util/constants'
 import { EditorStep } from '../../management/CodyManagementPage'
 
@@ -29,10 +29,10 @@ export function NeoVimInstructions({
 
     useEffect(() => {
         if (step === EditorStep.SetupInstructions) {
-            eventLogger.log(EventName.CODY_EDITOR_SETUP_VIEWED, { editor: 'NeoVim' })
+            EVENT_LOGGER.log(EventName.CODY_EDITOR_SETUP_VIEWED, { editor: 'NeoVim' })
             telemetryRecorder.recordEvent('cody.editorSetupPage', 'view', { metadata: { neoVim: 1 } })
         } else if (step === EditorStep.CodyFeatures) {
-            eventLogger.log(EventName.CODY_EDITOR_FEATURES_VIEWED, { editor: 'NeoVim' })
+            EVENT_LOGGER.log(EventName.CODY_EDITOR_FEATURES_VIEWED, { editor: 'NeoVim' })
             telemetryRecorder.recordEvent('cody.editorFeaturesPage', 'view', { metadata: { neoVim: 1 } })
         }
     }, [step, telemetryRecorder])
@@ -68,7 +68,7 @@ export function NeoVimInstructions({
                                     target="_blank"
                                     onClick={event => {
                                         event.preventDefault()
-                                        eventLogger.log(EventName.CODY_EDITOR_SETUP_OPEN_MARKETPLACE, {
+                                        EVENT_LOGGER.log(EventName.CODY_EDITOR_SETUP_OPEN_MARKETPLACE, {
                                             editor: 'NeoVim',
                                         })
                                         telemetryRecorder.recordEvent('cody.onboarding.openMarketplace', 'click', {

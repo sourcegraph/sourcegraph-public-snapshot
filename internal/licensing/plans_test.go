@@ -70,7 +70,7 @@ func TestInfo_hasUnknownPlan(t *testing.T) {
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("tags: %v", test.tags), func(t *testing.T) {
 			var gotErr string
-			err := (&Info{Info: license.Info{Tags: test.tags}}).hasUnknownPlan()
+			err := (&Info{Info: license.Info{Tags: test.tags}}).HasUnknownPlan()
 			if err != nil {
 				gotErr = err.Error()
 			}

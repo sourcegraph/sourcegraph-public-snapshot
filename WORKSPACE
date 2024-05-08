@@ -2,12 +2,16 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "platforms",
-    sha256 = "8150406605389ececb6da07cbcb509d5637a3ab9a24bc69b1101531367d89d74",
+    sha256 = "5eda539c841265031c2f82d8ae7a3a6490bd62176e0c038fc469eabf91f6149b",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
-        "https://github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.9/platforms-0.0.9.tar.gz",
+        "https://github.com/bazelbuild/platforms/releases/download/0.0.9/platforms-0.0.9.tar.gz",
     ],
 )
+
+load("@platforms//host:extension.bzl", "host_platform_repo")
+
+host_platform_repo(name = "host_platform")
 
 http_archive(
     name = "bazel_skylib",
@@ -60,15 +64,10 @@ http_archive(
 
 http_archive(
     name = "io_bazel_rules_go",
-    patch_args = ["-p1"],
-    patches = [
-        # Remove when bumping, is upstreamed and should be in 0.46.1
-        "//third_party/rules_go:package_main.patch",
-    ],
-    sha256 = "80a98277ad1311dacd837f9b16db62887702e9f1d1c4c9f796d0121a46c8e184",
+    sha256 = "af47f30e9cbd70ae34e49866e201b3f77069abb111183f2c0297e7e74ba6bbc0",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.46.0/rules_go-v0.46.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.46.0/rules_go-v0.46.0.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.47.0/rules_go-v0.47.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.47.0/rules_go-v0.47.0.zip",
     ],
 )
 
@@ -119,17 +118,17 @@ http_archive(
     patches = [
         "//third_party/rules_oci:no_xattr.patch",
     ],
-    sha256 = "cf6b8be82cde30daef18a09519d75269650317e40d917c8633cf8e3ab5645ea5",
-    strip_prefix = "rules_oci-1.7.2",
-    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.7.2/rules_oci-v1.7.2.tar.gz",
+    sha256 = "d41d0ba7855f029ad0e5ee35025f882cbe45b0d5d570842c52704f7a47ba8668",
+    strip_prefix = "rules_oci-1.4.3",
+    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.4.3/rules_oci-v1.4.3.tar.gz",
 )
 
 http_archive(
     name = "rules_pkg",
-    sha256 = "d250924a2ecc5176808fc4c25d5cf5e9e79e6346d79d5ab1c493e289e722d1d0",
+    sha256 = "8c20f74bca25d2d442b327ae26768c02cf3c99e93fad0381f32be9aab1967675",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.10.1/rules_pkg-0.10.1.tar.gz",
-        "https://github.com/bazelbuild/rules_pkg/releases/download/0.10.1/rules_pkg-0.10.1.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.8.1/rules_pkg-0.8.1.tar.gz",
+        "https://github.com/bazelbuild/rules_pkg/releases/download/0.8.1/rules_pkg-0.8.1.tar.gz",
     ],
 )
 
@@ -157,9 +156,27 @@ http_archive(
     url = "https://github.com/aspect-build/aspect-cli/archive/5.8.20.tar.gz",
 )
 
-load("@aspect_bazel_lib//lib:repositories.bzl", "register_jq_toolchains")
+load("@aspect_bazel_lib//lib:repositories.bzl", "register_expand_template_toolchains", "register_jq_toolchains")
 
 register_jq_toolchains()
+
+register_expand_template_toolchains()
+
+http_archive(
+    name = "rules_apko",
+    patch_args = ["-p1"],
+    patches = [
+        # required due to https://github.com/chainguard-dev/apko/issues/1052
+        "//third_party/rules_apko:repository_label_strip.patch",
+        # required until a release contains https://github.com/chainguard-dev/rules_apko/pull/53
+        "//third_party/rules_apko:apko_run_runfiles_path.patch",
+        # symlinking the lockfile appears to be problematic in CI https://github.com/sourcegraph/sourcegraph/pull/61877
+        "//third_party/rules_apko:copy_dont_symlink_lockfile.patch",
+    ],
+    sha256 = "f176171f95ee2b6eef1572c6da796d627940a1e898a32d476a2d7a9a99332960",
+    strip_prefix = "rules_apko-1.2.2",
+    url = "https://github.com/chainguard-dev/rules_apko/releases/download/v1.2.2/rules_apko-v1.2.2.tar.gz",
+)
 
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.2.1"
@@ -486,3 +503,35 @@ load("//dev:schema_migrations.bzl", "schema_migrations")
 schema_migrations(
     name = "schemas_migrations",
 )
+
+# wolfi images setup ================================
+
+load("@rules_apko//apko:repositories.bzl", "apko_register_toolchains", "rules_apko_dependencies")
+
+rules_apko_dependencies()
+
+# We don't register the default toolchains, and regsiter our own from a patched go_repository sourced
+# go_binary target that contains some fixes that are not yet merged upstream.
+# https://github.com/chainguard-dev/go-apk/pull/216
+apko_register_toolchains(
+    name = "apko",
+    register = False,
+)
+
+register_toolchains("//:apko_linux_toolchain")
+
+register_toolchains("//:apko_darwin_arm64_toolchain")
+
+register_toolchains("//:apko_darwin_amd64_toolchain")
+
+load("//wolfi-images:repo.bzl", "wolfi_lockfiles")
+
+wolfi_lockfiles(name = "apko_lockfiles")
+
+load("@apko_lockfiles//:translates.bzl", "apko_translate_locks")
+
+apko_translate_locks()
+
+load("@apko_lockfiles//:repositories.bzl", "apko_repositories")
+
+apko_repositories()

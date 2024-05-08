@@ -4,6 +4,7 @@
 # Bazel
 /bazel-*
 .bazelrc-nix
+build_event_log.bin
 
 # Vim
 *.swp

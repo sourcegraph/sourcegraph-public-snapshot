@@ -125,7 +125,7 @@ func (f *FireworksHandlerMethods) validateRequest(_ context.Context, _ log.Logge
 	return nil
 }
 
-func (f *FireworksHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger, _ fireworksRequest) (*flaggingResult, error) {
+func (f *FireworksHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, req fireworksRequest) (*flaggingResult, error) {
 	// TODO[#61278]: Add missing request validation for all LLM providers in Cody Gateway.
 	return nil, nil
 }
@@ -178,7 +178,9 @@ func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 	// For now, just count character usage, and set token counts to
 	// -1 as sentinel values.
 	promptUsage.tokens = -1
+	promptUsage.tokenizerTokens = -1
 	completionUsage.tokens = -1
+	completionUsage.tokenizerTokens = -1
 
 	dec := fireworks.NewDecoder(r)
 	// Consume all the messages, but we only care about the last completion data.

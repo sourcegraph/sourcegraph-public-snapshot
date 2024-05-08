@@ -59,5 +59,9 @@ dev/backcompat/flakes.json
 # Errors when used with @ianvs/prettier-plugin-sort-imports due to TS language API hitting global `eval`
 client/browser/src/types/webextension-polyfill/index.d.ts
 
-dev/release/release-config.jsonc
 graphql-operations.ts
+
+wolfi-images/*.lock.json
+
+# This is downloaded from upstream directly and should not be modified
+dev/linearhooks/internal/lineargql/schema.graphql

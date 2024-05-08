@@ -1,17 +1,18 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { mdiFileCodeOutline, mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
+    import { mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
     import { onMount } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
-    import { getFileIconInfo, Alert } from '$lib/wildcard'
     import Icon from '$lib/Icon.svelte'
-    import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntryFields } from '$lib/repo/api/tree'
+    import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntry } from '$lib/repo/api/tree'
+    import FileIcon from '$lib/repo/FileIcon.svelte'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
+    import { replaceRevisionInURL } from '$lib/shared'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import { createForwardStore } from '$lib/utils'
-    import { replaceRevisionInURL } from '$lib/web'
+    import { Alert } from '$lib/wildcard'
 
     export let repoName: string
     export let treeProvider: FileTreeProvider
@@ -21,7 +22,7 @@
     /**
      * Returns the corresponding icon for `entry`
      */
-    function getDirectoryIconPath(entry: TreeEntryFields, open: boolean) {
+    function getDirectoryIconPath(entry: TreeEntry, open: boolean) {
         if (entry === treeRoot) {
             return mdiFolderArrowUpOutline
         }
@@ -78,9 +79,20 @@
     }
 
     function scrollSelectedItemIntoView() {
-        treeView.scrollSelectedItemIntoView()
+        treeView.scrollSelectedItemIntoView(
+            // Only scroll the active tree entry into the 'center' if the selected entry changed
+            // by something other than user interaction. If we always 'center' then the sidebar
+            // will "jump" as the user selects an entry with the keyboard or mouse, which is
+            // disorienting.
+            // But if we never 'center' then going back and forth might position the selected
+            // entry at the top or bottom of the sidebar, which is not very visible.
+            // So we only 'center' if focus is not on the tree container, which likely means
+            // that the user is not interacting with the tree.
+            container?.contains(document.activeElement) ? 'nearest' : 'center'
+        )
     }
 
+    let container: HTMLElement | undefined
     let treeView: TreeView<FileTreeNodeValue>
     // Since context is only set once when the component is created
     // we need to dynamically sync any changes to the corresponding
@@ -104,7 +116,7 @@
     onMount(scrollSelectedItemIntoView)
 </script>
 
-<div tabindex="-1">
+<div tabindex="-1" bind:this={container}>
     <TreeView bind:this={treeView} {treeProvider} on:select={event => handleSelect(event.detail)}>
         <svelte:fragment let:entry let:expanded>
             {@const isRoot = entry === treeRoot}
@@ -125,12 +137,7 @@
                     {#if entry.isDirectory}
                         <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
                     {:else}
-                        {@const icon = (entry.__typename === 'GitBlob' &&
-                            getFileIconInfo(entry.name, entry.languages.at(0) ?? '')?.svg) || {
-                            path: mdiFileCodeOutline,
-                            color: 'var(--gray-05)',
-                        }}
-                        <Icon svgPath={icon.path} inline --color={icon.color} />
+                        <FileIcon inline file={entry.__typename === 'GitBlob' ? entry : null} />
                     {/if}
                     {isRoot ? '..' : entry.name}
                 </a>
@@ -151,23 +158,31 @@
             border-radius: var(--border-radius);
 
             &:hover {
-                background-color: var(--color-bg-2);
+                background-color: var(--color-bg-3);
             }
         }
 
         :global(.treeitem.selected) > :global(.label) {
-            background-color: var(--color-bg-2);
+            background-color: var(--color-bg-3);
         }
     }
 
     a {
-        color: var(--body-color);
+        color: var(--text-body);
         flex: 1;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
         text-decoration: none;
         padding: 0.1rem 0;
+
+        :global(.treeitem.selected) & {
+            color: var(--text-title);
+        }
+
+        &:hover {
+            color: var(--text-title);
+        }
     }
 
     .note {

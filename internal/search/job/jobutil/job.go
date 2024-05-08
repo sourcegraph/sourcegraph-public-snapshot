@@ -53,7 +53,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 			return nil, errors.New("The 'codycontext' patterntype is not compatible with Smart Search")
 		}
 
-		newJobTree, err := codycontext.NewSearchJob(plan, newJob)
+		newJobTree, err := codycontext.NewSearchJob(plan, inputs, newJob)
 		if err != nil {
 			return nil, err
 		}
@@ -138,8 +138,6 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 					})
 				}
 
-				// searcher to use full deadline if timeout: set or we are not batch.
-
 				searcherJob := NewTextSearchJob(b, inputs, resultTypes, repoOptions)
 				addJob(searcherJob)
 			}
@@ -179,6 +177,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
+				Concurrency:          4,
 			}
 
 			addJob(
@@ -408,12 +407,16 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 				Features:        *searchInputs.Features,
 			}
 
-			addJob(&structural.SearchJob{
-				SearcherArgs:     searcherArgs,
-				UseIndex:         f.Index(),
-				ContainsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
-				RepoOpts:         repoOptions,
-				BatchRetry:       searchInputs.Protocol == search.Batch,
+			structuralSearchJob := &structural.SearchJob{
+				SearcherArgs: searcherArgs,
+				UseIndex:     f.Index(),
+				BatchRetry:   searchInputs.Protocol == search.Batch,
+			}
+
+			addJob(&repoPagerJob{
+				child:            &reposPartialJob{structuralSearchJob},
+				repoOpts:         repoOptions,
+				containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 			})
 		}
 

@@ -1,0 +1,7 @@
+diff --git file2 file2
+index 97d1dc8b6de8aaf9c15a5a3e23c9141770e833da..47632561e40231236d92ece3ace9b23344e3876f 100644
+--- file2
++++ file2
+@@ -1 +1 @@
+-my_content_2
++new_file_content

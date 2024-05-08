@@ -39,7 +39,7 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 	adminID, err := createUser(bs, "admin")
 	require.NoError(t, err)
 
-	s := store.New(db, &observation.TestContext)
+	s := store.New(db, observation.TestContextTB(t))
 
 	tests := []struct {
 		name        string
@@ -149,7 +149,7 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), actor.FromUser(userID))
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(adminID))
 
-	s := store.New(db, &observation.TestContext)
+	s := store.New(db, observation.TestContextTB(t))
 
 	jobs := []types.ExhaustiveSearchJob{
 		{InitiatorID: userID, Query: "repo:job1"},
@@ -294,7 +294,7 @@ func TestStore_AggregateStatus(t *testing.T) {
 	_, err := createRepo(db, "repo1")
 	require.NoError(t, err)
 
-	s := store.New(db, &observation.TestContext)
+	s := store.New(db, observation.TestContextTB(t))
 
 	tc := []struct {
 		name string

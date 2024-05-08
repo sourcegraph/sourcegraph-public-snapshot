@@ -11813,6 +11813,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX exhaustive_search_jobs_pkey ON exhaustive_search_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "exhaustive_search_jobs_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX exhaustive_search_jobs_state ON exhaustive_search_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -12075,6 +12085,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX exhaustive_search_repo_jobs_pkey ON exhaustive_search_repo_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "exhaustive_search_repo_jobs_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX exhaustive_search_repo_jobs_state ON exhaustive_search_repo_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -12331,6 +12351,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX exhaustive_search_repo_revision_jobs_pkey ON exhaustive_search_repo_revision_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "exhaustive_search_repo_revision_jobs_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX exhaustive_search_repo_revision_jobs_state ON exhaustive_search_repo_revision_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [

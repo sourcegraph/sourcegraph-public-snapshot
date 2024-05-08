@@ -33,7 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/connection"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -50,7 +50,7 @@ type JanitorConfig struct {
 	DisableDeleteReposOnWrongShard bool
 }
 
-func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, fs gitserverfs.FS, rcf *wrexec.RecordingCommandFactory, cloneRepo cloneRepoFunc, logger log.Logger) goroutine.BackgroundRoutine {
+func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, fs gitserverfs.FS, rcf *wrexec.RecordingCommandFactory, logger log.Logger) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
@@ -86,9 +86,9 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, fs gitse
 				}()
 			}
 
-			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
+			gitserverAddrs := connection.NewGitserverAddresses(conf.Get())
 			// TODO: Should this return an error?
-			cleanupRepos(ctx, logger, db, fs, rcf, cfg.ShardID, cloneRepo, gitserverAddrs, cfg.DisableDeleteReposOnWrongShard)
+			cleanupRepos(ctx, logger, db, fs, rcf, cfg.ShardID, gitserverAddrs, cfg.DisableDeleteReposOnWrongShard)
 
 			return nil
 		}),
@@ -114,8 +114,6 @@ var sgMaintenanceScript string
 
 const (
 	day = 24 * time.Hour
-	// repoTTL is how often we should re-clone a repository.
-	repoTTL = 45 * day
 	// repoTTLGC is how often we should re-clone a repository once it is
 	// reporting git gc issues.
 	repoTTLGC = 2 * day
@@ -228,8 +226,6 @@ var (
 	})
 )
 
-type cloneRepoFunc func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error)
-
 // cleanupRepos walks the repos directory and performs maintenance tasks:
 //
 // 1. Compute the amount of space used by the repo
@@ -250,8 +246,7 @@ func cleanupRepos(
 	fs gitserverfs.FS,
 	rcf *wrexec.RecordingCommandFactory,
 	shardID string,
-	cloneRepo cloneRepoFunc,
-	gitServerAddrs gitserver.GitserverAddresses,
+	gitServerAddrs connection.GitserverAddresses,
 	disableDeleteReposOnWrongShard bool,
 ) {
 	logger = logger.Scoped("cleanup")
@@ -424,11 +419,6 @@ func cleanupRepos(
 			return false, err
 		}
 
-		recloneTime, err := getRecloneTime(ctx, backend.Config(), dir)
-		if err != nil {
-			return false, err
-		}
-
 		// Add a jitter to spread out re-cloning of repos cloned at the same time.
 		var reason string
 		const maybeCorrupt = "maybeCorrupt"
@@ -444,12 +434,22 @@ func cleanupRepos(
 			// unset flag to stop constantly re-cloning if it fails.
 			_ = backend.Config().Unset(ctx, gitConfigMaybeCorrupt)
 		}
-		if time.Since(recloneTime) > repoTTL+jitterDuration(string(dir), repoTTL/4) {
-			reason = "old"
+
+		// Check if we marked GC as failed and if so, if it's been too long.
+		gcFailedAt, err := backend.Config().Get(ctx, gitConfigGCFailed)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to read git gc fail time")
 		}
-		if time.Since(recloneTime) > repoTTLGC+jitterDuration(string(dir), repoTTLGC/4) {
-			if gclog, err := os.ReadFile(dir.Path("gc.log")); err == nil && len(gclog) > 0 {
-				reason = fmt.Sprintf("git gc %s", string(bytes.TrimSpace(gclog)))
+		if gcFailedAt != "" {
+			gcFailedAtInt, err := strconv.Atoi(gcFailedAt)
+			if err != nil {
+				return false, errors.Wrap(err, "failed to parse git gc fail time")
+			}
+			firstGCFailure := time.Unix(int64(gcFailedAtInt), 0)
+			if time.Since(firstGCFailure) > repoTTLGC+jitterDuration(string(dir), repoTTLGC/4) {
+				if gclog, err := os.ReadFile(dir.Path("gc.log")); err == nil && len(gclog) > 0 {
+					reason = fmt.Sprintf("git gc %s", string(bytes.TrimSpace(gclog)))
+				}
 			}
 		}
 
@@ -472,25 +472,26 @@ func cleanupRepos(
 
 		recloneLogger := logger.With(
 			log.String("repo", string(repoName)),
-			log.Time("cloned", recloneTime),
 			log.String("reason", reason),
 		)
 
-		recloneLogger.Info("re-cloning expired repo")
+		recloneLogger.Info("re-cloning potentially broken repo")
 
-		// update the re-clone time so that we don't constantly re-clone if cloning fails.
-		// For example if a repo fails to clone due to being large, we will constantly be
-		// doing a clone which uses up lots of resources.
-		if err := setRecloneTime(ctx, backend.Config(), dir, recloneTime.Add(time.Since(recloneTime)/2)); err != nil {
-			recloneLogger.Warn("setting backed off re-clone time failed", log.Error(err))
+		// We trigger a reclone by removing the repo from disk and marking it as
+		// uncloned in the DB. The reclone will then be performed as if this repo
+		// was newly added to Sourcegraph.
+		// This will make the repo inaccessible for a bit, but we consider the
+		// repo completely broken at this stage anways.
+		if err := fs.RemoveRepo(repoName); err != nil {
+			return true, errors.Wrap(err, "failed to remove repo")
+		}
+		// Set as not_cloned in the database.
+		if err := db.GitserverRepos().SetCloneStatus(ctx, repoName, types.CloneStatusNotCloned, shardID); err != nil {
+			return true, errors.Wrap(err, "failed to update clone status")
 		}
 
-		cmdCtx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
-		defer cancel()
-		if _, err := cloneRepo(cmdCtx, repoName, CloneOptions{Block: true, Overwrite: true}); err != nil {
-			return true, err
-		}
 		reposRecloned.Inc()
+
 		return true, nil
 	}
 
@@ -547,7 +548,9 @@ func cleanupRepos(
 	}
 
 	performGC := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		return false, gitGC(rcf, repoName, dir)
+		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
+
+		return false, gitGC(ctx, logger, backend, rcf, repoName, dir)
 	}
 
 	performSGMaintenance := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
@@ -818,51 +821,6 @@ func findGitDirs(fs gitserverfs.FS) ([]common.GitDir, error) {
 	})
 }
 
-// setRecloneTime sets the time a repository is cloned.
-func setRecloneTime(ctx context.Context, c git.GitConfigBackend, dir common.GitDir, now time.Time) error {
-	err := c.Set(ctx, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
-	if err != nil {
-		if err2 := git.EnsureHEAD(dir); err2 != nil {
-			err = errors.Append(err, err2)
-		}
-		return errors.Wrap(err, "failed to update recloneTimestamp")
-	}
-	return nil
-}
-
-// getRecloneTime returns an approximate time a repository is cloned. If the
-// value is not stored in the repository, the re-clone time for the repository is
-// set to now.
-func getRecloneTime(ctx context.Context, c git.GitConfigBackend, dir common.GitDir) (time.Time, error) {
-	// We store the time we re-cloned the repository. If the value is missing,
-	// we store the current time. This decouples this timestamp from the
-	// different ways a clone can appear in gitserver.
-	update := func() (time.Time, error) {
-		now := time.Now()
-		return now, setRecloneTime(ctx, c, dir, now)
-	}
-
-	value, err := c.Get(ctx, "sourcegraph.recloneTimestamp")
-	if err != nil {
-		return time.Unix(0, 0), errors.Wrap(err, "failed to determine clone timestamp")
-	}
-	if value == "" {
-		return update()
-	}
-
-	sec, err := strconv.ParseInt(value, 10, 0)
-	if err != nil {
-		// If the value is bad update it to the current time
-		now, err2 := update()
-		if err2 != nil {
-			err = err2
-		}
-		return now, err
-	}
-
-	return time.Unix(sec, 0), nil
-}
-
 // gitIsNonBareBestEffort returns true if the repository is not a bare
 // repo. If we fail to check or the repository is bare we return false.
 //
@@ -878,18 +836,35 @@ func gitIsNonBareBestEffort(rcf *wrexec.RecordingCommandFactory, repoName api.Re
 	return bytes.Equal(b, []byte("false"))
 }
 
+const gitConfigGCFailed = "sourcegraph.gcFailedAt"
+
 // gitGC will invoke `git-gc` to clean up any garbage in the repo. It will
 // operate synchronously and be aggressive with its internal heuristics when
 // deciding to act (meaning it will act now at lower thresholds).
-func gitGC(rcf *wrexec.RecordingCommandFactory, repoName api.RepoName, dir common.GitDir) error {
+func gitGC(ctx context.Context, logger log.Logger, backend git.GitBackend, rcf *wrexec.RecordingCommandFactory, repoName api.RepoName, dir common.GitDir) error {
 	cmd := exec.Command("git", "-c", "gc.auto=1", "-c", "gc.autoDetach=false", "gc", "--auto")
 	dir.Set(cmd)
 	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoName, cmd)
 	err := wrappedCmd.Run()
 	if err != nil {
+		if gclog, readErr := os.ReadFile(dir.Path("gc.log")); readErr == nil && len(gclog) > 0 {
+			// gc failed most likely.
+			logger.Error("git gc failed", log.String("repo", string(dir)), log.Error(err), log.String("gc.log", string(gclog)))
+			existing, err := backend.Config().Get(ctx, gitConfigGCFailed)
+			if err != nil {
+				logger.Error("failed to read gitConfigGCFailed config", log.Error(err))
+			} else if existing == "" { // Not set yet.
+				if err := backend.Config().Set(ctx, gitConfigGCFailed, strconv.Itoa(int(time.Now().Unix()))); err != nil {
+					logger.Error("failed to set gitConfigGCFailed config", log.Error(err))
+				}
+			}
+		}
+
 		return errors.Wrapf(executil.WrapCmdError(cmd, err), "failed to git-gc")
 	}
-	return nil
+
+	// This run of git gc was a success, reset the failedAt config.
+	return backend.Config().Unset(ctx, gitConfigGCFailed)
 }
 
 const (
@@ -1170,26 +1145,6 @@ func tooManyPackfiles(dir common.GitDir, limit int) (bool, error) {
 		count++
 	}
 	return count > limit, nil
-}
-
-// gitSetAutoGC will set the value of gc.auto. If GC is managed by Sourcegraph
-// the value will be 0 (disabled), otherwise if managed by git we will unset
-// it to rely on default (on) or global config.
-//
-// The purpose is to avoid repository corruption which can happen if several
-// git-gc operations are running at the same time.
-func gitSetAutoGC(ctx context.Context, c git.GitConfigBackend) error {
-	switch gitGCMode {
-	case gitGCModeGitAutoGC, gitGCModeJanitorAutoGC:
-		return c.Unset(ctx, "gc.auto")
-
-	case gitGCModeMaintenance:
-		return c.Set(ctx, "gc.auto", "0")
-
-	default:
-		// should not happen
-		panic(fmt.Sprintf("non exhaustive switch for gitGCMode: %d", gitGCMode))
-	}
 }
 
 // jitterDuration returns a duration between [0, d) based on key. This is like

@@ -13,7 +13,7 @@ import (
 func TestGetRepoRank(t *testing.T) {
 	ctx := context.Background()
 	mockStore := NewMockStore()
-	svc := newService(&observation.TestContext, mockStore, nil, conf.DefaultClient())
+	svc := newService(observation.TestContextTB(t), mockStore, nil, conf.DefaultClient())
 
 	mockStore.GetStarRankFunc.SetDefaultReturn(0.6, nil)
 
@@ -34,7 +34,7 @@ func TestGetRepoRankWithUserBoostedScores(t *testing.T) {
 	ctx := context.Background()
 	mockStore := NewMockStore()
 	mockConfigQuerier := NewMockSiteConfigQuerier()
-	svc := newService(&observation.TestContext, mockStore, nil, mockConfigQuerier)
+	svc := newService(observation.TestContextTB(t), mockStore, nil, mockConfigQuerier)
 
 	mockStore.GetStarRankFunc.SetDefaultReturn(0.6, nil)
 	mockConfigQuerier.SiteConfigFunc.SetDefaultReturn(schema.SiteConfiguration{

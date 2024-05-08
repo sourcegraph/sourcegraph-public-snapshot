@@ -28,7 +28,7 @@ describe('StreamingProgressSkippedButton', () => {
             repositoriesCount: 2,
             skipped: [
                 {
-                    reason: 'excluded-fork',
+                    reason: 'repository-fork',
                     message: '10k forked repositories excluded',
                     severity: 'info',
                     title: '10k forked repositories excluded',
@@ -69,7 +69,7 @@ describe('StreamingProgressSkippedButton', () => {
             repositoriesCount: 2,
             skipped: [
                 {
-                    reason: 'excluded-fork',
+                    reason: 'repository-fork',
                     message: '10k forked repositories excluded',
                     severity: 'info',
                     title: '10k forked repositories excluded',
@@ -120,7 +120,7 @@ describe('StreamingProgressSkippedButton', () => {
             repositoriesCount: 2,
             skipped: [
                 {
-                    reason: 'excluded-fork',
+                    reason: 'repository-fork',
                     message: '10k forked repositories excluded',
                     severity: 'info',
                     title: '10k forked repositories excluded',
@@ -171,7 +171,7 @@ describe('StreamingProgressSkippedButton', () => {
             repositoriesCount: 2,
             skipped: [
                 {
-                    reason: 'excluded-fork',
+                    reason: 'repository-fork',
                     message: '10k forked repositories excluded',
                     severity: 'info',
                     title: '10k forked repositories excluded',

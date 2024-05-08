@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/reposcheduler"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,7 +24,6 @@ type Services struct {
 	PoliciesService              *policies.Service
 	RankingService               *ranking.Service
 	UploadsService               *uploads.Service
-	SentinelService              *sentinel.Service
 	ContextService               *context.Service
 	GitserverClient              gitserver.Client
 }
@@ -46,7 +44,6 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 	autoIndexingSvc := autoindexing.NewService(deps.ObservationCtx, db, dependenciesSvc, policiesSvc, gitserverClient.Scoped("autoindexing"))
 	codenavSvc := codenav.NewService(deps.ObservationCtx, db, codeIntelDB, uploadsSvc, gitserverClient.Scoped("codenav"))
 	rankingSvc := ranking.NewService(deps.ObservationCtx, db, codeIntelDB)
-	sentinelService := sentinel.NewService(deps.ObservationCtx, db)
 	contextService := context.NewService(deps.ObservationCtx, db)
 	reposchedulingService := reposcheduler.NewService(reposcheduler.NewPreciseStore(deps.ObservationCtx, db))
 
@@ -58,7 +55,6 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 		PoliciesService:              policiesSvc,
 		RankingService:               rankingSvc,
 		UploadsService:               uploadsSvc,
-		SentinelService:              sentinelService,
 		ContextService:               contextService,
 		GitserverClient:              gitserverClient,
 	}, nil

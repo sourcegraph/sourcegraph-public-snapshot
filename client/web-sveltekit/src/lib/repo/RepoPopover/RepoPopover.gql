@@ -1,0 +1,31 @@
+fragment RepoPopoverFields on Repository {
+    name
+    description
+    stars
+    isPrivate
+    language
+    externalServices {
+        totalCount
+        nodes {
+            kind
+        }
+    }
+    tags {
+        nodes {
+            name
+        }
+    }
+
+    commit(rev: "HEAD") {
+        id
+        oid
+        subject
+        canonicalURL
+        author {
+            date
+            person {
+                ...Avatar_Person
+            }
+        }
+    }
+}

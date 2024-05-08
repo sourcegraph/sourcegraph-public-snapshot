@@ -24,7 +24,7 @@
     const id = uniqueID('tooltip')
 
     let visible = false
-    let wrapper: HTMLElement
+    let wrapper: HTMLElement | null
     let target: Element | null
 
     function show() {
@@ -42,7 +42,19 @@
             padding: 4,
         },
     }
-    $: target = wrapper?.firstElementChild
+    $: {
+        let node = wrapper?.firstElementChild
+        // Use `getClientRects` to check if the element is part of the layout.
+        // For example, an element with `display: contents` will not be part of the layout.
+        // Elements with `display: contents` are created by Svelte when using style props
+        // (https://svelte.dev/docs/component-directives#style-props).
+        while (node && node.getClientRects().length === 0) {
+            node = node.firstElementChild
+        }
+        if (node) {
+            target = node
+        }
+    }
     $: if (target && tooltip) {
         target.setAttribute('aria-label', tooltip)
     }
@@ -54,7 +66,15 @@
     itself is not interactable.
     svelte-ignore a11y-no-static-element-interactions
 -->
-<div class="wrapper" bind:this={wrapper} on:mouseenter={show} on:mouseleave={hide} on:focusin={show} on:focusout={hide}>
+<div
+    class="wrapper"
+    bind:this={wrapper}
+    on:mouseenter={show}
+    on:mouseleave={hide}
+    on:focusin={show}
+    on:focusout={hide}
+    data-tooltip-root
+>
     <slot />
 </div>
 {#if (alwaysVisible || visible) && target && tooltip}
@@ -85,6 +105,7 @@
         all: initial;
         position: absolute;
         isolation: isolate;
+        z-index: 1;
         font-family: inherit;
         font-size: var(--tooltip-font-size);
         font-style: normal;

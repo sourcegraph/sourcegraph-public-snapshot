@@ -27,7 +27,7 @@ func TestGetVCSSyncer(t *testing.T) {
 	}
 	tempCoursierCacheDir := filepath.Join(tempReposDir, "coursier")
 
-	fs := gitserverfs.New(&observation.TestContext, tempReposDir)
+	fs := gitserverfs.New(observation.TestContextTB(t), tempReposDir)
 	require.NoError(t, fs.Initialize())
 
 	repo := api.RepoName("foo/bar")

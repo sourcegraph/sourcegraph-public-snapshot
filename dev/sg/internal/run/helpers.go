@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -36,7 +37,7 @@ type cmdInRootErr struct {
 }
 
 func (e cmdInRootErr) Error() string {
-	return fmt.Sprintf("'%s' failed: %s", strings.Join(e.args, " "), e.output)
+	return fmt.Sprintf("'%s' failed: err = %q, output = %q", strings.Join(e.args, " "), e.err.Error(), e.output)
 }
 
 func (e cmdInRootErr) ErrorWithoutOutput() string {
@@ -58,6 +59,17 @@ func InRoot(cmd *exec.Cmd) (string, error) {
 	}
 
 	return string(out), nil
+}
+
+func SplitOutputInRoot(cmd *exec.Cmd, stdout, stderr io.Writer) error {
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return err
+	}
+	cmd.Dir = repoRoot
+	return cmd.Run()
 }
 
 func BashInRoot(ctx context.Context, cmd string, env []string) (string, error) {

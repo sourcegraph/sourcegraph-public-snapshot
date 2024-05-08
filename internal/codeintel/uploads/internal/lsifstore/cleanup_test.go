@@ -23,7 +23,7 @@ func TestDeleteLsifDataByUploadIds(t *testing.T) {
 		Level: log.LevelError,
 	})
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, codeIntelDB)
+	store := New(observation.TestContextTB(t), codeIntelDB)
 
 	t.Run("scip", func(t *testing.T) {
 		for i := range 5 {
@@ -54,7 +54,7 @@ func TestDeleteAbandonedSchemaVersionsRecords(t *testing.T) {
 		Level: log.LevelError,
 	})
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, codeIntelDB)
+	store := New(observation.TestContextTB(t), codeIntelDB)
 	ctx := context.Background()
 
 	assertCounts := func(expectedNumSymbols, expectedNumDocuments int) {
@@ -126,7 +126,7 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
 	internalStore := basestore.NewWithHandle(codeIntelDB.Handle())
-	store := New(&observation.TestContext, codeIntelDB)
+	store := New(observation.TestContextTB(t), codeIntelDB)
 
 	for i := range 200 {
 		insertDocumentQuery := sqlf.Sprintf(
@@ -222,7 +222,7 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 func TestIDsWithMeta(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, codeIntelDB)
+	store := New(observation.TestContextTB(t), codeIntelDB)
 	ctx := context.Background()
 
 	if _, err := codeIntelDB.ExecContext(ctx, `
@@ -257,7 +257,7 @@ func TestIDsWithMeta(t *testing.T) {
 func TestReconcileCandidates(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, codeIntelDB)
+	store := New(observation.TestContextTB(t), codeIntelDB)
 
 	ctx := context.Background()
 	now := time.Unix(1587396557, 0).UTC()

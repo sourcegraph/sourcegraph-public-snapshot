@@ -7,3 +7,5 @@ cmd/repo-updater/repos/testdata/** linguist-generated=true
 **/*.pb.go linguist-generated=true
 CHANGELOG.md merge=union
 **/mocks*_*test.go linguist-generated=true
+.apko/range.sh linguist-generated=true
+dev/linearhooks/internal/lineargql/gqltest/fake_client.go

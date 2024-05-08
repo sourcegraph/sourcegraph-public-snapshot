@@ -13,22 +13,38 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/codycontext",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/api",
+        "//internal/embeddings/embed",
         "//internal/search",
         "//internal/search/job",
         "//internal/search/query",
+        "//internal/search/result",
         "//internal/search/streaming",
         "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
         "@com_github_kljensen_snowball//:snowball",
+        "@com_github_sourcegraph_conc//pool",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
 go_test(
     name = "codycontext_test",
-    srcs = ["query_transformer_test.go"],
+    srcs = [
+        "job_test.go",
+        "query_transformer_test.go",
+    ],
     embed = [":codycontext"],
     deps = [
+        "//internal/api",
+        "//internal/search",
+        "//internal/search/job",
+        "//internal/search/job/mockjob",
         "//internal/search/query",
+        "//internal/search/result",
+        "//internal/search/streaming",
+        "//internal/types",
         "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//require",
     ],
 )

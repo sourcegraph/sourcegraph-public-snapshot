@@ -42,7 +42,7 @@ export const ExternalServiceEditPage: FC<Props> = ({
 
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalService')
-        telemetryRecorder.recordEvent('admin.externalService.edit', 'view')
+        telemetryRecorder.recordEvent('admin.codeHostConnection.edit', 'view')
     }, [telemetryService, telemetryRecorder])
 
     const [externalService, setExternalService] = useState<ExternalServiceFieldsWithConfig>()

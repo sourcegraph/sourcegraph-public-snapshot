@@ -17,8 +17,11 @@ type RepoRev struct {
 }
 
 var (
-	Repo = `{Repo:` + namedToNonCapturingGroups(RepoPattern) + `}`
-	Rev  = `{Rev:` + namedToNonCapturingGroups(RevPattern) + `}`
+	RepoPatternNonCapturing = namedToNonCapturingGroups(RepoPattern)
+	RevPatternNonCapturing  = namedToNonCapturingGroups(RevPattern)
+
+	Repo = `{Repo:` + RepoPatternNonCapturing + `}`
+	Rev  = `{Rev:` + RevPatternNonCapturing + `}`
 
 	RepoRevSuffix = `{Rev:` + namedToNonCapturingGroups(`(?:@`+RevPattern+`)?`) + `}`
 )

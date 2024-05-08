@@ -1,5 +1,6 @@
 import type { Meta } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../components/WebStory'
@@ -22,5 +23,9 @@ const Story: Meta = {
 export default Story
 
 export const RepositoriesPopoverExample = () => (
-    <RepositoriesPopover currentRepo="some-repo-id" telemetryService={NOOP_TELEMETRY_SERVICE} />
+    <RepositoriesPopover
+        currentRepo="some-repo-id"
+        telemetryService={NOOP_TELEMETRY_SERVICE}
+        telemetryRecorder={noOpTelemetryRecorder}
+    />
 )

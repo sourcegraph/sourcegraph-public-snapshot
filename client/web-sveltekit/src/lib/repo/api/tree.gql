@@ -22,9 +22,7 @@ fragment GitCommitFieldsWithTree on GitCommit {
             name
             path
             isDirectory
-            ... on GitBlob {
-                languages
-            }
+            ...FileIcon_GitBlob
         }
     }
 }

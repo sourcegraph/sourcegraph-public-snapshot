@@ -115,10 +115,10 @@ const (
 // DescriptionSuffix points to the service page and environment anchor expected to be
 // generated at https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/,
 // and should be added as a suffix to all alert descriptions.
-func DescriptionSuffix(serviceID, environmentID string) string {
-	return fmt.Sprintf(`See https://handbook.sourcegraph.com/departments/engineering/managed-services/%s#%s for service and infrastructure access details.
+func DescriptionSuffix(s spec.ServiceSpec, environmentID string) string {
+	return fmt.Sprintf(`See %s -> **%s** for service and infrastructure access details for this environment.
 If you need additional assistance, reach out to #discuss-core-services.`,
-		serviceID, environmentID)
+		s.GetHandbookPageURL(), environmentID)
 }
 
 type NotificationChannels map[SeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel
@@ -159,7 +159,9 @@ func (c Config) makeDocsSubject() string {
 		c.Service.GetName(), c.EnvironmentID, c.Name)
 }
 
-type Output struct{}
+type Output struct {
+	AlertPolicy monitoringalertpolicy.MonitoringAlertPolicy
+}
 
 func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
 	if err := onlyOneNonNil([]any{config.ThresholdAggregation, config.ResponseCodeMetric, config.MetricAbsence}); err != nil {
@@ -175,7 +177,7 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 	} else {
 		config.Description = fmt.Sprintf("%s\n\n%s",
 			config.Description,
-			DescriptionSuffix(config.Service.ID, config.EnvironmentID))
+			DescriptionSuffix(config.Service, config.EnvironmentID))
 	}
 
 	// Set default
@@ -220,7 +222,7 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 	}
 
 	// Build the final alert policy
-	_ = monitoringalertpolicy.NewMonitoringAlertPolicy(scope, id.TerraformID(config.ID),
+	alert := monitoringalertpolicy.NewMonitoringAlertPolicy(scope, id.TerraformID(config.ID),
 		&monitoringalertpolicy.MonitoringAlertPolicyConfig{
 			Project:     pointers.Ptr(config.ProjectID),
 			DisplayName: pointers.Ptr(config.Name),
@@ -244,7 +246,9 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 			Conditions: []*monitoringalertpolicy.MonitoringAlertPolicyConditions{condition},
 		})
 
-	return &Output{}, nil
+	return &Output{
+		AlertPolicy: alert,
+	}, nil
 }
 
 func onlyOneNonNil(options []any) error {

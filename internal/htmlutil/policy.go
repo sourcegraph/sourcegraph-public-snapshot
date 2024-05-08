@@ -31,6 +31,7 @@ var policy = sync.OnceValue(func() *bluemonday.Policy {
 	p.AllowAttrs("class").Matching(chromaOrAnsi).OnElements("span")
 	p.AllowAttrs("class").Matching(regexp.MustCompile(`^jp-[a-zA-Z0-9\-]+`)).OnElements("div")
 	p.AllowAttrs("align").OnElements("img", "p")
+	p.AllowAttrs("start").OnElements("ol")
 	p.AllowElements("picture", "video", "track", "source")
 	p.AllowAttrs("srcset", "src", "type", "media", "width", "height", "sizes").OnElements("source")
 	p.AllowAttrs("playsinline", "muted", "autoplay", "loop", "controls", "width", "height", "poster", "src").OnElements("video")

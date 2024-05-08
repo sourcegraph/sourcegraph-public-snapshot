@@ -3,6 +3,7 @@ package query
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
@@ -49,6 +50,9 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"has.content":      func() Predicate { return &FileContainsContentPredicate{} },
 		"has.owner":        func() Predicate { return &FileHasOwnerPredicate{} },
 		"has.contributor":  func() Predicate { return &FileHasContributorPredicate{} },
+	},
+	FieldRev: {
+		"at.time": func() Predicate { return &RevAtTimePredicate{} },
 	},
 }
 
@@ -614,3 +618,34 @@ func (f *FileHasContributorPredicate) Unmarshal(params string, negated bool) err
 
 func (f FileHasContributorPredicate) Field() string { return FieldFile }
 func (f FileHasContributorPredicate) Name() string  { return "has.contributor" }
+
+type RevAtTimePredicate struct {
+	RevAtTime
+}
+
+func (f *RevAtTimePredicate) Unmarshal(params string, negated bool) error {
+	elems := strings.Split(params, ",")
+	if len(elems) == 1 {
+		t, err := ParseGitDate(strings.TrimSpace(elems[0]), time.Now)
+		if err != nil {
+			return err
+		}
+		f.Timestamp = t
+		f.RevSpec = "HEAD"
+		return nil
+	} else if len(elems) == 2 {
+		t, err := ParseGitDate(strings.TrimSpace(elems[0]), time.Now)
+		if err != nil {
+			return err
+		}
+		f.Timestamp = t
+		f.RevSpec = strings.TrimSpace(elems[1])
+		return nil
+	} else {
+		return errors.New("unexpected number of arguments to rev:at.time()")
+	}
+}
+
+func (f RevAtTimePredicate) Field() string { return FieldRev }
+
+func (f RevAtTimePredicate) Name() string { return "at.time" }

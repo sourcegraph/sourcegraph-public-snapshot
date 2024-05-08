@@ -4,7 +4,7 @@ import { SearchPatternType } from '$lib/graphql-operations'
 import { buildSearchURLQuery, type Settings } from '$lib/shared'
 import { defaultSearchModeFromSettings, defaultPatternTypeFromSettings } from '$lib/web'
 
-import { USE_CLIENT_CACHE_QUERY_PARAMETER } from './constants'
+const CLIENT_CACHE_QUERY_PARAMETER = '__cc'
 
 // Defined in @sourcegraph/shared/src/search/searchQueryState.tsx
 export enum SearchMode {
@@ -140,6 +140,11 @@ export function queryStateStore(initial: Partial<Options> = {}, settings: QueryS
     }
 }
 
+export enum SearchCachePolicy {
+    Default,
+    CacheFirst,
+}
+
 /**
  * getQueryURL builds a /search URL from the given query state.
  * If enforceCache is true the in-memory query cache will be used when available.
@@ -149,7 +154,7 @@ export function queryStateStore(initial: Partial<Options> = {}, settings: QueryS
  */
 export function getQueryURL(
     queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>,
-    enforceCache = false
+    cachePolicy: SearchCachePolicy = SearchCachePolicy.Default
 ): URL {
     let url = new URL('/search', location.href)
     url.search = buildSearchURLQuery(
@@ -159,8 +164,38 @@ export function getQueryURL(
         queryState.searchContext,
         queryState.searchMode
     )
-    if (enforceCache) {
-        url.searchParams.append(USE_CLIENT_CACHE_QUERY_PARAMETER, '')
+    if (cachePolicy !== SearchCachePolicy.Default) {
+        setCachePolicyInURL(url, cachePolicy)
     }
     return url
+}
+
+/**
+ * setCachePolicy updates the URL to reflect the given cache policy.
+ *
+ * @param url The URL to update.
+ * @param cachePolicy The cache policy to set.
+ */
+export function setCachePolicyInURL(url: URL, cachePolicy: SearchCachePolicy): void {
+    url.searchParams.set(CLIENT_CACHE_QUERY_PARAMETER, cachePolicy.toString())
+}
+
+/**
+ * getCachePolicyFromURL inspects the URL for the presence of the client cache query parameter and returns
+ * the cache policy, if any.
+ *
+ * @param url The URL to inspect.
+ * @returns The cache policy if present or the default cache policy.
+ */
+export function getCachePolicyFromURL(url: URL): SearchCachePolicy {
+    const policy = url.searchParams.get(CLIENT_CACHE_QUERY_PARAMETER)
+    if (!policy) {
+        return SearchCachePolicy.Default
+    }
+    switch (policy) {
+        case String(SearchCachePolicy.CacheFirst):
+            return SearchCachePolicy.CacheFirst
+        default:
+            return SearchCachePolicy.Default
+    }
 }

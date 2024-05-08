@@ -43,7 +43,7 @@ func (t *Test) AddError(err error) {
 // DisplayErrors prints errors to stdout
 func (t *Test) DisplayErrors() {
 	for _, err := range t.Errors {
-		fmt.Println(err)
+		fmt.Println(err.Error())
 	}
 }
 
@@ -52,6 +52,11 @@ func (t *Test) DisplayLog() {
 	for _, log := range t.LogLines {
 		fmt.Println(log)
 	}
+}
+
+// Display if a test has failed
+func (t *Test) Failed() bool {
+	return 0 < len(t.Errors)
 }
 
 // TestResults is a collection of tests, organized by type. Its methods are generally used to control its logging behavior.
@@ -81,6 +86,32 @@ func (r *TestResults) AddAutoTest(test Test) {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 	r.AutoupgradeTests = append(r.AutoupgradeTests, test)
+}
+
+// Failed returns true if any given test has errors registered.
+func (r *TestResults) Failed() bool {
+	if 0 < len(r.StandardUpgradeTests) {
+		for _, test := range r.StandardUpgradeTests {
+			if test.Failed() {
+				return true
+			}
+		}
+	}
+	if 0 < len(r.MVUUpgradeTests) {
+		for _, test := range r.MVUUpgradeTests {
+			if test.Failed() {
+				return true
+			}
+		}
+	}
+	if 0 < len(r.AutoupgradeTests) {
+		for _, test := range r.AutoupgradeTests {
+			if test.Failed() {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // Used in all-type test
@@ -118,7 +149,7 @@ func (r *TestResults) PrintSimpleResults() {
 	if len(r.StandardUpgradeTests) != 0 {
 		stdRes := []string{}
 		for _, test := range r.StandardUpgradeTests {
-			if 0 < len(test.Errors) {
+			if test.Failed() {
 				stdRes = append(stdRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[len(test.Errors)-1]))
 			} else {
 				stdRes = append(stdRes, fmt.Sprintf("✅ %s Passed -- %s ", test.Version.String(), test.Runtime))
@@ -130,7 +161,7 @@ func (r *TestResults) PrintSimpleResults() {
 	if len(r.MVUUpgradeTests) != 0 {
 		mvuRes := []string{}
 		for _, test := range r.MVUUpgradeTests {
-			if 0 < len(test.Errors) {
+			if test.Failed() {
 				mvuRes = append(mvuRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[len(test.Errors)-1]))
 			} else {
 				mvuRes = append(mvuRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version.String(), test.Runtime))
@@ -142,7 +173,7 @@ func (r *TestResults) PrintSimpleResults() {
 	if len(r.AutoupgradeTests) != 0 {
 		autoRes := []string{}
 		for _, test := range r.AutoupgradeTests {
-			if 0 < len(test.Errors) {
+			if test.Failed() {
 				autoRes = append(autoRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[len(test.Errors)-1]))
 			} else {
 				autoRes = append(autoRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version.String(), test.Runtime))
@@ -158,21 +189,21 @@ func (r *TestResults) DisplayErrors() {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 	for _, test := range r.StandardUpgradeTests {
-		if 0 < len(test.Errors) {
+		if test.Failed() {
 			fmt.Printf("--- 🚨 Standard Upgrade Test %s Failed:\n", test.Version.String())
-			test.DisplayErrors()
+			test.DisplayLog()
 		}
 	}
 	for _, test := range r.MVUUpgradeTests {
-		if 0 < len(test.Errors) {
+		if test.Failed() {
 			fmt.Printf("--- 🚨 Multiversion Upgrade Test %s Failed:\n", test.Version.String())
-			test.DisplayErrors()
+			test.DisplayLog()
 		}
 	}
 	for _, test := range r.AutoupgradeTests {
-		if 0 < len(test.Errors) {
+		if test.Failed() {
 			fmt.Printf("--- 🚨 Auto Upgrade Test %s Failed:\n", test.Version.String())
-			test.DisplayErrors()
+			test.DisplayLog()
 		}
 	}
 }
@@ -221,6 +252,23 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 	test.AddLog(fmt.Sprintf("Upgrading from version (%s) to release candidate.", initVersion))
 	test.AddLog("-- 🏗️  setting up test environment")
 
+	// Pull images from registry if -target-registry is set
+	if ctx.Value(fromRegistryKey{}).(string) != "sourcegraph/" {
+		test.AddLog(fmt.Sprintf("🐋 pulling -target-registry images from %s", ctx.Value(fromRegistryKey{}).(string)))
+		out, err := run.Cmd(ctx, "docker", "image", "pull", fmt.Sprintf("%sfrontend:%s", ctx.Value(fromRegistryKey{}).(string), initVersion.String())).Run().String()
+		test.AddLog(out)
+		if err != nil {
+			test.AddError(errors.Newf("🚨 failed to pull images from -target-registry: %s", err))
+		}
+		fmt.Println(out)
+		out, err = run.Cmd(ctx, "docker", "image", "pull", fmt.Sprintf("%smigrator:%s", ctx.Value(fromRegistryKey{}).(string), initVersion.String())).Run().String()
+		test.AddLog(out)
+		if err != nil {
+			test.AddError(errors.Newf("🚨 failed to pull images from -target-registry: %s", err))
+		}
+		fmt.Println(out)
+	}
+
 	// Create a docker network for testing
 	//
 	// Docker bridge networks take up a lot of the docker daemons available port allocation. We run only a limited amount of test parallelization to get around this.
@@ -257,13 +305,24 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 			"--name", db.ContainerName,
 			"--network", networkName,
 			"-p", "5432",
-			fmt.Sprintf("sourcegraph/%s:%s", db.Image, initVersion),
+			fmt.Sprintf("%s%s:%s", ctx.Value(fromRegistryKey{}), db.Image, initVersion),
 		).Run().Wait()
 		if err != nil {
 			test.AddError(errors.Newf("🚨 failed to create test databases: %s", err))
 		}
+
 		// get the dynamically allocated port and register it to the test
-		port, err := run.Cmd(ctx, "docker", "port", db.ContainerName, "5432").Run().String()
+		out, err := run.Cmd(ctx, "docker", "port", db.ContainerName, "5432").Run().String()
+
+		// docker port can return multiple ports, ipv4 and ipv6, so we need to keep the former only.
+		ports := strings.Split(out, "\n")
+		var port string
+		if len(ports) < 1 {
+			test.AddError(errors.Newf("incorrect port output for %s", db.ContainerName))
+		} else {
+			port = ports[0]
+		}
+
 		if err != nil {
 			test.AddError(errors.Newf("🚨 failed to get port for %s: %s", db.ContainerName, err))
 		}
@@ -272,7 +331,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 
 	// Create a timeout to validate the databases have initialized, this is to prevent a hung test
 	// When many goroutines are running this test this is a point of failure.
-	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Second*120)
+	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Second*220)
 	wgDbPing := pool.New().WithErrors().WithContext(dbPingTimeout)
 	defer cancel()
 
@@ -313,7 +372,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 
 	// Initialize the databases by running migrator with the `up` command.
 	test.LogLines = append(test.LogLines, "-- 🏗️  initializing database schemas with migrator")
-	out, err = run.Cmd(ctx, dockerMigratorBaseString(test, "up", fmt.Sprintf("sourcegraph/migrator:%s", initVersion), networkName, dbs)...).Run().String()
+	out, err = run.Cmd(ctx, dockerMigratorBaseString(test, "up", fmt.Sprintf("%smigrator:%s", ctx.Value(fromRegistryKey{}), initVersion), networkName, dbs)...).Run().String()
 	if err != nil {
 		test.AddError(errors.Newf("🚨 failed to initialize database: %w", err))
 	}
@@ -346,7 +405,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 
 	//start frontend and poll db until initial version is set by frontend
 	var cleanFrontend func()
-	cleanFrontend, err = startFrontend(ctx, test, "sourcegraph/frontend", initVersion.String(), networkName, false, dbs)
+	cleanFrontend, err = startFrontend(ctx, test, fmt.Sprintf("%sfrontend", ctx.Value(fromRegistryKey{})), initVersion.String(), networkName, false, dbs)
 	if err != nil {
 		test.AddError(errors.Newf("🚨 failed to start frontend: %w", err))
 	}
@@ -517,8 +576,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	if auto {
 		envString = append(envString, "-e", "SRC_AUTOUPGRADE=true")
 	}
-	// ERROR
-	// {"SeverityText":"FATAL","Timestamp":1706224238009644720,"InstrumentationScope":"sourcegraph","Caller":"svcmain/svcmain.go:167","Function":"github.com/sourcegraph/sourcegraph/internal/service/svcmain.run.func1","Body":"failed to start service","Resource":{"service.name":"frontend","service.version":"0.0.0+dev","service.instance.id":"79a3e3ca0bfc"},"Attributes":{"service":"frontend","error":"failed to connect to frontend database: database schema out of date"}}
+
 	cmdString := []string{
 		"--network", networkName,
 		fmt.Sprintf("%s:%s", image, version),
@@ -526,6 +584,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	baseString = append(baseString, envString...)
 	cmdString = append(baseString, cmdString...)
 
+	// TODO: Improve log aggregation of frontend container runs
 	// Start the frontend container in goroutine to get logs
 	errChan := make(chan error)
 	go func() {
@@ -701,6 +760,12 @@ func handleVersions(cCtx *cli.Context, overrideStd, overrideMVU, overrideAuto []
 		targetVersion = semver.MustParse(cCtx.String("stamp-version"))
 	default:
 		targetVersion = semver.MustParse("0.0.0+dev") // If no stamp version is set, we assume version is in dev
+	}
+
+	// Ensure latest tags
+	err = run.Cmd(ctx, "git", "fetch", "--tags").Run().Wait()
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	// Sort latest stable release tags

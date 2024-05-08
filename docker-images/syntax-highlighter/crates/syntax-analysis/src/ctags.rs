@@ -82,7 +82,7 @@ impl<'a> Reply<'a> {
             name,
             path,
             language,
-            line: scope.scope_range.start_line as usize + 1,
+            line: scope.ident_range.start_line as usize + 1,
             kind: descriptors_to_kind(&scope.descriptors, &scope.kind),
             scope: tag_scope,
         };
@@ -197,14 +197,11 @@ pub fn generate_tags<W: std::io::Write>(
     let (root_scope, _) = match get_globals(parser, file_data) {
         Ok(vals) => vals,
         Err(err) => {
-            // TODO: Not sure I want to keep this or not
-            #[cfg(debug_assertions)]
-            if true {
-                panic!("Could not parse file: {}", err);
+            Reply::Error {
+                message: err.to_string(),
+                fatal: false,
             }
-
-            let _ = err;
-
+            .write(buf_writer);
             return None;
         }
     };
@@ -242,15 +239,7 @@ pub fn ctags_runner<R: Read, W: Write>(
             break;
         }
 
-        let request = serde_json::from_str::<Request>(&line);
-        let request = match request {
-            Ok(request) => request,
-            Err(_) => {
-                eprintln!("Could not parse request: {}", line);
-                continue;
-            }
-        };
-
+        let request = serde_json::from_str::<Request>(&line)?;
         match request {
             Request::GenerateTags { filename, size } => {
                 let mut file_data = vec![0; size];
@@ -258,8 +247,16 @@ pub fn ctags_runner<R: Read, W: Write>(
                     .read_exact(&mut file_data)
                     .expect("Could not fill file data exactly");
 
-                let code = String::from_utf8(file_data).context("when generating tags")?;
-                generate_tags(output, filename, &code);
+                match String::from_utf8(file_data) {
+                    Ok(code) => {
+                        generate_tags(output, filename, &code);
+                    }
+                    Err(error) => Reply::Error {
+                        message: error.to_string(),
+                        fatal: false,
+                    }
+                    .write(output),
+                };
             }
         }
 

@@ -21,7 +21,7 @@ func TestRepoIDsByGlobPatterns(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertRepo(t, db, 50, "Darth Vader", true)
 	insertRepo(t, db, 51, "Darth Venamis", true)
@@ -99,7 +99,7 @@ func TestUpdateReposMatchingPatterns(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertRepo(t, db, 50, "r1", false)
 	insertRepo(t, db, 51, "r2", false)
@@ -166,7 +166,7 @@ func TestUpdateReposMatchingPatternsOverLimit(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	limit := 50
 	ids := make([]int, 0, limit*3)

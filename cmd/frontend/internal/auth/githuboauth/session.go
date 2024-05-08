@@ -28,11 +28,13 @@ import (
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github/githubconvert"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
+	logger       log.Logger
 	db           database.DB
 	clientID     string
 	allowSignup  bool
@@ -134,8 +136,9 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		signupErrorMessage = "\n\nOr failed on creating a user account"
 	}
 
+	recorder := telemetryrecorder.New(s.db)
 	for _, attempt := range attempts {
-		newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
+		newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.logger, s.db, recorder, auth.GetAndSaveUserOp{
 			UserProps: database.NewUser{
 				Username: login,
 

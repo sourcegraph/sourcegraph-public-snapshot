@@ -7,6 +7,8 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -18,6 +20,7 @@ import (
 	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,6 +28,7 @@ const urnAzureDevOpsOAuth = "AzureDevOpsOAuth"
 
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
+	logger      log.Logger
 	db          database.DB
 	clientID    string
 	allowOrgs   map[string]struct{}
@@ -61,7 +65,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return false, nil, "failed to normalize username from email of azure dev ops account", errors.Wrapf(err, "failed to normalize username from email: %q", email)
 	}
 
-	newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
+	recorder := telemetryrecorder.New(s.db)
+	newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.logger, s.db, recorder, auth.GetAndSaveUserOp{
 		UserProps: database.NewUser{
 			Username:        username,
 			Email:           email,

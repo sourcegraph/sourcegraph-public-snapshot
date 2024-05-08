@@ -22,11 +22,6 @@ type automaticRetryClient struct {
 
 // Non-idempotent methods.
 
-func (r *automaticRetryClient) RepoDelete(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error) {
-	// RepoDelete isn't idempotent.
-	return r.base.RepoDelete(ctx, in, opts...)
-}
-
 func (r *automaticRetryClient) CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (proto.GitserverService_CreateCommitFromPatchBinaryClient, error) {
 	// CreateCommitFromPatchBinary isn't idempotent. It also is a client-streaming method, which is currently unsupported by our automatic retry logic.
 	// The caller is responsible for implementing their own retry semantics for this method.
@@ -75,19 +70,9 @@ func (r *automaticRetryClient) Archive(ctx context.Context, in *proto.ArchiveReq
 	return r.base.Archive(ctx, in, opts...)
 }
 
-func (r *automaticRetryClient) RepoClone(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (*proto.RepoCloneResponse, error) {
-	opts = append(defaults.RetryPolicy, opts...)
-	return r.base.RepoClone(ctx, in, opts...)
-}
-
 func (r *automaticRetryClient) RepoCloneProgress(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.RepoCloneProgress(ctx, in, opts...)
-}
-
-func (r *automaticRetryClient) RepoUpdate(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error) {
-	opts = append(defaults.RetryPolicy, opts...)
-	return r.base.RepoUpdate(ctx, in, opts...)
 }
 
 func (r *automaticRetryClient) IsPerforcePathCloneable(ctx context.Context, in *proto.IsPerforcePathCloneableRequest, opts ...grpc.CallOption) (*proto.IsPerforcePathCloneableResponse, error) {
@@ -150,6 +135,11 @@ func (r *automaticRetryClient) ReadFile(ctx context.Context, in *proto.ReadFileR
 	return r.base.ReadFile(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) ListRefs(ctx context.Context, in *proto.ListRefsRequest, opts ...grpc.CallOption) (proto.GitserverService_ListRefsClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ListRefs(ctx, in, opts...)
+}
+
 func (r *automaticRetryClient) GetCommit(ctx context.Context, in *proto.GetCommitRequest, opts ...grpc.CallOption) (*proto.GetCommitResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.GetCommit(ctx, in, opts...)
@@ -158,6 +148,36 @@ func (r *automaticRetryClient) GetCommit(ctx context.Context, in *proto.GetCommi
 func (r *automaticRetryClient) ResolveRevision(ctx context.Context, in *proto.ResolveRevisionRequest, opts ...grpc.CallOption) (*proto.ResolveRevisionResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.ResolveRevision(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) RevAtTime(ctx context.Context, in *proto.RevAtTimeRequest, opts ...grpc.CallOption) (*proto.RevAtTimeResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.RevAtTime(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) RawDiff(ctx context.Context, in *proto.RawDiffRequest, opts ...grpc.CallOption) (proto.GitserverService_RawDiffClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.RawDiff(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) ContributorCounts(ctx context.Context, in *proto.ContributorCountsRequest, opts ...grpc.CallOption) (*proto.ContributorCountsResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ContributorCounts(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) FirstEverCommit(ctx context.Context, in *proto.FirstEverCommitRequest, opts ...grpc.CallOption) (*proto.FirstEverCommitResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.FirstEverCommit(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) BehindAhead(ctx context.Context, in *proto.BehindAheadRequest, opts ...grpc.CallOption) (*proto.BehindAheadResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.BehindAhead(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) ChangedFiles(ctx context.Context, in *proto.ChangedFilesRequest, opts ...grpc.CallOption) (proto.GitserverService_ChangedFilesClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ChangedFiles(ctx, in, opts...)
 }
 
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

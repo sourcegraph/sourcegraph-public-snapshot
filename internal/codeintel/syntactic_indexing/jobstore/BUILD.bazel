@@ -10,17 +10,12 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/authz",
-        "//internal/conf",
-        "//internal/conf/conftypes",
         "//internal/database/basestore",
-        "//internal/database/connections/live",
         "//internal/database/dbutil",
         "//internal/observation",
         "//internal/workerutil",
         "//internal/workerutil/dbworker/store",
         "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_sourcegraph_log//:log",
     ],
 )
 

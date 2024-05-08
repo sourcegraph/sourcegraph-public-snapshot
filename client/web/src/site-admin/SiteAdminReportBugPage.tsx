@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import { mapValues, values } from 'lodash'
 
@@ -116,6 +116,8 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
     telemetryService,
     telemetryRecorder,
 }) => {
+    useEffect(() => telemetryRecorder.recordEvent('admin.reportBug', 'view'), [telemetryRecorder])
+
     const isLightTheme = useIsLightTheme()
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (

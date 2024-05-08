@@ -29,7 +29,6 @@ go_library(
         "//internal/auth/providers",
         "//internal/authz",
         "//internal/conf",
-        "//internal/conf/conftypes",
         "//internal/cookie",
         "//internal/database",
         "//internal/deviceid",
@@ -60,7 +59,6 @@ go_test(
     name = "userpasswd_test",
     timeout = "short",
     srcs = [
-        "config_test.go",
         "handlers_test.go",
         "lockout_test.go",
         "main_test.go",

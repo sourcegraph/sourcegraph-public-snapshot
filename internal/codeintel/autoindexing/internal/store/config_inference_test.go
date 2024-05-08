@@ -13,7 +13,7 @@ import (
 func TestSetInferenceScript(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	for _, testCase := range []struct {
 		script     string

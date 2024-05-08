@@ -2,6 +2,7 @@ package rockskip
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-ctags"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -45,50 +47,22 @@ func (mockParser) Parse(path string, bytes []byte) ([]*ctags.Entry, error) {
 func (mockParser) Close() {}
 
 func TestIndex(t *testing.T) {
-	fatalIfError := func(err error, message string) {
-		if err != nil {
-			t.Fatal(errors.Wrap(err, message))
-		}
-	}
-
-	gitDir, err := os.MkdirTemp("", "rockskip-test-index")
-	fatalIfError(err, "faiMkdirTemp")
-
-	t.Cleanup(func() {
-		if t.Failed() {
-			t.Logf("git dir %s left intact for inspection", gitDir)
-		} else {
-			os.RemoveAll(gitDir)
-		}
-	})
-
-	gitCmd := func(args ...string) *exec.Cmd {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = gitDir
-		return cmd
-	}
-
-	gitRun := func(args ...string) {
-		fatalIfError(gitCmd(args...).Run(), "git "+strings.Join(args, " "))
-	}
-
-	gitStdout := func(args ...string) string {
-		stdout, err := gitCmd(args...).Output()
-		fatalIfError(err, "git "+strings.Join(args, " "))
-		return string(stdout)
-	}
-
-	getHead := func() string {
-		return strings.TrimSpace(gitStdout("rev-parse", "HEAD"))
-	}
+	gitserver.ClientMocks.LocalGitserver = true
+	t.Cleanup(gitserver.ResetClientMocks)
+	repo, repoDir := gitserver.MakeGitRepositoryAndReturnDir(t)
 
 	state := map[string][]string{}
 
+	gitRun := func(args ...string) {
+		out, err := gitserver.CreateGitCommand(repoDir, "git", args...).CombinedOutput()
+		require.NoError(t, err, string(out))
+	}
+
 	add := func(filename string, contents string) {
-		fatalIfError(os.WriteFile(path.Join(gitDir, filename), []byte(contents), 0644), "os.WriteFile")
+		require.NoError(t, os.WriteFile(path.Join(repoDir, filename), []byte(contents), 0644), "os.WriteFile")
 		gitRun("add", filename)
 		symbols, err := mockParser{}.Parse(filename, []byte(contents))
-		fatalIfError(err, "simpleParse")
+		require.NoError(t, err)
 		state[filename] = []string{}
 		for _, symbol := range symbols {
 			state[filename] = append(state[filename], symbol.Name)
@@ -104,8 +78,8 @@ func TestIndex(t *testing.T) {
 	// Needed in CI
 	gitRun("config", "user.email", "test@sourcegraph.com")
 
-	git, err := NewSubprocessGit(gitDir)
-	fatalIfError(err, "NewSubprocessGit")
+	git, err := NewSubprocessGit(t, repoDir)
+	require.NoError(t, err)
 	defer git.Close()
 
 	db := dbtest.NewDB(t)
@@ -114,18 +88,20 @@ func TestIndex(t *testing.T) {
 	createParser := func() (ctags.Parser, error) { return mockParser{}, nil }
 
 	service, err := NewService(db, git, newMockRepositoryFetcher(git), createParser, 1, 1, false, 1, 1, 1, false)
-	fatalIfError(err, "NewService")
+	require.NoError(t, err)
 
 	verifyBlobs := func() {
-		repo := "somerepo"
-		commit := getHead()
+		out, err := gitserver.CreateGitCommand(repoDir, "git", "rev-parse", "HEAD").CombinedOutput()
+		require.NoError(t, err, string(out))
+		commit := string(bytes.TrimSpace(out))
+
 		args := search.SymbolsParameters{
 			Repo:         api.RepoName(repo),
 			CommitID:     api.CommitID(commit),
 			Query:        "",
 			IncludeLangs: []string{"Text"}}
 		symbols, err := service.Search(context.Background(), args)
-		fatalIfError(err, "Search")
+		require.NoError(t, err)
 
 		// Make sure the paths match.
 		gotPathSet := map[string]struct{}{}
@@ -149,7 +125,7 @@ func TestIndex(t *testing.T) {
 			fmt.Println("unexpected paths (-got +want)")
 			fmt.Println(diff)
 			err = PrintInternals(context.Background(), db)
-			fatalIfError(err, "PrintInternals")
+			require.NoError(t, err)
 			t.FailNow()
 		}
 
@@ -167,7 +143,7 @@ func TestIndex(t *testing.T) {
 				fmt.Println("unexpected symbols (-got +want)")
 				fmt.Println(diff)
 				err = PrintInternals(context.Background(), db)
-				fatalIfError(err, "PrintInternals")
+				require.NoError(t, err)
 				t.FailNow()
 			}
 		}
@@ -204,9 +180,10 @@ type SubprocessGit struct {
 	catFileCmd    *exec.Cmd
 	catFileStdin  io.WriteCloser
 	catFileStdout bufio.Reader
+	gs            gitserver.Client
 }
 
-func NewSubprocessGit(gitDir string) (*SubprocessGit, error) {
+func NewSubprocessGit(t testing.TB, gitDir string) (*SubprocessGit, error) {
 	cmd := exec.Command("git", "cat-file", "--batch")
 	cmd.Dir = gitDir
 
@@ -230,6 +207,7 @@ func NewSubprocessGit(gitDir string) (*SubprocessGit, error) {
 		catFileCmd:    cmd,
 		catFileStdin:  stdin,
 		catFileStdout: *bufio.NewReader(stdout),
+		gs:            gitserver.NewTestClient(t),
 	}, nil
 }
 
@@ -263,26 +241,52 @@ func (g SubprocessGit) LogReverseEach(ctx context.Context, repo string, givenCom
 	return gitdomain.ParseLogReverseEach(output, onLogEntry)
 }
 
-func (g SubprocessGit) RevList(ctx context.Context, repo string, givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
-	revList := exec.Command("git", gitserver.RevListArgs(givenCommit)...)
-	revList.Dir = g.gitDir
-	output, err := revList.StdoutPipe()
-	if err != nil {
-		return err
-	}
-
-	err = revList.Start()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err = revList.Wait()
+func (g *SubprocessGit) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
+	nextCursor := commit
+	for {
+		var commits []api.CommitID
+		var err error
+		commits, nextCursor, err = g.paginatedRevList(ctx, api.RepoName(repo), nextCursor, 100)
 		if err != nil {
-			returnError = err
+			return err
 		}
-	}()
+		for _, c := range commits {
+			shouldContinue, err := onCommit(string(c))
+			if err != nil {
+				return err
+			}
+			if !shouldContinue {
+				return nil
+			}
+		}
+		if nextCursor == "" {
+			return nil
+		}
+	}
+}
 
-	return gitdomain.RevListEach(output, onCommit)
+func (g *SubprocessGit) paginatedRevList(ctx context.Context, repo api.RepoName, commit string, count int) (_ []api.CommitID, nextCursor string, _ error) {
+	commits, err := g.gs.Commits(ctx, repo, gitserver.CommitsOptions{
+		N:           uint(count + 1),
+		Range:       commit,
+		FirstParent: true,
+	})
+	if err != nil {
+		return nil, "", err
+	}
+
+	commitIDs := make([]api.CommitID, 0, count+1)
+
+	for _, commit := range commits {
+		commitIDs = append(commitIDs, commit.ID)
+	}
+
+	if len(commitIDs) > count {
+		nextCursor = string(commitIDs[len(commitIDs)-1])
+		commitIDs = commitIDs[:count]
+	}
+
+	return commitIDs, nextCursor, nil
 }
 
 func newMockRepositoryFetcher(git *SubprocessGit) fetcher.RepositoryFetcher {

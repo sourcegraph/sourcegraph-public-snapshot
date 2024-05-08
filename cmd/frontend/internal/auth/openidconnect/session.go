@@ -76,13 +76,21 @@ func SignOut(w http.ResponseWriter, r *http.Request, sessionKey string, getProvi
 	// client upon every sign-out, but since logic here is a low-frequent and
 	// dotcom-specific operation, we can live with it, to avoid cascading
 	// refactorings that doesn't really do any useful in enterprise environment.
+	connConfig := sams.ConnConfig{
+		ExternalURL: p.config.Issuer,
+	}
 	samsClient, err := sams.NewClientV1(
-		p.config.Issuer,
-		p.config.ClientID,
-		p.config.ClientSecret,
-		[]scopes.Scope{
-			"sams::session::read",
-			"sams::session::write",
+		sams.ClientV1Config{
+			ConnConfig: connConfig,
+			TokenSource: sams.ClientCredentialsTokenSource(
+				connConfig,
+				p.config.ClientID,
+				p.config.ClientSecret,
+				[]scopes.Scope{
+					"sams::session::read",
+					"sams::session::write",
+				},
+			),
 		},
 	)
 	if err != nil {

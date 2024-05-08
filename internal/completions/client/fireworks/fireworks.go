@@ -30,6 +30,9 @@ const Llama213bCodeInstruct = "accounts/fireworks/models/llama-v2-13b-code-instr
 const Llama234bCodeInstruct = "accounts/fireworks/models/llama-v2-34b-code-instruct"
 const Mistral7bInstruct = "accounts/fireworks/models/mistral-7b-instruct-4k"
 const Mixtral8x7bInstruct = "accounts/fireworks/models/mixtral-8x7b-instruct"
+const Mixtral8x22Instruct = "accounts/fireworks/models/mixtral-8x22b-instruct"
+
+const Mixtral8x7bFineTunedModel = "accounts/sourcegraph/models/codecompletion-mixtral-rust-152k-005e"
 
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
 	return &fireworksClient{

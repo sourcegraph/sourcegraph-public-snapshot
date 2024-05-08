@@ -4,10 +4,13 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file"
 
 DOCSITE_VERSION = "1.9.4"
 SRC_CLI_VERSION = "5.3.0"
+KUBEBUILDER_ASSETS_VERSION = "1.28.0"
 CTAGS_VERSION = "6.0.0.2783f009"
 PACKER_VERSION = "1.8.3"
 P4_FUSION_VERSION = "v1.13.2-sg.04a293a"
 GH_VERSION = "2.45.0"
+PGUTILS_VERSION = "ad082497"
+LINEAR_SDK_VERSION = "21.1.0"
 
 GH_BUILDFILE = """
 filegroup(
@@ -21,6 +24,14 @@ SRC_CLI_BUILDFILE = """
 filegroup(
     name = "src-cli-{}",
     srcs = ["src"],
+    visibility = ["//visibility:public"],
+)
+"""
+
+KUBEBUILDER_ASSETS_BUILDFILE = """
+filegroup(
+    name = "kubebuilder-assets",
+    srcs = glob(["*"]),
     visibility = ["//visibility:public"],
 )
 """
@@ -43,6 +54,14 @@ filegroup(
     name = "packer-{}",
     srcs = ["packer"],
     visibility = ["//visibility:public"],
+)
+"""
+
+PGUTILS_BUILDFILE = """\
+package(default_visibility = ["//visibility:public"])
+filegroup(
+    name = "files",
+    srcs = glob(["**/*"]),
 )
 """
 
@@ -91,6 +110,31 @@ def tool_deps():
         build_file_content = SRC_CLI_BUILDFILE.format("darwin-arm64"),
         sha256 = "d2100e9dce86036c405490b89ab0dec40ee427884dead883c4ba69cc474caf45",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_arm64.tar.gz".format(SRC_CLI_VERSION),
+    )
+
+    # Needed for internal/appliance tests
+    http_archive(
+        name = "kubebuilder-assets-darwin-arm64",
+        build_file_content = KUBEBUILDER_ASSETS_BUILDFILE,
+        sha256 = "c87c6b3c0aec4233e68a12dc9690bcbe2f8d6cd72c23e670602b17b2d7118325",
+        urls = ["https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-{}-darwin-arm64.tar.gz".format(KUBEBUILDER_ASSETS_VERSION)],
+        strip_prefix = "kubebuilder/bin",
+    )
+
+    http_archive(
+        name = "kubebuilder-assets-darwin-amd64",
+        build_file_content = KUBEBUILDER_ASSETS_BUILDFILE,
+        sha256 = "a02e33a3981712c8d2702520f95357bd6c7d03d24b83a4f8ac1c89a9ba4d78c1",
+        urls = ["https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-{}-darwin-amd64.tar.gz".format(KUBEBUILDER_ASSETS_VERSION)],
+        strip_prefix = "kubebuilder/bin",
+    )
+
+    http_archive(
+        name = "kubebuilder-assets-linux-amd64",
+        build_file_content = KUBEBUILDER_ASSETS_BUILDFILE,
+        sha256 = "8c816871604cbe119ca9dd8072b576552ae369b96eebc3cdaaf50edd7e3c0c7b",
+        urls = ["https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-{}-linux-amd64.tar.gz".format(KUBEBUILDER_ASSETS_VERSION)],
+        strip_prefix = "kubebuilder/bin",
     )
 
     # universal-ctags
@@ -185,6 +229,69 @@ def tool_deps():
         executable = True,
     )
 
+    http_file(
+        name = "pg_dump-linux-amd64",
+        url = "https://storage.googleapis.com/pg-utils/x86_64-linux/dist/pg_dump.{0}".format(PGUTILS_VERSION),
+        sha256 = "fdf416c349a1cada342d0a8738fd8413066203ad66324ca5da504a0f4d628bb5",
+        executable = True,
+    )
+
+    http_file(
+        name = "pg_dump-darwin-amd64",
+        url = "https://storage.googleapis.com/pg-utils/x86_64-darwin/dist/pg_dump.{0}".format(PGUTILS_VERSION),
+        sha256 = "f16b24d798f3c25f0bf268172be21a03aa11ccd0bf436fc00d680da7f35d4303",
+        executable = True,
+    )
+
+    http_file(
+        name = "pg_dump-darwin-arm64",
+        url = "https://storage.googleapis.com/pg-utils/aarch64-darwin/dist/pg_dump.{0}".format(PGUTILS_VERSION),
+        sha256 = "d142961bdf84e87c14b55b6dabc4311b8f44483c8d31d39f37dc81cf8b456cc7",
+        executable = True,
+    )
+
+    http_file(
+        name = "dropdb-linux-amd64",
+        url = "https://storage.googleapis.com/pg-utils/x86_64-linux/dist/dropdb.{0}".format(PGUTILS_VERSION),
+        sha256 = "445ee469a26e4486c0765876eb8a7c04fd71ee1c2221430b42436323b30f3ca4",
+        executable = True,
+    )
+
+    http_file(
+        name = "dropdb-darwin-amd64",
+        url = "https://storage.googleapis.com/pg-utils/x86_64-darwin/dist/dropdb.{0}".format(PGUTILS_VERSION),
+        sha256 = "c614403a788298a28b9d7042ebba0628024ec93d9443fd2467bfc496a5fd51da",
+        executable = True,
+    )
+
+    http_file(
+        name = "dropdb-darwin-arm64",
+        url = "https://storage.googleapis.com/pg-utils/aarch64-darwin/dist/dropdb.{0}".format(PGUTILS_VERSION),
+        sha256 = "4e4a92cbcd2e5d804b8fa5402488c4521fbc927059baf43e6f1e639834400c0e",
+        executable = True,
+    )
+
+    http_file(
+        name = "createdb-linux-amd64",
+        url = "https://storage.googleapis.com/pg-utils/x86_64-linux/dist/createdb.{0}".format(PGUTILS_VERSION),
+        sha256 = "55b22dec6f24dc38bd16e7f727479ce493fdfb91a226901531b57387089c2843",
+        executable = True,
+    )
+
+    http_file(
+        name = "createdb-darwin-amd64",
+        url = "https://storage.googleapis.com/pg-utils/x86_64-darwin/dist/createdb.{0}".format(PGUTILS_VERSION),
+        sha256 = "d2acf9a9e20c3967cb4a8a1a50fccbff8ae6d01f30a34913acef7035822bea89",
+        executable = True,
+    )
+
+    http_file(
+        name = "createdb-darwin-arm64",
+        url = "https://storage.googleapis.com/pg-utils/aarch64-darwin/dist/createdb.{0}".format(PGUTILS_VERSION),
+        sha256 = "e6e5ee13fb2f1e4a55dffb282e5021d5486008ab74cd4f39c944439ed0e7765f",
+        executable = True,
+    )
+
     http_archive(
         name = "gh_darwin-arm64",
         build_file_content = GH_BUILDFILE,
@@ -207,4 +314,29 @@ def tool_deps():
         sha256 = "79e89a14af6fc69163aee00e764e86d5809d0c6c77e6f229aebe7a4ed115ee67",
         strip_prefix = "gh_{0}_linux_amd64".format(GH_VERSION),
         url = "https://github.com/cli/cli/releases/download/v{0}/gh_{0}_linux_amd64.tar.gz".format(GH_VERSION),
+    )
+
+    http_archive(
+        name = "postgresql-13-linux-amd64",
+        url = "https://github.com/cedarai/embedded-postgres-binaries/releases/download/13.6-with-tools-20220304/postgresql-13.6-linux-amd64.txz",
+        build_file_content = PGUTILS_BUILDFILE,
+        sha256 = "ff673163a110b82e212139cd8a0ab4df89c030f324b2412b107d48f6764ad8b7",
+    )
+    http_archive(
+        name = "postgresql-13-darwin-amd64",
+        url = "https://github.com/cedarai/embedded-postgres-binaries/releases/download/13.6-with-tools-20220304/postgresql-13.6-darwin-amd64.txz",
+        build_file_content = PGUTILS_BUILDFILE,
+        sha256 = "e9ac855ca1d428cd2fe2a50c996ec5766f6db1c26b8f3f6ab3c929961c39d2e2",
+    )
+    http_archive(
+        name = "postgresql-13-darwin-arm64",
+        url = "https://github.com/cedarai/embedded-postgres-binaries/releases/download/13.6-with-tools-20220304/postgresql-13.6-darwin-arm64.txz",
+        build_file_content = PGUTILS_BUILDFILE,
+        sha256 = "32fd723dc8a64efaebc18e78f293bc7c5523fbb659a82be0f9da900f3a28c510",
+    )
+
+    http_file(
+        name = "linear-sdk-graphql-schema",
+        url = "https://raw.githubusercontent.com/linear/linear/%40linear/sdk%40{0}/packages/sdk/src/schema.graphql".format(LINEAR_SDK_VERSION),
+        integrity = "sha256-9WUYPWt4iWcE/fhm6guqrfbk41y+Hb3jIR9I0/yCzwk=",
     )

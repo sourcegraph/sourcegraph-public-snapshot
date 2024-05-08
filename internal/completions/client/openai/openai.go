@@ -67,7 +67,7 @@ func (c *openAIChatCompletionStreamClient) Complete(
 		// Empty response.
 		return &types.CompletionResponse{}, nil
 	}
-	err = c.tokenManager.TokenizeAndCalculateUsage(inputText(requestParams.Messages), response.Choices[0].Text, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature))
+	err = c.tokenManager.UpdateTokenCountsFromModelUsage(response.Usage.PromptTokens, response.Usage.CompletionTokens, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature), tokenusage.OpenAI)
 	if err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 	}
@@ -104,6 +104,8 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	dec := NewDecoder(resp.Body)
 	var content string
 	var ev types.CompletionResponse
+	var promptTokens, completionTokens int
+
 	for dec.Scan() {
 		if ctx.Err() != nil && ctx.Err() == context.Canceled {
 			return nil
@@ -118,6 +120,14 @@ func (c *openAIChatCompletionStreamClient) Stream(
 		var event openaiResponse
 		if err := json.Unmarshal(data, &event); err != nil {
 			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
+		}
+
+		// These are only included in the last message, so we're not worried about overwriting
+		if event.Usage.PromptTokens > 0 {
+			promptTokens = event.Usage.PromptTokens
+		}
+		if event.Usage.CompletionTokens > 0 {
+			completionTokens = event.Usage.CompletionTokens
 		}
 
 		if len(event.Choices) > 0 {
@@ -139,19 +149,11 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	if dec.Err() != nil {
 		return dec.Err()
 	}
-	err = c.tokenManager.TokenizeAndCalculateUsage(inputText(requestParams.Messages), content, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature))
+	err = c.tokenManager.UpdateTokenCountsFromModelUsage(promptTokens, completionTokens, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature), tokenusage.OpenAI)
 	if err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w", log.Error(err))
 	}
 	return nil
-}
-
-func inputText(messages []types.Message) string {
-	allText := ""
-	for _, message := range messages {
-		allText += message.Text
-	}
-	return allText
 }
 
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests

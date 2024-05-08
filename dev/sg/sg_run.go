@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
-	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -73,30 +72,11 @@ sg run -describe jaeger
 }
 
 func runExec(ctx *cli.Context) error {
-	config, err := getConfig()
-	if err != nil {
-		return err
+	args := StartArgs{
+		Describe: ctx.Bool("describe"),
+		Commands: ctx.Args().Slice(),
 	}
-	cmds, err := listToCommands(config, ctx.Args().Slice())
-	if err != nil {
-		return err
-	}
-
-	if ctx.Bool("describe") {
-		for _, cmd := range cmds.commands {
-			out, err := yaml.Marshal(cmd)
-			if err != nil {
-				return err
-			}
-			if err = std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", cmd.GetConfig().Name, string(out))); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
-
-	return cmds.start(ctx.Context)
+	return start(ctx.Context, args)
 }
 
 func constructRunCmdLongHelp() string {

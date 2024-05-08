@@ -38,6 +38,20 @@ var (
 	// called. Useful for sentinel errors.
 	WithStack = errors.WithStack
 
+	// WithSafeDetails annotates an error with the given reportable details.
+	// The format is made available as a PII-free string, alongside
+	// with a PII-free representation of every additional argument.
+	// Arguments can be reported as-is (without redaction) by wrapping
+	// them using the Safe() function.
+	//
+	// If the format is empty and there are no arguments, the
+	// error argument is returned unchanged.
+	//
+	// Detail is shown:
+	// - when formatting with `%+v`.
+	// - in Sentry reports.
+	WithSafeDetails = errors.WithSafeDetails
+
 	Is        = errors.Is
 	IsAny     = errors.IsAny
 	As        = errors.As

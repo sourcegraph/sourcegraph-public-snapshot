@@ -25,7 +25,7 @@ func TestDiagnostics(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -98,7 +98,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}

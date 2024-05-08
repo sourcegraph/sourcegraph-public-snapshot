@@ -66,7 +66,7 @@ export const ExternalServicePage: FC<Props> = props => {
 
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalService')
-        telemetryRecorder.recordEvent('admin.externalService', 'view')
+        telemetryRecorder.recordEvent('admin.codeHostConnection', 'view')
     }, [telemetryService, telemetryRecorder])
 
     const [syncInProgress, setSyncInProgress] = useState<boolean>(false)

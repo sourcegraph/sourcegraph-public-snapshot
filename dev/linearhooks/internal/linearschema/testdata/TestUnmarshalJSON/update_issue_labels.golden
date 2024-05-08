@@ -1,0 +1,83 @@
+linearschema.Event{
+	Action:           linearschema.EventActionType("update"),
+	Type:             linearschema.EventEntityType("Issue"),
+	Url:              "https://linear.app/sourcegraph/issue/FOO-5/slkdajflasdlf",
+	WebhookId:        "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+	WebhookTimestamp: 1714600904932,
+	Data: map[string]interface{}{
+		"boardOrder": 0,
+		"botActor":   nil,
+		"createdAt":  "2024-05-01T21:58:58.543Z",
+		"creatorId":  "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+		"id":         "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+		"identifier": "FOO-5",
+		"labelIds": []interface{}{
+			"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+			"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+			"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+		},
+		"labels": []interface{}{
+			map[string]interface{}{
+				"color": "#c52828",
+				"id":    "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+				"name":  "bug",
+			},
+			map[string]interface{}{
+				"color": "#FFB6C1",
+				"id":    "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+				"name":  "graph/backend",
+			},
+			map[string]interface{}{
+				"color": "#bec2c8",
+				"id":    "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+				"name":  "auto-index",
+			},
+		},
+		"number":              5,
+		"previousIdentifiers": []interface{}{},
+		"priority":            0,
+		"priorityLabel":       "No priority",
+		"sortOrder":           -3180,
+		"state": map[string]interface{}{
+			"color": "#bec2c8",
+			"id":    "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+			"name":  "Backlog",
+			"type":  "backlog",
+		},
+		"stateId":       "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+		"subscriberIds": []interface{}{"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx"},
+		"team": map[string]interface{}{
+			"id":   "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+			"key":  "FOO",
+			"name": "FOO's Test",
+		},
+		"teamId":    "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+		"title":     "slkdajflasdlf",
+		"updatedAt": "2024-05-01T22:01:44.848Z",
+		"url":       "https://linear.app/sourcegraph/issue/FOO-5/slkdajflasdlf",
+	},
+	IssueData: &linearschema.IssueData{
+		ID:         "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+		Identifier: "FOO-5",
+		Title:      "slkdajflasdlf",
+		Team: linearschema.IssueTeamData{
+			ID:   "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+			Key:  "FOO",
+			Name: "FOO's Test",
+		},
+		Labels: []linearschema.IssueLabelData{
+			{
+				ID:   "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+				Name: "bug",
+			},
+			{
+				ID:   "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+				Name: "graph/backend",
+			},
+			{
+				ID:   "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+				Name: "auto-index",
+			},
+		},
+	},
+}

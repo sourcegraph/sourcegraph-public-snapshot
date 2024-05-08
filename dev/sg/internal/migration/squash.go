@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -423,7 +424,9 @@ func generateSquashedUpMigration(database db.Database, postgresDSN string, skipD
 
 	pgDump := func(args ...string) (string, error) {
 		cmd := exec.Command("pg_dump", append([]string{postgresDSN}, args...)...)
-		return run.InRoot(cmd)
+		var b bytes.Buffer
+		err := run.SplitOutputInRoot(cmd, &b, os.Stderr)
+		return b.String(), err
 	}
 
 	excludeTables := []string{
@@ -435,6 +438,7 @@ func generateSquashedUpMigration(database db.Database, postgresDSN string, skipD
 	args := []string{
 		"--schema-only",
 		"--no-owner",
+		"--verbose",
 	}
 	for _, tableName := range excludeTables {
 		args = append(args, "--exclude-table", tableName)

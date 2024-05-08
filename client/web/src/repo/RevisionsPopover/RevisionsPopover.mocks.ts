@@ -3,6 +3,7 @@ import { subDays } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { GitRefType } from '@sourcegraph/shared/src/graphql-operations'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 
 import type {
     GitCommitAncestorsConnectionFields,
@@ -23,6 +24,7 @@ export const MOCK_PROPS: RevisionsPopoverProps = {
     currentRev: 'main',
     togglePopover: () => null,
     showSpeculativeResults: false,
+    telemetryRecorder: noOpTelemetryRecorder,
 }
 
 const yesterday = subDays(new Date(), 1).toISOString()

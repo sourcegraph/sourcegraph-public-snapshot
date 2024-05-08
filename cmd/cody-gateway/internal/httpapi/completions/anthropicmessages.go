@@ -36,7 +36,7 @@ func NewAnthropicMessagesHandler(
 	autoFlushStreamingResponses bool,
 ) (http.Handler, error) {
 	// Tokenizer only needs to be initialized once, and can be shared globally.
-	tokenizer, err := tokenizer.NewTokenizer(tokenizer.AnthropicModel)
+	tokenizer, err := tokenizer.NewCL100kBaseTokenizer()
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +227,15 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 	for _, m := range body.Messages {
 		promptUsage.characters += len(m.Content)
 	}
-	promptUsage.characters = len(body.System)
+	// Setting a default -1 value so that in case of errors the tokenizer computed tokens don't impact the data
+	completionUsage.tokenizerTokens = -1
+	promptUsage.tokenizerTokens = -1
+
+	promptUsageTokens, err := a.tokenizer.Tokenize(body.BuildPrompt())
+	if err == nil {
+		promptUsage.tokenizerTokens = len(promptUsageTokens)
+	}
+	promptUsage.characters += len(body.System)
 
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
@@ -237,10 +245,15 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 			logger.Error("failed to parse Anthropic response as JSON", log.Error(err))
 			return promptUsage, completionUsage
 		}
-
+		var completionString string
 		// Extract character data from response by summing up all text
 		for _, c := range res.Content {
-			completionUsage.characters += len(c.Text)
+			completionString += c.Text
+		}
+		completionUsage.characters = len(completionString)
+		completionUsageTokens, err := a.tokenizer.Tokenize(completionString)
+		if err == nil {
+			completionUsage.tokenizerTokens = len(completionUsageTokens)
 		}
 		// Extract prompt usage data from the response
 		completionUsage.tokens = res.Usage.OutputTokens
@@ -265,7 +278,7 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 			logger.Error("failed to decode event payload", log.Error(err), log.String("body", string(data)))
 			continue
 		}
-
+		var completionString string
 		switch event.Type {
 		case "message_start":
 			if event.Message != nil && event.Message.Usage != nil {
@@ -273,12 +286,17 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 			}
 		case "content_block_delta":
 			if event.Delta != nil {
-				completionUsage.characters += len(event.Delta.Text)
+				completionString += event.Delta.Text
 			}
 		case "message_delta":
 			if event.Usage != nil {
 				completionUsage.tokens = event.Usage.OutputTokens
 			}
+		}
+		completionUsage.characters += len(completionString)
+		completionUsageTokens, err := a.tokenizer.Tokenize(completionString)
+		if err == nil {
+			completionUsage.tokenizerTokens = len(completionUsageTokens)
 		}
 	}
 	if err := dec.Err(); err != nil {

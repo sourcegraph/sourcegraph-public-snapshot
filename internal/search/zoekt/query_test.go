@@ -82,13 +82,19 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Name:            "Languages get passed as file filter",
 			Type:            search.TextRequest,
 			Query:           `file:\.go$ lang:go`,
-			WantZoektOutput: autogold.Expect(`(and file_regex:"\\.go(?m:$)" file_regex:"(?i:\\.GO)(?m:$)")`),
+			WantZoektOutput: autogold.Expect(`(and file_regex:"(?i:\\.GO)(?m:$)" file_regex:"\\.go(?m:$)")`),
 		},
 		{
-			Name:            "Languages still use case_insensitive in case sensitivity mode",
+			Name:            "Languages still use case_insensitive in case sensitivity mode (Go)",
 			Type:            search.TextRequest,
 			Query:           `file:\.go$ lang:go case:true`,
-			WantZoektOutput: autogold.Expect(`(and case_file_regex:"\\.go(?m:$)" case_file_regex:"(?i:\\.GO)(?m:$)")`),
+			WantZoektOutput: autogold.Expect(`(and file_regex:"(?i:\\.GO)(?m:$)" case_file_regex:"\\.go(?m:$)")`),
+		},
+		{
+			Name:            "Languages still use case_insensitive in case sensitivity mode (Typescript)",
+			Type:            search.TextRequest,
+			Query:           `lang:typescript case:true`,
+			WantZoektOutput: autogold.Expect(`file_regex:"(?i:\\.)(?:(?i:TS)(?m:$)|(?i:CTS)(?m:$)|(?i:MTS)(?m:$))"`),
 		},
 		{
 			Name:  "Language get passed as lang: query",

@@ -15,6 +15,7 @@ require (
 	github.com/go-enry/go-enry/v2 v2.8.4
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.6.0
+	github.com/google/uuid v1.6.0
 	github.com/grafana/regexp v0.0.0-20221123153739-15dc172cd2db
 	github.com/hexops/autogold/v2 v2.0.3
 	github.com/jackc/pgconn v1.14.0
@@ -35,6 +36,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/sys v0.17.0
 	golang.org/x/term v0.17.0
+	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -69,7 +71,6 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/uuid v1.4.0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/hexops/valast v1.4.3 // indirect
@@ -125,7 +126,6 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.18.0 // indirect
 	google.golang.org/genproto v0.0.0-20231030173426-d783a09b4405 // indirect
-	google.golang.org/grpc v1.59.0 // indirect
 	gotest.tools/v3 v3.0.3 // indirect
 	mvdan.cc/gofumpt v0.4.0 // indirect
 )

@@ -3,7 +3,7 @@
 import hotkeys from 'hotkeys-js'
 import { expect, describe, it, vi, beforeEach } from 'vitest'
 
-import { evaluateKey, registerHotkey } from './Hotkey'
+import { evaluateKey, exportedForTesting, registerHotkey } from './Hotkey'
 
 const mocks = vi.hoisted(() => ({
     isLinuxPlatform: vi.fn(),
@@ -172,6 +172,32 @@ describe('Hotkey', () => {
             hotkeys.trigger('hello')
             expect(counter_1).toBe(0)
             expect(counter_2).toBe(1)
+        })
+    })
+
+    describe('isContentElement', () => {
+        describe('with getAttribute', () => {
+            it('should return false is no condition is met', () => {
+                const element = document.createElement('div')
+                expect(exportedForTesting.isContentElement(element)).toBe(false)
+            })
+
+            it('should return true if contenteditable is true', () => {
+                const element = document.createElement('div')
+                element.setAttribute('contenteditable', 'true')
+                expect(exportedForTesting.isContentElement(element)).toBe(true)
+            })
+
+            it.each(['textarea', 'input', 'textbox'])('should return true if the role is %s', role => {
+                const element = document.createElement('div')
+                element.setAttribute('role', role)
+                expect(exportedForTesting.isContentElement(element)).toBe(true)
+            })
+
+            it.each(['INPUT', 'TEXTAREA'])('should return true if the tagName is %s', tagName => {
+                const element = document.createElement(tagName.toLowerCase())
+                expect(exportedForTesting.isContentElement(element)).toBe(true)
+            })
         })
     })
 })

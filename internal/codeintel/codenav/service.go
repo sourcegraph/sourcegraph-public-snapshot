@@ -187,7 +187,7 @@ func (s *Service) getUploadsWithDefinitionsForMonikers(ctx context.Context, orde
 	uploadsCopy := copyUploads(uploads)
 	requestState.dataLoader.SetUploadInCacheMap(uploadsCopy)
 
-	uploadsWithResolvableCommits, err := s.removeUploadsWithUnknownCommits(ctx, uploadsCopy, requestState)
+	uploadsWithResolvableCommits, err := filterUploadsWithCommits(ctx, requestState.commitCache, uploadsCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -339,7 +339,7 @@ func (s *Service) getUploadsByIDs(ctx context.Context, ids []int, requestState R
 		return nil, errors.Wrap(err, "service.GetCompletedUploadsByIDs")
 	}
 
-	uploadsWithResolvableCommits, err := s.removeUploadsWithUnknownCommits(ctx, uploads, requestState)
+	uploadsWithResolvableCommits, err := filterUploadsWithCommits(ctx, requestState.commitCache, uploads)
 	if err != nil {
 		return nil, nil
 	}
@@ -348,32 +348,6 @@ func (s *Service) getUploadsByIDs(ctx context.Context, ids []int, requestState R
 	allUploads := append(existingUploads, uploadsWithResolvableCommits...)
 
 	return allUploads, nil
-}
-
-// removeUploadsWithUnknownCommits removes uploads for commits which are unknown to gitserver from the given
-// slice. The slice is filtered in-place and returned (to update the slice length).
-func (s *Service) removeUploadsWithUnknownCommits(ctx context.Context, uploads []uploadsshared.CompletedUpload, requestState RequestState) ([]uploadsshared.CompletedUpload, error) {
-	rcs := make([]RepositoryCommit, 0, len(uploads))
-	for _, upload := range uploads {
-		rcs = append(rcs, RepositoryCommit{
-			RepositoryID: upload.RepositoryID,
-			Commit:       upload.Commit,
-		})
-	}
-
-	exists, err := requestState.commitCache.AreCommitsResolvable(ctx, rcs)
-	if err != nil {
-		return nil, err
-	}
-
-	filtered := uploads[:0]
-	for i, upload := range uploads {
-		if exists[i] {
-			filtered = append(filtered, upload)
-		}
-	}
-
-	return filtered, nil
 }
 
 // getBulkMonikerLocations returns the set of locations (within the given uploads) with an attached moniker
@@ -688,17 +662,11 @@ func (s *Service) GetCompletedUploadsByIDs(ctx context.Context, ids []int) ([]up
 	return s.uploadSvc.GetCompletedUploadsByIDs(ctx, ids)
 }
 
-func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []uploadsshared.CompletedUpload, err error) {
-	ctx, trace, endObservation := s.operations.getClosestCompletedUploadsForBlob.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.String("commit", commit),
-		attribute.String("path", path),
-		attribute.Bool("exactPath", exactPath),
-		attribute.String("indexer", indexer),
-	}})
+func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, opts uploadsshared.UploadMatchingOptions) (_ []uploadsshared.CompletedUpload, err error) {
+	ctx, trace, endObservation := s.operations.getClosestCompletedUploadsForBlob.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
 
-	candidates, err := s.uploadSvc.InferClosestUploads(ctx, repositoryID, commit, path, exactPath, indexer)
+	candidates, err := s.uploadSvc.InferClosestUploads(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -709,7 +677,7 @@ func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, reposit
 		attribute.String("candidates", uploadIDsToString(uploadCandidates)))
 
 	commitChecker := NewCommitCache(s.repoStore, s.gitserver)
-	commitChecker.SetResolvableCommit(repositoryID, commit)
+	commitChecker.SetResolvableCommit(opts.RepositoryID, opts.Commit)
 
 	candidatesWithCommits, err := filterUploadsWithCommits(ctx, commitChecker, uploadCandidates)
 	if err != nil {
@@ -723,16 +691,17 @@ func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, reposit
 	filtered := candidatesWithCommits[:0]
 
 	for i := range candidatesWithCommits {
-		if exactPath {
+		switch opts.RootToPathMatching {
+		case uploadsshared.RootMustEnclosePath:
 			// TODO - this breaks if the file was renamed in git diff
-			pathExists, err := s.lsifstore.GetPathExists(ctx, candidates[i].ID, strings.TrimPrefix(path, candidates[i].Root))
+			pathExists, err := s.lsifstore.GetPathExists(ctx, candidates[i].ID, strings.TrimPrefix(opts.Path, candidates[i].Root))
 			if err != nil {
 				return nil, errors.Wrap(err, "lsifStore.Exists")
 			}
 			if !pathExists {
 				continue
 			}
-		} else { //nolint:staticcheck
+		case uploadsshared.RootEnclosesPathOrPathEnclosesRoot:
 			// TODO(efritz) - ensure there's a valid document path for this condition as well
 		}
 

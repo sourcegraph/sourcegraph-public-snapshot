@@ -6,7 +6,6 @@ go_library(
     srcs = [
         "buf.go",
         "client.go",
-        "doc_changes.go",
         "go_checks.go",
         "godirective.go",
         "gogenerate.go",
@@ -31,7 +30,6 @@ go_library(
         "//dev/sg/internal/std",
         "//dev/sg/root",
         "//internal/download",
-        "//internal/honey",
         "//lib/errors",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_masterminds_semver//:semver",

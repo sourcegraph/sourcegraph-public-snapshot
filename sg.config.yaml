@@ -129,7 +129,14 @@ env:
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: '1KB'
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: '100MB'
 
-  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: 'http://127.0.0.1:6080'
+  # Telemetry V2 export configuration. By default, this points to a test
+  # instance (go/msp-ops/telemetry-gateway#dev). Set the following:
+  #
+  #   TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: 'http://127.0.0.1:6080'
+  #
+  # in 'sg.config.overwrite.yaml' to point to a locally running Telemetry
+  # Gateway instead (via 'sg run telemetry-gateway')
+  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: "https://telemetry-gateway.sgdev.org:443"
   SRC_TELEMETRY_EVENTS_EXPORT_ALL: 'true'
 
   # By default, allow temporary edits to external services.
@@ -265,18 +272,6 @@ commands:
       - internal
       - cmd/embeddings
       - internal/embeddings
-
-  qdrant:
-    cmd: |
-      docker run -p 6333:6333 -p 6334:6334 \
-        -v $HOME/.sourcegraph-dev/data/qdrant_data:/data \
-        -e QDRANT__SERVICE__GRPC_PORT="6334" \
-        -e QDRANT__LOG_LEVEL=INFO \
-        -e QDRANT__STORAGE__STORAGE_PATH=/data \
-        -e QDRANT__STORAGE__SNAPSHOTS_PATH=/data \
-        -e QDRANT_INIT_FILE_PATH=/data/.qdrant-initialized \
-        --entrypoint /usr/local/bin/qdrant \
-        sourcegraph/qdrant:insiders
 
   worker:
     cmd: |
@@ -515,11 +510,14 @@ commands:
         -listen "127.0.0.1:$ZOEKT_LISTEN_PORT" \
         -cpu_fraction 0.25
     install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
       mkdir -p .bin
       export GOBIN="${PWD}/.bin"
-      go install github.com/sourcegraph/zoekt/cmd/zoekt-archive-index
-      go install github.com/sourcegraph/zoekt/cmd/zoekt-git-index
-      go install github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver
+      go install -gcflags="$GCFLAGS" github.com/sourcegraph/zoekt/cmd/zoekt-archive-index
+      go install -gcflags="$GCFLAGS" github.com/sourcegraph/zoekt/cmd/zoekt-git-index
+      go install -gcflags="$GCFLAGS" github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
       CTAGS_COMMAND: dev/universal-ctags-dev
@@ -544,8 +542,11 @@ commands:
 
   zoekt-web-template: &zoekt_webserver_template
     install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
       mkdir -p .bin
-      env GOBIN="${PWD}/.bin" go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
+      env GOBIN="${PWD}/.bin" go install -gcflags="$GCFLAGS" github.com/sourcegraph/zoekt/cmd/zoekt-webserver
     checkBinary: .bin/zoekt-webserver
     env:
       JAEGER_DISABLED: true
@@ -936,22 +937,6 @@ commands:
     cmd: echo "monitoring-generator is deprecated, please run 'sg generate go' or 'bazel run //dev:write_all_generated' instead"
     env:
 
-  loki:
-    cmd: |
-      echo "Loki: serving on http://localhost:3100"
-      echo "Loki: note that logs are piped to ${LOKI_LOG_FILE}"
-      docker run --rm --name=loki \
-        -p 3100:3100 -v $LOKI_DISK:/loki \
-        index.docker.io/grafana/loki:$LOKI_VERSION >"${LOKI_LOG_FILE}" 2>&1
-    install: |
-      mkdir -p "${LOKI_DISK}"
-      mkdir -p "$(dirname ${LOKI_LOG_FILE})"
-      docker pull index.docker.io/grafana/loki:$LOKI_VERSION
-    env:
-      LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
-      LOKI_VERSION: '2.3.0'
-      LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
-
   otel-collector:
     install: |
       bazel build //docker-images/opentelemetry-collector:image_tarball
@@ -1158,17 +1143,6 @@ dockerCommands:
       # docker containers must access things via docker host on non-linux platforms
       CACHE: false
 
-  loki:
-    logfile: $HOME/.sourcegraph-dev/logs/loki/loki.log
-    docker:
-      image: index.docker.io/grafana/loki:2.3.0
-      pull: true
-      ports:
-        - 3100
-      volumes:
-        - from: $HOME/.sourcegraph-dev/data/loki
-          to: /loki
-
   otel-collector:
     target: //docker-images/opentelemetry-collector:image_tarball
     description: OpenTelemetry collector
@@ -1270,35 +1244,19 @@ dockerCommands:
         WORKERS: 1
         ROCKET_ADDRESS: 0.0.0.0
 
-  qdrant:
-    docker:
-      image: sourcegraph/qdrant:insiders
-      ports:
-        - 6333
-        - 6334
-      volumes:
-        - from: $HOME/.sourcegraph-dev/data/qdrant_data
-          to: /data
-      env:
-        QDRANT__SERVICE__GRPC_PORT: 6334
-        QDRANT__LOG_LEVEL: INFO
-        QDRANT__STORAGE__STORAGE_PATH: /data
-        QDRANT__STORAGE__SNAPSHOTS_PATH: /data
-        QDRANT_INIT_FILE_PATH: /data/.qdrant-initialized
-
 #
 # CommandSets ################################################################
 #
 defaultCommandset: enterprise
 commandsets:
   enterprise-bazel: &enterprise_bazel_set
-    requiresDevPrivate: true
     checks:
       - redis
       - postgres
       - git
       - bazelisk
       - ibazel
+      - dev-private
     bazelCommands:
       - blobstore
       - docsite
@@ -1320,12 +1278,12 @@ commandsets:
 
   # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1345,7 +1303,6 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - embeddings
-      - telemetry-gateway
     env:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
@@ -1359,12 +1316,12 @@ commandsets:
 
   dotcom:
     # This is 95% the enterprise runset, with the addition of Cody Gateway.
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1383,13 +1340,11 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - embeddings
-      - telemetry-gateway
       - cody-gateway
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
   codeintel-bazel: &codeintel_bazel_set
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -1397,6 +1352,7 @@ commandsets:
       - git
       - bazelisk
       - ibazel
+      - dev-private
     bazelCommands:
       - blobstore
       - frontend
@@ -1422,12 +1378,12 @@ commandsets:
       - prometheus
 
   codeintel-syntactic:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - web
@@ -1440,12 +1396,12 @@ commandsets:
       - syntactic-code-intel-worker-1
 
   codeintel:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1471,12 +1427,12 @@ commandsets:
       - prometheus
 
   codeintel-kubernetes:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1502,12 +1458,12 @@ commandsets:
       - prometheus
 
   enterprise-codeintel:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1527,17 +1483,17 @@ commandsets:
       - blobstore
       - codeintel-worker
       - codeintel-executor
-      # - otel-collector
+      - otel-collector
       - jaeger
       - grafana
       - prometheus
   enterprise-codeintel-multi-queue-executor:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1566,12 +1522,12 @@ commandsets:
     <<: *codeintel_bazel_set
 
   enterprise-codeinsights:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1594,12 +1550,12 @@ commandsets:
       DISABLE_CODE_INSIGHTS: false
 
   api-only:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1615,12 +1571,12 @@ commandsets:
       - blobstore
 
   batches:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1642,12 +1598,12 @@ commandsets:
       - batcheshelper-builder
 
   batches-kubernetes:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - worker
@@ -1669,12 +1625,12 @@ commandsets:
       - batcheshelper-builder
 
   iam:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+      - dev-private
     commands:
       - frontend
       - repo-updater
@@ -1745,9 +1701,9 @@ commandsets:
       - jaeger
 
   single-program:
-    requiresDevPrivate: true
     checks:
       - git
+      - dev-private
     commands:
       - sourcegraph
       - web
@@ -1769,29 +1725,6 @@ commandsets:
       - redis
     bazelCommands:
       - cody-gateway
-
-  qdrant:
-    commands:
-      - qdrant
-      - frontend
-      - worker
-      - repo-updater
-      - web
-      - gitserver-0
-      - gitserver-1
-      - searcher
-      - caddy
-      - symbols
-      - docsite
-      - syntax-highlighter
-      - zoekt-index-0
-      - zoekt-index-1
-      - zoekt-web-0
-      - zoekt-web-1
-      - blobstore
-      - embeddings
-    env:
-      QDRANT_ENDPOINT: 'localhost:6334'
 
   enterprise-bazel-sveltekit:
     <<: *enterprise_bazel_set
@@ -1821,7 +1754,6 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - embeddings
-      - telemetry-gateway
     env:
       SVELTEKIT: true
 

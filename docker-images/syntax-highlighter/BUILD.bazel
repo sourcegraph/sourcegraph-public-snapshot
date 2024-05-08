@@ -3,7 +3,9 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
-load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_tarball")
+load("//wolfi-images:defs.bzl", "wolfi_base")
+
+exports_files(["rustfmt.toml"])
 
 rust_binary(
     name = "syntect_server",
@@ -83,7 +85,7 @@ pkg_tar(
 # reflecting better real production usage.
 oci_image(
     name = "scip-ctags_image",
-    base = "@wolfi_base",
+    base = "//wolfi-images/sourcegraph-base:base_image",
     entrypoint = ["/scip-ctags"],
     tars = [":tar_scip-ctags"],
 )
@@ -109,7 +111,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_syntax_highlighter_base",
+    base = ":base_image",
     entrypoint = [
         "/sbin/tini",
         "--",
@@ -168,3 +170,5 @@ oci_push(
     image = ":scip-ctags_image",
     repository = image_repository("scip-ctags"),
 )
+
+wolfi_base()

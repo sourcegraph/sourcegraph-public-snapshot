@@ -8,15 +8,28 @@ import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 
 import styles from './SearchPageFooter.module.scss'
 
-export const SearchPageFooter: FC = () => {
-    const { telemetryService, isSourcegraphDotCom } = useLegacyContext_onlyInStormRoutes()
+type linkNames = 'Docs' | 'About' | 'Cody' | 'Enterprise' | 'Security' | 'Discord'
 
-    const logLinkClicked = (name: string): void => {
+const v2LinkNameTypes: { [key in linkNames]: number } = {
+    Docs: 1,
+    About: 2,
+    Cody: 3,
+    Enterprise: 4,
+    Security: 5,
+    Discord: 6,
+}
+
+export const SearchPageFooter: FC = () => {
+    const { telemetryService, isSourcegraphDotCom, platformContext } = useLegacyContext_onlyInStormRoutes()
+    const { telemetryRecorder } = platformContext
+
+    const logLinkClicked = (name: linkNames): void => {
         telemetryService.log('HomepageFooterCTASelected', { name }, { name })
+        telemetryRecorder.recordEvent('home.footer.CTA', 'click', { metadata: { type: v2LinkNameTypes[name] } })
     }
 
     const links = useMemo(
-        (): { name: string; href: string }[] =>
+        (): { name: linkNames; href: string }[] =>
             isSourcegraphDotCom
                 ? [
                       {
