@@ -15,6 +15,7 @@ go_library(
     deps = [
         "//lib/errors",
         "//lib/managedservicesplatform/bigquerywriter",
+        "//lib/managedservicesplatform/cloudsql",
         "//lib/managedservicesplatform/runtime/internal/opentelemetry",
         "//lib/pointers",
         "@com_github_getsentry_sentry_go//:sentry-go",
