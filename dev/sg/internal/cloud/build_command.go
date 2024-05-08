@@ -12,7 +12,7 @@ import (
 
 var BuildEphemeralCommand = cli.Command{
 	Name:        "build",
-	Usage:       "sg could build",
+	Usage:       "trigger a cloud ephemeral build",
 	Description: "Triggers a Cloud Ephemeral build of the current branch which will push images to the cloud ephemeral registry",
 	Action:      wipAction(buildCloudEphemeral),
 }
