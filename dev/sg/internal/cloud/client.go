@@ -3,7 +3,6 @@ package cloud
 import (
 	"context"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -47,15 +46,17 @@ type Client struct {
 type DeploymentSpec struct {
 	Name             string
 	Version          string
+	License          string
 	InstanceFeatures map[string]string
 }
 
-func NewDeploymentSpec(name, version string) *DeploymentSpec {
+func NewDeploymentSpec(name, version, license string) *DeploymentSpec {
 	features := newInstanceFeatures()
 	features.SetEphemeralInstance(true)
 	return &DeploymentSpec{
 		Name:             name,
 		Version:          version,
+		License:          license,
 		InstanceFeatures: features.Value(),
 	}
 }
@@ -139,8 +140,7 @@ func (c *Client) ListInstances(ctx context.Context, all bool) ([]*Instance, erro
 }
 
 func (c *Client) CreateInstance(ctx context.Context, spec *DeploymentSpec) (*Instance, error) {
-	// TODO(burmudar): Better method to get LicenseKeys
-	licenseKey := os.Getenv("EPHEMERAL_LICENSE_KEY")
+	licenseKey := spec.License
 	if licenseKey == "" {
 		return nil, errors.New("no license key - the env var 'EPHEMERAL_LICENSE_KEY' is empty")
 	}

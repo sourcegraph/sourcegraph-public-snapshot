@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -69,31 +70,54 @@ func determineVersion(build *buildkite.Build, tag string) (string, error) {
 	), nil
 }
 
+func getCloudEphemeralLicenseKey(ctx context.Context) (string, error) {
+	store, err := secrets.FromContext(ctx)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get secrets store")
+	}
+
+	sec := secrets.ExternalSecret{
+		Project: secrets.LocalDevProject,
+		Name:    "SG_CLOUD_EPHEMERAL_LICENSE_KEY",
+	}
+	return store.GetExternal(ctx, sec)
+}
+
 func createDeploymentForVersion(ctx context.Context, email, name, version string) error {
 	cloudClient, err := NewClient(ctx, email, APIEndpoint)
 	if err != nil {
 		return err
 	}
 
-	spec := NewDeploymentSpec(
-		sanitizeInstanceName(name),
-		version,
-	)
 	cloudEmoji := "☁️"
-	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Starting deployment %q for version %q", spec.Name, spec.Version))
+	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Starting deployment %q for version %q", name, version))
 
 	// Check if the deployment already exists
-	_, err = cloudClient.GetInstance(ctx, spec.Name)
+	pending.Updatef("Checking if deployment %q already exists", name)
+	_, err = cloudClient.GetInstance(ctx, name)
 	if err != nil {
 		if !errors.Is(err, ErrInstanceNotFound) {
-			return errors.Wrapf(err, "failed to check if instance %q already exists", spec.Name)
+			return errors.Wrapf(err, "failed to check if instance %q already exists", name)
 		}
 	} else {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", spec.Name))
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", name))
 		// Deployment exists
 		return ErrDeploymentExists
 	}
 
+	pending.Updatef("Fetching license key...")
+	license, err := getCloudEphemeralLicenseKey(ctx)
+	if err != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", name))
+		return err
+	}
+	spec := NewDeploymentSpec(
+		sanitizeInstanceName(name),
+		version,
+		license,
+	)
+
+	pending.Updatef("Creating deployment %q for version %q", spec.Name, spec.Version)
 	inst, err := cloudClient.CreateInstance(ctx, spec)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", spec.Name))
