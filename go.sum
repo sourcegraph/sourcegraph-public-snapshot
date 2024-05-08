@@ -321,8 +321,6 @@ github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
-github.com/bevzzz/nb v0.2.1 h1:CYjTWcvWRrUHMzPXXS+9aMGmk5CQWgESwmi53VhK2fs=
-github.com/bevzzz/nb v0.2.1/go.mod h1:i8J311U4tUD6ZjBDE3HY8qPswTuUORiUfAFcWPqUTdA=
 github.com/bevzzz/nb v0.3.0 h1:Pg2p4TXttIRquLZjz5cfffPfWeUCHVBPUhdcDhwbccI=
 github.com/bevzzz/nb v0.3.0/go.mod h1:i8J311U4tUD6ZjBDE3HY8qPswTuUORiUfAFcWPqUTdA=
 github.com/bevzzz/nb-synth v0.0.0-20240128164931-35fdda0583a0 h1:CH1+0p2ywCtqQbDL2KpwRn+XL71Peyhlshusdbn13kk=

@@ -7,7 +7,7 @@ package htmlutil
 import (
 	"bytes"
 	"io"
-	"regexp"
+	"regexp" // nolint // required for bluemonday API
 	"sync"
 
 	"github.com/microcosm-cc/bluemonday"

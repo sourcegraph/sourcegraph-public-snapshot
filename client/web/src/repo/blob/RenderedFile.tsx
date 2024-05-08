@@ -24,9 +24,10 @@ export const RenderedFile = forwardRef<HTMLDivElement, Props>(function RenderedF
     useScrollToLocationHash(location)
 
     return (
-        <div ref={reference} className={classNames(styles.renderedFile, className)}>
+        // the jupyter class comes from global style sheets
+        <div ref={reference} className={classNames(styles.renderedFile, className, 'jupyter')}>
             <div className={styles.container}>
-                <Markdown dangerousInnerHTML={dangerousInnerHTML} enableMathJax={true} />
+                <Markdown dangerousInnerHTML={dangerousInnerHTML} />
             </div>
         </div>
     )
