@@ -69,7 +69,7 @@ func TestStatusAMD_RoundTrip(t *testing.T) {
 type fuzzStatus Status
 
 func (fuzzStatus) Generate(rand *rand.Rand, _ int) reflect.Value {
-	validValues := []Status{StatusAdded, StatusModified, StatusDeleted, StatusUnspecified}
+	validValues := []Status{StatusAdded, StatusModified, StatusDeleted, StatusUnspecified, StatusTypeChanged}
 	return reflect.ValueOf(fuzzStatus(validValues[rand.Intn(len(validValues))]))
 }
 
