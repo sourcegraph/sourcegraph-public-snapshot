@@ -694,34 +694,6 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	runCommitsTest(checker)
 }
 
-func TestParseCommitsUniqueToBranch(t *testing.T) { // KEEP
-	commits, err := parseCommitsUniqueToBranch([]string{
-		"c165bfff52e9d4f87891bba497e3b70fea144d89:2020-08-04T08:23:30-05:00",
-		"f73ee8ed601efea74f3b734eeb073307e1615606:2020-04-16T16:06:21-04:00",
-		"6057f7ed8d331c82030c713b650fc8fd2c0c2347:2020-04-16T16:20:26-04:00",
-		"7886287b8758d1baf19cf7b8253856128369a2a7:2020-04-16T16:55:58-04:00",
-		"b69f89473bbcc04dc52cafaf6baa504e34791f5a:2020-04-20T12:10:49-04:00",
-		"172b7fcf8b8c49b37b231693433586c2bfd1619e:2020-04-20T12:37:36-04:00",
-		"5bc35c78fb5fb388891ca944cd12d85fd6dede95:2020-05-05T12:53:18-05:00",
-	})
-	if err != nil {
-		t.Fatalf("unexpected error parsing commits: %s", err)
-	}
-
-	expectedCommits := map[string]time.Time{
-		"c165bfff52e9d4f87891bba497e3b70fea144d89": *mustParseDate("2020-08-04T08:23:30-05:00", t),
-		"f73ee8ed601efea74f3b734eeb073307e1615606": *mustParseDate("2020-04-16T16:06:21-04:00", t),
-		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": *mustParseDate("2020-04-16T16:20:26-04:00", t),
-		"7886287b8758d1baf19cf7b8253856128369a2a7": *mustParseDate("2020-04-16T16:55:58-04:00", t),
-		"b69f89473bbcc04dc52cafaf6baa504e34791f5a": *mustParseDate("2020-04-20T12:10:49-04:00", t),
-		"172b7fcf8b8c49b37b231693433586c2bfd1619e": *mustParseDate("2020-04-20T12:37:36-04:00", t),
-		"5bc35c78fb5fb388891ca944cd12d85fd6dede95": *mustParseDate("2020-05-05T12:53:18-05:00", t),
-	}
-	if diff := cmp.Diff(expectedCommits, commits); diff != "" {
-		t.Errorf("unexpected commits (-want +got):\n%s", diff)
-	}
-}
-
 func TestCommitsUniqueToBranch(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
@@ -745,39 +717,6 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedCommits, commits); diff != "" {
 		t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
-	}
-}
-
-func TestFilterCommitsUniqueToBranch(t *testing.T) {
-	commitMap := map[string]time.Time{
-		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
-		"2775e60f523d3151a2a34ffdc659f500d0e73022": {},
-		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
-		"9019942b8b92d5a70a7f546d97c451621c5059a6": {},
-	}
-
-	client := NewTestClient(t).WithClientSource(NewTestClientSource(t, []string{"test"}, func(o *TestClientSourceOptions) {
-		o.ClientFunc = func(conn *grpc.ClientConn) proto.GitserverServiceClient {
-			c := NewMockGitserverServiceClient()
-			c.GetCommitFunc.SetDefaultHook(func(ctx context.Context, gcr *proto.GetCommitRequest, co ...grpc.CallOption) (*proto.GetCommitResponse, error) {
-				if gcr.GetCommit() == "2775e60f523d3151a2a34ffdc659f500d0e73022" {
-					s, err := status.New(codes.NotFound, "bad revision").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
-					require.NoError(t, err)
-					return nil, s.Err()
-				}
-				return &proto.GetCommitResponse{}, nil
-			})
-			return c
-		}
-	})).(*clientImplementor)
-	filtered := client.filterCommitsUniqueToBranch(context.Background(), "repo", commitMap)
-	expected := map[string]time.Time{
-		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
-		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
-		"9019942b8b92d5a70a7f546d97c451621c5059a6": {},
-	}
-	if diff := cmp.Diff(expected, filtered); diff != "" {
-		t.Errorf("unexpected commits in result (-want +got):\n%s", diff)
 	}
 }
 
