@@ -119,7 +119,7 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *Sour
 func (r *Reconciler) reconcileGitServerService(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
 	svc := service.NewService("gitserver", sg.Namespace, sg.Spec.GitServer)
 	svc.Spec.Ports = []corev1.ServicePort{
-		{Name: "unused", TargetPort: intstr.FromInt(10811), Port: 10811},
+		{Name: "unused", TargetPort: intstr.FromInt32(10811), Port: 10811},
 	}
 	svc.Spec.Selector = map[string]string{
 		"app":  "gitserver",
