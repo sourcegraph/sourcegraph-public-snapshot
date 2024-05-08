@@ -11,26 +11,12 @@ requirements:
   - name: "jq"
     cmd: "jq --help"
   - name: "Buidkite access token"
+    # `write_builds` permission is all that's needed here
+    # You also need to ensure you add access to the Sourcegraph organization on Buildkite.
     env: BUILDKITE_ACCESS_TOKEN
     only: # We only need this to create CI builds.
       - internal.create
       - promoteToPublic.create
-    # `write_builds` permission is all that's needed here
-    # You also need to ensure you add access to the Sourcegraph organization on Buildkite.
-
-   # announce-engineering slack webhook url:
-   # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=pldpna5vivapxe4phewnqd42ji&h=team-sourcegraph.1password.com
-  - name: 'Slack Webhook URL'
-    env: SLACK_WEBHOOK_URL
-    only:
-      - promoteToPublic.finalize
-
-  # team-cloud-ops slack webhook url:
-  # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=xwwpaakz5iajowr2fruueoevba&h=team-sourcegraph.1password.com
-  - name: 'Slack Webhook URL Cloud Ops'
-    env: SLACK_WEBHOOK_URL_CLOUD_OPS
-    only:
-      - promoteToPublic.finalize
 
 internal:
   create:
