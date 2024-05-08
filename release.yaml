@@ -17,14 +17,6 @@ requirements:
       - promoteToPublic.create
     # `write_builds` permission is all that's needed here
     # You also need to ensure you add access to the Sourcegraph organization on Buildkite.
-  - name: "GitHub CLI"
-    cmd: "which gh"
-    only:
-      - promoteToPublic.finalize
-  - name: "GitHub CLI auth status"
-    cmd: "gh auth status"
-    only:
-      - promoteToPublic.finalize
 
    # announce-engineering slack webhook url:
    # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=pldpna5vivapxe4phewnqd42ji&h=team-sourcegraph.1password.com
@@ -225,19 +217,19 @@ promoteToPublic:
       - name: 'Promote on release registry'
         cmd: |
           echo "Promoting sourcegraph/sourcegraph {{version}} release on release registry"
-            body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '' "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}/promote")
-            exit_code=$?
+          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '' "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}/promote")
+          exit_code=$?
 
-            if [ $exit_code != 0 ]; then
-              echo "❌ Failed to promote release on release registry, got:"
-              echo "--- raw body ---"
-              echo $body
-              echo "--- raw body ---"
-              exit $exit_code
-            else
-              echo "Release promoted, see:"
-              echo $body
-            fi
+          if [ $exit_code != 0 ]; then
+            echo "❌ Failed to promote release on release registry, got:"
+            echo "--- raw body ---"
+            echo $body
+            echo "--- raw body ---"
+            exit $exit_code
+          else
+            echo "Release promoted, see:"
+            echo $body
+          fi
       - name: 'git:tag'
         cmd: |
           set -eu
@@ -281,7 +273,7 @@ promoteToPublic:
             - [Release post](https://sourcegraph.com/blog/release/${month_name}-${current_year})
           EndOfText
 
-          gh release create ${version} --latest --verify-tag -t "Sourcegraph ${tag}" --generate-notes --notes "${releasepost}"
+          bazel run //dev/tools:gh -- release create ${version} --latest --verify-tag -t "Sourcegraph ${tag}" --generate-notes --notes "${releasepost}"
 
       # tag is usually in the format `5.3.2`
       # while version is usually the tag prepended with a v, `v5.3.2`
