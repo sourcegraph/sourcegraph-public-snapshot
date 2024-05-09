@@ -50,13 +50,12 @@ message EnterpriseSubscriptionCondition {
 }
 
 // EnterpriseSubscription represents a Sourcegraph Enterprise subscription.
-// It is one of the fundamental elements of the Enterprise Portal service.
 message EnterpriseSubscription {
   // ID is the external, prefixed UUID-format identifier for this subscription.
   string id = 1;
   // Timeline of key events corresponding to this subscription.
   repeated EnterpriseSubscriptionCondition conditions = 2;
-  // Display name of this subscription. This is not guaranteed to be unique.
+  // Display name of this subscription, e.g. "Acme, Inc."
   string display_name = 3;
 }
 
