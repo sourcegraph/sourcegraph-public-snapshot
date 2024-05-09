@@ -16,6 +16,7 @@ go_library(
         "repo_updater.go",
         "spec.go",
         "symbols.go",
+        "syntect.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance",
     visibility = ["//:__subpackages__"],
@@ -69,6 +70,7 @@ go_test(
         "repo_updater_test.go",
         "standard_config_test.go",
         "symbols_test.go",
+        "syntect_test.go",
     ],
     data = [
         ":testdata",
