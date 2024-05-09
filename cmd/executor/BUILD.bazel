@@ -9,6 +9,7 @@ go_library(
     name = "executor_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/executor",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/executor/internal/config",
@@ -27,6 +28,7 @@ go_library(
 go_binary(
     name = "executor",
     embed = [":executor_lib"],
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:public"],
 )
 
@@ -43,6 +45,7 @@ go_binary(
     gotags = [
         "shell",
     ],
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:public"],
 )
 
@@ -96,6 +99,7 @@ container_structure_test(
     driver = "docker",
     image = ":image",
     tags = [
+        TAG_SEARCHSUITE,
         "exclusive",
         "requires-network",
     ],

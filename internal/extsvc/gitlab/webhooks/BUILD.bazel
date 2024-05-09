@@ -8,6 +8,7 @@ go_library(
         "merge_requests.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/extsvc/gitlab",
@@ -23,6 +24,7 @@ go_test(
         "merge_requests_test.go",
     ],
     embed = [":webhooks"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/extsvc/gitlab",
         "//lib/errors",

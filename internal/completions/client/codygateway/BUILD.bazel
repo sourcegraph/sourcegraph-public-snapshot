@@ -5,6 +5,7 @@ go_library(
     name = "codygateway",
     srcs = ["codygateway.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/codygateway",
+    tags = [TAG_CODY_CORE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -27,6 +28,7 @@ go_test(
     name = "codygateway_test",
     srcs = ["codygateway_test.go"],
     embed = [":codygateway"],
+    tags = [TAG_CODY_CORE],
     deps = [
         "//internal/completions/types",
         "//lib/errors",

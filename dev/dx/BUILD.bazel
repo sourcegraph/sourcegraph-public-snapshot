@@ -4,6 +4,7 @@ go_library(
     name = "dx_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/dx",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//lib/output",
@@ -14,5 +15,6 @@ go_library(
 go_binary(
     name = "dx",
     embed = [":dx_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )

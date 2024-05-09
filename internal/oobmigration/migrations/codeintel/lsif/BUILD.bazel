@@ -14,6 +14,7 @@ go_library(
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/codeintel/lsif",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/codeintel/shared/ranges",
@@ -48,6 +49,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":lsif"],
     tags = [
+        TAG_INFRA_RELEASE,
         TAG_INFRA_RELEASE,
         "requires-network",
     ],

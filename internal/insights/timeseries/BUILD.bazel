@@ -8,6 +8,7 @@ go_library(
         "timeseries.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/timeseries",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = ["//internal/insights/types"],
 )
@@ -20,6 +21,7 @@ go_test(
         "timeseries_test.go",
     ],
     embed = [":timeseries"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/insights/types",
         "@com_github_google_go_cmp//cmp",

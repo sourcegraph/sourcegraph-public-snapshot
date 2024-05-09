@@ -5,6 +5,7 @@ go_library(
     name = "diskusage",
     srcs = ["diskusage.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/diskusage",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
 )
 
@@ -12,6 +13,9 @@ go_test(
     name = "diskusage_test",
     srcs = ["diskusage_test.go"],
     embed = [":diskusage"],
-    tags = [TAG_PLATFORM_SOURCE],
+    tags = [
+        TAG_PLATFORM_SOURCE,
+        TAG_PLATFORM_SOURCE,
+    ],
     deps = ["@com_github_stretchr_testify//require"],
 )

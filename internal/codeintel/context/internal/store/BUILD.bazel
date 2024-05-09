@@ -8,6 +8,7 @@ go_library(
         "store.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/context/internal/store",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",
@@ -22,5 +23,8 @@ go_test(
     name = "store_test",
     srcs = ["store_test.go"],
     embed = [":store"],
-    tags = [TAG_PLATFORM_GRAPH],
+    tags = [
+        TAG_PLATFORM_GRAPH,
+        TAG_PLATFORM_GRAPH,
+    ],
 )

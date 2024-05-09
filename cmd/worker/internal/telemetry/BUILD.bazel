@@ -6,6 +6,7 @@ go_library(
     name = "telemetry",
     srcs = ["telemetry_job.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/shared/init/db",
@@ -36,6 +37,7 @@ go_test(
     ],
     embed = [":telemetry"],
     tags = [
+        TAG_INFRA_CORESERVICES,
         # Test requires localhost for database
         "requires-network",
     ],

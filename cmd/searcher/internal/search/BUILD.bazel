@@ -23,6 +23,7 @@ go_library(
         "zoekt_search.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/searcher:__subpackages__"],
     deps = [
         "//internal/api",
@@ -134,6 +135,7 @@ go_test(
         "zoekt_search_test.go",
     ],
     embed = [":search"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/api",
         "//internal/comby",

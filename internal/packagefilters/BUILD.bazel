@@ -8,6 +8,7 @@ go_library(
         "package_filters.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/packagefilters",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/codeintel/dependencies/shared",
@@ -24,6 +25,7 @@ go_test(
     name = "packagefilters_test",
     srcs = ["glob_test.go"],
     embed = [":packagefilters"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "@com_github_gobwas_glob//:glob",
         "@com_github_grafana_regexp//:regexp",

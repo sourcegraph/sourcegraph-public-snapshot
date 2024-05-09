@@ -9,6 +9,7 @@ go_library(
         "prompt.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic",
+    tags = [TAG_CODY_CORE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/completions/tokenusage",
@@ -28,6 +29,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":anthropic"],
+    tags = [TAG_CODY_CORE],
     deps = [
         "//internal/completions/tokenusage",
         "//internal/completions/types",

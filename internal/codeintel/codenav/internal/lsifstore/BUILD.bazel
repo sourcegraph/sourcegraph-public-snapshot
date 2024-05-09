@@ -15,6 +15,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/codeintel/codenav/shared",
@@ -47,6 +48,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":lsifstore"],
     tags = [
+        TAG_PLATFORM_GRAPH,
         TAG_PLATFORM_GRAPH,
         # Test requires localhost for database
         "requires-network",

@@ -415,6 +415,7 @@ ts_project(
     data = [
         ":global-styles",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":module_style_typings",
@@ -544,6 +545,7 @@ ts_project(
         "src/utils/linkClickHandler.test.tsx",
         "src/utils/markdown.test.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@sourcegraph/testing",
@@ -590,6 +592,7 @@ vitest_test(
         ":snapshots",
         ":wildcard_tests",
     ],
+    tags = [TAG_SEARCHSUITE],
 )
 
 ts_project(
@@ -640,6 +643,7 @@ ts_project(
         "src/components/Typography/Typography.story.tsx",
         "src/global-styles/GlobalStylesStory/GlobalStyles.story.tsx",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":module_style_typings",

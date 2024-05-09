@@ -8,6 +8,7 @@ go_library(
         "metrics.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/background/repository_matcher",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",

@@ -57,6 +57,7 @@ go_test(
         "util_test.go",
     ],
     embed = [":scim"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/auth/userpasswd",
         "//internal/conf",

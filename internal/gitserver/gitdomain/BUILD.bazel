@@ -9,6 +9,7 @@ go_library(
         "log.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -29,7 +30,10 @@ go_test(
         "log_test.go",
     ],
     embed = [":gitdomain"],
-    tags = [TAG_PLATFORM_SOURCE],
+    tags = [
+        TAG_PLATFORM_SOURCE,
+        TAG_PLATFORM_SOURCE,
+    ],
     deps = [
         "//internal/api",
         "//internal/fileutil",

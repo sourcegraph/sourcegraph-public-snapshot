@@ -17,6 +17,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//cmd/gitserver/internal/common",
@@ -49,7 +50,10 @@ go_test(
         "util_test.go",
     ],
     embed = [":perforce"],
-    tags = [TAG_PLATFORM_SOURCE],
+    tags = [
+        TAG_PLATFORM_SOURCE,
+        TAG_PLATFORM_SOURCE,
+    ],
     deps = [
         "//cmd/gitserver/internal/common",
         "//internal/api",

@@ -9,6 +9,7 @@ go_library(
         "git_commit_graph.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -22,7 +23,10 @@ go_test(
     srcs = ["commit_graph_test.go"],
     data = glob(["testdata/**"]),
     embed = [":commitgraph"],
-    tags = [TAG_PLATFORM_GRAPH],
+    tags = [
+        TAG_PLATFORM_GRAPH,
+        TAG_PLATFORM_GRAPH,
+    ],
     deps = [
         "//internal/api",
         "//internal/byteutils",

@@ -4,6 +4,7 @@ go_library(
     name = "service",
     srcs = ["service.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linearhooks/internal/service",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/linearhooks:__subpackages__"],
     deps = [
         "//dev/linearhooks/internal/handlers",

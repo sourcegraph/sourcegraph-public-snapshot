@@ -12,6 +12,7 @@ go_library(
         "tree_entry.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -35,7 +36,10 @@ go_test(
         "commit_test.go",
     ],
     embed = [":gitresolvers"],
-    tags = [TAG_PLATFORM_GRAPH],
+    tags = [
+        TAG_PLATFORM_GRAPH,
+        TAG_PLATFORM_GRAPH,
+    ],
     deps = [
         "//internal/api",
         "//internal/codeintel/resolvers",

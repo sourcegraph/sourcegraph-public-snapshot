@@ -6,6 +6,7 @@ go_library(
     name = "files",
     srcs = ["files.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/executor:__subpackages__"],
     deps = [
         "//internal/executor/types",
@@ -20,6 +21,7 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":files"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/executor/types",
         "//lib/errors",

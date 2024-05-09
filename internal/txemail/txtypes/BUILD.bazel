@@ -4,5 +4,6 @@ go_library(
     name = "txtypes",
     srcs = ["types.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/txemail/txtypes",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
 )

@@ -10,6 +10,7 @@ go_library(
         "telemetry.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/client",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -41,6 +42,7 @@ go_test(
     timeout = "short",
     srcs = ["client_test.go"],
     embed = [":client"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/actor",
         "//internal/conf",

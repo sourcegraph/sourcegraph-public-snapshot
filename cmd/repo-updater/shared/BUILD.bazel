@@ -10,6 +10,7 @@ go_library(
     ],
     embedsrcs = ["state.html.tmpl"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/globals",
@@ -56,7 +57,10 @@ go_test(
     timeout = "short",
     srcs = ["main_test.go"],
     embed = [":shared"],
-    tags = [TAG_PLATFORM_SOURCE],
+    tags = [
+        TAG_PLATFORM_SOURCE,
+        TAG_PLATFORM_SOURCE,
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbmocks",

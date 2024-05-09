@@ -22,6 +22,10 @@ go_library(
         "tokens_graphql.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/dotcom/productsubscription",
+    tags = [
+        TAG_INFRA_CORESERVICES,
+        TAG_PLATFORM_SOURCE,
+    ],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
@@ -88,6 +92,8 @@ go_test(
     ],
     embed = [":productsubscription"],
     tags = [
+        TAG_INFRA_CORESERVICES,
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

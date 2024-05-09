@@ -10,6 +10,7 @@ go_library(
         "observability.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -36,6 +37,7 @@ go_test(
     ],
     embed = [":background"],
     tags = [
+        TAG_PLATFORM_GRAPH,
         TAG_PLATFORM_GRAPH,
         # requires localhost database
         "requires-network",

@@ -31,6 +31,7 @@ go_test(
     timeout = "short",
     srcs = ["file_handler_test.go"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost database
         "requires-network",
     ],

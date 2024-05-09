@@ -6,6 +6,7 @@ go_library(
     name = "integration_tests",
     srcs = ["mocks.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/integration_tests",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//cmd/gitserver/internal",
@@ -27,7 +28,10 @@ go_test(
     # This test loads coursier as a side effect, so we ensure the
     # path is sandboxed properly.
     env = {"COURSIER_CACHE_DIR": "/tmp"},
-    tags = [TAG_PLATFORM_SOURCE],
+    tags = [
+        TAG_PLATFORM_SOURCE,
+        TAG_PLATFORM_SOURCE,
+    ],
     deps = [
         "//cmd/gitserver/internal",
         "//cmd/gitserver/internal/common",

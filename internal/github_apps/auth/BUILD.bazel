@@ -5,6 +5,7 @@ go_library(
     name = "auth",
     srcs = ["auth.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/github_apps/auth",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/encryption",
@@ -22,6 +23,7 @@ go_test(
     srcs = ["auth_test.go"],
     embed = [":auth"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires access to redis
         "requires-network",
     ],

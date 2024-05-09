@@ -21,6 +21,7 @@ go_library(
         "util_states.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -54,7 +55,10 @@ go_test(
     name = "graphql_test",
     srcs = ["mocks_test.go"],
     embed = [":graphql"],
-    tags = [TAG_PLATFORM_GRAPH],
+    tags = [
+        TAG_PLATFORM_GRAPH,
+        TAG_PLATFORM_GRAPH,
+    ],
     deps = ["//internal/codeintel/uploads/shared"],
 )
 

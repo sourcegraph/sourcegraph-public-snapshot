@@ -5,6 +5,7 @@ go_library(
     name = "gitservice",
     srcs = ["gitservice.go"],
     importpath = "github.com/sourcegraph/sourcegraph/lib/gitservice",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
     deps = ["//lib/errors"],
 )
@@ -13,6 +14,9 @@ go_test(
     name = "gitservice_test",
     timeout = "short",
     srcs = ["gitservice_test.go"],
-    tags = [TAG_PLATFORM_SOURCE],
+    tags = [
+        TAG_PLATFORM_SOURCE,
+        TAG_PLATFORM_SOURCE,
+    ],
     deps = [":gitservice"],
 )

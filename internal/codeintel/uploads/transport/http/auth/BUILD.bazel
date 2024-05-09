@@ -13,6 +13,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/frontend/backend",
@@ -44,7 +45,10 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":auth"],
-    tags = [TAG_PLATFORM_GRAPH],
+    tags = [
+        TAG_PLATFORM_GRAPH,
+        TAG_PLATFORM_GRAPH,
+    ],
     deps = [
         "//cmd/frontend/backend",
         "//internal/actor",

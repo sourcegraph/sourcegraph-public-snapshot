@@ -10,6 +10,7 @@ go_library(
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codygateway",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/completions/types",
@@ -23,6 +24,7 @@ go_library(
 go_test(
     name = "codygateway_test",
     srcs = ["client_test.go"],
+    tags = [TAG_CODY_PRIME],
     deps = [
         ":codygateway",
         "@com_github_stretchr_testify//require",

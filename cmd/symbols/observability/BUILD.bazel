@@ -4,6 +4,7 @@ go_library(
     name = "observability",
     srcs = ["observability.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/observability",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:public"],
     deps = [
         "//internal/metrics",

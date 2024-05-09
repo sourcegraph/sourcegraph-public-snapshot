@@ -22,4 +22,8 @@ go_test(
     timeout = "short",
     srcs = ["old_tree_redirects_test.go"],
     embed = [":router"],
+    tags = [
+        TAG_SEARCHSUITE,
+        TAG_SEARCHSUITE,
+    ],
 )

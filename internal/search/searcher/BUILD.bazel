@@ -10,6 +10,7 @@ go_library(
         "symbol_search_job.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/searcher",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -45,6 +46,7 @@ go_test(
     timeout = "short",
     srcs = ["symbol_search_job_test.go"],
     embed = [":searcher"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/search/result",
         "//internal/types",

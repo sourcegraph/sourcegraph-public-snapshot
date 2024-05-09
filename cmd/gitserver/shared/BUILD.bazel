@@ -10,6 +10,7 @@ go_library(
         "shared.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/shared",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/gitserver/internal",
@@ -64,5 +65,8 @@ go_test(
     # This test loads coursier as a side effect, so we ensure the
     # path is sandboxed properly.
     env = {"COURSIER_CACHE_DIR": "/tmp"},
-    tags = [TAG_PLATFORM_SOURCE],
+    tags = [
+        TAG_PLATFORM_SOURCE,
+        TAG_PLATFORM_SOURCE,
+    ],
 )

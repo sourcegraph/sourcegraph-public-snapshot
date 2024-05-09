@@ -10,6 +10,7 @@ go_library(
         "root_unix.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/cacert",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/gitserver:__subpackages__"],
 )
 
@@ -17,6 +18,9 @@ go_test(
     name = "cacert_test",
     timeout = "short",
     srcs = ["cacert_test.go"],
-    tags = [TAG_PLATFORM_SOURCE],
+    tags = [
+        TAG_PLATFORM_SOURCE,
+        TAG_PLATFORM_SOURCE,
+    ],
     deps = [":cacert"],
 )

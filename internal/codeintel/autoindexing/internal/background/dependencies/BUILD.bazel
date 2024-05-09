@@ -15,6 +15,7 @@ go_library(
         "workerutil.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background/dependencies",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -58,6 +59,7 @@ go_test(
     ],
     embed = [":dependencies"],
     tags = [
+        TAG_PLATFORM_GRAPH,
         TAG_PLATFORM_GRAPH,
         "requires-network",
     ],

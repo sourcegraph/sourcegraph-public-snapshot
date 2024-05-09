@@ -10,6 +10,7 @@ go_library(
         "service.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -44,7 +45,10 @@ go_test(
         "service_test.go",
     ],
     embed = [":ranking"],
-    tags = [TAG_PLATFORM_GRAPH],
+    tags = [
+        TAG_PLATFORM_GRAPH,
+        TAG_PLATFORM_GRAPH,
+    ],
     deps = [
         "//internal/api",
         "//internal/codeintel/ranking/internal/store",

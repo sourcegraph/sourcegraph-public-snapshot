@@ -4,6 +4,7 @@ go_library(
     name = "httpapi",
     srcs = ["export.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/insights/httpapi",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/actor",

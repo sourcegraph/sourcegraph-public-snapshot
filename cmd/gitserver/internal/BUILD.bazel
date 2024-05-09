@@ -25,6 +25,7 @@ go_library(
     ],
     embedsrcs = ["sg_maintenance.sh"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal",
+    tags = [TAG_PLATFORM_SOURCE],
     # visibility = ["//cmd/gitserver:__subpackages__"],
     visibility = ["//visibility:public"],
     deps = [
@@ -103,6 +104,7 @@ go_test(
     # path is sandboxed properly.
     env = {"COURSIER_CACHE_DIR": "/tmp"},
     tags = [
+        TAG_PLATFORM_SOURCE,
         TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",

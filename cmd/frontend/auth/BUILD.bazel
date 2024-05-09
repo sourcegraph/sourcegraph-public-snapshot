@@ -50,6 +50,7 @@ go_test(
         "user_test.go",
     ],
     embed = [":auth"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//cmd/frontend/internal/app/ui",
         "//internal/actor",

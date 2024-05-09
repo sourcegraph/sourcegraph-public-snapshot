@@ -11,5 +11,6 @@ go_library(
     srcs = ["config.go"],
     embedsrcs = ["repos.json"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/ci/integration/executors/tester/config",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )

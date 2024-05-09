@@ -166,6 +166,7 @@ vitest_test(
     bin = vitest_bin,
     chdir = package_name(),
     data = SRCS + BUILD_DEPS + CONFIGS + TESTS + TEST_BUILD_DEPS,
+    tags = [TAG_SEARCHSUITE],
     with_vitest_config = False,
 )
 

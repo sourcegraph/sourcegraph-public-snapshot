@@ -1,5 +1,5 @@
 TAG_SECURITY = "owner_security"
-
+TAG_DATA_ANALYTICS = "owner_data_analytics"
 TAG_SEARCHSUITE = "owner_searchsuite"
 
 TAG_PLATFORM_GRAPH = "owner_platform_graph"
@@ -11,8 +11,6 @@ TAG_INFRA_DEVINFRA = "owner_infra_devinfra"
 TAG_INFRA_CORESERVICES = "owner_infra_coreservices"
 TAG_INFRA_CLOUDOPS = "owner_infra_cloudops"
 
-TAG_CODY_PLG = "owner_cody_plg"
-TAG_CODY_PRODUCT = "owner_cody_product"
-TAG_CODY_CLIENTS = "owner_cody_clients"
-TAG_CODY_ENTERPRISE = "owner_cody_enterprise"
+TAG_CODY_CORE = "owner_cody_core"
+TAG_CODY_PRIME = "owner_cody_prime"
 TAG_CODY_AI = "owner_cody_ai"

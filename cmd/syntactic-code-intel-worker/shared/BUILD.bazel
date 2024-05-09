@@ -9,6 +9,7 @@ go_library(
         "shared.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/syntactic-code-intel-worker/shared",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = [
         "//internal/authz",

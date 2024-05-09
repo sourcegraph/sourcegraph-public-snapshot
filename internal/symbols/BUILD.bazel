@@ -8,6 +8,7 @@ go_library(
         "retry.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/symbols",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -36,6 +37,7 @@ go_test(
     timeout = "short",
     srcs = ["client_test.go"],
     embed = [":symbols"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/actor",
         "//internal/authz",

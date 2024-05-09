@@ -5,6 +5,7 @@ go_library(
     name = "worker",
     srcs = ["installation_backfill.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/githubapps/worker",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//internal/database",
@@ -21,6 +22,7 @@ go_test(
     name = "worker_test",
     srcs = ["installation_backfill_test.go"],
     embed = [":worker"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/database/dbmocks",
         "//internal/github_apps/store",

@@ -49,6 +49,7 @@ go_test(
         "resolver_test.go",
     ],
     embed = [":resolvers"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",

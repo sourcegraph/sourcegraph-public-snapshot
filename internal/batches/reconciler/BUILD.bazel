@@ -10,6 +10,7 @@ go_library(
         "reconciler.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/reconciler",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/batches/graphql",
@@ -46,6 +47,7 @@ go_test(
     ],
     embed = [":reconciler"],
     tags = [
+        TAG_SEARCHSUITE,
         TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",

@@ -20,6 +20,7 @@ go_library(
     ],
     embedsrcs = ["oobmigrations.yaml"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/oobmigration",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -58,6 +59,7 @@ go_test(
     ],
     embed = [":oobmigration"],
     tags = [
+        TAG_INFRA_RELEASE,
         TAG_INFRA_RELEASE,
         # Test requires localhost database
         "requires-network",

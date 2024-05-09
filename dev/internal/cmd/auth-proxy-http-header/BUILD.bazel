@@ -4,11 +4,13 @@ go_library(
     name = "auth-proxy-http-header_lib",
     srcs = ["auth-proxy-http-header.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/internal/cmd/auth-proxy-http-header",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:private"],
 )
 
 go_binary(
     name = "auth-proxy-http-header",
     embed = [":auth-proxy-http-header_lib"],
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//dev:__subpackages__"],
 )

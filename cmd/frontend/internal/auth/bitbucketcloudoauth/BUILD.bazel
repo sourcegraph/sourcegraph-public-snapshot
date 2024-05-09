@@ -50,6 +50,7 @@ go_test(
     ],
     embed = [":bitbucketcloudoauth"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # allows network requests to localhost (database)
         "requires-network",
     ],

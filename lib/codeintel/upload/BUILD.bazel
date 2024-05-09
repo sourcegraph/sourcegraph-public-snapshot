@@ -14,6 +14,7 @@ go_library(
         "upload_options.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/upload",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",
@@ -33,6 +34,9 @@ go_test(
         "upload_test.go",
     ],
     embed = [":upload"],
-    tags = [TAG_PLATFORM_GRAPH],
+    tags = [
+        TAG_PLATFORM_GRAPH,
+        TAG_PLATFORM_GRAPH,
+    ],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

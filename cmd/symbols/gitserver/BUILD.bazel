@@ -9,6 +9,7 @@ go_library(
         "tar.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:public"],
     deps = [
         "//internal/api",
@@ -28,6 +29,7 @@ go_test(
     timeout = "short",
     srcs = ["client_test.go"],
     embed = [":gitserver"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/api",
         "//internal/gitserver",

@@ -8,6 +8,7 @@ go_library(
         "doc.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/contextconv",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "@org_golang_google_grpc//:go_default_library",
@@ -20,6 +21,7 @@ go_test(
     name = "contextconv_test",
     srcs = ["conversion_test.go"],
     embed = [":contextconv"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",

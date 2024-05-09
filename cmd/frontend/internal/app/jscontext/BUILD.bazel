@@ -42,4 +42,8 @@ go_test(
     timeout = "short",
     srcs = ["jscontext_test.go"],
     embed = [":jscontext"],
+    tags = [
+        TAG_SEARCHSUITE,
+        TAG_SEARCHSUITE,
+    ],
 )

@@ -11,6 +11,7 @@ go_library(
         "metrics_expirer.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/expirer",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -38,7 +39,10 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":expirer"],
-    tags = [TAG_PLATFORM_GRAPH],
+    tags = [
+        TAG_PLATFORM_GRAPH,
+        TAG_PLATFORM_GRAPH,
+    ],
     deps = [
         "//internal/api",
         "//internal/codeintel/policies",

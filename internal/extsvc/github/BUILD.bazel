@@ -10,6 +10,7 @@ go_library(
         "v4.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/github",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -49,6 +50,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":github"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         "requires-network",
     ],
     deps = [

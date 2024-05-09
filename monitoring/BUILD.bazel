@@ -4,6 +4,7 @@ go_library(
     name = "monitoring_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/monitoring",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//monitoring/command",
@@ -15,6 +16,7 @@ go_library(
 go_binary(
     name = "monitoring",
     embed = [":monitoring_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )
 

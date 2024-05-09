@@ -82,6 +82,10 @@ go_test(
         "templ_test.go",
     ],
     embed = [":ui"],
+    tags = [
+        TAG_SEARCHSUITE,
+        TAG_SEARCHSUITE,
+    ],
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/globals",

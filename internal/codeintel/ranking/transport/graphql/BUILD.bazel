@@ -8,6 +8,7 @@ go_library(
         "root_resolver.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/transport/graphql",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/codeintel/ranking",

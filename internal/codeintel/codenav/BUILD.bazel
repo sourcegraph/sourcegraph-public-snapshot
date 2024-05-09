@@ -17,6 +17,7 @@ go_library(
         "utils.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -61,7 +62,10 @@ go_test(
         "service_test.go",
     ],
     embed = [":codenav"],
-    tags = [TAG_PLATFORM_GRAPH],
+    tags = [
+        TAG_PLATFORM_GRAPH,
+        TAG_PLATFORM_GRAPH,
+    ],
     deps = [
         "//internal/actor",
         "//internal/api",

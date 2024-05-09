@@ -10,6 +10,7 @@ go_library(
         "updatequeue.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/scheduler",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/repo-updater:__subpackages__"],
     deps = [
         "//cmd/repo-updater/internal/gitserver",
@@ -34,7 +35,10 @@ go_test(
     name = "scheduler_test",
     srcs = ["scheduler_test.go"],
     embed = [":scheduler"],
-    tags = [TAG_PLATFORM_SOURCE],
+    tags = [
+        TAG_PLATFORM_SOURCE,
+        TAG_PLATFORM_SOURCE,
+    ],
     deps = [
         "//cmd/repo-updater/internal/gitserver",
         "//internal/api",
