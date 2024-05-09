@@ -136,10 +136,10 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args search
 		}
 
 		switch c.Status {
-		case gitdomain.AddedAMD, gitdomain.ModifiedAMD:
+		case gitdomain.StatusAdded, gitdomain.StatusModified:
 			addedOrModifiedPaths = append(addedOrModifiedPaths, c.Path)
 			addedModifiedOrDeletedPaths = append(addedModifiedOrDeletedPaths, c.Path)
-		case gitdomain.DeletedAMD:
+		case gitdomain.StatusDeleted:
 			addedModifiedOrDeletedPaths = append(addedModifiedOrDeletedPaths, c.Path)
 		}
 	}

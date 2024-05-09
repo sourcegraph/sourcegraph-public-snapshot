@@ -25,9 +25,9 @@ func TestDiff(t *testing.T) {
 	changedFilesFunc := &gitserver.ClientChangedFilesFunc{}
 	changedFilesFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName, id string, id2 string) (gitserver.ChangedFilesIterator, error) {
 		return gitserver.NewChangedFilesIteratorFromSlice([]gitdomain.PathStatus{
-			{Path: "modifiedFile", Status: gitdomain.ModifiedAMD},
-			{Path: "addedFile", Status: gitdomain.AddedAMD},
-			{Path: "deletedFile", Status: gitdomain.DeletedAMD},
+			{Path: "modifiedFile", Status: gitdomain.StatusModified},
+			{Path: "addedFile", Status: gitdomain.StatusAdded},
+			{Path: "deletedFile", Status: gitdomain.StatusDeleted},
 		}), nil
 	})
 

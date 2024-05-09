@@ -146,10 +146,10 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 				continue
 			}
 
-			if pathStatus.Status == gitdomain.DeletedAMD || pathStatus.Status == gitdomain.ModifiedAMD {
+			if pathStatus.Status == gitdomain.StatusDeleted || pathStatus.Status == gitdomain.StatusModified {
 				deletedPaths = append(deletedPaths, pathStatus.Path)
 			}
-			if pathStatus.Status == gitdomain.AddedAMD || pathStatus.Status == gitdomain.ModifiedAMD {
+			if pathStatus.Status == gitdomain.StatusAdded || pathStatus.Status == gitdomain.StatusModified {
 				addedPaths = append(addedPaths, pathStatus.Path)
 			}
 		}
@@ -223,11 +223,11 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 				added = goset.NewSet[string]()
 			}
 			switch pathStatus.Status {
-			case gitdomain.DeletedAMD:
+			case gitdomain.StatusDeleted:
 				deletedSymbols[pathStatus.Path] = deleted
-			case gitdomain.AddedAMD:
+			case gitdomain.StatusAdded:
 				addedSymbols[pathStatus.Path] = added
-			case gitdomain.ModifiedAMD:
+			case gitdomain.StatusModified:
 				deletedSymbols[pathStatus.Path] = deleted.Difference(added)
 				addedSymbols[pathStatus.Path] = added.Difference(deleted)
 			}

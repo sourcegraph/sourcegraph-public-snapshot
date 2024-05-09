@@ -964,9 +964,9 @@ func TestGRPCServer_ChangedFiles(t *testing.T) {
 		b := git.NewMockGitBackend()
 		b.ChangedFilesFunc.SetDefaultReturn(&testChangedFilesIterator{
 			paths: []gitdomain.PathStatus{
-				{Path: "file1.txt", Status: gitdomain.AddedAMD},
-				{Path: "file2.txt", Status: gitdomain.ModifiedAMD},
-				{Path: "file3.txt", Status: gitdomain.DeletedAMD},
+				{Path: "file1.txt", Status: gitdomain.StatusAdded},
+				{Path: "file2.txt", Status: gitdomain.StatusModified},
+				{Path: "file3.txt", Status: gitdomain.StatusDeleted},
 			},
 		}, nil)
 		gs := &grpcServer{
