@@ -29,7 +29,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SubscriptionsServiceClient interface {
 	// GetEnterpriseSubscription retrieves an exact match on an Enterprise subscription.
-	GetEnterpriseSubscription(ctx context.Context, in *GetEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*EnterpriseSubscription, error)
+	GetEnterpriseSubscription(ctx context.Context, in *GetEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*GetEnterpriseSubscriptionResponse, error)
 	// ListEnterpriseSubscriptions queries for Enterprise subscriptions.
 	ListEnterpriseSubscriptions(ctx context.Context, in *ListEnterpriseSubscriptionsRequest, opts ...grpc.CallOption) (*ListEnterpriseSubscriptionsResponse, error)
 	// ListEnterpriseSubscriptionLicenses queries for licenses associated with
@@ -49,8 +49,8 @@ func NewSubscriptionsServiceClient(cc grpc.ClientConnInterface) SubscriptionsSer
 	return &subscriptionsServiceClient{cc}
 }
 
-func (c *subscriptionsServiceClient) GetEnterpriseSubscription(ctx context.Context, in *GetEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*EnterpriseSubscription, error) {
-	out := new(EnterpriseSubscription)
+func (c *subscriptionsServiceClient) GetEnterpriseSubscription(ctx context.Context, in *GetEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*GetEnterpriseSubscriptionResponse, error) {
+	out := new(GetEnterpriseSubscriptionResponse)
 	err := c.cc.Invoke(ctx, SubscriptionsService_GetEnterpriseSubscription_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func (c *subscriptionsServiceClient) ListEnterpriseSubscriptionLicenses(ctx cont
 // for forward compatibility
 type SubscriptionsServiceServer interface {
 	// GetEnterpriseSubscription retrieves an exact match on an Enterprise subscription.
-	GetEnterpriseSubscription(context.Context, *GetEnterpriseSubscriptionRequest) (*EnterpriseSubscription, error)
+	GetEnterpriseSubscription(context.Context, *GetEnterpriseSubscriptionRequest) (*GetEnterpriseSubscriptionResponse, error)
 	// ListEnterpriseSubscriptions queries for Enterprise subscriptions.
 	ListEnterpriseSubscriptions(context.Context, *ListEnterpriseSubscriptionsRequest) (*ListEnterpriseSubscriptionsResponse, error)
 	// ListEnterpriseSubscriptionLicenses queries for licenses associated with
@@ -98,7 +98,7 @@ type SubscriptionsServiceServer interface {
 type UnimplementedSubscriptionsServiceServer struct {
 }
 
-func (UnimplementedSubscriptionsServiceServer) GetEnterpriseSubscription(context.Context, *GetEnterpriseSubscriptionRequest) (*EnterpriseSubscription, error) {
+func (UnimplementedSubscriptionsServiceServer) GetEnterpriseSubscription(context.Context, *GetEnterpriseSubscriptionRequest) (*GetEnterpriseSubscriptionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnterpriseSubscription not implemented")
 }
 func (UnimplementedSubscriptionsServiceServer) ListEnterpriseSubscriptions(context.Context, *ListEnterpriseSubscriptionsRequest) (*ListEnterpriseSubscriptionsResponse, error) {

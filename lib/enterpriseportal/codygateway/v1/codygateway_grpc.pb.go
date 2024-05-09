@@ -28,7 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CodyGatewayServiceClient interface {
 	// Retrieve Cody Gateway access granted to an Enterprise subscription.
-	GetCodyGatewayAccess(ctx context.Context, in *GetCodyGatewayAccessRequest, opts ...grpc.CallOption) (*CodyGatewayAccess, error)
+	GetCodyGatewayAccess(ctx context.Context, in *GetCodyGatewayAccessRequest, opts ...grpc.CallOption) (*GetCodyGatewayAccessResponse, error)
 	// List all Cody Gateway accesses granted to any Enterprise subscription.
 	ListCodyGatewayAccesses(ctx context.Context, in *ListCodyGatewayAccessesRequest, opts ...grpc.CallOption) (*ListCodyGatewayAccessesResponse, error)
 }
@@ -41,8 +41,8 @@ func NewCodyGatewayServiceClient(cc grpc.ClientConnInterface) CodyGatewayService
 	return &codyGatewayServiceClient{cc}
 }
 
-func (c *codyGatewayServiceClient) GetCodyGatewayAccess(ctx context.Context, in *GetCodyGatewayAccessRequest, opts ...grpc.CallOption) (*CodyGatewayAccess, error) {
-	out := new(CodyGatewayAccess)
+func (c *codyGatewayServiceClient) GetCodyGatewayAccess(ctx context.Context, in *GetCodyGatewayAccessRequest, opts ...grpc.CallOption) (*GetCodyGatewayAccessResponse, error) {
+	out := new(GetCodyGatewayAccessResponse)
 	err := c.cc.Invoke(ctx, CodyGatewayService_GetCodyGatewayAccess_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (c *codyGatewayServiceClient) ListCodyGatewayAccesses(ctx context.Context, 
 // for forward compatibility
 type CodyGatewayServiceServer interface {
 	// Retrieve Cody Gateway access granted to an Enterprise subscription.
-	GetCodyGatewayAccess(context.Context, *GetCodyGatewayAccessRequest) (*CodyGatewayAccess, error)
+	GetCodyGatewayAccess(context.Context, *GetCodyGatewayAccessRequest) (*GetCodyGatewayAccessResponse, error)
 	// List all Cody Gateway accesses granted to any Enterprise subscription.
 	ListCodyGatewayAccesses(context.Context, *ListCodyGatewayAccessesRequest) (*ListCodyGatewayAccessesResponse, error)
 	mustEmbedUnimplementedCodyGatewayServiceServer()
@@ -74,7 +74,7 @@ type CodyGatewayServiceServer interface {
 type UnimplementedCodyGatewayServiceServer struct {
 }
 
-func (UnimplementedCodyGatewayServiceServer) GetCodyGatewayAccess(context.Context, *GetCodyGatewayAccessRequest) (*CodyGatewayAccess, error) {
+func (UnimplementedCodyGatewayServiceServer) GetCodyGatewayAccess(context.Context, *GetCodyGatewayAccessRequest) (*GetCodyGatewayAccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCodyGatewayAccess not implemented")
 }
 func (UnimplementedCodyGatewayServiceServer) ListCodyGatewayAccesses(context.Context, *ListCodyGatewayAccessesRequest) (*ListCodyGatewayAccessesResponse, error) {

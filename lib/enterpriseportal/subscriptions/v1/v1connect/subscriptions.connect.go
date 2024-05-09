@@ -56,7 +56,7 @@ var (
 // enterpriseportal.subscriptions.v1.SubscriptionsService service.
 type SubscriptionsServiceClient interface {
 	// GetEnterpriseSubscription retrieves an exact match on an Enterprise subscription.
-	GetEnterpriseSubscription(context.Context, *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.EnterpriseSubscription], error)
+	GetEnterpriseSubscription(context.Context, *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.GetEnterpriseSubscriptionResponse], error)
 	// ListEnterpriseSubscriptions queries for Enterprise subscriptions.
 	ListEnterpriseSubscriptions(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionsRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionsResponse], error)
 	// ListEnterpriseSubscriptionLicenses queries for licenses associated with
@@ -79,7 +79,7 @@ type SubscriptionsServiceClient interface {
 func NewSubscriptionsServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) SubscriptionsServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &subscriptionsServiceClient{
-		getEnterpriseSubscription: connect.NewClient[v1.GetEnterpriseSubscriptionRequest, v1.EnterpriseSubscription](
+		getEnterpriseSubscription: connect.NewClient[v1.GetEnterpriseSubscriptionRequest, v1.GetEnterpriseSubscriptionResponse](
 			httpClient,
 			baseURL+SubscriptionsServiceGetEnterpriseSubscriptionProcedure,
 			connect.WithSchema(subscriptionsServiceGetEnterpriseSubscriptionMethodDescriptor),
@@ -105,14 +105,14 @@ func NewSubscriptionsServiceClient(httpClient connect.HTTPClient, baseURL string
 
 // subscriptionsServiceClient implements SubscriptionsServiceClient.
 type subscriptionsServiceClient struct {
-	getEnterpriseSubscription          *connect.Client[v1.GetEnterpriseSubscriptionRequest, v1.EnterpriseSubscription]
+	getEnterpriseSubscription          *connect.Client[v1.GetEnterpriseSubscriptionRequest, v1.GetEnterpriseSubscriptionResponse]
 	listEnterpriseSubscriptions        *connect.Client[v1.ListEnterpriseSubscriptionsRequest, v1.ListEnterpriseSubscriptionsResponse]
 	listEnterpriseSubscriptionLicenses *connect.Client[v1.ListEnterpriseSubscriptionLicensesRequest, v1.ListEnterpriseSubscriptionLicensesResponse]
 }
 
 // GetEnterpriseSubscription calls
 // enterpriseportal.subscriptions.v1.SubscriptionsService.GetEnterpriseSubscription.
-func (c *subscriptionsServiceClient) GetEnterpriseSubscription(ctx context.Context, req *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.EnterpriseSubscription], error) {
+func (c *subscriptionsServiceClient) GetEnterpriseSubscription(ctx context.Context, req *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.GetEnterpriseSubscriptionResponse], error) {
 	return c.getEnterpriseSubscription.CallUnary(ctx, req)
 }
 
@@ -132,7 +132,7 @@ func (c *subscriptionsServiceClient) ListEnterpriseSubscriptionLicenses(ctx cont
 // enterpriseportal.subscriptions.v1.SubscriptionsService service.
 type SubscriptionsServiceHandler interface {
 	// GetEnterpriseSubscription retrieves an exact match on an Enterprise subscription.
-	GetEnterpriseSubscription(context.Context, *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.EnterpriseSubscription], error)
+	GetEnterpriseSubscription(context.Context, *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.GetEnterpriseSubscriptionResponse], error)
 	// ListEnterpriseSubscriptions queries for Enterprise subscriptions.
 	ListEnterpriseSubscriptions(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionsRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionsResponse], error)
 	// ListEnterpriseSubscriptionLicenses queries for licenses associated with
@@ -188,7 +188,7 @@ func NewSubscriptionsServiceHandler(svc SubscriptionsServiceHandler, opts ...con
 // UnimplementedSubscriptionsServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedSubscriptionsServiceHandler struct{}
 
-func (UnimplementedSubscriptionsServiceHandler) GetEnterpriseSubscription(context.Context, *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.EnterpriseSubscription], error) {
+func (UnimplementedSubscriptionsServiceHandler) GetEnterpriseSubscription(context.Context, *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.GetEnterpriseSubscriptionResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.GetEnterpriseSubscription is not implemented"))
 }
 

@@ -14,7 +14,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cod
 // DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
 service CodyGatewayService {
   // Retrieve Cody Gateway access granted to an Enterprise subscription.
-  rpc GetCodyGatewayAccess(GetCodyGatewayAccessRequest) returns (CodyGatewayAccess) {
+  rpc GetCodyGatewayAccess(GetCodyGatewayAccessRequest) returns (GetCodyGatewayAccessResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
@@ -32,6 +32,10 @@ message GetCodyGatewayAccessRequest {
     // Cody Gateway access, e.g. 'slk_...'
     string access_token = 2;
   }
+}
+
+message GetCodyGatewayAccessResponse {
+  CodyGatewayAccess response = 1;
 }
 
 enum CodyGatewayRateLimitSource {

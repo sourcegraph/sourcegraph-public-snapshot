@@ -52,7 +52,7 @@ var (
 // service.
 type CodyGatewayServiceClient interface {
 	// Retrieve Cody Gateway access granted to an Enterprise subscription.
-	GetCodyGatewayAccess(context.Context, *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.CodyGatewayAccess], error)
+	GetCodyGatewayAccess(context.Context, *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.GetCodyGatewayAccessResponse], error)
 	// List all Cody Gateway accesses granted to any Enterprise subscription.
 	ListCodyGatewayAccesses(context.Context, *connect.Request[v1.ListCodyGatewayAccessesRequest]) (*connect.Response[v1.ListCodyGatewayAccessesResponse], error)
 }
@@ -68,7 +68,7 @@ type CodyGatewayServiceClient interface {
 func NewCodyGatewayServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) CodyGatewayServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &codyGatewayServiceClient{
-		getCodyGatewayAccess: connect.NewClient[v1.GetCodyGatewayAccessRequest, v1.CodyGatewayAccess](
+		getCodyGatewayAccess: connect.NewClient[v1.GetCodyGatewayAccessRequest, v1.GetCodyGatewayAccessResponse](
 			httpClient,
 			baseURL+CodyGatewayServiceGetCodyGatewayAccessProcedure,
 			connect.WithSchema(codyGatewayServiceGetCodyGatewayAccessMethodDescriptor),
@@ -87,13 +87,13 @@ func NewCodyGatewayServiceClient(httpClient connect.HTTPClient, baseURL string, 
 
 // codyGatewayServiceClient implements CodyGatewayServiceClient.
 type codyGatewayServiceClient struct {
-	getCodyGatewayAccess    *connect.Client[v1.GetCodyGatewayAccessRequest, v1.CodyGatewayAccess]
+	getCodyGatewayAccess    *connect.Client[v1.GetCodyGatewayAccessRequest, v1.GetCodyGatewayAccessResponse]
 	listCodyGatewayAccesses *connect.Client[v1.ListCodyGatewayAccessesRequest, v1.ListCodyGatewayAccessesResponse]
 }
 
 // GetCodyGatewayAccess calls
 // enterpriseportal.codygateway.v1.CodyGatewayService.GetCodyGatewayAccess.
-func (c *codyGatewayServiceClient) GetCodyGatewayAccess(ctx context.Context, req *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.CodyGatewayAccess], error) {
+func (c *codyGatewayServiceClient) GetCodyGatewayAccess(ctx context.Context, req *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.GetCodyGatewayAccessResponse], error) {
 	return c.getCodyGatewayAccess.CallUnary(ctx, req)
 }
 
@@ -107,7 +107,7 @@ func (c *codyGatewayServiceClient) ListCodyGatewayAccesses(ctx context.Context, 
 // enterpriseportal.codygateway.v1.CodyGatewayService service.
 type CodyGatewayServiceHandler interface {
 	// Retrieve Cody Gateway access granted to an Enterprise subscription.
-	GetCodyGatewayAccess(context.Context, *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.CodyGatewayAccess], error)
+	GetCodyGatewayAccess(context.Context, *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.GetCodyGatewayAccessResponse], error)
 	// List all Cody Gateway accesses granted to any Enterprise subscription.
 	ListCodyGatewayAccesses(context.Context, *connect.Request[v1.ListCodyGatewayAccessesRequest]) (*connect.Response[v1.ListCodyGatewayAccessesResponse], error)
 }
@@ -147,7 +147,7 @@ func NewCodyGatewayServiceHandler(svc CodyGatewayServiceHandler, opts ...connect
 // UnimplementedCodyGatewayServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedCodyGatewayServiceHandler struct{}
 
-func (UnimplementedCodyGatewayServiceHandler) GetCodyGatewayAccess(context.Context, *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.CodyGatewayAccess], error) {
+func (UnimplementedCodyGatewayServiceHandler) GetCodyGatewayAccess(context.Context, *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.GetCodyGatewayAccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.codygateway.v1.CodyGatewayService.GetCodyGatewayAccess is not implemented"))
 }
 
