@@ -282,7 +282,11 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.Teams,
-        element: <LegacyRoute render={props => <TeamsArea {...props} />} />,
+        element: (
+            <LegacyRoute
+                render={props => <TeamsArea {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />}
+            />
+        ),
     },
     {
         path: PageRoutes.Organizations,

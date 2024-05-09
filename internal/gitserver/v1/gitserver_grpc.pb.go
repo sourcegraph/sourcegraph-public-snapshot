@@ -30,8 +30,8 @@ type GitserverRepositoryServiceClient interface {
 	// DeleteRepository deletes a repository on disk if it exists.
 	// If it doesn't, an error is returned.
 	DeleteRepository(ctx context.Context, in *DeleteRepositoryRequest, opts ...grpc.CallOption) (*DeleteRepositoryResponse, error)
-	// FetchRepository fetches a repository from a remote. If the repository is not
-	// yet cloned, it will be cloned. Otherwise, it will be updated.
+	// FetchRepository fetches a repository from a remote. If the repository is
+	// not yet cloned, it will be cloned. Otherwise, it will be updated.
 	FetchRepository(ctx context.Context, in *FetchRepositoryRequest, opts ...grpc.CallOption) (*FetchRepositoryResponse, error)
 }
 
@@ -68,8 +68,8 @@ type GitserverRepositoryServiceServer interface {
 	// DeleteRepository deletes a repository on disk if it exists.
 	// If it doesn't, an error is returned.
 	DeleteRepository(context.Context, *DeleteRepositoryRequest) (*DeleteRepositoryResponse, error)
-	// FetchRepository fetches a repository from a remote. If the repository is not
-	// yet cloned, it will be cloned. Otherwise, it will be updated.
+	// FetchRepository fetches a repository from a remote. If the repository is
+	// not yet cloned, it will be cloned. Otherwise, it will be updated.
 	FetchRepository(context.Context, *FetchRepositoryRequest) (*FetchRepositoryResponse, error)
 	mustEmbedUnimplementedGitserverRepositoryServiceServer()
 }
@@ -206,8 +206,8 @@ type GitserverServiceClient interface {
 	// currently not filter parts of the archive, so this would be considered
 	// leaking information.
 	//
-	// If the given treeish does not exist, an error with a RevisionNotFoundPayload
-	// is returned.
+	// If the given treeish does not exist, an error with a
+	// RevisionNotFoundPayload is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -273,18 +273,17 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ResolveRevision(ctx context.Context, in *ResolveRevisionRequest, opts ...grpc.CallOption) (*ResolveRevisionResponse, error)
-	// ListRefs returns a list of all the refs known to the repository, this includes
-	// heads, tags, and other potential refs, but filters can be applied.
+	// ListRefs returns a list of all the refs known to the repository, this
+	// includes heads, tags, and other potential refs, but filters can be applied.
 	//
 	// The refs are ordered in the following order:
 	// HEAD first, if part of the result set.
-	// The rest will be ordered by creation date, in descending order, i.e., newest
-	// first.
-	// If two resources are created at the same timestamp, the records are ordered
-	// alphabetically.
+	// The rest will be ordered by creation date, in descending order, i.e.,
+	// newest first. If two resources are created at the same timestamp, the
+	// records are ordered alphabetically.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ListRefs(ctx context.Context, in *ListRefsRequest, opts ...grpc.CallOption) (GitserverService_ListRefsClient, error)
 	// RevAtTime looks up the OID of the nearest ancestor of `spec` that has a
 	// commit time before the given time. To simplify the logic, it only follows
@@ -303,8 +302,8 @@ type GitserverServiceClient interface {
 	// - No a/ b/ prefixes
 	// - Rename detection
 	//
-	// If either base or head are not found, an error with a RevisionNotFoundPayload
-	// is returned.
+	// If either base or head are not found, an error with a
+	// RevisionNotFoundPayload is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -316,16 +315,18 @@ type GitserverServiceClient interface {
 	ContributorCounts(ctx context.Context, in *ContributorCountsRequest, opts ...grpc.CallOption) (*ContributorCountsResponse, error)
 	// FirstEverCommit returns the first commit ever made to the repository.
 	//
-	// If the given repository is empty, an error with a RevisionNotFoundPayload is
-	// returned.
+	// If the given repository is empty, an error with a RevisionNotFoundPayload
+	// is returned.
 	FirstEverCommit(ctx context.Context, in *FirstEverCommitRequest, opts ...grpc.CallOption) (*FirstEverCommitResponse, error)
-	// BehindAhead returns the behind/ahead commit counts information for the symmetric difference left...right (both Git
-	// revspecs).
+	// BehindAhead returns the behind/ahead commit counts information for the
+	// symmetric difference left...right (both Git revspecs).
 	//
-	// Behind is the number of commits that are solely reachable in "left" but not "right".
-	// Ahead is the number of commits that are solely reachable in "right" but not "left".
+	// Behind is the number of commits that are solely reachable in "left" but not
+	// "right". Ahead is the number of commits that are solely reachable in
+	// "right" but not "left".
 	//
-	//	 For the example, given the graph below, BehindAhead("A", "B") would return {Behind: 3, Ahead: 2}.
+	//	 For the example, given the graph below, BehindAhead("A", "B") would return
+	//	 {Behind: 3, Ahead: 2}.
 	//
 	//		     y---b---b  branch B
 	//		    / \ /
@@ -333,24 +334,29 @@ type GitserverServiceClient interface {
 	//		  /   / \
 	//		 o---x---a---a---a  branch A
 	//
-	// If either left or right are the empty string (""), the HEAD commit is implicitly used.
+	// If either left or right are the empty string (""), the HEAD commit is
+	// implicitly used.
 	//
-	// If one of the two given revspecs does not exist, an error with a RevisionNotFoundPayload is
-	// is returned.
+	// If one of the two given revspecs does not exist, an error with a
+	// RevisionNotFoundPayload is is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	BehindAhead(ctx context.Context, in *BehindAheadRequest, opts ...grpc.CallOption) (*BehindAheadResponse, error)
 	// ChangedFiles returns the list of files that have been added, modified, or
-	// deleted in the entire repository between the two given <tree-ish> identifiers (e.g., commit, branch, tag).
+	// deleted in the entire repository between the two given <tree-ish>
+	// identifiers (e.g., commit, branch, tag).
 	//
-	// - Renamed files are represented as a deletion of the old path and an addition of the new path.
+	// - Renamed files are represented as a deletion of the old path and an
+	// addition of the new path.
 	// - No copy detection is performed.
-	// - The only file status codes returned are 'A' (added), 'M' (modified), or 'D' (deleted).
+	// - The only file status codes returned are 'A' (added), 'M' (modified), or
+	// 'D' (deleted).
 	//
 	// If `base` is omitted, the parent of `head` is used as the base.
 	//
-	// If either the `base` or `head` <tree-ish> id does not exist, an error with a `RevisionNotFoundPayload` is returned.
+	// If either the `base` or `head` <tree-ish> id does not exist, an error with
+	// a `RevisionNotFoundPayload` is returned.
 	ChangedFiles(ctx context.Context, in *ChangedFilesRequest, opts ...grpc.CallOption) (GitserverService_ChangedFilesClient, error)
 }
 
@@ -860,8 +866,8 @@ type GitserverServiceServer interface {
 	// currently not filter parts of the archive, so this would be considered
 	// leaking information.
 	//
-	// If the given treeish does not exist, an error with a RevisionNotFoundPayload
-	// is returned.
+	// If the given treeish does not exist, an error with a
+	// RevisionNotFoundPayload is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -927,18 +933,17 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ResolveRevision(context.Context, *ResolveRevisionRequest) (*ResolveRevisionResponse, error)
-	// ListRefs returns a list of all the refs known to the repository, this includes
-	// heads, tags, and other potential refs, but filters can be applied.
+	// ListRefs returns a list of all the refs known to the repository, this
+	// includes heads, tags, and other potential refs, but filters can be applied.
 	//
 	// The refs are ordered in the following order:
 	// HEAD first, if part of the result set.
-	// The rest will be ordered by creation date, in descending order, i.e., newest
-	// first.
-	// If two resources are created at the same timestamp, the records are ordered
-	// alphabetically.
+	// The rest will be ordered by creation date, in descending order, i.e.,
+	// newest first. If two resources are created at the same timestamp, the
+	// records are ordered alphabetically.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ListRefs(*ListRefsRequest, GitserverService_ListRefsServer) error
 	// RevAtTime looks up the OID of the nearest ancestor of `spec` that has a
 	// commit time before the given time. To simplify the logic, it only follows
@@ -957,8 +962,8 @@ type GitserverServiceServer interface {
 	// - No a/ b/ prefixes
 	// - Rename detection
 	//
-	// If either base or head are not found, an error with a RevisionNotFoundPayload
-	// is returned.
+	// If either base or head are not found, an error with a
+	// RevisionNotFoundPayload is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -970,16 +975,18 @@ type GitserverServiceServer interface {
 	ContributorCounts(context.Context, *ContributorCountsRequest) (*ContributorCountsResponse, error)
 	// FirstEverCommit returns the first commit ever made to the repository.
 	//
-	// If the given repository is empty, an error with a RevisionNotFoundPayload is
-	// returned.
+	// If the given repository is empty, an error with a RevisionNotFoundPayload
+	// is returned.
 	FirstEverCommit(context.Context, *FirstEverCommitRequest) (*FirstEverCommitResponse, error)
-	// BehindAhead returns the behind/ahead commit counts information for the symmetric difference left...right (both Git
-	// revspecs).
+	// BehindAhead returns the behind/ahead commit counts information for the
+	// symmetric difference left...right (both Git revspecs).
 	//
-	// Behind is the number of commits that are solely reachable in "left" but not "right".
-	// Ahead is the number of commits that are solely reachable in "right" but not "left".
+	// Behind is the number of commits that are solely reachable in "left" but not
+	// "right". Ahead is the number of commits that are solely reachable in
+	// "right" but not "left".
 	//
-	//	 For the example, given the graph below, BehindAhead("A", "B") would return {Behind: 3, Ahead: 2}.
+	//	 For the example, given the graph below, BehindAhead("A", "B") would return
+	//	 {Behind: 3, Ahead: 2}.
 	//
 	//		     y---b---b  branch B
 	//		    / \ /
@@ -987,24 +994,29 @@ type GitserverServiceServer interface {
 	//		  /   / \
 	//		 o---x---a---a---a  branch A
 	//
-	// If either left or right are the empty string (""), the HEAD commit is implicitly used.
+	// If either left or right are the empty string (""), the HEAD commit is
+	// implicitly used.
 	//
-	// If one of the two given revspecs does not exist, an error with a RevisionNotFoundPayload is
-	// is returned.
+	// If one of the two given revspecs does not exist, an error with a
+	// RevisionNotFoundPayload is is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	BehindAhead(context.Context, *BehindAheadRequest) (*BehindAheadResponse, error)
 	// ChangedFiles returns the list of files that have been added, modified, or
-	// deleted in the entire repository between the two given <tree-ish> identifiers (e.g., commit, branch, tag).
+	// deleted in the entire repository between the two given <tree-ish>
+	// identifiers (e.g., commit, branch, tag).
 	//
-	// - Renamed files are represented as a deletion of the old path and an addition of the new path.
+	// - Renamed files are represented as a deletion of the old path and an
+	// addition of the new path.
 	// - No copy detection is performed.
-	// - The only file status codes returned are 'A' (added), 'M' (modified), or 'D' (deleted).
+	// - The only file status codes returned are 'A' (added), 'M' (modified), or
+	// 'D' (deleted).
 	//
 	// If `base` is omitted, the parent of `head` is used as the base.
 	//
-	// If either the `base` or `head` <tree-ish> id does not exist, an error with a `RevisionNotFoundPayload` is returned.
+	// If either the `base` or `head` <tree-ish> id does not exist, an error with
+	// a `RevisionNotFoundPayload` is returned.
 	ChangedFiles(*ChangedFilesRequest, GitserverService_ChangedFilesServer) error
 	mustEmbedUnimplementedGitserverServiceServer()
 }

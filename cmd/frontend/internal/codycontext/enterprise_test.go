@@ -2,12 +2,17 @@ package codycontext
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -17,508 +22,54 @@ import (
 )
 
 func TestNewEnterpriseFilter(t *testing.T) {
-	t.Cleanup(func() { conf.Mock(nil) })
+	t.Cleanup(func() {
+		conf.Mock(nil)
+	})
 
-	tests := []struct {
-		name       string
-		ccf        *schema.CodyContextFilters
-		repos      []types.RepoIDName
-		chunks     []FileChunkContext
-		wantRepos  []types.RepoIDName
-		wantChunks []FileChunkContext
-	}{
-		{
-			name: "Cody context filters not set",
-			ccf:  nil,
-			repos: []types.RepoIDName{
-				{Name: "github.com/sourcegraph/about", ID: 1},
-				{Name: "github.com/sourcegraph/annotate", ID: 2},
-				{Name: "github.com/sourcegraph/sourcegraph", ID: 3},
-				{Name: "github.com/docker/compose", ID: 4},
-			},
-			chunks: []FileChunkContext{
-				{
-					RepoName: "github.com/sourcegraph/about",
-					RepoID:   1,
-					Path:     "/file1.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/annotate",
-					RepoID:   2,
-					Path:     "/file2.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/sourcegraph",
-					RepoID:   3,
-					Path:     "/file3.go",
-				},
-				{
-					RepoName: "github.com/docker/compose",
-					RepoID:   4,
-					Path:     "/file4.go",
-				},
-			},
-			wantRepos: []types.RepoIDName{
-				{Name: "github.com/sourcegraph/about", ID: 1},
-				{Name: "github.com/sourcegraph/annotate", ID: 2},
-				{Name: "github.com/sourcegraph/sourcegraph", ID: 3},
-				{Name: "github.com/docker/compose", ID: 4},
-			},
-			wantChunks: []FileChunkContext{
-				{
-					RepoName: "github.com/sourcegraph/about",
-					RepoID:   1,
-					Path:     "/file1.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/annotate",
-					RepoID:   2,
-					Path:     "/file2.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/sourcegraph",
-					RepoID:   3,
-					Path:     "/file3.go",
-				},
-				{
-					RepoName: "github.com/docker/compose",
-					RepoID:   4,
-					Path:     "/file4.go",
-				},
-			},
-		},
-		{
-			name: "include and exclude rules are not defined",
-			ccf:  &schema.CodyContextFilters{},
-			repos: []types.RepoIDName{
-				{Name: "github.com/sourcegraph/about", ID: 1},
-				{Name: "github.com/sourcegraph/annotate", ID: 2},
-				{Name: "github.com/sourcegraph/sourcegraph", ID: 3},
-				{Name: "github.com/docker/compose", ID: 4},
-			},
-			chunks: []FileChunkContext{
-				{
-					RepoName: "github.com/sourcegraph/about",
-					RepoID:   1,
-					Path:     "/file1.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/annotate",
-					RepoID:   2,
-					Path:     "/file2.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/sourcegraph",
-					RepoID:   3,
-					Path:     "/file3.go",
-				},
-				{
-					RepoName: "github.com/docker/compose",
-					RepoID:   4,
-					Path:     "/file4.go",
-				},
-			},
-			wantRepos: []types.RepoIDName{
-				{Name: "github.com/sourcegraph/about", ID: 1},
-				{Name: "github.com/sourcegraph/annotate", ID: 2},
-				{Name: "github.com/sourcegraph/sourcegraph", ID: 3},
-				{Name: "github.com/docker/compose", ID: 4},
-			},
-			wantChunks: []FileChunkContext{
-				{
-					RepoName: "github.com/sourcegraph/about",
-					RepoID:   1,
-					Path:     "/file1.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/annotate",
-					RepoID:   2,
-					Path:     "/file2.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/sourcegraph",
-					RepoID:   3,
-					Path:     "/file3.go",
-				},
-				{
-					RepoName: "github.com/docker/compose",
-					RepoID:   4,
-					Path:     "/file4.go",
-				},
-			},
-		},
-		{
-			name: "include and exclude rules empty",
-			ccf: &schema.CodyContextFilters{
-				Include: []*schema.CodyContextFilterItem{},
-				Exclude: []*schema.CodyContextFilterItem{},
-			},
-			repos: []types.RepoIDName{
-				{Name: "github.com/sourcegraph/about", ID: 1},
-				{Name: "github.com/sourcegraph/annotate", ID: 2},
-				{Name: "github.com/sourcegraph/sourcegraph", ID: 3},
-				{Name: "github.com/docker/compose", ID: 4},
-			},
-			chunks: []FileChunkContext{
-				{
-					RepoName: "github.com/sourcegraph/about",
-					RepoID:   1,
-					Path:     "/file1.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/annotate",
-					RepoID:   2,
-					Path:     "/file2.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/sourcegraph",
-					RepoID:   3,
-					Path:     "/file3.go",
-				},
-				{
-					RepoName: "github.com/docker/compose",
-					RepoID:   4,
-					Path:     "/file4.go",
-				},
-			},
-			wantRepos: []types.RepoIDName{
-				{Name: "github.com/sourcegraph/about", ID: 1},
-				{Name: "github.com/sourcegraph/annotate", ID: 2},
-				{Name: "github.com/sourcegraph/sourcegraph", ID: 3},
-				{Name: "github.com/docker/compose", ID: 4},
-			},
-			wantChunks: []FileChunkContext{
-				{
-					RepoName: "github.com/sourcegraph/about",
-					RepoID:   1,
-					Path:     "/file1.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/annotate",
-					RepoID:   2,
-					Path:     "/file2.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/sourcegraph",
-					RepoID:   3,
-					Path:     "/file3.go",
-				},
-				{
-					RepoName: "github.com/docker/compose",
-					RepoID:   4,
-					Path:     "/file4.go",
-				},
-			},
-		},
-		{
-			name: "only include rules defined",
-			ccf: &schema.CodyContextFilters{
-				Include: []*schema.CodyContextFilterItem{
-					{RepoNamePattern: "^github\\.com\\/sourcegraph\\/.+"},
-				},
-			},
-			repos: []types.RepoIDName{
-				{Name: "github.com/sourcegraph/about", ID: 1},
-				{Name: "github.com/sourcegraph/annotate", ID: 2},
-				{Name: "github.com/sourcegraph/sourcegraph", ID: 3},
-				{Name: "github.com/docker/compose", ID: 4},
-			},
-			chunks: []FileChunkContext{
-				{
-					RepoName: "github.com/sourcegraph/about",
-					RepoID:   1,
-					Path:     "/file1.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/annotate",
-					RepoID:   2,
-					Path:     "/file2.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/sourcegraph",
-					RepoID:   3,
-					Path:     "/file3.go",
-				},
-				{
-					RepoName: "github.com/docker/compose",
-					RepoID:   4,
-					Path:     "/file4.go",
-				},
-			},
-			wantRepos: []types.RepoIDName{
-				{Name: "github.com/sourcegraph/about", ID: 1},
-				{Name: "github.com/sourcegraph/annotate", ID: 2},
-				{Name: "github.com/sourcegraph/sourcegraph", ID: 3},
-			},
-			wantChunks: []FileChunkContext{
-				{
-					RepoName: "github.com/sourcegraph/about",
-					RepoID:   1,
-					Path:     "/file1.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/annotate",
-					RepoID:   2,
-					Path:     "/file2.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/sourcegraph",
-					RepoID:   3,
-					Path:     "/file3.go",
-				},
-			},
-		},
-		{
-			name: "only exclude rules defined",
-			ccf: &schema.CodyContextFilters{
-				Exclude: []*schema.CodyContextFilterItem{
-					{RepoNamePattern: "^github\\.com\\/sourcegraph\\/.+"},
-				},
-			},
-			repos: []types.RepoIDName{
-				{Name: "github.com/sourcegraph/about", ID: 1},
-				{Name: "github.com/sourcegraph/annotate", ID: 2},
-				{Name: "github.com/sourcegraph/sourcegraph", ID: 3},
-				{Name: "github.com/docker/compose", ID: 4},
-			},
-			chunks: []FileChunkContext{
-				{
-					RepoName: "github.com/sourcegraph/about",
-					RepoID:   1,
-					Path:     "/file1.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/annotate",
-					RepoID:   2,
-					Path:     "/file2.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/sourcegraph",
-					RepoID:   3,
-					Path:     "/file3.go",
-				},
-				{
-					RepoName: "github.com/docker/compose",
-					RepoID:   4,
-					Path:     "/file4.go",
-				},
-			},
-			wantRepos: []types.RepoIDName{
-				{Name: "github.com/docker/compose", ID: 4},
-			},
-			wantChunks: []FileChunkContext{
-				{
-					RepoName: "github.com/docker/compose",
-					RepoID:   4,
-					Path:     "/file4.go",
-				},
-			},
-		},
-		{
-			name: "include and exclude rules defined",
-			ccf: &schema.CodyContextFilters{
-				Include: []*schema.CodyContextFilterItem{
-					{RepoNamePattern: "^github\\.com\\/sourcegraph\\/.+"},
-				},
-				Exclude: []*schema.CodyContextFilterItem{
-					{RepoNamePattern: ".*cody.*"},
-				},
-			},
-			repos: []types.RepoIDName{
-				{Name: "github.com/sourcegraph/about", ID: 1},
-				{Name: "github.com/sourcegraph/annotate", ID: 2},
-				{Name: "github.com/sourcegraph/sourcegraph", ID: 3},
-				{Name: "github.com/docker/compose", ID: 4},
-				{Name: "github.com/sourcegraph/cody", ID: 5},
-			},
-			chunks: []FileChunkContext{
-				{
-					RepoName: "github.com/sourcegraph/about",
-					RepoID:   1,
-					Path:     "/file1.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/annotate",
-					RepoID:   2,
-					Path:     "/file2.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/sourcegraph",
-					RepoID:   3,
-					Path:     "/file3.go",
-				},
-				{
-					RepoName: "github.com/docker/compose",
-					RepoID:   4,
-					Path:     "/file4.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/cody",
-					RepoID:   5,
-					Path:     "/index.ts",
-				},
-			},
-			wantRepos: []types.RepoIDName{
-				{Name: "github.com/sourcegraph/about", ID: 1},
-				{Name: "github.com/sourcegraph/annotate", ID: 2},
-				{Name: "github.com/sourcegraph/sourcegraph", ID: 3},
-			},
-			wantChunks: []FileChunkContext{
-				{
-					RepoName: "github.com/sourcegraph/about",
-					RepoID:   1,
-					Path:     "/file1.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/annotate",
-					RepoID:   2,
-					Path:     "/file2.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/sourcegraph",
-					RepoID:   3,
-					Path:     "/file3.go",
-				},
-			},
-		},
-		{
-			name: "multiple include and exclude rules defined",
-			ccf: &schema.CodyContextFilters{
-				Include: []*schema.CodyContextFilterItem{
-					{RepoNamePattern: "^github\\.com\\/sourcegraph\\/.+"},
-					{RepoNamePattern: "^github\\.com\\/docker\\/compose$"},
-					{RepoNamePattern: "^github\\.com\\/.+\\/react"},
-				},
-				Exclude: []*schema.CodyContextFilterItem{
-					{RepoNamePattern: ".*cody.*"},
-					{RepoNamePattern: ".+\\/docker\\/.+"},
-				},
-			},
-			repos: []types.RepoIDName{
-				{Name: "github.com/sourcegraph/about", ID: 1},
-				{Name: "github.com/sourcegraph/annotate", ID: 2},
-				{Name: "github.com/sourcegraph/sourcegraph", ID: 3},
-				{Name: "github.com/docker/compose", ID: 4},
-				{Name: "github.com/sourcegraph/cody", ID: 5},
-				{Name: "github.com/facebook/react", ID: 6},
-			},
-			chunks: []FileChunkContext{
-				{
-					RepoName: "github.com/sourcegraph/about",
-					RepoID:   1,
-					Path:     "/file1.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/annotate",
-					RepoID:   2,
-					Path:     "/file2.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/sourcegraph",
-					RepoID:   3,
-					Path:     "/file3.go",
-				},
-				{
-					RepoName: "github.com/docker/compose",
-					RepoID:   4,
-					Path:     "/file4.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/cody",
-					RepoID:   5,
-					Path:     "/index.ts",
-				},
-				{
-					RepoName: "github.com/facebook/react",
-					RepoID:   6,
-					Path:     "/hooks.ts",
-				},
-			},
-			wantRepos: []types.RepoIDName{
-				{Name: "github.com/sourcegraph/about", ID: 1},
-				{Name: "github.com/sourcegraph/annotate", ID: 2},
-				{Name: "github.com/sourcegraph/sourcegraph", ID: 3},
-				{Name: "github.com/facebook/react", ID: 6},
-			},
-			wantChunks: []FileChunkContext{
-				{
-					RepoName: "github.com/sourcegraph/about",
-					RepoID:   1,
-					Path:     "/file1.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/annotate",
-					RepoID:   2,
-					Path:     "/file2.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/sourcegraph",
-					RepoID:   3,
-					Path:     "/file3.go",
-				},
-				{
-					RepoName: "github.com/facebook/react",
-					RepoID:   6,
-					Path:     "/hooks.ts",
-				},
-			},
-		},
-		{
-			name: "exclude everything",
-			ccf: &schema.CodyContextFilters{
-				Include: []*schema.CodyContextFilterItem{
-					{RepoNamePattern: "^github\\.com\\/sourcegraph\\/.+"},
-					{RepoNamePattern: "^github\\.com\\/docker\\/compose$"},
-					{RepoNamePattern: "^github\\.com\\/.+\\/react"},
-				},
-				Exclude: []*schema.CodyContextFilterItem{
-					{RepoNamePattern: ".*cody.*"},
-					{RepoNamePattern: ".*"},
-				},
-			},
-			repos: []types.RepoIDName{
-				{Name: "github.com/sourcegraph/about", ID: 1},
-				{Name: "github.com/sourcegraph/annotate", ID: 2},
-				{Name: "github.com/sourcegraph/sourcegraph", ID: 3},
-				{Name: "github.com/docker/compose", ID: 4},
-				{Name: "github.com/sourcegraph/cody", ID: 5},
-				{Name: "github.com/facebook/react", ID: 6},
-			},
-			chunks: []FileChunkContext{
-				{
-					RepoName: "github.com/sourcegraph/about",
-					RepoID:   1,
-					Path:     "/file1.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/annotate",
-					RepoID:   2,
-					Path:     "/file2.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/sourcegraph",
-					RepoID:   3,
-					Path:     "/file3.go",
-				},
-				{
-					RepoName: "github.com/docker/compose",
-					RepoID:   4,
-					Path:     "/file4.go",
-				},
-				{
-					RepoName: "github.com/sourcegraph/cody",
-					RepoID:   5,
-					Path:     "/index.ts",
-				},
-				{
-					RepoName: "github.com/facebook/react",
-					RepoID:   6,
-					Path:     "/hooks.ts",
-				},
-			},
-			wantRepos:  []types.RepoIDName{},
-			wantChunks: []FileChunkContext{},
-		},
+	content, err := os.ReadFile(filepath.Join("testdata", "enterprise_filter_test_data.json"))
+	require.NoError(t, err)
+
+	type repo struct {
+		Name api.RepoName
+		Id   api.RepoID `json:"id"`
+	}
+	type fileChunk struct {
+		Repo repo
+		Path string
+	}
+	type testCase struct {
+		Name               string                     `json:"name"`
+		Description        string                     `json:"description"`
+		Ccf                *schema.CodyContextFilters `json:"cody.contextFilters"`
+		Repos              []repo                     `json:"repos"`
+		IncludedRepos      []repo                     `json:"includedRepos"`
+		FileChunks         []fileChunk                `json:"fileChunks"`
+		IncludedFileChunks []fileChunk                `json:"includedFileChunks"`
+	}
+	var data struct {
+		TestCases []testCase `json:"testCases"`
+	}
+
+	err = json.Unmarshal(content, &data)
+	require.NoError(t, err)
+
+	toRepoIDName := func(r repo) types.RepoIDName { return types.RepoIDName{ID: r.Id, Name: r.Name} }
+
+	normalizeRepos := func(repos []repo) []types.RepoIDName {
+		result := make([]types.RepoIDName, 0, len(repos))
+		for _, r := range repos {
+			result = append(result, toRepoIDName(r))
+		}
+		return result
+	}
+
+	normalizeFileChunks := func(fcc []fileChunk) []FileChunkContext {
+		result := make([]FileChunkContext, 0, len(fcc))
+		for _, fc := range fcc {
+			r := toRepoIDName(fc.Repo)
+			result = append(result, FileChunkContext{RepoName: r.Name, RepoID: r.ID, Path: fc.Path})
+		}
+		return result
 	}
 
 	newFF := func(v bool) *featureflag.FeatureFlag {
@@ -533,19 +84,20 @@ func TestNewEnterpriseFilter(t *testing.T) {
 	}
 	featureFlagValues := []*featureflag.FeatureFlag{newFF(true), newFF(false), nil}
 
-	for _, tt := range tests {
+	for _, tt := range data.TestCases {
 		for _, ff := range featureFlagValues {
-			name := tt.name
+			name := tt.Name
 			if ff != nil {
 				name = name + fmt.Sprintf(" (%q feature flag value: %t)", ff.Name, ff.Bool.Value)
 			}
 			t.Run(name, func(t *testing.T) {
 				conf.Mock(&conf.Unified{
 					SiteConfiguration: schema.SiteConfiguration{
-						CodyContextFilters: tt.ccf,
+						CodyContextFilters: tt.Ccf,
 					},
 				})
 
+				// TODO: remove feature flag mocking after `CodyContextFilters` support is added to the IDE clients.
 				featureFlags := dbmocks.NewMockFeatureFlagStore()
 				if ff != nil {
 					featureFlags.GetFeatureFlagFunc.SetDefaultReturn(ff, nil)
@@ -554,21 +106,21 @@ func TestNewEnterpriseFilter(t *testing.T) {
 				db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 				f := newEnterpriseFilter(logtest.Scoped(t), db)
-				allowedRepos, matcher, _ := f.getMatcher(context.Background(), tt.repos)
-				filtered := make([]FileChunkContext, 0, len(tt.chunks))
-				for _, chunk := range tt.chunks {
-					if matcher(chunk.RepoID, chunk.Path) {
-						filtered = append(filtered, chunk)
+				includedRepos, matcher, _ := f.getMatcher(context.Background(), normalizeRepos(tt.Repos))
+				includedFileChunks := make([]fileChunk, 0, len(tt.FileChunks))
+				for _, chunk := range tt.FileChunks {
+					if matcher(chunk.Repo.Id, chunk.Path) {
+						includedFileChunks = append(includedFileChunks, chunk)
 					}
 				}
 
 				if ff != nil && ff.Bool.Value {
-					require.Equal(t, tt.wantRepos, allowedRepos)
-					require.Equal(t, tt.wantChunks, filtered)
+					require.Equal(t, normalizeRepos(tt.IncludedRepos), includedRepos)
+					require.Equal(t, normalizeFileChunks(tt.IncludedFileChunks), normalizeFileChunks(includedFileChunks))
 				} else {
 					// If feature flag is not set or is set to false, the Cody context filters are disabled.
-					require.Equal(t, tt.repos, tt.repos)
-					require.Equal(t, tt.wantChunks, tt.wantChunks)
+					require.Equal(t, normalizeRepos(tt.Repos), includedRepos)
+					require.Equal(t, normalizeFileChunks(tt.FileChunks), normalizeFileChunks(includedFileChunks))
 				}
 			})
 		}

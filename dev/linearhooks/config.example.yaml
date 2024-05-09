@@ -13,3 +13,8 @@ spec:
           # teamId is the identifier of the destination team. Issues that match the rule will be moved to this team.
           # Either identifier (i.e. unique team prefix) or UUID is accepted
           teamId: BAR
+          # modifier is an optional field that allows for additional configuration when moving the issue.
+          # Any errors encountered while applying the modifier will be logged, but the issue will still be moved regardless.
+          modifier:
+            # (optional) projectName is the name of the project that the issue will be moved to in the destination team
+            projectName: 'Test Project 1'

@@ -5,7 +5,7 @@ import { from } from 'rxjs'
 import type { LineOrPositionOrRange } from '$lib/common'
 import { getGraphQLClient, infinityQuery, mapOrThrow } from '$lib/graphql'
 import { GitRefType } from '$lib/graphql-types'
-import { fetchSidebarFileTree } from '$lib/repo/api/tree'
+import { ROOT_PATH, fetchSidebarFileTree } from '$lib/repo/api/tree'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 
@@ -24,7 +24,7 @@ const REFERENCES_PER_PAGE = 20
 export const load: LayoutLoad = async ({ parent, params }) => {
     const client = getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
-    const parentPath = params.path ? dirname(params.path) : ''
+    const parentPath = params.path ? dirname(params.path) : ROOT_PATH
     const resolvedRevision = resolveRevision(parent, revision)
 
     // Prefetch the sidebar file tree for the parent path.
