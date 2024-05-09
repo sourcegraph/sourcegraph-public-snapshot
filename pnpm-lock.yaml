@@ -543,8 +543,8 @@ importers:
         specifier: ^5.15.0
         version: 5.15.0
       '@sourcegraph/cody-context-filters-test-dataset':
-        specifier: ^0.0.1
-        version: 0.0.1
+        specifier: ^1.0.0
+        version: 1.0.0
       '@sourcegraph/eslint-config':
         specifier: 0.37.1
         version: 0.37.1(@testing-library/dom@8.13.0)(eslint@8.57.0)(typescript@5.4.2)
@@ -8429,8 +8429,8 @@ packages:
       '@sourcegraph/codemod-toolkit-ts': 1.0.1
     dev: true
 
-  /@sourcegraph/cody-context-filters-test-dataset@0.0.1:
-    resolution: {integrity: sha512-Z8ozYA1VdXJYXglgann0elVT3B5DgMtlwwZfUJiKr3+xG7HcM1obxxjNvj9eizGi+TSpukvwiPeFWr0BLzMPfg==}
+  /@sourcegraph/cody-context-filters-test-dataset@1.0.0:
+    resolution: {integrity: sha512-Uf7wMo5Fu3+g03gl2jvU2qHMaDp0p9RK9U2ucmy6VxWaavxALCC8iy47JL5GdgR5qG3ekEd5mAQV0dIIfoKELA==}
     dev: true
 
   /@sourcegraph/eslint-config@0.37.1(@testing-library/dom@8.13.0)(eslint@8.57.0)(typescript@5.4.2):
