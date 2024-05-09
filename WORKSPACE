@@ -468,7 +468,7 @@ rules_buf_dependencies()
 
 rules_buf_toolchains(
     sha256 = "05dfb45d2330559d258e1230f5a25e154f0a328afda2a434348b5ba4c124ece7",
-    version = "v1.28.1",
+    version = "v1.33.0",
 )
 
 load("@rules_buf//gazelle/buf:repositories.bzl", "gazelle_buf_dependencies")
