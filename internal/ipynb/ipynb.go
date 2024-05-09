@@ -11,9 +11,9 @@ import (
 	jupyter "github.com/bevzzz/nb/extension/extra/goldmark-jupyter"
 	"github.com/robert-nix/ansihtml"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/internal/htmlutil"
 	"github.com/sourcegraph/sourcegraph/internal/markdown"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Render renders Jupyter Notebook file (.ipynb) to sanitized HTML that is safe to render anywhere.
