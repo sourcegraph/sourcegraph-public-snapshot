@@ -55,12 +55,13 @@ func calcLeaseEnd(currentLeaseTime time.Time, extension, reduction time.Duration
 
 	if extension > 0 {
 		leaseEndTime = currentLeaseTime.Add(extension)
-	} else {
+		return leaseEndTime, nil
+	} else if extension < 0 {
 		return leaseEndTime, errors.New("lease extension value should be a positive value")
 	}
 	if reduction > 0 {
 		leaseEndTime = currentLeaseTime.Add(-reduction)
-	} else {
+	} else if reduction < 0 {
 		return leaseEndTime, errors.New("lease reduction value should be a positive value")
 	}
 

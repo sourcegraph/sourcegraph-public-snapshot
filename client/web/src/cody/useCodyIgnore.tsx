@@ -195,7 +195,7 @@ const CODY_CONTEXT_FILTERS_QUERY = gql`
 const EnterpriseProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
     const { data, error, loading } = useQuery<ContextFiltersResult, ContextFiltersVariables>(
         CODY_CONTEXT_FILTERS_QUERY,
-        {}
+        { fetchPolicy: 'cache-and-network' }
     )
     const [fns, setFns] = useState<CodyIgnoreFns>({ isRepoIgnored: alwaysTrue, isFileIgnored: alwaysTrue })
 

@@ -11,34 +11,12 @@ requirements:
   - name: "jq"
     cmd: "jq --help"
   - name: "Buidkite access token"
+    # `write_builds` permission is all that's needed here
+    # You also need to ensure you add access to the Sourcegraph organization on Buildkite.
     env: BUILDKITE_ACCESS_TOKEN
     only: # We only need this to create CI builds.
       - internal.create
       - promoteToPublic.create
-    # `write_builds` permission is all that's needed here
-    # You also need to ensure you add access to the Sourcegraph organization on Buildkite.
-  - name: "GitHub CLI"
-    cmd: "which gh"
-    only:
-      - promoteToPublic.finalize
-  - name: "GitHub CLI auth status"
-    cmd: "gh auth status"
-    only:
-      - promoteToPublic.finalize
-
-   # announce-engineering slack webhook url:
-   # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=pldpna5vivapxe4phewnqd42ji&h=team-sourcegraph.1password.com
-  - name: 'Slack Webhook URL'
-    env: SLACK_WEBHOOK_URL
-    only:
-      - promoteToPublic.finalize
-
-  # team-cloud-ops slack webhook url:
-  # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=xwwpaakz5iajowr2fruueoevba&h=team-sourcegraph.1password.com
-  - name: 'Slack Webhook URL Cloud Ops'
-    env: SLACK_WEBHOOK_URL_CLOUD_OPS
-    only:
-      - promoteToPublic.finalize
 
 internal:
   create:
@@ -68,9 +46,6 @@ internal:
             else
               echo "Build created, see:"
               echo $body | jq .web_url
-              cat << EOF | buildkite-agent annotate --style info
-              This is a Release build. Learn more about the process in the [reference documentation](https://www.notion.so/sourcegraph/Releases-3429f31510f2451fbc38a7f9ccaa0492)
-              EOF
             fi
   finalize:
     steps:
@@ -176,25 +151,25 @@ test:
 promoteToPublic:
   create:
     steps:
-      - name: 'validate promotion criteria'
-        cmd: |
-          echo "validating promotion criteria"
-          body=$(wget --content-on-error -O- --header="Content-Type: application/json" "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}")
-          exit_code=$?
-
-          if [ $exit_code != 0 ]; then
-            echo "❌ Failed to fetch release on release registry, got:"
-            echo "--- raw body ---"
-            echo $body
-            echo "--- raw body ---"
-            exit $exit_code
-          fi
-
-          is_development=$(echo "$body" | jq -r '.is_development')
-          if [ "$is_development" = "true" ]; then
-            echo "cannot promote a development release"
-            exit 1
-          fi
+      #      - name: 'validate promotion criteria'
+      #        cmd: |
+      #          echo "validating promotion criteria"
+      #          body=$(wget --content-on-error -O- --header="Content-Type: application/json" "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}")
+      #          exit_code=$?
+      #
+      #          if [ $exit_code != 0 ]; then
+      #            echo "❌ Failed to fetch release on release registry, got:"
+      #            echo "--- raw body ---"
+      #            echo $body
+      #            echo "--- raw body ---"
+      #            exit $exit_code
+      #          fi
+      #
+      #          is_development=$(echo "$body" | jq -r '.is_development')
+      #          if [ "$is_development" = "true" ]; then
+      #            echo "cannot promote a development release"
+      #            exit 1
+      #          fi
       - name: 'buildkite'
         cmd: |
           # We set DISABLE_ASPECT_WORKFLOWS to true, because the promotion is purely about retagging images
@@ -207,7 +182,8 @@ promoteToPublic:
             "env": {
               "DISABLE_ASPECT_WORKFLOWS": "true",
               "RELEASE_PUBLIC": "true",
-              "VERSION": "{{tag}}"
+              "VERSION": "{{tag}}",
+              "IS_DEVELOPMENT_RELEASE": "{{is_development}}"
             }
           }' "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds")
           exit_code=$?
@@ -221,28 +197,25 @@ promoteToPublic:
           else
             echo "Build created, see:"
             echo $body | jq .web_url
-            cat << EOF | buildkite-agent annotate --style info
-            This is a Release build. Learn more about the process in the [reference documentation](https://www.notion.so/sourcegraph/Releases-3429f31510f2451fbc38a7f9ccaa0492)
-            EOF
           fi
   finalize:
     steps:
       - name: 'Promote on release registry'
         cmd: |
           echo "Promoting sourcegraph/sourcegraph {{version}} release on release registry"
-            body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '' "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}/promote")
-            exit_code=$?
+          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '' "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}/promote")
+          exit_code=$?
 
-            if [ $exit_code != 0 ]; then
-              echo "❌ Failed to promote release on release registry, got:"
-              echo "--- raw body ---"
-              echo $body
-              echo "--- raw body ---"
-              exit $exit_code
-            else
-              echo "Release promoted, see:"
-              echo $body
-            fi
+          if [ $exit_code != 0 ]; then
+            echo "❌ Failed to promote release on release registry, got:"
+            echo "--- raw body ---"
+            echo $body
+            echo "--- raw body ---"
+            exit $exit_code
+          else
+            echo "Release promoted, see:"
+            echo $body
+          fi
       - name: 'git:tag'
         cmd: |
           set -eu
@@ -286,7 +259,7 @@ promoteToPublic:
             - [Release post](https://sourcegraph.com/blog/release/${month_name}-${current_year})
           EndOfText
 
-          gh release create ${version} --latest --verify-tag -t "Sourcegraph ${tag}" --generate-notes --notes "${releasepost}"
+          bazel run //dev/tools:gh -- release create ${version} --latest --verify-tag -t "Sourcegraph ${tag}" --generate-notes --notes "${releasepost}"
 
       # tag is usually in the format `5.3.2`
       # while version is usually the tag prepended with a v, `v5.3.2`
@@ -295,7 +268,7 @@ promoteToPublic:
           echo "Posting slack notification for release"
           tag="{{tag}}"
           changelog_version="${tag//./}"
-          webhooks=("$SLACK_WEBHOOK_URL" "$SLACK_WEBHOOK_URL_CLOUD_OPS")
+          webhooks=("$ANNOUNCE_ENG_SLACK_WEBHOOK_URL" "$CLOUD_OPS_SLACK_WEBHOOK_URL")
           for webhook in "${webhooks[@]}"
           do
             body=$(wget --content-on-error -O- --header="Content-Type: application/json" --post-data '{

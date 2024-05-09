@@ -1,10 +1,11 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { mdiDelete, mdiPencil } from '@mdi/js'
 
 import { logger } from '@sourcegraph/common'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, ErrorAlert, Form, H3, Icon, Input, Label, Link, Modal, Text } from '@sourcegraph/wildcard'
 
 import { TEAM_DISPLAY_NAME_MAX_LENGTH } from '..'
@@ -17,7 +18,7 @@ import { EditParentTeamModal } from './EditParentTeamModal'
 import { RemoveParentTeamModal } from './RemoveParentTeamModal'
 import { TeamHeader } from './TeamHeader'
 
-export interface TeamProfilePageProps {
+export interface TeamProfilePageProps extends TelemetryV2Props {
     /** The team that is the subject of the page. */
     team: TeamAreaTeamFields
 
@@ -25,10 +26,16 @@ export interface TeamProfilePageProps {
     onTeamUpdate: () => void
 }
 
-export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({ team, onTeamUpdate }) => {
+export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
+    team,
+    onTeamUpdate,
+    telemetryRecorder,
+}) => {
     const [openModal, setOpenModal] = useState<
         'edit-display-name' | 'edit-parent-team' | 'remove-parent-team' | undefined
     >()
+
+    useEffect(() => telemetryRecorder.recordEvent('team.profile', 'view'), [telemetryRecorder])
 
     const onEditDisplayName = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
@@ -116,6 +123,7 @@ export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
 
             {openModal === 'edit-parent-team' && (
                 <EditParentTeamModal
+                    telemetryRecorder={telemetryRecorder}
                     onCancel={closeModal}
                     afterEdit={afterAction}
                     teamID={team.id}
@@ -126,6 +134,7 @@ export const TeamProfilePage: React.FunctionComponent<TeamProfilePageProps> = ({
 
             {openModal === 'remove-parent-team' && (
                 <RemoveParentTeamModal
+                    telemetryRecorder={telemetryRecorder}
                     onCancel={closeModal}
                     afterEdit={afterAction}
                     teamID={team.id}
