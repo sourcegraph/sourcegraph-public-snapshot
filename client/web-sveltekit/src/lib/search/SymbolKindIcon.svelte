@@ -113,8 +113,9 @@
 
         // TODO(@taiyab): incorporate these colors into the semantic colors
 
+        --icon-color: var(--text-muted);
+
         :global(.theme-light) & {
-            --icon-color: var(--text-muted);
             &.module {
                 --icon-color: var(--oc-teal-8);
             }
@@ -130,7 +131,6 @@
         }
 
         :global(.theme-dark) & {
-            --icon-color: var(--text-muted);
             &.module {
                 --icon-color: var(--oc-teal-6);
             }
