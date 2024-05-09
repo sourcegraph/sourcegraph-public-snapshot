@@ -15,7 +15,7 @@ var DeleteEphemeralCommand = cli.Command{
 	Name:        "delete",
 	Usage:       "sg could delete <name/slug>",
 	Description: "delete ephemeral cloud instance identified either by the current branch or provided as a cli arg",
-	Action:      wipAction(deleteCloudEphemeral),
+	Action:      deleteCloudEphemeral,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "name",

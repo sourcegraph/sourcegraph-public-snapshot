@@ -18,7 +18,7 @@ var LeaseEphemeralCommand = cli.Command{
 	Usage:       "extend or reduce the lease of an ephemeral instance",
 	UsageText:   "sg cloud lease [command options]",
 	Description: "update the lease time of an ephemeral instance",
-	Action:      wipAction(leaseCloudEphemeral),
+	Action:      leaseCloudEphemeral,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "name",
