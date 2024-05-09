@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	DefaultFile = "sg.secrets.json"
+	DefaultFile     = "sg.secrets.json"
+	LocalDevProject = "sourcegraph-local-dev"
 )
 
 var (

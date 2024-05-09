@@ -1,0 +1,34 @@
+query FuzzyFinderQuery($query: String!) {
+    search(query: $query) {
+        results {
+            results {
+                ...FuzzyFinderFileMatch
+                ...FuzzyFinderRepository
+            }
+        }
+    }
+}
+
+fragment FuzzyFinderFileMatch on FileMatch {
+    file {
+        path
+        url
+        ...FileIcon_GitBlob
+    }
+    symbols {
+        name
+        kind
+        location {
+            url
+        }
+    }
+    repository {
+        name
+        stars
+    }
+}
+
+fragment FuzzyFinderRepository on Repository {
+    name
+    stars
+}

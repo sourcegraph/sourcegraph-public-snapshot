@@ -2,11 +2,6 @@
 # Generated via the `.buildkite/hooks/post-checkout` hook.
 try-import %workspace%/.aspect/bazelrc/ci.generated.bazelrc
 
-# Use repo caching for building and testing.
-# Article: https://buildkite.com/blog/how-bazel-built-its-ci-system-on-top-of-buildkite
-# Docs: https://bazel.build/reference/command-line-reference#flag--repository_cache
-common --repository_cache=/home/buildkite/repocache-sourcegraph
-
 # We need /usr/local/bin
 # TODO(DevX) we should be narrower here.
 common --test_env=PATH

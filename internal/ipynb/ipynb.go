@@ -2,7 +2,6 @@ package ipynb
 
 import (
 	"bytes"
-	"fmt"
 	"sync"
 
 	"github.com/bevzzz/nb"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/htmlutil"
 	"github.com/sourcegraph/sourcegraph/internal/markdown"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Render renders Jupyter Notebook file (.ipynb) to sanitized HTML that is safe to render anywhere.
@@ -21,7 +21,7 @@ func Render(content string) (string, error) {
 	var buf bytes.Buffer
 	c := notebook()
 	if err := c.Convert(&buf, []byte(content)); err != nil {
-		return "", fmt.Errorf("ipynb.Render: %w", err)
+		return "", errors.Newf("ipynb.Render: %w", err)
 	}
 
 	return htmlutil.SanitizeReader(&buf).String(), nil

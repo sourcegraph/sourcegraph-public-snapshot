@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -106,16 +107,36 @@ func (h *Handler) HandleIssueMover(w http.ResponseWriter, r *http.Request) {
 
 func moveIssue(logger log.Logger, client graphql.Client, rules []RuleSpec, issue linearschema.IssueData) error {
 	for _, r := range rules {
-		if newTeamId := r.moveToNewTeam(issue); newTeamId != nil {
-			logger.Info("moving issue",
-				log.String("from.id", issue.Team.Key),
-				log.String("to", r.Dst.TeamID),
+		if newTeamId := r.identifyTeamToMoveTo(issue); newTeamId != nil {
+			logger := logger.With(
+				log.String("issue.id", issue.Identifier),
+				log.String("from.key", issue.Team.Key),
+				log.String("to.id", r.Dst.TeamID),
 			)
+			logger.Info("moving issue")
+
 			teamUUID, err := getTeamUUID(context.Background(), client, r.Dst.TeamID)
 			if err != nil {
 				return errors.Wrapf(err, "get dst team %q UUID", r.Dst.TeamID)
 			}
-			if err := moveIssueToTeam(context.Background(), client, issue.Identifier, teamUUID); err != nil {
+
+			input := moveIssueToTeamInput{
+				issueId:  issue.Identifier,
+				teamUUID: teamUUID,
+			}
+			if r.Dst.Modifier != nil && r.Dst.Modifier.ProjectName != "" {
+				logger := logger.With(log.String("to.projectName", r.Dst.Modifier.ProjectName))
+				projectUUID, err := getProjectUUID(context.Background(), client, teamUUID, r.Dst.Modifier.ProjectName)
+				if err != nil {
+					logger.Error("unable to resolve project UUID, issue is moved without setting the desired project. you should inspect the error and consider updating the rule.",
+						log.Error(err),
+						log.String("to.uuid", teamUUID),
+					)
+				} else {
+					input.projectId = projectUUID
+				}
+			}
+			if err := moveIssueToTeam(context.Background(), client, input); err != nil {
 				return errors.Wrapf(err, "move issue %q to team %q", issue.Identifier, teamUUID)
 			}
 			return nil
@@ -126,7 +147,16 @@ func moveIssue(logger log.Logger, client graphql.Client, rules []RuleSpec, issue
 
 var (
 	// teamKeyUUIDCache caches team identifier/key -> UUID mappings to avoid
+	// re-requesting the same data for every label change.
+	// The cache has a TTL for eventually correct behavior in case a team is
+	// deleted and re-created.
 	teamKeyUUIDCache = expirable.NewLRU[string, string](0, nil, time.Minute*5)
+
+	// projectNameAndTeamIDToUUIDCache caches (team_uuid, project_name) -> UUID mappings to avoid
+	// re-requesting the same data for every label change. It's quite expensive to list all projects.
+	// The cache has a TTL for eventually correct behavior in case a project is
+	// deleted and re-created.
+	projectNameAndTeamIDToUUIDCache = expirable.NewLRU[string, string](0, nil, time.Minute*5)
 )
 
 func getTeamUUID(ctx context.Context, c graphql.Client, idOrKey string) (string, error) {
@@ -141,12 +171,36 @@ func getTeamUUID(ctx context.Context, c graphql.Client, idOrKey string) (string,
 	return resp.Team.Id, nil
 }
 
-func moveIssueToTeam(ctx context.Context, c graphql.Client, issueId, teamId string) error {
-	_, err := lineargql.MoveIssueToTeam(ctx, c, issueId, teamId)
+func getProjectUUID(ctx context.Context, c graphql.Client, teamUUID, projectName string) (string, error) {
+	compositeKey := fmt.Sprintf("%s:%s", teamUUID, projectName)
+	if v, ok := projectNameAndTeamIDToUUIDCache.Get(compositeKey); ok {
+		return v, nil
+	}
+	projects, err := lineargql.GetProjectsByTeamId(ctx, c, teamUUID, projectName)
+	if err != nil {
+		return "", errors.Wrapf(err, "list projects by team ID %s", teamUUID)
+	}
+	for _, project := range projects.Team.Projects.Nodes {
+		if project.Name == projectName {
+			projectNameAndTeamIDToUUIDCache.Add(compositeKey, project.Id)
+			return project.Id, nil
+		}
+	}
+	return "", errors.Newf("project %s not found", projectName)
+}
+
+type moveIssueToTeamInput struct {
+	issueId   string
+	teamUUID  string
+	projectId string
+}
+
+func moveIssueToTeam(ctx context.Context, c graphql.Client, input moveIssueToTeamInput) error {
+	_, err := lineargql.MoveIssueToTeam(ctx, c, input.issueId, input.teamUUID, input.projectId)
 	return err
 }
 
-func (r *RuleSpec) moveToNewTeam(issueData linearschema.IssueData) (newTeamId *string) {
+func (r *RuleSpec) identifyTeamToMoveTo(issueData linearschema.IssueData) (newTeamId *string) {
 	if len(r.Src.Labels) == 0 {
 		// This should never happen as we perform validation on startup, but if it does, we should panic.
 		panic("Expected non-empty label set for RuleSet")

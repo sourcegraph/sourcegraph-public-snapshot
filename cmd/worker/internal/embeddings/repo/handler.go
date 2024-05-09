@@ -252,16 +252,19 @@ func (r *revisionFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
 		}
 
 		switch f.Status {
-		case gitdomain.DeletedAMD:
+		case gitdomain.StatusDeleted:
 			// Deleted since "oldCommit"
 			toRemove = append(toRemove, f.Path)
-		case gitdomain.ModifiedAMD:
+		case gitdomain.StatusModified:
 			// Modified in "r.revision"
 			toRemove = append(toRemove, f.Path)
 			changedNew = append(changedNew, f.Path)
-		case gitdomain.AddedAMD:
+		case gitdomain.StatusAdded:
 			// Added in "r.revision"
 			changedNew = append(changedNew, f.Path)
+		case gitdomain.StatusTypeChanged:
+			// a type change does not change the contents of a file,
+			// so this is safe to ignore.
 		}
 	}
 

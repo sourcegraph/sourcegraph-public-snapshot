@@ -356,8 +356,7 @@ func (r *releaseRunner) Test(ctx context.Context) error {
 
 func (r *releaseRunner) Promote(ctx context.Context) error {
 	if r.isDevelopment {
-		announce2("promote", "Skipping promote, this is a development release")
-		return nil
+		return errors.New("cannot promote a development release")
 	}
 
 	if err := r.checkRequirements(ctx, stagePromoteCreate); err != nil {
@@ -369,8 +368,7 @@ func (r *releaseRunner) Promote(ctx context.Context) error {
 
 func (r *releaseRunner) PromoteFinalize(ctx context.Context) error {
 	if r.isDevelopment {
-		announce2("promote", "Skipping promote finalize, this is a development release")
-		return nil
+		return errors.New("cannot promote a development release")
 	}
 
 	if err := r.checkRequirements(ctx, stagePromoteFinalize); err != nil {

@@ -14,7 +14,7 @@ import (
 
 var ListVersionsEphemeralCommand = cli.Command{
 	Name:        "list-versions",
-	Usage:       "sg could list-versions",
+	Usage:       "list docker images in the cloud ephemeral registry",
 	Description: "list ephemeral cloud instances attached to your GCP account",
 	Action:      listTagsCloudEphemeral,
 	Flags: []cli.Flag{
@@ -28,7 +28,7 @@ var ListVersionsEphemeralCommand = cli.Command{
 		},
 		&cli.IntFlag{
 			Name:  "limit",
-			Usage: "limit the number of versions to list - to list everything set limt to a negative value",
+			Usage: "limit the number of versions to list - to list everything set limit to a negative value",
 			Value: 100,
 		},
 		&cli.StringFlag{

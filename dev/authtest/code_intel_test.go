@@ -2,6 +2,7 @@ package authtest
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -10,7 +11,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCodeIntelEndpoints(t *testing.T) {
@@ -28,6 +31,9 @@ func TestCodeIntelEndpoints(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
+
+	token, err := userClient.CreateAccessToken("code-intel-endpoint-test", []string{"user:all"}, pointers.Ptr(7500))
+	require.NoError(t, err)
 
 	// Set up external service
 	esID, err := client.AddExternalService(
@@ -96,7 +102,8 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		// Retry because the configuration update endpoint is eventually consistent
 		var lastBody string
 		err = gqltestutil.Retry(15*time.Second, func() error {
-			resp, err := userClient.Post(*baseURL+"/.api/scip/upload?commit=6ffc6072f5ed13d8e8782490705d9689cd2c546a&repository=github.com/sgtest/private", nil)
+			resp, err := userClient.PostWithHeader(*baseURL+"/.api/scip/upload?commit=6ffc6072f5ed13d8e8782490705d9689cd2c546a&repository=github.com/sgtest/private", nil,
+				map[string][]string{"Authorization": {fmt.Sprintf("token %s", token)}})
 			if err != nil {
 				t.Fatal(err)
 			}

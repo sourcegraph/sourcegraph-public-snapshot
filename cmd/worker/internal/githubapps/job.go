@@ -15,21 +15,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type githupAppsInstallationJob struct{}
+type githubAppsInstallationJob struct{}
 
 func NewGitHubApsInstallationJob() job.Job {
-	return &githupAppsInstallationJob{}
+	return &githubAppsInstallationJob{}
 }
 
-func (gh *githupAppsInstallationJob) Description() string {
+func (gh *githubAppsInstallationJob) Description() string {
 	return "Job to validate and backfill github app installations"
 }
 
-func (gh *githupAppsInstallationJob) Config() []env.Config {
+func (gh *githubAppsInstallationJob) Config() []env.Config {
 	return nil
 }
 
-func (gh *githupAppsInstallationJob) Routines(ctx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (gh *githubAppsInstallationJob) Routines(ctx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "init DB")

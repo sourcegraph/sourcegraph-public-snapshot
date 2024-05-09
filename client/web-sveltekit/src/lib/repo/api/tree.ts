@@ -8,6 +8,11 @@ import { type GitCommitFieldsWithTree, type TreeEntriesVariables, TreeEntries } 
 
 const MAX_FILE_TREE_ENTRIES = 1000
 
+/**
+ * Represents the root path of the repository.
+ */
+export const ROOT_PATH = ''
+
 export function isFileEntry(entry: TreeEntry): entry is Extract<TreeEntry, { __typename: 'GitBlob' }> {
     return entry.__typename === 'GitBlob' || !entry.isDirectory
 }

@@ -2,7 +2,6 @@ package markdown
 
 import (
 	"bytes"
-	"fmt"
 	"sync"
 
 	jupyter "github.com/bevzzz/nb/extension/extra/goldmark-jupyter"
@@ -16,13 +15,14 @@ import (
 	"github.com/yuin/goldmark/util"
 
 	"github.com/sourcegraph/sourcegraph/internal/htmlutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Render renders Markdown content into sanitized HTML that is safe to render anywhere.
 func Render(content string) (string, error) {
 	var buf bytes.Buffer
 	if err := Goldmark().Convert([]byte(content), &buf); err != nil {
-		return "", fmt.Errorf("markdown.Render: %w", err)
+		return "", errors.Newf("markdown.Render: %w", err)
 	}
 	return htmlutil.SanitizeReader(&buf).String(), nil
 }

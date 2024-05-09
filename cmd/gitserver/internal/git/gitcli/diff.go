@@ -137,13 +137,15 @@ func (i *gitDiffIterator) Next() (gitdomain.PathStatus, error) {
 
 		switch status[0] {
 		case 'A':
-			return gitdomain.PathStatus{Path: path, Status: gitdomain.AddedAMD}, nil
+			return gitdomain.PathStatus{Path: path, Status: gitdomain.StatusAdded}, nil
 		case 'M':
-			return gitdomain.PathStatus{Path: path, Status: gitdomain.ModifiedAMD}, nil
+			return gitdomain.PathStatus{Path: path, Status: gitdomain.StatusModified}, nil
 		case 'D':
-			return gitdomain.PathStatus{Path: path, Status: gitdomain.DeletedAMD}, nil
+			return gitdomain.PathStatus{Path: path, Status: gitdomain.StatusDeleted}, nil
+		case 'T':
+			return gitdomain.PathStatus{Path: path, Status: gitdomain.StatusTypeChanged}, nil
 		default:
-			return gitdomain.PathStatus{}, errors.Errorf("encountered unknown file status %q for file %q", status, path)
+			return gitdomain.PathStatus{}, errors.Errorf("encountered unexpected file status %q for file %q", status, path)
 		}
 	}
 
