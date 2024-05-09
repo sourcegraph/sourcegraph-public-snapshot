@@ -52,6 +52,7 @@ go_test(
         "dotcom_test.go",
         "enterprise_test.go",
     ],
+    data = glob(["testdata/**"]),
     embed = [":codycontext"],
     deps = [
         "//internal/api",
