@@ -3,15 +3,81 @@ package codycontext
 import (
 	"strings"
 
+	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const maxTransformedPatterns = 10
 
-type keywordQuery struct {
-	query    query.Basic
-	patterns []string
+type contextQuery struct {
+	symbolQuery  query.Basic
+	symbols      []string
+	keywordQuery query.Basic
+	patterns     []string
+}
+
+func parseQuery(queryString string) (*contextQuery, error) {
+	rawParseTree, err := query.Parse(queryString, query.SearchTypeStandard)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rawParseTree) != 1 {
+		return nil, errors.New("The 'codycontext' patterntype does not support multiple clauses")
+	}
+
+	patterns, parameters := nodeToPatternsAndParameters(rawParseTree[0])
+
+	symbols := findSymbols(patterns)
+	transformedPatterns := transformPatterns(patterns)
+
+	// To maintain decent latency, limit the number of patterns we search.
+	if len(transformedPatterns) > maxTransformedPatterns {
+		transformedPatterns = transformedPatterns[:maxTransformedPatterns]
+	}
+
+	symbolQuery, err := newBasicQuery(parameters, symbols)
+	if err != nil {
+		return nil, err
+	}
+
+	keywordQuery, err := newBasicQuery(parameters, transformedPatterns)
+	if err != nil {
+		return nil, err
+	}
+
+	return &contextQuery{symbolQuery, symbols, keywordQuery, transformedPatterns}, nil
+}
+
+func newBasicQuery(parameters []query.Parameter, patterns []string) (query.Basic, error) {
+	var nodes []query.Node
+	for _, p := range parameters {
+		nodes = append(nodes, p)
+	}
+
+	patternNodes := make([]query.Node, 0, len(patterns))
+	for _, p := range patterns {
+		node := query.Pattern{Value: p}
+		node.Annotation.Labels.Set(query.Literal)
+		patternNodes = append(patternNodes, node)
+	}
+
+	if len(patternNodes) > 0 {
+		nodes = append(nodes, query.NewOperator(patternNodes, query.Or)...)
+	}
+
+	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(nodes)
+	if err != nil {
+		return query.Basic{}, err
+	}
+
+	basicQuery, err := query.ToBasicQuery(newNodes)
+	if err != nil {
+		return query.Basic{}, err
+	}
+	return basicQuery, nil
 }
 
 func concatNodeToPatterns(concat query.Operator) []string {
@@ -46,7 +112,7 @@ func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Paramet
 				if op.Field == query.FieldContent {
 					// Split any content field on white space into a set of patterns
 					patterns = append(patterns, strings.Fields(op.Value)...)
-				} else if op.Field != query.FieldCase {
+				} else if op.Field != query.FieldCase && op.Field != query.FieldType {
 					parameters = append(parameters, op)
 				}
 			case query.Pattern:
@@ -96,50 +162,32 @@ func transformPatterns(patterns []string) []string {
 	return transformedPatterns
 }
 
-func queryStringToKeywordQuery(queryString string) (*keywordQuery, error) {
-	rawParseTree, err := query.Parse(queryString, query.SearchTypeStandard)
-	if err != nil {
-		return nil, err
+// findSymbols extracts patterns that look like symbols. It uses the following heuristics:
+//   - If the pattern contains an underscore or camelCase, it's probably a symbol
+//   - If the pattern contains a namespace marker, each component is probably a symbol
+//   - If the pattern contains a dot, split but still check if the components look like symbols.
+//     This avoids overmatching in cases where the dot just represents a period.
+func findSymbols(patterns []string) []string {
+	var symbols []string
+	for _, pattern := range patterns {
+		if strings.Contains(pattern, "::") {
+			symbols = append(symbols, strings.Split(pattern, "::")...)
+		} else if strings.Contains(pattern, ".") {
+			for _, split := range strings.Split(pattern, ".") {
+				if isLikelySymbol(split) {
+					symbols = append(symbols, split)
+				}
+			}
+		} else if isLikelySymbol(pattern) {
+			symbols = append(symbols, pattern)
+		}
 	}
 
-	if len(rawParseTree) != 1 {
-		return nil, errors.New("The 'codycontext' patterntype does not support multiple clauses")
-	}
+	return symbols
+}
 
-	patterns, parameters := nodeToPatternsAndParameters(rawParseTree[0])
+var camelCaseRegexp = regexp.MustCompile(`[a-z][A-Z]`)
 
-	transformedPatterns := transformPatterns(patterns)
-
-	// To maintain decent latency, limit the number of patterns we search.
-	if len(transformedPatterns) > maxTransformedPatterns {
-		transformedPatterns = transformedPatterns[:maxTransformedPatterns]
-	}
-
-	var nodes []query.Node
-	for _, p := range parameters {
-		nodes = append(nodes, p)
-	}
-
-	patternNodes := make([]query.Node, 0, len(transformedPatterns))
-	for _, p := range transformedPatterns {
-		node := query.Pattern{Value: p}
-		node.Annotation.Labels.Set(query.Literal)
-		patternNodes = append(patternNodes, node)
-	}
-
-	if len(patternNodes) > 0 {
-		nodes = append(nodes, query.NewOperator(patternNodes, query.Or)...)
-	}
-
-	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(nodes)
-	if err != nil {
-		return nil, err
-	}
-
-	newBasic, err := query.ToBasicQuery(newNodes)
-	if err != nil {
-		return nil, err
-	}
-
-	return &keywordQuery{newBasic, transformedPatterns}, nil
+func isLikelySymbol(pattern string) bool {
+	return strings.Contains(pattern, "_") || camelCaseRegexp.MatchString(pattern)
 }

@@ -902,6 +902,7 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 
 	zoektParams := &search.ZoektParameters{
 		FileMatchLimit:  b.fileMatchLimit,
+		Typ:             typ,
 		Select:          b.selector,
 		Features:        *b.features,
 		PatternType:     b.patternType,

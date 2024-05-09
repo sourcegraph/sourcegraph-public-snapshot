@@ -18,6 +18,7 @@ import (
 )
 
 func TestRun(t *testing.T) {
+	symbolJob := mockjob.NewMockJob()
 	codeJob := mockjob.NewMockJob()
 	textJob := mockjob.NewMockJob()
 
@@ -25,6 +26,7 @@ func TestRun(t *testing.T) {
 	searchJob := &searchJob{
 		codeCount:   4,
 		textCount:   2,
+		symbolJob:   symbolJob,
 		codeJob:     codeJob,
 		textJob:     textJob,
 		fileMatcher: func(api.RepoID, string) bool { return true },
@@ -39,7 +41,8 @@ func TestRun(t *testing.T) {
 	}
 
 	{
-		// Test both jobs error
+		// Test all jobs error
+		symbolJob.RunFunc.SetDefaultReturn(nil, errors.New("symbol job failed"))
 		codeJob.RunFunc.SetDefaultReturn(nil, errors.New("code job failed"))
 		textJob.RunFunc.SetDefaultReturn(nil, errors.New("text job failed"))
 		_, err := searchJob.Run(context.Background(), job.RuntimeClients{}, streaming.NewNullStream())
@@ -57,12 +60,20 @@ func TestRun(t *testing.T) {
 
 	{
 		// Test that results are limited and combined as expected
+		symbolMatches := result.Matches{
+			&result.FileMatch{File: result.File{Path: "file1.go"}, Symbols: []*result.SymbolMatch{{Symbol: result.Symbol{Name: "symbol1"}}}},
+			&result.FileMatch{File: result.File{Path: "file2.go"}, Symbols: []*result.SymbolMatch{{Symbol: result.Symbol{Name: "symbol2"}}}},
+			&result.FileMatch{File: result.File{Path: "file3.go"}, Symbols: []*result.SymbolMatch{{Symbol: result.Symbol{Name: "symbol3"}}}},
+			&result.FileMatch{File: result.File{Path: "file4.go"}, Symbols: []*result.SymbolMatch{{Symbol: result.Symbol{Name: "symbol4"}}}},
+			&result.FileMatch{File: result.File{Path: "file5.go"}, Symbols: []*result.SymbolMatch{{Symbol: result.Symbol{Name: "symbol5"}}}},
+		}
+
 		codeMatches := result.Matches{
-			&result.FileMatch{File: result.File{Path: "file1.go"}},
-			&result.FileMatch{File: result.File{Path: "file2.go"}},
-			&result.FileMatch{File: result.File{Path: "file3.go"}},
-			&result.FileMatch{File: result.File{Path: "file4.go"}},
-			&result.FileMatch{File: result.File{Path: "file5.go"}},
+			&result.FileMatch{File: result.File{Path: "file1.java"}},
+			&result.FileMatch{File: result.File{Path: "file2.java"}},
+			&result.FileMatch{File: result.File{Path: "file3.java"}},
+			&result.FileMatch{File: result.File{Path: "file4.java"}},
+			&result.FileMatch{File: result.File{Path: "file5.java"}},
 		}
 
 		textMatches := result.Matches{
@@ -73,6 +84,11 @@ func TestRun(t *testing.T) {
 			&result.FileMatch{File: result.File{Path: "file5.md"}},
 		}
 
+		symbolJob.RunFunc.SetDefaultHook(
+			func(ctx context.Context, clients job.RuntimeClients, sender streaming.Sender) (*search.Alert, error) {
+				sender.Send(streaming.SearchEvent{Results: symbolMatches})
+				return nil, nil
+			})
 		codeJob.RunFunc.SetDefaultHook(
 			func(ctx context.Context, clients job.RuntimeClients, sender streaming.Sender) (*search.Alert, error) {
 				sender.Send(streaming.SearchEvent{Results: codeMatches})
@@ -89,11 +105,15 @@ func TestRun(t *testing.T) {
 		require.NotNil(t, alert)
 		require.Nil(t, err)
 
-		require.Equal(t, append(codeMatches[:4], textMatches[:2]...), stream.Results)
+		// We should have 6 results total: 2 from text, 3 from symbols, 1 from non-symbols code.
+		wantResults := append(textMatches[:2], symbolMatches[:SymbolResultsCount]...)
+		wantResults = append(wantResults, codeMatches[:1]...)
+		require.Equal(t, wantResults, stream.Results)
 	}
 }
 
 func TestCodyIgnoreFiltering(t *testing.T) {
+	symbolJob := mockjob.NewMockJob()
 	codeJob := mockjob.NewMockJob()
 	textJob := mockjob.NewMockJob()
 
@@ -101,6 +121,7 @@ func TestCodyIgnoreFiltering(t *testing.T) {
 	searchJob := &searchJob{
 		codeCount: 4,
 		textCount: 2,
+		symbolJob: symbolJob,
 		codeJob:   codeJob,
 		textJob:   textJob,
 		// Add a file matcher that mimics a Cody ignore rule that checks both repo and path.
@@ -152,9 +173,9 @@ func TestCodyIgnoreFiltering(t *testing.T) {
 		require.Nil(t, err)
 
 		expectedMatches := []*result.FileMatch{
-			{File: result.File{Repo: allowed, Path: "allowed2.go"}},
 			{File: result.File{Repo: allowed, Path: "allowed1.md"}},
 			{File: result.File{Repo: allowed, Path: "allowed3.md"}},
+			{File: result.File{Repo: allowed, Path: "allowed2.go"}},
 			// allowed4.md also matches, but the text result limit is 2
 		}
 		require.Equal(t, len(expectedMatches), len(stream.Results))
