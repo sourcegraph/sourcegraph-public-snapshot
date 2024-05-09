@@ -126,16 +126,19 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 				}
 
 				switch c.Status {
-				case gitdomain.DeletedAMD:
+				case gitdomain.StatusDeleted:
 					// no longer appears in "p.Commit"
 					indexedIgnore = append(indexedIgnore, c.Path)
-				case gitdomain.ModifiedAMD:
+				case gitdomain.StatusModified:
 					// changed in both "indexed" and "p.Commit"
 					indexedIgnore = append(indexedIgnore, c.Path)
 					unindexedSearch = append(unindexedSearch, c.Path)
-				case gitdomain.AddedAMD:
+				case gitdomain.StatusAdded:
 					// doesn't exist in "indexed"
 					unindexedSearch = append(unindexedSearch, c.Path)
+				case gitdomain.StatusTypeChanged:
+					// a type change does not change the contents of a file,
+					// so this is safe to ignore.
 				}
 			}
 

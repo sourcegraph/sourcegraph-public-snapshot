@@ -160,6 +160,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                     submitSearch={submitSearchOnChange}
                     structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             ) : (
                 <LegacyToggles
@@ -184,6 +185,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             selectedSearchContextSpec={selectedSearchContextSpec}
             setSelectedSearchContextSpec={setSelectedSearchContextSpec}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             authenticatedUser={authenticatedUser}
             isSourcegraphDotCom={isSourcegraphDotCom}
             searchContextsEnabled={searchContextsEnabled}

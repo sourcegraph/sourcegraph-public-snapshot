@@ -24,13 +24,13 @@ var ErrDeploymentExists error = errors.New("deployment already exists")
 
 var DeployEphemeralCommand = cli.Command{
 	Name:        "deploy",
-	Usage:       "sg could deploy --branch <branch> --tag <tag>",
+	Usage:       "create a cloud ephemeral deployment",
 	Description: "Deploy the specified branch or tag to an ephemeral Sourcegraph Cloud environment",
 	Action:      wipAction(deployCloudEphemeral),
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "name",
-			DefaultText: "the name of the ephemeral deployment. If not specified, the name will be derived from the branch name",
+			DefaultText: "the name of the ephemeral deployment. If none is specified, the name will be derived from the branch name",
 		},
 		&cli.StringFlag{
 			Name:        "version",
@@ -130,9 +130,9 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 }
 
 func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
-	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote", currRepo.Branch))
+	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote branch", currRepo.Branch))
 	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "branch is out of date with remote"))
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to check if branch is out of sync with remote branch"))
 		return nil, err
 	} else if isOutOfSync {
 		return nil, ErrBranchOutOfSync

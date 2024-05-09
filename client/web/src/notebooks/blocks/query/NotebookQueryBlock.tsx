@@ -12,7 +12,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
@@ -191,6 +191,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 results={searchResults}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                                 settingsCascade={settingsCascade}
                                 platformContext={props.platformContext}
                                 openMatchesInNewTab={true}

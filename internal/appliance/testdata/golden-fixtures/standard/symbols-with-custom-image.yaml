@@ -203,9 +203,6 @@ resources:
         redisCache:
           disabled: true
 
-        redisExporter:
-          disabled: true
-
         redisStore:
           disabled: true
 

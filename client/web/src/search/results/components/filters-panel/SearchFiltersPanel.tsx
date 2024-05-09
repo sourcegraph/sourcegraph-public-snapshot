@@ -39,8 +39,16 @@ export interface SearchFiltersPanelProps extends TelemetryProps, TelemetryV2Prop
  * as it is, use consumer agnostic NewSearchFilters component instead.
  */
 export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
-    const { query, filters, withCountAllFilter, isFilterLoadingComplete, className, onQueryChange, telemetryService } =
-        props
+    const {
+        query,
+        filters,
+        withCountAllFilter,
+        isFilterLoadingComplete,
+        className,
+        onQueryChange,
+        telemetryService,
+        telemetryRecorder,
+    } = props
 
     const { isOpen, setFiltersPanel } = useSearchFiltersStore()
     const uiMode = useSearchFiltersPanelUIMode()
@@ -62,6 +70,7 @@ export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
                     isFilterLoadingComplete={isFilterLoadingComplete}
                     onQueryChange={onQueryChange}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             </Panel>
         )
@@ -81,6 +90,7 @@ export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
                 isFilterLoadingComplete={isFilterLoadingComplete}
                 onQueryChange={onQueryChange}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
             >
                 <Button variant="secondary" outline={true} onClick={() => setFiltersPanel(false)}>
                     <Icon as={DeleteIcon} width={14} height={14} aria-hidden={true} className={styles.closeIcon} />{' '}

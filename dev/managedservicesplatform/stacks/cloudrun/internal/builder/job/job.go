@@ -100,6 +100,9 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 		return nil, err
 	}
 
+	schedule := pointers.DerefZero(vars.Environment.EnvironmentJobSpec).Schedule
+	scheduleDeadlineSeconds := pointers.Deref(schedule.Deadline, 320)
+
 	job := cloudrunv2job.NewCloudRunV2Job(stack, pointers.Ptr("cloudrun"), &cloudrunv2job.CloudRunV2JobConfig{
 		Name:      pointers.Ptr(name),
 		Location:  pointers.Ptr(vars.GCPRegion),
@@ -152,7 +155,23 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 						Name: (*string)(vars.Service.Protocol),
 					}},
 
-					Env: b.env,
+					Env: func() any {
+						if schedule == nil {
+							return b.env
+						}
+						// Add cron schedule and deadline to environment variables
+						// for use by the runtime.
+						return append(b.env,
+							&cloudrunv2job.CloudRunV2JobTemplateTemplateContainersEnv{
+								Name:  pointers.Ptr("JOB_EXECUTION_CRON_SCHEDULE"),
+								Value: pointers.Ptr(schedule.Cron),
+							},
+							&cloudrunv2job.CloudRunV2JobTemplateTemplateContainersEnv{
+								Name:  pointers.Ptr("JOB_EXECUTION_DEADLINE"),
+								Value: pointers.Ptr(fmt.Sprintf("%ds", scheduleDeadlineSeconds)),
+							},
+						)
+					}(),
 
 					VolumeMounts: b.volumeMounts,
 
@@ -163,7 +182,7 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 			},
 		}})
 
-	if schedule := pointers.DerefZero(vars.Environment.EnvironmentJobSpec).Schedule; schedule != nil {
+	if schedule != nil {
 		invoker := serviceaccount.New(stack, resourceid.New("job_invoker"), serviceaccount.Config{
 			ProjectID:   vars.GCPProjectID,
 			AccountID:   fmt.Sprintf("%s-job-sa", vars.Service.ID),
@@ -182,7 +201,7 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 			Name:            job.Name(),
 			Schedule:        pointers.Ptr(schedule.Cron),
 			TimeZone:        pointers.Ptr("Etc/UTC"),
-			AttemptDeadline: pointers.Ptr(fmt.Sprintf("%ds", pointers.Deref(schedule.Deadline, 320))),
+			AttemptDeadline: pointers.Ptr(fmt.Sprintf("%ds", scheduleDeadlineSeconds)),
 			Region:          &vars.GCPRegion,
 			HttpTarget: &cloudschedulerjob.CloudSchedulerJobHttpTarget{
 				HttpMethod: pointers.Ptr(http.MethodPost),

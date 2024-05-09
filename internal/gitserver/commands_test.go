@@ -2328,9 +2328,9 @@ func TestClient_GetBehindAhead(t *testing.T) {
 func TestClient_ChangedFiles(t *testing.T) {
 	t.Run("correctly returns server response", func(t *testing.T) {
 		expectedChanges := []gitdomain.PathStatus{
-			{Path: "file1.txt", Status: gitdomain.AddedAMD},
-			{Path: "file2.txt", Status: gitdomain.ModifiedAMD},
-			{Path: "file3.txt", Status: gitdomain.DeletedAMD},
+			{Path: "file1.txt", Status: gitdomain.StatusAdded},
+			{Path: "file2.txt", Status: gitdomain.StatusModified},
+			{Path: "file3.txt", Status: gitdomain.StatusDeleted},
 		}
 		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
 			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
@@ -2443,8 +2443,8 @@ func TestChangedFilesIterator(t *testing.T) {
 			fetchCallCount++
 
 			return []gitdomain.PathStatus{
-				{Path: "file1.txt", Status: gitdomain.AddedAMD},
-				{Path: "file2.txt", Status: gitdomain.ModifiedAMD},
+				{Path: "file1.txt", Status: gitdomain.StatusAdded},
+				{Path: "file2.txt", Status: gitdomain.StatusModified},
 			}, nil
 		}
 		closeFunc := func() {}
@@ -2455,12 +2455,12 @@ func TestChangedFilesIterator(t *testing.T) {
 		// Test fetching the first item
 		item, err := iter.Next()
 		require.NoError(t, err)
-		require.Equal(t, gitdomain.PathStatus{Path: "file1.txt", Status: gitdomain.AddedAMD}, item)
+		require.Equal(t, gitdomain.PathStatus{Path: "file1.txt", Status: gitdomain.StatusAdded}, item)
 
 		// Test fetching the second item
 		item, err = iter.Next()
 		require.NoError(t, err)
-		require.Equal(t, gitdomain.PathStatus{Path: "file2.txt", Status: gitdomain.ModifiedAMD}, item)
+		require.Equal(t, gitdomain.PathStatus{Path: "file2.txt", Status: gitdomain.StatusModified}, item)
 
 		// Test fetching when there are no more items
 		_, err = iter.Next()
@@ -2476,12 +2476,12 @@ func TestChangedFilesIterator(t *testing.T) {
 			switch fetchCount {
 			case 1:
 				return []gitdomain.PathStatus{
-					{Path: "file1.txt", Status: gitdomain.AddedAMD},
-					{Path: "file2.txt", Status: gitdomain.ModifiedAMD},
+					{Path: "file1.txt", Status: gitdomain.StatusAdded},
+					{Path: "file2.txt", Status: gitdomain.StatusModified},
 				}, nil
 			case 2:
 				return []gitdomain.PathStatus{
-					{Path: "file3.txt", Status: gitdomain.AddedAMD},
+					{Path: "file3.txt", Status: gitdomain.StatusAdded},
 				}, nil
 			case 3:
 				// Ensure that fetch function is called if we returned no data
@@ -2500,19 +2500,19 @@ func TestChangedFilesIterator(t *testing.T) {
 		// Test fetching the first item
 		item, err := iter.Next()
 		require.NoError(t, err)
-		require.Equal(t, gitdomain.PathStatus{Path: "file1.txt", Status: gitdomain.AddedAMD}, item)
+		require.Equal(t, gitdomain.PathStatus{Path: "file1.txt", Status: gitdomain.StatusAdded}, item)
 		require.Equal(t, 1, fetchCount)
 
 		// Test fetching the second item
 		item, err = iter.Next()
 		require.NoError(t, err)
-		require.Equal(t, gitdomain.PathStatus{Path: "file2.txt", Status: gitdomain.ModifiedAMD}, item)
+		require.Equal(t, gitdomain.PathStatus{Path: "file2.txt", Status: gitdomain.StatusModified}, item)
 		require.Equal(t, 1, fetchCount)
 
 		// Test fetching the third item (should trigger a new fetch)
 		item, err = iter.Next()
 		require.NoError(t, err)
-		require.Equal(t, gitdomain.PathStatus{Path: "file3.txt", Status: gitdomain.AddedAMD}, item)
+		require.Equal(t, gitdomain.PathStatus{Path: "file3.txt", Status: gitdomain.StatusAdded}, item)
 		require.Equal(t, 2, fetchCount)
 
 		// Test fetching when there are no more items (should trigger two new fetches (since the third fetch returns an empty slice)
