@@ -2,7 +2,6 @@ package ipynb
 
 import (
 	"bytes"
-	"fmt"
 	"sync"
 
 	"github.com/bevzzz/nb"
@@ -12,6 +11,7 @@ import (
 	jupyter "github.com/bevzzz/nb/extension/extra/goldmark-jupyter"
 	"github.com/robert-nix/ansihtml"
 
+	"github.com/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/internal/htmlutil"
 	"github.com/sourcegraph/sourcegraph/internal/markdown"
 )
@@ -21,7 +21,7 @@ func Render(content string) (string, error) {
 	var buf bytes.Buffer
 	c := notebook()
 	if err := c.Convert(&buf, []byte(content)); err != nil {
-		return "", fmt.Errorf("ipynb.Render: %w", err)
+		return "", errors.Newf("ipynb.Render: %w", err)
 	}
 
 	return htmlutil.SanitizeReader(&buf).String(), nil
