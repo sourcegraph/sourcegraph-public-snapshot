@@ -28,11 +28,16 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SubscriptionsServiceClient interface {
-	// GetSubscription retrieves an exact match on an Enterprise subscription.
+	// GetEnterpriseSubscription retrieves an exact match on an Enterprise subscription.
 	GetEnterpriseSubscription(ctx context.Context, in *GetEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*EnterpriseSubscription, error)
 	// ListEnterpriseSubscriptions queries for Enterprise subscriptions.
 	ListEnterpriseSubscriptions(ctx context.Context, in *ListEnterpriseSubscriptionsRequest, opts ...grpc.CallOption) (*ListEnterpriseSubscriptionsResponse, error)
-	// ListEnterpriseSubscriptionLicenses queries for Enterprise subscription licenses.
+	// ListEnterpriseSubscriptionLicenses queries for licenses associated with
+	// Enterprise subscription licenses, with the ability to list licenses across
+	// all subscriptions, or just a specific subscription.
+	//
+	// Each subscription owns a collection of licenses, typically a series of
+	// licenses with the most recent one being a subscription's active license.
 	ListEnterpriseSubscriptionLicenses(ctx context.Context, in *ListEnterpriseSubscriptionLicensesRequest, opts ...grpc.CallOption) (*ListEnterpriseSubscriptionLicensesResponse, error)
 }
 
@@ -75,11 +80,16 @@ func (c *subscriptionsServiceClient) ListEnterpriseSubscriptionLicenses(ctx cont
 // All implementations must embed UnimplementedSubscriptionsServiceServer
 // for forward compatibility
 type SubscriptionsServiceServer interface {
-	// GetSubscription retrieves an exact match on an Enterprise subscription.
+	// GetEnterpriseSubscription retrieves an exact match on an Enterprise subscription.
 	GetEnterpriseSubscription(context.Context, *GetEnterpriseSubscriptionRequest) (*EnterpriseSubscription, error)
 	// ListEnterpriseSubscriptions queries for Enterprise subscriptions.
 	ListEnterpriseSubscriptions(context.Context, *ListEnterpriseSubscriptionsRequest) (*ListEnterpriseSubscriptionsResponse, error)
-	// ListEnterpriseSubscriptionLicenses queries for Enterprise subscription licenses.
+	// ListEnterpriseSubscriptionLicenses queries for licenses associated with
+	// Enterprise subscription licenses, with the ability to list licenses across
+	// all subscriptions, or just a specific subscription.
+	//
+	// Each subscription owns a collection of licenses, typically a series of
+	// licenses with the most recent one being a subscription's active license.
 	ListEnterpriseSubscriptionLicenses(context.Context, *ListEnterpriseSubscriptionLicensesRequest) (*ListEnterpriseSubscriptionLicensesResponse, error)
 	mustEmbedUnimplementedSubscriptionsServiceServer()
 }

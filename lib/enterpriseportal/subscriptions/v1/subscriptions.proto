@@ -7,7 +7,7 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1";
 
 // SubscriptionsService is the service API specification for Enterprise Portal's
-// core Enterprise subscription and Enterprise license management capbilities.
+// core Enterprise subscription and Enterprise license management capabilities.
 //
 // Extensions to support additional Enterprise services are expected to be
 // defined as separate gRPC services in 'lib/enterpriseportal' - these are
@@ -16,7 +16,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/sub
 //
 // DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
 service SubscriptionsService {
-  // GetSubscription retrieves an exact match on an Enterprise subscription.
+  // GetEnterpriseSubscription retrieves an exact match on an Enterprise subscription.
   rpc GetEnterpriseSubscription(GetEnterpriseSubscriptionRequest) returns (EnterpriseSubscription) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -26,27 +26,32 @@ service SubscriptionsService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
-  // ListEnterpriseSubscriptionLicenses queries for Enterprise subscription licenses.
+  // ListEnterpriseSubscriptionLicenses queries for licenses associated with
+  // Enterprise subscription licenses, with the ability to list licenses across
+  // all subscriptions, or just a specific subscription.
+  //
+  // Each subscription owns a collection of licenses, typically a series of
+  // licenses with the most recent one being a subscription's active license.
   rpc ListEnterpriseSubscriptionLicenses(ListEnterpriseSubscriptionLicensesRequest) returns (ListEnterpriseSubscriptionLicensesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
 
-enum EnterpriseSubscriptionConditionEvent {
-  ENTERPRISE_SUBSCRIPTION_CONDITION_EVENT_UNSPECIFIED = 0;
-  // License creation event.
-  ENTERPRISE_SUBSCRIPTION_CONDITION_EVENT_CREATED = 1;
-  // License archival event. i.e. 'is_archived'
-  ENTERPRISE_SUBSCRIPTION_CONDITION_EVENT_ARCHIVED = 2;
+enum EnterpriseSubscriptionConditionStatus {
+  ENTERPRISE_SUBSCRIPTION_CONDITION_STATUS_UNSPECIFIED = 0;
+  // License creation status.
+  ENTERPRISE_SUBSCRIPTION_CONDITION_STATUS_CREATED = 1;
+  // License archival status. i.e. 'is_archived'
+  ENTERPRISE_SUBSCRIPTION_CONDITION_STATUS_ARCHIVED = 2;
 }
 
 message EnterpriseSubscriptionCondition {
-  // The time this condition was created.
-  google.protobuf.Timestamp create_time = 1;
-  // Event is the type of event corresponding to this condition.
-  EnterpriseSubscriptionConditionEvent event = 2;
-  // Message is a description of the condition and why it happened.
-  optional string message = 3;
+  // The time this subscription transitioned into this status.
+  google.protobuf.Timestamp last_transition_time = 1;
+  // Status is the type of status corresponding to this condition.
+  EnterpriseSubscriptionConditionStatus status = 2;
+  // Message is a description of the status transition and why it happened.
+  string message = 3;
 }
 
 // EnterpriseSubscription represents a Sourcegraph Enterprise subscription.
@@ -59,9 +64,10 @@ message EnterpriseSubscription {
   string display_name = 3;
 }
 
-// EnterpriseSubscriptionLicenseClassic corresponds to
-// ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_CLASSIC.
-message EnterpriseSubscriptionLicenseClassic {
+// EnterpriseSubscriptionLicenseKey is the classic offline Sourcegraph license
+// key, and corresponds to ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY.
+message EnterpriseSubscriptionLicenseKey {
+  // Information embedded into the license key.
   message Info {
     // The tags that indicate which features are activated by this license.
     repeated string tags = 1;
@@ -76,39 +82,42 @@ message EnterpriseSubscriptionLicenseClassic {
     string salesforce_opportunity_id = 5;
   }
 
-  // Version of this classic license's information schema.
-  int32 info_version = 1;
+  // Version of this classic license's information schema. It is incremented
+  // whenever a major change is made to the shape of Info to indicate what
+  // fields can be expected from the information embedded in the license key.
+  uint32 info_version = 1;
   // Information embedded into the license key.
   Info info = 2;
   // The license key.
   string license_key = 3;
   // UUID of the known instance using this license key, self-reported from
-  // online license checks. Also known as 'site ID'.
+  // online license checks and pings. Also known as 'site ID'.
   string instance_id = 4;
 }
 
-enum EnterpriseSubscriptionLicenseConditionEvent {
-  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_EVENT_UNSPECIFIED = 0;
-  // License creation event.
-  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_EVENT_CREATED = 1;
-  // License archival event. i.e. 'is_archived'
-  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_EVENT_ARCHIVED = 2;
-  // License revocation event, i.e. 'is_revoked'
-  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_EVENT_REVOKED = 3;
+enum EnterpriseSubscriptionLicenseConditionStatus {
+  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_STATUS_UNSPECIFIED = 0;
+  // License creation status.
+  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_STATUS_CREATED = 1;
+  // License archival status. i.e. 'is_archived'
+  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_STATUS_ARCHIVED = 2;
+  // License revocation status, i.e. 'is_revoked'
+  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_STATUS_REVOKED = 3;
 }
 
 message EnterpriseSubscriptionLicenseCondition {
-  // The time this condition was created.
-  google.protobuf.Timestamp create_time = 1;
-  // Event is the type of event corresponding to this condition.
-  EnterpriseSubscriptionLicenseConditionEvent event = 2;
-  // Message is a description of the condition and why it happened.
-  optional string message = 3;
+  // The time this subscription transitioned into this status.
+  google.protobuf.Timestamp last_transition_time = 1;
+  // Status is the type of status corresponding to this condition.
+  EnterpriseSubscriptionLicenseConditionStatus status = 2;
+  // Message is a description of the status transition and why it happened.
+  string message = 3;
 }
 
 // EnterpriseSubscriptionLicense represents a license for a Sourcegraph
-// Enterprise subscription. It is one of the fundamental elements of the
-// Enterprise Portal service.
+// Enterprise product. Multiple licenses are associated with a single
+// subscription, typically a series of licenses with the most recent one being
+// a subscription's active license.
 message EnterpriseSubscriptionLicense {
   // ID is the external, prefixed UUID-format identifier for this license key.
   string id = 1;
@@ -119,7 +128,7 @@ message EnterpriseSubscriptionLicense {
   repeated EnterpriseSubscriptionLicenseCondition conditions = 3;
   // License data, based on the type of the license.
   oneof license {
-    EnterpriseSubscriptionLicenseClassic classic = 4;
+    EnterpriseSubscriptionLicenseKey key = 4;
   }
 }
 
@@ -135,10 +144,13 @@ message GetEnterpriseSubscriptionRequest {
 // licenses.
 enum EnterpriseSubscriptionLicenseType {
   ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_UNSPECIFIED = 0;
-  // This license type is the classic licensing mechanism that Sourcegraph has
-  // always had. Each Subscription is expected to have at most one active
-  // Sourcegraph classic license used by a Sourcegraph instance at a time.
-  ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_CLASSIC = 1;
+  // The 'license key' type is the classic licensing mechanism that Sourcegraph
+  // has always had. They are signed by a private key and offline-validated by
+  // a public key that ships with all Sourcegraph builds.
+  //
+  // Each Subscription is expected to have at most one active Sourcegraph classic
+  // license used by a Sourcegraph instance at a time.
+  ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY = 1;
 }
 
 message ListEnterpriseSubscriptionsRequest {

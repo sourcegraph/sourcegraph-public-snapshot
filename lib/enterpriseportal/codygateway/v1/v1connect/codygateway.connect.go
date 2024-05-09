@@ -52,9 +52,6 @@ var (
 // service.
 type CodyGatewayServiceClient interface {
 	// Retrieve Cody Gateway access granted to an Enterprise subscription.
-	//
-	// For classic licenses, properties may be inferred from the active license,
-	// or be defined in overrides.
 	GetCodyGatewayAccess(context.Context, *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.CodyGatewayAccess], error)
 	// List all Cody Gateway accesses granted to any Enterprise subscription.
 	ListCodyGatewayAccesses(context.Context, *connect.Request[v1.ListCodyGatewayAccessesRequest]) (*connect.Response[v1.ListCodyGatewayAccessesResponse], error)
@@ -110,9 +107,6 @@ func (c *codyGatewayServiceClient) ListCodyGatewayAccesses(ctx context.Context, 
 // enterpriseportal.codygateway.v1.CodyGatewayService service.
 type CodyGatewayServiceHandler interface {
 	// Retrieve Cody Gateway access granted to an Enterprise subscription.
-	//
-	// For classic licenses, properties may be inferred from the active license,
-	// or be defined in overrides.
 	GetCodyGatewayAccess(context.Context, *connect.Request[v1.GetCodyGatewayAccessRequest]) (*connect.Response[v1.CodyGatewayAccess], error)
 	// List all Cody Gateway accesses granted to any Enterprise subscription.
 	ListCodyGatewayAccesses(context.Context, *connect.Request[v1.ListCodyGatewayAccessesRequest]) (*connect.Response[v1.ListCodyGatewayAccessesResponse], error)

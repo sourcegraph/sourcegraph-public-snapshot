@@ -14,9 +14,6 @@ option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cod
 // DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
 service CodyGatewayService {
   // Retrieve Cody Gateway access granted to an Enterprise subscription.
-  //
-  // For classic licenses, properties may be inferred from the active license,
-  // or be defined in overrides.
   rpc GetCodyGatewayAccess(GetCodyGatewayAccessRequest) returns (CodyGatewayAccess) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -29,20 +26,20 @@ service CodyGatewayService {
 
 message GetCodyGatewayAccessRequest {
   oneof query {
-    // The external, prefixed UUID-format identifier for the Enterprise
-    // subscription to retrieve Cody Gateway access for.
+    // The external, prefixed UUID-format identifier of an Enterprise subscription.
     string subscription_id = 1;
-    // Look up a access using an associated access token representing this
-    // subscription's Cody Gateway access.
+    // An license-based access token that is valid for an Enterprise subscription's
+    // Cody Gateway access, e.g. 'slk_...'
     string access_token = 2;
   }
 }
 
 enum CodyGatewayRateLimitSource {
   CODY_GATEWAY_RATE_LIMIT_SOURCE_UNSPECIFIED = 0;
-  // Indicates that a custom override for the rate limit has been stored.
+  // Indicates that a custom override for the rate limit has been configured
+  // and applied.
   CODY_GATEWAY_RATE_LIMIT_SOURCE_OVERRIDE = 1;
-  // Indicates that the rate limit is inferred by the subscriptions active plan.
+  // Indicates that the rate limit is inferred by the subscription's active plan.
   CODY_GATEWAY_RATE_LIMIT_SOURCE_PLAN = 2;
 }
 
@@ -76,14 +73,9 @@ message CodyGatewayAccess {
   // Rate limit for embedding text chunks, or null if not enabled.
   optional CodyGatewayRateLimit embeddings_rate_limt = 5;
 
-  // The most preferable Sourcegraph access token to use for authenticating as
-  // the subscription holder with Cody Gateway.
-  // Null only if creating a token failed, for example when no active license
-  // exists.
-  optional CodyGatewayAccessToken current_access_token = 6;
   // Available access tokens for authenticating as the subscription holder with
   // Cody Gateway.
-  repeated CodyGatewayAccessToken access_tokens = 7;
+  repeated CodyGatewayAccessToken access_tokens = 6;
 }
 
 message ListCodyGatewayAccessesRequest {

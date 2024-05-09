@@ -55,11 +55,16 @@ var (
 // SubscriptionsServiceClient is a client for the
 // enterpriseportal.subscriptions.v1.SubscriptionsService service.
 type SubscriptionsServiceClient interface {
-	// GetSubscription retrieves an exact match on an Enterprise subscription.
+	// GetEnterpriseSubscription retrieves an exact match on an Enterprise subscription.
 	GetEnterpriseSubscription(context.Context, *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.EnterpriseSubscription], error)
 	// ListEnterpriseSubscriptions queries for Enterprise subscriptions.
 	ListEnterpriseSubscriptions(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionsRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionsResponse], error)
-	// ListEnterpriseSubscriptionLicenses queries for Enterprise subscription licenses.
+	// ListEnterpriseSubscriptionLicenses queries for licenses associated with
+	// Enterprise subscription licenses, with the ability to list licenses across
+	// all subscriptions, or just a specific subscription.
+	//
+	// Each subscription owns a collection of licenses, typically a series of
+	// licenses with the most recent one being a subscription's active license.
 	ListEnterpriseSubscriptionLicenses(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionLicensesResponse], error)
 }
 
@@ -126,11 +131,16 @@ func (c *subscriptionsServiceClient) ListEnterpriseSubscriptionLicenses(ctx cont
 // SubscriptionsServiceHandler is an implementation of the
 // enterpriseportal.subscriptions.v1.SubscriptionsService service.
 type SubscriptionsServiceHandler interface {
-	// GetSubscription retrieves an exact match on an Enterprise subscription.
+	// GetEnterpriseSubscription retrieves an exact match on an Enterprise subscription.
 	GetEnterpriseSubscription(context.Context, *connect.Request[v1.GetEnterpriseSubscriptionRequest]) (*connect.Response[v1.EnterpriseSubscription], error)
 	// ListEnterpriseSubscriptions queries for Enterprise subscriptions.
 	ListEnterpriseSubscriptions(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionsRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionsResponse], error)
-	// ListEnterpriseSubscriptionLicenses queries for Enterprise subscription licenses.
+	// ListEnterpriseSubscriptionLicenses queries for licenses associated with
+	// Enterprise subscription licenses, with the ability to list licenses across
+	// all subscriptions, or just a specific subscription.
+	//
+	// Each subscription owns a collection of licenses, typically a series of
+	// licenses with the most recent one being a subscription's active license.
 	ListEnterpriseSubscriptionLicenses(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionLicensesResponse], error)
 }
 
