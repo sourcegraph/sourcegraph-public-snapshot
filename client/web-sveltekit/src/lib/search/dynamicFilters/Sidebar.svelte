@@ -36,7 +36,7 @@
     import ArrowBendIcon from '$lib/icons/ArrowBend.svelte'
     import LanguageIcon from '$lib/LanguageIcon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
-    import SymbolKind from '$lib/search/SymbolKind.svelte'
+    import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import Tooltip from '$lib/Tooltip.svelte'
@@ -146,8 +146,10 @@
             onFilterSelect={handleFilterSelect}
         >
             <svelte:fragment slot="label" let:label>
-                <SymbolKind symbolKind={label.toUpperCase()} />
-                {label}
+                <div class="symbol-label">
+                    <SymbolKindIcon symbolKind={label.toUpperCase()} />
+                    {label}
+                </div>
             </svelte:fragment>
         </Section>
         <Section
@@ -237,6 +239,12 @@
             fill: none !important;
             --icon-color: var(--body-color);
         }
+    }
+
+    .symbol-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     pre {
