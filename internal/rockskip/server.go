@@ -6,14 +6,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -45,100 +44,8 @@ type Service struct {
 	searchLastIndexedCommit bool
 }
 
-type metrics struct {
-	searchRunning  prometheus.Gauge
-	searchFailed   prometheus.Counter
-	searchDuration prometheus.Histogram
-	indexRunning   prometheus.Gauge
-	indexFailed    prometheus.Counter
-	indexDuration  prometheus.Histogram
-	queueAge       prometheus.Histogram
-}
-
-func newMetrics(logger log.Logger, db *sql.DB) *metrics {
-	scanCount := func(sql string) (float64, error) {
-		row := db.QueryRowContext(context.Background(), sql)
-		var count int64
-		err := row.Scan(&count)
-		if err != nil {
-			return 0, err
-		}
-		return float64(count), nil
-	}
-
-	ns := "src_rockskip_service"
-
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Namespace: ns,
-		Name:      "repos_indexed",
-		Help:      "The number of repositories indexed by rockskip",
-	}, func() float64 {
-		count, err := scanCount(`SELECT COUNT(*) FROM rockskip_repos`)
-		if err != nil {
-			logger.Error("failed to get number of index repos", log.Error(err))
-			return 0
-		}
-		return count
-	})
-	return &metrics{
-		searchRunning: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace: ns,
-			Name:      "in_flight_search_requests",
-			Help:      "Number of in-flight search requests",
-		}),
-		searchFailed: promauto.NewCounter(prometheus.CounterOpts{
-			Namespace: ns,
-			Name:      "search_request_errors",
-			Help:      "Number of search requests that returned an error",
-		}),
-		searchDuration: promauto.NewHistogram(prometheus.HistogramOpts{
-			Namespace: ns,
-			Name:      "search_request_duration_seconds",
-			Help:      "Search request duration in seconds.",
-			Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 20, 30},
-		}),
-		indexRunning: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace: ns,
-			Name:      "in_flight_index_jobs",
-			Help:      "Number of in-flight index jobs",
-		}),
-		indexFailed: promauto.NewCounter(prometheus.CounterOpts{
-			Namespace: ns,
-			Name:      "index_job_errors",
-			Help:      "Number of index jobs that returned an error",
-		}),
-		indexDuration: promauto.NewHistogram(prometheus.HistogramOpts{
-			Namespace: ns,
-			Name:      "index_job_duration_seconds",
-			Help:      "Search request duration in seconds.",
-			Buckets:   prometheus.ExponentialBuckets(0.1, 2, 22),
-		}),
-		queueAge: promauto.NewHistogram(prometheus.HistogramOpts{
-			Namespace: ns,
-			Name:      "index_queue_age_seconds",
-			Help:      "A histogram of the amount of time a popped index request spent sitting in the queue beforehand.",
-			Buckets: []float64{
-				60,     // 1m
-				300,    // 5m
-				1200,   // 20m
-				2400,   // 40m
-				3600,   // 1h
-				10800,  // 3h
-				18000,  // 5h
-				36000,  // 10h
-				43200,  // 12h
-				54000,  // 15h
-				72000,  // 20h
-				86400,  // 24h
-				108000, // 30h
-				126000, // 35h
-				172800, // 48h
-			},
-		}),
-	}
-}
-
 func NewService(
+	observationCtx *observation.Context,
 	db *sql.DB,
 	git GitserverClient,
 	fetcher fetcher.RepositoryFetcher,
@@ -156,16 +63,14 @@ func NewService(
 		indexRequestQueues[i] = make(chan indexRequest, indexRequestsQueueSize)
 	}
 
-	logger := log.Scoped("service")
-
 	service := &Service{
-		logger:                  logger,
-		metrics:                 newMetrics(logger, db),
+		logger:                  observationCtx.Logger,
+		metrics:                 newMetrics(observationCtx, db),
 		db:                      db,
 		git:                     git,
 		fetcher:                 fetcher,
 		createParser:            createParser,
-		status:                  NewStatus(logger),
+		status:                  NewStatus(),
 		repoUpdates:             make(chan struct{}, 1),
 		maxRepos:                maxRepos,
 		logQueries:              logQueries,
@@ -214,30 +119,6 @@ func (s *Service) startCleanupLoop() {
 	}
 }
 
-func getHops(ctx context.Context, tx dbutil.DB, commit int, tasklog *TaskLog) ([]int, error) {
-	tasklog.Start("get hops")
-
-	current := commit
-	spine := []int{current}
-
-	for {
-		_, ancestor, _, present, err := GetCommitById(ctx, tx, current)
-		if err != nil {
-			return nil, errors.Wrap(err, "GetCommitById")
-		} else if !present {
-			break
-		} else {
-			if current == NULL {
-				break
-			}
-			current = ancestor
-			spine = append(spine, current)
-		}
-	}
-
-	return spine, nil
-}
-
 func DeleteOldRepos(ctx context.Context, db *sql.DB, maxRepos int, threadStatus *ThreadStatus) error {
 	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
 	// See doc/dev/background-information/sql/locking_behavior.md for more details.
@@ -256,6 +137,27 @@ func DeleteOldRepos(ctx context.Context, db *sql.DB, maxRepos int, threadStatus 
 		if !more {
 			return nil
 		}
+	}
+}
+
+func getHops(ctx context.Context, tx dbutil.DB, commit int, tasklog *TaskLog) ([]int, error) {
+	tasklog.Start("get hops")
+
+	current := commit
+	spine := []int{current}
+
+	for {
+		_, ancestor, _, present, err := GetCommitById(ctx, tx, current)
+		if err != nil {
+			return nil, errors.Wrap(err, "GetCommitById")
+		}
+
+		if !present || current == NULL {
+			return spine, nil
+		}
+
+		current = ancestor
+		spine = append(spine, current)
 	}
 }
 

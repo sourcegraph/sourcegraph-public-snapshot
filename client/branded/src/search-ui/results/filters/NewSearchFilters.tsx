@@ -7,7 +7,8 @@ import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery, succeedScan } from '@sourcegraph/shared/src/search/query/scanner'
 import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import type { Filter } from '@sourcegraph/shared/src/search/stream'
+import { V2FilterTypes, type Filter } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H1, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
 
@@ -29,7 +30,7 @@ import { FilterKind, type SearchTypeFilter, SEARCH_TYPES_TO_FILTER_TYPES, DYNAMI
 
 import styles from './NewSearchFilters.module.scss'
 
-interface NewSearchFiltersProps extends TelemetryProps {
+interface NewSearchFiltersProps extends TelemetryProps, TelemetryV2Props {
     query: string
     filters?: Filter[]
     withCountAllFilter: boolean
@@ -46,6 +47,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
     onQueryChange,
     children,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const [selectedFilters, setSelectedFilters, serializeFiltersURL] = useUrlFilters()
 
@@ -69,6 +71,9 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
     const handleFilterTypeClick = useCallback(
         (filter: URLQueryFilter, remove: boolean): void => {
             telemetryService.log('SearchFiltersTypeClick', { filterType: filter.label }, { filterType: filter.label })
+            telemetryRecorder.recordEvent('search.filters.type', 'click', {
+                metadata: { filterKind: V2FilterTypes[filter.kind] },
+            })
             if (remove) {
                 setSelectedFilters(
                     selectedFilters.filter(
@@ -83,20 +88,24 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 ])
             }
         },
-        [selectedFilters, setSelectedFilters, telemetryService]
+        [selectedFilters, setSelectedFilters, telemetryService, telemetryRecorder]
     )
 
     const handleFilterChange = useCallback(
         (filterKind: Filter['kind'], filters: URLQueryFilter[]) => {
             setSelectedFilters(filters)
             telemetryService.log('SearchFiltersSelectFilter', { filterKind }, { filterKind })
+            telemetryRecorder.recordEvent('search.filters', 'select', {
+                metadata: { filterKind: V2FilterTypes[filterKind] },
+            })
         },
-        [setSelectedFilters, telemetryService]
+        [setSelectedFilters, telemetryService, telemetryRecorder]
     )
 
     const handleApplyButtonFilters = (): void => {
         onQueryChange(mergeQueryAndFilters(query, selectedFilters), serializeFiltersURL([]))
         telemetryService.log('SearchFiltersApplyFiltersClick')
+        telemetryRecorder.recordEvent('search.filters', 'apply')
     }
 
     const onAddFilterToQuery = (filter: string): void => {
@@ -209,6 +218,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     isLimitHit={withCountAllFilter}
                     onQueryChange={onQueryChange}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             </div>
 
@@ -255,7 +265,7 @@ const STATIC_COUNT_FILTER: Filter[] = [
     },
 ]
 
-interface SyntheticCountFilterProps extends TelemetryProps {
+interface SyntheticCountFilterProps extends TelemetryProps, TelemetryV2Props {
     query: string
     isLimitHit: boolean
     onQueryChange: (query: string) => void
@@ -271,7 +281,7 @@ interface SyntheticCountFilterProps extends TelemetryProps {
  * changes the original query by adding count:all to the end.
  */
 const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
-    const { query, isLimitHit, onQueryChange, telemetryService } = props
+    const { query, isLimitHit, onQueryChange, telemetryService, telemetryRecorder } = props
 
     const selectedCountFilter = useMemo<Filter[]>(() => {
         const tokens = scanSearchQuery(query)
@@ -292,6 +302,9 @@ const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
 
     const handleCountAllFilter = (filterKind: Filter['kind'], countFilters: URLQueryFilter[]): void => {
         telemetryService.log('SearchFiltersSelectFilter', { filterKind }, { filterKind })
+        telemetryRecorder.recordEvent('search.filters', 'select', {
+            metadata: { filterKind: V2FilterTypes[filterKind] },
+        })
 
         if (countFilters.length > 0) {
             onQueryChange(`${query} count:all`)

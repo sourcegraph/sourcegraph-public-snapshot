@@ -5,6 +5,7 @@ go_library(
     name = "cloud",
     srcs = [
         "artifact_registry.go",
+        "build_command.go",
         "client.go",
         "common.go",
         "delete_command.go",
@@ -15,6 +16,7 @@ go_library(
         "list_versions_command.go",
         "printers.go",
         "status_command.go",
+        "upgrade_command.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/cloud",
     visibility = ["//dev/sg:__subpackages__"],

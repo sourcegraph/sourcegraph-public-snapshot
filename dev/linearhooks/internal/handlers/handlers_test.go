@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/linearhooks/internal/lineargql"
 	"github.com/sourcegraph/sourcegraph/dev/linearhooks/internal/lineargql/gqltest"
 	"github.com/sourcegraph/sourcegraph/dev/linearhooks/internal/linearschema"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func Test_moveIssue(t *testing.T) {
@@ -63,8 +64,113 @@ func Test_moveIssue(t *testing.T) {
 			gqlCallPayload: autogold.Expect([]map[string]interface{}{
 				{"id": "another-team-uuid"},
 				{
-					"issueId": "team-key-1",
-					"teamId":  "another-team-uuid",
+					"issueId":   "team-key-1",
+					"projectId": "",
+					"teamId":    "another-team-uuid",
+				},
+			}),
+		},
+		{
+			name: "match with project modifier",
+			rs: []RuleSpec{
+				{
+					Src: SrcSpec{TeamID: "team-a-uuid", Labels: []string{"a"}},
+					Dst: DstSpec{TeamID: "team-b-uuid", Modifier: &DstModifierSpec{ProjectName: "project-z"}},
+				},
+			},
+			issue: linearschema.IssueData{
+				Identifier: "team-a-key-1",
+				Labels:     []linearschema.IssueLabelData{{Name: "a"}},
+				Team: linearschema.IssueTeamData{
+					ID:  "team-a-uuid",
+					Key: "team-a-key",
+				},
+			},
+			stub: gqltest.MakeRequestStubInvocations(
+				gqltest.MakeRequestResultStub(lineargql.GetTeamByIdResponse{Team: lineargql.GetTeamByIdTeam{Id: "team-b-uuid", Key: "team-b-key", Name: "team-b-name"}}),
+				gqltest.MakeRequestResultStub(lineargql.GetProjectsByTeamIdResponse{Team: lineargql.GetProjectsByTeamIdTeam{Projects: lineargql.GetProjectsByTeamIdTeamProjectsProjectConnection{
+					Nodes: []lineargql.GetProjectsByTeamIdTeamProjectsProjectConnectionNodesProject{
+						{Name: "project-x", Id: "project-x-uuid"},
+						{Name: "project-y", Id: "project-y-uuid"},
+						{Name: "project-z", Id: "project-z-uuid"},
+					}}}}),
+				gqltest.MakeRequestResultStub(lineargql.MoveIssueToTeamResponse{}),
+			),
+			gqlCallCount: 3,
+			gqlCallPayload: autogold.Expect([]map[string]interface{}{
+				{"id": "team-b-uuid"},
+				{"projectName": "project-z", "teamId": "team-b-uuid"},
+				{
+					"issueId":   "team-a-key-1",
+					"projectId": "project-z-uuid",
+					"teamId":    "team-b-uuid",
+				},
+			}),
+		},
+		{
+			name: "match with project modifier but failed to resolve project due to api error",
+			rs: []RuleSpec{
+				{
+					Src: SrcSpec{TeamID: "team-c-uuid", Labels: []string{"a"}},
+					Dst: DstSpec{TeamID: "team-d-uuid", Modifier: &DstModifierSpec{ProjectName: "project-z"}},
+				},
+			},
+			issue: linearschema.IssueData{
+				Identifier: "team-c-key-1",
+				Labels:     []linearschema.IssueLabelData{{Name: "a"}},
+				Team: linearschema.IssueTeamData{
+					ID:  "team-c-uuid",
+					Key: "team-c-key",
+				},
+			},
+			stub: gqltest.MakeRequestStubInvocations(
+				gqltest.MakeRequestResultStub(lineargql.GetTeamByIdResponse{Team: lineargql.GetTeamByIdTeam{Id: "team-d-uuid", Key: "team-d-key", Name: "team-d-name"}}),
+				gqltest.MakeRequestResultErrStub(errors.New("oh no")),
+				gqltest.MakeRequestResultStub(lineargql.MoveIssueToTeamResponse{}),
+			),
+			gqlCallCount: 3,
+			gqlCallPayload: autogold.Expect([]map[string]interface{}{
+				{"id": "team-d-uuid"},
+				{"projectName": "project-z", "teamId": "team-d-uuid"},
+				{
+					"issueId":   "team-c-key-1",
+					"projectId": "",
+					"teamId":    "team-d-uuid",
+				},
+			}),
+		},
+		{
+			name: "match with project modifier but failed to find matching projects",
+			rs: []RuleSpec{
+				{
+					Src: SrcSpec{TeamID: "team-e-uuid", Labels: []string{"a"}},
+					Dst: DstSpec{TeamID: "team-f-uuid", Modifier: &DstModifierSpec{ProjectName: "project-z"}},
+				},
+			},
+			issue: linearschema.IssueData{
+				Identifier: "team-e-key-1",
+				Labels:     []linearschema.IssueLabelData{{Name: "a"}},
+				Team: linearschema.IssueTeamData{
+					ID:  "team-e-uuid",
+					Key: "team-e-key",
+				},
+			},
+			stub: gqltest.MakeRequestStubInvocations(
+				gqltest.MakeRequestResultStub(lineargql.GetTeamByIdResponse{Team: lineargql.GetTeamByIdTeam{Id: "team-f-uuid", Key: "team-f-key", Name: "team-f-name"}}),
+				gqltest.MakeRequestResultStub(lineargql.GetProjectsByTeamIdResponse{Team: lineargql.GetProjectsByTeamIdTeam{Projects: lineargql.GetProjectsByTeamIdTeamProjectsProjectConnection{
+					Nodes: []lineargql.GetProjectsByTeamIdTeamProjectsProjectConnectionNodesProject{
+						{Name: "project-x", Id: "project-x-uuid"},
+					}}}}),
+				gqltest.MakeRequestResultStub(lineargql.MoveIssueToTeamResponse{}),
+			),
+			gqlCallCount: 3,
+			gqlCallPayload: autogold.Expect([]map[string]interface{}{
+				{"id": "team-f-uuid"},
+				{"projectName": "project-z", "teamId": "team-f-uuid"},
+				{
+					"issueId":   "team-e-key-1",
+					"projectId": "",
+					"teamId":    "team-f-uuid",
 				},
 			}),
 		},

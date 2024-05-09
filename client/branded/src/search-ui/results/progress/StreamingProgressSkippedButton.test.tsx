@@ -4,6 +4,7 @@ import sinon from 'sinon'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import type { Progress } from '@sourcegraph/shared/src/search/stream'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
@@ -55,6 +56,7 @@ describe('StreamingProgressSkippedButton', () => {
                 query=""
                 progress={progress}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={sinon.spy()}
             />
         )
@@ -106,6 +108,7 @@ describe('StreamingProgressSkippedButton', () => {
                 query=""
                 progress={progress}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={sinon.spy()}
             />
         )
@@ -147,6 +150,7 @@ describe('StreamingProgressSkippedButton', () => {
                 query=""
                 progress={progress}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={sinon.spy()}
             />
         )
@@ -200,6 +204,7 @@ describe('StreamingProgressSkippedButton', () => {
                 query=""
                 progress={progress}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={onSearchAgain}
             />
         )
