@@ -11,8 +11,8 @@ go_library(
         "@com_github_bevzzz_nb//:nb",
         "@com_github_bevzzz_nb//extension",
         "@com_github_bevzzz_nb//extension/adapter",
-        "@com_github_bevzzz_nb//extension/extra/goldmark-jupyter",
-        "@com_github_bevzzz_nb_synth//:go_default_library",
-        "@com_github_robert_nix_ansihtml//:go_default_library",
+        "@com_github_bevzzz_nb_extension_extra_goldmark_jupyter//:goldmark-jupyter",
+        "@com_github_bevzzz_nb_synth//:nb-synth",
+        "@com_github_robert_nix_ansihtml//:ansihtml",
     ],
 )

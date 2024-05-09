@@ -7,7 +7,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/htmlutil",
-        "@com_github_bevzzz_nb//extension/extra/goldmark-jupyter",
+        "@com_github_bevzzz_nb_extension_extra_goldmark_jupyter//:goldmark-jupyter",
         "@com_github_yuin_goldmark//:goldmark",
         "@com_github_yuin_goldmark//ast",
         "@com_github_yuin_goldmark//extension",
