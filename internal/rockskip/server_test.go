@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -87,7 +88,7 @@ func TestIndex(t *testing.T) {
 
 	createParser := func() (ctags.Parser, error) { return mockParser{}, nil }
 
-	service, err := NewService(db, git, newMockRepositoryFetcher(git), createParser, 1, 1, false, 1, 1, 1, false)
+	service, err := NewService(observation.TestContextTB(t), db, git, newMockRepositoryFetcher(git), createParser, 1, 1, false, 1, 1, 1, false)
 	require.NoError(t, err)
 
 	verifyBlobs := func() {
