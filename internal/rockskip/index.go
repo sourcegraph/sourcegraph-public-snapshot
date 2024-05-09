@@ -152,6 +152,7 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 			if pathStatus.Status == gitdomain.StatusAdded || pathStatus.Status == gitdomain.StatusModified {
 				addedPaths = append(addedPaths, pathStatus.Path)
 			}
+			// Ignoring StatusTypeChanged because there are no changes to the contents of a file.
 		}
 
 		symbolsFromDeletedFiles := map[string]*goset.Set[string]{}
@@ -230,6 +231,9 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 			case gitdomain.StatusModified:
 				deletedSymbols[pathStatus.Path] = deleted.Difference(added)
 				addedSymbols[pathStatus.Path] = added.Difference(deleted)
+			case gitdomain.StatusTypeChanged:
+				// a type change does not change the contents of a file,
+				// so this is safe to ignore.
 			}
 		}
 

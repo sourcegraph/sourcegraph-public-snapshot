@@ -141,6 +141,9 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args search
 			addedModifiedOrDeletedPaths = append(addedModifiedOrDeletedPaths, c.Path)
 		case gitdomain.StatusDeleted:
 			addedModifiedOrDeletedPaths = append(addedModifiedOrDeletedPaths, c.Path)
+		case gitdomain.StatusTypeChanged:
+			// a type change does not change the contents of a file,
+			// so this is safe to ignore.
 		}
 	}
 
