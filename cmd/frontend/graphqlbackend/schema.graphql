@@ -7590,6 +7590,10 @@ type CodyLLMConfiguration {
     Name of the provider being used for LLM interactions.
     """
     provider: String!
+    """
+    Identity to send to with LLM interactions for abuse detection.
+    """
+    user: String!
 }
 
 """

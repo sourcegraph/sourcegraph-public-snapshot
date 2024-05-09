@@ -703,6 +703,8 @@ type Completions struct {
 	PerUserDailyLimit int `json:"perUserDailyLimit,omitempty"`
 	// Provider description: The external completions provider. Defaults to 'sourcegraph'.
 	Provider string `json:"provider,omitempty"`
+	// User description: The user to pass to the LLM provider for abuse detection.
+	User string `json:"user,omitempty"`
 }
 
 // ConfigFeatures description: Configuration for the completions service.

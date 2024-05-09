@@ -680,6 +680,8 @@ func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 	return nil
 }
 
+func (c *codyLLMConfigurationResolver) User() string { return c.config.User }
+
 type CodyContextFiltersArgs struct {
 	Version string
 }

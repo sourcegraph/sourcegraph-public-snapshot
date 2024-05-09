@@ -15,6 +15,7 @@ type CompletionsConfig struct {
 	AccessToken                                            string
 	Provider                                               CompletionsProviderName
 	Endpoint                                               string
+	User                                                   string
 	PerUserDailyLimit                                      int
 	PerUserCodeCompletionsDailyLimit                       int
 	PerCommunityUserChatMonthlyLLMRequestLimit             int

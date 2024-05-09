@@ -178,6 +178,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 		// so the stop sequences we send might not actually be very useful
 		// for OpenAI.
 		Stop: requestParams.StopSequences,
+		User: requestParams.User,
 	}
 	for _, m := range requestParams.Messages {
 		// TODO(sqs): map these 'roles' to openai system/user/assistant
@@ -296,7 +297,7 @@ type openAIChatCompletionsRequestParameters struct {
 	PresencePenalty  float32            `json:"presence_penalty,omitempty"`  // unused
 	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"` // unused
 	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`        // unused
-	User             string             `json:"user,omitempty"`              // unused
+	User             string             `json:"user,omitempty"`              // request.User
 }
 
 // openAICompletionsRequestParameters payload for openAI completions endpoint https://platform.openai.com/docs/api-reference/completions/create
@@ -313,7 +314,7 @@ type openAICompletionsRequestParameters struct {
 	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"` // unused
 	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`        // unused
 	Suffix           string             `json:"suffix,omitempty"`            // unused
-	User             string             `json:"user,omitempty"`              // unused
+	User             string             `json:"user,omitempty"`              // request.User
 }
 
 type message struct {
