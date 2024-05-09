@@ -1,5 +1,3 @@
-@use './Jupyter';
-
 .markdown {
     // marked wraps all content in <p>, even if there is only one child.
     // If that is the case, treat the <p> as if it wasn't there
