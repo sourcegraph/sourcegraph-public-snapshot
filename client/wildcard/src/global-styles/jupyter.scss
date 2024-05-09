@@ -1,6 +1,9 @@
+/* stylelint-disable selector-class-pattern */
+
 // Rendered jupyter notebook styling
 .jupyter {
     --jp-cell-prompt-width: 6rem;
+
     /* Cell */
 
     .jp-Cell {
@@ -98,7 +101,8 @@
         vertical-align: top;
     }
 
-    .jp-InputPrompt {
+    .jp-InputPrompt,
+    .jp-OutputPrompt {
         display: table-cell;
         vertical-align: top;
         color: var(--text-disabled);
@@ -181,26 +185,6 @@
         table-layout: fixed;
         width: 100%;
         overflow: hidden;
-    }
-
-    .jp-OutputPrompt {
-        color: var(--text-disabled);
-        font-family: var(--code-font-family);
-        font-size: var(--font-size-small);
-        padding: 0.25rem;
-
-        // Right align prompt text, don't wrap to handle large prompt numbers
-        text-align: right;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-
-        &:not(:empty) {
-            width: var(--jp-cell-prompt-width);
-        }
-
-        // Disable text selection
-        user-select: none;
     }
 
     .jp-OutputArea-prompt {
