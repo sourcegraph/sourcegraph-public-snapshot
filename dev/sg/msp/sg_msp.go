@@ -890,8 +890,48 @@ This command supports completions on services and environments.
 							return syncEnvironmentWorkspaces(c, tfcClient, svc.Service, *env)
 						}
 
+						if c.Args().Len() == 0 {
+							// No service specified, sync them all
+							if c.Bool("delete") {
+								// Simple safeguard, there's additional safeguards
+								// in syncEnvironmentWorkspaces but let's fail
+								// fast here
+								return errors.New("cannot delete workspaces for all services")
+							}
+
+							std.Out.Promptf("Syncing all environments for all services - are you sure? (y/N) ")
+							var input string
+							if _, err := fmt.Scan(&input); err != nil {
+								return err
+							}
+							if input != "y" {
+								return errors.New("aborting")
+							}
+
+							// Iterate all services
+							services, err := msprepo.ListServices()
+							if err != nil {
+								return err
+							}
+							for _, serviceID := range services {
+								serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
+								svc, err := spec.Open(serviceSpecPath)
+								if err != nil {
+									return errors.Wrap(err, serviceID)
+								}
+								for _, env := range svc.Environments {
+									if err := syncEnvironmentWorkspaces(c, tfcClient, svc.Service, env); err != nil {
+										return errors.Wrapf(err, "%s: sync env %q", serviceID, env.ID)
+									}
+								}
+							}
+
+							// Done!
+							return nil
+						}
+
 						// Otherwise, we are syncing all environments for a service.
-						std.Out.WriteNoticef("Syncing all environments for a specific service ...")
+						std.Out.WriteNoticef("Syncing all environments for the specified service ...")
 						svc, err := useServiceArgument(c, true)
 						if err != nil {
 							return err
