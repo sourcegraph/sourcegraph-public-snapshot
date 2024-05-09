@@ -11,7 +11,6 @@ import (
 )
 
 func newDotComDBConn(ctx context.Context, config Config) (*dotcomdb.Database, error) {
-	// TODO allow override
 	if config.DotComDB.PGDSNOverride != nil {
 		config, err := pgx.ParseConfig(*config.DotComDB.PGDSNOverride)
 		if err != nil {
