@@ -22,15 +22,16 @@ import (
 
 var ErrDeploymentExists error = errors.New("deployment already exists")
 
-var DeployEphemeralCommand = cli.Command{
+var deployEphemeralCommand = cli.Command{
 	Name:        "deploy",
-	Usage:       "create a cloud ephemeral deployment",
-	Description: "Deploy the specified branch or tag to an ephemeral Sourcegraph Cloud environment",
+	Usage:       "Deploy a new ephemeral instance from the current branch or specific version",
+	Description: "Deploy a new ephemeral instance from the current branch or specific version",
 	Action:      deployCloudEphemeral,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "name",
-			DefaultText: "the name of the ephemeral deployment. If none is specified, the name will be derived from the branch name",
+			Usage:       "name of the instance to update the lease expiry time for",
+			DefaultText: "current branch name will be used",
 		},
 		&cli.StringFlag{
 			Name:        "version",
