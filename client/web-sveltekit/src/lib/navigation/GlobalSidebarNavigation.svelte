@@ -8,6 +8,7 @@
 
 <script lang="ts">
     import { mdiClose } from '@mdi/js'
+
     import { page } from '$app/stores'
     import { onClickOutside, portal } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
@@ -17,6 +18,7 @@
     import MainNavigationLink from './MainNavigationLink.svelte'
 
     export let onClose: () => void
+    export let entries: (NavigationEntry | NavigationMenu)[] = mainNavigation
 </script>
 
 <div class="root" use:portal>
@@ -33,7 +35,7 @@
 
         <nav>
             <ul class="list">
-                {#each mainNavigation as entry (entry.label)}
+                {#each entries as entry (entry.label)}
                     <li>
                         <MainNavigationLink {entry} />
                         {#if isNavigationMenu(entry) && entry.children.length > 0}

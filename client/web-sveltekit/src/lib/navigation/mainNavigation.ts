@@ -145,3 +145,36 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
         href: '/insights',
     },
 ]
+
+/**
+ * The main navigation for sourcegraph.com
+ */
+export const dotcomMainNavigation: (NavigationMenu | NavigationEntry)[] = [
+    {
+        label: 'Code Search',
+        icon: mdiMagnify,
+        href: '/search',
+    },
+    {
+        label: 'Cody AI',
+        icon: CodyIcon,
+        href: '/cody',
+        isCurrent(this: NavigationMenu, page) {
+            return this.children.some(entry => isCurrent(entry, page))
+        },
+        children: [
+            {
+                label: 'Dashboard',
+                href: '/cody',
+            },
+            {
+                label: 'Web Chat',
+                href: '/cody/chat',
+            },
+        ],
+    },
+    {
+        label: 'About Sourcegraph',
+        href: '/',
+    },
+]
