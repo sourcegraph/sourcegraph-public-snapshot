@@ -841,7 +841,7 @@ This command supports completions on services and environments.
 						},
 						&cli.StringFlag{
 							Name:  "workspace-run-mode",
-							Usage: "One of 'vcs', 'cli'",
+							Usage: "One of 'vcs', 'cli', or 'ignore' (to respect existing configuration)",
 							Value: "vcs",
 						},
 						&cli.BoolFlag{
@@ -871,9 +871,10 @@ This command supports completions on services and environments.
 							return errors.Wrap(err, "get TFC OAuth client ID")
 						}
 
+						runMode := terraformcloud.WorkspaceRunMode(c.String("workspace-run-mode"))
 						tfcClient, err := terraformcloud.NewClient(tfcAccessToken, tfcOAuthClient,
 							terraformcloud.WorkspaceConfig{
-								RunMode: terraformcloud.WorkspaceRunMode(c.String("workspace-run-mode")),
+								RunMode: runMode,
 							})
 						if err != nil {
 							return errors.Wrap(err, "init Terraform Cloud client")
@@ -899,7 +900,15 @@ This command supports completions on services and environments.
 								return errors.New("cannot delete workspaces for all services")
 							}
 
-							std.Out.Promptf("Syncing all environments for all services - are you sure? (y/N) ")
+							confirmAction := "Syncing all environments for all services"
+							if runMode != terraformcloud.WorkspaceRunModeIgnore {
+								// This action may override custom run mode
+								// configurations, which may unexpectedly deploy
+								// new changes
+								confirmAction = fmt.Sprintf("%s, including setting ALL workspaces to use run mode %q (use '-workspace-run-mode=ignore' to respect the existing run mode)",
+									confirmAction, runMode)
+							}
+							std.Out.Promptf("%s - are you sure? (y/N) ", confirmAction)
 							var input string
 							if _, err := fmt.Scan(&input); err != nil {
 								return err

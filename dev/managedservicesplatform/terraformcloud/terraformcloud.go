@@ -52,6 +52,9 @@ type WorkspaceRunMode string
 const (
 	WorkspaceRunModeVCS WorkspaceRunMode = "vcs"
 	WorkspaceRunModeCLI WorkspaceRunMode = "cli"
+	// WorkspaceRunModeIgnore is used to indicate that the workspace's run mode
+	// should not be modified.
+	WorkspaceRunModeIgnore WorkspaceRunMode = "ignore"
 )
 
 type WorkspaceConfig struct {
@@ -266,6 +269,9 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 			// to TFC, hence we need to remove all VCS and working directory override
 			wantWorkspaceOptions.VCSRepo = nil
 			wantWorkspaceOptions.WorkingDirectory = nil
+		case WorkspaceRunModeIgnore:
+			// We will apply existing configuration later before the
+			// 'Workspaces.Update' operation
 		default:
 			return nil, errors.Errorf("invalid WorkspaceRunModeVCS %q", c.workspaceConfig.RunMode)
 		}
@@ -279,6 +285,11 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 		if existingWorkspace, err := c.client.Workspaces.Read(ctx, c.org, workspaceName); err != nil {
 			if !errors.Is(err, tfe.ErrResourceNotFound) {
 				return nil, errors.Wrap(err, "failed to check if workspace exists")
+			}
+
+			if c.workspaceConfig.RunMode == WorkspaceRunModeIgnore {
+				// Can't ignore a configuration that doesn't exist yet!
+				return nil, errors.New("cannot create workspace in WorkspaceRunModeIgnore")
 			}
 
 			createdWorkspace, err := c.client.Workspaces.Create(ctx, c.org,
@@ -295,6 +306,19 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 			workspaces = append(workspaces, Workspace{
 				Name: existingWorkspace.Name,
 			})
+
+			// Apply existing config relevant to run mode explicitly
+			if c.workspaceConfig.RunMode == WorkspaceRunModeIgnore {
+				if existingWorkspace.VCSRepo != nil {
+					wantWorkspaceOptions.VCSRepo = &tfe.VCSRepoOptions{
+						OAuthTokenID: &existingWorkspace.VCSRepo.OAuthTokenID,
+						Identifier:   &existingWorkspace.VCSRepo.Identifier,
+						Branch:       &existingWorkspace.VCSRepo.Branch,
+					}
+				}
+				wantWorkspaceOptions.WorkingDirectory = &existingWorkspace.WorkingDirectory
+				wantWorkspaceOptions.TriggerPrefixes = existingWorkspace.TriggerPrefixes
+			}
 
 			// VCSRepo must be removed by explicitly using the API - update
 			// doesn't remove it - if we want to remove the connection.
