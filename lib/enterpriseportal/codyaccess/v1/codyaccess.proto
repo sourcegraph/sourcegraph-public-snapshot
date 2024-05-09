@@ -1,18 +1,18 @@
 syntax = "proto3";
 
-package enterpriseportal.codygateway.v1;
+package enterpriseportal.codyaccess.v1;
 
 import "google/protobuf/duration.proto";
 
-option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codygateway/v1";
+option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1";
 
-// CodyGatewayService is an extension to Enterprise Portal that serves Cody
+// CodyAccessService is an extension to Enterprise Portal that serves Cody
 // Gateway access management capabilities (e.g. access quotas). It is not the
 // Cody Gateway service API itself - it serves capabilities that Cody Gateway
 // depends on.
 //
 // DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
-service CodyGatewayService {
+service CodyAccessService {
   // Retrieve Cody Gateway access granted to an Enterprise subscription.
   rpc GetCodyGatewayAccess(GetCodyGatewayAccessRequest) returns (GetCodyGatewayAccessResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
