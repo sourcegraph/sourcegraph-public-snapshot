@@ -13,12 +13,21 @@ import (
 )
 
 func InitDB(observationCtx *observation.Context) (database.DB, error) {
-	rawDB, err := initDatabaseMemo.Init(observationCtx)
+	rawDB, err := InitRawDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
 	return database.NewDB(observationCtx.Logger, rawDB), nil
+}
+
+func InitRawDB(observationCtx *observation.Context) (*sql.DB, error) {
+	rawDB, err := initDatabaseMemo.Init(observationCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	return rawDB, err
 }
 
 var initDatabaseMemo = memo.NewMemoizedConstructorWithArg(func(observationCtx *observation.Context) (*sql.DB, error) {
