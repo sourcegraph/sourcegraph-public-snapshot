@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/cody-context-filters-test-dataset",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "license": "Apache-2.0",
   "description": "Cody context filters test dataset",
   "repository": {
