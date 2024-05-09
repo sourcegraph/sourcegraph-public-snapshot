@@ -100,6 +100,12 @@
             display: flex;
             flex-direction: column;
         }
+
+        form,
+        div,
+        :global([data-scroller]) {
+            padding: 1rem;
+        }
     }
 
     form {
@@ -109,12 +115,6 @@
         :global([data-input-container]) {
             flex: 1;
         }
-    }
-
-    form,
-    div,
-    :global([data-scroller]) {
-        padding: 1rem;
     }
 
     form,

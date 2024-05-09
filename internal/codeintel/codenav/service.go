@@ -198,11 +198,11 @@ func (s *Service) getUploadsWithDefinitionsForMonikers(ctx context.Context, orde
 // monikerLimit is the maximum number of monikers that can be returned from orderedMonikers.
 const monikerLimit = 10
 
-func (r *Service) getOrderedMonikers(ctx context.Context, visibleUploads []visibleUpload, kinds ...string) ([]precise.QualifiedMonikerData, error) {
+func (s *Service) getOrderedMonikers(ctx context.Context, visibleUploads []visibleUpload, kinds ...string) ([]precise.QualifiedMonikerData, error) {
 	monikerSet := newQualifiedMonikerSet()
 
 	for i := range visibleUploads {
-		rangeMonikers, err := r.lsifstore.GetMonikersByPosition(
+		rangeMonikers, err := s.lsifstore.GetMonikersByPosition(
 			ctx,
 			visibleUploads[i].Upload.ID,
 			visibleUploads[i].TargetPathWithoutRoot,
@@ -219,7 +219,7 @@ func (r *Service) getOrderedMonikers(ctx context.Context, visibleUploads []visib
 					continue
 				}
 
-				packageInformationData, _, err := r.lsifstore.GetPackageInformation(
+				packageInformationData, _, err := s.lsifstore.GetPackageInformation(
 					ctx,
 					visibleUploads[i].Upload.ID,
 					visibleUploads[i].TargetPathWithoutRoot,
@@ -657,11 +657,6 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 	return dedupeRanges(sortedRanges), nil
 }
 
-// TODO(#48681) - do not proxy this
-func (s *Service) GetCompletedUploadsByIDs(ctx context.Context, ids []int) ([]uploadsshared.CompletedUpload, error) {
-	return s.uploadSvc.GetCompletedUploadsByIDs(ctx, ids)
-}
-
 func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, opts uploadsshared.UploadMatchingOptions) (_ []uploadsshared.CompletedUpload, err error) {
 	ctx, trace, endObservation := s.operations.getClosestCompletedUploadsForBlob.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
@@ -810,7 +805,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		}})
 	}()
 
-	uploads, err := s.GetCompletedUploadsByIDs(ctx, []int{uploadID})
+	uploads, err := s.uploadSvc.GetCompletedUploadsByIDs(ctx, []int{uploadID})
 	if err != nil {
 		return nil, err
 	}
