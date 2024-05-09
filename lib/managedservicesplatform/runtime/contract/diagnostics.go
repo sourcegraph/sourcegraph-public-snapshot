@@ -32,7 +32,7 @@ type diagnosticsContract struct {
 	OpenTelemetry opentelemetry.Config
 	sentryDSN     *string
 
-	// only MSP jobs with a schedule configured will have these values
+	// Only MSP jobs with a schedule configured will have these values.
 	cronSchedule *string
 	cronDeadline *time.Duration
 
@@ -58,7 +58,7 @@ func loadDiagnosticsContract(
 		},
 		sentryDSN: env.GetOptional("SENTRY_DSN", "Sentry error reporting DSN"),
 
-		// only MSP jobs with a schedule configured will have these values
+		// Only MSP jobs with a schedule configured will have these values.
 		cronSchedule: env.GetOptional("JOB_EXECUTION_CRON_SCHEDULE", "Jobs: expected cron schedule for job executions"),
 		cronDeadline: env.GetOptionalInterval("JOB_EXECUTION_DEADLINE", "Jobs: maximum duration to wait for job executions"),
 
@@ -289,7 +289,7 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (func(err 
 		// Half the deadline is used as a margin to allow for a grace period
 		// for execution to report they are active
 		CheckInMargin: int64(math.Ceil(c.cronDeadline.Minutes() / 2)),
-		// Set in MSP
+		// When running in MSP, the timezone is always set to UTC.
 		Timezone: "Etc/UTC",
 	}
 
