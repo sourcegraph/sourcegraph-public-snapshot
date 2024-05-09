@@ -37,19 +37,19 @@ service SubscriptionsService {
   }
 }
 
-enum EnterpriseSubscriptionConditionStatus {
-  ENTERPRISE_SUBSCRIPTION_CONDITION_STATUS_UNSPECIFIED = 0;
-  // License creation status.
-  ENTERPRISE_SUBSCRIPTION_CONDITION_STATUS_CREATED = 1;
-  // License archival status. i.e. 'is_archived'
-  ENTERPRISE_SUBSCRIPTION_CONDITION_STATUS_ARCHIVED = 2;
-}
-
 message EnterpriseSubscriptionCondition {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    // License creation status.
+    STATUS_CREATED = 1;
+    // License archival status. i.e. 'is_archived'
+    STATUS_ARCHIVED = 2;
+  }
+
   // The time this subscription transitioned into this status.
   google.protobuf.Timestamp last_transition_time = 1;
   // Status is the type of status corresponding to this condition.
-  EnterpriseSubscriptionConditionStatus status = 2;
+  Status status = 2;
   // Message is a description of the status transition and why it happened.
   string message = 3;
 }
@@ -95,21 +95,21 @@ message EnterpriseSubscriptionLicenseKey {
   string instance_id = 4;
 }
 
-enum EnterpriseSubscriptionLicenseConditionStatus {
-  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_STATUS_UNSPECIFIED = 0;
-  // License creation status.
-  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_STATUS_CREATED = 1;
-  // License archival status. i.e. 'is_archived'
-  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_STATUS_ARCHIVED = 2;
-  // License revocation status, i.e. 'is_revoked'
-  ENTERPRISE_SUBSCRIPTION_LICENSE_CONDITION_STATUS_REVOKED = 3;
-}
-
 message EnterpriseSubscriptionLicenseCondition {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    // License creation status.
+    STATUS_CREATED = 1;
+    // License archival status. i.e. 'is_archived'
+    STATUS_ARCHIVED = 2;
+    // License revocation status, i.e. 'is_revoked'
+    STATUS_REVOKED = 3;
+  }
+
   // The time this subscription transitioned into this status.
   google.protobuf.Timestamp last_transition_time = 1;
   // Status is the type of status corresponding to this condition.
-  EnterpriseSubscriptionLicenseConditionStatus status = 2;
+  Status status = 2;
   // Message is a description of the status transition and why it happened.
   string message = 3;
 }
