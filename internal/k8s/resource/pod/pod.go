@@ -43,6 +43,17 @@ func NewPodTemplate(name string, cfg config.StandardComponent) corev1.PodTemplat
 	return template
 }
 
+func NewVolumeFromPVC(name, claimName string) corev1.Volume {
+	return corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+				ClaimName: claimName,
+			},
+		},
+	}
+}
+
 func NewVolumeEmptyDir(name string) corev1.Volume {
 	return corev1.Volume{
 		Name: name,

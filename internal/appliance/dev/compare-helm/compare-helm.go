@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	k8syamlapi "k8s.io/apimachinery/pkg/util/yaml"
@@ -18,7 +20,7 @@ import (
 func main() {
 	helmRepoRoot := flag.String("deploy-sourcegraph-helm-path", filepath.Join("..", "deploy-sourcegraph-helm"), "Path to deploy-sourcegraph-helm repository checkout.")
 	helmTemplateExtraArgs := flag.String("helm-template-extra-args", "", "extra args to pass to `helm template`")
-	component := flag.String("component", "", "Which SG service to target.")
+	component := flag.String("component", "", "Which SG service to target (comma-separated list).")
 	goldenFile := flag.String("golden-file", "", "Which golden fixture to compare.")
 	noColor := flag.Bool("no-color", false, "Do not try to produce diffs in color. This is necessary for non-GNU diff users.")
 	flag.Parse()
@@ -30,7 +32,9 @@ func main() {
 		fatal("must pass -golden-file")
 	}
 
-	helmObjs := parseHelmResources(*helmTemplateExtraArgs, *helmRepoRoot, *component)
+	components := strings.Split(*component, ",")
+
+	helmObjs := parseHelmResources(*helmTemplateExtraArgs, *helmRepoRoot, components)
 
 	goldenContent, err := os.ReadFile(*goldenFile)
 	must(err)
@@ -109,7 +113,7 @@ func main() {
 	must(diffCmd.Run())
 }
 
-func parseHelmResources(helmTemplateExtraArgs, helmRepoRoot, component string) []*unstructured.Unstructured {
+func parseHelmResources(helmTemplateExtraArgs, helmRepoRoot string, components []string) []*unstructured.Unstructured {
 	helmShellCmd := "helm template . " + helmTemplateExtraArgs
 	helmCmd := exec.Command("sh", "-c", helmShellCmd)
 	helmCmd.Dir = filepath.Join(helmRepoRoot, "charts", "sourcegraph")
@@ -134,7 +138,7 @@ func parseHelmResources(helmTemplateExtraArgs, helmRepoRoot, component string) [
 		must(err)
 
 		k8sObj := obj.(*unstructured.Unstructured)
-		if k8sObj.GetLabels()["app.kubernetes.io/component"] == component {
+		if slices.Contains(components, k8sObj.GetLabels()["app.kubernetes.io/component"]) {
 			helmObjs = append(helmObjs, k8sObj)
 		}
 	}

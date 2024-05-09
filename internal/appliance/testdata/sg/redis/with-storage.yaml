@@ -13,7 +13,8 @@ spec:
   frontend:
     disabled: true
 
-  gitServer: {}
+  gitServer:
+    disabled: true
 
   indexedSearch:
     disabled: true
@@ -31,10 +32,10 @@ spec:
     disabled: true
 
   redisCache:
-    disabled: true
+    storageSize: 123Gi
 
   redisStore:
-    disabled: true
+    storageSize: 123Gi
 
   repoUpdater:
     disabled: true
