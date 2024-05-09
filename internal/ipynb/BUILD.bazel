@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//internal/htmlutil",
         "//internal/markdown",
+        "//lib/errors",
         "@com_github_bevzzz_nb//:nb",
         "@com_github_bevzzz_nb//extension",
         "@com_github_bevzzz_nb//extension/adapter",

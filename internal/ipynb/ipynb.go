@@ -11,7 +11,7 @@ import (
 	jupyter "github.com/bevzzz/nb/extension/extra/goldmark-jupyter"
 	"github.com/robert-nix/ansihtml"
 
-	"github.com/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/internal/htmlutil"
 	"github.com/sourcegraph/sourcegraph/internal/markdown"
 )
