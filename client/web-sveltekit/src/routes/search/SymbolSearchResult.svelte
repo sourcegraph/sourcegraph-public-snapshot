@@ -5,7 +5,7 @@
     import { observeIntersection } from '$lib/intersection-observer'
     import RepoStars from '$lib/repo/RepoStars.svelte'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
-    import SymbolKind from '$lib/search/SymbolKindIcon.svelte'
+    import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
     import type { SymbolMatch } from '$lib/shared'
 
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
@@ -41,7 +41,7 @@
             {#each result.symbols as symbol, index}
                 <a href={symbol.url}>
                     <div class="result">
-                        <SymbolKind symbolKind={symbol.kind} />
+                        <SymbolKindIcon symbolKind={symbol.kind} />
                         {#await highlightedHTMLRows then result}
                             <CodeExcerpt
                                 startLine={symbol.line}
