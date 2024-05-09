@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"fmt"
-	"net"
 	"text/template"
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/cloudsql"
 )
 
 type postgreSQLContract struct {
@@ -45,48 +45,56 @@ func (c postgreSQLContract) Configured() bool {
 // variable.
 func (c postgreSQLContract) OpenDatabase(ctx context.Context, database string) (*sql.DB, error) {
 	if c.customDSNTemplate != nil {
-		tmpl, err := template.New("PGDSN").Parse(*c.customDSNTemplate)
+		config, err := parseCustomDSNTemplateConnConfig(*c.customDSNTemplate, database)
 		if err != nil {
-			return nil, errors.Wrap(err, "PGDSN is not a valid template")
+			return nil, err
 		}
-		var dsn bytes.Buffer
-		if err := tmpl.Execute(&dsn, struct{ Database string }{Database: database}); err != nil {
-			return nil, errors.Wrap(err, "PGDSN template is invalid")
-		}
-		return sql.Open("pgx", dsn.String())
+		return sql.Open("customdsn", stdlib.RegisterConnConfig(config))
 	}
-
-	config, err := c.getCloudSQLConnConfig(ctx, database)
-	if err != nil {
-		return nil, errors.Wrap(err, "get CloudSQL connection config")
-	}
-	return sql.Open("pgx", stdlib.RegisterConnConfig(config))
+	return cloudsql.Open(ctx, c.getCloudSQLConnConfig(database))
 }
 
-// getCloudSQLConnConfig generates a pgx connection configuration for using
-// a Cloud SQL instance using IAM auth.
-func (c postgreSQLContract) getCloudSQLConnConfig(ctx context.Context, database string) (*pgx.ConnConfig, error) {
-	if c.instanceConnectionName == nil || c.instanceConnectionUser == nil {
-		return nil, errors.New("missing required PostgreSQL configuration")
+// ConnectToDatabase is similar to OpenDatabase, but returns a
+// github.com/jackc/pgx/v5 connection to the configured datbase instead for
+// services that prefer to use 'pgx' directly.
+//
+// In development, the connection can be overridden with the PGDSN environment
+// variable.
+func (c postgreSQLContract) ConnectToDatabase(ctx context.Context, database string) (*pgx.Conn, error) {
+	if c.customDSNTemplate != nil {
+		config, err := parseCustomDSNTemplateConnConfig(*c.customDSNTemplate, database)
+		if err != nil {
+			return nil, err
+		}
+		return pgx.ConnectConfig(ctx, config)
 	}
+	return cloudsql.Connect(ctx, c.getCloudSQLConnConfig(database))
+}
 
-	// https://github.com/GoogleCloudPlatform/cloud-sql-go-connector?tab=readme-ov-file#automatic-iam-database-authentication
-	dsn := fmt.Sprintf("user=%s dbname=%s", *c.instanceConnectionUser, database)
-	config, err := pgx.ParseConfig(dsn)
-	if err != nil {
-		return nil, errors.Wrap(err, "pgx.ParseConfig")
+func (c postgreSQLContract) getCloudSQLConnConfig(database string) cloudsql.ConnConfig {
+	return cloudsql.ConnConfig{
+		ConnectionName: c.instanceConnectionName,
+		User:           c.instanceConnectionUser,
+		Database:       database,
+		DialOptions: []cloudsqlconn.DialOption{
+			// MSP-provisioned databases only allow private IP access
+			cloudsqlconn.WithPrivateIP(),
+		},
 	}
-	d, err := cloudsqlconn.NewDialer(ctx,
-		cloudsqlconn.WithIAMAuthN(),
-		// MSP uses private IP
-		cloudsqlconn.WithDefaultDialOptions(cloudsqlconn.WithPrivateIP()))
+}
+
+func parseCustomDSNTemplateConnConfig(customDSNTemplate, database string) (*pgx.ConnConfig, error) {
+	tmpl, err := template.New("PGDSN").Parse(customDSNTemplate)
 	if err != nil {
-		return nil, errors.Wrap(err, "cloudsqlconn.NewDialer")
+		return nil, errors.Wrap(err, "PGDSN is not a valid template")
 	}
-	// Use the Cloud SQL connector to handle connecting to the instance.
-	// This approach does *NOT* require the Cloud SQL proxy.
-	config.DialFunc = func(ctx context.Context, _, _ string) (net.Conn, error) {
-		return d.Dial(ctx, *c.instanceConnectionName)
+	var dsn bytes.Buffer
+	if err := tmpl.Execute(&dsn, struct{ Database string }{Database: database}); err != nil {
+		return nil, errors.Wrap(err, "PGDSN template is invalid")
+	}
+	config, err := pgx.ParseConfig(dsn.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "rendered PGDSN is invalid")
 	}
 	return config, nil
 }
