@@ -198,8 +198,8 @@
         await invalidate(`search:${url}`)
         void goto(url)
 
-        // Rest interaction state since after success submit we should visually hide
-        // any suggestions UI but still keep focus on input, after user interacts with
+        // Reset interaction state since after success submit we should hide
+        // suggestions UI but still keep focus on input, after user interacts with
         // search input again we show suggestion panel
         userHasInteracted = false
     }
