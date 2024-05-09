@@ -63,11 +63,16 @@ func WithPushRefSpec(ref, branch string) pushOpt {
 // * Does the commit exist remotely?
 func (g *GitRepo) IsOutOfSync(ctx context.Context) (bool, error) {
 	if ok, err := g.HasRemoteBranch(ctx); err != nil {
+		println("HAS REMOTE ERR")
+		println("HAS REMOTE ERR")
+		println("HAS REMOTE ERR")
 		return false, err
 	} else if !ok {
-		return false, nil
+		// We don't have a remote branch, so we're definitely out of sync
+		return true, nil
 	}
 
+	// Now lets check if the commit exists in the remote branch
 	return !g.HasRemoteCommit(ctx), nil
 }
 

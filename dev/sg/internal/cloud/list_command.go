@@ -13,7 +13,7 @@ import (
 
 var ListEphemeralCommand = cli.Command{
 	Name:        "list",
-	Usage:       "sg could list",
+	Usage:       "list ephemeral cloud instances",
 	Description: "list ephemeral cloud instances attached to your GCP account",
 	Action:      wipAction(listCloudEphemeral),
 	Flags: []cli.Flag{

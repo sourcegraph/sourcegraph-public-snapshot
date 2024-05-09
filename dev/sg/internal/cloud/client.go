@@ -164,6 +164,20 @@ func (c *Client) CreateInstance(ctx context.Context, spec *DeploymentSpec) (*Ins
 	return newInstance(resp.Msg.GetInstance())
 }
 
+func (c *Client) UpgradeInstance(ctx context.Context, spec *DeploymentSpec) (*Instance, error) {
+	req := newRequestWithToken(c.token, &cloudapiv1.UpdateInstanceVersionRequest{
+		Name:        spec.Name,
+		Environment: DevEnvironment,
+		Version:     spec.Version,
+	})
+	resp, err := c.client.UpdateInstanceVersion(ctx, req)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to upgrade instance")
+	}
+
+	return newInstance(resp.Msg.GetInstance())
+}
+
 func (c *Client) DeleteInstance(ctx context.Context, name string) error {
 	return nil
 }

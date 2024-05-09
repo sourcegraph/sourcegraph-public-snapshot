@@ -3,15 +3,15 @@ resources:
   kind: Deployment
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: d33e42f7a0651e109c1a55ae881f9e3000e194cb5257dad1714cf26d5a370b3c
+      appliance.sourcegraph.com/configHash: 47d66a78b1de65fcfbf8ab61f1629a4e0eaec6b84314237799f4e7cb02ac1d2f
     creationTimestamp: "2024-04-19T00:00:00Z"
     generation: 1
     labels:
-      app.kubernetes.io/component: blobstore
+      app.kubernetes.io/component: redis-cache
       app.kubernetes.io/name: sourcegraph
       app.kubernetes.io/version: 5.3.9104
       deploy: sourcegraph
-    name: blobstore
+    name: redis-cache
     namespace: NORMALIZED_FOR_TESTING
     ownerReferences:
     - apiVersion: v1
@@ -29,64 +29,100 @@ resources:
     revisionHistoryLimit: 10
     selector:
       matchLabels:
-        app: blobstore
+        app: redis-cache
     strategy:
-      rollingUpdate:
-        maxSurge: 25%
-        maxUnavailable: 25%
-      type: RollingUpdate
+      type: Recreate
     template:
       metadata:
         annotations:
-          kubectl.kubernetes.io/default-container: blobstore
+          kubectl.kubernetes.io/default-container: redis-cache
         creationTimestamp: null
         labels:
-          app: blobstore
+          app: redis-cache
           deploy: sourcegraph
-        name: blobstore
+        name: redis-cache
       spec:
         containers:
-        - image: index.docker.io/sourcegraph/blobstore:5.3.2@sha256:d625be1eefe61cc42f94498e3c588bf212c4159c8b20c519db84eae4ff715efa
+        - image: index.docker.io/sourcegraph/redis-custom-image:default
           imagePullPolicy: IfNotPresent
-          name: blobstore
+          livenessProbe:
+            failureThreshold: 2
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            successThreshold: 1
+            tcpSocket:
+              port: redis
+            timeoutSeconds: 5
+          name: redis-cache
           ports:
-          - containerPort: 9000
-            name: blobstore
+          - containerPort: 6379
+            name: redis
             protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - "\n#!/bin/bash\nif [ -f /etc/redis/redis.conf ]; then\n  REDISCLI_AUTH=$(grep
+                -h \"requirepass\" /etc/redis/redis.conf | cut -d ' ' -f 2)\nfi\nresponse=$(\n
+                \ redis-cli ping\n)\nif [ \"$response\" != \"PONG\" ]; then\n  echo
+                \"$response\"\n  exit 1\nfi\n\t\t\t\t\t"
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
           resources:
             limits:
               cpu: "1"
-              memory: 500M
+              memory: 7Gi
             requests:
               cpu: "1"
-              memory: 500M
+              memory: 7Gi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-            runAsGroup: 101
-            runAsUser: 100
+            runAsGroup: 1000
+            runAsUser: 999
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: FallbackToLogsOnError
           volumeMounts:
-          - mountPath: /blobstore
-            name: blobstore
-          - mountPath: /data
-            name: blobstore-data
+          - mountPath: /redis-data
+            name: redis-data
+        - image: index.docker.io/sourcegraph/redis-exporter-custom-image:default
+          imagePullPolicy: IfNotPresent
+          name: redis-exporter
+          ports:
+          - containerPort: 9121
+            name: redisexp
+            protocol: TCP
+          resources:
+            limits:
+              cpu: 10m
+              memory: 100Mi
+            requests:
+              cpu: 10m
+              memory: 100Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 1000
+            runAsUser: 999
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: FallbackToLogsOnError
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
         securityContext:
-          fsGroup: 101
+          fsGroup: 1000
           fsGroupChangePolicy: OnRootMismatch
           runAsGroup: 101
           runAsUser: 100
         terminationGracePeriodSeconds: 30
         volumes:
-        - emptyDir: {}
-          name: blobstore
-        - name: blobstore-data
+        - name: redis-data
           persistentVolumeClaim:
-            claimName: blobstore
+            claimName: redis-cache
   status: {}
 - apiVersion: v1
   data:
@@ -94,7 +130,8 @@ resources:
       spec:
         requestedVersion: "5.3.9104"
 
-        blobstore: {}
+        blobstore:
+          disabled: true
 
         codeInsights:
           disabled: true
@@ -124,7 +161,11 @@ resources:
           disabled: true
 
         redisCache:
-          disabled: true
+          containerConfig:
+            redis-cache:
+              image: redis-custom-image:default
+            redis-exporter:
+              image: redis-exporter-custom-image:default
 
         redisStore:
           disabled: true
@@ -157,13 +198,13 @@ resources:
   kind: PersistentVolumeClaim
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: d33e42f7a0651e109c1a55ae881f9e3000e194cb5257dad1714cf26d5a370b3c
+      appliance.sourcegraph.com/configHash: 47d66a78b1de65fcfbf8ab61f1629a4e0eaec6b84314237799f4e7cb02ac1d2f
     creationTimestamp: "2024-04-19T00:00:00Z"
     finalizers:
     - kubernetes.io/pvc-protection
     labels:
       deploy: sourcegraph
-    name: blobstore
+    name: redis-cache
     namespace: NORMALIZED_FOR_TESTING
     ownerReferences:
     - apiVersion: v1
@@ -185,16 +226,43 @@ resources:
   status:
     phase: Pending
 - apiVersion: v1
+  data:
+    endpoint: cmVkaXMtY2FjaGU6NjM3OQ==
+  kind: Secret
+  metadata:
+    annotations:
+      appliance.sourcegraph.com/configHash: 47d66a78b1de65fcfbf8ab61f1629a4e0eaec6b84314237799f4e7cb02ac1d2f
+    creationTimestamp: "2024-04-19T00:00:00Z"
+    labels:
+      app.kubernetes.io/component: redis-cache
+      app.kubernetes.io/name: sourcegraph
+      app.kubernetes.io/version: 5.3.9104
+      deploy: sourcegraph
+    name: redis-cache
+    namespace: NORMALIZED_FOR_TESTING
+    ownerReferences:
+    - apiVersion: v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ConfigMap
+      name: sg
+      uid: NORMALIZED_FOR_TESTING
+    resourceVersion: NORMALIZED_FOR_TESTING
+    uid: NORMALIZED_FOR_TESTING
+  type: Opaque
+- apiVersion: v1
   kind: Service
   metadata:
     annotations:
-      appliance.sourcegraph.com/configHash: d33e42f7a0651e109c1a55ae881f9e3000e194cb5257dad1714cf26d5a370b3c
+      appliance.sourcegraph.com/configHash: 47d66a78b1de65fcfbf8ab61f1629a4e0eaec6b84314237799f4e7cb02ac1d2f
+      prometheus.io/port: "9121"
+      sourcegraph.prometheus/scrape: "true"
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
-      app: blobstore
-      app.kubernetes.io/component: blobstore
+      app: redis-cache
+      app.kubernetes.io/component: redis-cache
       deploy: sourcegraph
-    name: blobstore
+    name: redis-cache
     namespace: NORMALIZED_FOR_TESTING
     ownerReferences:
     - apiVersion: v1
@@ -214,12 +282,12 @@ resources:
     - IPv4
     ipFamilyPolicy: SingleStack
     ports:
-    - name: blobstore
-      port: 9000
+    - name: redis
+      port: 6379
       protocol: TCP
-      targetPort: blobstore
+      targetPort: redis
     selector:
-      app: blobstore
+      app: redis-cache
     sessionAffinity: None
     type: ClusterIP
   status:

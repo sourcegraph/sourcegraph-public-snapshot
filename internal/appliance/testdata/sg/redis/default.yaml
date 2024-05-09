@@ -13,7 +13,8 @@ spec:
   frontend:
     disabled: true
 
-  gitServer: {}
+  gitServer:
+    disabled: true
 
   indexedSearch:
     disabled: true
@@ -30,11 +31,9 @@ spec:
   preciseCodeIntel:
     disabled: true
 
-  redisCache:
-    disabled: true
+  redisCache: {}
 
-  redisStore:
-    disabled: true
+  redisStore: {}
 
   repoUpdater:
     disabled: true
