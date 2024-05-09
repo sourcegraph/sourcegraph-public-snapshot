@@ -34,7 +34,7 @@ type EphemeralClient interface {
 	CreateInstance(context.Context, *DeploymentSpec) (*Instance, error)
 	GetInstance(context.Context, string) (*Instance, error)
 	ListInstances(context.Context, bool) ([]*Instance, error)
-	DeleteInstance(context.Context, string) error
+	DeleteInstance(context.Context, string) (string, error)
 }
 
 type Client struct {
@@ -178,8 +178,17 @@ func (c *Client) UpgradeInstance(ctx context.Context, spec *DeploymentSpec) (*In
 	return newInstance(resp.Msg.GetInstance())
 }
 
-func (c *Client) DeleteInstance(ctx context.Context, name string) error {
-	return nil
+func (c *Client) DeleteInstance(ctx context.Context, name string) (string, error) {
+	req := newRequestWithToken(c.token, &cloudapiv1.DeleteInstanceRequest{
+		Name:        name,
+		Environment: DevEnvironment,
+	})
+	resp, err := c.client.DeleteInstance(ctx, req)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to delete instance")
+	}
+
+	return resp.Msg.GetStatus(), nil
 }
 
 func (c *Client) ExtendLease(ctx context.Context, name string, extendTime time.Time) (*Instance, error) {
