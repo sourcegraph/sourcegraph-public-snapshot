@@ -11,8 +11,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/hashutil",
-        "//internal/lazyregexp",
-        "//lib/errors",
+        "//lib/accesstoken",
     ],
 )
 
