@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"strings"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 )
+
+type BigQueryWriter interface {
+	Write(ctx context.Context, values ...bigquery.ValueSaver) error
+}
 
 type BuildkiteAgentEvent struct {
 	event string

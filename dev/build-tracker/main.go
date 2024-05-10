@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/bigquerywriter"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -43,12 +42,12 @@ type Server struct {
 	config       *config.Config
 	notifyClient notify.NotificationClient
 	bkClient     *buildkite.Client
-	bqWriter     *bigquerywriter.Writer
+	bqWriter     BigQueryWriter
 	http         *http.Server
 }
 
 // NewServer creatse a new server to listen for Buildkite webhook events.
-func NewServer(addr string, logger log.Logger, c config.Config, bqWriter *bigquerywriter.Writer) *Server {
+func NewServer(addr string, logger log.Logger, c config.Config, bqWriter BigQueryWriter) *Server {
 	logger = logger.Scoped("server")
 
 	if testutil.IsTest && c.BuildkiteToken == "" {

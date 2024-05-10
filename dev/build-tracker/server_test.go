@@ -312,4 +312,25 @@ func TestProcessEvent(t *testing.T) {
 		// fixed notification
 		require.Equal(t, 2, mockNotifyClient.sendCalled)
 	})
+
+	t.Run("agent webhooks", func(t *testing.T) {
+		mockBq := NewMockBigQueryWriter()
+		server := NewServer(":8080", logger, config.Config{}, mockBq)
+
+		server.processEvent(&build.Event{
+			Name: "agent.connected",
+			Agent: buildkite.Agent{
+				ID:             pointers.Ptr("QWdlbnQtLS0wMThmNjI4Yy1jY2M0LTRhMmEtOTJjOS1kN2NjODE5MDZiNzc="),
+				Name:           pointers.Ptr("banana-agent-default"),
+				ConnectedState: pointers.Ptr("connected"),
+				Hostname:       pointers.Ptr("banana-agent-deadbeef"),
+				IPAddress:      pointers.Ptr("10.0.0.5"),
+				UserAgent:      pointers.Ptr("buildkite-agent/4.2.0 (linux; amd64)"),
+				Version:        pointers.Ptr("4.2.0"),
+				Metadata:       []string{"queue=express"},
+			},
+		})
+
+		require.Equal(t, 1, len(mockBq.WriteFunc.History()))
+	})
 }
