@@ -4,6 +4,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -50,7 +51,13 @@ func (cfg *Configuration) Estimate(now time.Time, n int) *time.Time {
 
 		total := schedule.total()
 		if total == 0 {
-			at = schedule.ValidUntil()
+			nextAt := schedule.ValidUntil()
+			if nextAt == at {
+				// This loop has a complex end condition, and we've hit infinite loops here before.
+				// As a protective measure, if we make no progress, do not continue looping.
+				log.Scoped("changeset scheduler").Error("infinite loop calculating estimate")
+				return nil
+			}
 			continue
 		}
 
