@@ -190,6 +190,7 @@
     .jp-OutputArea-prompt {
         display: table-cell;
         vertical-align: top;
+        width: var(--jp-cell-prompt-width);
     }
 
     .jp-OutputArea-output {
