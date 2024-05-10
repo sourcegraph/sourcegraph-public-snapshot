@@ -483,11 +483,11 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			PushConfig: &pubsubsubscription.PubsubSubscriptionPushConfig{
 				PushEndpoint: endpoint.SecretData(),
 			},
-			// only retain un-acked messages for 1 hour
+			// Only retain un-acked messages for 1 hour
 			// the notifications aren't critical so they can be dropped after
-			// a reasonable amount of time
+			// a reasonable amount of time.
 			MessageRetentionDuration: pointers.Ptr("3600s"),
-			// we don't want the subscription to expire if there hasn't been a rollout in 31 days
+			// We don't want the subscription to expire if there hasn't been a rollout in 31 days.
 			ExpirationPolicy: &pubsubsubscription.PubsubSubscriptionExpirationPolicy{
 				Ttl: pointers.Ptr(""),
 			},
