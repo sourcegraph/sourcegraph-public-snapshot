@@ -122,7 +122,7 @@ const StackName = "monitoring"
 
 const sharedAlertsSlackChannel = "#alerts-msp"
 
-// user id of MSP Rollouts bot
+// mspRolloutsSlackUserID  is the user ID of MSP Rollouts Slack bot.
 const mspRolloutsSlackUserID string = "U072KKSCLSJ"
 
 // nobl9ClientID user account (@jac) for trial
