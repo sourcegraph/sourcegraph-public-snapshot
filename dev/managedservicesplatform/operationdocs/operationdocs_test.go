@@ -223,6 +223,34 @@ Some additional operations!`),
 			},
 		},
 		opts: Options{},
+	}, {
+		name: "with managed-services revision",
+		spec: spec.Spec{
+			Service: spec.ServiceSpec{
+				ID:          testServiceID,
+				Description: "Test service for MSP",
+				Name:        pointers.Ptr("MSP Testbed"),
+			},
+			Build: spec.BuildSpec{
+				Image: "us.gcr.io/sourcegraph-dev/msp-example",
+				Source: spec.BuildSourceSpec{
+					Repo: "github.com/sourcegraph/sourcegraph",
+				},
+			},
+			Environments: []spec.EnvironmentSpec{{
+				ID:        testServiceEnvironment,
+				ProjectID: testProjectID,
+				Category:  spec.EnvironmentCategoryTest,
+				Deploy: spec.EnvironmentDeploySpec{
+					Type: "rollout",
+				},
+			}},
+			Rollout: &spec.RolloutSpec{
+				Stages: []spec.RolloutStageSpec{{EnvironmentID: testServiceEnvironment}},
+			},
+		},
+		alerts: map[string]terraform.AlertPolicy{},
+		opts:   Options{ManagedServicesRevision: "a857d23cdc4184a045e4022285d38bed4acddac9"},
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
 			doc, err := Render(tc.spec, tc.alerts, tc.opts)
