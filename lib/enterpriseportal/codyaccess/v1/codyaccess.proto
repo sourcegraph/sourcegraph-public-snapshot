@@ -35,7 +35,7 @@ message GetCodyGatewayAccessRequest {
 }
 
 message GetCodyGatewayAccessResponse {
-  CodyGatewayAccess response = 1;
+  CodyGatewayAccess access = 1;
 }
 
 enum CodyGatewayRateLimitSource {
