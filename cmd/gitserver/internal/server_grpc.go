@@ -1707,6 +1707,133 @@ func (gs *grpcServer) ReadDir(req *proto.ReadDirRequest, ss proto.GitserverServi
 	return nil
 }
 
+func (gs *grpcServer) CommitLog(req *proto.CommitLogRequest, ss proto.GitserverService_CommitLogServer) (err error) {
+	ctx := ss.Context()
+
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.Strings("ranges", byteSlicesToStrings(req.GetRanges())),
+		log.String("path", string(req.GetPath())),
+	)
+
+	if req.GetRepoName() == "" {
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	if len(req.GetRanges()) == 0 && !req.GetAllRefs() {
+		return status.New(codes.InvalidArgument, "must specify ranges or all_refs").Err()
+	}
+
+	if len(req.GetRanges()) > 0 && req.GetAllRefs() {
+		return status.New(codes.InvalidArgument, "cannot specify both ranges and all_refs").Err()
+	}
+
+	var order git.CommitLogOrder
+	switch req.GetOrder() {
+	case proto.CommitLogRequest_COMMIT_LOG_ORDER_COMMIT_DATE:
+		order = git.CommitLogOrderCommitDate
+	case proto.CommitLogRequest_COMMIT_LOG_ORDER_TOPO_DATE:
+		order = git.CommitLogOrderTopoDate
+	case proto.CommitLogRequest_COMMIT_LOG_ORDER_UNSPECIFIED:
+		order = git.CommitLogOrderDefault
+	default:
+		return status.New(codes.InvalidArgument, "unknown order").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
+		return err
+	}
+
+	backend := gs.gitBackendSource(repoDir, repoName)
+
+	it, err := backend.CommitLog(ctx, git.CommitLogOpts{
+		Ranges:                byteSlicesToStrings(req.GetRanges()),
+		AllRefs:               req.GetAllRefs(),
+		After:                 req.GetAfter().AsTime(),
+		Before:                req.GetBefore().AsTime(),
+		MaxCommits:            req.GetMaxCommits(),
+		Skip:                  req.GetSkip(),
+		FollowOnlyFirstParent: req.GetFollowOnlyFirstParent(),
+		IncludeModifiedFiles:  req.GetIncludeModifiedFiles(),
+		MessageQuery:          string(req.GetMessageQuery()),
+		AuthorQuery:           string(req.GetAuthorQuery()),
+		Path:                  string(req.GetPath()),
+		FollowPathRenames:     req.GetFollowPathRenames(),
+		Order:                 order,
+	})
+	if err != nil {
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		return err
+	}
+
+	defer func() {
+		closeErr := it.Close()
+		if closeErr == nil {
+			return
+		}
+
+		if err == nil {
+			err = closeErr
+			return
+		}
+	}()
+
+	sendFunc := func(cs []*proto.GetCommitResponse) error {
+		return ss.Send(&proto.CommitLogResponse{Commits: cs})
+	}
+
+	// We use a chunker here to make sure we don't send too large gRPC messages.
+	// For repos with thousands or even millions of commits, sending them all in one
+	// message would be very memory intensive, but sending them all in individual
+	// messages would be slow, so we chunk them instead.
+	chunker := chunk.New(sendFunc)
+
+	for {
+		commit, err := it.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			var e *gitdomain.RevisionNotFoundError
+			if errors.As(err, &e) {
+				s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+					Repo: req.GetRepoName(),
+					Spec: e.Spec,
+				})
+				if err != nil {
+					return err
+				}
+				return s.Err()
+			}
+			return err
+		}
+
+		modifiedFiles := make([][]byte, len(commit.ModifiedFiles))
+		for i, f := range commit.ModifiedFiles {
+			modifiedFiles[i] = []byte(f)
+		}
+
+		err = chunker.Send(&proto.GetCommitResponse{
+			Commit:        commit.ToProto(),
+			ModifiedFiles: modifiedFiles,
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to send commits chunk")
+		}
+	}
+
+	err = chunker.Flush()
+	if err != nil {
+		return errors.Wrap(err, "failed to flush commits")
+	}
+
+	return nil
+}
+
 // checkRepoExists checks if a given repository is cloned on disk, and returns an
 // error otherwise.
 // On Sourcegraph.com, not all repos are managed by the scheduler. We thus

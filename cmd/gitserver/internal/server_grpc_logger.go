@@ -1089,6 +1089,45 @@ func readDirRequestToLogFields(req *proto.ReadDirRequest) []log.Field {
 	}
 }
 
+func (l *loggingGRPCServer) CommitLog(request *proto.CommitLogRequest, server proto.GitserverService_CommitLogServer) error {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+			proto.GitserverService_CommitLog_FullMethodName,
+			status.Code(server.Context().Err()),
+			trace.Context(server.Context()).TraceID,
+			elapsed,
+
+			commitLogRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.CommitLog(request, server)
+}
+
+func commitLogRequestToLogFields(req *proto.CommitLogRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.Strings("ranges", byteSlicesToStrings(req.GetRanges())),
+		log.Bool("allRefs", req.GetAllRefs()),
+		log.Time("after", req.GetAfter().AsTime()),
+		log.Time("before", req.GetBefore().AsTime()),
+		log.Int("maxCommits", int(req.GetMaxCommits())),
+		log.Int("skip", int(req.GetSkip())),
+		log.Bool("followOnlyFirstParent", req.GetFollowOnlyFirstParent()),
+		log.Bool("includeModifiedFiles", req.GetIncludeModifiedFiles()),
+		log.Int("order", int(req.GetOrder())),
+		log.String("messageQuery", string(req.GetMessageQuery())),
+		log.String("authorQuery", string(req.GetAuthorQuery())),
+		log.Bool("followPathRenames", req.GetFollowPathRenames()),
+		log.String("path", string(req.GetPath())),
+	}
+}
+
 type loggingRepositoryServiceServer struct {
 	base   proto.GitserverRepositoryServiceServer
 	logger log.Logger

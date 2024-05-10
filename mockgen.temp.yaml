@@ -150,6 +150,8 @@
     - GitserverService_ChangedFilesClient
     - GitserverService_ReadDirServer
     - GitserverService_ReadDirClient
+    - GitserverService_CommitLogServer
+    - GitserverService_CommitLogClient
 - filename: cmd/gitserver/internal/git/mock.go
   path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git
   interfaces:
@@ -158,6 +160,7 @@
     - BlameHunkReader
     - RefIterator
     - ReadDirIterator
+    - CommitLogIterator
 - filename: cmd/gitserver/internal/gitserverfs/mock.go
   path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs
   interfaces:
