@@ -1051,35 +1051,6 @@ func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.
 	return false, nil
 }
 
-// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
-// contains a commit past a specified date.
-func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string) (_ bool, err error) {
-	ctx, _, endObservation := c.operations.hasCommitAfter.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("date", date),
-			attribute.String("revSpec", revspec),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	if revspec == "" {
-		revspec = "HEAD"
-	}
-
-	// TODO: Because N: 1 currently has a special meaning because of `isRequestForSingleCommit`,
-	// we ask for two commits here, but the second one we never actually need.
-	// One we figure out why `isRequestForSingleCommit` exists in the first place,
-	// we should update this.
-	commits, err := c.Commits(ctx, repo, CommitsOptions{N: 2, After: date, Range: revspec})
-	if err != nil {
-		return false, err
-	}
-
-	return len(commits) > 0, nil
-}
-
 func isBadObjectErr(output, obj string) bool {
 	return output == "fatal: bad object "+obj
 }
