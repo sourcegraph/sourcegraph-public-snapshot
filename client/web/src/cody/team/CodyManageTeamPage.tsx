@@ -163,7 +163,7 @@ export const CodyManageTeamPage: React.FunctionComponent<CodyManageTeamPageProps
     return (
         <>
             <Page className={classNames('d-flex flex-column')}>
-                <PageTitle title="Dashboard" />
+                <PageTitle title="Manage Cody team" />
                 <PageHeader
                     className="mb-4 mt-4"
                     actions={
