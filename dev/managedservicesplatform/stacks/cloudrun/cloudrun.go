@@ -14,7 +14,6 @@ import (
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/datagooglesecretmanagersecretversion"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiamcustomrole"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/pubsubsubscription"
@@ -472,16 +471,16 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		})
 
 		// Get cloud-relay endpoint from GSM.
-		endpoint := datagooglesecretmanagersecretversion.NewDataGoogleSecretManagerSecretVersion(stack, id.TerraformID("clouddeploy-endpoint"), &datagooglesecretmanagersecretversion.DataGoogleSecretManagerSecretVersionConfig{
-			Project: pointers.Ptr(googlesecretsmanager.SharedSecretsProjectID),
-			Secret:  pointers.Ptr(googlesecretsmanager.SecretMSPDeployNotifEndpoint),
+		endpoint := gsmsecret.Get(stack, id.Group("clouddeploy-endpoint"), gsmsecret.DataConfig{
+			ProjectID: googlesecretsmanager.SharedSecretsProjectID,
+			Secret:    googlesecretsmanager.SecretMSPDeployNotificationEndpoint,
 		})
 
 		_ = pubsubsubscription.NewPubsubSubscription(stack, id.TerraformID("clouddeploy-operations-sub"), &pubsubsubscription.PubsubSubscriptionConfig{
 			Name:  pointers.Ptr("clouddeploy-operations"),
 			Topic: topic.Id(),
 			PushConfig: &pubsubsubscription.PubsubSubscriptionPushConfig{
-				PushEndpoint: endpoint.SecretData(),
+				PushEndpoint: &endpoint.Value,
 			},
 			// Only retain un-acked messages for 1 hour
 			// the notifications aren't critical so they can be dropped after
