@@ -14,11 +14,11 @@
     import Icon from '$lib/Icon.svelte'
     import SourcegraphLogo from '$lib/SourcegraphLogo.svelte'
 
-    import { isCurrent, mainNavigation } from './mainNavigation'
+    import { isCurrent } from './mainNavigation'
     import MainNavigationLink from './MainNavigationLink.svelte'
 
     export let onClose: () => void
-    export let entries: (NavigationEntry | NavigationMenu)[] = mainNavigation
+    export let entries: (NavigationEntry | NavigationMenu)[]
 </script>
 
 <div class="root" use:portal>

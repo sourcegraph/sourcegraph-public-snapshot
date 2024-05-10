@@ -19,8 +19,12 @@
     import { isRouteEnabled } from '$lib/navigation'
 
     import type { LayoutData } from './$types'
+    import { mainNavigation, dotcomMainNavigation } from './navigation'
 
     export let data: LayoutData
+
+    // TODO(camdencheek): is there a better way to do this than to access the window context directly?
+    const navigationEntries = window.context.sourcegraphDotComMode ? dotcomMainNavigation : mainNavigation
 
     const user = writable(data.user ?? null)
     const settings = writable(isErrorLike(data.settings) ? null : data.settings)
@@ -96,7 +100,7 @@
     {/if}
 {/await}
 
-<GlobalHeader authenticatedUser={$user} {handleOptOut} />
+<GlobalHeader authenticatedUser={$user} {handleOptOut} entries={navigationEntries} />
 
 <main>
     <slot />
