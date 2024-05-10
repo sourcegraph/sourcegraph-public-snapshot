@@ -115,3 +115,34 @@ func EnvVarsOtel() []corev1.EnvVar {
 		{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://$(OTEL_AGENT_HOST):4317"},
 	}
 }
+
+func EnvVarsPostgres(secretName string) []corev1.EnvVar {
+	return []corev1.EnvVar{
+		NewEnvVarSecretKeyRef("POSTGRES_DATABASE", secretName, "database"),
+		NewEnvVarSecretKeyRef("POSTGRES_HOST", secretName, "host"),
+		NewEnvVarSecretKeyRef("POSTGRES_PASSWORD", secretName, "password"),
+		NewEnvVarSecretKeyRef("POSTGRES_PORT", secretName, "port"),
+		NewEnvVarSecretKeyRef("POSTGRES_USER", secretName, "user"),
+		{
+			Name:  "POSTGRES_DB",
+			Value: "$(POSTGRES_DATABASE)",
+		},
+	}
+}
+
+func EnvVarsPostgresExporter(secretName string) []corev1.EnvVar {
+	return []corev1.EnvVar{
+		NewEnvVarSecretKeyRef("DATA_SOURCE_DB", secretName, "database"),
+		NewEnvVarSecretKeyRef("DATA_SOURCE_PASS", secretName, "password"),
+		NewEnvVarSecretKeyRef("DATA_SOURCE_PORT", secretName, "port"),
+		NewEnvVarSecretKeyRef("DATA_SOURCE_USER", secretName, "user"),
+		{
+			Name:  "DATA_SOURCE_URI",
+			Value: "127.0.0.1:$(DATA_SOURCE_PORT)/$(DATA_SOURCE_DB)?sslmode=disable",
+		},
+		{
+			Name:  "PG_EXPORTER_EXTEND_QUERY_PATH",
+			Value: "/config/queries.yaml",
+		},
+	}
+}
