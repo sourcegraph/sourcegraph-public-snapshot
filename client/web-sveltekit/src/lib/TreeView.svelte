@@ -257,8 +257,7 @@
 
 <style lang="scss">
     ul {
-        // Padding ensures that focus rings of tree items are not cut off
-        padding: 0 0.25rem;
+        padding: 0;
 
         &,
         :global(ul[role='group']) {

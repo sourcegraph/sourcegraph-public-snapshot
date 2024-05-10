@@ -1,3 +1,15 @@
+<script lang="ts" context="module">
+    import { writable } from 'svelte/store'
+
+    const fuzzyFinderState = writable(false)
+    const scopeState = writable<FuzzyFinderTabId | ''>('')
+
+    export function openFuzzyFinder(tab?: FuzzyFinderTabId): void {
+        fuzzyFinderState.set(true)
+        scopeState.set(tab ?? FuzzyFinderTabType.Repos)
+    }
+</script>
+
 <script lang="ts">
     import { escapeRegExp } from 'lodash'
 
@@ -5,10 +17,9 @@
     import { registerHotkey } from '$lib/Hotkey'
     import { parseRepoRevision } from '$lib/shared'
 
-    import FuzzyFinder from './FuzzyFinder.svelte'
+    import FuzzyFinder, { type FuzzyFinderTabId, FuzzyFinderTabType } from './FuzzyFinder.svelte'
     import { filesHotkey, reposHotkey, symbolsHotkey } from './keys'
 
-    let open = false
     let finder: FuzzyFinder | undefined
     let scope = ''
 
@@ -17,8 +28,8 @@
         ignoreInputFields: false,
         handler: event => {
             event.stopPropagation()
-            open = true
-            finder?.selectTab('repos')
+            $fuzzyFinderState = true
+            $scopeState = 'repos'
             return false
         },
     })
@@ -27,8 +38,8 @@
         ignoreInputFields: false,
         handler: event => {
             event.stopPropagation()
-            open = true
-            finder?.selectTab('symbols')
+            $fuzzyFinderState = true
+            $scopeState = 'symbols'
             return false
         },
     })
@@ -38,10 +49,16 @@
         ignoreInputFields: false,
         handler: event => {
             event.stopPropagation()
-            open = true
-            finder?.selectTab('files')
+            $fuzzyFinderState = true
+            $scopeState = 'files'
             return false
         },
+    })
+
+    scopeState.subscribe(tab => {
+        if (tab) {
+            finder?.selectTab(tab)
+        }
     })
 
     $: if ($page.params.repo) {
@@ -55,4 +72,4 @@
     }
 </script>
 
-<FuzzyFinder bind:this={finder} {open} {scope} on:close={() => (open = false)} />
+<FuzzyFinder bind:this={finder} open={$fuzzyFinderState} {scope} on:close={() => ($fuzzyFinderState = false)} />

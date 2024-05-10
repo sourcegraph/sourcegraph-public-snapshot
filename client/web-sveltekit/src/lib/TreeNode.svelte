@@ -1,6 +1,13 @@
 <svelte:options immutable />
 
+<script lang="ts" context="module">
+    interface TreeNodeContext {
+        level: number
+    }
+</script>
+
 <script lang="ts" generics="T">
+    import { getContext, setContext } from 'svelte'
     import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 
     import Icon from '$lib/Icon.svelte'
@@ -22,8 +29,10 @@
     $: selectable = treeProvider.isSelectable(entry)
     $: selected = $treeState.selected === nodeID
     $: tabindex = $treeState.focused === nodeID ? 0 : -1
-
     $: children = expandable && expanded ? treeProvider.fetchChildren(entry) : null
+
+    let level = getContext<TreeNodeContext>('tree-node-nesting')?.level ?? 0
+    setContext('tree-node-nesting', { level: level + 1 })
 
     function toggleOpen(expand?: boolean) {
         if (expandable) {
@@ -58,6 +67,7 @@
     {tabindex}
     data-treeitem
     data-node-id={nodeID}
+    style="--tree-node-nested-level: {level}"
 >
     <span bind:this={label} class="label" data-treeitem-label>
         <!-- hide the open/close button to preserve alignment with expandable entries -->
@@ -99,8 +109,6 @@
 
 <style lang="scss">
     [role='treeitem'] {
-        // Margin ensures that focus rings are not covered by preceeding or following elements
-        margin: 0.25rem 0;
         border-radius: var(--border-radius);
 
         &[tabindex='0']:focus {
@@ -112,14 +120,15 @@
         }
     }
 
-    [role='group'],
     .loading {
-        margin-left: 1rem;
+        margin-left: calc(var(--tree-node-nested-level) * 1rem + 1rem);
     }
 
     .label {
         display: flex;
         align-items: center;
+        padding-right: 0.25rem;
+        padding-left: calc(var(--tree-node-nested-level) * 0.75rem + 0.35rem);
     }
 
     .hidden {

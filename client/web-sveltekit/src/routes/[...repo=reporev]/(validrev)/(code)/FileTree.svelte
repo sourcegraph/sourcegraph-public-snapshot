@@ -130,7 +130,6 @@
 
         :global([data-treeitem][aria-selected]) > :global([data-treeitem-label]) {
             cursor: pointer;
-            border-radius: var(--border-radius);
 
             &:hover {
                 background-color: var(--color-bg-3);
@@ -138,7 +137,11 @@
         }
 
         :global([data-treeitem][aria-selected='true']) > :global([data-treeitem-label]) {
-            background-color: var(--color-bg-3);
+            background-color: var(--primary);
+
+            &:hover {
+                background-color: var(--primary);
+            }
         }
     }
 
@@ -149,14 +152,15 @@
         overflow: hidden;
         white-space: nowrap;
         text-decoration: none;
-        padding: 0.1rem 0;
+        padding: 0.2rem 0.25rem 0.2rem 0;
 
-        :global([data-treeitem][aria-selected='true']) & {
-            color: var(--text-title);
+        :global([data-treeitem][aria-selected='true']) > & {
+            color: var(--body-bg);
         }
 
         &:hover {
             color: var(--text-title);
+            text-decoration: none;
         }
     }
 
