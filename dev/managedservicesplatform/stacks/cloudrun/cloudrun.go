@@ -14,8 +14,11 @@ import (
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/datagooglesecretmanagersecretversion"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiamcustomrole"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/pubsubsubscription"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/pubsubtopic"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/serviceaccountiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucket"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucketiammember"
@@ -461,6 +464,35 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			skaffoldBucketName: skaffoldBucket.Name(),
 			pipelineBucketName: pipelineBucket.Name(),
 		})
+
+		// Enable pubsub topics to receive notifications for cloud deploy events
+		// See https://cloud.google.com/deploy/docs/subscribe-deploy-notifications#available_topics for topic info
+		topic := pubsubtopic.NewPubsubTopic(stack, id.TerraformID("clouddeploy-operations-topic"), &pubsubtopic.PubsubTopicConfig{
+			Name: pointers.Ptr("clouddeploy-operations"),
+		})
+
+		// Get cloud-relay endpoint from secret manager
+		endpoint := datagooglesecretmanagersecretversion.NewDataGoogleSecretManagerSecretVersion(stack, id.TerraformID("clouddeploy-endpoint"), &datagooglesecretmanagersecretversion.DataGoogleSecretManagerSecretVersionConfig{
+			Project: pointers.Ptr(googlesecretsmanager.SharedSecretsProjectID),
+			Secret:  pointers.Ptr(googlesecretsmanager.SecretMSPDeployNotifEndpoint),
+		})
+
+		_ = pubsubsubscription.NewPubsubSubscription(stack, id.TerraformID("clouddeploy-operations-sub"), &pubsubsubscription.PubsubSubscriptionConfig{
+			Name:  pointers.Ptr("clouddeploy-operations"),
+			Topic: topic.Id(),
+			PushConfig: &pubsubsubscription.PubsubSubscriptionPushConfig{
+				PushEndpoint: endpoint.SecretData(),
+			},
+			// only retain un-acked messages for 1 hour
+			// the notifications aren't critical so they can be dropped after
+			// a reasonable amount of time
+			MessageRetentionDuration: pointers.Ptr("3600s"),
+			// we don't want the subscription to expire if there hasn't been a rollout in 31 days
+			ExpirationPolicy: &pubsubsubscription.PubsubSubscriptionExpirationPolicy{
+				Ttl: pointers.Ptr(""),
+			},
+		})
+
 	}
 
 	// Collect outputs

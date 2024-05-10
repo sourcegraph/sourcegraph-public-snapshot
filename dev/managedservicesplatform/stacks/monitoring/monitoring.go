@@ -122,6 +122,9 @@ const StackName = "monitoring"
 
 const sharedAlertsSlackChannel = "#alerts-msp"
 
+// user id of MSP Rollouts bot
+const mspRolloutsSlackUserID string = "U072KKSCLSJ"
+
 // nobl9ClientID user account (@jac) for trial
 const nobl9ClientID = "0oab428uphKZbY1jy417"
 const nobl9OrganizationID = "sourcegraph-n8JWJzlFjsCw"
@@ -267,10 +270,12 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				vars.Service.GetName(), vars.EnvironmentID)
 			// https://registry.terraform.io/providers/pablovarela/slack/latest/docs/resources/conversation#argument-reference
 			slackChannel = slackconversation.NewConversation(stack, id.TerraformID("channel"), &slackconversation.ConversationConfig{
-				Name:      pointers.Ptr(strings.TrimPrefix(channel.Name, "#")),
-				Topic:     description,
-				Purpose:   description,
-				IsPrivate: pointers.Ptr(false),
+				Name:                           pointers.Ptr(strings.TrimPrefix(channel.Name, "#")),
+				Topic:                          description,
+				Purpose:                        description,
+				IsPrivate:                      pointers.Ptr(false),
+				PermanentMembers:               pointers.Ptr(pointers.Slice([]string{mspRolloutsSlackUserID})),
+				ActionOnUpdatePermanentMembers: pointers.Ptr("none"),
 
 				// In case it already exists
 				AdoptExistingChannel: pointers.Ptr(true),
