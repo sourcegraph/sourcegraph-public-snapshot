@@ -122,8 +122,8 @@ const StackName = "monitoring"
 
 const sharedAlertsSlackChannel = "#alerts-msp"
 
-// mspRolloutsSlackUserID  is the user ID of MSP Rollouts Slack bot.
-const mspRolloutsSlackUserID string = "U072KKSCLSJ"
+// mspRolloutsBotSlackUserID  is the user ID of MSP Rollouts Slack bot.
+const mspRolloutsBotSlackUserID string = "U072KKSCLSJ"
 
 // nobl9ClientID user account (@jac) for trial
 const nobl9ClientID = "0oab428uphKZbY1jy417"
@@ -274,7 +274,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				Topic:                          description,
 				Purpose:                        description,
 				IsPrivate:                      pointers.Ptr(false),
-				PermanentMembers:               pointers.Ptr(pointers.Slice([]string{mspRolloutsSlackUserID})),
+				PermanentMembers:               pointers.Ptr(pointers.Slice([]string{mspRolloutsBotSlackUserID})),
 				// Do not kick out other users in the channel
 				ActionOnUpdatePermanentMembers: pointers.Ptr("none"),
 

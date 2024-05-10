@@ -471,7 +471,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		})
 
 		// Get cloud-relay endpoint from GSM.
-		endpoint := gsmsecret.Get(stack, id.Group("clouddeploy-endpoint"), gsmsecret.DataConfig{
+		endpoint := gsmsecret.Get(stack, id.Group("cloudrelay-endpoint"), gsmsecret.DataConfig{
 			ProjectID: googlesecretsmanager.SharedSecretsProjectID,
 			Secret:    googlesecretsmanager.SecretMSPDeployNotificationEndpoint,
 		})
