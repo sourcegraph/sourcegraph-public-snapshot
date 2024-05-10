@@ -157,6 +157,7 @@ func TestConfiguration_Estimate(t *testing.T) {
 
 	t.Run("infinite loop", func(t *testing.T) {
 		// Reproduces a scenario that caused an infinite loop when running Estimate.
+		// See #62597.
 
 		cfg, err := NewConfiguration(&[]*schema.BatchChangeRolloutWindow{
 			{
