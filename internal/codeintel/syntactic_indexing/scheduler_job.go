@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -58,24 +59,32 @@ func newSchedulerJob(
 	scheduler SyntacticJobScheduler,
 ) goroutine.BackgroundRoutine {
 
+	m := new(metrics.SingletonREDMetrics)
+
+	redMetrics := m.Get(func() *metrics.REDMetrics {
+		return metrics.NewREDMetrics(
+			observationCtx.Registerer,
+			"codeintel_syntactic_indexing_background",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+	})
+
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(context.Background()),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return scheduler.Schedule(observationCtx, ctx, time.Now())
 		}),
-		goroutine.WithName("codeintel.autoindexing-background-scheduler"),
-		goroutine.WithDescription("schedule autoindexing jobs in the background using defined or inferred configurations"),
+		goroutine.WithName("codeintel.syntactic-indexing-background-scheduler"),
+		goroutine.WithDescription("schedule syntactic indexing jobs in the background"),
 		goroutine.WithInterval(time.Second*5),
 		goroutine.WithOperation(observationCtx.Operation(observation.Op{
-			Name:              "codeintel.indexing.HandleIndexSchedule",
+			Name:              "codeintel.syntactic_indexing.HandleIndexSchedule",
 			MetricLabelValues: []string{"HandleIndexSchedule"},
-			// Metrics:           redMetrics,
-			// ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-			// 	if errors.As(err, &inference.LimitError{}) {
-			// 		return observation.EmitForNone
-			// 	}
-			// 	return observation.EmitForDefault
-			// },
+			Metrics:           redMetrics,
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				return observation.EmitForDefault
+			},
 		})),
 	)
 }
