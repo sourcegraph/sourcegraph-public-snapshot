@@ -10,6 +10,7 @@ go_library(
         "gitserver.go",
         "grpc.go",
         "kubernetes.go",
+        "pgsql.go",
         "reconcile.go",
         "redis.go",
         "repo_updater.go",
@@ -21,6 +22,7 @@ go_library(
     deps = [
         "//internal/appliance/config",
         "//internal/appliance/v1:appliance",
+        "//internal/k8s/resource/configmap",
         "//internal/k8s/resource/container",
         "//internal/k8s/resource/deployment",
         "//internal/k8s/resource/pod",
@@ -47,7 +49,6 @@ go_library(
         "@io_k8s_sigs_controller_runtime//pkg/predicate",
         "@io_k8s_sigs_controller_runtime//pkg/reconcile",
         "@io_k8s_sigs_yaml//:yaml",
-        "@io_k8s_utils//ptr",
     ],
 )
 
@@ -63,6 +64,7 @@ go_test(
         "gitserver_test.go",
         "golden_test.go",
         "helpers_test.go",
+        "pgsql_test.go",
         "redis_test.go",
         "repo_updater_test.go",
         "standard_config_test.go",

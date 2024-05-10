@@ -7,8 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	libaccesstoken "github.com/sourcegraph/sourcegraph/lib/accesstoken"
 )
 
 // PersonalAccessTokenPrefix is the token prefix for Sourcegraph personal access tokens. Its purpose
@@ -19,22 +18,7 @@ const LocalInstanceIdentifier = "local"
 const InstanceIdentifierLength = 16
 const InstanceIdentifierHmacKey = "instance_identifier_hmac_key" // Public as we are using HMAC for key derivation, not for authentication
 
-var personalAccessTokenRegex = lazyregexp.New("^(?:sgp_|sgph_)?(?:[a-fA-F0-9]{16}_|local_)?([a-fA-F0-9]{40})$")
-
-// ParsePersonalAccessToken parses a personal access token to remove prefixes and extract the <token> that is stored in the database
-// Personal access tokens can take several forms:
-//   - <token>
-//   - sgp_<token>
-//   - sgp_<instance-identifier>_<token>
-func ParsePersonalAccessToken(token string) (string, error) {
-	tokenMatches := personalAccessTokenRegex.FindStringSubmatch(token)
-	if len(tokenMatches) <= 1 {
-		return "", errors.New("invalid token format")
-	}
-	tokenValue := tokenMatches[1]
-
-	return tokenValue, nil
-}
+var ParsePersonalAccessToken = libaccesstoken.ParsePersonalAccessToken
 
 // GeneratePersonalAccessToken generates a new personal access token.
 // It returns the full token string, and the byte representation of the access token.
