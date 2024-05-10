@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -51,8 +52,14 @@ type EnvironmentSpec struct {
 	// configured.
 	Category EnvironmentCategory `yaml:"category"`
 
-	// Deploy specifies how to deploy revisions.
+	// Deploy specifies how to deploy revisions of the service image.
 	Deploy EnvironmentDeploySpec `yaml:"deploy"`
+
+	// Locations specifies details for the desired geographical location of
+	// resources provisioned for this environment. If omitted, default
+	// locations are used (namely, the GCP region 'us-central1'). If provided,
+	// all fields must be specified.
+	Locations *EnvironmentLocationsSpec `yaml:"locations,omitempty"`
 
 	// EnvironmentServiceSpec carries service-specific configuration.
 	*EnvironmentServiceSpec `yaml:",inline"`
@@ -123,6 +130,7 @@ func (s EnvironmentSpec) Validate() []error {
 
 	// Validate other shared sub-specs
 	errs = append(errs, s.Deploy.Validate()...)
+	errs = append(errs, s.GetLocationSpec().Validate()...)
 	errs = append(errs, s.Resources.Validate()...)
 	errs = append(errs, s.Instances.Validate()...)
 	for k, v := range s.SecretVolumes {
@@ -833,9 +841,6 @@ type EnvironmentResourceBigQueryDatasetSpec struct {
 	// project for BigQuery resources. If not provided, resources are created
 	// within the service's project.
 	ProjectID *string `yaml:"projectID,omitempty"`
-	// Location defaults to "US". Do not configure unless you know what you are
-	// doing, as BigQuery locations are not the same as standard GCP regions.
-	Location *string `yaml:"region,omitempty"`
 }
 
 func (EnvironmentResourceBigQueryDatasetSpec) ResourceKind() string { return "BigQuery dataset" }
@@ -897,4 +902,73 @@ type EnvironmentAlertingSpec struct {
 	// of alerts that are considered high-signal indicators that something is
 	// definitely wrong with your service.
 	Opsgenie *bool `yaml:"opsgenie,omitempty"`
+}
+
+type EnvironmentLocationsSpec struct {
+	// GCPRegion is the GCP region where all regional resources resources should
+	// be deployed for this environment, for example:
+	//
+	// - https://cloud.google.com/about/locations#americas
+	// - https://cloud.google.com/about/locations#asia-pacific
+	GCPRegion string `yaml:"gcpRegion"`
+	// GCPLocation is the GCP location where all multi-regional resources should
+	// be deployed for this environment, e.g. BigQuery:
+	// https://cloud.google.com/about/locations#multi-region
+	//
+	// Note that the names of valid locations are not consistent across GCP
+	// products, callsites should check that the allowed values in
+	// 'EnvironmentLocationsSpec.Validate()' match the actual values supported
+	// by the relevant GCP product.
+	GCPLocation string `yaml:"gcpLocation"`
+}
+
+// GetLocationSpec returns the appropriate location spec for the environment,
+// returning defaults if none is configured.
+func (s EnvironmentSpec) GetLocationSpec() EnvironmentLocationsSpec {
+	if s.Locations == nil {
+		// Provide our defaults
+		return EnvironmentLocationsSpec{
+			GCPRegion:   "us-central1",
+			GCPLocation: "US", // original default for BigQuery
+		}
+	}
+	return *s.Locations
+}
+
+func (s EnvironmentLocationsSpec) Validate() []error {
+	var (
+		allowedRegions = []string{
+			// Starter list, same as Cloud controller
+			"us-central1",
+			"us-west1",
+			"asia-northeast1",
+			"australia-southeast1",
+			"europe-west2",
+			"europe-west3",
+			"northamerica-northeast1",
+		}
+		allowedLocations = []string{
+			// Only support locations that have BigQuery (i.e. not APAC)
+			"us",
+			"europe",
+		}
+	)
+
+	var errs []error
+
+	if s.GCPRegion == "" {
+		errs = append(errs, errors.New("locations.gcpRegion must be non-empty"))
+	} else if !slices.Contains(allowedRegions, s.GCPRegion) {
+		errs = append(errs, errors.Newf("locations.gcpRegion %q is not valid, allowed: [%s]",
+			s.GCPRegion, strings.Join(allowedRegions, ", ")))
+	}
+
+	if s.GCPLocation == "" {
+		errs = append(errs, errors.New("locations.gcpLocation must be non-empty"))
+	} else if !slices.Contains(allowedLocations, strings.ToLower(s.GCPLocation)) {
+		errs = append(errs, errors.Newf("locations.gcpLocation %q is not valid, allowed: [%s]",
+			s.GCPLocation, strings.Join(allowedLocations, ", ")))
+	}
+
+	return errs
 }

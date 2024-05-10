@@ -89,12 +89,6 @@ const (
 	ScaffoldSourceFile = "skaffoldsource.tar.gz"
 )
 
-// Hardcoded variables.
-var (
-	// GCPRegion is currently hardcoded.
-	GCPRegion = "us-central1"
-)
-
 const tfVarKeyResolvedImageTag = "resolved_image_tag"
 
 const SentryOrganization = "sourcegraph"
@@ -121,6 +115,9 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	if err != nil {
 		return nil, err
 	}
+
+	// Resource locationSpec configuration
+	locationSpec := vars.Environment.GetLocationSpec()
 
 	diagnosticsSecret := random.New(stack, resourceid.New("diagnostics-secret"), random.Config{
 		ByteLength: 8,
@@ -180,7 +177,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		return privatenetwork.New(stack, resourceid.New("privatenetwork"), privatenetwork.Config{
 			ProjectID: vars.ProjectID,
 			ServiceID: vars.Service.ID,
-			Region:    GCPRegion,
+			Region:    locationSpec.GCPRegion,
 		})
 	})
 
@@ -200,7 +197,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			resourceid.New("redis"),
 			redis.Config{
 				ProjectID: vars.ProjectID,
-				Region:    GCPRegion,
+				Region:    locationSpec.GCPRegion,
 				Spec:      *vars.Environment.Resources.Redis,
 				Network:   privateNetwork().Network,
 			})
@@ -233,7 +230,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		pgSpec := *vars.Environment.Resources.PostgreSQL
 		sqlInstance, err := cloudsql.New(stack, resourceid.New("postgresql"), cloudsql.Config{
 			ProjectID: vars.ProjectID,
-			Region:    GCPRegion,
+			Region:    locationSpec.GCPRegion,
 			Spec:      pgSpec,
 			Network:   privateNetwork().Network,
 
@@ -288,6 +285,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			ServiceID:              vars.Service.ID,
 			WorkloadServiceAccount: vars.IAM.CloudRunWorkloadServiceAccount,
 			Spec:                   *vars.Environment.Resources.BigQueryDataset,
+			Locations:              locationSpec,
 			PreventDestroys:        vars.PreventDestroys,
 		})
 		if err != nil {
@@ -350,7 +348,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		ResolvedImageTag:  *imageTag.StringValue,
 		Environment:       vars.Environment,
 		GCPProjectID:      vars.ProjectID,
-		GCPRegion:         GCPRegion,
+		GCPRegion:         locationSpec.GCPRegion,
 		ServiceAccount:    vars.IAM.CloudRunWorkloadServiceAccount,
 		DiagnosticsSecret: diagnosticsSecret,
 		ResourceLimits:    makeContainerResourceLimits(vars.Environment.Instances.Resources),
@@ -375,7 +373,11 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// pipelines for each. In particular, see https://registry.terraform.io/providers/hashicorp/google/5.10.0/docs/resources/clouddeploy_delivery_pipeline#target_id:
 		//
 		// > The location of the Target is inferred to be the same as the location of the DeliveryPipeline that contains this Stage.
-		var rolloutLocation = GCPRegion
+		//
+		// Updated note: in theory we can change this since we now use a custom
+		// rollout target, but in may be good practice to keep separate regions
+		// separated.
+		var rolloutLocation = locationSpec.GCPRegion
 
 		// stageTargets enumerate stages in order. Cloud Deploy targets are
 		// created separately because the TF provider doesn't support Custom
@@ -433,7 +435,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// locally.
 		skaffoldBucket := storagebucket.NewStorageBucket(stack, id.Group("skaffold").TerraformID("bucket"), &storagebucket.StorageBucketConfig{
 			Name:     pointers.Stringf("%s-cloudrun-skaffold", vars.ProjectID),
-			Location: &GCPRegion,
+			Location: &rolloutLocation,
 		})
 		_ = storagebucketobject.NewStorageBucketObject(stack, id.Group("skaffold").TerraformID("object"), &storagebucketobject.StorageBucketObjectConfig{
 			Name:        pointers.Ptr("source.tar.gz"),
@@ -446,7 +448,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// We manually create it so we can provision IAM access
 		pipelineBucket := storagebucket.NewStorageBucket(stack, id.Group("pipeline").TerraformID("bucket"), &storagebucket.StorageBucketConfig{
 			Name:     pointers.Stringf("%s_clouddeploy", deliveryPipeline.PipelineID),
-			Location: &GCPRegion,
+			Location: &rolloutLocation,
 		})
 
 		// Provision Service Account IAM to create releases
