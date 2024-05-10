@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -32,7 +33,12 @@ func (j *syntacticIndexingSchedulerJob) Config() []env.Config {
 }
 
 func (j *syntacticIndexingSchedulerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	scheduler, err := NewSyntacticJobScheduler(observationCtx)
+	rawDB, err := workerdb.InitRawDB(observationCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	scheduler, err := NewSyntacticJobScheduler(observationCtx, rawDB)
 
 	if err != nil {
 		return nil, err

@@ -2,10 +2,10 @@ package syntactic_indexing
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
@@ -35,19 +35,14 @@ type syntacticJobScheduler struct {
 
 var _ SyntacticJobScheduler = &syntacticJobScheduler{}
 
-func NewSyntacticJobScheduler(observationCtx *observation.Context) (SyntacticJobScheduler, error) {
+func NewSyntacticJobScheduler(observationCtx *observation.Context, db *sql.DB) (SyntacticJobScheduler, error) {
 
 	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	rawDB, err := workerdb.InitRawDB(observationCtx)
-	if err != nil {
-		return nil, err
-	}
-
-	db := database.NewDB(observationCtx.Logger, rawDB)
+	database := database.NewDB(observationCtx.Logger, db)
 	matcher := policies.NewMatcher(
 		services.GitserverClient,
 		policies.IndexingExtractor,
@@ -55,21 +50,23 @@ func NewSyntacticJobScheduler(observationCtx *observation.Context) (SyntacticJob
 		true,
 	)
 
-	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, db)
+	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, database)
 	repoSchedulingSvc := reposcheduler.NewService(repoSchedulingStore)
 
-	jobStore, err := jobstore.NewStoreWithDB(observationCtx, rawDB)
+	jobStore, err := jobstore.NewStoreWithDB(observationCtx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, db.Repos(), services.GitserverClient)
+	repoStore := database.Repos()
+
+	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, services.GitserverClient)
 
 	return &syntacticJobScheduler{
 		RepositorySchedulingService: repoSchedulingSvc,
 		PolicyMatcher:               matcher,
 		PoliciesService:             *services.PoliciesService,
-		RepoStore:                   db.Repos(),
+		RepoStore:                   repoStore,
 		Enqueuer:                    enqueuer,
 		Config:                      config,
 	}, nil
