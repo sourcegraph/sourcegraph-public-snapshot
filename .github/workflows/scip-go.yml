@@ -53,11 +53,6 @@ jobs:
         run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
         env:
           SRC_ENDPOINT: https://sourcegraph.sourcegraph.com/
-      - name: Upload scip-go dump to Dogfood
-        working-directory: ${{ matrix.root }}
-        run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
-        env:
-          SRC_ENDPOINT: https://k8s.sgdev.org/
       - name: Upload scip-go dump to Demo
         working-directory: ${{ matrix.root }}
         run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
