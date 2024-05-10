@@ -31,7 +31,8 @@ type Config struct {
 
 	WorkloadServiceAccount *serviceaccount.Output
 
-	Spec spec.EnvironmentResourceBigQueryDatasetSpec
+	Spec      spec.EnvironmentResourceBigQueryDatasetSpec
+	Locations spec.EnvironmentLocationsSpec
 
 	// PreventDestroys indicates if destroys should be allowed on core components of
 	// this resource.
@@ -44,7 +45,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		datasetID = config.Spec.GetDatasetID(config.ServiceID)
 		projectID = pointers.Deref(config.Spec.ProjectID,
 			config.DefaultProjectID)
-		location = pointers.Deref(config.Spec.Location, "US")
+		location = config.Locations.GCPLocation
 		labels   = map[string]*string{
 			"service": &config.ServiceID,
 		}

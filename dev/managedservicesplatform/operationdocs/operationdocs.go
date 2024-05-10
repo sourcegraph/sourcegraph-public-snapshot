@@ -122,15 +122,21 @@ This service is operated on the %s.`,
 
 	if s.Rollout != nil {
 		md.Headingf(1, "Rollouts")
-		region := "us-central1"
-		var rolloutDetails []string
-		// Get final stage to generate pipeline url
-		finalStageEnv := s.Rollout.Stages[len(s.Rollout.Stages)-1].EnvironmentID
-		finalStageProject := s.GetEnvironment(finalStageEnv).ProjectID
-		rolloutDetails = append(rolloutDetails,
-			"Delivery pipeline: "+markdown.Linkf(fmt.Sprintf("`%s-%s-rollout`", s.Service.ID, region),
-				"https://console.cloud.google.com/deploy/delivery-pipelines/%[1]s/%[2]s-%[1]s-rollout?project=%[3]s", region, s.Service.ID, finalStageProject))
+		var (
+			rolloutDetails    []string
+			finalStageEnvID   = s.Rollout.Stages[len(s.Rollout.Stages)-1].EnvironmentID
+			finalStageEnv     = s.GetEnvironment(finalStageEnvID)
+			finalStageProject = finalStageEnv.ProjectID
+			finalStageRegion  = finalStageEnv.GetLocationSpec().GCPRegion
+		)
 
+		// use the final stage to generate pipeline url
+		rolloutDetails = append(rolloutDetails,
+			"Delivery pipeline: "+markdown.Linkf(fmt.Sprintf("`%s-%s-rollout`", s.Service.ID, finalStageRegion),
+				"https://console.cloud.google.com/deploy/delivery-pipelines/%[1]s/%[2]s-%[1]s-rollout?project=%[3]s",
+				finalStageRegion, s.Service.ID, finalStageProject))
+
+		// Generate a list of each stage environment
 		var stages []string
 		for _, stage := range s.Rollout.Stages {
 			envIndex := slices.IndexFunc(environmentHeaders, func(env environmentHeader) bool {
