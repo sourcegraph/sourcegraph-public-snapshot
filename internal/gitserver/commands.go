@@ -1122,7 +1122,7 @@ func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.
 
 // CommitsUniqueToBranch returns a map from commits that exist on a particular
 // branch in the given repository to their committer date. This set of commits is
-// determined by listing `{branchName} ^HEAD`, which is interpreted as: all
+// determined by listing `HEAD..{branchName}`, which is interpreted as: all
 // commits on {branchName} not also on the tip of the default branch. If the
 // supplied branch name is the default branch, then this method instead returns
 // all commits reachable from HEAD.
@@ -1136,62 +1136,25 @@ func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, repo api.
 	})
 	defer endObservation(1, observation.Args{})
 
-	args := []string{"log", "--pretty=format:%H:%cI"}
-	if maxAge != nil {
-		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
-	}
-	if isDefaultBranch {
-		args = append(args, "HEAD")
-	} else {
-		args = append(args, branchName, "^HEAD")
+	branchRange := "HEAD"
+	if !isDefaultBranch {
+		branchRange = fmt.Sprintf("HEAD..%s", branchName)
 	}
 
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.CombinedOutput(ctx)
+	commits, err := c.Commits(ctx, repo, CommitsOptions{
+		Range: branchRange,
+		After: maxAge.Format(time.RFC3339),
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	commits, err := parseCommitsUniqueToBranch(strings.Split(string(out), "\n"))
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) && err == nil {
-		return c.filterCommitsUniqueToBranch(ctx, repo, commits), nil
-	}
-	return commits, err
-}
-
-func (c *clientImplementor) filterCommitsUniqueToBranch(ctx context.Context, repo api.RepoName, commitsMap map[string]time.Time) map[string]time.Time {
-	filtered := make(map[string]time.Time, len(commitsMap))
-	for commitID, timeStamp := range commitsMap {
-		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID))
-		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			filtered[commitID] = timeStamp
-		}
-	}
-	return filtered
-}
-
-func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err error) {
-	commitDates := make(map[string]time.Time, len(lines))
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		parts := strings.SplitN(line, ":", 2)
-		if len(parts) != 2 {
-			return nil, errors.Errorf(`unexpected output from git log "%s"`, line)
-		}
-
-		duration, err := time.Parse(time.RFC3339, parts[1])
-		if err != nil {
-			return nil, errors.Errorf(`unexpected output from git log (bad date format) "%s"`, line)
-		}
-
-		commitDates[parts[0]] = duration
+	commitMap := make(map[string]time.Time)
+	for _, commit := range commits {
+		commitMap[string(commit.ID)] = commit.Committer.Date
 	}
 
-	return commitDates, nil
+	return commitMap, nil
 }
 
 // HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
