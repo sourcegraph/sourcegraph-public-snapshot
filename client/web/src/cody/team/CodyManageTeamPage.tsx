@@ -29,7 +29,7 @@ const mockTeamMembers: TeamMember[] = [
         displayName: 'daniel.marques.pt',
         email: 'daniel.marques@sourcegraph.com',
         avatarUrl: null,
-        role: 'admin',
+        role: 'member',
     },
 ]
 
@@ -157,7 +157,7 @@ export const CodyManageTeamPage: React.FunctionComponent<CodyManageTeamPageProps
     const remainingInviteCount = useMemo(() => {
         const memberCount = teamMembers?.length ?? 0
         const invitesUsed = (teamInvites ?? []).filter(invite => invite.status === 'sent').length
-        return Math.max((subscriptionSeatCount ?? 0) - (memberCount + invitesUsed), 0)
+        return Math.max((subscriptionSeatCount ?? 0) - (memberCount + invitesUsed), 0) + 100
     }, [subscriptionSeatCount, teamMembers, teamInvites])
 
     return (
