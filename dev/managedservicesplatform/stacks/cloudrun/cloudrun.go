@@ -16,6 +16,8 @@ import (
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiamcustomrole"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/pubsubsubscription"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/pubsubtopic"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/serviceaccountiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucket"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucketiammember"
@@ -461,6 +463,35 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			skaffoldBucketName: skaffoldBucket.Name(),
 			pipelineBucketName: pipelineBucket.Name(),
 		})
+
+		// Create the Pub/Sub topic that receives notifications for Cloud Deploy events,
+		// see https://cloud.google.com/deploy/docs/subscribe-deploy-notifications#available_topics for topic info.
+		topic := pubsubtopic.NewPubsubTopic(stack, id.TerraformID("clouddeploy-operations-topic"), &pubsubtopic.PubsubTopicConfig{
+			Name: pointers.Ptr("clouddeploy-operations"),
+		})
+
+		// Get cloud-relay endpoint from GSM.
+		endpoint := gsmsecret.Get(stack, id.Group("cloudrelay-endpoint"), gsmsecret.DataConfig{
+			ProjectID: googlesecretsmanager.SharedSecretsProjectID,
+			Secret:    googlesecretsmanager.SecretMSPDeployNotificationEndpoint,
+		})
+
+		_ = pubsubsubscription.NewPubsubSubscription(stack, id.TerraformID("clouddeploy-operations-sub"), &pubsubsubscription.PubsubSubscriptionConfig{
+			Name:  pointers.Ptr("clouddeploy-operations"),
+			Topic: topic.Id(),
+			PushConfig: &pubsubsubscription.PubsubSubscriptionPushConfig{
+				PushEndpoint: &endpoint.Value,
+			},
+			// Only retain un-acked messages for 1 hour
+			// the notifications aren't critical so they can be dropped after
+			// a reasonable amount of time.
+			MessageRetentionDuration: pointers.Ptr("3600s"),
+			// We don't want the subscription to expire if there hasn't been a rollout in 31 days.
+			ExpirationPolicy: &pubsubsubscription.PubsubSubscriptionExpirationPolicy{
+				Ttl: pointers.Ptr(""),
+			},
+		})
+
 	}
 
 	// Collect outputs

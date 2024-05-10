@@ -39,6 +39,7 @@ var gcpServices = []string{
 	"clouddeploy.googleapis.com",
 	"bigqueryconnection.googleapis.com",
 	"accesscontextmanager.googleapis.com", // for VPC SC perimeter management
+	"pubsub.googleapis.com",               // for Cloud Deploy notifications
 }
 
 const (
