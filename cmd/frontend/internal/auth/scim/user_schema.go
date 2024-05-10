@@ -57,22 +57,19 @@ func (u *UserSCIMService) Schema() schema.Schema {
 				Description: optional.NewString("Email addresses for the user. The value SHOULD be canonicalized by the service provider, e.g., 'bjensen@example.com' instead of 'bjensen@EXAMPLE.COM'. Canonical type values of 'work', 'home', and 'other'."),
 				MultiValued: true,
 				Name:        "emails",
+				Required:    true,
 				SubAttributes: []schema.SimpleParams{
 					schema.SimpleStringParams(schema.StringParams{
-						Description: optional.NewString("Email addresses for the user. The value SHOULD be canonicalized by the service provider, e.g., 'bjensen@example.com' instead of 'bjensen@EXAMPLE.COM'. Canonical type values of 'work', 'home', and 'other'."),
+						Description: optional.NewString("Email addresses for the user. The value SHOULD be canonicalized by the service provider, e.g., 'bjensen@example.com' instead of 'bjensen@EXAMPLE.COM'. Canonical type value is 'work'."),
 						Name:        "value",
 					}),
 					schema.SimpleStringParams(schema.StringParams{
-						Description: optional.NewString("A human-readable name, primarily used for display purposes. READ-ONLY."),
-						Name:        "display",
-					}),
-					schema.SimpleStringParams(schema.StringParams{
-						CanonicalValues: []string{"work", "home", "other"},
-						Description:     optional.NewString("A label indicating the attribute's function, e.g., 'work' or 'home'."),
+						CanonicalValues: []string{"work"},
+						Description:     optional.NewString("A label indicating the attribute's function."),
 						Name:            "type",
 					}),
 					schema.SimpleBooleanParams(schema.BooleanParams{
-						Description: optional.NewString("A Boolean value indicating the 'primary' or preferred attribute value for this attribute, e.g., the preferred mailing address or primary email address. The primary attribute value 'true' MUST appear no more than once."),
+						Description: optional.NewString("A Boolean value indicating the 'primary' or preferred attribute value for this attribute, e.g., the preferred mailing address or primary email address. The primary attribute value 'true' MUST NOT appear more than once."),
 						Name:        "primary",
 					}),
 				},
