@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"io"
+	"io/fs"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -92,6 +93,19 @@ type GitBackend interface {
 	// Aggregations are done by email address.
 	// If range does not exist, a RevisionNotFoundError is returned.
 	ContributorCounts(ctx context.Context, opt ContributorCountsOpts) ([]*gitdomain.ContributorCount, error)
+	// Stat returns the file info for the given path at the given commit.
+	// If the file does not exist, a os.PathError is returned.
+	// If the commit does not exist, a RevisionNotFoundError is returned.
+	// Stat supports submodules, symlinks, directories and files.
+	Stat(ctx context.Context, commit api.CommitID, path string) (fs.FileInfo, error)
+	// ReadDir returns the list of files and directories in the given path at the given commit.
+	// Path can be used to read subdirectories.
+	// If the path does not exist, a os.PathError is returned.
+	// If the commit does not exist, a RevisionNotFoundError is returned.
+	// ReadDir supports submodules, symlinks, directories and files.
+	// If recursive is true, ReadDir will return the contents of all subdirectories.
+	// The caller must call Close on the returned ReadDirIterator when done.
+	ReadDir(ctx context.Context, commit api.CommitID, path string, recursive bool) (ReadDirIterator, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
@@ -244,4 +258,15 @@ type ContributorCountsOpts struct {
 	// If set, only count commits that are in the given path. Can be a pathspec
 	// (e.g., "foo/bar/").
 	Path string
+}
+
+// ReadDirIterator is an iterator for the contents of a directory.
+// The caller MUST Close() this iterator when done, regardless of whether an error
+// was returned from Next().
+type ReadDirIterator interface {
+	// Next returns the next file in the directory. io.EOF is returned at the end
+	// of the stream.
+	Next() (fs.FileInfo, error)
+	// Close closes the iterator.
+	Close() error
 }
