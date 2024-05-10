@@ -45,7 +45,6 @@ type operations struct {
 	perforceGetChangelist    *observation.Operation
 	createCommitFromPatch    *observation.Operation
 	getObject                *observation.Operation
-	commitsUniqueToBranch    *observation.Operation
 	getDefaultBranch         *observation.Operation
 	logReverseEach           *observation.Operation
 	diffSymbols              *observation.Operation
@@ -132,7 +131,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		perforceGetChangelist:    op("PerforceGetChangelist"),
 		createCommitFromPatch:    op("CreateCommitFromPatch"),
 		getObject:                op("GetObject"),
-		commitsUniqueToBranch:    op("CommitsUniqueToBranch"),
 		getDefaultBranch:         op("GetDefaultBranch"),
 		logReverseEach:           op("LogReverseEach"),
 		diffSymbols:              op("DiffSymbols"),

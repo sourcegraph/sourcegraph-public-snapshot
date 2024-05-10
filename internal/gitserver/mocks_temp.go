@@ -45,9 +45,6 @@ type MockClient struct {
 	// CommitsFunc is an instance of a mock function object controlling the
 	// behavior of the method Commits.
 	CommitsFunc *ClientCommitsFunc
-	// CommitsUniqueToBranchFunc is an instance of a mock function object
-	// controlling the behavior of the method CommitsUniqueToBranch.
-	CommitsUniqueToBranchFunc *ClientCommitsUniqueToBranchFunc
 	// ContributorCountFunc is an instance of a mock function object
 	// controlling the behavior of the method ContributorCount.
 	ContributorCountFunc *ClientContributorCountFunc
@@ -179,11 +176,6 @@ func NewMockClient() *MockClient {
 		},
 		CommitsFunc: &ClientCommitsFunc{
 			defaultHook: func(context.Context, api.RepoName, CommitsOptions) (r0 []*gitdomain.Commit, r1 error) {
-				return
-			},
-		},
-		CommitsUniqueToBranchFunc: &ClientCommitsUniqueToBranchFunc{
-			defaultHook: func(context.Context, api.RepoName, string, bool, *time.Time) (r0 map[string]time.Time, r1 error) {
 				return
 			},
 		},
@@ -384,11 +376,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.Commits")
 			},
 		},
-		CommitsUniqueToBranchFunc: &ClientCommitsUniqueToBranchFunc{
-			defaultHook: func(context.Context, api.RepoName, string, bool, *time.Time) (map[string]time.Time, error) {
-				panic("unexpected invocation of MockClient.CommitsUniqueToBranch")
-			},
-		},
 		ContributorCountFunc: &ClientContributorCountFunc{
 			defaultHook: func(context.Context, api.RepoName, ContributorOptions) ([]*gitdomain.ContributorCount, error) {
 				panic("unexpected invocation of MockClient.ContributorCount")
@@ -571,9 +558,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		CommitsFunc: &ClientCommitsFunc{
 			defaultHook: i.Commits,
-		},
-		CommitsUniqueToBranchFunc: &ClientCommitsUniqueToBranchFunc{
-			defaultHook: i.CommitsUniqueToBranch,
 		},
 		ContributorCountFunc: &ClientContributorCountFunc{
 			defaultHook: i.ContributorCount,
@@ -1435,124 +1419,6 @@ func (c ClientCommitsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientCommitsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientCommitsUniqueToBranchFunc describes the behavior when the
-// CommitsUniqueToBranch method of the parent MockClient instance is
-// invoked.
-type ClientCommitsUniqueToBranchFunc struct {
-	defaultHook func(context.Context, api.RepoName, string, bool, *time.Time) (map[string]time.Time, error)
-	hooks       []func(context.Context, api.RepoName, string, bool, *time.Time) (map[string]time.Time, error)
-	history     []ClientCommitsUniqueToBranchFuncCall
-	mutex       sync.Mutex
-}
-
-// CommitsUniqueToBranch delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockClient) CommitsUniqueToBranch(v0 context.Context, v1 api.RepoName, v2 string, v3 bool, v4 *time.Time) (map[string]time.Time, error) {
-	r0, r1 := m.CommitsUniqueToBranchFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.CommitsUniqueToBranchFunc.appendCall(ClientCommitsUniqueToBranchFuncCall{v0, v1, v2, v3, v4, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// CommitsUniqueToBranch method of the parent MockClient instance is invoked
-// and the hook queue is empty.
-func (f *ClientCommitsUniqueToBranchFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, bool, *time.Time) (map[string]time.Time, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CommitsUniqueToBranch method of the parent MockClient instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *ClientCommitsUniqueToBranchFunc) PushHook(hook func(context.Context, api.RepoName, string, bool, *time.Time) (map[string]time.Time, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientCommitsUniqueToBranchFunc) SetDefaultReturn(r0 map[string]time.Time, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string, bool, *time.Time) (map[string]time.Time, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientCommitsUniqueToBranchFunc) PushReturn(r0 map[string]time.Time, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, string, bool, *time.Time) (map[string]time.Time, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientCommitsUniqueToBranchFunc) nextHook() func(context.Context, api.RepoName, string, bool, *time.Time) (map[string]time.Time, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientCommitsUniqueToBranchFunc) appendCall(r0 ClientCommitsUniqueToBranchFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientCommitsUniqueToBranchFuncCall objects
-// describing the invocations of this function.
-func (f *ClientCommitsUniqueToBranchFunc) History() []ClientCommitsUniqueToBranchFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientCommitsUniqueToBranchFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientCommitsUniqueToBranchFuncCall is an object that describes an
-// invocation of method CommitsUniqueToBranch on an instance of MockClient.
-type ClientCommitsUniqueToBranchFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 bool
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 *time.Time
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[string]time.Time
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientCommitsUniqueToBranchFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientCommitsUniqueToBranchFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
