@@ -9,7 +9,7 @@ MSP is owned by [Core Services](https://sourcegraph.notion.site/ed8af5ecf15545b2
 
 Services are defined in [`sourcegraph/managed-services`](https://github.com/sourcegraph/managed-services), though service source code may live elsewhere.
 
-> [!NOTE]
+> [!IMPORTANT]
 > This page may be out of date if a service or environment was recently added or updated - reach out to #discuss-core-services for help updating these pages, or use `sg msp operations $SERVICE_ID` to view the generated documentation in your terminal.
 
 # team-a

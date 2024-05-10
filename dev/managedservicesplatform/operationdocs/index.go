@@ -49,7 +49,7 @@ In addition to service-specific guidance, %s is also available.`,
 	md.Paragraphf("Services are defined in %s, though service source code may live elsewhere.",
 		markdown.Link(markdown.Code("sourcegraph/managed-services"), "https://github.com/sourcegraph/managed-services"))
 
-	md.Admonitionf(markdown.AdmonitionNote,
+	md.Admonitionf(markdown.AdmonitionImportant,
 		"This page may be out of date if a service or environment was recently added or updated - reach out to #discuss-core-services for help updating these pages, or use %s to view the generated documentation in your terminal.",
 		markdown.Code("sg msp operations $SERVICE_ID"))
 
