@@ -320,18 +320,45 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 }
 
 func (gs *grpcServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
+	accesslog.Record(ctx,
+		req.GetRepo(),
+		log.String("objectname", req.GetObjectName()),
+	)
+
+	if req.GetRepo() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	if req.GetObjectName() == "" {
+		return nil, status.New(codes.InvalidArgument, "object name must be specified").Err()
+	}
+
 	repoName := api.RepoName(req.GetRepo())
 	repoDir := gs.fs.RepoDir(repoName)
 
-	// Log which actor is accessing the repo.
-	accesslog.Record(ctx, string(repoName), log.String("objectname", req.GetObjectName()))
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
+		return nil, err
+	}
 
 	backend := gs.getBackendFunc(repoDir, repoName)
 
 	obj, err := backend.GetObject(ctx, req.GetObjectName())
 	if err != nil {
-		gs.svc.LogIfCorrupt(ctx, repoName, err)
 		gs.logger.Error("getting object", log.Error(err))
+
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepo(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
 		return nil, err
 	}
 

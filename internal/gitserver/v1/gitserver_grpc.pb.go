@@ -194,6 +194,13 @@ type GitserverServiceClient interface {
 	CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error)
 	DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
+	// GetObject returns the object with the given OID in the given repository.
+	//
+	// If the object is not found, an error with a RevisionNotFoundPayload is
+	// returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	GetObject(ctx context.Context, in *GetObjectRequest, opts ...grpc.CallOption) (*GetObjectResponse, error)
 	IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error)
 	ListGitolite(ctx context.Context, in *ListGitoliteRequest, opts ...grpc.CallOption) (*ListGitoliteResponse, error)
@@ -854,6 +861,13 @@ type GitserverServiceServer interface {
 	CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error
 	DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error)
 	Exec(*ExecRequest, GitserverService_ExecServer) error
+	// GetObject returns the object with the given OID in the given repository.
+	//
+	// If the object is not found, an error with a RevisionNotFoundPayload is
+	// returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	GetObject(context.Context, *GetObjectRequest) (*GetObjectResponse, error)
 	IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error)
 	ListGitolite(context.Context, *ListGitoliteRequest) (*ListGitoliteResponse, error)
