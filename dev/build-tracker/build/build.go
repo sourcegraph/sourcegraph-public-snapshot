@@ -174,6 +174,8 @@ type Event struct {
 	Pipeline buildkite.Pipeline `json:"pipeline,omitempty"`
 	// Job is the current job being executed by the Build. When the event is not a job event variant, then this job will be empty
 	Job buildkite.Job `json:"job,omitempty"`
+	// Agent is the agent that is running the job that triggered this event. When the event is not an agent event variant, then this will be empty
+	Agent buildkite.Agent `json:"agent,omitempty"`
 }
 
 func (b *Event) WrappedBuild() *Build {

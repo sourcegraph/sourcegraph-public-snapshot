@@ -26,7 +26,7 @@ func TestGetBuild(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodGet, "/-/debug/1234", nil)
 	req = mux.SetURLVars(req, map[string]string{"buildNumber": "1234"})
 	t.Run("401 Unauthorized when in production mode and incorrect credentials", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{Production: true, DebugPassword: "this is a test"})
+		server := NewServer(":8080", logger, config.Config{Production: true, DebugPassword: "this is a test"}, nil)
 		rec := httptest.NewRecorder()
 		server.handleGetBuild(rec, req)
 
@@ -39,7 +39,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("404 for build that does not exist", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		rec := httptest.NewRecorder()
 		server.handleGetBuild(rec, req)
 
@@ -47,7 +47,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("get marshalled json for build", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		rec := httptest.NewRecorder()
 
 		num := 1234
@@ -100,7 +100,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("200 with valid credentials in production mode", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{Production: true, DebugPassword: "this is a test"})
+		server := NewServer(":8080", logger, config.Config{Production: true, DebugPassword: "this is a test"}, nil)
 		rec := httptest.NewRecorder()
 
 		req.SetBasicAuth("devx", server.config.DebugPassword)
@@ -132,7 +132,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 	}
 
 	t.Run("All old builds get removed", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		b := finishedBuild(1, "passed", time.Now().AddDate(-1, 0, 0))
 		server.store.Set(b)
 
@@ -154,7 +154,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		}
 	})
 	t.Run("1 build left after old builds are removed", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		b := finishedBuild(1, "canceled", time.Now().AddDate(-1, 0, 0))
 		server.store.Set(b)
 
@@ -237,7 +237,7 @@ func TestProcessEvent(t *testing.T) {
 		return &build.Event{Name: build.EventBuildFinished, Build: buildkite.Build{State: &state, Branch: &branch, Number: &buildNumber, Pipeline: pipeline}, Job: job.Job, Pipeline: *pipeline}
 	}
 	t.Run("no send notification on unfinished builds", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
@@ -254,7 +254,7 @@ func TestProcessEvent(t *testing.T) {
 	})
 
 	t.Run("failed build sends notification", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
@@ -270,7 +270,7 @@ func TestProcessEvent(t *testing.T) {
 	})
 
 	t.Run("passed build sends notification", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
@@ -286,7 +286,7 @@ func TestProcessEvent(t *testing.T) {
 	})
 
 	t.Run("failed build, then passed build sends fixed notification", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
