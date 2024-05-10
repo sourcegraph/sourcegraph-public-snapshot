@@ -224,11 +224,20 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		allFDs := make([]fs.FileInfo, 0)
 		seen := make(map[string]struct{})
 		for _, d := range dirnames {
-			fds, err := h.gitserverClient.ReadDir(ctx, repo.Name, api.CommitID(upload.Commit), d, false)
+			it, err := h.gitserverClient.ReadDir(ctx, repo.Name, api.CommitID(upload.Commit), d, false)
 			if err != nil {
 				return nil, errors.Wrap(err, "gitserverClient.ReadDir")
 			}
-			for _, fd := range fds {
+			defer it.Close()
+
+			for {
+				fd, err := it.Next()
+				if err != nil {
+					if errors.Is(err, io.EOF) {
+						break
+					}
+					return nil, errors.Wrap(err, "gitserverClient.ReadDir.Next")
+				}
 				if fd.IsDir() {
 					continue
 				}

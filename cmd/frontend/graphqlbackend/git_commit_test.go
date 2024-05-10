@@ -291,12 +291,12 @@ func TestGitCommitFileNames(t *testing.T) {
 	}
 	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.ReadDirFunc.SetDefaultReturn([]fs.FileInfo{
+	gitserverClient.ReadDirFunc.SetDefaultReturn(gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 		&fileutil.FileInfo{Name_: "a"},
 		&fileutil.FileInfo{Name_: "b"},
 		// We also return a dir to check that it's skipped in the output.
 		&fileutil.FileInfo{Name_: "dir", Mode_: os.ModeDir},
-	}, nil)
+	}), nil)
 	defer func() {
 		backend.Mocks = backend.MockServices{}
 	}()
@@ -340,12 +340,12 @@ func TestGitCommitAncestors(t *testing.T) {
 	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
 
 	client := gitserver.NewMockClient()
-	client.ReadDirFunc.SetDefaultReturn([]fs.FileInfo{
+	client.ReadDirFunc.SetDefaultReturn(gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 		&fileutil.FileInfo{Name_: "a"},
 		&fileutil.FileInfo{Name_: "b"},
 		// We also return a dir to check that it's skipped in the output.
 		&fileutil.FileInfo{Name_: "dir", Mode_: os.ModeDir},
-	}, nil)
+	}), nil)
 
 	// A linear commit tree:
 	// * -> c1 -> c2 -> c3 -> c4 -> c5 (HEAD)

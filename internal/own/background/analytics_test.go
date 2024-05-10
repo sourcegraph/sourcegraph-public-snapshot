@@ -30,14 +30,14 @@ type fakeGitServer struct {
 	fileContents map[string]string
 }
 
-func (f fakeGitServer) ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recursive bool) ([]fs.FileInfo, error) {
+func (f fakeGitServer) ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recursive bool) (gitserver.ReadDirIterator, error) {
 	fis := make([]fs.FileInfo, 0, len(f.files))
 	for _, file := range f.files {
 		fis = append(fis, &fileutil.FileInfo{
 			Name_: file,
 		})
 	}
-	return fis, nil
+	return gitserver.NewReadDirIteratorFromSlice(fis), nil
 }
 
 func (f fakeGitServer) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {

@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"io"
 	"io/fs"
 	"net/url"
 	"os"
@@ -320,18 +321,28 @@ func (*rootTreeFileInfo) Size() int64        { return 0 }
 func (*rootTreeFileInfo) Sys() any           { return nil }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
-	fds, err := r.gitserverClient.ReadDir(ctx, r.gitRepo, api.CommitID(r.oid), "", true)
+	it, err := r.gitserverClient.ReadDir(ctx, r.gitRepo, api.CommitID(r.oid), "", true)
 	if err != nil {
 		return nil, err
 	}
+	defer it.Close()
 
-	names := make([]string, 0, len(fds))
-	for _, fd := range fds {
-		if fd.IsDir() {
+	names := make([]string, 0)
+
+	for {
+		entry, err := it.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		if entry.IsDir() {
 			continue
 		}
-		names = append(names, fd.Name())
+		names = append(names, entry.Name())
 	}
+
 	return names, nil
 }
 

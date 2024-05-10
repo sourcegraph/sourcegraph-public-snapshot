@@ -2,9 +2,12 @@ package inttests
 
 import (
 	"context"
+	"io"
+	"io/fs"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -52,9 +55,19 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 
 	source := gitserver.NewTestClientSource(t, GitserverAddresses)
 	client := gitserver.NewTestClient(t).WithClientSource(source).WithChecker(checker)
-	files, err := client.ReadDir(ctx, repo, commitID, "", false)
+	it, err := client.ReadDir(ctx, repo, commitID, "", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
+	}
+
+	files := []fs.FileInfo{}
+	for {
+		f, err := it.Next()
+		if err == io.EOF {
+			break
+		}
+		require.NoError(t, err)
+		files = append(files, f)
 	}
 
 	// Because we have a wildcard matcher we still allow directory visibility
