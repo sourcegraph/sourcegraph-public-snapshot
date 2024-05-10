@@ -270,11 +270,11 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				vars.Service.GetName(), vars.EnvironmentID)
 			// https://registry.terraform.io/providers/pablovarela/slack/latest/docs/resources/conversation#argument-reference
 			slackChannel = slackconversation.NewConversation(stack, id.TerraformID("channel"), &slackconversation.ConversationConfig{
-				Name:                           pointers.Ptr(strings.TrimPrefix(channel.Name, "#")),
-				Topic:                          description,
-				Purpose:                        description,
-				IsPrivate:                      pointers.Ptr(false),
-				PermanentMembers:               pointers.Ptr(pointers.Slice([]string{mspRolloutsBotSlackUserID})),
+				Name:             pointers.Ptr(strings.TrimPrefix(channel.Name, "#")),
+				Topic:            description,
+				Purpose:          description,
+				IsPrivate:        pointers.Ptr(false),
+				PermanentMembers: pointers.Ptr(pointers.Slice([]string{mspRolloutsBotSlackUserID})),
 				// Do not kick out other users in the channel
 				ActionOnUpdatePermanentMembers: pointers.Ptr("none"),
 
