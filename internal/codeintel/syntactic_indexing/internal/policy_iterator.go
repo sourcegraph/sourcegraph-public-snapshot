@@ -16,6 +16,8 @@ const (
 // This iterator abstracts away the pagination logic for retrieving policies batches,
 // propagating any errors
 type PolicyIterator interface {
+	// Iterate over all available policies in batches. The `handle` function is NEVER
+	// invoked with an empty policies list
 	ForEachPoliciesBatch(ctx context.Context, handle func([]policiesshared.ConfigurationPolicy) error) error
 }
 
@@ -55,10 +57,10 @@ func (p policyIterator) ForEachPoliciesBatch(ctx context.Context, handle func([]
 			break
 		}
 
-		handleError := handle(policies)
+		handlerError := handle(policies)
 
-		if handleError != nil {
-			return handleError // propagate error from the handler
+		if handlerError != nil {
+			return handlerError // propagate error from the handler
 		}
 
 		offset = offset + len(policies)
