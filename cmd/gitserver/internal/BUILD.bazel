@@ -94,7 +94,7 @@ go_test(
         "list_gitolite_test.go",
         "main_test.go",
         "mocks_test.go",
-        "repo_info_test.go",
+        "repositoryservice_test.go",
         "server_grpc_test.go",
         "server_test.go",
     ],
