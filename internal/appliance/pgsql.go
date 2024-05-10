@@ -222,7 +222,7 @@ func (r *Reconciler) reconcilePGSQLConfigMap(ctx context.Context, sg *Sourcegrap
 }
 
 func (r *Reconciler) reconcilePGSQLSecret(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
-	scrt := secret.NewSecret("pgsql-auth", sg.Namespace)
+	scrt := secret.NewSecret("pgsql-auth", sg.Namespace, sg.Spec.RequestedVersion)
 
 	cn := sg.Spec.PGSQL.DatabaseConnection
 	scrt.Data = map[string][]byte{

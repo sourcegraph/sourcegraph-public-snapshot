@@ -409,13 +409,15 @@ resources:
     password: cGFzc3dvcmQ=
     port: NTQzMg==
     user: c2c=
-  immutable: false
   kind: Secret
   metadata:
     annotations:
       appliance.sourcegraph.com/configHash: 1a699c66e173ecb90aba090427b165f1eb257dcaf67627d48b11d21460a8475b
     creationTimestamp: "2024-04-19T00:00:00Z"
     labels:
+      app.kubernetes.io/component: pgsql-auth
+      app.kubernetes.io/name: sourcegraph
+      app.kubernetes.io/version: 5.3.9104
       deploy: sourcegraph
     name: pgsql-auth
     namespace: NORMALIZED_FOR_TESTING
