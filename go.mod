@@ -255,6 +255,9 @@ require (
 	github.com/aws/jsii-runtime-go v1.84.0
 	github.com/bazelbuild/bazel-gazelle v0.35.0
 	github.com/bazelbuild/rules_go v0.47.0
+	github.com/bevzzz/nb v0.3.0
+	github.com/bevzzz/nb-synth v0.0.0-20240128164931-35fdda0583a0
+	github.com/bevzzz/nb/extension/extra/goldmark-jupyter v0.0.0-20240131001330-e69229bd9da4
 	github.com/derision-test/go-mockgen/v2 v2.0.1
 	github.com/dghubble/gologin/v2 v2.4.0
 	github.com/edsrzf/mmap-go v1.1.0
@@ -281,6 +284,7 @@ require (
 	github.com/pkoukk/tiktoken-go v0.1.6
 	github.com/pkoukk/tiktoken-go-loader v0.0.1
 	github.com/prometheus/statsd_exporter v0.22.7
+	github.com/robert-nix/ansihtml v1.0.1
 	github.com/sourcegraph/cloud-api v0.0.0-20240501113836-ecd1d4cba9dd
 	github.com/sourcegraph/log/logr v0.0.0-20240425170707-431bcb6c8668
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20230822024612-edb48c530722
@@ -446,7 +450,7 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
-	github.com/alecthomas/chroma/v2 v2.5.0
+	github.com/alecthomas/chroma/v2 v2.12.0
 	github.com/alecthomas/kingpin v2.2.6+incompatible // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137
