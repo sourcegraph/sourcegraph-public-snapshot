@@ -465,7 +465,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			pipelineBucketName: pipelineBucket.Name(),
 		})
 
-		// Enable pubsub topics to receive notifications for cloud deploy events
+		// Create the Pub/Sub topic that receives notifications for Cloud Deploy events,
 		// see https://cloud.google.com/deploy/docs/subscribe-deploy-notifications#available_topics for topic info.
 		topic := pubsubtopic.NewPubsubTopic(stack, id.TerraformID("clouddeploy-operations-topic"), &pubsubtopic.PubsubTopicConfig{
 			Name: pointers.Ptr("clouddeploy-operations"),
