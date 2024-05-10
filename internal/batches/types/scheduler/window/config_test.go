@@ -25,6 +25,31 @@ func timeOfDayPtr(hour, minute int8) *timeOfDay {
 }
 
 func TestConfiguration_Estimate(t *testing.T) {
+	t.Run("possible timeout", func(t *testing.T) {
+		cfg, err := NewConfiguration(&[]*schema.BatchChangeRolloutWindow{
+			{
+				Rate: "15/hour",
+			},
+			{
+				Days:  []string{"monday", "tuesday", "wednesday", "thursday", "friday"},
+				End:   "23:59",
+				Rate:  "10/hour",
+				Start: "13:00",
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		now := time.Date(2024, 3, 10, 15, 35, 0, 0, time.UTC)
+		for i := 0; i < 10000; i++ {
+			now = now.Add(7 * time.Second)
+			t.Run(now.String(), func(t *testing.T) {
+				t.Logf("estimate with %d changesets in queue: %v", 1000, cfg.Estimate(now, 1000))
+			})
+		}
+	})
+
 	t.Run("no windows", func(t *testing.T) {
 		cfg := &Configuration{}
 		now := time.Now()
