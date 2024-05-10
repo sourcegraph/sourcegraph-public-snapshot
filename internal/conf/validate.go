@@ -203,7 +203,11 @@ func ValidateSite(input string) (messages []string, err error) {
 // siteConfigSecrets is the list of secrets in site config needs to be redacted
 // before serving or unredacted before saving.
 var siteConfigSecrets = []struct {
-	readPath  string // gjson uses "." as path separator, uses "\" to escape.
+	// gjson uses "." as path separator, uses "\" to escape if the key itself
+	// contains a "." character. For example,
+	// 	- "scim.authToken" => "scim\.authToken"
+	// 	- "dotcom": { "sams.clientSecret" } => "dotcom.sams\.clientSecret"
+	readPath  string
 	editPaths []string
 }{
 	{readPath: `executors\.accessToken`, editPaths: []string{"executors.accessToken"}},
@@ -223,6 +227,7 @@ var siteConfigSecrets = []struct {
 	{readPath: `completions.accessToken`, editPaths: []string{"completions", "accessToken"}},
 	{readPath: `app.dotcomAuthToken`, editPaths: []string{"app", "dotcomAuthToken"}},
 	{readPath: `attribution\.gateway.accessToken`, editPaths: []string{"attribution.gateway", "accessToken"}},
+	{readPath: `scim\.authToken`, editPaths: []string{"scim.authToken"}},
 }
 
 // UnredactSecrets unredacts unchanged secrets back to their original value for
