@@ -49,18 +49,21 @@ jobs:
         env:
           SRC_ENDPOINT: https://sourcegraph.com/
           SRC_ACCESS_TOKEN: ${{ secrets.SRC_ACCESS_TOKEN_DOTCOM }}
+
       - name: Upload scip-go dump to S2
         working-directory: ${{ matrix.root }}
         run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
         env:
           SRC_ENDPOINT: https://sourcegraph.sourcegraph.com/
           SRC_ACCESS_TOKEN: ${{ secrets.SRC_ACCESS_TOKEN_S2 }}
+
       - name: Upload scip-go dump to Dogfood
         working-directory: ${{ matrix.root }}
         run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
           SRC_ACCESS_TOKEN: ${{ secrets.SRC_ACCESS_TOKEN_DOGFOOD }}
+
       - name: Upload scip-go dump to Demo
         working-directory: ${{ matrix.root }}
         run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
