@@ -275,6 +275,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				Purpose:                        description,
 				IsPrivate:                      pointers.Ptr(false),
 				PermanentMembers:               pointers.Ptr(pointers.Slice([]string{mspRolloutsSlackUserID})),
+				// Do not kick out other users in the channel
 				ActionOnUpdatePermanentMembers: pointers.Ptr("none"),
 
 				// In case it already exists
