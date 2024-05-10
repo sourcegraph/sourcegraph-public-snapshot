@@ -16,7 +16,7 @@ const (
 // This iterator abstracts away the pagination logic for retrieving policies batches,
 // propagating any errors
 type PolicyIterator interface {
-	// Iterate over all available policies in batches. The `handle` function is NEVER
+	// Iterate over all matching policies in batches. The `handle` function is NEVER
 	// invoked with an empty policies list
 	ForEachPoliciesBatch(ctx context.Context, handle func([]policiesshared.ConfigurationPolicy) error) error
 }
