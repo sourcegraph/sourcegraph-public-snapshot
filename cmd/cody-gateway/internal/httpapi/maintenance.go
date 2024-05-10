@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -43,7 +44,8 @@ func NewMaintenanceHandler(
 			ClientSecret: config.SAMSClientConfig.ClientSecret,
 			// Since we are only using our SAMS client to verify supplied token,
 			// we just issue tokens with a minimal set of scopes.
-			Scopes: []string{"openid", "profile", "email"},
+			Scopes:   []string{"openid", "profile", "email"},
+			TokenURL: fmt.Sprintf("%s/oauth/token", config.SAMSClientConfig.URL),
 		})
 
 	return newMaintenanceHandler(logger, next, redisKV, samsClient)

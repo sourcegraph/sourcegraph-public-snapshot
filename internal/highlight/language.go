@@ -1,14 +1,12 @@
 package highlight
 
 import (
-	"fmt"
 	"path/filepath"
 	"strings"
 
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 )
@@ -54,7 +52,7 @@ func getEngineParameter(engine EngineType) string {
 	return engine.String()
 }
 
-func engineNameToEngineType(engineName string) (engine EngineType, ok bool) {
+func EngineNameToEngineType(engineName string) (engine EngineType, ok bool) {
 	switch engineName {
 	case gosyntect.SyntaxEngineSyntect:
 		return EngineSyntect, true
@@ -97,7 +95,6 @@ var highlightConfig = syntaxHighlightConfig{
 
 var baseHighlightConfig = syntaxHighlightConfig{
 	Extensions: map[string]string{
-		"jsx":  "jsx", // default `getLanguage()` helper doesn't handle JSX
 		"tsx":  "tsx", // default `getLanguage()` helper doesn't handle TSX
 		"ncl":  "nickel",
 		"sbt":  "scala",
@@ -141,32 +138,6 @@ var baseEngineConfig = syntaxEngineConfig{
 }
 
 func Init() {
-	// Validation only: Do NOT set any values in the configuration in this function.
-	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		highlights := c.SiteConfig().SyntaxHighlighting
-		if highlights == nil {
-			return
-		}
-
-		if _, ok := engineNameToEngineType(highlights.Engine.Default); !ok {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid highlights.Engine.Default: `%s`.", highlights.Engine.Default)))
-		}
-
-		for _, engine := range highlights.Engine.Overrides {
-			if _, ok := engineNameToEngineType(engine); !ok {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid highlights.Engine.Default: `%s`.", engine)))
-			}
-		}
-
-		for _, pattern := range highlights.Languages.Patterns {
-			if _, err := regexp.Compile(pattern.Pattern); err != nil {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid regexp: `%s`. See the valid syntax: https://golang.org/pkg/regexp/", pattern.Pattern)))
-			}
-		}
-
-		return
-	})
-
 	go func() {
 		conf.Watch(func() {
 			// Populate effective configuration with base configuration
@@ -196,7 +167,7 @@ func Init() {
 				return
 			}
 
-			if defaultEngine, ok := engineNameToEngineType(config.SyntaxHighlighting.Engine.Default); ok {
+			if defaultEngine, ok := EngineNameToEngineType(config.SyntaxHighlighting.Engine.Default); ok {
 				engineConfig.Default = defaultEngine
 			}
 
@@ -208,7 +179,7 @@ func Init() {
 			//
 			// After that, we set the values from the new configuration
 			for name, engine := range config.SyntaxHighlighting.Engine.Overrides {
-				if overrideEngine, ok := engineNameToEngineType(engine); ok {
+				if overrideEngine, ok := EngineNameToEngineType(engine); ok {
 					engineConfig.Overrides[strings.ToLower(name)] = overrideEngine
 				}
 			}

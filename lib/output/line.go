@@ -45,7 +45,7 @@ func Emoji(emoji string, s string) FancyLine {
 	return Line(emoji, StyleReset, s)
 }
 
-// Emoji creates a new FancyLine with an emoji prefix and style.
+// Emoji creates a new FancyLine with an emoji prefix and format string.
 func Emojif(emoji string, s string, a ...any) FancyLine {
 	return Linef(emoji, StyleReset, s, a...)
 }

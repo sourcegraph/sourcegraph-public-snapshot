@@ -19,6 +19,7 @@ import {
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 
 import { isBatchChangesExecutionEnabled } from './batches'
 import { useBreadcrumbs, type BreadcrumbSetters, type BreadcrumbsProps } from './components/Breadcrumbs'
@@ -26,7 +27,6 @@ import { NotFoundPage } from './components/HeroPage'
 import type { SearchStreamingProps } from './search'
 import type { StaticSourcegraphWebAppContext, DynamicSourcegraphWebAppContext } from './SourcegraphWebApp'
 import type { StaticAppConfig } from './staticAppConfig'
-import { eventLogger } from './tracking/eventLogger'
 import { getLicenseFeatures } from './util/license'
 
 export interface StaticLegacyRouteContext extends LegacyRouteComputedContext, LegacyRouteStaticInjections {}
@@ -117,7 +117,7 @@ export const LegacyRoute: FC<LegacyRouteProps> = ({ render, condition }) => {
     return render(context)
 }
 
-export interface LegacyRouteContextProviderProps extends TelemetryV2Props {
+export interface LegacyRouteContextProviderProps {
     context: StaticAppConfig & StaticSourcegraphWebAppContext & DynamicSourcegraphWebAppContext
 }
 
@@ -151,8 +151,8 @@ export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContext
          */
         streamSearch: aggregateStreamingSearch,
         fetchHighlightedFileLineRanges: _fetchHighlightedFileLineRanges,
-        telemetryService: eventLogger,
-        telemetryRecorder: props.telemetryRecorder,
+        telemetryService: EVENT_LOGGER,
+        telemetryRecorder: platformContext.telemetryRecorder,
         /**
          * Breadcrumb props
          */

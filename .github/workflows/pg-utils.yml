@@ -1,0 +1,121 @@
+name: pg-utils
+
+on:
+  push:
+    paths:
+      - 'dev/nix/pg-utils.nix'
+    branches:
+        - 'main'
+  pull_request:
+    paths:
+      - 'dev/nix/pg-utils.nix'
+  workflow_dispatch:
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
+jobs:
+  x86_64-darwin:
+    name: Build pg-utils x86_64-darwin
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: DeterminateSystems/nix-installer-action@07b8bcba1b22d847db7ee507180c33e115499665 # SECURITY: pin third-party action hashes
+      - uses: DeterminateSystems/magic-nix-cache-action@a08d2ea91155518e6677c96e3111ac63813b9349
+      - name: '🔓 Authenticate to Google Cloud'
+        uses: google-github-actions/auth@3a3c4c57d294ef65efaaee4ff17b22fa88dd3c69
+        with:
+          credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
+      - name: Run `nix build`
+        run: |
+          nix build .#pg-utils
+      - name: Sign the binaries
+        # signing in ./result/bin will cause a cache miss on next invocation
+        run: |
+          mkdir -p dist
+          cp -L ./result/bin/{createdb,dropdb,pg_dump} ./dist/
+          sudo codesign --force -s - ./dist/{createdb,dropdb,pg_dump}
+      - name: Rename and prepare for upload
+        run: |
+          cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+      - name: Show hash of pg-utils
+        run: |
+          shasum -a 256 ./dist/{createdb,dropdb,pg_dump}.*
+      - uses: google-github-actions/upload-cloud-storage@e95a15f226403ed658d3e65f40205649f342ba2c
+        # github.head_ref is only available for pull requests
+        # if the event type is not pull_requet we have to use github.ref_name
+        if: ${{ github.ref_name == 'main' }}
+        with:
+          path: './dist/'
+          destination: 'pg-utils/x86_64-darwin/'
+          glob: '{createdb,dropdb,pg_dump}*'
+  aarch64-darwin:
+    name: Build pg-utils aarch64-darwin
+    runs-on: macos-latest-xlarge
+    steps:
+      - uses: actions/checkout@v3
+      - uses: DeterminateSystems/nix-installer-action@07b8bcba1b22d847db7ee507180c33e115499665 # SECURITY: pin third-party action hashes
+      - uses: DeterminateSystems/magic-nix-cache-action@a08d2ea91155518e6677c96e3111ac63813b9349
+      - name: '🔓 Authenticate to Google Cloud'
+        uses: google-github-actions/auth@3a3c4c57d294ef65efaaee4ff17b22fa88dd3c69
+        with:
+          credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
+      - name: Run `nix build`
+        run: |
+          nix build .#pg-utils
+      - name: Sign the binary
+        # signing in ./result/bin will cause a cache miss on next invocation
+        run: |
+          mkdir -p dist
+          cp -L ./result/bin/{createdb,dropdb,pg_dump}* ./dist/
+          sudo codesign --force -s - ./dist/{createdb,dropdb,pg_dump}*
+      - name: Rename and prepare for upload
+        run: |
+          cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+      - name: Show hash of pg-utils
+        run: |
+          shasum -a 256 ./dist/{createdb,dropdb,pg_dump}*
+      - uses: google-github-actions/upload-cloud-storage@e95a15f226403ed658d3e65f40205649f342ba2c
+        # github.head_ref is only available for pull requests
+        # if the event type is not pull_requet we have to use github.ref_name
+        if: ${{ github.ref_name == 'main' }}
+        with:
+          path: './dist/'
+          destination: 'pg-utils/aarch64-darwin'
+          glob: '{createdb,dropdb,pg_dump}*'
+  x86_64-linux:
+    name: Build pg-utils x86_64-linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: DeterminateSystems/nix-installer-action@07b8bcba1b22d847db7ee507180c33e115499665 # SECURITY: pin third-party action hashes
+      - uses: DeterminateSystems/magic-nix-cache-action@a08d2ea91155518e6677c96e3111ac63813b9349
+      - name: '🔓 Authenticate to Google Cloud'
+        uses: google-github-actions/auth@3a3c4c57d294ef65efaaee4ff17b22fa88dd3c69
+        with:
+          credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
+      - name: Run `nix build`
+        run: |
+          nix build .#pg-utils
+      - name: Rename and prepare for upload
+        run: |
+          mkdir -p dist
+          cp -R -L ./result/bin/{createdb,dropdb,pg_dump}* dist/
+          cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+      - name: Show hash of pg-utils
+        run: |
+          shasum -a 256 ./dist/{createdb,dropdb,pg_dump}*
+      - uses: google-github-actions/upload-cloud-storage@e95a15f226403ed658d3e65f40205649f342ba2c
+        # github.head_ref is only available for pull requests
+        # if the event type is not pull_requet we have to use github.ref_name
+        if: ${{ github.ref_name == 'main' }}
+        with:
+          path: './dist/'
+          destination: 'pg-utils/x86_64-linux'
+          glob: '{createdb,dropdb,pg_dump}*'
+
+  report_failure:
+    needs: [aarch64-darwin, x86_64-darwin, x86_64-linux]
+    if: ${{ failure() }}
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@main
+    secrets: inherit

@@ -14,11 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func cloneStatus(cloned, cloning bool) types.CloneStatus {
+func cloneStatus(cloned, locked bool) types.CloneStatus {
 	switch {
 	case cloned:
 		return types.CloneStatusCloned
-	case cloning:
+	case locked:
 		return types.CloneStatusCloning
 	}
 	return types.CloneStatusNotCloned

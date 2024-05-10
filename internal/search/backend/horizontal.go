@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
-	"github.com/sourcegraph/zoekt/stream"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -64,7 +63,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	pl := pool.New().WithErrors()
 	for endpoint, client := range clients {
 		pl.Go(func() error {
-			err := client.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
+			err := client.StreamSearch(ctx, q, opts, zoekt.SenderFunc(func(sr *zoekt.SearchResult) {
 				// This shouldn't happen, but skip event if sr is nil.
 				if sr == nil {
 					return
@@ -88,14 +87,6 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	}
 
 	return pl.Wait()
-}
-
-type queueSearchResult struct {
-	*zoekt.SearchResult
-
-	// optimization: It can be expensive to calculate sizeBytes, hence we cache it
-	// in the queue.
-	sizeBytes uint64
 }
 
 // Search aggregates search over every endpoint in Map.

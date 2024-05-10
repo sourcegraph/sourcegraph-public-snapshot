@@ -29,6 +29,7 @@
         justify-content: center;
         align-items: center;
         border: 1px solid var(--border-color);
+        background-color: var(--color-bg-1);
         padding: 0.5rem;
     }
 </style>

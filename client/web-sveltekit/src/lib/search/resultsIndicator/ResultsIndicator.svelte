@@ -1,6 +1,5 @@
 <script lang="ts">
     import { mdiChevronDown, mdiInformationOutline, mdiAlert, mdiAlertCircle } from '@mdi/js'
-    import { onMount } from 'svelte'
 
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
@@ -14,32 +13,21 @@
     export let suggestedItems: Required<Skipped>[]
     export let severity: string
 
-    const SEARCH_JOB_THRESHOLD = 8000
+    const SEARCH_JOB_THRESHOLD = 10000
+
     const icons: Record<string, string> = {
         info: mdiInformationOutline,
         warning: mdiAlert,
         error: mdiAlertCircle,
     }
 
-    onMount(() => {
-        let startTime = Date.now()
-        const interval = setInterval(() => {
-            const now = Date.now()
-            elapsedDuration = now - startTime
-            // once search has completed, reset the startTime
-            if (done) {
-                startTime = Date.now()
-            }
-        }, 1300)
-        return () => clearInterval(interval)
-    })
-
-    $: elapsedDuration = 0
+    $: elapsedDuration = progress.durationMs
     $: takingTooLong = elapsedDuration >= SEARCH_JOB_THRESHOLD
     $: loading = state === 'loading'
     $: severity = progress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
         ? 'error'
         : 'info'
+    $: isError = severity === 'error' || state === 'error'
     /*
      * NOTE: progress.done and state === 'complete' will sometimes be different values.
      * Only one of them needs to evaluate to true in order for the ResultIndicator to
@@ -49,72 +37,50 @@
 </script>
 
 <div class="indicator">
-    <div class="icon">
-        {#if loading}
-            <LoadingSpinner inline />
+    {#if loading}
+        <LoadingSpinner --size="16px" />
+    {:else}
+        <Icon svgPath={icons[severity]} --icon-size="16px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
+    {/if}
+
+    <div class="messages">
+        <ProgressMessage {state} {progress} {severity} />
+        {#if !done && takingTooLong}
+            <TimeoutMessage />
+        {:else if done}
+            <SuggestedAction {progress} {suggestedItems} {severity} {state} />
         {:else}
-            <Icon svgPath={icons[severity]} size={18} />
+            <span>Running search...</span>
         {/if}
     </div>
 
-    <div class="messages">
-        <ProgressMessage {state} {progress} {elapsedDuration} {severity} />
-
-        <div class="action-container">
-            {#if !done && takingTooLong}
-                <TimeoutMessage />
-            {:else if done}
-                <SuggestedAction {progress} {suggestedItems} {severity} {state} />
-            {:else}
-                <div class="suggested-action">
-                    {#if elapsedDuration <= SEARCH_JOB_THRESHOLD}
-                        <div class="running-search">
-                            <small> Running Search </small>
-                        </div>
-                    {/if}
-                </div>
-            {/if}
-        </div>
-    </div>
-
-    <div class="dropdown-icon">
-        <Icon svgPath={mdiChevronDown} size={18} />
-    </div>
+    <Icon svgPath={mdiChevronDown} --icon-size="12px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
 </div>
 
 <style lang="scss">
-    .action-container {
-        margin-top: 0.3rem;
-    }
-
-    .icon {
-        margin-right: 0.5rem;
-    }
-
-    .dropdown-icon {
-        margin-left: 1.2rem;
-    }
-
     .indicator {
-        align-items: center;
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
-    }
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: var(--border-radius);
 
-    .messages {
-        align-content: center;
-        align-items: flex-start;
-        display: flex;
-        flex-flow: column nowrap;
-    }
+        &:hover {
+            background-color: var(--color-bg-2);
+        }
 
-    .running-search {
-        color: var(--text-muted);
-    }
+        .messages {
+            display: flex;
+            flex-flow: column nowrap;
+            justify-content: center;
+            align-items: flex-start;
+            row-gap: 0.25rem;
+        }
 
-    .suggested-action {
-        display: flex;
-        flex-flow: row nowrap;
+        span {
+            color: var(--text-muted);
+        }
     }
 </style>

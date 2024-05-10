@@ -18,11 +18,22 @@ describe('Notices', () => {
                                 { message: 'a', location: 'home' },
                                 { message: 'a', location: 'home', dismissible: true },
                                 { message: 'b', location: 'top' },
+                                { message: 'a message with a variant', location: 'top', variant: 'note' },
+                                {
+                                    message: 'a message with style overrides',
+                                    location: 'top',
+                                    variant: 'success',
+                                    styleOverrides: {
+                                        backgroundColor: '#00f0ff',
+                                        textCentered: true,
+                                    },
+                                },
                             ],
                         },
                     }}
                 >
                     <Notices location="home" telemetryRecorder={noOpTelemetryRecorder} />
+                    <Notices location="top" telemetryRecorder={noOpTelemetryRecorder} />
                 </SettingsProvider>
             ).asFragment()
         ).toMatchSnapshot())

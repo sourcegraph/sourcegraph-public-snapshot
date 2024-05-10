@@ -13,10 +13,6 @@ import (
 )
 
 func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, error) {
-	if dotcom.SourcegraphDotComMode() {
-		return false, nil
-	}
-
 	// 🚨 SECURITY: The site alerts may contain sensitive data, so only site
 	// admins may view them.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {

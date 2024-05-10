@@ -8,6 +8,7 @@ go_library(
         "buckets.go",
         "context.go",
         "httptrace.go",
+        "init.go",
         "logger.go",
         "trace.go",
         "url.go",
@@ -15,7 +16,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/trace",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/conf/conftypes",
         "//internal/env",
         "//internal/trace/policy",
         "//lib/errors",

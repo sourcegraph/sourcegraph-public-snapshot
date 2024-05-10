@@ -2,7 +2,11 @@ load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//client/web-sveltekit:vite/package_json.bzl", vite_bin = "bin")
 load("@npm//client/web-sveltekit:vitest/package_json.bzl", vitest_bin = "bin")
-load("//dev:defs.bzl", "vitest_test")
+load("@npm//client/web-sveltekit:svelte-check/package_json.bzl", svelte_check = "bin")
+load("@npm//client/web-sveltekit:@sveltejs/kit/package_json.bzl", sveltekit = "bin")
+load("@aspect_rules_js//js:defs.bzl", "js_run_binary")
+load("//dev:defs.bzl", "ts_binary", "vitest_test")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 # gazelle:ignore
 
@@ -32,18 +36,18 @@ SRCS = [
     [
         "src/lib/graphql-operations.ts",
         "src/lib/graphql-types.ts",
-        "src/lib/graphql-type-mocks.ts",
+        "src/testing/graphql-type-mocks.ts",
         "src/**/*.gql.ts",
         "src/**/*.gql.d.ts",
         "src/**/*.test.ts",
         "src/**/*.spec.ts",
+        "src/testing/*",
+        "src/**/*.stories.svelte",
     ],
-) + glob([
-    "dev/**/*.cjs",
-    "dev/**/*.ts",
-])
+)
 
 BUILD_DEPS = [
+    "//cmd/frontend/graphqlbackend:graphql_schema",
     "//:node_modules/@apollo/client",
     "//:node_modules/@codemirror/autocomplete",
     "//:node_modules/@codemirror/commands",
@@ -64,8 +68,6 @@ BUILD_DEPS = [
     "//:node_modules/react-resizable",
     "//:node_modules/rxjs",
     "//:node_modules/uuid",
-    "//cmd/frontend/graphqlbackend:graphql_schema",
-    ":node_modules/hotkeys-js",
     ":node_modules/@faker-js/faker",
     ":node_modules/@floating-ui/dom",
     ":node_modules/@graphql-codegen/cli",
@@ -76,6 +78,7 @@ BUILD_DEPS = [
     ":node_modules/@graphql-tools/utils",
     ":node_modules/@melt-ui/svelte",
     ":node_modules/@sourcegraph/branded",
+    ":node_modules/@sourcegraph/client-api",
     ":node_modules/@sourcegraph/common",
     ":node_modules/@sourcegraph/http-client",
     ":node_modules/@sourcegraph/shared",
@@ -87,15 +90,21 @@ BUILD_DEPS = [
     ":node_modules/@sveltejs/vite-plugin-svelte",
     ":node_modules/@types/prismjs",
     ":node_modules/@urql/core",
+    ":node_modules/fzf",
     ":node_modules/graphql",
+    ":node_modules/hotkeys-js",
     ":node_modules/prismjs",
     ":node_modules/sass",
+    ":node_modules/signale",
     ":node_modules/svelte",
     ":node_modules/ts-key-enum",
     ":node_modules/vite",
     ":node_modules/vite-plugin-inspect",
     ":node_modules/wonka",
-]
+] + glob([
+    "dev/**/*.cjs",
+    "dev/**/*.ts",
+])
 
 CONFIGS = [
     "//client/branded:tsconfig",
@@ -138,11 +147,19 @@ TESTS = glob([
 ])
 
 TEST_BUILD_DEPS = [
+    ":generate-graphql-types",
     ":node_modules/vitest",
-    ":node_modules/signale",
     ":node_modules/@testing-library/svelte",
     ":node_modules/@testing-library/user-event",
-]
+] + glob(
+    [
+        "src/testing/*",
+    ],
+    [
+        # Already inluded in TESTS
+        "src/testing/graphql-mocking.test.ts",
+    ],
+)
 
 vitest_test(
     name = "unit_tests",
@@ -150,4 +167,113 @@ vitest_test(
     chdir = package_name(),
     data = SRCS + BUILD_DEPS + CONFIGS + TESTS + TEST_BUILD_DEPS,
     with_vitest_config = False,
+)
+
+# Create binary that executes graphql-codegen
+ts_binary(
+    name = "graphql_codegen_bin",
+    data = [
+        "dev/graphql-type-mocks.cjs",
+        "dev/vite-graphql-codegen.ts",
+        ":node_modules/@graphql-codegen/cli",
+        ":node_modules/@graphql-codegen/near-operation-file-preset",
+        ":node_modules/@graphql-codegen/typed-document-node",
+        ":node_modules/@graphql-codegen/typescript",
+        ":node_modules/@graphql-codegen/typescript-operations",
+        ":node_modules/@graphql-tools/utils",
+        ":node_modules/@graphql-typed-document-node/core",
+        ":node_modules/graphql",
+        ":node_modules/signale",
+    ],
+    entry_point = "dev/generate-graphql.ts",
+)
+
+# Generate types from graphql files
+GRAPHQL_FILES = glob(
+    [
+        "src/**/*.gql",
+    ],
+)
+
+# Files that possibly contain gql`...` tags
+OTHER_GRAPHQL_INPUT_FILES = glob(
+    [
+        "src/**/*.ts",
+    ],
+    [
+        "src/lib/graphql-*.ts",
+        "src/testing/graphql-type-mocks.ts",
+        "src/**/*.gql.ts",
+    ],
+)
+
+# Run graphql-codegen
+js_run_binary(
+    name = "generate-graphql-types",
+    srcs = GRAPHQL_FILES + OTHER_GRAPHQL_INPUT_FILES + [
+        "//cmd/frontend/graphqlbackend:graphql_schema",
+    ],
+    outs = [src + ".ts" for src in GRAPHQL_FILES] + [
+        "src/lib/graphql-operations.ts",
+        "src/lib/graphql-types.ts",
+        "src/testing/graphql-type-mocks.ts",
+    ],
+    chdir = package_name(),
+    tool = ":graphql_codegen_bin",
+)
+
+# Generate SvelteKit specific types
+sveltekit.svelte_kit(
+    name = "sveltekit-sync",
+    srcs = SRCS + [
+        ":node_modules/@sveltejs/adapter-static",
+        ":node_modules/@sveltejs/vite-plugin-svelte",
+        # This is needed to sveltekit sync to generate the types
+        # It explicitly looks for the existince of this package
+        "//:node_modules/typescript",
+    ],
+    args = [
+        "sync",
+    ],
+    chdir = package_name(),
+    out_dirs = [
+        ".svelte-kit",
+    ],
+)
+
+# Runs svelte-check on production source files
+svelte_check.svelte_check_test(
+    name = "svelte-check",
+    timeout = "short",
+    args = [
+        "--tsconfig",
+        "tsconfig.json",
+    ],
+    chdir = package_name(),
+    data = SRCS + BUILD_DEPS + CONFIGS + [
+        ":sveltekit-sync",
+        ":generate-graphql-types",
+        ":node_modules/@graphql-typed-document-node/core",
+        "//:node_modules/@types/uuid",
+        # Needed to properly extend vite's UserConfig type
+        ":node_modules/vitest",
+    ],
+)
+
+filegroup(
+    name = "sveltekit-pages",
+    srcs = glob(["src/routes/**/+page.svelte"]),
+    visibility = ["//cmd/frontend/internal/app/ui/sveltekit:__pkg__"],
+)
+
+write_generated_to_source_files(
+    name = "write_generated",
+    additional_update_targets = [
+        "//cmd/frontend/internal/app/ui/sveltekit:write_generated",
+        "//client/web:write_generated_sveltekit_routes",
+    ],
+    output_files = {
+        "src/lib/routes.ts": "cmd/frontend/internal/app/ui/sveltekit/_routes.ts",
+    },
+    target = "//cmd/frontend/internal/app/ui/sveltekit:generate_route_info",
 )

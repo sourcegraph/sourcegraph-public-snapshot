@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -131,16 +130,14 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 		client = provider.GetPATClient(c.Token, "")
 	}
 
-	if !dotcom.SourcegraphDotComMode() || svc.CloudDefault {
-		client.ExternalRateLimiter().SetCollector(&ratelimit.MetricsCollector{
-			Remaining: func(n float64) {
-				gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(n)
-			},
-			WaitDuration: func(n time.Duration) {
-				gitlabRatelimitWaitCounter.WithLabelValues("rest", svc.DisplayName).Add(n.Seconds())
-			},
-		})
-	}
+	client.ExternalRateLimiter().SetCollector(&ratelimit.MetricsCollector{
+		Remaining: func(n float64) {
+			gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(n)
+		},
+		WaitDuration: func(n time.Duration) {
+			gitlabRatelimitWaitCounter.WithLabelValues("rest", svc.DisplayName).Add(n.Seconds())
+		},
+	})
 
 	return &GitLabSource{
 		svc:                       svc,

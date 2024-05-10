@@ -48,7 +48,7 @@ func Init(logger log.Logger, db database.DB) {
 		openidconnect.Middleware(logger, db),
 		sourcegraphoperator.Middleware(db),
 		saml.Middleware(db),
-		httpheader.Middleware(db),
+		httpheader.Middleware(logger, db),
 		githuboauth.Middleware(db),
 		gitlaboauth.Middleware(db),
 		bitbucketcloudoauth.Middleware(db),

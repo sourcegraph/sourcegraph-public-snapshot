@@ -28,6 +28,7 @@ go_library(
         "//internal/extsvc",
         "//internal/extsvc/gitlab",
         "//internal/licensing",
+        "//internal/telemetry/telemetryrecorder",
         "//lib/errors",
         "//schema",
         "@com_github_dghubble_gologin_v2//:gologin",

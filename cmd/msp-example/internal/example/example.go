@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/background"
@@ -49,17 +50,17 @@ func (s Service) Initialize(
 		if err := initPostgreSQL(ctx, contract); err != nil {
 			return nil, errors.Wrap(err, "initPostgreSQL")
 		}
-		logger.Info("postgresql database configured")
+		logger.Info("postgresql connection success")
 
 		if err := writeBigQueryEvent(ctx, contract, "service.initialized"); err != nil {
 			return nil, errors.Wrap(err, "writeBigQueryEvent")
 		}
-		logger.Info("bigquery connection checked")
+		logger.Info("bigquery connection success")
 
 		if err := testRedisConnection(ctx, contract); err != nil {
 			return nil, errors.Wrap(err, "newRedisConnection")
 		}
-		logger.Info("redis connection checked")
+		logger.Info("redis connection success")
 	}
 
 	requestCounter, err := getRequestCounter()
@@ -74,7 +75,7 @@ func (s Service) Initialize(
 	}))
 	// Test endpoint for making CURL requests to arbitrary targets from this
 	// service, for testing networking. Requires diagnostic auth.
-	h.Handle("/proxy", contract.DiagnosticsAuthMiddleware(
+	h.Handle("/proxy", contract.Diagnostics.DiagnosticsAuthMiddleware(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			host := r.URL.Query().Get("host")
 			if host == "" {
@@ -132,7 +133,7 @@ func (s Service) Initialize(
 			proxy.ServeHTTP(w, proxiedRequest)
 		}),
 	))
-	contract.RegisterDiagnosticsHandlers(h, serviceState{
+	contract.Diagnostics.RegisterDiagnosticsHandlers(h, serviceState{
 		statelessMode: config.StatelessMode,
 		contract:      contract,
 	})
@@ -141,8 +142,20 @@ func (s Service) Initialize(
 		&httpRoutine{
 			log: logger,
 			Server: &http.Server{
-				Addr:    fmt.Sprintf(":%d", contract.Port),
-				Handler: h,
+				Addr: fmt.Sprintf(":%d", contract.Port),
+				Handler: otelhttp.NewHandler(h, "http",
+					otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
+						// If incoming, just include the path since our own host is not
+						// very interesting. If outgoing, include the host as well.
+						target := r.URL.Path
+						if r.RemoteAddr == "" { // no RemoteAddr indicates this is an outgoing request
+							target = r.Host + target
+						}
+						if operation != "" {
+							return fmt.Sprintf("%s.%s %s", operation, r.Method, target)
+						}
+						return fmt.Sprintf("%s %s", r.Method, target)
+					})),
 			},
 		},
 	}, nil

@@ -7,6 +7,8 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -176,13 +178,22 @@ const (
 	CompletionsV1            CompletionsVersion = 1
 )
 
+// CodyClientName represents the name of a client in URL query parameters.
+type CodyClientName string
+
+const (
+	CodyClientWeb       CodyClientName = "web"
+	CodyClientVscode    CodyClientName = "vscode"
+	CodyClientJetbrains CodyClientName = "jetbrains"
+)
+
 type CompletionsClient interface {
 	// Stream executions a completions request, streaming results to the callback.
 	// Callers should check for ErrStatusNotOK and handle the error appropriately.
-	Stream(context.Context, CompletionsFeature, CompletionsVersion, CompletionRequestParameters, SendCompletionEvent) error
+	Stream(context.Context, CompletionsFeature, CompletionsVersion, CompletionRequestParameters, SendCompletionEvent, log.Logger) error
 	// Complete executions a completions request until done. Callers should check
 	// for ErrStatusNotOK and handle the error appropriately.
-	Complete(context.Context, CompletionsFeature, CompletionsVersion, CompletionRequestParameters) (*CompletionResponse, error)
+	Complete(context.Context, CompletionsFeature, CompletionsVersion, CompletionRequestParameters, log.Logger) (*CompletionResponse, error)
 }
 
 func ConvertFromLegacyMessages(messages []Message) []Message {

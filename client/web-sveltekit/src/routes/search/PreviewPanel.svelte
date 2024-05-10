@@ -33,8 +33,8 @@
     // the cache. It may make sense to pass loaders into this function
     // rather than adding a dependency on the blob page.
     import {
-        BlobPageQuery,
-        BlobSyntaxHighlightQuery,
+        BlobFileViewBlobQuery,
+        BlobFileViewHighlightedFileQuery,
     } from '../[...repo=reporev]/(validrev)/(code)/-/blob/[...path]/page.gql'
 
     import { getSearchResultsContext } from './searchResultsContext'
@@ -53,7 +53,7 @@
 
     $: blobStore = toReadable(
         client
-            .query(BlobPageQuery, {
+            .query(BlobFileViewBlobQuery, {
                 repoName: result.repository,
                 revspec: result.commit ?? '',
                 path: result.path,
@@ -63,7 +63,7 @@
 
     $: highlightStore = toReadable(
         client
-            .query(BlobSyntaxHighlightQuery, {
+            .query(BlobFileViewHighlightedFileQuery, {
                 repoName: result.repository,
                 revspec: result.commit ?? '',
                 path: result.path,
@@ -77,7 +77,7 @@
     <div class="header">
         <h3>File Preview</h3>
         <button data-testid="preview-close" on:click={() => searchResultContext.setPreview(null)}>
-            <Icon svgPath={mdiClose} class="close-icon" size={16} inline />
+            <Icon svgPath={mdiClose} class="close-icon" --icon-size="16px" inline />
         </button>
     </div>
     <div class="file-link">
@@ -152,5 +152,6 @@
     .content {
         flex: 1;
         min-height: 0;
+        background-color: var(--code-bg);
     }
 </style>

@@ -8,6 +8,7 @@ package images
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -17,6 +18,9 @@ const (
 	// SourcegraphDockerPublishRegistry is a public registry for final images, and does not require authentication to pull from.
 	// TODO RFC795: safeguard
 	SourcegraphDockerPublishRegistry = "index.docker.io/sourcegraph"
+	// SourcegraphArtifactRegistryPublicRegistry is a public registry for storing public images.
+	// It is a migitation for the upcoming Docker Hub rate limits on GCP starting July 15, 2024
+	SourcegraphArtifactRegistryPublicRegistry = "us-docker.pkg.dev/sourcegraph-public-images/sourcegraph-public-images"
 	// SourcegraphInternalReleaseRegistry is a private registry storing internal releases.
 	SourcegraphInternalReleaseRegistry = "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal"
 	// SourcegraphPublicReleaseRegistry is a currently private registry for storing public releases.
@@ -103,6 +107,7 @@ var DeploySourcegraphDockerImages = []string{
 	"alpine-3.14",
 	"postgres-12-alpine",
 	"blobstore",
+	"caddy",
 	"cadvisor",
 	"codeinsights-db",
 	"codeintel-db",
@@ -120,7 +125,6 @@ var DeploySourcegraphDockerImages = []string{
 	"postgres_exporter",
 	"precise-code-intel-worker",
 	"prometheus",
-	"qdrant",
 	"redis-cache",
 	"redis-store",
 	"redis_exporter",
@@ -148,6 +152,7 @@ func CandidateImageTag(commit string, buildNumber int) string {
 // - latest tag omitted if empty
 // - branch name omitted when `main`
 func BranchImageTag(now time.Time, commit string, buildNumber int, branchName, latestTag string) string {
+	branchName = sanitizeBranchForDockerTag(branchName)
 	commitSuffix := fmt.Sprintf("%.12s", commit)
 	if latestTag != "" {
 		commitSuffix = latestTag + "-" + commitSuffix
@@ -159,4 +164,10 @@ func BranchImageTag(now time.Time, commit string, buildNumber int, branchName, l
 	}
 
 	return tag
+}
+
+func sanitizeBranchForDockerTag(branch string) string {
+	branch = strings.ReplaceAll(branch, "/", "-")
+	branch = strings.ReplaceAll(branch, "+", "-")
+	return branch
 }

@@ -76,7 +76,9 @@ func initLogsDir() (string, error) {
 	}
 
 	logsdir := path.Join(sghomedir, "sg_start/logs")
-	os.RemoveAll(logsdir)
+	if err := os.RemoveAll(logsdir); err != nil {
+		return "", err
+	}
 	if err := os.MkdirAll(logsdir, 0744); err != nil && !os.IsExist(err) {
 		return "", err
 	}
@@ -223,7 +225,9 @@ func newIBazelEventHandler(filename string) *iBazelEventHandler {
 // This is a blocking function
 func (h *iBazelEventHandler) watch(ctx context.Context) {
 	_, cancel := context.WithCancelCause(ctx)
-	tail, err := tail.TailFile(h.filename, tail.Config{Follow: true, Logger: tail.DiscardingLogger})
+	// I have anecdotal evidence that the default inotify events fail when the logfile is recreated and dumped to
+	// by a restarting iBazel instance. So switching to Poll
+	tail, err := tail.TailFile(h.filename, tail.Config{Follow: true, Poll: true, Logger: tail.DiscardingLogger})
 	if err != nil {
 		cancel(err)
 	}

@@ -2,6 +2,7 @@ package gitserver_test
 
 import (
 	"context"
+	"io"
 	"math/rand"
 	"os/exec"
 	"path/filepath"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 )
@@ -61,55 +63,6 @@ func TestClient_IsRepoCloneale_ProtoRoundTrip(t *testing.T) {
 	if err := quick.Check(fn, nil); err != nil {
 		t.Errorf("IsRepoCloneableResponse proto roundtrip failed (-want +got):\n%s", diff)
 	}
-}
-
-func TestClient_RepoUpdateRequest_ProtoRoundTrip(t *testing.T) {
-	var diff string
-	t.Run("request", func(t *testing.T) {
-		fn := func(repo api.RepoName) bool {
-			original := protocol.RepoUpdateRequest{
-				Repo: repo,
-			}
-
-			var converted protocol.RepoUpdateRequest
-			converted.FromProto(original.ToProto())
-
-			if diff = cmp.Diff(original, converted); diff != "" {
-				return false
-			}
-
-			return true
-		}
-
-		if err := quick.Check(fn, nil); err != nil {
-			t.Errorf("RepoUpdateRequest proto roundtrip failed (-want +got):\n%s", diff)
-		}
-	})
-
-	t.Run("response", func(t *testing.T) {
-		fn := func(lastFetched fuzzTime, lastChanged fuzzTime, err string) bool {
-			lastFetchedPtr := time.Time(lastFetched)
-			lastChangedPtr := time.Time(lastChanged)
-
-			original := protocol.RepoUpdateResponse{
-				LastFetched: &lastFetchedPtr,
-				LastChanged: &lastChangedPtr,
-				Error:       err,
-			}
-			var converted protocol.RepoUpdateResponse
-			converted.FromProto(original.ToProto())
-
-			if diff = cmp.Diff(original, converted); diff != "" {
-				return false
-			}
-
-			return true
-		}
-
-		if err := quick.Check(fn, nil); err != nil {
-			t.Errorf("RepoUpdateResponse proto roundtrip failed (-want +got):\n%s", diff)
-		}
-	})
 }
 
 func TestClient_CreateCommitFromPatchRequest_ProtoRoundTrip(t *testing.T) {
@@ -179,25 +132,6 @@ func TestClient_CreateCommitFromPatchRequest_ProtoRoundTrip(t *testing.T) {
 			t.Errorf("CreateCommitFromPatchResponse proto roundtrip failed (-want +got):\n%s", diff)
 		}
 	})
-}
-
-func TestClient_RepoClone_ProtoRoundTrip(t *testing.T) {
-	var diff string
-
-	fn := func(original protocol.RepoCloneResponse) bool {
-		var converted protocol.RepoCloneResponse
-		converted.FromProto(original.ToProto())
-
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
-		}
-
-		return true
-	}
-
-	if err := quick.Check(fn, nil); err != nil {
-		t.Errorf("RepoCloneResponse proto roundtrip failed (-want +got):\n%s", diff)
-	}
 }
 
 func TestClient_ListGitolite_ProtoRoundTrip(t *testing.T) {
@@ -465,3 +399,48 @@ func (fuzzTime) Generate(rand *rand.Rand, _ int) reflect.Value {
 }
 
 var _ quick.Generator = fuzzTime{}
+
+func TestNewChangedFilesIteratorFromSlice(t *testing.T) {
+	t.Run("IterateThroughFiles", func(t *testing.T) {
+		files := []gitdomain.PathStatus{
+			{Path: "file1.txt", Status: gitdomain.StatusAdded},
+			{Path: "file2.txt", Status: gitdomain.StatusModified},
+			{Path: "file3.txt", Status: gitdomain.StatusDeleted},
+		}
+
+		iter := gitserver.NewChangedFilesIteratorFromSlice(files)
+		defer iter.Close()
+
+		for i := 0; i < len(files); i++ {
+			file, err := iter.Next()
+			require.NoError(t, err)
+			require.Equal(t, files[i], file)
+		}
+
+		_, err := iter.Next()
+		require.Equal(t, io.EOF, err)
+	})
+
+	t.Run("EmptySlice", func(t *testing.T) {
+		iter := gitserver.NewChangedFilesIteratorFromSlice(nil)
+		defer iter.Close()
+
+		_, err := iter.Next()
+		require.Equal(t, io.EOF, err)
+	})
+
+	t.Run("Close", func(t *testing.T) {
+		files := []gitdomain.PathStatus{
+			{Path: "file1.txt", Status: gitdomain.StatusAdded},
+		}
+
+		iter := gitserver.NewChangedFilesIteratorFromSlice(files)
+
+		// Close should be idempotent
+		iter.Close()
+		iter.Close()
+
+		_, err := iter.Next()
+		require.Equal(t, io.EOF, err)
+	})
+}

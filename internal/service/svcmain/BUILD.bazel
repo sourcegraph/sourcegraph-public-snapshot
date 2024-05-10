@@ -10,6 +10,7 @@ go_library(
         "//internal/debugserver",
         "//internal/env",
         "//internal/hostname",
+        "//internal/httpcli",
         "//internal/logging",
         "//internal/observation",
         "//internal/profiler",

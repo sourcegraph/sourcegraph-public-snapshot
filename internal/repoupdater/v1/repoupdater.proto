@@ -20,10 +20,23 @@ service RepoUpdaterService {
   rpc EnqueueRepoUpdate(EnqueueRepoUpdateRequest) returns (EnqueueRepoUpdateResponse) {
     option idempotency_level = IDEMPOTENT;
   }
+  // RecloneRepository reclones the repository on gitserver. This is useful when
+  // the repository is likely broken.
+  // Note that after this call finished the repository is not immediately available
+  // again, so this method should be used with care.
+  rpc RecloneRepository(RecloneRepositoryRequest) returns (RecloneRepositoryResponse) {}
   rpc EnqueueChangesetSync(EnqueueChangesetSyncRequest) returns (EnqueueChangesetSyncResponse) {
     option idempotency_level = IDEMPOTENT;
   }
 }
+
+message RecloneRepositoryRequest {
+  // repo_name is the name of the repo to reclone.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+}
+
+message RecloneRepositoryResponse {}
 
 message RepoUpdateSchedulerInfoRequest {
   // The ID of the repo to lookup the schedule for.

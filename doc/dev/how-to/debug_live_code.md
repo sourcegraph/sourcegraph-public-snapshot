@@ -1,6 +1,6 @@
 # How to debug live code
 
-How to debug a program with Visual Studio Code:
+How to debug a program with Visual Studio Code. Instructions for debugging Go code with Goland/IntelliJ [here](#attaching-via-goland)
 
 ## Debug TypeScript code
 
@@ -18,7 +18,7 @@ Requires "Debugger for Chrome" extension.
 
 ## Debug Go code
 
-Instructions for attaching with Goland [here](#attaching-via-goland)
+Instructions for attaching with Goland/IntelliJ [here](#attaching-via-goland).
 
 Install [Delve](https://github.com/derekparker/delve):
 

@@ -2,11 +2,18 @@ package shared
 
 import (
 	"context"
+	"database/sql"
 
 	"net/http"
 	"time"
 
 	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -26,14 +33,14 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		log.String("path to scip-syntax CLI", config.IndexingWorkerConfig.CliPath),
 		log.String("API address", config.ListenAddress))
 
-	db := mustInitializeDB(observationCtx, "syntactic-code-intel-indexer")
+	db := initDB(observationCtx, "syntactic-code-intel-indexer")
 
-	workerStore, err := NewStore(observationCtx, db)
+	jobStore, err := jobstore.NewStoreWithDB(observationCtx, db)
 	if err != nil {
 		return errors.Wrap(err, "initializing worker store")
 	}
 
-	indexingWorker := NewIndexingWorker(ctx, observationCtx, workerStore, *config.IndexingWorkerConfig)
+	indexingWorker := NewIndexingWorker(ctx, observationCtx, jobStore, *config.IndexingWorkerConfig)
 
 	// Initialize health server
 	server := httpserver.NewFromAddr(config.ListenAddress, &http.Server{
@@ -46,4 +53,28 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	goroutine.MonitorBackgroundRoutines(ctx, server, indexingWorker)
 
 	return nil
+}
+
+func initDB(observationCtx *observation.Context, name string) *sql.DB {
+	// This is an internal service, so we rely on the
+	// frontend to do authz checks for user requests.
+	// Authz checks are enforced by the DB layer
+	//
+	// This call to SetProviders is here so that calls to GetProviders don't block.
+	// Relevant PR: https://github.com/sourcegraph/sourcegraph/pull/15755
+	// Relevant issue: https://github.com/sourcegraph/sourcegraph/issues/15962
+
+	authz.SetProviders(true, []authz.Provider{})
+
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
+	})
+
+	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, name)
+
+	if err != nil {
+		log.Scoped("init db ("+name+")").Fatal("Failed to connect to frontend database", log.Error(err))
+	}
+
+	return sqlDB
 }

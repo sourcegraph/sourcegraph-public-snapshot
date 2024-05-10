@@ -39,7 +39,6 @@ go_library(
         "@com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1:configuration",
         "@com_github_sourcegraph_zoekt//grpc/protos/zoekt/webserver/v1:webserver",
         "@com_github_sourcegraph_zoekt//query",
-        "@com_github_sourcegraph_zoekt//stream",
         "@io_opentelemetry_go_otel//attribute",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",

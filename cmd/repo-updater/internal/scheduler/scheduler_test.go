@@ -12,14 +12,12 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -280,7 +278,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(logtest.Scoped(t), db, gitserver.NewMockClient())
+			s := NewUpdateScheduler(logtest.Scoped(t), db, gitserver.NewMockRepositoryServiceClient())
 
 			for _, call := range test.calls {
 				s.updateQueue.enqueue(call.repo, call.priority)
@@ -446,7 +444,7 @@ func TestUpdateQueue_remove(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockClient())
+			s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockRepositoryServiceClient())
 			setupInitialQueue(s, test.initialQueue)
 
 			// Perform the removals.
@@ -518,7 +516,7 @@ func TestUpdateQueue_acquireNext(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockClient())
+			s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockRepositoryServiceClient())
 			setupInitialQueue(s, test.initialQueue)
 
 			// Test aquireNext.
@@ -651,7 +649,7 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 			_, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockClient())
+			s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockRepositoryServiceClient())
 			setupInitialSchedule(s, test.initialSchedule)
 			setupInitialQueue(s, test.initialQueue)
 
@@ -797,7 +795,7 @@ func TestSchedule_upsert(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockClient())
+			s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockRepositoryServiceClient())
 			setupInitialSchedule(s, test.initialSchedule)
 
 			for _, call := range test.upsertCalls {
@@ -819,7 +817,7 @@ func TestUpdateQueue_PrioritiseUncloned(t *testing.T) {
 	_, stop := startRecording()
 	defer stop()
 
-	s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockClient())
+	s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockRepositoryServiceClient())
 
 	assertFront := func(name api.RepoName) {
 		t.Helper()
@@ -857,7 +855,7 @@ func TestScheduleInsertNew(t *testing.T) {
 	_, stop := startRecording()
 	defer stop()
 
-	s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockClient())
+	s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockRepositoryServiceClient())
 
 	assertFront := func(name api.RepoName) {
 		t.Helper()
@@ -1048,7 +1046,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockClient())
+			s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockRepositoryServiceClient())
 			setupInitialSchedule(s, test.initialSchedule)
 			s.schedule.randGenerator = &mockRandomGenerator{}
 
@@ -1147,7 +1145,7 @@ func TestSchedule_remove(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockClient())
+			s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockRepositoryServiceClient())
 			setupInitialSchedule(s, test.initialSchedule)
 
 			for _, call := range test.removeCalls {
@@ -1309,7 +1307,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockClient())
+			s := NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB(), gitserver.NewMockRepositoryServiceClient())
 
 			setupInitialSchedule(s, test.initialSchedule)
 
@@ -1328,9 +1326,10 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 	c := configuredRepo{ID: 3, Name: "c"}
 
 	type mockRequestRepoUpdate struct {
-		repo configuredRepo
-		resp *gitserverprotocol.RepoUpdateResponse
-		err  error
+		repo        configuredRepo
+		lastFetched time.Time
+		lastChanged time.Time
+		err         error
 	}
 
 	tests := []struct {
@@ -1382,18 +1381,14 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			},
 			mockRequestRepoUpdates: []*mockRequestRepoUpdate{
 				{
-					repo: a,
-					resp: &gitserverprotocol.RepoUpdateResponse{
-						LastFetched: pointers.Ptr(defaultTime.Add(2 * time.Minute)),
-						LastChanged: pointers.Ptr(defaultTime),
-					},
+					repo:        a,
+					lastFetched: defaultTime.Add(2 * time.Minute),
+					lastChanged: defaultTime,
 				},
 				{
-					repo: b,
-					resp: &gitserverprotocol.RepoUpdateResponse{
-						LastFetched: pointers.Ptr(defaultTime.Add(2 * time.Minute)),
-						LastChanged: pointers.Ptr(defaultTime),
-					},
+					repo:        b,
+					lastFetched: defaultTime.Add(2 * time.Minute),
+					lastChanged: defaultTime,
 				},
 			},
 			finalSchedule: []*scheduledRepoUpdate{
@@ -1427,17 +1422,17 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 
 			contexts := make(chan context.Context, expectedRequestCount)
 			db := dbmocks.NewMockDB()
-			gs := gitserver.NewMockClient()
-			gs.RequestRepoUpdateFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName) (*gitserverprotocol.RepoUpdateResponse, error) {
+			gs := gitserver.NewMockRepositoryServiceClient()
+			gs.FetchRepositoryFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName) (time.Time, time.Time, error) {
 				select {
 				case mock := <-mockRequestRepoUpdates:
 					if !reflect.DeepEqual(mock.repo.Name, repo) {
 						t.Errorf("\nexpected requestRepoUpdate\n%s\ngot\n%s", spew.Sdump(mock.repo), spew.Sdump(repo))
 					}
 					contexts <- ctx // Intercept all contexts so we can wait for spawned goroutines to finish.
-					return mock.resp, mock.err
+					return mock.lastFetched, mock.lastChanged, mock.err
 				case <-ctx.Done():
-					return nil, ctx.Err()
+					return time.Time{}, time.Time{}, ctx.Err()
 				}
 			})
 

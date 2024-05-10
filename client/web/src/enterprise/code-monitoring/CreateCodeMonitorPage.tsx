@@ -5,6 +5,7 @@ import { useLocation } from 'react-router-dom'
 import type { Observable } from 'rxjs'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -12,7 +13,6 @@ import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
 import type { CodeMonitorFields } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { convertActionsForCreate } from './action-converters'
 import { createCodeMonitor as _createCodeMonitor } from './backend'
@@ -42,7 +42,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
     )
 
     useEffect(() => {
-        eventLogger.logPageView('CreateCodeMonitorPage', {
+        EVENT_LOGGER.logPageView('CreateCodeMonitorPage', {
             hasTriggerQuery: !!triggerQuery,
             hasDescription: !!description,
         })
@@ -53,7 +53,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
 
     const createMonitorRequest = useCallback(
         (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> => {
-            eventLogger.log('CreateCodeMonitorFormSubmitted')
+            EVENT_LOGGER.log('CreateCodeMonitorFormSubmitted')
             telemetryRecorder.recordEvent('codeMonitor.create', 'submit')
             return createCodeMonitor({
                 monitor: {

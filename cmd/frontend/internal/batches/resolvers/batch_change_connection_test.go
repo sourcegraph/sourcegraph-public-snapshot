@@ -33,7 +33,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, true).ID
 
-	bstore := bstore.New(db, &observation.TestContext, nil)
+	bstore := bstore.New(db, observation.TestContextTB(t), nil)
 	repoStore := database.ReposWith(logger, bstore)
 	esStore := database.ExternalServicesWith(logger, bstore)
 
@@ -189,7 +189,7 @@ func TestBatchChangesListing(t *testing.T) {
 
 	orgID := bt.CreateTestOrg(t, db, "org").ID
 
-	store := bstore.New(db, &observation.TestContext, nil)
+	store := bstore.New(db, observation.TestContextTB(t), nil)
 
 	r := &Resolver{store: store}
 	s, err := newSchema(db, r)

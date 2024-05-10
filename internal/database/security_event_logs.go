@@ -47,6 +47,11 @@ const (
 	SecurityEventNameRoleChangeDenied  SecurityEventName = "RoleChangeDenied"
 	SecurityEventNameRoleChangeGranted SecurityEventName = "RoleChangeGranted"
 
+	SecurityEventNameRBACRoleAdded     SecurityEventName = "RBACRoleAdded"
+	SecurityEventNameRBACRoleRemoved   SecurityEventName = "RBACRoleRemoved"
+	SecurityEventNameRBACRoleSet       SecurityEventName = "RBACRoleSet"
+	SecurityEventNameRBACPermissionSet SecurityEventName = "RBACPermissionSet"
+
 	SecurityEventNameAccessGranted SecurityEventName = "AccessGranted"
 
 	SecurityEventAccessTokenCreated             SecurityEventName = "AccessTokenCreated"

@@ -29,6 +29,6 @@ export function computePanelFlexBoxStyle(input: Input): string {
         flex-basis: 0;
         flex-shrink: 0;
         overflow: hidden;
-        pointer-events: ${dragState !== undefined ? 'none' : 'unset'}
+        pointer-events: ${dragState !== null ? 'none' : 'unset'}
     `
 }

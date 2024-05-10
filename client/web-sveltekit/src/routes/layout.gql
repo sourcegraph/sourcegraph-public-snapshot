@@ -25,10 +25,10 @@ query GlobalAlertsSiteFlags {
 }
 
 mutation DisableSveltePrototype($userID: ID!) {
-    overrideWebNext: createFeatureFlagOverride(namespace:$userID, flagName:"web-next", value:false) {
+    overrideWebNext: createFeatureFlagOverride(namespace: $userID, flagName: "web-next", value: false) {
         __typename
     }
-    overrideRollout: createFeatureFlagOverride(namespace:$userID, flagName:"web-next-rollout", value:false) {
+    overrideRollout: createFeatureFlagOverride(namespace: $userID, flagName: "web-next-rollout", value: false) {
         __typename
     }
 }
@@ -39,6 +39,6 @@ fragment FeatureFlag on EvaluatedFeatureFlag {
 }
 
 fragment AuthenticatedUser on User {
-    ...Header_User
+    ...GlobalNavigation_User
     ...SearchInput_AuthenticatedUser
 }

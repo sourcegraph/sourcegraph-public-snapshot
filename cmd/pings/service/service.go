@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
+	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/contract"
 )
 
 // Service is the pings service.
@@ -41,7 +42,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	}
 
 	// Register MSP diagnostics ('/-/version', '/-/healthz', etc)
-	contract.RegisterDiagnosticsHandlers(
+	contract.Diagnostics.RegisterDiagnosticsHandlers(
 		&muxRegisterer{handler: handler},
 		&serviceState{
 			logger:       logger.Scoped("state"),
@@ -68,7 +69,7 @@ type serviceState struct {
 	pubsubClient pubsub.TopicClient
 }
 
-var _ runtime.ServiceState = (*serviceState)(nil)
+var _ contract.ServiceState = (*serviceState)(nil)
 
 func (s *serviceState) Healthy(ctx context.Context, query url.Values) error {
 	if query.Get("full-suite") == "" {

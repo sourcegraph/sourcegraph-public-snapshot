@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/gofrs/uuid"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
@@ -265,43 +264,6 @@ func TestCreateOrganization(t *testing.T) {
 		})
 	})
 
-	t.Run("Creates organization and sets statistics", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(t, true)
-
-		id, err := uuid.NewV4()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		orgs.UpdateOrgsOpenBetaStatsFunc.SetDefaultReturn(nil)
-		defer func() {
-			orgs.UpdateOrgsOpenBetaStatsFunc = nil
-		}()
-
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `mutation CreateOrganization($name: String!, $displayName: String, $statsID: ID) {
-				createOrganization(name: $name, displayName: $displayName, statsID: $statsID) {
-					id
-                    name
-				}
-			}`,
-			ExpectedResult: fmt.Sprintf(`
-			{
-				"createOrganization": {
-					"id": "%s",
-					"name": "%s"
-				}
-			}
-			`, MarshalOrgID(mockedOrg.ID), mockedOrg.Name),
-			Variables: map[string]any{
-				"name":    "acme",
-				"statsID": id.String(),
-			},
-		})
-	})
-
 	t.Run("Fails for unauthenticated user", func(t *testing.T) {
 		dotcom.MockSourcegraphDotComMode(t, true)
 
@@ -388,68 +350,7 @@ func TestAddOrganizationMember(t *testing.T) {
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
-	t.Run("Works for site admin if not on Cloud", func(t *testing.T) {
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `mutation AddUserToOrganization($organization: ID!, $username: String!) {
-				addUserToOrganization(organization: $organization, username: $username) {
-					alwaysNil
-				}
-			}`,
-			ExpectedResult: `{
-				"addUserToOrganization": {
-					"alwaysNil": null
-				}
-			}`,
-			Variables: map[string]any{
-				"organization": orgIDString,
-				"username":     userName,
-			},
-		})
-	})
-
-	t.Run("Does not work for site admin on Cloud", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(t, true)
-
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `mutation AddUserToOrganization($organization: ID!, $username: String!) {
-				addUserToOrganization(organization: $organization, username: $username) {
-					alwaysNil
-				}
-			}`,
-			ExpectedResult: "null",
-			ExpectedErrors: []*gqlerrors.QueryError{
-				{
-					Message: "Must be a member of the organization to add members%!(EXTRA *withstack.withStack=current user is not an org member)",
-					Path:    []any{"addUserToOrganization"},
-				},
-			},
-			Variables: map[string]any{
-				"organization": orgIDString,
-				"username":     userName,
-			},
-		})
-	})
-
-	t.Run("Works on Cloud if site admin is org member", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(t, true)
-		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(ctx context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
-			if userID == 1 {
-				return &types.OrgMembership{OrgID: orgID, UserID: 1}, nil
-			} else if userID == 2 {
-				return nil, &database.ErrOrgMemberNotFound{}
-			}
-			t.Fatalf("Unexpected user ID received for OrgMembers.GetByOrgIDAndUserID: %d", userID)
-			return nil, nil
-		})
-
-		defer func() {
-			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
-		}()
-
+	t.Run("Works for site admin", func(t *testing.T) {
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
 			Context: ctx,

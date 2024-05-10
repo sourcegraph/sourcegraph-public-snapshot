@@ -23,12 +23,21 @@ type MockGitserverServiceClient struct {
 	// ArchiveFunc is an instance of a mock function object controlling the
 	// behavior of the method Archive.
 	ArchiveFunc *GitserverServiceClientArchiveFunc
+	// BehindAheadFunc is an instance of a mock function object controlling
+	// the behavior of the method BehindAhead.
+	BehindAheadFunc *GitserverServiceClientBehindAheadFunc
 	// BlameFunc is an instance of a mock function object controlling the
 	// behavior of the method Blame.
 	BlameFunc *GitserverServiceClientBlameFunc
+	// ChangedFilesFunc is an instance of a mock function object controlling
+	// the behavior of the method ChangedFiles.
+	ChangedFilesFunc *GitserverServiceClientChangedFilesFunc
 	// CheckPerforceCredentialsFunc is an instance of a mock function object
 	// controlling the behavior of the method CheckPerforceCredentials.
 	CheckPerforceCredentialsFunc *GitserverServiceClientCheckPerforceCredentialsFunc
+	// ContributorCountsFunc is an instance of a mock function object
+	// controlling the behavior of the method ContributorCounts.
+	ContributorCountsFunc *GitserverServiceClientContributorCountsFunc
 	// CreateCommitFromPatchBinaryFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// CreateCommitFromPatchBinary.
@@ -42,6 +51,9 @@ type MockGitserverServiceClient struct {
 	// ExecFunc is an instance of a mock function object controlling the
 	// behavior of the method Exec.
 	ExecFunc *GitserverServiceClientExecFunc
+	// FirstEverCommitFunc is an instance of a mock function object
+	// controlling the behavior of the method FirstEverCommit.
+	FirstEverCommitFunc *GitserverServiceClientFirstEverCommitFunc
 	// GetCommitFunc is an instance of a mock function object controlling
 	// the behavior of the method GetCommit.
 	GetCommitFunc *GitserverServiceClientGetCommitFunc
@@ -60,6 +72,9 @@ type MockGitserverServiceClient struct {
 	// ListGitoliteFunc is an instance of a mock function object controlling
 	// the behavior of the method ListGitolite.
 	ListGitoliteFunc *GitserverServiceClientListGitoliteFunc
+	// ListRefsFunc is an instance of a mock function object controlling the
+	// behavior of the method ListRefs.
+	ListRefsFunc *GitserverServiceClientListRefsFunc
 	// MergeBaseFunc is an instance of a mock function object controlling
 	// the behavior of the method MergeBase.
 	MergeBaseFunc *GitserverServiceClientMergeBaseFunc
@@ -78,24 +93,21 @@ type MockGitserverServiceClient struct {
 	// PerforceUsersFunc is an instance of a mock function object
 	// controlling the behavior of the method PerforceUsers.
 	PerforceUsersFunc *GitserverServiceClientPerforceUsersFunc
+	// RawDiffFunc is an instance of a mock function object controlling the
+	// behavior of the method RawDiff.
+	RawDiffFunc *GitserverServiceClientRawDiffFunc
 	// ReadFileFunc is an instance of a mock function object controlling the
 	// behavior of the method ReadFile.
 	ReadFileFunc *GitserverServiceClientReadFileFunc
-	// RepoCloneFunc is an instance of a mock function object controlling
-	// the behavior of the method RepoClone.
-	RepoCloneFunc *GitserverServiceClientRepoCloneFunc
 	// RepoCloneProgressFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoCloneProgress.
 	RepoCloneProgressFunc *GitserverServiceClientRepoCloneProgressFunc
-	// RepoDeleteFunc is an instance of a mock function object controlling
-	// the behavior of the method RepoDelete.
-	RepoDeleteFunc *GitserverServiceClientRepoDeleteFunc
-	// RepoUpdateFunc is an instance of a mock function object controlling
-	// the behavior of the method RepoUpdate.
-	RepoUpdateFunc *GitserverServiceClientRepoUpdateFunc
 	// ResolveRevisionFunc is an instance of a mock function object
 	// controlling the behavior of the method ResolveRevision.
 	ResolveRevisionFunc *GitserverServiceClientResolveRevisionFunc
+	// RevAtTimeFunc is an instance of a mock function object controlling
+	// the behavior of the method RevAtTime.
+	RevAtTimeFunc *GitserverServiceClientRevAtTimeFunc
 	// SearchFunc is an instance of a mock function object controlling the
 	// behavior of the method Search.
 	SearchFunc *GitserverServiceClientSearchFunc
@@ -111,13 +123,28 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 				return
 			},
 		},
+		BehindAheadFunc: &GitserverServiceClientBehindAheadFunc{
+			defaultHook: func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (r0 *v1.BehindAheadResponse, r1 error) {
+				return
+			},
+		},
 		BlameFunc: &GitserverServiceClientBlameFunc{
 			defaultHook: func(context.Context, *v1.BlameRequest, ...grpc.CallOption) (r0 v1.GitserverService_BlameClient, r1 error) {
 				return
 			},
 		},
+		ChangedFilesFunc: &GitserverServiceClientChangedFilesFunc{
+			defaultHook: func(context.Context, *v1.ChangedFilesRequest, ...grpc.CallOption) (r0 v1.GitserverService_ChangedFilesClient, r1 error) {
+				return
+			},
+		},
 		CheckPerforceCredentialsFunc: &GitserverServiceClientCheckPerforceCredentialsFunc{
 			defaultHook: func(context.Context, *v1.CheckPerforceCredentialsRequest, ...grpc.CallOption) (r0 *v1.CheckPerforceCredentialsResponse, r1 error) {
+				return
+			},
+		},
+		ContributorCountsFunc: &GitserverServiceClientContributorCountsFunc{
+			defaultHook: func(context.Context, *v1.ContributorCountsRequest, ...grpc.CallOption) (r0 *v1.ContributorCountsResponse, r1 error) {
 				return
 			},
 		},
@@ -138,6 +165,11 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 		},
 		ExecFunc: &GitserverServiceClientExecFunc{
 			defaultHook: func(context.Context, *v1.ExecRequest, ...grpc.CallOption) (r0 v1.GitserverService_ExecClient, r1 error) {
+				return
+			},
+		},
+		FirstEverCommitFunc: &GitserverServiceClientFirstEverCommitFunc{
+			defaultHook: func(context.Context, *v1.FirstEverCommitRequest, ...grpc.CallOption) (r0 *v1.FirstEverCommitResponse, r1 error) {
 				return
 			},
 		},
@@ -171,6 +203,11 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 				return
 			},
 		},
+		ListRefsFunc: &GitserverServiceClientListRefsFunc{
+			defaultHook: func(context.Context, *v1.ListRefsRequest, ...grpc.CallOption) (r0 v1.GitserverService_ListRefsClient, r1 error) {
+				return
+			},
+		},
 		MergeBaseFunc: &GitserverServiceClientMergeBaseFunc{
 			defaultHook: func(context.Context, *v1.MergeBaseRequest, ...grpc.CallOption) (r0 *v1.MergeBaseResponse, r1 error) {
 				return
@@ -201,13 +238,13 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 				return
 			},
 		},
-		ReadFileFunc: &GitserverServiceClientReadFileFunc{
-			defaultHook: func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (r0 v1.GitserverService_ReadFileClient, r1 error) {
+		RawDiffFunc: &GitserverServiceClientRawDiffFunc{
+			defaultHook: func(context.Context, *v1.RawDiffRequest, ...grpc.CallOption) (r0 v1.GitserverService_RawDiffClient, r1 error) {
 				return
 			},
 		},
-		RepoCloneFunc: &GitserverServiceClientRepoCloneFunc{
-			defaultHook: func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (r0 *v1.RepoCloneResponse, r1 error) {
+		ReadFileFunc: &GitserverServiceClientReadFileFunc{
+			defaultHook: func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (r0 v1.GitserverService_ReadFileClient, r1 error) {
 				return
 			},
 		},
@@ -216,18 +253,13 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 				return
 			},
 		},
-		RepoDeleteFunc: &GitserverServiceClientRepoDeleteFunc{
-			defaultHook: func(context.Context, *v1.RepoDeleteRequest, ...grpc.CallOption) (r0 *v1.RepoDeleteResponse, r1 error) {
-				return
-			},
-		},
-		RepoUpdateFunc: &GitserverServiceClientRepoUpdateFunc{
-			defaultHook: func(context.Context, *v1.RepoUpdateRequest, ...grpc.CallOption) (r0 *v1.RepoUpdateResponse, r1 error) {
-				return
-			},
-		},
 		ResolveRevisionFunc: &GitserverServiceClientResolveRevisionFunc{
 			defaultHook: func(context.Context, *v1.ResolveRevisionRequest, ...grpc.CallOption) (r0 *v1.ResolveRevisionResponse, r1 error) {
+				return
+			},
+		},
+		RevAtTimeFunc: &GitserverServiceClientRevAtTimeFunc{
+			defaultHook: func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (r0 *v1.RevAtTimeResponse, r1 error) {
 				return
 			},
 		},
@@ -249,14 +281,29 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.Archive")
 			},
 		},
+		BehindAheadFunc: &GitserverServiceClientBehindAheadFunc{
+			defaultHook: func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.BehindAhead")
+			},
+		},
 		BlameFunc: &GitserverServiceClientBlameFunc{
 			defaultHook: func(context.Context, *v1.BlameRequest, ...grpc.CallOption) (v1.GitserverService_BlameClient, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.Blame")
 			},
 		},
+		ChangedFilesFunc: &GitserverServiceClientChangedFilesFunc{
+			defaultHook: func(context.Context, *v1.ChangedFilesRequest, ...grpc.CallOption) (v1.GitserverService_ChangedFilesClient, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.ChangedFiles")
+			},
+		},
 		CheckPerforceCredentialsFunc: &GitserverServiceClientCheckPerforceCredentialsFunc{
 			defaultHook: func(context.Context, *v1.CheckPerforceCredentialsRequest, ...grpc.CallOption) (*v1.CheckPerforceCredentialsResponse, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.CheckPerforceCredentials")
+			},
+		},
+		ContributorCountsFunc: &GitserverServiceClientContributorCountsFunc{
+			defaultHook: func(context.Context, *v1.ContributorCountsRequest, ...grpc.CallOption) (*v1.ContributorCountsResponse, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.ContributorCounts")
 			},
 		},
 		CreateCommitFromPatchBinaryFunc: &GitserverServiceClientCreateCommitFromPatchBinaryFunc{
@@ -277,6 +324,11 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 		ExecFunc: &GitserverServiceClientExecFunc{
 			defaultHook: func(context.Context, *v1.ExecRequest, ...grpc.CallOption) (v1.GitserverService_ExecClient, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.Exec")
+			},
+		},
+		FirstEverCommitFunc: &GitserverServiceClientFirstEverCommitFunc{
+			defaultHook: func(context.Context, *v1.FirstEverCommitRequest, ...grpc.CallOption) (*v1.FirstEverCommitResponse, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.FirstEverCommit")
 			},
 		},
 		GetCommitFunc: &GitserverServiceClientGetCommitFunc{
@@ -309,6 +361,11 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.ListGitolite")
 			},
 		},
+		ListRefsFunc: &GitserverServiceClientListRefsFunc{
+			defaultHook: func(context.Context, *v1.ListRefsRequest, ...grpc.CallOption) (v1.GitserverService_ListRefsClient, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.ListRefs")
+			},
+		},
 		MergeBaseFunc: &GitserverServiceClientMergeBaseFunc{
 			defaultHook: func(context.Context, *v1.MergeBaseRequest, ...grpc.CallOption) (*v1.MergeBaseResponse, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.MergeBase")
@@ -339,14 +396,14 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.PerforceUsers")
 			},
 		},
+		RawDiffFunc: &GitserverServiceClientRawDiffFunc{
+			defaultHook: func(context.Context, *v1.RawDiffRequest, ...grpc.CallOption) (v1.GitserverService_RawDiffClient, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.RawDiff")
+			},
+		},
 		ReadFileFunc: &GitserverServiceClientReadFileFunc{
 			defaultHook: func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (v1.GitserverService_ReadFileClient, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.ReadFile")
-			},
-		},
-		RepoCloneFunc: &GitserverServiceClientRepoCloneFunc{
-			defaultHook: func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-				panic("unexpected invocation of MockGitserverServiceClient.RepoClone")
 			},
 		},
 		RepoCloneProgressFunc: &GitserverServiceClientRepoCloneProgressFunc{
@@ -354,19 +411,14 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.RepoCloneProgress")
 			},
 		},
-		RepoDeleteFunc: &GitserverServiceClientRepoDeleteFunc{
-			defaultHook: func(context.Context, *v1.RepoDeleteRequest, ...grpc.CallOption) (*v1.RepoDeleteResponse, error) {
-				panic("unexpected invocation of MockGitserverServiceClient.RepoDelete")
-			},
-		},
-		RepoUpdateFunc: &GitserverServiceClientRepoUpdateFunc{
-			defaultHook: func(context.Context, *v1.RepoUpdateRequest, ...grpc.CallOption) (*v1.RepoUpdateResponse, error) {
-				panic("unexpected invocation of MockGitserverServiceClient.RepoUpdate")
-			},
-		},
 		ResolveRevisionFunc: &GitserverServiceClientResolveRevisionFunc{
 			defaultHook: func(context.Context, *v1.ResolveRevisionRequest, ...grpc.CallOption) (*v1.ResolveRevisionResponse, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.ResolveRevision")
+			},
+		},
+		RevAtTimeFunc: &GitserverServiceClientRevAtTimeFunc{
+			defaultHook: func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.RevAtTime")
 			},
 		},
 		SearchFunc: &GitserverServiceClientSearchFunc{
@@ -385,11 +437,20 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		ArchiveFunc: &GitserverServiceClientArchiveFunc{
 			defaultHook: i.Archive,
 		},
+		BehindAheadFunc: &GitserverServiceClientBehindAheadFunc{
+			defaultHook: i.BehindAhead,
+		},
 		BlameFunc: &GitserverServiceClientBlameFunc{
 			defaultHook: i.Blame,
 		},
+		ChangedFilesFunc: &GitserverServiceClientChangedFilesFunc{
+			defaultHook: i.ChangedFiles,
+		},
 		CheckPerforceCredentialsFunc: &GitserverServiceClientCheckPerforceCredentialsFunc{
 			defaultHook: i.CheckPerforceCredentials,
+		},
+		ContributorCountsFunc: &GitserverServiceClientContributorCountsFunc{
+			defaultHook: i.ContributorCounts,
 		},
 		CreateCommitFromPatchBinaryFunc: &GitserverServiceClientCreateCommitFromPatchBinaryFunc{
 			defaultHook: i.CreateCommitFromPatchBinary,
@@ -402,6 +463,9 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		},
 		ExecFunc: &GitserverServiceClientExecFunc{
 			defaultHook: i.Exec,
+		},
+		FirstEverCommitFunc: &GitserverServiceClientFirstEverCommitFunc{
+			defaultHook: i.FirstEverCommit,
 		},
 		GetCommitFunc: &GitserverServiceClientGetCommitFunc{
 			defaultHook: i.GetCommit,
@@ -421,6 +485,9 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		ListGitoliteFunc: &GitserverServiceClientListGitoliteFunc{
 			defaultHook: i.ListGitolite,
 		},
+		ListRefsFunc: &GitserverServiceClientListRefsFunc{
+			defaultHook: i.ListRefs,
+		},
 		MergeBaseFunc: &GitserverServiceClientMergeBaseFunc{
 			defaultHook: i.MergeBase,
 		},
@@ -439,23 +506,20 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		PerforceUsersFunc: &GitserverServiceClientPerforceUsersFunc{
 			defaultHook: i.PerforceUsers,
 		},
+		RawDiffFunc: &GitserverServiceClientRawDiffFunc{
+			defaultHook: i.RawDiff,
+		},
 		ReadFileFunc: &GitserverServiceClientReadFileFunc{
 			defaultHook: i.ReadFile,
-		},
-		RepoCloneFunc: &GitserverServiceClientRepoCloneFunc{
-			defaultHook: i.RepoClone,
 		},
 		RepoCloneProgressFunc: &GitserverServiceClientRepoCloneProgressFunc{
 			defaultHook: i.RepoCloneProgress,
 		},
-		RepoDeleteFunc: &GitserverServiceClientRepoDeleteFunc{
-			defaultHook: i.RepoDelete,
-		},
-		RepoUpdateFunc: &GitserverServiceClientRepoUpdateFunc{
-			defaultHook: i.RepoUpdate,
-		},
 		ResolveRevisionFunc: &GitserverServiceClientResolveRevisionFunc{
 			defaultHook: i.ResolveRevision,
+		},
+		RevAtTimeFunc: &GitserverServiceClientRevAtTimeFunc{
+			defaultHook: i.RevAtTime,
 		},
 		SearchFunc: &GitserverServiceClientSearchFunc{
 			defaultHook: i.Search,
@@ -582,6 +646,127 @@ func (c GitserverServiceClientArchiveFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// GitserverServiceClientBehindAheadFunc describes the behavior when the
+// BehindAhead method of the parent MockGitserverServiceClient instance is
+// invoked.
+type GitserverServiceClientBehindAheadFunc struct {
+	defaultHook func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error)
+	hooks       []func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error)
+	history     []GitserverServiceClientBehindAheadFuncCall
+	mutex       sync.Mutex
+}
+
+// BehindAhead delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) BehindAhead(v0 context.Context, v1 *v1.BehindAheadRequest, v2 ...grpc.CallOption) (*v1.BehindAheadResponse, error) {
+	r0, r1 := m.BehindAheadFunc.nextHook()(v0, v1, v2...)
+	m.BehindAheadFunc.appendCall(GitserverServiceClientBehindAheadFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the BehindAhead method
+// of the parent MockGitserverServiceClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverServiceClientBehindAheadFunc) SetDefaultHook(hook func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BehindAhead method of the parent MockGitserverServiceClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverServiceClientBehindAheadFunc) PushHook(hook func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientBehindAheadFunc) SetDefaultReturn(r0 *v1.BehindAheadResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientBehindAheadFunc) PushReturn(r0 *v1.BehindAheadResponse, r1 error) {
+	f.PushHook(func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientBehindAheadFunc) nextHook() func(context.Context, *v1.BehindAheadRequest, ...grpc.CallOption) (*v1.BehindAheadResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientBehindAheadFunc) appendCall(r0 GitserverServiceClientBehindAheadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverServiceClientBehindAheadFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverServiceClientBehindAheadFunc) History() []GitserverServiceClientBehindAheadFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientBehindAheadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientBehindAheadFuncCall is an object that describes an
+// invocation of method BehindAhead on an instance of
+// MockGitserverServiceClient.
+type GitserverServiceClientBehindAheadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.BehindAheadRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.BehindAheadResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientBehindAheadFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientBehindAheadFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // GitserverServiceClientBlameFunc describes the behavior when the Blame
 // method of the parent MockGitserverServiceClient instance is invoked.
 type GitserverServiceClientBlameFunc struct {
@@ -697,6 +882,127 @@ func (c GitserverServiceClientBlameFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientBlameFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverServiceClientChangedFilesFunc describes the behavior when the
+// ChangedFiles method of the parent MockGitserverServiceClient instance is
+// invoked.
+type GitserverServiceClientChangedFilesFunc struct {
+	defaultHook func(context.Context, *v1.ChangedFilesRequest, ...grpc.CallOption) (v1.GitserverService_ChangedFilesClient, error)
+	hooks       []func(context.Context, *v1.ChangedFilesRequest, ...grpc.CallOption) (v1.GitserverService_ChangedFilesClient, error)
+	history     []GitserverServiceClientChangedFilesFuncCall
+	mutex       sync.Mutex
+}
+
+// ChangedFiles delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) ChangedFiles(v0 context.Context, v1 *v1.ChangedFilesRequest, v2 ...grpc.CallOption) (v1.GitserverService_ChangedFilesClient, error) {
+	r0, r1 := m.ChangedFilesFunc.nextHook()(v0, v1, v2...)
+	m.ChangedFilesFunc.appendCall(GitserverServiceClientChangedFilesFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ChangedFiles method
+// of the parent MockGitserverServiceClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverServiceClientChangedFilesFunc) SetDefaultHook(hook func(context.Context, *v1.ChangedFilesRequest, ...grpc.CallOption) (v1.GitserverService_ChangedFilesClient, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ChangedFiles method of the parent MockGitserverServiceClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverServiceClientChangedFilesFunc) PushHook(hook func(context.Context, *v1.ChangedFilesRequest, ...grpc.CallOption) (v1.GitserverService_ChangedFilesClient, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientChangedFilesFunc) SetDefaultReturn(r0 v1.GitserverService_ChangedFilesClient, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.ChangedFilesRequest, ...grpc.CallOption) (v1.GitserverService_ChangedFilesClient, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientChangedFilesFunc) PushReturn(r0 v1.GitserverService_ChangedFilesClient, r1 error) {
+	f.PushHook(func(context.Context, *v1.ChangedFilesRequest, ...grpc.CallOption) (v1.GitserverService_ChangedFilesClient, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientChangedFilesFunc) nextHook() func(context.Context, *v1.ChangedFilesRequest, ...grpc.CallOption) (v1.GitserverService_ChangedFilesClient, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientChangedFilesFunc) appendCall(r0 GitserverServiceClientChangedFilesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverServiceClientChangedFilesFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverServiceClientChangedFilesFunc) History() []GitserverServiceClientChangedFilesFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientChangedFilesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientChangedFilesFuncCall is an object that describes an
+// invocation of method ChangedFiles on an instance of
+// MockGitserverServiceClient.
+type GitserverServiceClientChangedFilesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.ChangedFilesRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1.GitserverService_ChangedFilesClient
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientChangedFilesFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientChangedFilesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -819,6 +1125,128 @@ func (c GitserverServiceClientCheckPerforceCredentialsFuncCall) Args() []interfa
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientCheckPerforceCredentialsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverServiceClientContributorCountsFunc describes the behavior when
+// the ContributorCounts method of the parent MockGitserverServiceClient
+// instance is invoked.
+type GitserverServiceClientContributorCountsFunc struct {
+	defaultHook func(context.Context, *v1.ContributorCountsRequest, ...grpc.CallOption) (*v1.ContributorCountsResponse, error)
+	hooks       []func(context.Context, *v1.ContributorCountsRequest, ...grpc.CallOption) (*v1.ContributorCountsResponse, error)
+	history     []GitserverServiceClientContributorCountsFuncCall
+	mutex       sync.Mutex
+}
+
+// ContributorCounts delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) ContributorCounts(v0 context.Context, v1 *v1.ContributorCountsRequest, v2 ...grpc.CallOption) (*v1.ContributorCountsResponse, error) {
+	r0, r1 := m.ContributorCountsFunc.nextHook()(v0, v1, v2...)
+	m.ContributorCountsFunc.appendCall(GitserverServiceClientContributorCountsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ContributorCounts
+// method of the parent MockGitserverServiceClient instance is invoked and
+// the hook queue is empty.
+func (f *GitserverServiceClientContributorCountsFunc) SetDefaultHook(hook func(context.Context, *v1.ContributorCountsRequest, ...grpc.CallOption) (*v1.ContributorCountsResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ContributorCounts method of the parent MockGitserverServiceClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverServiceClientContributorCountsFunc) PushHook(hook func(context.Context, *v1.ContributorCountsRequest, ...grpc.CallOption) (*v1.ContributorCountsResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientContributorCountsFunc) SetDefaultReturn(r0 *v1.ContributorCountsResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.ContributorCountsRequest, ...grpc.CallOption) (*v1.ContributorCountsResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientContributorCountsFunc) PushReturn(r0 *v1.ContributorCountsResponse, r1 error) {
+	f.PushHook(func(context.Context, *v1.ContributorCountsRequest, ...grpc.CallOption) (*v1.ContributorCountsResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientContributorCountsFunc) nextHook() func(context.Context, *v1.ContributorCountsRequest, ...grpc.CallOption) (*v1.ContributorCountsResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientContributorCountsFunc) appendCall(r0 GitserverServiceClientContributorCountsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverServiceClientContributorCountsFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverServiceClientContributorCountsFunc) History() []GitserverServiceClientContributorCountsFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientContributorCountsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientContributorCountsFuncCall is an object that
+// describes an invocation of method ContributorCounts on an instance of
+// MockGitserverServiceClient.
+type GitserverServiceClientContributorCountsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.ContributorCountsRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.ContributorCountsResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientContributorCountsFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientContributorCountsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -1298,6 +1726,128 @@ func (c GitserverServiceClientExecFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientExecFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverServiceClientFirstEverCommitFunc describes the behavior when the
+// FirstEverCommit method of the parent MockGitserverServiceClient instance
+// is invoked.
+type GitserverServiceClientFirstEverCommitFunc struct {
+	defaultHook func(context.Context, *v1.FirstEverCommitRequest, ...grpc.CallOption) (*v1.FirstEverCommitResponse, error)
+	hooks       []func(context.Context, *v1.FirstEverCommitRequest, ...grpc.CallOption) (*v1.FirstEverCommitResponse, error)
+	history     []GitserverServiceClientFirstEverCommitFuncCall
+	mutex       sync.Mutex
+}
+
+// FirstEverCommit delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) FirstEverCommit(v0 context.Context, v1 *v1.FirstEverCommitRequest, v2 ...grpc.CallOption) (*v1.FirstEverCommitResponse, error) {
+	r0, r1 := m.FirstEverCommitFunc.nextHook()(v0, v1, v2...)
+	m.FirstEverCommitFunc.appendCall(GitserverServiceClientFirstEverCommitFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the FirstEverCommit
+// method of the parent MockGitserverServiceClient instance is invoked and
+// the hook queue is empty.
+func (f *GitserverServiceClientFirstEverCommitFunc) SetDefaultHook(hook func(context.Context, *v1.FirstEverCommitRequest, ...grpc.CallOption) (*v1.FirstEverCommitResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FirstEverCommit method of the parent MockGitserverServiceClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverServiceClientFirstEverCommitFunc) PushHook(hook func(context.Context, *v1.FirstEverCommitRequest, ...grpc.CallOption) (*v1.FirstEverCommitResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientFirstEverCommitFunc) SetDefaultReturn(r0 *v1.FirstEverCommitResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.FirstEverCommitRequest, ...grpc.CallOption) (*v1.FirstEverCommitResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientFirstEverCommitFunc) PushReturn(r0 *v1.FirstEverCommitResponse, r1 error) {
+	f.PushHook(func(context.Context, *v1.FirstEverCommitRequest, ...grpc.CallOption) (*v1.FirstEverCommitResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientFirstEverCommitFunc) nextHook() func(context.Context, *v1.FirstEverCommitRequest, ...grpc.CallOption) (*v1.FirstEverCommitResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientFirstEverCommitFunc) appendCall(r0 GitserverServiceClientFirstEverCommitFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverServiceClientFirstEverCommitFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverServiceClientFirstEverCommitFunc) History() []GitserverServiceClientFirstEverCommitFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientFirstEverCommitFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientFirstEverCommitFuncCall is an object that describes
+// an invocation of method FirstEverCommit on an instance of
+// MockGitserverServiceClient.
+type GitserverServiceClientFirstEverCommitFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.FirstEverCommitRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.FirstEverCommitResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientFirstEverCommitFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientFirstEverCommitFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -2027,6 +2577,126 @@ func (c GitserverServiceClientListGitoliteFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientListGitoliteFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverServiceClientListRefsFunc describes the behavior when the
+// ListRefs method of the parent MockGitserverServiceClient instance is
+// invoked.
+type GitserverServiceClientListRefsFunc struct {
+	defaultHook func(context.Context, *v1.ListRefsRequest, ...grpc.CallOption) (v1.GitserverService_ListRefsClient, error)
+	hooks       []func(context.Context, *v1.ListRefsRequest, ...grpc.CallOption) (v1.GitserverService_ListRefsClient, error)
+	history     []GitserverServiceClientListRefsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListRefs delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) ListRefs(v0 context.Context, v1 *v1.ListRefsRequest, v2 ...grpc.CallOption) (v1.GitserverService_ListRefsClient, error) {
+	r0, r1 := m.ListRefsFunc.nextHook()(v0, v1, v2...)
+	m.ListRefsFunc.appendCall(GitserverServiceClientListRefsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListRefs method of
+// the parent MockGitserverServiceClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverServiceClientListRefsFunc) SetDefaultHook(hook func(context.Context, *v1.ListRefsRequest, ...grpc.CallOption) (v1.GitserverService_ListRefsClient, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListRefs method of the parent MockGitserverServiceClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverServiceClientListRefsFunc) PushHook(hook func(context.Context, *v1.ListRefsRequest, ...grpc.CallOption) (v1.GitserverService_ListRefsClient, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientListRefsFunc) SetDefaultReturn(r0 v1.GitserverService_ListRefsClient, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.ListRefsRequest, ...grpc.CallOption) (v1.GitserverService_ListRefsClient, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientListRefsFunc) PushReturn(r0 v1.GitserverService_ListRefsClient, r1 error) {
+	f.PushHook(func(context.Context, *v1.ListRefsRequest, ...grpc.CallOption) (v1.GitserverService_ListRefsClient, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientListRefsFunc) nextHook() func(context.Context, *v1.ListRefsRequest, ...grpc.CallOption) (v1.GitserverService_ListRefsClient, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientListRefsFunc) appendCall(r0 GitserverServiceClientListRefsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverServiceClientListRefsFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverServiceClientListRefsFunc) History() []GitserverServiceClientListRefsFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientListRefsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientListRefsFuncCall is an object that describes an
+// invocation of method ListRefs on an instance of
+// MockGitserverServiceClient.
+type GitserverServiceClientListRefsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.ListRefsRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1.GitserverService_ListRefsClient
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientListRefsFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientListRefsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -2760,6 +3430,125 @@ func (c GitserverServiceClientPerforceUsersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// GitserverServiceClientRawDiffFunc describes the behavior when the RawDiff
+// method of the parent MockGitserverServiceClient instance is invoked.
+type GitserverServiceClientRawDiffFunc struct {
+	defaultHook func(context.Context, *v1.RawDiffRequest, ...grpc.CallOption) (v1.GitserverService_RawDiffClient, error)
+	hooks       []func(context.Context, *v1.RawDiffRequest, ...grpc.CallOption) (v1.GitserverService_RawDiffClient, error)
+	history     []GitserverServiceClientRawDiffFuncCall
+	mutex       sync.Mutex
+}
+
+// RawDiff delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) RawDiff(v0 context.Context, v1 *v1.RawDiffRequest, v2 ...grpc.CallOption) (v1.GitserverService_RawDiffClient, error) {
+	r0, r1 := m.RawDiffFunc.nextHook()(v0, v1, v2...)
+	m.RawDiffFunc.appendCall(GitserverServiceClientRawDiffFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RawDiff method of
+// the parent MockGitserverServiceClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverServiceClientRawDiffFunc) SetDefaultHook(hook func(context.Context, *v1.RawDiffRequest, ...grpc.CallOption) (v1.GitserverService_RawDiffClient, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RawDiff method of the parent MockGitserverServiceClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverServiceClientRawDiffFunc) PushHook(hook func(context.Context, *v1.RawDiffRequest, ...grpc.CallOption) (v1.GitserverService_RawDiffClient, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientRawDiffFunc) SetDefaultReturn(r0 v1.GitserverService_RawDiffClient, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.RawDiffRequest, ...grpc.CallOption) (v1.GitserverService_RawDiffClient, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientRawDiffFunc) PushReturn(r0 v1.GitserverService_RawDiffClient, r1 error) {
+	f.PushHook(func(context.Context, *v1.RawDiffRequest, ...grpc.CallOption) (v1.GitserverService_RawDiffClient, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientRawDiffFunc) nextHook() func(context.Context, *v1.RawDiffRequest, ...grpc.CallOption) (v1.GitserverService_RawDiffClient, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientRawDiffFunc) appendCall(r0 GitserverServiceClientRawDiffFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverServiceClientRawDiffFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverServiceClientRawDiffFunc) History() []GitserverServiceClientRawDiffFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientRawDiffFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientRawDiffFuncCall is an object that describes an
+// invocation of method RawDiff on an instance of
+// MockGitserverServiceClient.
+type GitserverServiceClientRawDiffFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.RawDiffRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1.GitserverService_RawDiffClient
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientRawDiffFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientRawDiffFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // GitserverServiceClientReadFileFunc describes the behavior when the
 // ReadFile method of the parent MockGitserverServiceClient instance is
 // invoked.
@@ -2877,127 +3666,6 @@ func (c GitserverServiceClientReadFileFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientReadFileFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverServiceClientRepoCloneFunc describes the behavior when the
-// RepoClone method of the parent MockGitserverServiceClient instance is
-// invoked.
-type GitserverServiceClientRepoCloneFunc struct {
-	defaultHook func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error)
-	hooks       []func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error)
-	history     []GitserverServiceClientRepoCloneFuncCall
-	mutex       sync.Mutex
-}
-
-// RepoClone delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverServiceClient) RepoClone(v0 context.Context, v1 *v1.RepoCloneRequest, v2 ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-	r0, r1 := m.RepoCloneFunc.nextHook()(v0, v1, v2...)
-	m.RepoCloneFunc.appendCall(GitserverServiceClientRepoCloneFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the RepoClone method of
-// the parent MockGitserverServiceClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverServiceClientRepoCloneFunc) SetDefaultHook(hook func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoClone method of the parent MockGitserverServiceClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitserverServiceClientRepoCloneFunc) PushHook(hook func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverServiceClientRepoCloneFunc) SetDefaultReturn(r0 *v1.RepoCloneResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverServiceClientRepoCloneFunc) PushReturn(r0 *v1.RepoCloneResponse, r1 error) {
-	f.PushHook(func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverServiceClientRepoCloneFunc) nextHook() func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverServiceClientRepoCloneFunc) appendCall(r0 GitserverServiceClientRepoCloneFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverServiceClientRepoCloneFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverServiceClientRepoCloneFunc) History() []GitserverServiceClientRepoCloneFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverServiceClientRepoCloneFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverServiceClientRepoCloneFuncCall is an object that describes an
-// invocation of method RepoClone on an instance of
-// MockGitserverServiceClient.
-type GitserverServiceClientRepoCloneFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *v1.RepoCloneRequest
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []grpc.CallOption
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *v1.RepoCloneResponse
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitserverServiceClientRepoCloneFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverServiceClientRepoCloneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -3123,248 +3791,6 @@ func (c GitserverServiceClientRepoCloneProgressFuncCall) Results() []interface{}
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitserverServiceClientRepoDeleteFunc describes the behavior when the
-// RepoDelete method of the parent MockGitserverServiceClient instance is
-// invoked.
-type GitserverServiceClientRepoDeleteFunc struct {
-	defaultHook func(context.Context, *v1.RepoDeleteRequest, ...grpc.CallOption) (*v1.RepoDeleteResponse, error)
-	hooks       []func(context.Context, *v1.RepoDeleteRequest, ...grpc.CallOption) (*v1.RepoDeleteResponse, error)
-	history     []GitserverServiceClientRepoDeleteFuncCall
-	mutex       sync.Mutex
-}
-
-// RepoDelete delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitserverServiceClient) RepoDelete(v0 context.Context, v1 *v1.RepoDeleteRequest, v2 ...grpc.CallOption) (*v1.RepoDeleteResponse, error) {
-	r0, r1 := m.RepoDeleteFunc.nextHook()(v0, v1, v2...)
-	m.RepoDeleteFunc.appendCall(GitserverServiceClientRepoDeleteFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the RepoDelete method of
-// the parent MockGitserverServiceClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverServiceClientRepoDeleteFunc) SetDefaultHook(hook func(context.Context, *v1.RepoDeleteRequest, ...grpc.CallOption) (*v1.RepoDeleteResponse, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoDelete method of the parent MockGitserverServiceClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitserverServiceClientRepoDeleteFunc) PushHook(hook func(context.Context, *v1.RepoDeleteRequest, ...grpc.CallOption) (*v1.RepoDeleteResponse, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverServiceClientRepoDeleteFunc) SetDefaultReturn(r0 *v1.RepoDeleteResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, *v1.RepoDeleteRequest, ...grpc.CallOption) (*v1.RepoDeleteResponse, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverServiceClientRepoDeleteFunc) PushReturn(r0 *v1.RepoDeleteResponse, r1 error) {
-	f.PushHook(func(context.Context, *v1.RepoDeleteRequest, ...grpc.CallOption) (*v1.RepoDeleteResponse, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverServiceClientRepoDeleteFunc) nextHook() func(context.Context, *v1.RepoDeleteRequest, ...grpc.CallOption) (*v1.RepoDeleteResponse, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverServiceClientRepoDeleteFunc) appendCall(r0 GitserverServiceClientRepoDeleteFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverServiceClientRepoDeleteFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverServiceClientRepoDeleteFunc) History() []GitserverServiceClientRepoDeleteFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverServiceClientRepoDeleteFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverServiceClientRepoDeleteFuncCall is an object that describes an
-// invocation of method RepoDelete on an instance of
-// MockGitserverServiceClient.
-type GitserverServiceClientRepoDeleteFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *v1.RepoDeleteRequest
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []grpc.CallOption
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *v1.RepoDeleteResponse
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitserverServiceClientRepoDeleteFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverServiceClientRepoDeleteFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverServiceClientRepoUpdateFunc describes the behavior when the
-// RepoUpdate method of the parent MockGitserverServiceClient instance is
-// invoked.
-type GitserverServiceClientRepoUpdateFunc struct {
-	defaultHook func(context.Context, *v1.RepoUpdateRequest, ...grpc.CallOption) (*v1.RepoUpdateResponse, error)
-	hooks       []func(context.Context, *v1.RepoUpdateRequest, ...grpc.CallOption) (*v1.RepoUpdateResponse, error)
-	history     []GitserverServiceClientRepoUpdateFuncCall
-	mutex       sync.Mutex
-}
-
-// RepoUpdate delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitserverServiceClient) RepoUpdate(v0 context.Context, v1 *v1.RepoUpdateRequest, v2 ...grpc.CallOption) (*v1.RepoUpdateResponse, error) {
-	r0, r1 := m.RepoUpdateFunc.nextHook()(v0, v1, v2...)
-	m.RepoUpdateFunc.appendCall(GitserverServiceClientRepoUpdateFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the RepoUpdate method of
-// the parent MockGitserverServiceClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverServiceClientRepoUpdateFunc) SetDefaultHook(hook func(context.Context, *v1.RepoUpdateRequest, ...grpc.CallOption) (*v1.RepoUpdateResponse, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoUpdate method of the parent MockGitserverServiceClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitserverServiceClientRepoUpdateFunc) PushHook(hook func(context.Context, *v1.RepoUpdateRequest, ...grpc.CallOption) (*v1.RepoUpdateResponse, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverServiceClientRepoUpdateFunc) SetDefaultReturn(r0 *v1.RepoUpdateResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, *v1.RepoUpdateRequest, ...grpc.CallOption) (*v1.RepoUpdateResponse, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverServiceClientRepoUpdateFunc) PushReturn(r0 *v1.RepoUpdateResponse, r1 error) {
-	f.PushHook(func(context.Context, *v1.RepoUpdateRequest, ...grpc.CallOption) (*v1.RepoUpdateResponse, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverServiceClientRepoUpdateFunc) nextHook() func(context.Context, *v1.RepoUpdateRequest, ...grpc.CallOption) (*v1.RepoUpdateResponse, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverServiceClientRepoUpdateFunc) appendCall(r0 GitserverServiceClientRepoUpdateFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverServiceClientRepoUpdateFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverServiceClientRepoUpdateFunc) History() []GitserverServiceClientRepoUpdateFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverServiceClientRepoUpdateFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverServiceClientRepoUpdateFuncCall is an object that describes an
-// invocation of method RepoUpdate on an instance of
-// MockGitserverServiceClient.
-type GitserverServiceClientRepoUpdateFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *v1.RepoUpdateRequest
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []grpc.CallOption
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *v1.RepoUpdateResponse
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitserverServiceClientRepoUpdateFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverServiceClientRepoUpdateFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // GitserverServiceClientResolveRevisionFunc describes the behavior when the
 // ResolveRevision method of the parent MockGitserverServiceClient instance
 // is invoked.
@@ -3484,6 +3910,127 @@ func (c GitserverServiceClientResolveRevisionFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientResolveRevisionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverServiceClientRevAtTimeFunc describes the behavior when the
+// RevAtTime method of the parent MockGitserverServiceClient instance is
+// invoked.
+type GitserverServiceClientRevAtTimeFunc struct {
+	defaultHook func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error)
+	hooks       []func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error)
+	history     []GitserverServiceClientRevAtTimeFuncCall
+	mutex       sync.Mutex
+}
+
+// RevAtTime delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) RevAtTime(v0 context.Context, v1 *v1.RevAtTimeRequest, v2 ...grpc.CallOption) (*v1.RevAtTimeResponse, error) {
+	r0, r1 := m.RevAtTimeFunc.nextHook()(v0, v1, v2...)
+	m.RevAtTimeFunc.appendCall(GitserverServiceClientRevAtTimeFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RevAtTime method of
+// the parent MockGitserverServiceClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverServiceClientRevAtTimeFunc) SetDefaultHook(hook func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RevAtTime method of the parent MockGitserverServiceClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverServiceClientRevAtTimeFunc) PushHook(hook func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientRevAtTimeFunc) SetDefaultReturn(r0 *v1.RevAtTimeResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientRevAtTimeFunc) PushReturn(r0 *v1.RevAtTimeResponse, r1 error) {
+	f.PushHook(func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientRevAtTimeFunc) nextHook() func(context.Context, *v1.RevAtTimeRequest, ...grpc.CallOption) (*v1.RevAtTimeResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientRevAtTimeFunc) appendCall(r0 GitserverServiceClientRevAtTimeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverServiceClientRevAtTimeFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverServiceClientRevAtTimeFunc) History() []GitserverServiceClientRevAtTimeFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientRevAtTimeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientRevAtTimeFuncCall is an object that describes an
+// invocation of method RevAtTime on an instance of
+// MockGitserverServiceClient.
+type GitserverServiceClientRevAtTimeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.RevAtTimeRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.RevAtTimeResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientRevAtTimeFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientRevAtTimeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -7103,6 +7650,1761 @@ func (c GitserverService_BlameServerSetTrailerFuncCall) Results() []interface{} 
 	return []interface{}{}
 }
 
+// MockGitserverService_ChangedFilesClient is a mock implementation of the
+// GitserverService_ChangedFilesClient interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/gitserver/v1) used for unit
+// testing.
+type MockGitserverService_ChangedFilesClient struct {
+	// CloseSendFunc is an instance of a mock function object controlling
+	// the behavior of the method CloseSend.
+	CloseSendFunc *GitserverService_ChangedFilesClientCloseSendFunc
+	// ContextFunc is an instance of a mock function object controlling the
+	// behavior of the method Context.
+	ContextFunc *GitserverService_ChangedFilesClientContextFunc
+	// HeaderFunc is an instance of a mock function object controlling the
+	// behavior of the method Header.
+	HeaderFunc *GitserverService_ChangedFilesClientHeaderFunc
+	// RecvFunc is an instance of a mock function object controlling the
+	// behavior of the method Recv.
+	RecvFunc *GitserverService_ChangedFilesClientRecvFunc
+	// RecvMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method RecvMsg.
+	RecvMsgFunc *GitserverService_ChangedFilesClientRecvMsgFunc
+	// SendMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method SendMsg.
+	SendMsgFunc *GitserverService_ChangedFilesClientSendMsgFunc
+	// TrailerFunc is an instance of a mock function object controlling the
+	// behavior of the method Trailer.
+	TrailerFunc *GitserverService_ChangedFilesClientTrailerFunc
+}
+
+// NewMockGitserverService_ChangedFilesClient creates a new mock of the
+// GitserverService_ChangedFilesClient interface. All methods return zero
+// values for all results, unless overwritten.
+func NewMockGitserverService_ChangedFilesClient() *MockGitserverService_ChangedFilesClient {
+	return &MockGitserverService_ChangedFilesClient{
+		CloseSendFunc: &GitserverService_ChangedFilesClientCloseSendFunc{
+			defaultHook: func() (r0 error) {
+				return
+			},
+		},
+		ContextFunc: &GitserverService_ChangedFilesClientContextFunc{
+			defaultHook: func() (r0 context.Context) {
+				return
+			},
+		},
+		HeaderFunc: &GitserverService_ChangedFilesClientHeaderFunc{
+			defaultHook: func() (r0 metadata.MD, r1 error) {
+				return
+			},
+		},
+		RecvFunc: &GitserverService_ChangedFilesClientRecvFunc{
+			defaultHook: func() (r0 *v1.ChangedFilesResponse, r1 error) {
+				return
+			},
+		},
+		RecvMsgFunc: &GitserverService_ChangedFilesClientRecvMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SendMsgFunc: &GitserverService_ChangedFilesClientSendMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		TrailerFunc: &GitserverService_ChangedFilesClientTrailerFunc{
+			defaultHook: func() (r0 metadata.MD) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockGitserverService_ChangedFilesClient creates a new mock of
+// the GitserverService_ChangedFilesClient interface. All methods panic on
+// invocation, unless overwritten.
+func NewStrictMockGitserverService_ChangedFilesClient() *MockGitserverService_ChangedFilesClient {
+	return &MockGitserverService_ChangedFilesClient{
+		CloseSendFunc: &GitserverService_ChangedFilesClientCloseSendFunc{
+			defaultHook: func() error {
+				panic("unexpected invocation of MockGitserverService_ChangedFilesClient.CloseSend")
+			},
+		},
+		ContextFunc: &GitserverService_ChangedFilesClientContextFunc{
+			defaultHook: func() context.Context {
+				panic("unexpected invocation of MockGitserverService_ChangedFilesClient.Context")
+			},
+		},
+		HeaderFunc: &GitserverService_ChangedFilesClientHeaderFunc{
+			defaultHook: func() (metadata.MD, error) {
+				panic("unexpected invocation of MockGitserverService_ChangedFilesClient.Header")
+			},
+		},
+		RecvFunc: &GitserverService_ChangedFilesClientRecvFunc{
+			defaultHook: func() (*v1.ChangedFilesResponse, error) {
+				panic("unexpected invocation of MockGitserverService_ChangedFilesClient.Recv")
+			},
+		},
+		RecvMsgFunc: &GitserverService_ChangedFilesClientRecvMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_ChangedFilesClient.RecvMsg")
+			},
+		},
+		SendMsgFunc: &GitserverService_ChangedFilesClientSendMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_ChangedFilesClient.SendMsg")
+			},
+		},
+		TrailerFunc: &GitserverService_ChangedFilesClientTrailerFunc{
+			defaultHook: func() metadata.MD {
+				panic("unexpected invocation of MockGitserverService_ChangedFilesClient.Trailer")
+			},
+		},
+	}
+}
+
+// NewMockGitserverService_ChangedFilesClientFrom creates a new mock of the
+// MockGitserverService_ChangedFilesClient interface. All methods delegate
+// to the given implementation, unless overwritten.
+func NewMockGitserverService_ChangedFilesClientFrom(i v1.GitserverService_ChangedFilesClient) *MockGitserverService_ChangedFilesClient {
+	return &MockGitserverService_ChangedFilesClient{
+		CloseSendFunc: &GitserverService_ChangedFilesClientCloseSendFunc{
+			defaultHook: i.CloseSend,
+		},
+		ContextFunc: &GitserverService_ChangedFilesClientContextFunc{
+			defaultHook: i.Context,
+		},
+		HeaderFunc: &GitserverService_ChangedFilesClientHeaderFunc{
+			defaultHook: i.Header,
+		},
+		RecvFunc: &GitserverService_ChangedFilesClientRecvFunc{
+			defaultHook: i.Recv,
+		},
+		RecvMsgFunc: &GitserverService_ChangedFilesClientRecvMsgFunc{
+			defaultHook: i.RecvMsg,
+		},
+		SendMsgFunc: &GitserverService_ChangedFilesClientSendMsgFunc{
+			defaultHook: i.SendMsg,
+		},
+		TrailerFunc: &GitserverService_ChangedFilesClientTrailerFunc{
+			defaultHook: i.Trailer,
+		},
+	}
+}
+
+// GitserverService_ChangedFilesClientCloseSendFunc describes the behavior
+// when the CloseSend method of the parent
+// MockGitserverService_ChangedFilesClient instance is invoked.
+type GitserverService_ChangedFilesClientCloseSendFunc struct {
+	defaultHook func() error
+	hooks       []func() error
+	history     []GitserverService_ChangedFilesClientCloseSendFuncCall
+	mutex       sync.Mutex
+}
+
+// CloseSend delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ChangedFilesClient) CloseSend() error {
+	r0 := m.CloseSendFunc.nextHook()()
+	m.CloseSendFunc.appendCall(GitserverService_ChangedFilesClientCloseSendFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CloseSend method of
+// the parent MockGitserverService_ChangedFilesClient instance is invoked
+// and the hook queue is empty.
+func (f *GitserverService_ChangedFilesClientCloseSendFunc) SetDefaultHook(hook func() error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CloseSend method of the parent MockGitserverService_ChangedFilesClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ChangedFilesClientCloseSendFunc) PushHook(hook func() error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ChangedFilesClientCloseSendFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func() error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ChangedFilesClientCloseSendFunc) PushReturn(r0 error) {
+	f.PushHook(func() error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ChangedFilesClientCloseSendFunc) nextHook() func() error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ChangedFilesClientCloseSendFunc) appendCall(r0 GitserverService_ChangedFilesClientCloseSendFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ChangedFilesClientCloseSendFuncCall objects describing
+// the invocations of this function.
+func (f *GitserverService_ChangedFilesClientCloseSendFunc) History() []GitserverService_ChangedFilesClientCloseSendFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ChangedFilesClientCloseSendFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ChangedFilesClientCloseSendFuncCall is an object that
+// describes an invocation of method CloseSend on an instance of
+// MockGitserverService_ChangedFilesClient.
+type GitserverService_ChangedFilesClientCloseSendFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ChangedFilesClientCloseSendFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ChangedFilesClientCloseSendFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ChangedFilesClientContextFunc describes the behavior
+// when the Context method of the parent
+// MockGitserverService_ChangedFilesClient instance is invoked.
+type GitserverService_ChangedFilesClientContextFunc struct {
+	defaultHook func() context.Context
+	hooks       []func() context.Context
+	history     []GitserverService_ChangedFilesClientContextFuncCall
+	mutex       sync.Mutex
+}
+
+// Context delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ChangedFilesClient) Context() context.Context {
+	r0 := m.ContextFunc.nextHook()()
+	m.ContextFunc.appendCall(GitserverService_ChangedFilesClientContextFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Context method of
+// the parent MockGitserverService_ChangedFilesClient instance is invoked
+// and the hook queue is empty.
+func (f *GitserverService_ChangedFilesClientContextFunc) SetDefaultHook(hook func() context.Context) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Context method of the parent MockGitserverService_ChangedFilesClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ChangedFilesClientContextFunc) PushHook(hook func() context.Context) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ChangedFilesClientContextFunc) SetDefaultReturn(r0 context.Context) {
+	f.SetDefaultHook(func() context.Context {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ChangedFilesClientContextFunc) PushReturn(r0 context.Context) {
+	f.PushHook(func() context.Context {
+		return r0
+	})
+}
+
+func (f *GitserverService_ChangedFilesClientContextFunc) nextHook() func() context.Context {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ChangedFilesClientContextFunc) appendCall(r0 GitserverService_ChangedFilesClientContextFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ChangedFilesClientContextFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ChangedFilesClientContextFunc) History() []GitserverService_ChangedFilesClientContextFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ChangedFilesClientContextFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ChangedFilesClientContextFuncCall is an object that
+// describes an invocation of method Context on an instance of
+// MockGitserverService_ChangedFilesClient.
+type GitserverService_ChangedFilesClientContextFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 context.Context
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ChangedFilesClientContextFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ChangedFilesClientContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ChangedFilesClientHeaderFunc describes the behavior when
+// the Header method of the parent MockGitserverService_ChangedFilesClient
+// instance is invoked.
+type GitserverService_ChangedFilesClientHeaderFunc struct {
+	defaultHook func() (metadata.MD, error)
+	hooks       []func() (metadata.MD, error)
+	history     []GitserverService_ChangedFilesClientHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// Header delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ChangedFilesClient) Header() (metadata.MD, error) {
+	r0, r1 := m.HeaderFunc.nextHook()()
+	m.HeaderFunc.appendCall(GitserverService_ChangedFilesClientHeaderFuncCall{r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Header method of the
+// parent MockGitserverService_ChangedFilesClient instance is invoked and
+// the hook queue is empty.
+func (f *GitserverService_ChangedFilesClientHeaderFunc) SetDefaultHook(hook func() (metadata.MD, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Header method of the parent MockGitserverService_ChangedFilesClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ChangedFilesClientHeaderFunc) PushHook(hook func() (metadata.MD, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ChangedFilesClientHeaderFunc) SetDefaultReturn(r0 metadata.MD, r1 error) {
+	f.SetDefaultHook(func() (metadata.MD, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ChangedFilesClientHeaderFunc) PushReturn(r0 metadata.MD, r1 error) {
+	f.PushHook(func() (metadata.MD, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverService_ChangedFilesClientHeaderFunc) nextHook() func() (metadata.MD, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ChangedFilesClientHeaderFunc) appendCall(r0 GitserverService_ChangedFilesClientHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ChangedFilesClientHeaderFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ChangedFilesClientHeaderFunc) History() []GitserverService_ChangedFilesClientHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ChangedFilesClientHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ChangedFilesClientHeaderFuncCall is an object that
+// describes an invocation of method Header on an instance of
+// MockGitserverService_ChangedFilesClient.
+type GitserverService_ChangedFilesClientHeaderFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 metadata.MD
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ChangedFilesClientHeaderFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ChangedFilesClientHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverService_ChangedFilesClientRecvFunc describes the behavior when
+// the Recv method of the parent MockGitserverService_ChangedFilesClient
+// instance is invoked.
+type GitserverService_ChangedFilesClientRecvFunc struct {
+	defaultHook func() (*v1.ChangedFilesResponse, error)
+	hooks       []func() (*v1.ChangedFilesResponse, error)
+	history     []GitserverService_ChangedFilesClientRecvFuncCall
+	mutex       sync.Mutex
+}
+
+// Recv delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ChangedFilesClient) Recv() (*v1.ChangedFilesResponse, error) {
+	r0, r1 := m.RecvFunc.nextHook()()
+	m.RecvFunc.appendCall(GitserverService_ChangedFilesClientRecvFuncCall{r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Recv method of the
+// parent MockGitserverService_ChangedFilesClient instance is invoked and
+// the hook queue is empty.
+func (f *GitserverService_ChangedFilesClientRecvFunc) SetDefaultHook(hook func() (*v1.ChangedFilesResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Recv method of the parent MockGitserverService_ChangedFilesClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ChangedFilesClientRecvFunc) PushHook(hook func() (*v1.ChangedFilesResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ChangedFilesClientRecvFunc) SetDefaultReturn(r0 *v1.ChangedFilesResponse, r1 error) {
+	f.SetDefaultHook(func() (*v1.ChangedFilesResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ChangedFilesClientRecvFunc) PushReturn(r0 *v1.ChangedFilesResponse, r1 error) {
+	f.PushHook(func() (*v1.ChangedFilesResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverService_ChangedFilesClientRecvFunc) nextHook() func() (*v1.ChangedFilesResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ChangedFilesClientRecvFunc) appendCall(r0 GitserverService_ChangedFilesClientRecvFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ChangedFilesClientRecvFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ChangedFilesClientRecvFunc) History() []GitserverService_ChangedFilesClientRecvFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ChangedFilesClientRecvFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ChangedFilesClientRecvFuncCall is an object that
+// describes an invocation of method Recv on an instance of
+// MockGitserverService_ChangedFilesClient.
+type GitserverService_ChangedFilesClientRecvFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.ChangedFilesResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ChangedFilesClientRecvFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ChangedFilesClientRecvFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverService_ChangedFilesClientRecvMsgFunc describes the behavior
+// when the RecvMsg method of the parent
+// MockGitserverService_ChangedFilesClient instance is invoked.
+type GitserverService_ChangedFilesClientRecvMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_ChangedFilesClientRecvMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// RecvMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ChangedFilesClient) RecvMsg(v0 interface{}) error {
+	r0 := m.RecvMsgFunc.nextHook()(v0)
+	m.RecvMsgFunc.appendCall(GitserverService_ChangedFilesClientRecvMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RecvMsg method of
+// the parent MockGitserverService_ChangedFilesClient instance is invoked
+// and the hook queue is empty.
+func (f *GitserverService_ChangedFilesClientRecvMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecvMsg method of the parent MockGitserverService_ChangedFilesClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ChangedFilesClientRecvMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ChangedFilesClientRecvMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ChangedFilesClientRecvMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ChangedFilesClientRecvMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ChangedFilesClientRecvMsgFunc) appendCall(r0 GitserverService_ChangedFilesClientRecvMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ChangedFilesClientRecvMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ChangedFilesClientRecvMsgFunc) History() []GitserverService_ChangedFilesClientRecvMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ChangedFilesClientRecvMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ChangedFilesClientRecvMsgFuncCall is an object that
+// describes an invocation of method RecvMsg on an instance of
+// MockGitserverService_ChangedFilesClient.
+type GitserverService_ChangedFilesClientRecvMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ChangedFilesClientRecvMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ChangedFilesClientRecvMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ChangedFilesClientSendMsgFunc describes the behavior
+// when the SendMsg method of the parent
+// MockGitserverService_ChangedFilesClient instance is invoked.
+type GitserverService_ChangedFilesClientSendMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_ChangedFilesClientSendMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// SendMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ChangedFilesClient) SendMsg(v0 interface{}) error {
+	r0 := m.SendMsgFunc.nextHook()(v0)
+	m.SendMsgFunc.appendCall(GitserverService_ChangedFilesClientSendMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendMsg method of
+// the parent MockGitserverService_ChangedFilesClient instance is invoked
+// and the hook queue is empty.
+func (f *GitserverService_ChangedFilesClientSendMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendMsg method of the parent MockGitserverService_ChangedFilesClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ChangedFilesClientSendMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ChangedFilesClientSendMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ChangedFilesClientSendMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ChangedFilesClientSendMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ChangedFilesClientSendMsgFunc) appendCall(r0 GitserverService_ChangedFilesClientSendMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ChangedFilesClientSendMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ChangedFilesClientSendMsgFunc) History() []GitserverService_ChangedFilesClientSendMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ChangedFilesClientSendMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ChangedFilesClientSendMsgFuncCall is an object that
+// describes an invocation of method SendMsg on an instance of
+// MockGitserverService_ChangedFilesClient.
+type GitserverService_ChangedFilesClientSendMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ChangedFilesClientSendMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ChangedFilesClientSendMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ChangedFilesClientTrailerFunc describes the behavior
+// when the Trailer method of the parent
+// MockGitserverService_ChangedFilesClient instance is invoked.
+type GitserverService_ChangedFilesClientTrailerFunc struct {
+	defaultHook func() metadata.MD
+	hooks       []func() metadata.MD
+	history     []GitserverService_ChangedFilesClientTrailerFuncCall
+	mutex       sync.Mutex
+}
+
+// Trailer delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ChangedFilesClient) Trailer() metadata.MD {
+	r0 := m.TrailerFunc.nextHook()()
+	m.TrailerFunc.appendCall(GitserverService_ChangedFilesClientTrailerFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Trailer method of
+// the parent MockGitserverService_ChangedFilesClient instance is invoked
+// and the hook queue is empty.
+func (f *GitserverService_ChangedFilesClientTrailerFunc) SetDefaultHook(hook func() metadata.MD) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Trailer method of the parent MockGitserverService_ChangedFilesClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ChangedFilesClientTrailerFunc) PushHook(hook func() metadata.MD) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ChangedFilesClientTrailerFunc) SetDefaultReturn(r0 metadata.MD) {
+	f.SetDefaultHook(func() metadata.MD {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ChangedFilesClientTrailerFunc) PushReturn(r0 metadata.MD) {
+	f.PushHook(func() metadata.MD {
+		return r0
+	})
+}
+
+func (f *GitserverService_ChangedFilesClientTrailerFunc) nextHook() func() metadata.MD {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ChangedFilesClientTrailerFunc) appendCall(r0 GitserverService_ChangedFilesClientTrailerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ChangedFilesClientTrailerFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ChangedFilesClientTrailerFunc) History() []GitserverService_ChangedFilesClientTrailerFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ChangedFilesClientTrailerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ChangedFilesClientTrailerFuncCall is an object that
+// describes an invocation of method Trailer on an instance of
+// MockGitserverService_ChangedFilesClient.
+type GitserverService_ChangedFilesClientTrailerFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 metadata.MD
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ChangedFilesClientTrailerFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ChangedFilesClientTrailerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockGitserverService_ChangedFilesServer is a mock implementation of the
+// GitserverService_ChangedFilesServer interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/gitserver/v1) used for unit
+// testing.
+type MockGitserverService_ChangedFilesServer struct {
+	// ContextFunc is an instance of a mock function object controlling the
+	// behavior of the method Context.
+	ContextFunc *GitserverService_ChangedFilesServerContextFunc
+	// RecvMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method RecvMsg.
+	RecvMsgFunc *GitserverService_ChangedFilesServerRecvMsgFunc
+	// SendFunc is an instance of a mock function object controlling the
+	// behavior of the method Send.
+	SendFunc *GitserverService_ChangedFilesServerSendFunc
+	// SendHeaderFunc is an instance of a mock function object controlling
+	// the behavior of the method SendHeader.
+	SendHeaderFunc *GitserverService_ChangedFilesServerSendHeaderFunc
+	// SendMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method SendMsg.
+	SendMsgFunc *GitserverService_ChangedFilesServerSendMsgFunc
+	// SetHeaderFunc is an instance of a mock function object controlling
+	// the behavior of the method SetHeader.
+	SetHeaderFunc *GitserverService_ChangedFilesServerSetHeaderFunc
+	// SetTrailerFunc is an instance of a mock function object controlling
+	// the behavior of the method SetTrailer.
+	SetTrailerFunc *GitserverService_ChangedFilesServerSetTrailerFunc
+}
+
+// NewMockGitserverService_ChangedFilesServer creates a new mock of the
+// GitserverService_ChangedFilesServer interface. All methods return zero
+// values for all results, unless overwritten.
+func NewMockGitserverService_ChangedFilesServer() *MockGitserverService_ChangedFilesServer {
+	return &MockGitserverService_ChangedFilesServer{
+		ContextFunc: &GitserverService_ChangedFilesServerContextFunc{
+			defaultHook: func() (r0 context.Context) {
+				return
+			},
+		},
+		RecvMsgFunc: &GitserverService_ChangedFilesServerRecvMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SendFunc: &GitserverService_ChangedFilesServerSendFunc{
+			defaultHook: func(*v1.ChangedFilesResponse) (r0 error) {
+				return
+			},
+		},
+		SendHeaderFunc: &GitserverService_ChangedFilesServerSendHeaderFunc{
+			defaultHook: func(metadata.MD) (r0 error) {
+				return
+			},
+		},
+		SendMsgFunc: &GitserverService_ChangedFilesServerSendMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SetHeaderFunc: &GitserverService_ChangedFilesServerSetHeaderFunc{
+			defaultHook: func(metadata.MD) (r0 error) {
+				return
+			},
+		},
+		SetTrailerFunc: &GitserverService_ChangedFilesServerSetTrailerFunc{
+			defaultHook: func(metadata.MD) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockGitserverService_ChangedFilesServer creates a new mock of
+// the GitserverService_ChangedFilesServer interface. All methods panic on
+// invocation, unless overwritten.
+func NewStrictMockGitserverService_ChangedFilesServer() *MockGitserverService_ChangedFilesServer {
+	return &MockGitserverService_ChangedFilesServer{
+		ContextFunc: &GitserverService_ChangedFilesServerContextFunc{
+			defaultHook: func() context.Context {
+				panic("unexpected invocation of MockGitserverService_ChangedFilesServer.Context")
+			},
+		},
+		RecvMsgFunc: &GitserverService_ChangedFilesServerRecvMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_ChangedFilesServer.RecvMsg")
+			},
+		},
+		SendFunc: &GitserverService_ChangedFilesServerSendFunc{
+			defaultHook: func(*v1.ChangedFilesResponse) error {
+				panic("unexpected invocation of MockGitserverService_ChangedFilesServer.Send")
+			},
+		},
+		SendHeaderFunc: &GitserverService_ChangedFilesServerSendHeaderFunc{
+			defaultHook: func(metadata.MD) error {
+				panic("unexpected invocation of MockGitserverService_ChangedFilesServer.SendHeader")
+			},
+		},
+		SendMsgFunc: &GitserverService_ChangedFilesServerSendMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_ChangedFilesServer.SendMsg")
+			},
+		},
+		SetHeaderFunc: &GitserverService_ChangedFilesServerSetHeaderFunc{
+			defaultHook: func(metadata.MD) error {
+				panic("unexpected invocation of MockGitserverService_ChangedFilesServer.SetHeader")
+			},
+		},
+		SetTrailerFunc: &GitserverService_ChangedFilesServerSetTrailerFunc{
+			defaultHook: func(metadata.MD) {
+				panic("unexpected invocation of MockGitserverService_ChangedFilesServer.SetTrailer")
+			},
+		},
+	}
+}
+
+// NewMockGitserverService_ChangedFilesServerFrom creates a new mock of the
+// MockGitserverService_ChangedFilesServer interface. All methods delegate
+// to the given implementation, unless overwritten.
+func NewMockGitserverService_ChangedFilesServerFrom(i v1.GitserverService_ChangedFilesServer) *MockGitserverService_ChangedFilesServer {
+	return &MockGitserverService_ChangedFilesServer{
+		ContextFunc: &GitserverService_ChangedFilesServerContextFunc{
+			defaultHook: i.Context,
+		},
+		RecvMsgFunc: &GitserverService_ChangedFilesServerRecvMsgFunc{
+			defaultHook: i.RecvMsg,
+		},
+		SendFunc: &GitserverService_ChangedFilesServerSendFunc{
+			defaultHook: i.Send,
+		},
+		SendHeaderFunc: &GitserverService_ChangedFilesServerSendHeaderFunc{
+			defaultHook: i.SendHeader,
+		},
+		SendMsgFunc: &GitserverService_ChangedFilesServerSendMsgFunc{
+			defaultHook: i.SendMsg,
+		},
+		SetHeaderFunc: &GitserverService_ChangedFilesServerSetHeaderFunc{
+			defaultHook: i.SetHeader,
+		},
+		SetTrailerFunc: &GitserverService_ChangedFilesServerSetTrailerFunc{
+			defaultHook: i.SetTrailer,
+		},
+	}
+}
+
+// GitserverService_ChangedFilesServerContextFunc describes the behavior
+// when the Context method of the parent
+// MockGitserverService_ChangedFilesServer instance is invoked.
+type GitserverService_ChangedFilesServerContextFunc struct {
+	defaultHook func() context.Context
+	hooks       []func() context.Context
+	history     []GitserverService_ChangedFilesServerContextFuncCall
+	mutex       sync.Mutex
+}
+
+// Context delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ChangedFilesServer) Context() context.Context {
+	r0 := m.ContextFunc.nextHook()()
+	m.ContextFunc.appendCall(GitserverService_ChangedFilesServerContextFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Context method of
+// the parent MockGitserverService_ChangedFilesServer instance is invoked
+// and the hook queue is empty.
+func (f *GitserverService_ChangedFilesServerContextFunc) SetDefaultHook(hook func() context.Context) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Context method of the parent MockGitserverService_ChangedFilesServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ChangedFilesServerContextFunc) PushHook(hook func() context.Context) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ChangedFilesServerContextFunc) SetDefaultReturn(r0 context.Context) {
+	f.SetDefaultHook(func() context.Context {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ChangedFilesServerContextFunc) PushReturn(r0 context.Context) {
+	f.PushHook(func() context.Context {
+		return r0
+	})
+}
+
+func (f *GitserverService_ChangedFilesServerContextFunc) nextHook() func() context.Context {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ChangedFilesServerContextFunc) appendCall(r0 GitserverService_ChangedFilesServerContextFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ChangedFilesServerContextFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ChangedFilesServerContextFunc) History() []GitserverService_ChangedFilesServerContextFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ChangedFilesServerContextFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ChangedFilesServerContextFuncCall is an object that
+// describes an invocation of method Context on an instance of
+// MockGitserverService_ChangedFilesServer.
+type GitserverService_ChangedFilesServerContextFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 context.Context
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ChangedFilesServerContextFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ChangedFilesServerContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ChangedFilesServerRecvMsgFunc describes the behavior
+// when the RecvMsg method of the parent
+// MockGitserverService_ChangedFilesServer instance is invoked.
+type GitserverService_ChangedFilesServerRecvMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_ChangedFilesServerRecvMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// RecvMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ChangedFilesServer) RecvMsg(v0 interface{}) error {
+	r0 := m.RecvMsgFunc.nextHook()(v0)
+	m.RecvMsgFunc.appendCall(GitserverService_ChangedFilesServerRecvMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RecvMsg method of
+// the parent MockGitserverService_ChangedFilesServer instance is invoked
+// and the hook queue is empty.
+func (f *GitserverService_ChangedFilesServerRecvMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecvMsg method of the parent MockGitserverService_ChangedFilesServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ChangedFilesServerRecvMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ChangedFilesServerRecvMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ChangedFilesServerRecvMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ChangedFilesServerRecvMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ChangedFilesServerRecvMsgFunc) appendCall(r0 GitserverService_ChangedFilesServerRecvMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ChangedFilesServerRecvMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ChangedFilesServerRecvMsgFunc) History() []GitserverService_ChangedFilesServerRecvMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ChangedFilesServerRecvMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ChangedFilesServerRecvMsgFuncCall is an object that
+// describes an invocation of method RecvMsg on an instance of
+// MockGitserverService_ChangedFilesServer.
+type GitserverService_ChangedFilesServerRecvMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ChangedFilesServerRecvMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ChangedFilesServerRecvMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ChangedFilesServerSendFunc describes the behavior when
+// the Send method of the parent MockGitserverService_ChangedFilesServer
+// instance is invoked.
+type GitserverService_ChangedFilesServerSendFunc struct {
+	defaultHook func(*v1.ChangedFilesResponse) error
+	hooks       []func(*v1.ChangedFilesResponse) error
+	history     []GitserverService_ChangedFilesServerSendFuncCall
+	mutex       sync.Mutex
+}
+
+// Send delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ChangedFilesServer) Send(v0 *v1.ChangedFilesResponse) error {
+	r0 := m.SendFunc.nextHook()(v0)
+	m.SendFunc.appendCall(GitserverService_ChangedFilesServerSendFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Send method of the
+// parent MockGitserverService_ChangedFilesServer instance is invoked and
+// the hook queue is empty.
+func (f *GitserverService_ChangedFilesServerSendFunc) SetDefaultHook(hook func(*v1.ChangedFilesResponse) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Send method of the parent MockGitserverService_ChangedFilesServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ChangedFilesServerSendFunc) PushHook(hook func(*v1.ChangedFilesResponse) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ChangedFilesServerSendFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(*v1.ChangedFilesResponse) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ChangedFilesServerSendFunc) PushReturn(r0 error) {
+	f.PushHook(func(*v1.ChangedFilesResponse) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ChangedFilesServerSendFunc) nextHook() func(*v1.ChangedFilesResponse) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ChangedFilesServerSendFunc) appendCall(r0 GitserverService_ChangedFilesServerSendFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ChangedFilesServerSendFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ChangedFilesServerSendFunc) History() []GitserverService_ChangedFilesServerSendFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ChangedFilesServerSendFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ChangedFilesServerSendFuncCall is an object that
+// describes an invocation of method Send on an instance of
+// MockGitserverService_ChangedFilesServer.
+type GitserverService_ChangedFilesServerSendFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *v1.ChangedFilesResponse
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ChangedFilesServerSendFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ChangedFilesServerSendFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ChangedFilesServerSendHeaderFunc describes the behavior
+// when the SendHeader method of the parent
+// MockGitserverService_ChangedFilesServer instance is invoked.
+type GitserverService_ChangedFilesServerSendHeaderFunc struct {
+	defaultHook func(metadata.MD) error
+	hooks       []func(metadata.MD) error
+	history     []GitserverService_ChangedFilesServerSendHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// SendHeader delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverService_ChangedFilesServer) SendHeader(v0 metadata.MD) error {
+	r0 := m.SendHeaderFunc.nextHook()(v0)
+	m.SendHeaderFunc.appendCall(GitserverService_ChangedFilesServerSendHeaderFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendHeader method of
+// the parent MockGitserverService_ChangedFilesServer instance is invoked
+// and the hook queue is empty.
+func (f *GitserverService_ChangedFilesServerSendHeaderFunc) SetDefaultHook(hook func(metadata.MD) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendHeader method of the parent MockGitserverService_ChangedFilesServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ChangedFilesServerSendHeaderFunc) PushHook(hook func(metadata.MD) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ChangedFilesServerSendHeaderFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ChangedFilesServerSendHeaderFunc) PushReturn(r0 error) {
+	f.PushHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ChangedFilesServerSendHeaderFunc) nextHook() func(metadata.MD) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ChangedFilesServerSendHeaderFunc) appendCall(r0 GitserverService_ChangedFilesServerSendHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ChangedFilesServerSendHeaderFuncCall objects describing
+// the invocations of this function.
+func (f *GitserverService_ChangedFilesServerSendHeaderFunc) History() []GitserverService_ChangedFilesServerSendHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ChangedFilesServerSendHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ChangedFilesServerSendHeaderFuncCall is an object that
+// describes an invocation of method SendHeader on an instance of
+// MockGitserverService_ChangedFilesServer.
+type GitserverService_ChangedFilesServerSendHeaderFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ChangedFilesServerSendHeaderFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ChangedFilesServerSendHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ChangedFilesServerSendMsgFunc describes the behavior
+// when the SendMsg method of the parent
+// MockGitserverService_ChangedFilesServer instance is invoked.
+type GitserverService_ChangedFilesServerSendMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_ChangedFilesServerSendMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// SendMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ChangedFilesServer) SendMsg(v0 interface{}) error {
+	r0 := m.SendMsgFunc.nextHook()(v0)
+	m.SendMsgFunc.appendCall(GitserverService_ChangedFilesServerSendMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendMsg method of
+// the parent MockGitserverService_ChangedFilesServer instance is invoked
+// and the hook queue is empty.
+func (f *GitserverService_ChangedFilesServerSendMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendMsg method of the parent MockGitserverService_ChangedFilesServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ChangedFilesServerSendMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ChangedFilesServerSendMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ChangedFilesServerSendMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ChangedFilesServerSendMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ChangedFilesServerSendMsgFunc) appendCall(r0 GitserverService_ChangedFilesServerSendMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ChangedFilesServerSendMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ChangedFilesServerSendMsgFunc) History() []GitserverService_ChangedFilesServerSendMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ChangedFilesServerSendMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ChangedFilesServerSendMsgFuncCall is an object that
+// describes an invocation of method SendMsg on an instance of
+// MockGitserverService_ChangedFilesServer.
+type GitserverService_ChangedFilesServerSendMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ChangedFilesServerSendMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ChangedFilesServerSendMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ChangedFilesServerSetHeaderFunc describes the behavior
+// when the SetHeader method of the parent
+// MockGitserverService_ChangedFilesServer instance is invoked.
+type GitserverService_ChangedFilesServerSetHeaderFunc struct {
+	defaultHook func(metadata.MD) error
+	hooks       []func(metadata.MD) error
+	history     []GitserverService_ChangedFilesServerSetHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// SetHeader delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ChangedFilesServer) SetHeader(v0 metadata.MD) error {
+	r0 := m.SetHeaderFunc.nextHook()(v0)
+	m.SetHeaderFunc.appendCall(GitserverService_ChangedFilesServerSetHeaderFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetHeader method of
+// the parent MockGitserverService_ChangedFilesServer instance is invoked
+// and the hook queue is empty.
+func (f *GitserverService_ChangedFilesServerSetHeaderFunc) SetDefaultHook(hook func(metadata.MD) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetHeader method of the parent MockGitserverService_ChangedFilesServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ChangedFilesServerSetHeaderFunc) PushHook(hook func(metadata.MD) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ChangedFilesServerSetHeaderFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ChangedFilesServerSetHeaderFunc) PushReturn(r0 error) {
+	f.PushHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ChangedFilesServerSetHeaderFunc) nextHook() func(metadata.MD) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ChangedFilesServerSetHeaderFunc) appendCall(r0 GitserverService_ChangedFilesServerSetHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ChangedFilesServerSetHeaderFuncCall objects describing
+// the invocations of this function.
+func (f *GitserverService_ChangedFilesServerSetHeaderFunc) History() []GitserverService_ChangedFilesServerSetHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ChangedFilesServerSetHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ChangedFilesServerSetHeaderFuncCall is an object that
+// describes an invocation of method SetHeader on an instance of
+// MockGitserverService_ChangedFilesServer.
+type GitserverService_ChangedFilesServerSetHeaderFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ChangedFilesServerSetHeaderFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ChangedFilesServerSetHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ChangedFilesServerSetTrailerFunc describes the behavior
+// when the SetTrailer method of the parent
+// MockGitserverService_ChangedFilesServer instance is invoked.
+type GitserverService_ChangedFilesServerSetTrailerFunc struct {
+	defaultHook func(metadata.MD)
+	hooks       []func(metadata.MD)
+	history     []GitserverService_ChangedFilesServerSetTrailerFuncCall
+	mutex       sync.Mutex
+}
+
+// SetTrailer delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverService_ChangedFilesServer) SetTrailer(v0 metadata.MD) {
+	m.SetTrailerFunc.nextHook()(v0)
+	m.SetTrailerFunc.appendCall(GitserverService_ChangedFilesServerSetTrailerFuncCall{v0})
+	return
+}
+
+// SetDefaultHook sets function that is called when the SetTrailer method of
+// the parent MockGitserverService_ChangedFilesServer instance is invoked
+// and the hook queue is empty.
+func (f *GitserverService_ChangedFilesServerSetTrailerFunc) SetDefaultHook(hook func(metadata.MD)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetTrailer method of the parent MockGitserverService_ChangedFilesServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ChangedFilesServerSetTrailerFunc) PushHook(hook func(metadata.MD)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ChangedFilesServerSetTrailerFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(metadata.MD) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ChangedFilesServerSetTrailerFunc) PushReturn() {
+	f.PushHook(func(metadata.MD) {
+		return
+	})
+}
+
+func (f *GitserverService_ChangedFilesServerSetTrailerFunc) nextHook() func(metadata.MD) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ChangedFilesServerSetTrailerFunc) appendCall(r0 GitserverService_ChangedFilesServerSetTrailerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ChangedFilesServerSetTrailerFuncCall objects describing
+// the invocations of this function.
+func (f *GitserverService_ChangedFilesServerSetTrailerFunc) History() []GitserverService_ChangedFilesServerSetTrailerFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ChangedFilesServerSetTrailerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ChangedFilesServerSetTrailerFuncCall is an object that
+// describes an invocation of method SetTrailer on an instance of
+// MockGitserverService_ChangedFilesServer.
+type GitserverService_ChangedFilesServerSetTrailerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ChangedFilesServerSetTrailerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ChangedFilesServerSetTrailerFuncCall) Results() []interface{} {
+	return []interface{}{}
+}
+
 // MockGitserverService_ExecServer is a mock implementation of the
 // GitserverService_ExecServer interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/gitserver/v1) used for unit
@@ -7974,6 +10276,3512 @@ func (c GitserverService_ExecServerSetTrailerFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverService_ExecServerSetTrailerFuncCall) Results() []interface{} {
+	return []interface{}{}
+}
+
+// MockGitserverService_ListRefsClient is a mock implementation of the
+// GitserverService_ListRefsClient interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/gitserver/v1) used for unit
+// testing.
+type MockGitserverService_ListRefsClient struct {
+	// CloseSendFunc is an instance of a mock function object controlling
+	// the behavior of the method CloseSend.
+	CloseSendFunc *GitserverService_ListRefsClientCloseSendFunc
+	// ContextFunc is an instance of a mock function object controlling the
+	// behavior of the method Context.
+	ContextFunc *GitserverService_ListRefsClientContextFunc
+	// HeaderFunc is an instance of a mock function object controlling the
+	// behavior of the method Header.
+	HeaderFunc *GitserverService_ListRefsClientHeaderFunc
+	// RecvFunc is an instance of a mock function object controlling the
+	// behavior of the method Recv.
+	RecvFunc *GitserverService_ListRefsClientRecvFunc
+	// RecvMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method RecvMsg.
+	RecvMsgFunc *GitserverService_ListRefsClientRecvMsgFunc
+	// SendMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method SendMsg.
+	SendMsgFunc *GitserverService_ListRefsClientSendMsgFunc
+	// TrailerFunc is an instance of a mock function object controlling the
+	// behavior of the method Trailer.
+	TrailerFunc *GitserverService_ListRefsClientTrailerFunc
+}
+
+// NewMockGitserverService_ListRefsClient creates a new mock of the
+// GitserverService_ListRefsClient interface. All methods return zero values
+// for all results, unless overwritten.
+func NewMockGitserverService_ListRefsClient() *MockGitserverService_ListRefsClient {
+	return &MockGitserverService_ListRefsClient{
+		CloseSendFunc: &GitserverService_ListRefsClientCloseSendFunc{
+			defaultHook: func() (r0 error) {
+				return
+			},
+		},
+		ContextFunc: &GitserverService_ListRefsClientContextFunc{
+			defaultHook: func() (r0 context.Context) {
+				return
+			},
+		},
+		HeaderFunc: &GitserverService_ListRefsClientHeaderFunc{
+			defaultHook: func() (r0 metadata.MD, r1 error) {
+				return
+			},
+		},
+		RecvFunc: &GitserverService_ListRefsClientRecvFunc{
+			defaultHook: func() (r0 *v1.ListRefsResponse, r1 error) {
+				return
+			},
+		},
+		RecvMsgFunc: &GitserverService_ListRefsClientRecvMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SendMsgFunc: &GitserverService_ListRefsClientSendMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		TrailerFunc: &GitserverService_ListRefsClientTrailerFunc{
+			defaultHook: func() (r0 metadata.MD) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockGitserverService_ListRefsClient creates a new mock of the
+// GitserverService_ListRefsClient interface. All methods panic on
+// invocation, unless overwritten.
+func NewStrictMockGitserverService_ListRefsClient() *MockGitserverService_ListRefsClient {
+	return &MockGitserverService_ListRefsClient{
+		CloseSendFunc: &GitserverService_ListRefsClientCloseSendFunc{
+			defaultHook: func() error {
+				panic("unexpected invocation of MockGitserverService_ListRefsClient.CloseSend")
+			},
+		},
+		ContextFunc: &GitserverService_ListRefsClientContextFunc{
+			defaultHook: func() context.Context {
+				panic("unexpected invocation of MockGitserverService_ListRefsClient.Context")
+			},
+		},
+		HeaderFunc: &GitserverService_ListRefsClientHeaderFunc{
+			defaultHook: func() (metadata.MD, error) {
+				panic("unexpected invocation of MockGitserverService_ListRefsClient.Header")
+			},
+		},
+		RecvFunc: &GitserverService_ListRefsClientRecvFunc{
+			defaultHook: func() (*v1.ListRefsResponse, error) {
+				panic("unexpected invocation of MockGitserverService_ListRefsClient.Recv")
+			},
+		},
+		RecvMsgFunc: &GitserverService_ListRefsClientRecvMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_ListRefsClient.RecvMsg")
+			},
+		},
+		SendMsgFunc: &GitserverService_ListRefsClientSendMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_ListRefsClient.SendMsg")
+			},
+		},
+		TrailerFunc: &GitserverService_ListRefsClientTrailerFunc{
+			defaultHook: func() metadata.MD {
+				panic("unexpected invocation of MockGitserverService_ListRefsClient.Trailer")
+			},
+		},
+	}
+}
+
+// NewMockGitserverService_ListRefsClientFrom creates a new mock of the
+// MockGitserverService_ListRefsClient interface. All methods delegate to
+// the given implementation, unless overwritten.
+func NewMockGitserverService_ListRefsClientFrom(i v1.GitserverService_ListRefsClient) *MockGitserverService_ListRefsClient {
+	return &MockGitserverService_ListRefsClient{
+		CloseSendFunc: &GitserverService_ListRefsClientCloseSendFunc{
+			defaultHook: i.CloseSend,
+		},
+		ContextFunc: &GitserverService_ListRefsClientContextFunc{
+			defaultHook: i.Context,
+		},
+		HeaderFunc: &GitserverService_ListRefsClientHeaderFunc{
+			defaultHook: i.Header,
+		},
+		RecvFunc: &GitserverService_ListRefsClientRecvFunc{
+			defaultHook: i.Recv,
+		},
+		RecvMsgFunc: &GitserverService_ListRefsClientRecvMsgFunc{
+			defaultHook: i.RecvMsg,
+		},
+		SendMsgFunc: &GitserverService_ListRefsClientSendMsgFunc{
+			defaultHook: i.SendMsg,
+		},
+		TrailerFunc: &GitserverService_ListRefsClientTrailerFunc{
+			defaultHook: i.Trailer,
+		},
+	}
+}
+
+// GitserverService_ListRefsClientCloseSendFunc describes the behavior when
+// the CloseSend method of the parent MockGitserverService_ListRefsClient
+// instance is invoked.
+type GitserverService_ListRefsClientCloseSendFunc struct {
+	defaultHook func() error
+	hooks       []func() error
+	history     []GitserverService_ListRefsClientCloseSendFuncCall
+	mutex       sync.Mutex
+}
+
+// CloseSend delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ListRefsClient) CloseSend() error {
+	r0 := m.CloseSendFunc.nextHook()()
+	m.CloseSendFunc.appendCall(GitserverService_ListRefsClientCloseSendFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CloseSend method of
+// the parent MockGitserverService_ListRefsClient instance is invoked and
+// the hook queue is empty.
+func (f *GitserverService_ListRefsClientCloseSendFunc) SetDefaultHook(hook func() error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CloseSend method of the parent MockGitserverService_ListRefsClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ListRefsClientCloseSendFunc) PushHook(hook func() error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ListRefsClientCloseSendFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func() error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ListRefsClientCloseSendFunc) PushReturn(r0 error) {
+	f.PushHook(func() error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ListRefsClientCloseSendFunc) nextHook() func() error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ListRefsClientCloseSendFunc) appendCall(r0 GitserverService_ListRefsClientCloseSendFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ListRefsClientCloseSendFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ListRefsClientCloseSendFunc) History() []GitserverService_ListRefsClientCloseSendFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ListRefsClientCloseSendFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ListRefsClientCloseSendFuncCall is an object that
+// describes an invocation of method CloseSend on an instance of
+// MockGitserverService_ListRefsClient.
+type GitserverService_ListRefsClientCloseSendFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ListRefsClientCloseSendFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ListRefsClientCloseSendFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ListRefsClientContextFunc describes the behavior when
+// the Context method of the parent MockGitserverService_ListRefsClient
+// instance is invoked.
+type GitserverService_ListRefsClientContextFunc struct {
+	defaultHook func() context.Context
+	hooks       []func() context.Context
+	history     []GitserverService_ListRefsClientContextFuncCall
+	mutex       sync.Mutex
+}
+
+// Context delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ListRefsClient) Context() context.Context {
+	r0 := m.ContextFunc.nextHook()()
+	m.ContextFunc.appendCall(GitserverService_ListRefsClientContextFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Context method of
+// the parent MockGitserverService_ListRefsClient instance is invoked and
+// the hook queue is empty.
+func (f *GitserverService_ListRefsClientContextFunc) SetDefaultHook(hook func() context.Context) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Context method of the parent MockGitserverService_ListRefsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ListRefsClientContextFunc) PushHook(hook func() context.Context) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ListRefsClientContextFunc) SetDefaultReturn(r0 context.Context) {
+	f.SetDefaultHook(func() context.Context {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ListRefsClientContextFunc) PushReturn(r0 context.Context) {
+	f.PushHook(func() context.Context {
+		return r0
+	})
+}
+
+func (f *GitserverService_ListRefsClientContextFunc) nextHook() func() context.Context {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ListRefsClientContextFunc) appendCall(r0 GitserverService_ListRefsClientContextFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ListRefsClientContextFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ListRefsClientContextFunc) History() []GitserverService_ListRefsClientContextFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ListRefsClientContextFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ListRefsClientContextFuncCall is an object that
+// describes an invocation of method Context on an instance of
+// MockGitserverService_ListRefsClient.
+type GitserverService_ListRefsClientContextFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 context.Context
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ListRefsClientContextFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ListRefsClientContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ListRefsClientHeaderFunc describes the behavior when the
+// Header method of the parent MockGitserverService_ListRefsClient instance
+// is invoked.
+type GitserverService_ListRefsClientHeaderFunc struct {
+	defaultHook func() (metadata.MD, error)
+	hooks       []func() (metadata.MD, error)
+	history     []GitserverService_ListRefsClientHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// Header delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ListRefsClient) Header() (metadata.MD, error) {
+	r0, r1 := m.HeaderFunc.nextHook()()
+	m.HeaderFunc.appendCall(GitserverService_ListRefsClientHeaderFuncCall{r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Header method of the
+// parent MockGitserverService_ListRefsClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ListRefsClientHeaderFunc) SetDefaultHook(hook func() (metadata.MD, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Header method of the parent MockGitserverService_ListRefsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ListRefsClientHeaderFunc) PushHook(hook func() (metadata.MD, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ListRefsClientHeaderFunc) SetDefaultReturn(r0 metadata.MD, r1 error) {
+	f.SetDefaultHook(func() (metadata.MD, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ListRefsClientHeaderFunc) PushReturn(r0 metadata.MD, r1 error) {
+	f.PushHook(func() (metadata.MD, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverService_ListRefsClientHeaderFunc) nextHook() func() (metadata.MD, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ListRefsClientHeaderFunc) appendCall(r0 GitserverService_ListRefsClientHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ListRefsClientHeaderFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ListRefsClientHeaderFunc) History() []GitserverService_ListRefsClientHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ListRefsClientHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ListRefsClientHeaderFuncCall is an object that describes
+// an invocation of method Header on an instance of
+// MockGitserverService_ListRefsClient.
+type GitserverService_ListRefsClientHeaderFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 metadata.MD
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ListRefsClientHeaderFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ListRefsClientHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverService_ListRefsClientRecvFunc describes the behavior when the
+// Recv method of the parent MockGitserverService_ListRefsClient instance is
+// invoked.
+type GitserverService_ListRefsClientRecvFunc struct {
+	defaultHook func() (*v1.ListRefsResponse, error)
+	hooks       []func() (*v1.ListRefsResponse, error)
+	history     []GitserverService_ListRefsClientRecvFuncCall
+	mutex       sync.Mutex
+}
+
+// Recv delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ListRefsClient) Recv() (*v1.ListRefsResponse, error) {
+	r0, r1 := m.RecvFunc.nextHook()()
+	m.RecvFunc.appendCall(GitserverService_ListRefsClientRecvFuncCall{r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Recv method of the
+// parent MockGitserverService_ListRefsClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ListRefsClientRecvFunc) SetDefaultHook(hook func() (*v1.ListRefsResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Recv method of the parent MockGitserverService_ListRefsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ListRefsClientRecvFunc) PushHook(hook func() (*v1.ListRefsResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ListRefsClientRecvFunc) SetDefaultReturn(r0 *v1.ListRefsResponse, r1 error) {
+	f.SetDefaultHook(func() (*v1.ListRefsResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ListRefsClientRecvFunc) PushReturn(r0 *v1.ListRefsResponse, r1 error) {
+	f.PushHook(func() (*v1.ListRefsResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverService_ListRefsClientRecvFunc) nextHook() func() (*v1.ListRefsResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ListRefsClientRecvFunc) appendCall(r0 GitserverService_ListRefsClientRecvFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_ListRefsClientRecvFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_ListRefsClientRecvFunc) History() []GitserverService_ListRefsClientRecvFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ListRefsClientRecvFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ListRefsClientRecvFuncCall is an object that describes
+// an invocation of method Recv on an instance of
+// MockGitserverService_ListRefsClient.
+type GitserverService_ListRefsClientRecvFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.ListRefsResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ListRefsClientRecvFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ListRefsClientRecvFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverService_ListRefsClientRecvMsgFunc describes the behavior when
+// the RecvMsg method of the parent MockGitserverService_ListRefsClient
+// instance is invoked.
+type GitserverService_ListRefsClientRecvMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_ListRefsClientRecvMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// RecvMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ListRefsClient) RecvMsg(v0 interface{}) error {
+	r0 := m.RecvMsgFunc.nextHook()(v0)
+	m.RecvMsgFunc.appendCall(GitserverService_ListRefsClientRecvMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RecvMsg method of
+// the parent MockGitserverService_ListRefsClient instance is invoked and
+// the hook queue is empty.
+func (f *GitserverService_ListRefsClientRecvMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecvMsg method of the parent MockGitserverService_ListRefsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ListRefsClientRecvMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ListRefsClientRecvMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ListRefsClientRecvMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ListRefsClientRecvMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ListRefsClientRecvMsgFunc) appendCall(r0 GitserverService_ListRefsClientRecvMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ListRefsClientRecvMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ListRefsClientRecvMsgFunc) History() []GitserverService_ListRefsClientRecvMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ListRefsClientRecvMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ListRefsClientRecvMsgFuncCall is an object that
+// describes an invocation of method RecvMsg on an instance of
+// MockGitserverService_ListRefsClient.
+type GitserverService_ListRefsClientRecvMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ListRefsClientRecvMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ListRefsClientRecvMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ListRefsClientSendMsgFunc describes the behavior when
+// the SendMsg method of the parent MockGitserverService_ListRefsClient
+// instance is invoked.
+type GitserverService_ListRefsClientSendMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_ListRefsClientSendMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// SendMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ListRefsClient) SendMsg(v0 interface{}) error {
+	r0 := m.SendMsgFunc.nextHook()(v0)
+	m.SendMsgFunc.appendCall(GitserverService_ListRefsClientSendMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendMsg method of
+// the parent MockGitserverService_ListRefsClient instance is invoked and
+// the hook queue is empty.
+func (f *GitserverService_ListRefsClientSendMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendMsg method of the parent MockGitserverService_ListRefsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ListRefsClientSendMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ListRefsClientSendMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ListRefsClientSendMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ListRefsClientSendMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ListRefsClientSendMsgFunc) appendCall(r0 GitserverService_ListRefsClientSendMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ListRefsClientSendMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ListRefsClientSendMsgFunc) History() []GitserverService_ListRefsClientSendMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ListRefsClientSendMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ListRefsClientSendMsgFuncCall is an object that
+// describes an invocation of method SendMsg on an instance of
+// MockGitserverService_ListRefsClient.
+type GitserverService_ListRefsClientSendMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ListRefsClientSendMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ListRefsClientSendMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ListRefsClientTrailerFunc describes the behavior when
+// the Trailer method of the parent MockGitserverService_ListRefsClient
+// instance is invoked.
+type GitserverService_ListRefsClientTrailerFunc struct {
+	defaultHook func() metadata.MD
+	hooks       []func() metadata.MD
+	history     []GitserverService_ListRefsClientTrailerFuncCall
+	mutex       sync.Mutex
+}
+
+// Trailer delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ListRefsClient) Trailer() metadata.MD {
+	r0 := m.TrailerFunc.nextHook()()
+	m.TrailerFunc.appendCall(GitserverService_ListRefsClientTrailerFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Trailer method of
+// the parent MockGitserverService_ListRefsClient instance is invoked and
+// the hook queue is empty.
+func (f *GitserverService_ListRefsClientTrailerFunc) SetDefaultHook(hook func() metadata.MD) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Trailer method of the parent MockGitserverService_ListRefsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ListRefsClientTrailerFunc) PushHook(hook func() metadata.MD) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ListRefsClientTrailerFunc) SetDefaultReturn(r0 metadata.MD) {
+	f.SetDefaultHook(func() metadata.MD {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ListRefsClientTrailerFunc) PushReturn(r0 metadata.MD) {
+	f.PushHook(func() metadata.MD {
+		return r0
+	})
+}
+
+func (f *GitserverService_ListRefsClientTrailerFunc) nextHook() func() metadata.MD {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ListRefsClientTrailerFunc) appendCall(r0 GitserverService_ListRefsClientTrailerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ListRefsClientTrailerFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ListRefsClientTrailerFunc) History() []GitserverService_ListRefsClientTrailerFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ListRefsClientTrailerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ListRefsClientTrailerFuncCall is an object that
+// describes an invocation of method Trailer on an instance of
+// MockGitserverService_ListRefsClient.
+type GitserverService_ListRefsClientTrailerFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 metadata.MD
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ListRefsClientTrailerFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ListRefsClientTrailerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockGitserverService_ListRefsServer is a mock implementation of the
+// GitserverService_ListRefsServer interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/gitserver/v1) used for unit
+// testing.
+type MockGitserverService_ListRefsServer struct {
+	// ContextFunc is an instance of a mock function object controlling the
+	// behavior of the method Context.
+	ContextFunc *GitserverService_ListRefsServerContextFunc
+	// RecvMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method RecvMsg.
+	RecvMsgFunc *GitserverService_ListRefsServerRecvMsgFunc
+	// SendFunc is an instance of a mock function object controlling the
+	// behavior of the method Send.
+	SendFunc *GitserverService_ListRefsServerSendFunc
+	// SendHeaderFunc is an instance of a mock function object controlling
+	// the behavior of the method SendHeader.
+	SendHeaderFunc *GitserverService_ListRefsServerSendHeaderFunc
+	// SendMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method SendMsg.
+	SendMsgFunc *GitserverService_ListRefsServerSendMsgFunc
+	// SetHeaderFunc is an instance of a mock function object controlling
+	// the behavior of the method SetHeader.
+	SetHeaderFunc *GitserverService_ListRefsServerSetHeaderFunc
+	// SetTrailerFunc is an instance of a mock function object controlling
+	// the behavior of the method SetTrailer.
+	SetTrailerFunc *GitserverService_ListRefsServerSetTrailerFunc
+}
+
+// NewMockGitserverService_ListRefsServer creates a new mock of the
+// GitserverService_ListRefsServer interface. All methods return zero values
+// for all results, unless overwritten.
+func NewMockGitserverService_ListRefsServer() *MockGitserverService_ListRefsServer {
+	return &MockGitserverService_ListRefsServer{
+		ContextFunc: &GitserverService_ListRefsServerContextFunc{
+			defaultHook: func() (r0 context.Context) {
+				return
+			},
+		},
+		RecvMsgFunc: &GitserverService_ListRefsServerRecvMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SendFunc: &GitserverService_ListRefsServerSendFunc{
+			defaultHook: func(*v1.ListRefsResponse) (r0 error) {
+				return
+			},
+		},
+		SendHeaderFunc: &GitserverService_ListRefsServerSendHeaderFunc{
+			defaultHook: func(metadata.MD) (r0 error) {
+				return
+			},
+		},
+		SendMsgFunc: &GitserverService_ListRefsServerSendMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SetHeaderFunc: &GitserverService_ListRefsServerSetHeaderFunc{
+			defaultHook: func(metadata.MD) (r0 error) {
+				return
+			},
+		},
+		SetTrailerFunc: &GitserverService_ListRefsServerSetTrailerFunc{
+			defaultHook: func(metadata.MD) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockGitserverService_ListRefsServer creates a new mock of the
+// GitserverService_ListRefsServer interface. All methods panic on
+// invocation, unless overwritten.
+func NewStrictMockGitserverService_ListRefsServer() *MockGitserverService_ListRefsServer {
+	return &MockGitserverService_ListRefsServer{
+		ContextFunc: &GitserverService_ListRefsServerContextFunc{
+			defaultHook: func() context.Context {
+				panic("unexpected invocation of MockGitserverService_ListRefsServer.Context")
+			},
+		},
+		RecvMsgFunc: &GitserverService_ListRefsServerRecvMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_ListRefsServer.RecvMsg")
+			},
+		},
+		SendFunc: &GitserverService_ListRefsServerSendFunc{
+			defaultHook: func(*v1.ListRefsResponse) error {
+				panic("unexpected invocation of MockGitserverService_ListRefsServer.Send")
+			},
+		},
+		SendHeaderFunc: &GitserverService_ListRefsServerSendHeaderFunc{
+			defaultHook: func(metadata.MD) error {
+				panic("unexpected invocation of MockGitserverService_ListRefsServer.SendHeader")
+			},
+		},
+		SendMsgFunc: &GitserverService_ListRefsServerSendMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_ListRefsServer.SendMsg")
+			},
+		},
+		SetHeaderFunc: &GitserverService_ListRefsServerSetHeaderFunc{
+			defaultHook: func(metadata.MD) error {
+				panic("unexpected invocation of MockGitserverService_ListRefsServer.SetHeader")
+			},
+		},
+		SetTrailerFunc: &GitserverService_ListRefsServerSetTrailerFunc{
+			defaultHook: func(metadata.MD) {
+				panic("unexpected invocation of MockGitserverService_ListRefsServer.SetTrailer")
+			},
+		},
+	}
+}
+
+// NewMockGitserverService_ListRefsServerFrom creates a new mock of the
+// MockGitserverService_ListRefsServer interface. All methods delegate to
+// the given implementation, unless overwritten.
+func NewMockGitserverService_ListRefsServerFrom(i v1.GitserverService_ListRefsServer) *MockGitserverService_ListRefsServer {
+	return &MockGitserverService_ListRefsServer{
+		ContextFunc: &GitserverService_ListRefsServerContextFunc{
+			defaultHook: i.Context,
+		},
+		RecvMsgFunc: &GitserverService_ListRefsServerRecvMsgFunc{
+			defaultHook: i.RecvMsg,
+		},
+		SendFunc: &GitserverService_ListRefsServerSendFunc{
+			defaultHook: i.Send,
+		},
+		SendHeaderFunc: &GitserverService_ListRefsServerSendHeaderFunc{
+			defaultHook: i.SendHeader,
+		},
+		SendMsgFunc: &GitserverService_ListRefsServerSendMsgFunc{
+			defaultHook: i.SendMsg,
+		},
+		SetHeaderFunc: &GitserverService_ListRefsServerSetHeaderFunc{
+			defaultHook: i.SetHeader,
+		},
+		SetTrailerFunc: &GitserverService_ListRefsServerSetTrailerFunc{
+			defaultHook: i.SetTrailer,
+		},
+	}
+}
+
+// GitserverService_ListRefsServerContextFunc describes the behavior when
+// the Context method of the parent MockGitserverService_ListRefsServer
+// instance is invoked.
+type GitserverService_ListRefsServerContextFunc struct {
+	defaultHook func() context.Context
+	hooks       []func() context.Context
+	history     []GitserverService_ListRefsServerContextFuncCall
+	mutex       sync.Mutex
+}
+
+// Context delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ListRefsServer) Context() context.Context {
+	r0 := m.ContextFunc.nextHook()()
+	m.ContextFunc.appendCall(GitserverService_ListRefsServerContextFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Context method of
+// the parent MockGitserverService_ListRefsServer instance is invoked and
+// the hook queue is empty.
+func (f *GitserverService_ListRefsServerContextFunc) SetDefaultHook(hook func() context.Context) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Context method of the parent MockGitserverService_ListRefsServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ListRefsServerContextFunc) PushHook(hook func() context.Context) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ListRefsServerContextFunc) SetDefaultReturn(r0 context.Context) {
+	f.SetDefaultHook(func() context.Context {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ListRefsServerContextFunc) PushReturn(r0 context.Context) {
+	f.PushHook(func() context.Context {
+		return r0
+	})
+}
+
+func (f *GitserverService_ListRefsServerContextFunc) nextHook() func() context.Context {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ListRefsServerContextFunc) appendCall(r0 GitserverService_ListRefsServerContextFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ListRefsServerContextFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ListRefsServerContextFunc) History() []GitserverService_ListRefsServerContextFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ListRefsServerContextFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ListRefsServerContextFuncCall is an object that
+// describes an invocation of method Context on an instance of
+// MockGitserverService_ListRefsServer.
+type GitserverService_ListRefsServerContextFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 context.Context
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ListRefsServerContextFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ListRefsServerContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ListRefsServerRecvMsgFunc describes the behavior when
+// the RecvMsg method of the parent MockGitserverService_ListRefsServer
+// instance is invoked.
+type GitserverService_ListRefsServerRecvMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_ListRefsServerRecvMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// RecvMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ListRefsServer) RecvMsg(v0 interface{}) error {
+	r0 := m.RecvMsgFunc.nextHook()(v0)
+	m.RecvMsgFunc.appendCall(GitserverService_ListRefsServerRecvMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RecvMsg method of
+// the parent MockGitserverService_ListRefsServer instance is invoked and
+// the hook queue is empty.
+func (f *GitserverService_ListRefsServerRecvMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecvMsg method of the parent MockGitserverService_ListRefsServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ListRefsServerRecvMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ListRefsServerRecvMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ListRefsServerRecvMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ListRefsServerRecvMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ListRefsServerRecvMsgFunc) appendCall(r0 GitserverService_ListRefsServerRecvMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ListRefsServerRecvMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ListRefsServerRecvMsgFunc) History() []GitserverService_ListRefsServerRecvMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ListRefsServerRecvMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ListRefsServerRecvMsgFuncCall is an object that
+// describes an invocation of method RecvMsg on an instance of
+// MockGitserverService_ListRefsServer.
+type GitserverService_ListRefsServerRecvMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ListRefsServerRecvMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ListRefsServerRecvMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ListRefsServerSendFunc describes the behavior when the
+// Send method of the parent MockGitserverService_ListRefsServer instance is
+// invoked.
+type GitserverService_ListRefsServerSendFunc struct {
+	defaultHook func(*v1.ListRefsResponse) error
+	hooks       []func(*v1.ListRefsResponse) error
+	history     []GitserverService_ListRefsServerSendFuncCall
+	mutex       sync.Mutex
+}
+
+// Send delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ListRefsServer) Send(v0 *v1.ListRefsResponse) error {
+	r0 := m.SendFunc.nextHook()(v0)
+	m.SendFunc.appendCall(GitserverService_ListRefsServerSendFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Send method of the
+// parent MockGitserverService_ListRefsServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ListRefsServerSendFunc) SetDefaultHook(hook func(*v1.ListRefsResponse) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Send method of the parent MockGitserverService_ListRefsServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ListRefsServerSendFunc) PushHook(hook func(*v1.ListRefsResponse) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ListRefsServerSendFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(*v1.ListRefsResponse) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ListRefsServerSendFunc) PushReturn(r0 error) {
+	f.PushHook(func(*v1.ListRefsResponse) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ListRefsServerSendFunc) nextHook() func(*v1.ListRefsResponse) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ListRefsServerSendFunc) appendCall(r0 GitserverService_ListRefsServerSendFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_ListRefsServerSendFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_ListRefsServerSendFunc) History() []GitserverService_ListRefsServerSendFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ListRefsServerSendFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ListRefsServerSendFuncCall is an object that describes
+// an invocation of method Send on an instance of
+// MockGitserverService_ListRefsServer.
+type GitserverService_ListRefsServerSendFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *v1.ListRefsResponse
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ListRefsServerSendFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ListRefsServerSendFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ListRefsServerSendHeaderFunc describes the behavior when
+// the SendHeader method of the parent MockGitserverService_ListRefsServer
+// instance is invoked.
+type GitserverService_ListRefsServerSendHeaderFunc struct {
+	defaultHook func(metadata.MD) error
+	hooks       []func(metadata.MD) error
+	history     []GitserverService_ListRefsServerSendHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// SendHeader delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverService_ListRefsServer) SendHeader(v0 metadata.MD) error {
+	r0 := m.SendHeaderFunc.nextHook()(v0)
+	m.SendHeaderFunc.appendCall(GitserverService_ListRefsServerSendHeaderFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendHeader method of
+// the parent MockGitserverService_ListRefsServer instance is invoked and
+// the hook queue is empty.
+func (f *GitserverService_ListRefsServerSendHeaderFunc) SetDefaultHook(hook func(metadata.MD) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendHeader method of the parent MockGitserverService_ListRefsServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ListRefsServerSendHeaderFunc) PushHook(hook func(metadata.MD) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ListRefsServerSendHeaderFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ListRefsServerSendHeaderFunc) PushReturn(r0 error) {
+	f.PushHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ListRefsServerSendHeaderFunc) nextHook() func(metadata.MD) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ListRefsServerSendHeaderFunc) appendCall(r0 GitserverService_ListRefsServerSendHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ListRefsServerSendHeaderFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ListRefsServerSendHeaderFunc) History() []GitserverService_ListRefsServerSendHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ListRefsServerSendHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ListRefsServerSendHeaderFuncCall is an object that
+// describes an invocation of method SendHeader on an instance of
+// MockGitserverService_ListRefsServer.
+type GitserverService_ListRefsServerSendHeaderFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ListRefsServerSendHeaderFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ListRefsServerSendHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ListRefsServerSendMsgFunc describes the behavior when
+// the SendMsg method of the parent MockGitserverService_ListRefsServer
+// instance is invoked.
+type GitserverService_ListRefsServerSendMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_ListRefsServerSendMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// SendMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ListRefsServer) SendMsg(v0 interface{}) error {
+	r0 := m.SendMsgFunc.nextHook()(v0)
+	m.SendMsgFunc.appendCall(GitserverService_ListRefsServerSendMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendMsg method of
+// the parent MockGitserverService_ListRefsServer instance is invoked and
+// the hook queue is empty.
+func (f *GitserverService_ListRefsServerSendMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendMsg method of the parent MockGitserverService_ListRefsServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ListRefsServerSendMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ListRefsServerSendMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ListRefsServerSendMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ListRefsServerSendMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ListRefsServerSendMsgFunc) appendCall(r0 GitserverService_ListRefsServerSendMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ListRefsServerSendMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ListRefsServerSendMsgFunc) History() []GitserverService_ListRefsServerSendMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ListRefsServerSendMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ListRefsServerSendMsgFuncCall is an object that
+// describes an invocation of method SendMsg on an instance of
+// MockGitserverService_ListRefsServer.
+type GitserverService_ListRefsServerSendMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ListRefsServerSendMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ListRefsServerSendMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ListRefsServerSetHeaderFunc describes the behavior when
+// the SetHeader method of the parent MockGitserverService_ListRefsServer
+// instance is invoked.
+type GitserverService_ListRefsServerSetHeaderFunc struct {
+	defaultHook func(metadata.MD) error
+	hooks       []func(metadata.MD) error
+	history     []GitserverService_ListRefsServerSetHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// SetHeader delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ListRefsServer) SetHeader(v0 metadata.MD) error {
+	r0 := m.SetHeaderFunc.nextHook()(v0)
+	m.SetHeaderFunc.appendCall(GitserverService_ListRefsServerSetHeaderFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetHeader method of
+// the parent MockGitserverService_ListRefsServer instance is invoked and
+// the hook queue is empty.
+func (f *GitserverService_ListRefsServerSetHeaderFunc) SetDefaultHook(hook func(metadata.MD) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetHeader method of the parent MockGitserverService_ListRefsServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ListRefsServerSetHeaderFunc) PushHook(hook func(metadata.MD) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ListRefsServerSetHeaderFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ListRefsServerSetHeaderFunc) PushReturn(r0 error) {
+	f.PushHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ListRefsServerSetHeaderFunc) nextHook() func(metadata.MD) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ListRefsServerSetHeaderFunc) appendCall(r0 GitserverService_ListRefsServerSetHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ListRefsServerSetHeaderFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ListRefsServerSetHeaderFunc) History() []GitserverService_ListRefsServerSetHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ListRefsServerSetHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ListRefsServerSetHeaderFuncCall is an object that
+// describes an invocation of method SetHeader on an instance of
+// MockGitserverService_ListRefsServer.
+type GitserverService_ListRefsServerSetHeaderFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ListRefsServerSetHeaderFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ListRefsServerSetHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ListRefsServerSetTrailerFunc describes the behavior when
+// the SetTrailer method of the parent MockGitserverService_ListRefsServer
+// instance is invoked.
+type GitserverService_ListRefsServerSetTrailerFunc struct {
+	defaultHook func(metadata.MD)
+	hooks       []func(metadata.MD)
+	history     []GitserverService_ListRefsServerSetTrailerFuncCall
+	mutex       sync.Mutex
+}
+
+// SetTrailer delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverService_ListRefsServer) SetTrailer(v0 metadata.MD) {
+	m.SetTrailerFunc.nextHook()(v0)
+	m.SetTrailerFunc.appendCall(GitserverService_ListRefsServerSetTrailerFuncCall{v0})
+	return
+}
+
+// SetDefaultHook sets function that is called when the SetTrailer method of
+// the parent MockGitserverService_ListRefsServer instance is invoked and
+// the hook queue is empty.
+func (f *GitserverService_ListRefsServerSetTrailerFunc) SetDefaultHook(hook func(metadata.MD)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetTrailer method of the parent MockGitserverService_ListRefsServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ListRefsServerSetTrailerFunc) PushHook(hook func(metadata.MD)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ListRefsServerSetTrailerFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(metadata.MD) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ListRefsServerSetTrailerFunc) PushReturn() {
+	f.PushHook(func(metadata.MD) {
+		return
+	})
+}
+
+func (f *GitserverService_ListRefsServerSetTrailerFunc) nextHook() func(metadata.MD) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ListRefsServerSetTrailerFunc) appendCall(r0 GitserverService_ListRefsServerSetTrailerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ListRefsServerSetTrailerFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ListRefsServerSetTrailerFunc) History() []GitserverService_ListRefsServerSetTrailerFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ListRefsServerSetTrailerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ListRefsServerSetTrailerFuncCall is an object that
+// describes an invocation of method SetTrailer on an instance of
+// MockGitserverService_ListRefsServer.
+type GitserverService_ListRefsServerSetTrailerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ListRefsServerSetTrailerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ListRefsServerSetTrailerFuncCall) Results() []interface{} {
+	return []interface{}{}
+}
+
+// MockGitserverService_RawDiffClient is a mock implementation of the
+// GitserverService_RawDiffClient interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/gitserver/v1) used for unit
+// testing.
+type MockGitserverService_RawDiffClient struct {
+	// CloseSendFunc is an instance of a mock function object controlling
+	// the behavior of the method CloseSend.
+	CloseSendFunc *GitserverService_RawDiffClientCloseSendFunc
+	// ContextFunc is an instance of a mock function object controlling the
+	// behavior of the method Context.
+	ContextFunc *GitserverService_RawDiffClientContextFunc
+	// HeaderFunc is an instance of a mock function object controlling the
+	// behavior of the method Header.
+	HeaderFunc *GitserverService_RawDiffClientHeaderFunc
+	// RecvFunc is an instance of a mock function object controlling the
+	// behavior of the method Recv.
+	RecvFunc *GitserverService_RawDiffClientRecvFunc
+	// RecvMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method RecvMsg.
+	RecvMsgFunc *GitserverService_RawDiffClientRecvMsgFunc
+	// SendMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method SendMsg.
+	SendMsgFunc *GitserverService_RawDiffClientSendMsgFunc
+	// TrailerFunc is an instance of a mock function object controlling the
+	// behavior of the method Trailer.
+	TrailerFunc *GitserverService_RawDiffClientTrailerFunc
+}
+
+// NewMockGitserverService_RawDiffClient creates a new mock of the
+// GitserverService_RawDiffClient interface. All methods return zero values
+// for all results, unless overwritten.
+func NewMockGitserverService_RawDiffClient() *MockGitserverService_RawDiffClient {
+	return &MockGitserverService_RawDiffClient{
+		CloseSendFunc: &GitserverService_RawDiffClientCloseSendFunc{
+			defaultHook: func() (r0 error) {
+				return
+			},
+		},
+		ContextFunc: &GitserverService_RawDiffClientContextFunc{
+			defaultHook: func() (r0 context.Context) {
+				return
+			},
+		},
+		HeaderFunc: &GitserverService_RawDiffClientHeaderFunc{
+			defaultHook: func() (r0 metadata.MD, r1 error) {
+				return
+			},
+		},
+		RecvFunc: &GitserverService_RawDiffClientRecvFunc{
+			defaultHook: func() (r0 *v1.RawDiffResponse, r1 error) {
+				return
+			},
+		},
+		RecvMsgFunc: &GitserverService_RawDiffClientRecvMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SendMsgFunc: &GitserverService_RawDiffClientSendMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		TrailerFunc: &GitserverService_RawDiffClientTrailerFunc{
+			defaultHook: func() (r0 metadata.MD) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockGitserverService_RawDiffClient creates a new mock of the
+// GitserverService_RawDiffClient interface. All methods panic on
+// invocation, unless overwritten.
+func NewStrictMockGitserverService_RawDiffClient() *MockGitserverService_RawDiffClient {
+	return &MockGitserverService_RawDiffClient{
+		CloseSendFunc: &GitserverService_RawDiffClientCloseSendFunc{
+			defaultHook: func() error {
+				panic("unexpected invocation of MockGitserverService_RawDiffClient.CloseSend")
+			},
+		},
+		ContextFunc: &GitserverService_RawDiffClientContextFunc{
+			defaultHook: func() context.Context {
+				panic("unexpected invocation of MockGitserverService_RawDiffClient.Context")
+			},
+		},
+		HeaderFunc: &GitserverService_RawDiffClientHeaderFunc{
+			defaultHook: func() (metadata.MD, error) {
+				panic("unexpected invocation of MockGitserverService_RawDiffClient.Header")
+			},
+		},
+		RecvFunc: &GitserverService_RawDiffClientRecvFunc{
+			defaultHook: func() (*v1.RawDiffResponse, error) {
+				panic("unexpected invocation of MockGitserverService_RawDiffClient.Recv")
+			},
+		},
+		RecvMsgFunc: &GitserverService_RawDiffClientRecvMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_RawDiffClient.RecvMsg")
+			},
+		},
+		SendMsgFunc: &GitserverService_RawDiffClientSendMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_RawDiffClient.SendMsg")
+			},
+		},
+		TrailerFunc: &GitserverService_RawDiffClientTrailerFunc{
+			defaultHook: func() metadata.MD {
+				panic("unexpected invocation of MockGitserverService_RawDiffClient.Trailer")
+			},
+		},
+	}
+}
+
+// NewMockGitserverService_RawDiffClientFrom creates a new mock of the
+// MockGitserverService_RawDiffClient interface. All methods delegate to the
+// given implementation, unless overwritten.
+func NewMockGitserverService_RawDiffClientFrom(i v1.GitserverService_RawDiffClient) *MockGitserverService_RawDiffClient {
+	return &MockGitserverService_RawDiffClient{
+		CloseSendFunc: &GitserverService_RawDiffClientCloseSendFunc{
+			defaultHook: i.CloseSend,
+		},
+		ContextFunc: &GitserverService_RawDiffClientContextFunc{
+			defaultHook: i.Context,
+		},
+		HeaderFunc: &GitserverService_RawDiffClientHeaderFunc{
+			defaultHook: i.Header,
+		},
+		RecvFunc: &GitserverService_RawDiffClientRecvFunc{
+			defaultHook: i.Recv,
+		},
+		RecvMsgFunc: &GitserverService_RawDiffClientRecvMsgFunc{
+			defaultHook: i.RecvMsg,
+		},
+		SendMsgFunc: &GitserverService_RawDiffClientSendMsgFunc{
+			defaultHook: i.SendMsg,
+		},
+		TrailerFunc: &GitserverService_RawDiffClientTrailerFunc{
+			defaultHook: i.Trailer,
+		},
+	}
+}
+
+// GitserverService_RawDiffClientCloseSendFunc describes the behavior when
+// the CloseSend method of the parent MockGitserverService_RawDiffClient
+// instance is invoked.
+type GitserverService_RawDiffClientCloseSendFunc struct {
+	defaultHook func() error
+	hooks       []func() error
+	history     []GitserverService_RawDiffClientCloseSendFuncCall
+	mutex       sync.Mutex
+}
+
+// CloseSend delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_RawDiffClient) CloseSend() error {
+	r0 := m.CloseSendFunc.nextHook()()
+	m.CloseSendFunc.appendCall(GitserverService_RawDiffClientCloseSendFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CloseSend method of
+// the parent MockGitserverService_RawDiffClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_RawDiffClientCloseSendFunc) SetDefaultHook(hook func() error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CloseSend method of the parent MockGitserverService_RawDiffClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_RawDiffClientCloseSendFunc) PushHook(hook func() error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_RawDiffClientCloseSendFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func() error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_RawDiffClientCloseSendFunc) PushReturn(r0 error) {
+	f.PushHook(func() error {
+		return r0
+	})
+}
+
+func (f *GitserverService_RawDiffClientCloseSendFunc) nextHook() func() error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_RawDiffClientCloseSendFunc) appendCall(r0 GitserverService_RawDiffClientCloseSendFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_RawDiffClientCloseSendFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_RawDiffClientCloseSendFunc) History() []GitserverService_RawDiffClientCloseSendFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_RawDiffClientCloseSendFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_RawDiffClientCloseSendFuncCall is an object that
+// describes an invocation of method CloseSend on an instance of
+// MockGitserverService_RawDiffClient.
+type GitserverService_RawDiffClientCloseSendFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_RawDiffClientCloseSendFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_RawDiffClientCloseSendFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_RawDiffClientContextFunc describes the behavior when the
+// Context method of the parent MockGitserverService_RawDiffClient instance
+// is invoked.
+type GitserverService_RawDiffClientContextFunc struct {
+	defaultHook func() context.Context
+	hooks       []func() context.Context
+	history     []GitserverService_RawDiffClientContextFuncCall
+	mutex       sync.Mutex
+}
+
+// Context delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_RawDiffClient) Context() context.Context {
+	r0 := m.ContextFunc.nextHook()()
+	m.ContextFunc.appendCall(GitserverService_RawDiffClientContextFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Context method of
+// the parent MockGitserverService_RawDiffClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_RawDiffClientContextFunc) SetDefaultHook(hook func() context.Context) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Context method of the parent MockGitserverService_RawDiffClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_RawDiffClientContextFunc) PushHook(hook func() context.Context) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_RawDiffClientContextFunc) SetDefaultReturn(r0 context.Context) {
+	f.SetDefaultHook(func() context.Context {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_RawDiffClientContextFunc) PushReturn(r0 context.Context) {
+	f.PushHook(func() context.Context {
+		return r0
+	})
+}
+
+func (f *GitserverService_RawDiffClientContextFunc) nextHook() func() context.Context {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_RawDiffClientContextFunc) appendCall(r0 GitserverService_RawDiffClientContextFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_RawDiffClientContextFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_RawDiffClientContextFunc) History() []GitserverService_RawDiffClientContextFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_RawDiffClientContextFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_RawDiffClientContextFuncCall is an object that describes
+// an invocation of method Context on an instance of
+// MockGitserverService_RawDiffClient.
+type GitserverService_RawDiffClientContextFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 context.Context
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_RawDiffClientContextFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_RawDiffClientContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_RawDiffClientHeaderFunc describes the behavior when the
+// Header method of the parent MockGitserverService_RawDiffClient instance
+// is invoked.
+type GitserverService_RawDiffClientHeaderFunc struct {
+	defaultHook func() (metadata.MD, error)
+	hooks       []func() (metadata.MD, error)
+	history     []GitserverService_RawDiffClientHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// Header delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_RawDiffClient) Header() (metadata.MD, error) {
+	r0, r1 := m.HeaderFunc.nextHook()()
+	m.HeaderFunc.appendCall(GitserverService_RawDiffClientHeaderFuncCall{r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Header method of the
+// parent MockGitserverService_RawDiffClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_RawDiffClientHeaderFunc) SetDefaultHook(hook func() (metadata.MD, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Header method of the parent MockGitserverService_RawDiffClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_RawDiffClientHeaderFunc) PushHook(hook func() (metadata.MD, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_RawDiffClientHeaderFunc) SetDefaultReturn(r0 metadata.MD, r1 error) {
+	f.SetDefaultHook(func() (metadata.MD, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_RawDiffClientHeaderFunc) PushReturn(r0 metadata.MD, r1 error) {
+	f.PushHook(func() (metadata.MD, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverService_RawDiffClientHeaderFunc) nextHook() func() (metadata.MD, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_RawDiffClientHeaderFunc) appendCall(r0 GitserverService_RawDiffClientHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_RawDiffClientHeaderFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_RawDiffClientHeaderFunc) History() []GitserverService_RawDiffClientHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_RawDiffClientHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_RawDiffClientHeaderFuncCall is an object that describes
+// an invocation of method Header on an instance of
+// MockGitserverService_RawDiffClient.
+type GitserverService_RawDiffClientHeaderFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 metadata.MD
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_RawDiffClientHeaderFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_RawDiffClientHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverService_RawDiffClientRecvFunc describes the behavior when the
+// Recv method of the parent MockGitserverService_RawDiffClient instance is
+// invoked.
+type GitserverService_RawDiffClientRecvFunc struct {
+	defaultHook func() (*v1.RawDiffResponse, error)
+	hooks       []func() (*v1.RawDiffResponse, error)
+	history     []GitserverService_RawDiffClientRecvFuncCall
+	mutex       sync.Mutex
+}
+
+// Recv delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_RawDiffClient) Recv() (*v1.RawDiffResponse, error) {
+	r0, r1 := m.RecvFunc.nextHook()()
+	m.RecvFunc.appendCall(GitserverService_RawDiffClientRecvFuncCall{r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Recv method of the
+// parent MockGitserverService_RawDiffClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_RawDiffClientRecvFunc) SetDefaultHook(hook func() (*v1.RawDiffResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Recv method of the parent MockGitserverService_RawDiffClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_RawDiffClientRecvFunc) PushHook(hook func() (*v1.RawDiffResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_RawDiffClientRecvFunc) SetDefaultReturn(r0 *v1.RawDiffResponse, r1 error) {
+	f.SetDefaultHook(func() (*v1.RawDiffResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_RawDiffClientRecvFunc) PushReturn(r0 *v1.RawDiffResponse, r1 error) {
+	f.PushHook(func() (*v1.RawDiffResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverService_RawDiffClientRecvFunc) nextHook() func() (*v1.RawDiffResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_RawDiffClientRecvFunc) appendCall(r0 GitserverService_RawDiffClientRecvFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_RawDiffClientRecvFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_RawDiffClientRecvFunc) History() []GitserverService_RawDiffClientRecvFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_RawDiffClientRecvFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_RawDiffClientRecvFuncCall is an object that describes an
+// invocation of method Recv on an instance of
+// MockGitserverService_RawDiffClient.
+type GitserverService_RawDiffClientRecvFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.RawDiffResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_RawDiffClientRecvFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_RawDiffClientRecvFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverService_RawDiffClientRecvMsgFunc describes the behavior when the
+// RecvMsg method of the parent MockGitserverService_RawDiffClient instance
+// is invoked.
+type GitserverService_RawDiffClientRecvMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_RawDiffClientRecvMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// RecvMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_RawDiffClient) RecvMsg(v0 interface{}) error {
+	r0 := m.RecvMsgFunc.nextHook()(v0)
+	m.RecvMsgFunc.appendCall(GitserverService_RawDiffClientRecvMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RecvMsg method of
+// the parent MockGitserverService_RawDiffClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_RawDiffClientRecvMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecvMsg method of the parent MockGitserverService_RawDiffClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_RawDiffClientRecvMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_RawDiffClientRecvMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_RawDiffClientRecvMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_RawDiffClientRecvMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_RawDiffClientRecvMsgFunc) appendCall(r0 GitserverService_RawDiffClientRecvMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_RawDiffClientRecvMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_RawDiffClientRecvMsgFunc) History() []GitserverService_RawDiffClientRecvMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_RawDiffClientRecvMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_RawDiffClientRecvMsgFuncCall is an object that describes
+// an invocation of method RecvMsg on an instance of
+// MockGitserverService_RawDiffClient.
+type GitserverService_RawDiffClientRecvMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_RawDiffClientRecvMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_RawDiffClientRecvMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_RawDiffClientSendMsgFunc describes the behavior when the
+// SendMsg method of the parent MockGitserverService_RawDiffClient instance
+// is invoked.
+type GitserverService_RawDiffClientSendMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_RawDiffClientSendMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// SendMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_RawDiffClient) SendMsg(v0 interface{}) error {
+	r0 := m.SendMsgFunc.nextHook()(v0)
+	m.SendMsgFunc.appendCall(GitserverService_RawDiffClientSendMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendMsg method of
+// the parent MockGitserverService_RawDiffClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_RawDiffClientSendMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendMsg method of the parent MockGitserverService_RawDiffClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_RawDiffClientSendMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_RawDiffClientSendMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_RawDiffClientSendMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_RawDiffClientSendMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_RawDiffClientSendMsgFunc) appendCall(r0 GitserverService_RawDiffClientSendMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_RawDiffClientSendMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_RawDiffClientSendMsgFunc) History() []GitserverService_RawDiffClientSendMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_RawDiffClientSendMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_RawDiffClientSendMsgFuncCall is an object that describes
+// an invocation of method SendMsg on an instance of
+// MockGitserverService_RawDiffClient.
+type GitserverService_RawDiffClientSendMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_RawDiffClientSendMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_RawDiffClientSendMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_RawDiffClientTrailerFunc describes the behavior when the
+// Trailer method of the parent MockGitserverService_RawDiffClient instance
+// is invoked.
+type GitserverService_RawDiffClientTrailerFunc struct {
+	defaultHook func() metadata.MD
+	hooks       []func() metadata.MD
+	history     []GitserverService_RawDiffClientTrailerFuncCall
+	mutex       sync.Mutex
+}
+
+// Trailer delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_RawDiffClient) Trailer() metadata.MD {
+	r0 := m.TrailerFunc.nextHook()()
+	m.TrailerFunc.appendCall(GitserverService_RawDiffClientTrailerFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Trailer method of
+// the parent MockGitserverService_RawDiffClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_RawDiffClientTrailerFunc) SetDefaultHook(hook func() metadata.MD) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Trailer method of the parent MockGitserverService_RawDiffClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_RawDiffClientTrailerFunc) PushHook(hook func() metadata.MD) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_RawDiffClientTrailerFunc) SetDefaultReturn(r0 metadata.MD) {
+	f.SetDefaultHook(func() metadata.MD {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_RawDiffClientTrailerFunc) PushReturn(r0 metadata.MD) {
+	f.PushHook(func() metadata.MD {
+		return r0
+	})
+}
+
+func (f *GitserverService_RawDiffClientTrailerFunc) nextHook() func() metadata.MD {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_RawDiffClientTrailerFunc) appendCall(r0 GitserverService_RawDiffClientTrailerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_RawDiffClientTrailerFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_RawDiffClientTrailerFunc) History() []GitserverService_RawDiffClientTrailerFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_RawDiffClientTrailerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_RawDiffClientTrailerFuncCall is an object that describes
+// an invocation of method Trailer on an instance of
+// MockGitserverService_RawDiffClient.
+type GitserverService_RawDiffClientTrailerFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 metadata.MD
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_RawDiffClientTrailerFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_RawDiffClientTrailerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockGitserverService_RawDiffServer is a mock implementation of the
+// GitserverService_RawDiffServer interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/gitserver/v1) used for unit
+// testing.
+type MockGitserverService_RawDiffServer struct {
+	// ContextFunc is an instance of a mock function object controlling the
+	// behavior of the method Context.
+	ContextFunc *GitserverService_RawDiffServerContextFunc
+	// RecvMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method RecvMsg.
+	RecvMsgFunc *GitserverService_RawDiffServerRecvMsgFunc
+	// SendFunc is an instance of a mock function object controlling the
+	// behavior of the method Send.
+	SendFunc *GitserverService_RawDiffServerSendFunc
+	// SendHeaderFunc is an instance of a mock function object controlling
+	// the behavior of the method SendHeader.
+	SendHeaderFunc *GitserverService_RawDiffServerSendHeaderFunc
+	// SendMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method SendMsg.
+	SendMsgFunc *GitserverService_RawDiffServerSendMsgFunc
+	// SetHeaderFunc is an instance of a mock function object controlling
+	// the behavior of the method SetHeader.
+	SetHeaderFunc *GitserverService_RawDiffServerSetHeaderFunc
+	// SetTrailerFunc is an instance of a mock function object controlling
+	// the behavior of the method SetTrailer.
+	SetTrailerFunc *GitserverService_RawDiffServerSetTrailerFunc
+}
+
+// NewMockGitserverService_RawDiffServer creates a new mock of the
+// GitserverService_RawDiffServer interface. All methods return zero values
+// for all results, unless overwritten.
+func NewMockGitserverService_RawDiffServer() *MockGitserverService_RawDiffServer {
+	return &MockGitserverService_RawDiffServer{
+		ContextFunc: &GitserverService_RawDiffServerContextFunc{
+			defaultHook: func() (r0 context.Context) {
+				return
+			},
+		},
+		RecvMsgFunc: &GitserverService_RawDiffServerRecvMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SendFunc: &GitserverService_RawDiffServerSendFunc{
+			defaultHook: func(*v1.RawDiffResponse) (r0 error) {
+				return
+			},
+		},
+		SendHeaderFunc: &GitserverService_RawDiffServerSendHeaderFunc{
+			defaultHook: func(metadata.MD) (r0 error) {
+				return
+			},
+		},
+		SendMsgFunc: &GitserverService_RawDiffServerSendMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SetHeaderFunc: &GitserverService_RawDiffServerSetHeaderFunc{
+			defaultHook: func(metadata.MD) (r0 error) {
+				return
+			},
+		},
+		SetTrailerFunc: &GitserverService_RawDiffServerSetTrailerFunc{
+			defaultHook: func(metadata.MD) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockGitserverService_RawDiffServer creates a new mock of the
+// GitserverService_RawDiffServer interface. All methods panic on
+// invocation, unless overwritten.
+func NewStrictMockGitserverService_RawDiffServer() *MockGitserverService_RawDiffServer {
+	return &MockGitserverService_RawDiffServer{
+		ContextFunc: &GitserverService_RawDiffServerContextFunc{
+			defaultHook: func() context.Context {
+				panic("unexpected invocation of MockGitserverService_RawDiffServer.Context")
+			},
+		},
+		RecvMsgFunc: &GitserverService_RawDiffServerRecvMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_RawDiffServer.RecvMsg")
+			},
+		},
+		SendFunc: &GitserverService_RawDiffServerSendFunc{
+			defaultHook: func(*v1.RawDiffResponse) error {
+				panic("unexpected invocation of MockGitserverService_RawDiffServer.Send")
+			},
+		},
+		SendHeaderFunc: &GitserverService_RawDiffServerSendHeaderFunc{
+			defaultHook: func(metadata.MD) error {
+				panic("unexpected invocation of MockGitserverService_RawDiffServer.SendHeader")
+			},
+		},
+		SendMsgFunc: &GitserverService_RawDiffServerSendMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_RawDiffServer.SendMsg")
+			},
+		},
+		SetHeaderFunc: &GitserverService_RawDiffServerSetHeaderFunc{
+			defaultHook: func(metadata.MD) error {
+				panic("unexpected invocation of MockGitserverService_RawDiffServer.SetHeader")
+			},
+		},
+		SetTrailerFunc: &GitserverService_RawDiffServerSetTrailerFunc{
+			defaultHook: func(metadata.MD) {
+				panic("unexpected invocation of MockGitserverService_RawDiffServer.SetTrailer")
+			},
+		},
+	}
+}
+
+// NewMockGitserverService_RawDiffServerFrom creates a new mock of the
+// MockGitserverService_RawDiffServer interface. All methods delegate to the
+// given implementation, unless overwritten.
+func NewMockGitserverService_RawDiffServerFrom(i v1.GitserverService_RawDiffServer) *MockGitserverService_RawDiffServer {
+	return &MockGitserverService_RawDiffServer{
+		ContextFunc: &GitserverService_RawDiffServerContextFunc{
+			defaultHook: i.Context,
+		},
+		RecvMsgFunc: &GitserverService_RawDiffServerRecvMsgFunc{
+			defaultHook: i.RecvMsg,
+		},
+		SendFunc: &GitserverService_RawDiffServerSendFunc{
+			defaultHook: i.Send,
+		},
+		SendHeaderFunc: &GitserverService_RawDiffServerSendHeaderFunc{
+			defaultHook: i.SendHeader,
+		},
+		SendMsgFunc: &GitserverService_RawDiffServerSendMsgFunc{
+			defaultHook: i.SendMsg,
+		},
+		SetHeaderFunc: &GitserverService_RawDiffServerSetHeaderFunc{
+			defaultHook: i.SetHeader,
+		},
+		SetTrailerFunc: &GitserverService_RawDiffServerSetTrailerFunc{
+			defaultHook: i.SetTrailer,
+		},
+	}
+}
+
+// GitserverService_RawDiffServerContextFunc describes the behavior when the
+// Context method of the parent MockGitserverService_RawDiffServer instance
+// is invoked.
+type GitserverService_RawDiffServerContextFunc struct {
+	defaultHook func() context.Context
+	hooks       []func() context.Context
+	history     []GitserverService_RawDiffServerContextFuncCall
+	mutex       sync.Mutex
+}
+
+// Context delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_RawDiffServer) Context() context.Context {
+	r0 := m.ContextFunc.nextHook()()
+	m.ContextFunc.appendCall(GitserverService_RawDiffServerContextFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Context method of
+// the parent MockGitserverService_RawDiffServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_RawDiffServerContextFunc) SetDefaultHook(hook func() context.Context) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Context method of the parent MockGitserverService_RawDiffServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_RawDiffServerContextFunc) PushHook(hook func() context.Context) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_RawDiffServerContextFunc) SetDefaultReturn(r0 context.Context) {
+	f.SetDefaultHook(func() context.Context {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_RawDiffServerContextFunc) PushReturn(r0 context.Context) {
+	f.PushHook(func() context.Context {
+		return r0
+	})
+}
+
+func (f *GitserverService_RawDiffServerContextFunc) nextHook() func() context.Context {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_RawDiffServerContextFunc) appendCall(r0 GitserverService_RawDiffServerContextFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_RawDiffServerContextFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_RawDiffServerContextFunc) History() []GitserverService_RawDiffServerContextFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_RawDiffServerContextFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_RawDiffServerContextFuncCall is an object that describes
+// an invocation of method Context on an instance of
+// MockGitserverService_RawDiffServer.
+type GitserverService_RawDiffServerContextFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 context.Context
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_RawDiffServerContextFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_RawDiffServerContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_RawDiffServerRecvMsgFunc describes the behavior when the
+// RecvMsg method of the parent MockGitserverService_RawDiffServer instance
+// is invoked.
+type GitserverService_RawDiffServerRecvMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_RawDiffServerRecvMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// RecvMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_RawDiffServer) RecvMsg(v0 interface{}) error {
+	r0 := m.RecvMsgFunc.nextHook()(v0)
+	m.RecvMsgFunc.appendCall(GitserverService_RawDiffServerRecvMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RecvMsg method of
+// the parent MockGitserverService_RawDiffServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_RawDiffServerRecvMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecvMsg method of the parent MockGitserverService_RawDiffServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_RawDiffServerRecvMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_RawDiffServerRecvMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_RawDiffServerRecvMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_RawDiffServerRecvMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_RawDiffServerRecvMsgFunc) appendCall(r0 GitserverService_RawDiffServerRecvMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_RawDiffServerRecvMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_RawDiffServerRecvMsgFunc) History() []GitserverService_RawDiffServerRecvMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_RawDiffServerRecvMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_RawDiffServerRecvMsgFuncCall is an object that describes
+// an invocation of method RecvMsg on an instance of
+// MockGitserverService_RawDiffServer.
+type GitserverService_RawDiffServerRecvMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_RawDiffServerRecvMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_RawDiffServerRecvMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_RawDiffServerSendFunc describes the behavior when the
+// Send method of the parent MockGitserverService_RawDiffServer instance is
+// invoked.
+type GitserverService_RawDiffServerSendFunc struct {
+	defaultHook func(*v1.RawDiffResponse) error
+	hooks       []func(*v1.RawDiffResponse) error
+	history     []GitserverService_RawDiffServerSendFuncCall
+	mutex       sync.Mutex
+}
+
+// Send delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_RawDiffServer) Send(v0 *v1.RawDiffResponse) error {
+	r0 := m.SendFunc.nextHook()(v0)
+	m.SendFunc.appendCall(GitserverService_RawDiffServerSendFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Send method of the
+// parent MockGitserverService_RawDiffServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_RawDiffServerSendFunc) SetDefaultHook(hook func(*v1.RawDiffResponse) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Send method of the parent MockGitserverService_RawDiffServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_RawDiffServerSendFunc) PushHook(hook func(*v1.RawDiffResponse) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_RawDiffServerSendFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(*v1.RawDiffResponse) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_RawDiffServerSendFunc) PushReturn(r0 error) {
+	f.PushHook(func(*v1.RawDiffResponse) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_RawDiffServerSendFunc) nextHook() func(*v1.RawDiffResponse) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_RawDiffServerSendFunc) appendCall(r0 GitserverService_RawDiffServerSendFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_RawDiffServerSendFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_RawDiffServerSendFunc) History() []GitserverService_RawDiffServerSendFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_RawDiffServerSendFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_RawDiffServerSendFuncCall is an object that describes an
+// invocation of method Send on an instance of
+// MockGitserverService_RawDiffServer.
+type GitserverService_RawDiffServerSendFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *v1.RawDiffResponse
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_RawDiffServerSendFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_RawDiffServerSendFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_RawDiffServerSendHeaderFunc describes the behavior when
+// the SendHeader method of the parent MockGitserverService_RawDiffServer
+// instance is invoked.
+type GitserverService_RawDiffServerSendHeaderFunc struct {
+	defaultHook func(metadata.MD) error
+	hooks       []func(metadata.MD) error
+	history     []GitserverService_RawDiffServerSendHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// SendHeader delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverService_RawDiffServer) SendHeader(v0 metadata.MD) error {
+	r0 := m.SendHeaderFunc.nextHook()(v0)
+	m.SendHeaderFunc.appendCall(GitserverService_RawDiffServerSendHeaderFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendHeader method of
+// the parent MockGitserverService_RawDiffServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_RawDiffServerSendHeaderFunc) SetDefaultHook(hook func(metadata.MD) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendHeader method of the parent MockGitserverService_RawDiffServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_RawDiffServerSendHeaderFunc) PushHook(hook func(metadata.MD) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_RawDiffServerSendHeaderFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_RawDiffServerSendHeaderFunc) PushReturn(r0 error) {
+	f.PushHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_RawDiffServerSendHeaderFunc) nextHook() func(metadata.MD) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_RawDiffServerSendHeaderFunc) appendCall(r0 GitserverService_RawDiffServerSendHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_RawDiffServerSendHeaderFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_RawDiffServerSendHeaderFunc) History() []GitserverService_RawDiffServerSendHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_RawDiffServerSendHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_RawDiffServerSendHeaderFuncCall is an object that
+// describes an invocation of method SendHeader on an instance of
+// MockGitserverService_RawDiffServer.
+type GitserverService_RawDiffServerSendHeaderFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_RawDiffServerSendHeaderFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_RawDiffServerSendHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_RawDiffServerSendMsgFunc describes the behavior when the
+// SendMsg method of the parent MockGitserverService_RawDiffServer instance
+// is invoked.
+type GitserverService_RawDiffServerSendMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_RawDiffServerSendMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// SendMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_RawDiffServer) SendMsg(v0 interface{}) error {
+	r0 := m.SendMsgFunc.nextHook()(v0)
+	m.SendMsgFunc.appendCall(GitserverService_RawDiffServerSendMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendMsg method of
+// the parent MockGitserverService_RawDiffServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_RawDiffServerSendMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendMsg method of the parent MockGitserverService_RawDiffServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_RawDiffServerSendMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_RawDiffServerSendMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_RawDiffServerSendMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_RawDiffServerSendMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_RawDiffServerSendMsgFunc) appendCall(r0 GitserverService_RawDiffServerSendMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_RawDiffServerSendMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_RawDiffServerSendMsgFunc) History() []GitserverService_RawDiffServerSendMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_RawDiffServerSendMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_RawDiffServerSendMsgFuncCall is an object that describes
+// an invocation of method SendMsg on an instance of
+// MockGitserverService_RawDiffServer.
+type GitserverService_RawDiffServerSendMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_RawDiffServerSendMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_RawDiffServerSendMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_RawDiffServerSetHeaderFunc describes the behavior when
+// the SetHeader method of the parent MockGitserverService_RawDiffServer
+// instance is invoked.
+type GitserverService_RawDiffServerSetHeaderFunc struct {
+	defaultHook func(metadata.MD) error
+	hooks       []func(metadata.MD) error
+	history     []GitserverService_RawDiffServerSetHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// SetHeader delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_RawDiffServer) SetHeader(v0 metadata.MD) error {
+	r0 := m.SetHeaderFunc.nextHook()(v0)
+	m.SetHeaderFunc.appendCall(GitserverService_RawDiffServerSetHeaderFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetHeader method of
+// the parent MockGitserverService_RawDiffServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_RawDiffServerSetHeaderFunc) SetDefaultHook(hook func(metadata.MD) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetHeader method of the parent MockGitserverService_RawDiffServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_RawDiffServerSetHeaderFunc) PushHook(hook func(metadata.MD) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_RawDiffServerSetHeaderFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_RawDiffServerSetHeaderFunc) PushReturn(r0 error) {
+	f.PushHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_RawDiffServerSetHeaderFunc) nextHook() func(metadata.MD) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_RawDiffServerSetHeaderFunc) appendCall(r0 GitserverService_RawDiffServerSetHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_RawDiffServerSetHeaderFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_RawDiffServerSetHeaderFunc) History() []GitserverService_RawDiffServerSetHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_RawDiffServerSetHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_RawDiffServerSetHeaderFuncCall is an object that
+// describes an invocation of method SetHeader on an instance of
+// MockGitserverService_RawDiffServer.
+type GitserverService_RawDiffServerSetHeaderFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_RawDiffServerSetHeaderFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_RawDiffServerSetHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_RawDiffServerSetTrailerFunc describes the behavior when
+// the SetTrailer method of the parent MockGitserverService_RawDiffServer
+// instance is invoked.
+type GitserverService_RawDiffServerSetTrailerFunc struct {
+	defaultHook func(metadata.MD)
+	hooks       []func(metadata.MD)
+	history     []GitserverService_RawDiffServerSetTrailerFuncCall
+	mutex       sync.Mutex
+}
+
+// SetTrailer delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverService_RawDiffServer) SetTrailer(v0 metadata.MD) {
+	m.SetTrailerFunc.nextHook()(v0)
+	m.SetTrailerFunc.appendCall(GitserverService_RawDiffServerSetTrailerFuncCall{v0})
+	return
+}
+
+// SetDefaultHook sets function that is called when the SetTrailer method of
+// the parent MockGitserverService_RawDiffServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_RawDiffServerSetTrailerFunc) SetDefaultHook(hook func(metadata.MD)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetTrailer method of the parent MockGitserverService_RawDiffServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_RawDiffServerSetTrailerFunc) PushHook(hook func(metadata.MD)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_RawDiffServerSetTrailerFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(metadata.MD) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_RawDiffServerSetTrailerFunc) PushReturn() {
+	f.PushHook(func(metadata.MD) {
+		return
+	})
+}
+
+func (f *GitserverService_RawDiffServerSetTrailerFunc) nextHook() func(metadata.MD) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_RawDiffServerSetTrailerFunc) appendCall(r0 GitserverService_RawDiffServerSetTrailerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_RawDiffServerSetTrailerFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_RawDiffServerSetTrailerFunc) History() []GitserverService_RawDiffServerSetTrailerFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_RawDiffServerSetTrailerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_RawDiffServerSetTrailerFuncCall is an object that
+// describes an invocation of method SetTrailer on an instance of
+// MockGitserverService_RawDiffServer.
+type GitserverService_RawDiffServerSetTrailerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_RawDiffServerSetTrailerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_RawDiffServerSetTrailerFuncCall) Results() []interface{} {
 	return []interface{}{}
 }
 

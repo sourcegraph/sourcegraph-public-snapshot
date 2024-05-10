@@ -35,8 +35,10 @@ type Spec struct {
 	// README is the contents of the README.md file adjacent to the service
 	// specification. May be a zero-length byte slice if a README file is not
 	// present, or nil if this spec was not opened with 'spec.Open(...)'.
-	README []byte
+	README []byte `yaml:"-"`
 }
+
+var ErrServiceDoesNotExist = errors.New("service does not exist")
 
 // Open a specification file, validate it, unmarshal the data as a MSP spec,
 // and load any extraneous configuration. Callsites that return an error to the
@@ -53,7 +55,7 @@ func Open(specPath string) (*Spec, error) {
 	specData, err := os.ReadFile(specPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil, errors.Wrap(err, "service does not exist")
+			return nil, ErrServiceDoesNotExist
 		}
 		return nil, errors.Wrap(err, "read service specification")
 	}

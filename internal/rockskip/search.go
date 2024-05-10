@@ -26,6 +26,15 @@ import (
 )
 
 func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ result.Symbols, err error) {
+	s.metrics.searchRunning.Inc()
+	defer func(start time.Time) {
+		s.metrics.searchRunning.Dec()
+		if err != nil {
+			s.metrics.searchFailed.Inc()
+		}
+		s.metrics.searchDuration.Observe(time.Since(start).Seconds())
+	}(time.Now())
+
 	repo := string(args.Repo)
 	commitHash := string(args.CommitID)
 
@@ -195,7 +204,8 @@ func (s *Service) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 			repo:   rc.repo,
 			commit: rc.commit,
 		},
-		done: done}
+		dateAddedToQueue: time.Now(),
+		done:             done}
 
 	// Route the index request to the indexer associated with the repo.
 	ix := int(fnv1.HashString32(rc.repo)) % len(s.indexRequestQueues)

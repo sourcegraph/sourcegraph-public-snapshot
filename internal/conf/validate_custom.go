@@ -108,24 +108,3 @@ func TestValidator(t interface {
 		t.Errorf("got no matches for expected error substrings %q", wantSet)
 	}
 }
-
-// ContributeWarning adds the configuration validator function to the validation process.
-// It is called to validate site configuration. Any problems it returns are shown as configuration
-// warnings in the form of site alerts.
-//
-// It may only be called at init time.
-func ContributeWarning(f Validator) {
-	contributedWarnings = append(contributedWarnings, f)
-}
-
-var contributedWarnings []Validator
-
-// GetWarnings identifies problems with the configuration that a site
-// admin should address, but do not prevent Sourcegraph from running.
-func GetWarnings() (problems Problems, err error) {
-	c := *Get()
-	for i := range contributedWarnings {
-		problems = append(problems, contributedWarnings[i](c)...)
-	}
-	return problems, nil
-}

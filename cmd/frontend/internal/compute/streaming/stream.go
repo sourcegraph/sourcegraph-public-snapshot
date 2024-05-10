@@ -11,7 +11,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/compute"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -76,7 +75,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	progress := &streamclient.ProgressAggregator{
 		Start:     start,
 		RepoNamer: streamclient.RepoNamer(ctx, h.db),
-		Trace:     trace.URL(trace.ID(ctx), conf.DefaultClient()),
+		Trace:     trace.URL(trace.ID(ctx)),
 	}
 
 	sendProgress := func() {

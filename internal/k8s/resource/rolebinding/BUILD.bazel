@@ -1,5 +1,4 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
-load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "rolebinding",
@@ -7,23 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/k8s/resource/rolebinding",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/maps",
         "@io_k8s_api//rbac/v1:rbac",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
-    ],
-)
-
-go_test(
-    name = "rolebinding_test",
-    srcs = [
-        "example_test.go",
-        "rolebinding_test.go",
-    ],
-    embed = [":rolebinding"],
-    deps = [
-        "@com_github_google_go_cmp//cmp",
-        "@io_k8s_api//rbac/v1:rbac",
-        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
-        "@io_k8s_sigs_yaml//:yaml",
     ],
 )

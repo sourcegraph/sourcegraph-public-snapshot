@@ -16,19 +16,34 @@ function eventName(name: string): string {
     return EVENT_PREFIX + name
 }
 
+type ShowStates = 'default' | 'code' | 'repo' | 'changes'
+
+const v2ShowStateTypes: { [key in ShowStates]: number } = {
+    default: 1,
+    code: 2,
+    repo: 3,
+    changes: 4,
+}
+
 export const SimpleSearch: FC<SimpleSearchProps> = props => {
-    const [showState, setShowState] = useState<string>('default')
+    const [showState, setShowState] = useState<ShowStates>('default')
 
     function onSubmitWithTelemetry(event?: React.FormEvent): void {
         const arg = { type: showState }
         props.telemetryService.log(eventName('SubmitSearch'), arg, arg)
+        props.telemetryRecorder.recordEvent('simpleSearch.search', 'submit', {
+            metadata: { type: v2ShowStateTypes[showState] },
+        })
         props.onSubmit(event)
     }
 
     function pickRender(): JSX.Element {
-        const changeState = (nextState: string): void => {
+        const changeState = (nextState: ShowStates): void => {
             const arg = { next: nextState }
             props.telemetryService.log(eventName('SelectJob'), arg, arg)
+            props.telemetryRecorder.recordEvent('simpleSearch.search.type', 'select', {
+                metadata: { type: v2ShowStateTypes[nextState] },
+            })
             setShowState(nextState)
         }
 
@@ -79,7 +94,7 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
 }
 
 interface SearchPickerProps {
-    setShowState: (state: string) => void
+    setShowState: (state: ShowStates) => void
 }
 
 const SearchPicker: FC<SearchPickerProps> = ({ setShowState }) => (

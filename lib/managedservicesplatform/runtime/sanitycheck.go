@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+
+	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/contract"
 )
 
 // passSanityCheck exits with a code zero if the environment variable SANITY_CHECK equals
 // to "true". See internal/sanitycheck.
-func passSanityCheck(svc ServiceMetadata) {
+func passSanityCheck(svc contract.ServiceMetadataProvider) {
 	if os.Getenv("SANITY_CHECK") == "true" {
 		// dump metadata to stdout
 		if err := json.NewEncoder(os.Stdout).Encode(map[string]string{

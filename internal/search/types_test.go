@@ -151,7 +151,7 @@ func TestZoektParameters(t *testing.T) {
 			},
 		},
 		{
-			name:    "test keyword scoring",
+			name:    "test bm25 scoring",
 			context: context.Background(),
 			params: &ZoektParameters{
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
@@ -161,11 +161,11 @@ func TestZoektParameters(t *testing.T) {
 				ShardMaxMatchCount:  100000,
 				TotalMaxMatchCount:  1000000,
 				MaxWallTime:         20000000000,
-				FlushWallTime:       2000000000, // for keyword search, default is 2 sec
+				FlushWallTime:       2000000000, // for bm25 scoring, default is 2 sec
 				MaxDocDisplayCount:  10000,
 				ChunkMatches:        true,
 				DocumentRanksWeight: 4500,
-				UseKeywordScoring:   true},
+				UseBM25Scoring:      true},
 		},
 	}
 

@@ -18,6 +18,7 @@ const mockAccount: NormalizedExternalAccount = {
         serviceID: '123',
         clientID: '123',
         noSignIn: false,
+        requiredForAuthz: false,
     },
 }
 

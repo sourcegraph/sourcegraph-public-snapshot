@@ -98,7 +98,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+		s := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 		if err := s.CreateSiteCredential(ctx, &btypes.SiteCredential{
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
 			ExternalServiceID:   githubRepo.ExternalRepo.ServiceID,

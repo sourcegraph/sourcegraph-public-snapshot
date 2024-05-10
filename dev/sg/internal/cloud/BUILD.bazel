@@ -1,0 +1,52 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cloud",
+    srcs = [
+        "artifact_registry.go",
+        "build_command.go",
+        "client.go",
+        "common.go",
+        "delete_command.go",
+        "deploy_command.go",
+        "instance.go",
+        "lease_command.go",
+        "list_command.go",
+        "list_versions_command.go",
+        "printers.go",
+        "status_command.go",
+        "upgrade_command.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/cloud",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/ci/gitops",
+        "//dev/ci/images",
+        "//dev/sg/internal/bk",
+        "//dev/sg/internal/repo",
+        "//dev/sg/internal/secrets",
+        "//dev/sg/internal/std",
+        "//lib/errors",
+        "//lib/output",
+        "//lib/pointers",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_buildkite_go_buildkite_v3//buildkite",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_sourcegraph_cloud_api//go/cloudapi/v1:cloudapi",
+        "@com_github_sourcegraph_cloud_api//go/cloudapi/v1/cloudapiv1connect",
+        "@com_github_sourcegraph_run//:run",
+        "@com_github_urfave_cli_v2//:cli",
+        "@com_google_cloud_go_artifactregistry//apiv1",
+        "@com_google_cloud_go_artifactregistry//apiv1/artifactregistrypb",
+        "@org_golang_google_api//iterator",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
+go_test(
+    name = "cloud_test",
+    srcs = ["instance_test.go"],
+    embed = [":cloud"],
+    deps = ["@com_github_sourcegraph_cloud_api//go/cloudapi/v1:cloudapi"],
+)

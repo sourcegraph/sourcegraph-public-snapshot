@@ -19,8 +19,7 @@
         <tbody>
             {#each hunks as hunk (hunk.oldRange.startLine)}
                 <tr>
-                    <td colspan="2" />
-                    <td class="content">
+                    <td class="header" colspan="3">
                         @@ -{hunk.oldRange.startLine},{hunk.oldRange.lines} +{hunk.newRange.startLine},{hunk.newRange
                             .lines}
                         {#if hunk.section}
@@ -53,8 +52,6 @@
     table {
         width: 100%;
         border-collapse: collapse;
-        border-radius: var(--border-radius);
-        border: 1px solid var(--border-color);
     }
 
     tr {
@@ -80,23 +77,29 @@
             text-align: right;
             -webkit-user-select: none;
             user-select: none;
-            vertical-align: top !important;
+            vertical-align: top;
             padding: 0 0.5rem;
+            color: var(--text-muted);
+        }
+
+        &.header {
+            white-space: pre-wrap;
+            background-color: var(--color-bg-2);
+            color: var(--body-color);
+            padding: 0.25rem 1rem;
         }
 
         &.content {
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
             white-space: pre-wrap;
-            color: var(--body-color);
 
-            & > :global(*) {
-                display: inline-block;
+            > :global(*) {
+                display: inline;
             }
 
             &::before {
                 padding-right: 0.5rem;
                 content: attr(data-diff-marker);
+                color: var(--text-muted);
             }
         }
     }

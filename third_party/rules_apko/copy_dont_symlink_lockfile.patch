@@ -1,0 +1,14 @@
+diff --git a/apko/translate_lock.bzl b/apko/translate_lock.bzl
+index 9fef1a9..a02da58 100644
+--- a/apko/translate_lock.bzl
++++ b/apko/translate_lock.bzl
+@@ -66,7 +66,8 @@ def _translate_apko_lock_impl(rctx):
+
+     # We copy the lockfile (.lock.json) to avoid visibility problems when we reference it from another module.
+     lock_file_local = "lockfile_copy"
+-    rctx.symlink(rctx.attr.lock, lock_file_local)
++    rctx.file(lock_file_local, rctx.read(rctx.attr.lock))
++    # rctx.symlink(rctx.attr.lock, lock_file_local)
+
+     apks = []
+     indexes = []

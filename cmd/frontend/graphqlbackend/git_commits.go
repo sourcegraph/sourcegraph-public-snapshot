@@ -82,7 +82,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 			ctx,
 			r.repo.RepoName(),
 			r.revisionRange,
-			gitserver.ResolveRevisionOptions{NoEnsureRevision: false},
+			gitserver.ResolveRevisionOptions{EnsureRevision: true},
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to resolve revision range")

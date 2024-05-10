@@ -1,8 +1,7 @@
 <script lang="ts" context="module">
-    export interface Tab {
-        id: string
-        title: string
-    }
+    import type { Tab } from './TabsHeader.svelte'
+
+    export type { Tab }
 
     export interface TabsContext {
         id: string
@@ -17,6 +16,8 @@
     import { createEventDispatcher, setContext } from 'svelte'
     import { derived, writable, type Readable, type Writable, type Unsubscriber } from 'svelte/store'
     import * as uuid from 'uuid'
+
+    import TabsHeader from './TabsHeader.svelte'
 
     /**
      * The index of the tab that should be selected by default.
@@ -51,28 +52,14 @@
         },
     })
 
-    function selectTab(event: MouseEvent) {
-        const index = (event.target as HTMLElement).id.match(/\d+$/)?.[0]
-        if (index) {
-            $selectedTab = $selectedTab === +index && toggable ? null : +index
-            dispatch('select', $selectedTab)
-        }
+    function selectTab(event: { detail: number }) {
+        $selectedTab = $selectedTab === event.detail && toggable ? null : event.detail
+        dispatch('select', $selectedTab)
     }
 </script>
 
-<div class="tabs">
-    <div class="tabs-header" role="tablist">
-        {#each $tabs as tab, index (tab.id)}
-            <button
-                id="{id}--tab--{index}"
-                aria-controls={tab.id}
-                aria-selected={$selectedTab === index}
-                tabindex={$selectedTab === index ? 0 : -1}
-                role="tab"
-                on:click={selectTab}>{tab.title}</button
-            >
-        {/each}
-    </div>
+<div class="tabs" data-tabs>
+    <TabsHeader {id} tabs={$tabs} selected={$selectedTab} on:select={selectTab} />
     <slot />
 </div>
 
@@ -80,38 +67,6 @@
     .tabs {
         display: flex;
         flex-direction: column;
-    }
-
-    .tabs-header {
-        display: flex;
-        gap: 1rem;
-        justify-content: var(--align-tabs, center);
-    }
-
-    button {
-        cursor: pointer;
-        border: none;
-        background: none;
-        align-items: center;
-        letter-spacing: normal;
-        margin: 0;
-        min-height: 2rem;
-        padding: 0 0.25rem;
-        color: var(--body-color);
-        text-transform: none;
-        display: inline-flex;
-        flex-direction: column;
-        justify-content: center;
-        border-bottom: 2px solid transparent;
-
-        &[aria-selected='true'],
-        &:hover {
-            color: var(--body-color);
-            background-color: var(--color-bg-2);
-        }
-
-        &[aria-selected='true'] {
-            font-weight: 700;
-        }
+        height: 100%;
     }
 </style>

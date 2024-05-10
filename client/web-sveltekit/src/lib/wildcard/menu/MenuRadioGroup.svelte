@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Writable } from 'svelte/store'
-    import { getContext } from './Menu.svelte'
+    import { getContext } from './DropdownMenu.svelte'
     import { mdiCheck } from '@mdi/js'
     import Icon from '$lib/Icon.svelte'
 
@@ -24,7 +24,7 @@
             </slot>
             {#if checked}
                 <span>
-                    <Icon svgPath={mdiCheck} inline />
+                    <Icon svgPath={mdiCheck} inline aria-hidden />
                 </span>
             {/if}
         </div>

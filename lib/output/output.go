@@ -290,6 +290,7 @@ func (o *Output) WriteMarkdown(str string, opts ...MarkdownStyleOpts) error {
 		// wrap output at slightly less than terminal width
 		glamour.WithWordWrap(o.caps.Width*4/5),
 		glamour.WithEmoji(),
+		glamour.WithPreservedNewLines(),
 	)
 	if err != nil {
 		return errors.Wrap(err, "renderer")

@@ -179,18 +179,18 @@ func createLogFields(upload uploadsshared.Upload) []attribute.KeyValue {
 // defaultBranchContains tells if the default branch contains the given commit ID.
 func (c *handler) defaultBranchContains(ctx context.Context, repo api.RepoName, commit string) (bool, error) {
 	// Determine default branch name.
-	defaultBranchName, _, err := c.gitserverClient.GetDefaultBranch(ctx, repo, true)
+	defaultBranchName, _, err := c.gitserverClient.GetDefaultBranch(ctx, repo, false)
 	if err != nil {
 		return false, err
 	}
 
 	// Determine if branch contains commit.
-	branches, err := c.gitserverClient.BranchesContaining(ctx, repo, api.CommitID(commit))
+	branches, err := c.gitserverClient.ListRefs(ctx, repo, gitserver.ListRefsOpts{HeadsOnly: true, Contains: api.CommitID(commit)})
 	if err != nil {
 		return false, err
 	}
 	for _, branch := range branches {
-		if branch == defaultBranchName {
+		if branch.Name == defaultBranchName {
 			return true, nil
 		}
 	}
@@ -340,7 +340,7 @@ const requeueDelay = time.Minute
 // valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
 // fail on.
 func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, gitserverClient gitserver.Client, workerStore dbworkerstore.Store[uploadsshared.Upload], upload uploadsshared.Upload, repo *types.Repo) (requeued bool, _ error) {
-	_, err := gitserverClient.ResolveRevision(ctx, repo.Name, upload.Commit, gitserver.ResolveRevisionOptions{})
+	_, err := gitserverClient.ResolveRevision(ctx, repo.Name, upload.Commit, gitserver.ResolveRevisionOptions{EnsureRevision: true})
 	if err == nil {
 		// commit is resolvable
 		return false, nil

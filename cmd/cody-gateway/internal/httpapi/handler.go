@@ -176,8 +176,8 @@ func NewHandler(
 		registerSimpleGETEndpoint("v1.embeddings.models", "/embeddings/models", embeddings.NewListHandler())
 
 		factoryMap := embeddings.ModelFactoryMap{
-			embeddings.ModelNameOpenAIAda:         embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
-			embeddings.ModelNameSourcegraphTriton: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.TritonURL),
+			embeddings.ModelNameOpenAIAda:            embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
+			embeddings.ModelNameSourcegraphSTMultiQA: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL, config.Sourcegraph.EmbeddingsAPIToken),
 		}
 		embeddingsHandler := embeddings.NewHandler(
 			logger,
@@ -195,16 +195,6 @@ func NewHandler(
 			"/embeddings",
 			attributesOpenAIEmbeddings,
 			embeddingsHandler)
-
-		if config.Sourcegraph.UnlimitedEmbeddings {
-			// Register an endpoint for Triton embeddings that does not implement rate limiting.
-			unlimitedHandler := embeddings.NewUnlimitedHandler(logger, eventLogger, factoryMap, []string{string(embeddings.ModelNameSourcegraphTriton)})
-			registerStandardEndpoint(
-				"v1.embeddings-unlimited",
-				"/embeddings-unlimited",
-				attributesOpenAIEmbeddings,
-				unlimitedHandler)
-		}
 	}
 
 	if config.Fireworks.AccessToken == "" {

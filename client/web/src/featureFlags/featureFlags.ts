@@ -8,7 +8,6 @@ export const FEATURE_FLAGS = [
     'admin-onboarding',
     'auditlog-expansion',
     'blob-page-switch-areas-shortcuts',
-    'clone-progress-logging',
     'cody-chat-mock-test',
     'cody-web-search',
     'contrast-compliant-syntax-highlighting',
@@ -29,7 +28,8 @@ export const FEATURE_FLAGS = [
     'search-debug',
     'signup-survey-enabled',
     'sourcegraph-operator-site-admin-hide-maintenance',
-    'cody-payments-testing-mode',
+    'ab-hubspot-form-workpersonal-to-handraiser',
+    'external-accounts-modal',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

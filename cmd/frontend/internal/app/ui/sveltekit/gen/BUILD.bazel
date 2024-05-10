@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "gen_lib",
+    srcs = ["gen_routes.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit/gen",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/frontend/internal/app/ui/sveltekit/tags",
+        "//cmd/frontend/internal/routevar",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)
+
+go_binary(
+    name = "gen_routes",
+    embed = [":gen_lib"],
+    visibility = ["//cmd/frontend:__subpackages__"],
+)

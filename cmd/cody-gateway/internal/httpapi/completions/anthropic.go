@@ -15,8 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -33,7 +33,7 @@ func NewAnthropicHandler(
 	autoFlushStreamingResponses bool,
 ) (http.Handler, error) {
 	// Tokenizer only needs to be initialized once, and can be shared globally.
-	anthropicTokenizer, err := tokenizer.NewAnthropicClaudeTokenizer()
+	anthropicTokenizer, err := tokenizer.NewCL100kBaseTokenizer()
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ type anthropicTokenCount struct {
 
 // GetPromptTokenCount computes the token count of the prompt exactly once using
 // the given tokenizer. It is not concurrency-safe.
-func (ar *anthropicRequest) GetPromptTokenCount(tk *tokenizer.Tokenizer) (int, error) {
+func (ar *anthropicRequest) GetPromptTokenCount(tk tokenizer.Tokenizer) (int, error) {
 	if ar.promptTokens == nil {
 		tokens, err := tk.Tokenize(ar.Prompt)
 		ar.promptTokens = &anthropicTokenCount{
@@ -117,7 +117,7 @@ type anthropicResponse struct {
 }
 
 type AnthropicHandlerMethods struct {
-	anthropicTokenizer *tokenizer.Tokenizer
+	anthropicTokenizer tokenizer.Tokenizer
 	promptRecorder     PromptRecorder
 	config             config.AnthropicConfig
 }
@@ -176,12 +176,18 @@ func (a *AnthropicHandlerMethods) transformRequest(r *http.Request) {
 
 func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody anthropicRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 	var err error
+
+	// Setting a default -1 value so that in case of errors the tokenizer computed tokens don't impact the data
+	completionUsage.tokenizerTokens = -1
+	promptUsage.tokenizerTokens = -1
+
 	// First, extract prompt usage details from the request.
 	promptUsage.characters = len(reqBody.Prompt)
 	promptUsage.tokens, err = reqBody.GetPromptTokenCount(a.anthropicTokenizer)
 	if err != nil {
 		logger.Error("failed to count tokens in Anthropic response", log.Error(err))
 	}
+	promptUsage.tokenizerTokens = promptUsage.tokens
 
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
@@ -198,6 +204,7 @@ func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 			logger.Error("failed to count tokens in Anthropic response", log.Error(err))
 		} else {
 			completionUsage.tokens = len(tokens)
+			completionUsage.tokenizerTokens = completionUsage.tokens
 		}
 		return promptUsage, completionUsage
 	}
@@ -234,5 +241,6 @@ func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 	} else {
 		completionUsage.tokens = len(tokens)
 	}
+	completionUsage.tokenizerTokens = completionUsage.tokens
 	return promptUsage, completionUsage
 }

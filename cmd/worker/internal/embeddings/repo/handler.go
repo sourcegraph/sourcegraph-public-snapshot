@@ -6,7 +6,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/diff"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/db"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -31,7 +31,6 @@ type handler struct {
 	db                     database.DB
 	uploadStore            uploadstore.Store
 	gitserverClient        gitserver.Client
-	getQdrantInserter      func() (db.VectorInserter, error)
 	contextService         embed.ContextService
 	repoEmbeddingJobsStore bgrepo.RepoEmbeddingJobsStore
 	rankingService         *ranking.Service
@@ -104,22 +103,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		return err
 	}
 
-	modelID := embeddingsClient.GetModelIdentifier()
-	modelDims, err := embeddingsClient.GetDimensions()
-	if err != nil {
-		return err
-	}
-
-	qdrantInserter, err := h.getQdrantInserter()
-	if err != nil {
-		return err
-	}
-
-	err = qdrantInserter.PrepareUpdate(ctx, modelID, uint64(modelDims))
-	if err != nil {
-		return err
-	}
-
 	var previousIndex *embeddings.RepoEmbeddingIndex
 	if embeddingsConfig.Incremental {
 		previousIndex, err = embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, repo.ID, repo.Name)
@@ -151,18 +134,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 	if previousIndex != nil {
 		logger.Info("found previous embeddings index. Attempting incremental update", log.String("old_revision", string(previousIndex.Revision)))
 		opts.IndexedRevision = previousIndex.Revision
-
-		hasPreviousIndex, err := qdrantInserter.HasIndex(ctx, modelID, repo.ID, previousIndex.Revision)
-		if err != nil {
-			return err
-		}
-
-		if !hasPreviousIndex {
-			err = uploadPreviousIndex(ctx, modelID, qdrantInserter, repo.ID, previousIndex)
-			if err != nil {
-				return err
-			}
-		}
 	}
 
 	ranks, err := h.rankingService.GetDocumentRanks(ctx, repo.Name)
@@ -179,7 +150,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 	repoEmbeddingIndex, toRemove, stats, err := embed.EmbedRepo(
 		ctx,
 		embeddingsClient,
-		qdrantInserter,
 		h.contextService,
 		fetcher,
 		repo.IDName(),
@@ -188,16 +158,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		logger,
 		reportStats,
 	)
-	if err != nil {
-		return err
-	}
-
-	err = qdrantInserter.FinalizeUpdate(ctx, db.FinalizeUpdateParams{
-		ModelID:       modelID,
-		RepoID:        repo.ID,
-		Revision:      record.Revision,
-		FilesToRemove: toRemove,
-	})
 	if err != nil {
 		return err
 	}
@@ -269,18 +229,43 @@ func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
 
 func (r *revisionFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
 	toIndex []embed.FileEntry,
-	toRemove []string,
+	filesToRemove []string,
 	err error,
 ) {
 	ctx = actor.WithInternalActor(ctx)
-	b, err := r.gitserver.DiffSymbols(ctx, r.repo, oldCommit, r.revision)
+	changedFilesIterator, err := r.gitserver.ChangedFiles(ctx, r.repo, string(oldCommit), string(r.revision))
 	if err != nil {
 		return nil, nil, err
 	}
+	defer changedFilesIterator.Close()
 
-	toRemove, changedNew, err := diff.ParseGitDiffNameStatus(b)
-	if err != nil {
-		return nil, nil, err
+	var toRemove []string
+	var changedNew []string
+
+	for {
+		f, err := changedFilesIterator.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "iterating over changed files in git diff")
+		}
+
+		switch f.Status {
+		case gitdomain.StatusDeleted:
+			// Deleted since "oldCommit"
+			toRemove = append(toRemove, f.Path)
+		case gitdomain.StatusModified:
+			// Modified in "r.revision"
+			toRemove = append(toRemove, f.Path)
+			changedNew = append(changedNew, f.Path)
+		case gitdomain.StatusAdded:
+			// Added in "r.revision"
+			changedNew = append(changedNew, f.Path)
+		case gitdomain.StatusTypeChanged:
+			// a type change does not change the contents of a file,
+			// so this is safe to ignore.
+		}
 	}
 
 	// toRemove only contains file names, but we also need the file sizes. We could
@@ -303,7 +288,7 @@ func (r *revisionFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
 		}
 	}
 
-	return
+	return toIndex, toRemove, nil
 }
 
 // validateRevision returns an error if the revision provided to this job is empty.
@@ -322,47 +307,5 @@ func (r *revisionFetcher) validateRevision(ctx context.Context) error {
 		// The repo can be processed once it's resubmitted with a non-empty revision.
 		return errors.Newf("could not get latest commit for repo %s", r.repo)
 	}
-	return nil
-}
-
-func uploadPreviousIndex(ctx context.Context, modelID string, inserter db.VectorInserter, repoID api.RepoID, previousIndex *embeddings.RepoEmbeddingIndex) error {
-	const batchSize = 128
-	batch := make([]db.ChunkPoint, batchSize)
-
-	for indexNum, index := range []embeddings.EmbeddingIndex{previousIndex.CodeIndex, previousIndex.TextIndex} {
-		isCode := indexNum == 0
-
-		// returns the ith row in the index as a ChunkPoint
-		getChunkPoint := func(i int) db.ChunkPoint {
-			payload := db.ChunkPayload{
-				RepoName:  previousIndex.RepoName,
-				RepoID:    repoID,
-				Revision:  previousIndex.Revision,
-				FilePath:  index.RowMetadata[i].FileName,
-				StartLine: uint32(index.RowMetadata[i].StartLine),
-				EndLine:   uint32(index.RowMetadata[i].EndLine),
-				IsCode:    isCode,
-			}
-			return db.NewChunkPoint(payload, embeddings.Dequantize(index.Row(i)))
-		}
-
-		for batchStart := 0; batchStart < len(index.RowMetadata); batchStart += batchSize {
-			// Build a batch
-			batch = batch[:0] // reset batch
-			for i := batchStart; i < batchStart+batchSize && i < len(index.RowMetadata); i++ {
-				batch = append(batch, getChunkPoint(i))
-			}
-
-			// Insert the batch
-			err := inserter.InsertChunks(ctx, db.InsertParams{
-				ModelID:     modelID,
-				ChunkPoints: batch,
-			})
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }

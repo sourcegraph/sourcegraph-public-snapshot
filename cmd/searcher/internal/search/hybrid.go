@@ -3,7 +3,9 @@ package search
 import (
 	"bytes"
 	"context"
+	"io"
 	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
+	"sort"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,10 +14,10 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -102,26 +104,58 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 		}
 		logger = logger.With(log.String("indexed", string(indexed)))
 
-		// TODO if our store was more flexible we could cache just based on
-		// indexed and p.Commit and avoid the need of running diff for each
-		// search.
-		out, err := s.GitDiffSymbols(ctx, p.Repo, indexed, p.Commit)
-		if errcode.IsNotFound(err) {
-			recordHybridFinalState("git-diff-not-found")
-			logger.Debug("not doing hybrid search due to likely missing indexed commit on gitserver", log.Error(err))
-			return nil, false, nil
-		} else if err != nil {
-			recordHybridFinalState("git-diff-error")
-			return nil, false, errors.Wrapf(err, "failed to find changed files in %s between %s and %s", p.Repo, indexed, p.Commit)
-		}
+		indexedIgnore, unindexedSearch, err := func() (indexedIgnore []string, unindexedSearch []string, err error) {
+			// TODO if our store was more flexible we could cache just based on
+			// indexed and p.Commit and avoid the need of running diff for each
+			// search.
+			changedFiles, err := s.GitChangedFiles(ctx, p.Repo, indexed, p.Commit)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "failed to get changed files")
+			}
+			defer changedFiles.Close()
 
-		indexedIgnore, unindexedSearch, err := diff.ParseGitDiffNameStatus(out)
+			for {
+				c, err := changedFiles.Next()
+				if err == io.EOF {
+					break
+				}
+
+				if err != nil {
+					err = errors.Wrap(err, "iterating over changed files in git diff")
+					return nil, nil, err
+				}
+
+				switch c.Status {
+				case gitdomain.StatusDeleted:
+					// no longer appears in "p.Commit"
+					indexedIgnore = append(indexedIgnore, c.Path)
+				case gitdomain.StatusModified:
+					// changed in both "indexed" and "p.Commit"
+					indexedIgnore = append(indexedIgnore, c.Path)
+					unindexedSearch = append(unindexedSearch, c.Path)
+				case gitdomain.StatusAdded:
+					// doesn't exist in "indexed"
+					unindexedSearch = append(unindexedSearch, c.Path)
+				case gitdomain.StatusTypeChanged:
+					// a type change does not change the contents of a file,
+					// so this is safe to ignore.
+				}
+			}
+
+			sort.Strings(indexedIgnore)
+			sort.Strings(unindexedSearch)
+
+			return indexedIgnore, unindexedSearch, nil
+		}()
 		if err != nil {
-			logger.Debug("parseGitDiffNameStatus failed",
-				log.Binary("out", out),
-				log.Error(err))
-			recordHybridFinalState("git-diff-parse-error")
-			return nil, false, errors.Wrapf(err, "failed to parse git diff output of changed files in %s between %s and %s", p.Repo, indexed, p.Commit)
+			if errcode.IsNotFound(err) {
+				recordHybridFinalState("git-diff-not-found")
+				logger.Debug("not doing hybrid search due to likely missing indexed commit on gitserver", log.Error(err))
+			} else if err != nil {
+				recordHybridFinalState("git-diff-error")
+			}
+
+			return nil, false, err
 		}
 
 		totalLenIndexedIgnore := totalStringsLen(indexedIgnore)

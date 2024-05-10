@@ -1,6 +1,6 @@
 import type { ApolloClient, ApolloQueryResult, ObservableQuery } from '@apollo/client'
-import { from } from 'rxjs'
-import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
+import { from, ReplaySubject } from 'rxjs'
+import { map, share, shareReplay } from 'rxjs/operators'
 
 import { createAggregateError, asError, logger } from '@sourcegraph/common'
 import { fromObservableQueryPromise, getDocumentNode } from '@sourcegraph/http-client'
@@ -9,6 +9,7 @@ import type { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
 import { gqlToCascade, type SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     toPrettyBlobURL,
     type RepoFile,
@@ -21,7 +22,6 @@ import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
 import type { TelemetryRecorderProvider } from '../telemetry'
-import { eventLogger } from '../tracking/eventLogger'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
@@ -41,8 +41,12 @@ export function createPlatformContext(props: {
             map(mapViewerSettingsResult),
             shareReplay(1),
             map(gqlToCascade),
-            publishReplay(1),
-            refCount()
+            share({
+                connector: () => new ReplaySubject(1),
+                resetOnError: false,
+                resetOnComplete: false,
+                resetOnRefCountZero: false,
+            })
         ),
         updateSettings: async (subject, edit) => {
             const settingsQueryWatcher = await settingsQueryWatcherPromise
@@ -87,7 +91,7 @@ export function createPlatformContext(props: {
         urlToFile: toPrettyWebBlobURL,
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
-        telemetryService: eventLogger,
+        telemetryService: EVENT_LOGGER,
         telemetryRecorder: props.telemetryRecorderProvider.getRecorder(
             window.context.debug
                 ? [

@@ -5,7 +5,6 @@ go_library(
     name = "licensing",
     srcs = [
         "codygateway.go",
-        "conf.go",
         "constants.go",
         "data.go",
         "doc.go",

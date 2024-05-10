@@ -32,8 +32,9 @@ func (c CDKTF) OutputDir() string {
 // configured.
 func (c CDKTF) Synthesize() error {
 	// Forcibly shut down the JSII runtime post-Synth to make sure that we don't
-	// get bizarre side-effects from multiple apps being rendered.
-	defer jsiiruntime.Close()
+	// get bizarre side-effects from multiple apps being rendered. We use a panic
+	// catcher to discard useless panics from the library.
+	defer (&panics.Catcher{}).Try(jsiiruntime.Close)
 
 	// CDKTF is prone to panics for no good reason, so make a best-effort
 	// attempt to capture them.

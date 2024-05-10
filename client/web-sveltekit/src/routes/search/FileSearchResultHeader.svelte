@@ -1,23 +1,14 @@
 <script lang="ts">
     import { highlightRanges } from '$lib/dom'
-    import {
-        displayRepoName,
-        splitPath,
-        getFileMatchUrl,
-        getRepositoryUrl,
-        type ContentMatch,
-        type PathMatch,
-        type SymbolMatch,
-    } from '$lib/shared'
+    import { getFileMatchUrl, type ContentMatch, type PathMatch, type SymbolMatch } from '$lib/shared'
+    import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
-    import CopyPathButton from './CopyPathButton.svelte'
+    import RepoRev from './RepoRev.svelte'
 
     export let result: ContentMatch | PathMatch | SymbolMatch
 
-    $: repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     $: fileURL = getFileMatchUrl(result)
-    $: repoName = displayRepoName(result.repository)
-    $: [fileBase, fileName] = splitPath(result.path)
+    $: rev = result.branches?.[0]
 
     $: matches =
         result.type !== 'symbol' && result.pathMatches
@@ -25,22 +16,34 @@
             : []
 </script>
 
-<a href={repoAtRevisionURL}>{repoName}</a>
-<span aria-hidden={true}>&nbsp;›&nbsp;</span>
-<!-- #key is needed here to recreate the link because use:highlightNode changes the DOM -->
+<RepoRev repoName={result.repository} {rev} />
+<span class="interpunct">·</span>
 <span class="root">
     {#key result}
-        <a href={fileURL} use:highlightRanges={{ ranges: matches }}>
-            {#if fileBase}{fileBase}/{/if}<strong>{fileName}</strong>
+        <a class="path" href={fileURL} use:highlightRanges={{ ranges: matches }}>
+            {result.path}
         </a>
     {/key}
-    <CopyPathButton path={result.path} />
+    <span data-visible-on-focus><CopyButton value={result.path} label="Copy path to clipboard" /></span>
 </span>
 
 <style lang="scss">
     .root {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        font-family: var(--code-font-family);
+        font-size: var(--code-font-size);
+
+        a,
+        span {
+            vertical-align: middle;
+        }
+    }
+
+    .interpunct {
+        margin: 0 0.5rem;
+        color: var(--text-disabled);
+    }
+
+    .path {
+        color: var(--text-body);
     }
 </style>

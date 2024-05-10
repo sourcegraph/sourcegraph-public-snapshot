@@ -4,9 +4,9 @@ import { gql, useMutation } from '@apollo/client'
 import { mdiClose } from '@mdi/js'
 import { useNavigate } from 'react-router-dom'
 
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Input, LoadingSpinner, Modal, Icon, H3, Text } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../tracking/eventLogger'
 import type { OrgAreaRouteContext } from '../area/OrgArea'
 
 interface DeleteOrgModalProps extends OrgAreaRouteContext {
@@ -25,7 +25,7 @@ const DELETE_ORG_MUTATION = gql`
 const deleteLabelId = 'deleteOrgId'
 
 export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<DeleteOrgModalProps>> = props => {
-    const { org, isOpen, toggleDeleteModal } = props
+    const { org, isOpen, toggleDeleteModal, telemetryRecorder } = props
 
     const navigate = useNavigate()
     const [orgNameInput, setOrgNameInput] = useState('')
@@ -41,20 +41,23 @@ export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<Del
         event => {
             setOrgNameInput(event.currentTarget.value)
             setOrgNamesMatch(event.currentTarget.value === org.name)
+            telemetryRecorder.recordEvent('org.name', 'change')
         },
-        [org]
+        [org, telemetryRecorder]
     )
 
     const deleteOrg = useCallback(async () => {
         try {
             await deleteOrganization({ variables: { organization: org.id, hard: true } })
+            telemetryRecorder.recordEvent('org', 'delete')
             navigate({
                 pathname: '/settings',
             })
         } catch {
-            eventLogger.log('OrgDeletionFailed')
+            EVENT_LOGGER.log('OrgDeletionFailed')
+            telemetryRecorder.recordEvent('org', 'deleteFailed')
         }
-    }, [org, deleteOrganization, navigate])
+    }, [org, deleteOrganization, navigate, telemetryRecorder])
 
     return (
         <Modal

@@ -300,20 +300,21 @@ func TestSiteConfigurationHistory(t *testing.T) {
 
 func TestIsRequiredOutOfBandMigration(t *testing.T) {
 	tests := []struct {
-		name      string
-		version   oobmigration.Version
-		migration oobmigration.Migration
-		want      bool
+		name           string
+		currentVersion oobmigration.Version
+		latestVersion  oobmigration.Version
+		migration      oobmigration.Migration
+		want           bool
 	}{
 		{
-			name:      "not deprecated",
-			version:   oobmigration.Version{Major: 4, Minor: 3},
-			migration: oobmigration.Migration{},
-			want:      false,
+			name:          "not deprecated",
+			latestVersion: oobmigration.Version{Major: 4, Minor: 3},
+			migration:     oobmigration.Migration{},
+			want:          false,
 		},
 		{
-			name:    "deprecated but finished",
-			version: oobmigration.Version{Major: 4, Minor: 3},
+			name:          "deprecated but finished",
+			latestVersion: oobmigration.Version{Major: 4, Minor: 3},
 			migration: oobmigration.Migration{
 				Deprecated: &oobmigration.Version{Major: 3, Minor: 43},
 				Progress:   1,
@@ -321,34 +322,42 @@ func TestIsRequiredOutOfBandMigration(t *testing.T) {
 			want: false,
 		},
 		{
-			name:    "deprecated after the current",
-			version: oobmigration.Version{Major: 4, Minor: 3},
+			name:          "deprecated after the latest",
+			latestVersion: oobmigration.Version{Major: 4, Minor: 3},
 			migration: oobmigration.Migration{
 				Deprecated: &oobmigration.Version{Major: 4, Minor: 4},
 			},
 			want: false,
 		},
-
 		{
-			name:    "deprecated at current and unfinished",
-			version: oobmigration.Version{Major: 4, Minor: 3},
+			name:          "deprecated at latest and unfinished",
+			latestVersion: oobmigration.Version{Major: 4, Minor: 3},
 			migration: oobmigration.Migration{
 				Deprecated: &oobmigration.Version{Major: 4, Minor: 3},
 			},
 			want: true,
 		},
 		{
-			name:    "deprecated prior to current and unfinished",
-			version: oobmigration.Version{Major: 4, Minor: 3},
+			name:          "deprecated prior to latest and unfinished",
+			latestVersion: oobmigration.Version{Major: 4, Minor: 3},
+			migration: oobmigration.Migration{
+				Deprecated: &oobmigration.Version{Major: 4, Minor: 3},
+				Progress:   1,
+			},
+			want: false,
+		},
+		{
+			name:           "deprecated prior to current and unfinished",
+			currentVersion: oobmigration.Version{Major: 4, Minor: 3},
 			migration: oobmigration.Migration{
 				Deprecated: &oobmigration.Version{Major: 3, Minor: 43},
 			},
-			want: true,
+			want: false,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := isRequiredOutOfBandMigration(test.version, test.migration)
+			got := isRequiredOutOfBandMigration(test.currentVersion, test.latestVersion, test.migration)
 			assert.Equal(t, test.want, got)
 		})
 	}

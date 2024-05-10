@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -983,6 +984,135 @@ func TestGetOffsetNRecordingTime(t *testing.T) {
 	})
 }
 
+func BenchmarkFilterSeriesPoints(b *testing.B) {
+
+	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
+
+	for _, size := range []int{100, 1_000, 100_000} {
+		b.Run(strconv.Itoa(size), func(b *testing.B) {
+
+			// Best case: Early return because of an empty denylist
+			b.Run("early return because of empty denylist", func(b *testing.B) {
+				denyList := make([]api.RepoID, 0)
+
+				var points []SeriesPointForExport
+				for i := 0; i < size; i++ {
+					points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
+				}
+
+				b.ResetTimer()
+
+				for range b.N {
+					_ = FilterSeriesPoints(denyList, points)
+				}
+			})
+
+			// Second-best case: No assignments because everything is filtered out
+			b.Run("filter out all repos", func(b *testing.B) {
+				var denyList []api.RepoID
+				var points []SeriesPointForExport
+
+				for i := 0; i < size; i++ {
+					denyList = append(denyList, api.RepoID(i))
+					points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
+				}
+
+				b.ResetTimer()
+
+				for range b.N {
+					_ = FilterSeriesPoints(denyList, points)
+				}
+			})
+
+			// Worst case: Everything is checked, but all values are re-assigned
+			b.Run("filter out no repos", func(b *testing.B) {
+				var denyList []api.RepoID
+				var points []SeriesPointForExport
+
+				for i := 1; i < size; i++ {
+					denyList = append(denyList, api.RepoID(-i))
+					points = append(points, SeriesPointForExport{RepoId: optionalRepoID(api.RepoID(i))})
+				}
+
+				b.ResetTimer()
+
+				for range b.N {
+					_ = FilterSeriesPoints(denyList, points)
+
+				}
+			})
+		})
+	}
+
+}
+
+func TestFilterSeriesPoints(t *testing.T) {
+
+	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
+
+	t.Run("removes repos on denylist from points", func(t *testing.T) {
+		denyList := []api.RepoID{123}
+		points := []SeriesPointForExport{
+			{RepoId: optionalRepoID(123)},
+			{RepoId: optionalRepoID(456)},
+		}
+
+		want := []SeriesPointForExport{{RepoId: optionalRepoID(456)}}
+
+		got := FilterSeriesPoints(denyList, points)
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("returns all points on empty denylist", func(t *testing.T) {
+		var denyList []api.RepoID
+		points := []SeriesPointForExport{
+			{RepoId: optionalRepoID(123)},
+			{RepoId: optionalRepoID(456)},
+		}
+
+		want := points
+
+		got := FilterSeriesPoints(denyList, points)
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("disallows records with RepoId=nil if there is at least one entry in the denyList", func(t *testing.T) {
+		denyList := []api.RepoID{123}
+		points := []SeriesPointForExport{
+			{RepoId: nil},
+		}
+
+		want := []SeriesPointForExport{}
+
+		got := FilterSeriesPoints(denyList, points)
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("allows records with RepoId=nil if there are no entries in the denyList", func(t *testing.T) {
+		denyList := []api.RepoID{}
+		points := []SeriesPointForExport{
+			{RepoId: nil},
+		}
+
+		want := []SeriesPointForExport{{RepoId: nil}}
+
+		got := FilterSeriesPoints(denyList, points)
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatch (-want +got):\n%s", diff)
+		}
+	})
+}
+
 func TestGetAllDataForInsightViewId(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
@@ -990,7 +1120,7 @@ func TestGetAllDataForInsightViewId(t *testing.T) {
 
 	permissionStore := NewMockInsightPermissionStore()
 	// no repo restrictions by default
-	permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn(nil, nil)
+	permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn([]api.RepoID{}, nil)
 
 	insightStore := NewInsightStore(insightsDB)
 	seriesStore := New(insightsDB, permissionStore)
@@ -1095,7 +1225,7 @@ SELECT recording_time,
 		permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn([]api.RepoID{1111}, nil)
 		defer func() {
 			// cleanup
-			permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn(nil, nil)
+			permissionStore.GetUnauthorizedRepoIDsFunc.SetDefaultReturn([]api.RepoID{}, nil)
 		}()
 		got, err := seriesStore.GetAllDataForInsightViewID(ctx, ExportOpts{InsightViewUniqueID: view.UniqueID})
 		if err != nil {

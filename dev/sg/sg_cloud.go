@@ -10,10 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -43,6 +45,14 @@ var cloudCommand = &cli.Command{
 				return nil
 			},
 		},
+		&cloud.BuildEphemeralCommand,
+		&cloud.DeleteEphemeralCommand,
+		&cloud.DeployEphemeralCommand,
+		&cloud.LeaseEphemeralCommand,
+		&cloud.ListEphemeralCommand,
+		&cloud.ListVersionsEphemeralCommand,
+		&cloud.StatusEphemeralCommand,
+		&cloud.UpgradeEphemeralCommand,
 	},
 }
 

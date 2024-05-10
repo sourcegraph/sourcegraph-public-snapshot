@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -175,11 +177,11 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan So
 
 	var wg sync.WaitGroup
 
-	// List all repositories of teams selected that the account has access to
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 
+		// List all repositories of teams selected that the account has access to
 		for _, t := range s.config.Teams {
 			page := &bitbucketcloud.PageToken{Pagelen: 100}
 			var err error
@@ -191,6 +193,35 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan So
 				}
 
 				ch <- batch{repos: repos}
+			}
+		}
+
+		// List repositories that are explicitly named.
+		// Admins normally add to end of lists, so end of list most likely has new repos
+		// => stream them first.
+		for i := len(s.config.Repos) - 1; i >= 0; i-- {
+			if err := ctx.Err(); err != nil {
+				ch <- batch{err: err}
+				break
+			}
+
+			name := s.config.Repos[i]
+			ps := strings.SplitN(name, "/", 2)
+			if len(ps) != 2 {
+				ch <- batch{err: errors.Errorf("invalid repo name, expected format <workspace>/<repo_slug>, got %q", name)}
+				continue
+			}
+
+			workspace, repoSlug := ps[0], ps[1]
+			repo, err := s.client.Repo(ctx, workspace, repoSlug)
+			if err != nil {
+				if errcode.IsNotFound(err) {
+					s.logger.Warn("skipping missing bitbucketcloud.repos entry", log.String("name", name), log.Error(err))
+					continue
+				}
+				ch <- batch{err: errors.Wrapf(err, "failed to fetch repo %q", name)}
+			} else {
+				ch <- batch{repos: []*bitbucketcloud.Repo{repo}}
 			}
 		}
 	}()

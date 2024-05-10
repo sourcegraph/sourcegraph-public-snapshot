@@ -21,7 +21,7 @@ func testStoreWithoutConfigurationPolicies(t *testing.T, db database.DB) Store {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	return New(&observation.TestContext, db)
+	return New(observation.TestContextTB(t), db)
 }
 
 // insertRepo creates a repository record with the given id and name. If there is already a repository

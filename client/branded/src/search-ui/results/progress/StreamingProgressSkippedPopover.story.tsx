@@ -1,6 +1,7 @@
 import type { Meta, StoryFn } from '@storybook/react'
 
 import type { Progress } from '@sourcegraph/shared/src/search/stream'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
@@ -26,7 +27,7 @@ export const Popover: StoryFn = () => {
         repositoriesCount: 2,
         skipped: [
             {
-                reason: 'excluded-fork',
+                reason: 'repository-fork',
                 message: '',
                 severity: 'info',
                 title: '10k forked repositories excluded',
@@ -73,6 +74,7 @@ export const Popover: StoryFn = () => {
                     query=""
                     progress={progress}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                     onSearchAgain={() => {}}
                 />
             )}
@@ -87,7 +89,7 @@ export const ShouldCloseAllInfo: StoryFn = () => {
         repositoriesCount: 2,
         skipped: [
             {
-                reason: 'excluded-fork',
+                reason: 'repository-fork',
                 message: 'By default we exclude forked repositories. Include them with `fork:yes` in your query.',
                 severity: 'info',
                 title: '10k forked repositories excluded',
@@ -116,6 +118,7 @@ export const ShouldCloseAllInfo: StoryFn = () => {
                     query=""
                     progress={progress}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                     onSearchAgain={() => {}}
                 />
             )}
@@ -132,7 +135,7 @@ export const ShouldOpenOneInfo: StoryFn = () => {
         repositoriesCount: 2,
         skipped: [
             {
-                reason: 'excluded-fork',
+                reason: 'repository-fork',
                 message: 'By default we exclude forked repositories. Include them with `fork:yes` in your query.',
                 severity: 'info',
                 title: '10k forked repositories excluded',
@@ -151,6 +154,7 @@ export const ShouldOpenOneInfo: StoryFn = () => {
                     query=""
                     progress={progress}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                     onSearchAgain={() => {}}
                 />
             )}

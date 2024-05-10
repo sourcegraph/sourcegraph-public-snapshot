@@ -24,5 +24,8 @@ import (
 	_ "github.com/Khan/genqlient"
 
 	// Used to generate schema
+	_ "chainguard.dev/apko/pkg/lock"
 	_ "github.com/pseudomuto/protoc-gen-doc"
+
+	_ "github.com/maxbrunsfeld/counterfeiter/v6"
 )

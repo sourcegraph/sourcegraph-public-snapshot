@@ -16,7 +16,8 @@ interface AddCodeHostWidgetProps {
 
 export const AddCodeHostWidget: FC<AddCodeHostWidgetProps> = props => {
     const { className } = props
-    const { telemetryService } = useLegacyContext_onlyInStormRoutes()
+    const { telemetryService, platformContext } = useLegacyContext_onlyInStormRoutes()
+    const { telemetryRecorder } = platformContext
 
     return (
         <MarketingBlock
@@ -29,7 +30,10 @@ export const AddCodeHostWidget: FC<AddCodeHostWidgetProps> = props => {
                 to="/site-admin/external-services/new"
                 className="d-inline-flex align-items-center"
                 weight="medium"
-                onClick={() => telemetryService.log('OnboardingWidget:ConnectCodeHost:Clicked')}
+                onClick={() => {
+                    telemetryService.log('OnboardingWidget:ConnectCodeHost:Clicked')
+                    telemetryRecorder.recordEvent('onboardingWidget.connectCodeHost', 'click')
+                }}
             >
                 Connect code host
                 <Icon svgPath={mdiChevronRight} className="ml-1" size="md" aria-label="Arrow right icon" />
@@ -48,7 +52,10 @@ export const AddCodeHostWidget: FC<AddCodeHostWidgetProps> = props => {
                             target="_blank"
                             rel="noopener noreferrer"
                             className={styles.textUnderline}
-                            onClick={() => telemetryService.log('OnboardingWidget:ViewDocs:Clicked')}
+                            onClick={() => {
+                                telemetryService.log('OnboardingWidget:ViewDocs:Clicked')
+                                telemetryRecorder.recordEvent('onboardingWidget.viewDocs', 'click')
+                            }}
                         >
                             docs
                         </Link>
@@ -69,7 +76,10 @@ export const AddCodeHostWidget: FC<AddCodeHostWidgetProps> = props => {
                             target="_blank"
                             rel="noopener noreferrer"
                             className={styles.textUnderline}
-                            onClick={() => telemetryService.log('OnboardingWidget:ViewSOC2:Clicked')}
+                            onClick={() => {
+                                telemetryService.log('OnboardingWidget:ViewSOC2:Clicked')
+                                telemetryRecorder.recordEvent('onboardingWidget.viewSOC2', 'click')
+                            }}
                         >
                             SOC 2 Type 2
                         </Link>{' '}
@@ -79,7 +89,10 @@ export const AddCodeHostWidget: FC<AddCodeHostWidgetProps> = props => {
                             target="_blank"
                             rel="noopener noreferrer"
                             className={styles.textUnderline}
-                            onClick={() => telemetryService.log('OnboardingWidget:ViewSecurityPortal:Clicked')}
+                            onClick={() => {
+                                telemetryService.log('OnboardingWidget:ViewSecurityPortal:Clicked')
+                                telemetryRecorder.recordEvent('onboardingWidget.viewSecurityPortal', 'click')
+                            }}
                         >
                             security portal
                         </Link>

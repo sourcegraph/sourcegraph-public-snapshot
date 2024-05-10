@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import type { TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcript'
-import type { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
+import type { TranscriptJSON, CodyClientScope } from '@sourcegraph/cody-shared'
 import { useLazyQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Text } from '@sourcegraph/wildcard'
@@ -11,6 +10,7 @@ import { Text } from '@sourcegraph/wildcard'
 import type { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
 import { EventName } from '../../../util/constants'
 import type { CodyTranscriptEventActions, CodyTranscriptEventFeatures } from '../../useCodyChat'
+import { useCodyIgnore } from '../../useCodyIgnore'
 
 import { ReposStatusQuery } from './backend'
 import { RepositoriesSelectorPopover, getFileName, type IRepo } from './RepositoriesSelectorPopover'
@@ -35,7 +35,6 @@ export interface ScopeSelectorProps {
     // rather than collapsing or flipping position.
     encourageOverlap?: boolean
     authenticatedUser: AuthenticatedUser | null
-    isFileIgnored: (path: string) => boolean
 }
 
 export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function ScopeSelectorComponent({
@@ -49,7 +48,6 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     renderHint,
     encourageOverlap,
     authenticatedUser,
-    isFileIgnored,
 }) {
     const [loadReposStatus, { data: newReposStatusData, previousData: previousReposStatusData }] = useLazyQuery<
         ReposStatusResult,
@@ -60,18 +58,49 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
     const activeEditor = useMemo(() => scope.editor.getActiveTextEditor(), [scope.editor])
 
-    const isCurrentFileIgnored = activeEditor?.filePath ? isFileIgnored(activeEditor.filePath) : false
-    const inferredFilePath = (!isCurrentFileIgnored && activeEditor?.filePath) || null
+    const codyIgnoreFns = useCodyIgnore()
+
+    const inferredFilePath = (() => {
+        if (!activeEditor?.repoName || !activeEditor?.filePath) {
+            return null
+        }
+        if (codyIgnoreFns.isFileIgnored(activeEditor.repoName, activeEditor.filePath)) {
+            return null
+        }
+        return activeEditor.filePath
+    })()
+
     useEffect(() => {
+        if (!activeEditor?.repoName || !activeEditor?.filePath) {
+            return
+        }
+
+        const isCurrentRepoIgnored = codyIgnoreFns.isRepoIgnored(activeEditor.repoName)
+        if (isCurrentRepoIgnored) {
+            setScope({
+                ...scope,
+                includeInferredFile: false,
+                includeInferredRepository: false,
+                repositories: scope.repositories.filter(r => r !== activeEditor?.repoName),
+            })
+            return
+        }
+
+        const isCurrentFileIgnored = codyIgnoreFns.isFileIgnored(activeEditor.repoName, activeEditor.filePath)
         if (isCurrentFileIgnored && scope.includeInferredFile) {
             setScope({ ...scope, includeInferredFile: false, includeInferredRepository: true })
+            return
         }
-    }, [isCurrentFileIgnored, scope, setScope])
+    }, [activeEditor, codyIgnoreFns, scope, setScope])
 
     useEffect(() => {
         const repoNames = [...scope.repositories]
 
-        if (activeEditor?.repoName && !repoNames.includes(activeEditor.repoName)) {
+        if (
+            activeEditor?.repoName &&
+            !repoNames.includes(activeEditor.repoName) &&
+            !codyIgnoreFns.isRepoIgnored(activeEditor.repoName)
+        ) {
             repoNames.push(activeEditor.repoName)
         }
 
@@ -82,17 +111,17 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
         loadReposStatus({
             variables: { repoNames, first: repoNames.length },
         }).catch(() => null)
-    }, [activeEditor, scope.repositories, loadReposStatus])
+    }, [activeEditor, scope.repositories, codyIgnoreFns, loadReposStatus])
 
     const allRepositories = useMemo(() => reposStatusData?.repositories.nodes || [], [reposStatusData])
 
     const inferredRepository = useMemo(() => {
-        if (activeEditor?.repoName) {
+        if (activeEditor?.repoName && !codyIgnoreFns.isRepoIgnored(activeEditor.repoName)) {
             return allRepositories.find(repo => repo.name === activeEditor.repoName) || null
         }
 
         return null
-    }, [activeEditor, allRepositories])
+    }, [activeEditor, codyIgnoreFns, allRepositories])
 
     const additionalRepositories: IRepo[] = useMemo(
         () =>
@@ -127,8 +156,19 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
     const resetScope = useCallback((): void => {
         logTranscriptEvent(EventName.CODY_CHAT_SCOPE_RESET, 'cody.chat.scope.repo', 'reset')
-        setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
-    }, [scope, setScope, logTranscriptEvent])
+        let isCurrentRepoIgnored = false
+        let isCurrentFileIgnored = false
+        if (activeEditor?.repoName && activeEditor?.filePath) {
+            isCurrentRepoIgnored = codyIgnoreFns.isRepoIgnored(activeEditor.repoName)
+            isCurrentFileIgnored = codyIgnoreFns.isFileIgnored(activeEditor.repoName, activeEditor.filePath)
+        }
+        setScope({
+            ...scope,
+            repositories: [],
+            includeInferredRepository: !isCurrentRepoIgnored,
+            includeInferredFile: !isCurrentFileIgnored,
+        })
+    }, [scope, setScope, logTranscriptEvent, activeEditor, codyIgnoreFns])
 
     return (
         <>

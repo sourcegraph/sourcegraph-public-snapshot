@@ -4,13 +4,14 @@ import type { FC } from 'react'
 import { type ApolloClient, useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import * as jsonc from 'jsonc-parser'
-import { lastValueFrom, Subject, Subscription } from 'rxjs'
-import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
+import { lastValueFrom, timer, Subject, Subscription } from 'rxjs'
+import { delay, mergeMap, retry, tap, timeout } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
@@ -29,7 +30,6 @@ import { PageTitle } from '../components/PageTitle'
 import type { SiteResult } from '../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
-import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
 import { SiteConfigurationChangeList } from './SiteConfigurationChangeList'
@@ -250,7 +250,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminConfiguration')
+        EVENT_LOGGER.logViewEvent('SiteAdminConfiguration')
         this.props.telemetryRecorder.recordEvent('admin.configuration', 'view')
 
         this.subscriptions.add(
@@ -276,12 +276,12 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                     mergeMap(() =>
                         // wait for server to restart
                         fetchSite().pipe(
-                            retryWhen(errors =>
-                                errors.pipe(
-                                    tap(() => this.forceUpdate()),
-                                    delay(500)
-                                )
-                            ),
+                            retry({
+                                delay: () => {
+                                    this.forceUpdate()
+                                    return timer(500)
+                                },
+                            }),
                             timeout(10000)
                         )
                     ),
@@ -458,7 +458,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
     }
 
     private onSave = async (newContents: string): Promise<string> => {
-        eventLogger.log('SiteConfigurationSaved')
+        EVENT_LOGGER.log('SiteConfigurationSaved')
         this.props.telemetryRecorder.recordEvent('admin.configuration', 'save')
 
         this.setState({ saving: true, error: undefined })
@@ -530,8 +530,8 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
     }
 
     private reloadSite = (): void => {
-        eventLogger.log('SiteReloaded')
-        this.props.telemetryRecorder.recordEvent('admin.configuration.site', 'reload')
+        EVENT_LOGGER.log('SiteReloaded')
+        this.props.telemetryRecorder.recordEvent('admin.configuration', 'reloadInstance')
         this.siteReloads.next()
     }
 }

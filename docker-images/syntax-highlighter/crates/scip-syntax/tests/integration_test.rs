@@ -1,14 +1,16 @@
-use std::collections::HashMap;
-use std::path::Path;
-use std::process::Command;
-use std::{env::temp_dir, path::PathBuf};
+use std::{
+    collections::HashMap,
+    env::temp_dir,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
-use assert_cmd::cargo::cargo_bin;
-use assert_cmd::prelude::*;
-
-use scip_syntax::evaluate::Evaluator;
-use scip_syntax::index::{index_command, AnalysisMode, IndexMode, IndexOptions};
-use scip_syntax::io::read_index_from_file;
+use assert_cmd::{cargo::cargo_bin, prelude::*};
+use scip_syntax::{
+    evaluate::Evaluator,
+    index::{index_command, AnalysisMode, IndexMode, IndexOptions},
+    io::read_index_from_file,
+};
 
 lazy_static::lazy_static! {
     static ref BINARY_LOCATION: PathBuf = {

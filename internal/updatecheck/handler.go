@@ -237,10 +237,12 @@ type pingRequest struct {
 	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Cody App
 	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
 	// CodyUsage is deprecated, but here so we can receive pings from older instances
-	CodyUsage         json.RawMessage `json:"codyUsage,omitempty"`
-	CodyUsage2        json.RawMessage `json:"codyUsage2,omitempty"`
-	CodyProviders     json.RawMessage `json:"codyProviders,omitempty"`
-	RepoMetadataUsage json.RawMessage `json:"repoMetadataUsage,omitempty"`
+	CodyUsage                    json.RawMessage `json:"codyUsage,omitempty"`
+	CodyUsage2                   json.RawMessage `json:"codyUsage2,omitempty"`
+	CodyProviders                json.RawMessage `json:"codyProviders,omitempty"`
+	RepoMetadataUsage            json.RawMessage `json:"repoMetadataUsage,omitempty"`
+	LlmUsage                     json.RawMessage `json:"llmUsage,omitempty"`
+	CodyContextFiltersConfigured bool            `json:"codyContextFiltersConfigured,omitempty"`
 }
 
 type dependencyVersions struct {
@@ -371,6 +373,8 @@ type pingPayload struct {
 	CodyUsage2                    json.RawMessage `json:"cody_usage_2"`
 	CodyProviders                 json.RawMessage `json:"cody_providers"`
 	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
+	LlmUsage                      json.RawMessage `json:"llm_usage"`
+	CodyContextFiltersConfigured  string          `json:"cody_context_filters_configured"`
 }
 
 func logPing(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter, r *http.Request, pr *pingRequest, hasUpdate bool) {
@@ -473,6 +477,8 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		CodyUsage2:                    pr.CodyUsage2,
 		CodyProviders:                 pr.CodyProviders,
 		RepoMetadataUsage:             pr.RepoMetadataUsage,
+		LlmUsage:                      pr.LlmUsage,
+		CodyContextFiltersConfigured:  strconv.FormatBool(pr.CodyContextFiltersConfigured),
 	})
 }
 
@@ -509,10 +515,7 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 	}
 
 	countsByLanguage := make([]jsonCodeIntelRepositoryCountsByLanguage, 0, len(codeIntelUsage.CountsByLanguage))
-	for language, counts := range codeIntelUsage.CountsByLanguage {
-		// note: do not capture loop var by ref
-		languageID := language
-
+	for languageID, counts := range codeIntelUsage.CountsByLanguage {
 		countsByLanguage = append(countsByLanguage, jsonCodeIntelRepositoryCountsByLanguage{
 			LanguageID:                            &languageID,
 			NumRepositoriesWithUploadRecords:      counts.NumRepositoriesWithUploadRecords,
@@ -539,9 +542,6 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 
 	languageRequests := make([]jsonLanguageRequest, 0, len(codeIntelUsage.LanguageRequests))
 	for _, request := range codeIntelUsage.LanguageRequests {
-		// note: do not capture loop var by ref
-		request := request
-
 		languageRequests = append(languageRequests, jsonLanguageRequest{
 			LanguageID:  &request.LanguageID,
 			NumRequests: &request.NumRequests,

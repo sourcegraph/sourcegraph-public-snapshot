@@ -54,6 +54,10 @@ func TestGitCLIBackend_Blame(t *testing.T) {
 			StartLine: 4,
 			EndLine:   5,
 			CommitID:  "53e63d6dd6e61a58369bbc637b0ead2ee58d993c",
+			PreviousCommit: &gitdomain.PreviousCommit{
+				CommitID: "51f8be07ed2090b76e77b096c9d0737fc8ac70f4",
+				Filename: "foo.txt",
+			},
 			Author: gitdomain.Signature{
 				Name:  "Bar Author",
 				Email: "bar@sourcegraph.com",
@@ -115,7 +119,7 @@ func TestGitCLIBackend_Blame(t *testing.T) {
 		require.Error(t, err)
 		require.True(t, errors.Is(err, context.Canceled), "unexpected error: %v", err)
 
-		require.NoError(t, hr.Close())
+		require.True(t, errors.Is(hr.Close(), context.Canceled), "unexpected error: %v", err)
 	})
 
 	t.Run("commit not found", func(t *testing.T) {
@@ -298,6 +302,10 @@ var testGitBlameOutputHunks = []*gitdomain.Hunk{
 	{
 		StartLine: 1, EndLine: 5, StartByte: 0, EndByte: 41,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "ec809e79094cbcd05825446ee14c6d072466a0b7",
+			Filename: "release.sh",
+		},
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
 			Email: "mrnugget@gmail.com",
@@ -309,6 +317,10 @@ var testGitBlameOutputHunks = []*gitdomain.Hunk{
 	{
 		StartLine: 5, EndLine: 15, StartByte: 41, EndByte: 249,
 		CommitID: "fbb98e0b7ff0752798463d9f49d922858a4188f6",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "18f59760f4260518c29f0f07056245ed5d1d0f08",
+			Filename: "release.sh",
+		},
 		Author: gitdomain.Signature{
 			Name:  "Adam Harvey",
 			Email: "aharvey@sourcegraph.com",
@@ -320,6 +332,10 @@ var testGitBlameOutputHunks = []*gitdomain.Hunk{
 	{
 		StartLine: 15, EndLine: 16, StartByte: 249, EndByte: 328,
 		CommitID: "8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "e6e03e850770dd0ba745f0fa4b23127e9d72ad30",
+			Filename: "release.sh",
+		},
 		Author: gitdomain.Signature{
 			Name:  "Adam Harvey",
 			Email: "adam@adamharvey.name",
@@ -331,6 +347,10 @@ var testGitBlameOutputHunks = []*gitdomain.Hunk{
 	{
 		StartLine: 16, EndLine: 20, StartByte: 328, EndByte: 394,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "ec809e79094cbcd05825446ee14c6d072466a0b7",
+			Filename: "release.sh",
+		},
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
 			Email: "mrnugget@gmail.com",
@@ -342,6 +362,10 @@ var testGitBlameOutputHunks = []*gitdomain.Hunk{
 	{
 		StartLine: 20, EndLine: 21, StartByte: 394, EndByte: 504,
 		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "6e931cc9745502184ce32d48b01f9a8706a4dfe8",
+			Filename: "release.sh",
+		},
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
 			Email: "mrnugget@gmail.com",
@@ -353,6 +377,10 @@ var testGitBlameOutputHunks = []*gitdomain.Hunk{
 	{
 		StartLine: 21, EndLine: 22, StartByte: 504, EndByte: 553,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "ec809e79094cbcd05825446ee14c6d072466a0b7",
+			Filename: "release.sh",
+		},
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
 			Email: "mrnugget@gmail.com",
@@ -364,6 +392,10 @@ var testGitBlameOutputHunks = []*gitdomain.Hunk{
 	{
 		StartLine: 22, EndLine: 24, StartByte: 553, EndByte: 695,
 		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "6e931cc9745502184ce32d48b01f9a8706a4dfe8",
+			Filename: "release.sh",
+		},
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
 			Email: "mrnugget@gmail.com",
@@ -426,6 +458,189 @@ func TestBlameHunkReader(t *testing.T) {
 			} else if err != nil {
 				t.Fatalf("blameHunkReader.Read failed: %s", err)
 			}
+		}
+	})
+}
+
+var testGitBlameMovedFile = `9b3fbcf3fd859a4fa7f97e6056138307c57fb949 39 39 1
+author Petri-Johan Last
+author-mail <petri.last@sourcegraph.com>
+author-time 1712302218
+author-tz +0200
+committer Petri-Johan Last
+committer-mail <petri.last@sourcegraph.com>
+committer-time 1712302218
+committer-tz +0200
+summary Move commit
+previous bae93ddeeba0cc0099c322e2e46f60ad368c6e37 blame_test.go
+filename another_test.go
+9b3fbcf3fd859a4fa7f97e6056138307c57fb949 111 111 1
+previous bae93ddeeba0cc0099c322e2e46f60ad368c6e37 blame_test.go
+filename another_test.go
+9b3fbcf3fd859a4fa7f97e6056138307c57fb949 178 178 2
+previous bae93ddeeba0cc0099c322e2e46f60ad368c6e37 blame_test.go
+filename another_test.go
+9b3fbcf3fd859a4fa7f97e6056138307c57fb949 190 190 1
+previous bae93ddeeba0cc0099c322e2e46f60ad368c6e37 blame_test.go
+filename another_test.go
+bae93ddeeba0cc0099c322e2e46f60ad368c6e37 1 1 38
+author Petri-Johan Last
+author-mail <petri.last@sourcegraph.com>
+author-time 1712302156
+author-tz +0200
+committer Petri-Johan Last
+committer-mail <petri.last@sourcegraph.com>
+committer-time 1712302156
+committer-tz +0200
+summary Initial commit
+boundary
+filename blame_test.go
+bae93ddeeba0cc0099c322e2e46f60ad368c6e37 39 40 71
+filename blame_test.go
+bae93ddeeba0cc0099c322e2e46f60ad368c6e37 110 112 66
+filename blame_test.go
+bae93ddeeba0cc0099c322e2e46f60ad368c6e37 178 180 10
+filename blame_test.go
+bae93ddeeba0cc0099c322e2e46f60ad368c6e37 188 191 303
+filename blame_test.go`
+
+var testGitBlameMovedFileHunks = []*gitdomain.Hunk{
+	{
+		StartLine: 39, EndLine: 40, StartByte: 0, EndByte: 0,
+		CommitID: "9b3fbcf3fd859a4fa7f97e6056138307c57fb949",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+			Filename: "blame_test.go",
+		},
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302218, 0),
+		},
+		Message:  "Move commit",
+		Filename: "another_test.go",
+	},
+	{
+		StartLine: 111, EndLine: 112, StartByte: 0, EndByte: 0,
+		CommitID: "9b3fbcf3fd859a4fa7f97e6056138307c57fb949",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+			Filename: "blame_test.go",
+		},
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302218, 0),
+		},
+		Message:  "Move commit",
+		Filename: "another_test.go",
+	},
+	{
+		StartLine: 178, EndLine: 180, StartByte: 0, EndByte: 0,
+		CommitID: "9b3fbcf3fd859a4fa7f97e6056138307c57fb949",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+			Filename: "blame_test.go",
+		},
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302218, 0),
+		},
+		Message:  "Move commit",
+		Filename: "another_test.go",
+	},
+	{
+		StartLine: 190, EndLine: 191, StartByte: 0, EndByte: 0,
+		CommitID: "9b3fbcf3fd859a4fa7f97e6056138307c57fb949",
+		PreviousCommit: &gitdomain.PreviousCommit{
+			CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+			Filename: "blame_test.go",
+		},
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302218, 0),
+		},
+		Message:  "Move commit",
+		Filename: "another_test.go",
+	},
+	{
+		StartLine: 1, EndLine: 39, StartByte: 0, EndByte: 0,
+		CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302156, 0),
+		},
+		Message:  "Initial commit",
+		Filename: "blame_test.go",
+	},
+	{
+		StartLine: 40, EndLine: 111, StartByte: 0, EndByte: 0,
+		CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302156, 0),
+		},
+		Message:  "Initial commit",
+		Filename: "blame_test.go",
+	},
+	{
+		StartLine: 112, EndLine: 178, StartByte: 0, EndByte: 0,
+		CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302156, 0),
+		},
+		Message:  "Initial commit",
+		Filename: "blame_test.go",
+	},
+	{
+		StartLine: 180, EndLine: 190, StartByte: 0, EndByte: 0,
+		CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302156, 0),
+		},
+		Message:  "Initial commit",
+		Filename: "blame_test.go",
+	},
+	{
+		StartLine: 191, EndLine: 494, StartByte: 0, EndByte: 0,
+		CommitID: "bae93ddeeba0cc0099c322e2e46f60ad368c6e37",
+		Author: gitdomain.Signature{
+			Name:  "Petri-Johan Last",
+			Email: "petri.last@sourcegraph.com",
+			Date:  time.Unix(1712302156, 0),
+		},
+		Message:  "Initial commit",
+		Filename: "blame_test.go",
+	},
+}
+
+func TestBlameHunkReader_moved_file(t *testing.T) {
+	t.Run("OK matching hunks", func(t *testing.T) {
+		rc := io.NopCloser(strings.NewReader(testGitBlameMovedFile))
+		reader := newBlameHunkReader(rc)
+		defer reader.Close()
+
+		hunks := []*gitdomain.Hunk{}
+		for {
+			hunk, err := reader.Read()
+			if errors.Is(err, io.EOF) {
+				break
+			} else if err != nil {
+				t.Fatalf("blameHunkReader.Read failed: %s", err)
+			}
+			hunks = append(hunks, hunk)
+		}
+
+		if d := cmp.Diff(testGitBlameMovedFileHunks, hunks); d != "" {
+			t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
 		}
 	})
 }

@@ -369,6 +369,8 @@ type BitbucketCloudConnection struct {
 	GitURLType string `json:"gitURLType,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to Bitbucket Cloud.
 	RateLimit *BitbucketCloudRateLimit `json:"rateLimit,omitempty"`
+	// Repos description: An array of repository "projectKey/repositorySlug" strings specifying repositories to mirror on Sourcegraph.
+	Repos []string `json:"repos,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Cloud repository.
 	//
 	//  - "{host}" is replaced with the Bitbucket Cloud URL's host (such as bitbucket.org),  and "{nameWithOwner}" is replaced with the Bitbucket Cloud repository's "owner/path" (such as "myorg/myrepo").
@@ -608,12 +610,32 @@ type CloudKMSEncryptionKey struct {
 	Type            string `json:"type"`
 }
 
+// CodeMonitors description: Configuration options for code monitors
+type CodeMonitors struct {
+	// Concurrency description: The number of code monitor jobs allowed to run concurrenctly. Decrease to reduce peak load.
+	Concurrency int `json:"concurrency,omitempty"`
+	// PollInterval description: The interval at which a monitor checks for new changes. Increase to reduce average load.
+	PollInterval string `json:"pollInterval,omitempty"`
+}
+
 // Codeintel description: The configuration for the codeintel queue.
 type Codeintel struct {
 	// Limit description: The maximum number of dequeues allowed within the expiration window.
 	Limit int `json:"limit"`
 	// Weight description: The relative weight of this queue. Higher weights mean a higher chance of being picked at random.
 	Weight int `json:"weight"`
+}
+type CodyContextFilterItem struct {
+	// RepoNamePattern description: Regular expression which matches a set of repository names. The pattern is evaluated using Go regular expression syntax (https://golang.org/pkg/regexp/). By default, the pattern matches partially. Use \"^...$\" for whole-string matching.
+	RepoNamePattern string `json:"repoNamePattern"`
+}
+
+// CodyContextFilters description: Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
+type CodyContextFilters struct {
+	// Exclude description: List of rules specifying repositories that Cody should excluded from context in requests to third-party LLMs. These rules are applied only to repositories matching the include rules.
+	Exclude []*CodyContextFilterItem `json:"exclude,omitempty"`
+	// Include description: List of rules specifying repositories that Cody may include as context in requests to third-party LLMs. If defined, only repositories matching these rules will be considered for sharing. If not defined, all repositories may be shared.
+	Include []*CodyContextFilterItem `json:"include,omitempty"`
 }
 
 // CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
@@ -624,6 +646,14 @@ type CodyGateway struct {
 	BigQueryGoogleProjectID string `json:"bigQueryGoogleProjectID,omitempty"`
 	// BigQueryTable description: The table in the dataset to pull BigQuery Cody Gateway related events from.
 	BigQueryTable string `json:"bigQueryTable,omitempty"`
+}
+type CodyProConfig struct {
+	// SamsBackendOrigin description: Origin of the SAMS backend. (Must match the SAMS OIDC registration in auth.providers.)
+	SamsBackendOrigin string `json:"samsBackendOrigin,omitempty"`
+	// SscBackendOrigin description: Origin of the Self-serve Cody backend.
+	SscBackendOrigin string `json:"sscBackendOrigin,omitempty"`
+	// StripePublishableKey description: Stripe Publishable Key for use in Stripe Checkout, Stripe Elements. This is not considered a secret.
+	StripePublishableKey string `json:"stripePublishableKey,omitempty"`
 }
 
 // Completions description: Configuration for the completions service.
@@ -710,7 +740,8 @@ type DequeueCacheConfig struct {
 // Dotcom description: Configuration options for Sourcegraph.com only.
 type Dotcom struct {
 	// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
-	CodyGateway *CodyGateway `json:"codyGateway,omitempty"`
+	CodyGateway   *CodyGateway   `json:"codyGateway,omitempty"`
+	CodyProConfig *CodyProConfig `json:"codyProConfig,omitempty"`
 	// MinimumExternalAccountAge description: The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.
 	MinimumExternalAccountAge int `json:"minimumExternalAccountAge,omitempty"`
 	// MinimumExternalAccountAgeExemptList description: A list of email addresses that are allowed to be exempted from the minimumExternalAccountAge requirement.
@@ -781,8 +812,6 @@ type Embeddings struct {
 	PolicyRepositoryMatchLimit *int `json:"policyRepositoryMatchLimit,omitempty"`
 	// Provider description: The provider to use for generating embeddings. Defaults to sourcegraph.
 	Provider string `json:"provider,omitempty"`
-	// Qdrant description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
-	Qdrant *Qdrant `json:"qdrant,omitempty"`
 	// Url description: The url to the external embedding API service. Deprecated, use endpoint instead.
 	Url string `json:"url,omitempty"`
 }
@@ -1159,13 +1188,19 @@ type GerritConnection struct {
 	//
 	// Supports excluding by name ({"name": "owner/name"})
 	Exclude []*ExcludedGerritProject `json:"exclude,omitempty"`
+	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this Gerrit instance.
+	//
+	// If "http", Sourcegraph will access Gerrit repositories using Git URLs of the form http(s)://gerrit.example.com/a/myteam/myproject.git (using https: if the Gerrit instance uses HTTPS).
+	//
+	// If "ssh", Sourcegraph will access Gerrit repositories using Git URLs of the form git@gerrit.example.com:myteam/myproject.git. The exact hostname and port will be fetched from /ssh_info. See the documentation for how to provide SSH private keys and known_hosts: https://sourcegraph.com/docs/admin/repo/auth.
+	GitURLType string `json:"gitURLType,omitempty"`
 	// Password description: The password associated with the Gerrit username used for authentication.
 	Password string `json:"password"`
 	// Projects description: An array of project strings specifying which Gerrit projects to mirror on Sourcegraph. If empty, all projects will be mirrored.
 	Projects []string `json:"projects,omitempty"`
 	// Url description: URL of a Gerrit instance, such as https://gerrit.example.com.
 	Url string `json:"url"`
-	// Username description: A username for authentication withe the Gerrit code host.
+	// Username description: A username for authentication with the Gerrit code host.
 	Username string `json:"username"`
 }
 
@@ -1296,6 +1331,8 @@ type GitHubConnection struct {
 	// RepositoryQuery description: An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph. The valid values are:
 	//
 	// - `public` mirrors all public repositories for GitHub Enterprise and is the equivalent of `none` for GitHub
+	//
+	// - `internal` mirrors all internal repositories for GitHub Enterprise and is the equivalent of `none` for GitHub
 	//
 	// - `affiliated` mirrors all repositories affiliated with the configured token's user:
 	// 	- Private repositories with read access
@@ -1514,20 +1551,6 @@ type Header struct {
 	Value     string `json:"value"`
 }
 
-// Hnsw description: Overrides for the HNSW index config.
-type Hnsw struct {
-	// EfConstruct description: Number of neighbours to consider during the index building. Larger the value, more accurate the search, more time required to build the index.
-	EfConstruct *int `json:"efConstruct,omitempty"`
-	// FullScanThreshold description: Minimal size (in KiloBytes) of vectors for additional payload-based indexing.
-	FullScanThreshold *int `json:"fullScanThreshold,omitempty"`
-	// M description: Number of edges per node in the index graph. Larger the value - more accurate the search, more space required.
-	M *int `json:"m,omitempty"`
-	// OnDisk description: Store HNSW index on disk.
-	OnDisk *bool `json:"onDisk,omitempty"`
-	// PayloadM description: Number of edges per node in the index graph. Larger the value, more accurate the search, more space required.
-	PayloadM *int `json:"payloadM,omitempty"`
-}
-
 // IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
 type IdentityProvider struct {
 	Oauth    *OAuthIdentity
@@ -1647,6 +1670,9 @@ type Notice struct {
 	Location string `json:"location"`
 	// Message description: The message to display. Markdown formatting is supported.
 	Message string `json:"message"`
+	// StyleOverrides description: Overrides for the notice's default style. You probably want to use notice 'variant' setting instead.
+	StyleOverrides *StyleOverrides `json:"styleOverrides,omitempty"`
+	Variant        string          `json:"variant,omitempty"`
 }
 type Notifications struct {
 	// Key description: e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.
@@ -1924,12 +1950,6 @@ type OpenTelemetry struct {
 	// Endpoint description: OpenTelemetry tracing collector endpoint. By default, Sourcegraph's "/-/debug/otlp" endpoint forwards data to the configured collector backend.
 	Endpoint string `json:"endpoint,omitempty"`
 }
-type Optimizers struct {
-	// IndexingThreshold description: Maximum size (in kilobytes) of vectors allowed for plain index, exceeding this threshold will enable vector indexing. Set to 0 to disable indexing
-	IndexingThreshold *int `json:"indexingThreshold,omitempty"`
-	// MemmapThreshold description: Maximum size (in kilobytes) of vectors to store in-memory per segment.
-	MemmapThreshold *int `json:"memmapThreshold,omitempty"`
-}
 
 // OrganizationInvitations description: Configuration for organization invitations.
 type OrganizationInvitations struct {
@@ -2089,24 +2109,6 @@ type PythonRateLimit struct {
 	Enabled bool `json:"enabled"`
 	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
-}
-
-// Qdrant description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
-type Qdrant struct {
-	Enabled bool `json:"enabled,omitempty"`
-	// Hnsw description: Overrides for the HNSW index config.
-	Hnsw       *Hnsw       `json:"hnsw,omitempty"`
-	Optimizers *Optimizers `json:"optimizers,omitempty"`
-	// Quantization description: Overrides for quantization config.
-	Quantization *Quantization `json:"quantization,omitempty"`
-}
-
-// Quantization description: Overrides for quantization config.
-type Quantization struct {
-	// Enabled description: Whether to enable int8 scalar quantization
-	Enabled *bool `json:"enabled,omitempty"`
-	// Quantile description: Any values that lie outside the quantile range will be truncated
-	Quantile *float64 `json:"quantile,omitempty"`
 }
 type QuickLink struct {
 	// Description description: A description for this quick link
@@ -2770,6 +2772,10 @@ type SiteConfiguration struct {
 	CodeIntelRankingDocumentReferenceCountsGraphKey string `json:"codeIntelRanking.documentReferenceCountsGraphKey,omitempty"`
 	// CodeIntelRankingStaleResultsAge description: The interval at which to run the reduce job that computes document reference counts. Default is 24hrs.
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
+	// CodeMonitors description: Configuration options for code monitors
+	CodeMonitors *CodeMonitors `json:"codeMonitors,omitempty"`
+	// CodyContextFilters description: Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
+	CodyContextFilters *CodyContextFilters `json:"cody.contextFilters,omitempty"`
 	// CodyEnabled description: Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.
 	CodyEnabled *bool `json:"cody.enabled,omitempty"`
 	// CodyPermissions description: Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://sourcegraph.com/docs/admin/access_control
@@ -3040,6 +3046,8 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelRanking.documentReferenceCountsEnabled")
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")
 	delete(m, "codeIntelRanking.staleResultsAge")
+	delete(m, "codeMonitors")
+	delete(m, "cody.contextFilters")
 	delete(m, "cody.enabled")
 	delete(m, "cody.permissions")
 	delete(m, "cody.restrictUsersFeatureFlag")
@@ -3174,6 +3182,16 @@ type Step struct {
 	Outputs map[string]OutputVariable `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 	Run string `json:"run"`
+}
+
+// StyleOverrides description: Overrides for the notice's default style. You probably want to use notice 'variant' setting instead.
+type StyleOverrides struct {
+	// BackgroundColor description: The hex code of the background color for this notice.
+	BackgroundColor string `json:"backgroundColor,omitempty"`
+	// TextCentered description: Whether the notice text should be centered.
+	TextCentered bool `json:"textCentered,omitempty"`
+	// TextColor description: The hex code of the text color for this notice.
+	TextColor string `json:"textColor,omitempty"`
 }
 type SubRepoPermissions struct {
 	// Enabled description: Enables sub-repo permission checking

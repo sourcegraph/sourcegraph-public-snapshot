@@ -17,7 +17,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_base",
+    base = "//wolfi-images/sourcegraph-base:base_image",
     entrypoint = [
         "/sbin/tini",
         "--",
@@ -62,9 +62,9 @@ go_library(
     ],
 )
 
-# msp_delivery(
-#     name = "msp_deploy",
-#     gcp_project = "telemetry-gateway-prod-acae",
-#     msp_service_id = "telemetry-gateway",
-#     repository = "index.docker.io/sourcegraph/telemetry-gateway",
-# )
+msp_delivery(
+    name = "msp_deploy",
+    gcp_project = "telemetry-gateway-prod-acae",
+    msp_service_id = "telemetry-gateway",
+    repository = "index.docker.io/sourcegraph/telemetry-gateway",
+)

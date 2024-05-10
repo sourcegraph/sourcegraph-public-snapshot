@@ -1,15 +1,15 @@
 <script lang="ts">
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
+    import Avatar from '$lib/Avatar.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Paginator from '$lib/Paginator.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
-    import Avatar from '$lib/Avatar.svelte'
     import { createPromiseStore } from '$lib/utils'
     import { Alert, Button, ButtonGroup } from '$lib/wildcard'
-    import type { ContributorConnection } from './page.gql'
 
     import type { PageData } from './$types'
+    import type { ContributorConnection } from './page.gql'
 
     export let data: PageData
 
@@ -69,21 +69,20 @@
             </ButtonGroup>
         </form>
         {#if !currentContributorConnection && $contributorConnection.pending}
-            <div class="mt-3">
+            <div class="info">
                 <LoadingSpinner />
             </div>
         {:else if currentContributorConnection}
             {@const nodes = currentContributorConnection.nodes}
-            <table class="mt-3">
+            <table>
                 <tbody>
                     {#each nodes as contributor}
                         {@const commit = contributor.commits.nodes[0]}
                         <tr>
                             <td
-                                ><span><Avatar avatar={contributor.person} /></span>&nbsp;<span
-                                    >{contributor.person.displayName}</span
-                                ></td
-                            >
+                                ><span><Avatar avatar={contributor.person} --avatar-size="1.5rem" /></span>&nbsp;
+                                <span>{contributor.person.displayName}</span>
+                            </td>
                             <td
                                 ><Timestamp date={new Date(commit.author.date)} strict />:
                                 <a href={commit.canonicalURL}>{commit.subject}</a></td
@@ -100,18 +99,16 @@
                 </tbody>
             </table>
             {#if nodes.length > 0}
-                <div class="d-flex flex-column align-items-center">
+                <div class="paginator">
                     <Paginator
                         disabled={$contributorConnection.pending}
                         pageInfo={currentContributorConnection.pageInfo}
                     />
-                    <p class="mt-1 text-muted">
-                        <small>Total contributors: {currentContributorConnection.totalCount}</small>
-                    </p>
+                    <small>Total contributors: {currentContributorConnection.totalCount}</small>
                 </div>
             {/if}
         {:else if $contributorConnection.error}
-            <div class="mt-2">
+            <div class="info">
                 <Alert variant="danger">
                     Unable to load contributors: {$contributorConnection.error.message}
                 </Alert>
@@ -136,6 +133,7 @@
     table {
         border-collapse: collapse;
         width: 100%;
+        margin-top: 1rem;
     }
 
     td {
@@ -150,5 +148,20 @@
             white-space: nowrap;
             text-overflow: ellipsis;
         }
+    }
+
+    .paginator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        small {
+            margin-top: 0.5rem;
+            color: var(--text-muted);
+        }
+    }
+
+    .info {
+        margin-top: 1rem;
     }
 </style>

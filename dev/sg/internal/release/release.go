@@ -1,13 +1,20 @@
 package release
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/sourcegraph/run"
+	"github.com/urfave/cli/v2"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/urfave/cli/v2"
 )
 
 // releaseBaseFlags are the flags that are common to all subcommands of the release command.
@@ -42,6 +49,11 @@ var releaseBaseFlags = []cli.Flag{
 		Value: false,
 		Usage: "Infer run configuration from last commit instead of flags.",
 	},
+	&cli.BoolFlag{
+		Name:    "development",
+		Aliases: []string{"d"},
+		Usage:   "Create a development release. This is a release that is not meant to be promoted to public, but is meant to be used by other developers to test their changes. It is not meant to be used by customers.",
+	},
 }
 
 // releaseRunFlags are the flags for the release run * subcommands. Version is optional here, because
@@ -56,11 +68,13 @@ var releaseRunFlags = append(releaseBaseFlags, &cli.StringFlag{
 //
 // TODO https://github.com/sourcegraph/sourcegraph/issues/61077 to add the "auto" value that ask
 // the releaseregistry to provide the version number.
-var releaseCreatePromoteFlags = append(releaseBaseFlags, &cli.StringFlag{
-	Name:     "version",
-	Usage:    "Force version (required)",
-	Required: true,
-})
+var releaseCreatePromoteFlags = append(releaseBaseFlags, []cli.Flag{
+	&cli.StringFlag{
+		Name:     "version",
+		Usage:    "Force version (required)",
+		Required: true,
+	},
+}...)
 
 var Command = &cli.Command{
 	Name:     "release",
@@ -162,7 +176,113 @@ var Command = &cli.Command{
 				return r.Promote(cctx.Context)
 			},
 		},
+		{
+			Name:      "calendar",
+			Usage:     "Generate a calendar events for releases",
+			Aliases:   []string{"cal"},
+			Category:  category.Util,
+			UsageText: "sg release calendar --config /path/to/calendar/config",
+			Action:    generateCalendarEvents,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     "config",
+					Required: true,
+					Usage:    "Path to the calendar config file",
+					Action: func(ctx *cli.Context, s string) error {
+						if _, err := os.Stat(s); err != nil {
+							return errors.Newf("config file %q does not exist", s)
+						}
+						return nil
+					},
+				},
+			},
+		},
+		{
+			Name:      "cut",
+			Usage:     "Cut a release",
+			Category:  category.Util,
+			UsageText: "sg release cut",
+			Action:    cutReleaseBranch,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     "version",
+					Required: true,
+					Usage:    "the version to cut",
+					Aliases:  []string{"v"},
+				},
+				&cli.StringFlag{
+					Name:    "branch",
+					Aliases: []string{"b"},
+					Usage:   "the branch to cut the release from",
+					Value:   "main",
+				},
+			},
+		},
 	},
+}
+
+// Return type from releaseregistry
+// for the /releases/sourcegraph endpoint
+type releaseInfo struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	Public     bool   `json:"public"`
+	CreatedAt  string `json:"created_at"`
+	PromotedAt string `json:"promoted_at"`
+	Version    string `json:"version"`
+	GitSha     string `json:"git_sha"`
+}
+
+// determineNextReleaseVersion determines latest major.minor.patch version number by hitting the releaseregistry
+// Is only called when --version auto is passed to the sg release command
+// Should *only* be called for patch releases for the monorepo!
+// returns the new patch number for the latest minor version, in the form of "major.minor.patch"
+func determineNextReleaseVersion(ctx context.Context) (string, error) {
+	releaseEndpoint := "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph" // In the future we may wish to change this to name of the product being released
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, releaseEndpoint, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "Could not create request")
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", errors.Wrap(err, "Could not get response from releaseregistry")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", errors.Newf("API error, got status %d", resp.StatusCode)
+	}
+
+	var versions []releaseInfo
+	if err := json.NewDecoder(resp.Body).Decode(&versions); err != nil {
+		return "", errors.New("Could not parse ReleaseInfo json")
+	}
+
+	if len(versions) == 0 {
+		return "", errors.New("No releases returned")
+	}
+	newestVersion := semver.MustParse(strings.TrimPrefix(versions[0].Version, "v"))
+	url := fmt.Sprintf("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/next/%d.%d", newestVersion.Major(), newestVersion.Minor())
+
+	req, err = http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "Could not create POST request")
+	}
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		return "", errors.New("Could not automatically determine new version number")
+	}
+	if resp.StatusCode != 200 {
+		return "", errors.Newf("API error, got status %d", resp.StatusCode)
+	}
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.New("Could not read new version number")
+	}
+	defer resp.Body.Close()
+	version := string(bodyBytes)
+	return version, nil
 }
 
 func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
@@ -176,9 +296,19 @@ func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 
 	workdir := cctx.String("workdir")
 	pretend := cctx.Bool("pretend")
-	// Normalize the version string, to prevent issues where this was given with the wrong convention
-	// which requires a full rebuild.
-	version := fmt.Sprintf("v%s", strings.TrimPrefix(cctx.String("version"), "v"))
+	isDevelopment := cctx.Bool("development")
+	var version string
+	if cctx.String("version") == "auto" {
+		var err error
+		version, err = determineNextReleaseVersion(cctx.Context)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// Normalize the version string, to prevent issues where this was given with the wrong convention
+		// which requires a full rebuild.
+		version = fmt.Sprintf("v%s", strings.TrimPrefix(cctx.String("version"), "v"))
+	}
 	typ := cctx.String("type")
 	inputs := cctx.String("inputs")
 	branch := cctx.String("branch")
@@ -206,5 +336,5 @@ func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 		inputs = rc.Inputs
 	}
 
-	return NewReleaseRunner(cctx.Context, workdir, version, inputs, typ, branch, pretend)
+	return NewReleaseRunner(cctx.Context, workdir, version, inputs, typ, branch, pretend, isDevelopment)
 }

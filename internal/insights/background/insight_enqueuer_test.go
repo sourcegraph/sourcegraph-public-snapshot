@@ -13,53 +13,10 @@ import (
 
 	"github.com/hexops/autogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
 )
-
-var testRealGlobalSettings = &api.Settings{ID: 1, Contents: `{
-	"insights": [
-		{
-		  "title": "fmt usage",
-		  "description": "errors.Errorf/fmt.Printf usage",
-		  "series": [
-			{
-			  "label": "errors.Errorf",
-			  "search": "errorf",
-			},
-			{
-			  "label": "printf",
-			  "search": "fmt.Printf",
-			},
-			{
-			  "label": "duplicate",
-			  "search": "errorf",
-			}
-		  ]
-		},
-		{
-			"title": "gitserver usage",
-			"description": "gitserver exec & close usage",
-			"series": [
-			  {
-				"label": "exec",
-				"search": "gitserver.Exec",
-			  },
-			  {
-				"label": "close",
-				"search": "gitserver.Close",
-			  },
-			  {
-				"label": "duplicate",
-				"search": "gitserver.Close",
-			  }
-			]
-		  }
-		]
-	}
-`}
 
 // Test_discoverAndEnqueueInsights tests that insight discovery and job enqueueing works and
 // adheres to a few properties:

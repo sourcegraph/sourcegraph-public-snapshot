@@ -17,7 +17,7 @@ import (
 func TestSoftDeleteExpiredUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertUploads(t, db,
 		shared.Upload{ID: 50, RepositoryID: 100, State: "completed"},
@@ -97,7 +97,7 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// The packages in this test reference each other in the following way:
 	//

@@ -23,12 +23,13 @@ var (
 	// gitCmdAllowlist are commands and arguments that are allowed to execute and are
 	// checked by IsAllowedGitCmd
 	gitCmdAllowlist = map[string][]string{
-		"log":    append([]string{}, gitCommonAllowlist...),
-		"show":   append([]string{}, gitCommonAllowlist...),
-		"remote": {"-v"},
-		"diff":   append([]string{}, gitCommonAllowlist...),
-		"blame":  {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
-		"branch": {"-r", "-a", "--contains", "--merged", "--format"},
+		"log":       append([]string{}, gitCommonAllowlist...),
+		"show":      append([]string{}, gitCommonAllowlist...),
+		"remote":    {"-v"},
+		"diff":      append([]string{}, gitCommonAllowlist...),
+		"diff-tree": append([]string{"--root"}, gitCommonAllowlist...),
+		"blame":     {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
+		"branch":    {"-r", "-a", "--contains", "--merged", "--format"},
 
 		"rev-parse":    {"--abbrev-ref", "--symbolic-full-name", "--glob", "--exclude"},
 		"rev-list":     {"--first-parent", "--max-parents", "--reverse", "--max-count", "--count", "--after", "--before", "--", "-n", "--date-order", "--skip", "--left-right"},
@@ -37,11 +38,11 @@ var (
 		"archive":      {"--worktree-attributes", "--format", "-0", "HEAD", "--"},
 		"ls-tree":      {"--name-only", "HEAD", "--long", "--full-name", "--object-only", "--", "-z", "-r", "-t"},
 		"ls-files":     {"--with-tree", "-z"},
-		"for-each-ref": {"--format", "--points-at"},
+		"for-each-ref": {"--format", "--points-at", "--contains", "--sort", "-creatordate", "-refname", "-HEAD"},
 		"tag":          {"--list", "--sort", "-creatordate", "--format", "--points-at"},
 		"merge-base":   {"--"},
 		"show-ref":     {"--heads"},
-		"shortlog":     {"-s", "-n", "-e", "--no-merges", "--after", "--before"},
+		"shortlog":     {"--summary", "--numbered", "--email", "--no-merges", "--after", "--before"},
 		"cat-file":     {"-p", "-t"},
 		"lfs":          {},
 
@@ -227,6 +228,15 @@ func IsAllowedGitCmd(logger log.Logger, args []string, dir common.GitDir) bool {
 				// (arg == "-F" && len(args) > i+2 && args[i+2] == "-") || (arg == "-" && args[i] == "-F")
 				if arg == "-F" {
 					checkFileInput = true
+					continue
+				}
+			}
+
+			if cmd == "diff-tree" {
+				if arg == "-r" {
+					// Using -r tells diff-tree to recurse into subdirectories, this is allowed
+					//
+					// See https://git-scm.com/docs/git-diff-tree
 					continue
 				}
 			}

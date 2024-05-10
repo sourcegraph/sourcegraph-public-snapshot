@@ -12,17 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// rfcFlags are the flags that are common to all subcommands of the rfc command. This allows to not have to remember which position the flags are
-// to be inputted on the CLI.
-var rfcFlags = []cli.Flag{
-	&cli.BoolFlag{
-		Name:     "private",
-		Usage:    "perform the RFC action on the private RFC drive",
-		Required: false,
-		Value:    false,
-	},
-}
-
 var rfcCommand = &cli.Command{
 	Name:  "rfc",
 	Usage: `List, search, and open Sourcegraph RFCs`,
@@ -37,46 +26,69 @@ var rfcCommand = &cli.Command{
 sg rfc list
 
 # List all Private RFCs
-sg rfc list --private
+sg rfc --private list
+
+# List all Public RFCs that match one of some statuses
+sg rfc list -s approved -s implemented -s done
 
 # Search for a Public RFC
 sg rfc search "search terms"
 
 # Search for a Private RFC
-sg rfc search --private "search terms"
+sg rfc --private search "search terms"
 
 # Open a specific Public RFC
 sg rfc open 420
 
 # Open a specific private RFC
-sg rfc open --private 420
+sg rfc --private open 420
 
 # Create a new public RFC
 sg rfc create "title"
 
 # Create a new private RFC. Possible types: [solution]
-sg rfc create --private --type <type> "title"
+sg rfc --private create --type <type> "title"
 `,
 	Category: category.Company,
-	Flags:    rfcFlags,
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:     "private",
+			Usage:    "perform the RFC action on the private RFC drive",
+			Required: false,
+			Value:    false,
+		},
+	},
 	Subcommands: []*cli.Command{
 		{
-			Name:  "list",
-			Usage: "List Sourcegraph RFCs",
-			Flags: rfcFlags,
+			Name:      "list",
+			ArgsUsage: " ",
+			Usage:     "List Sourcegraph RFCs",
+			Flags: []cli.Flag{
+				&cli.StringSliceFlag{
+					Name:    "status",
+					Aliases: []string{"s"},
+					Usage:   "Only show RFCs with the given status(es)",
+				},
+			},
 			Action: func(c *cli.Context) error {
 				driveSpec := rfc.PublicDrive
 				if c.Bool("private") {
 					driveSpec = rfc.PrivateDrive
 				}
-				return rfc.List(c.Context, driveSpec, std.Out)
+				return rfc.List(c.Context, driveSpec, std.Out, c.StringSlice("status"))
 			},
 		},
 		{
 			Name:      "search",
 			ArgsUsage: "[query]",
-			Flags:     rfcFlags,
 			Usage:     "Search Sourcegraph RFCs",
+			Flags: []cli.Flag{
+				&cli.StringSliceFlag{
+					Name:    "status",
+					Aliases: []string{"s"},
+					Usage:   "Only show RFCs with the given status(es)",
+				},
+			},
 			Action: func(c *cli.Context) error {
 				driveSpec := rfc.PublicDrive
 				if c.Bool("private") {
@@ -85,13 +97,12 @@ sg rfc create --private --type <type> "title"
 				if c.Args().Len() == 0 {
 					return errors.New("no search query given")
 				}
-				return rfc.Search(c.Context, strings.Join(c.Args().Slice(), " "), driveSpec, std.Out)
+				return rfc.Search(c.Context, strings.Join(c.Args().Slice(), " "), driveSpec, std.Out, c.StringSlice("status"))
 			},
 		},
 		{
 			Name:      "open",
 			ArgsUsage: "[number]",
-			Flags:     rfcFlags,
 			Usage:     "Open a Sourcegraph RFC - find and list RFC numbers with 'sg rfc list' or 'sg rfc search'",
 			Action: func(c *cli.Context) error {
 				driveSpec := rfc.PublicDrive
@@ -106,12 +117,14 @@ sg rfc create --private --type <type> "title"
 		},
 		{
 			Name:      "create",
-			ArgsUsage: "[title...]",
-			Flags: append(rfcFlags, &cli.StringFlag{
-				Name:  "type",
-				Usage: "the type of the RFC to create (valid: solution)",
-				Value: rfc.ProblemSolutionDriveTemplate.Name,
-			}),
+			ArgsUsage: "--type <type> [title...]",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:  "type",
+					Usage: "the type of the RFC to create (valid: solution)",
+					Value: rfc.ProblemSolutionDriveTemplate.Name,
+				},
+			},
 			Usage: "Create Sourcegraph RFCs",
 			Action: func(c *cli.Context) error {
 				driveSpec := rfc.PublicDrive

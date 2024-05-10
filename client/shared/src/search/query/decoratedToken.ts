@@ -1088,6 +1088,16 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
                 },
             ]
         }
+        case 'at.time': {
+            return [
+                {
+                    type: 'literal',
+                    range: { start: offset, end: offset + body.length },
+                    value: body,
+                    quoted: false,
+                },
+            ]
+        }
     }
     decorated.push({
         type: 'literal',

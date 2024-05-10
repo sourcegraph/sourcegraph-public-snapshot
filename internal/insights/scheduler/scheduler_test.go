@@ -29,7 +29,7 @@ func Test_MonitorStartsAndStops(t *testing.T) {
 	config := JobMonitorConfig{
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
-		ObservationCtx: &observation.TestContext,
+		ObservationCtx: observation.TestContextTB(t),
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
 	routines := NewBackgroundJobMonitor(ctx, config).Routines()
@@ -45,7 +45,7 @@ func TestScheduler_InitialBackfill(t *testing.T) {
 	config := JobMonitorConfig{
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
-		ObservationCtx: &observation.TestContext,
+		ObservationCtx: observation.TestContextTB(t),
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
 	monitor := NewBackgroundJobMonitor(ctx, config)

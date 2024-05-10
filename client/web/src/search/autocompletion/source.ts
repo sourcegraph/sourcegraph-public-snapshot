@@ -1,4 +1,4 @@
-interface CompletionResult<T> {
+export interface CompletionResult<T> {
     /**
      * Initial/synchronous result.
      */

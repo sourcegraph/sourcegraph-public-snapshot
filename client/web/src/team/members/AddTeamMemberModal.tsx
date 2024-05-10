@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import { logger } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, H3, Modal, ErrorAlert, Form, Label } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
@@ -9,7 +10,7 @@ import type { Scalars } from '../../graphql-operations'
 import { useAddTeamMembers } from './backend'
 import { UserSelect } from './user-select/UserSelect'
 
-export interface AddTeamMemberModalProps {
+export interface AddTeamMemberModalProps extends TelemetryV2Props {
     teamID: Scalars['ID']
     teamName: string
 
@@ -22,6 +23,7 @@ export const AddTeamMemberModal: React.FunctionComponent<React.PropsWithChildren
     teamName,
     onCancel,
     afterAdd,
+    telemetryRecorder,
 }) => {
     const labelId = 'addTeamMember'
 
@@ -42,13 +44,15 @@ export const AddTeamMemberModal: React.FunctionComponent<React.PropsWithChildren
                     variables: { team: teamID, members: selectedMembers.map(member => ({ userID: member })) },
                 })
 
+                telemetryRecorder.recordEvent('team.members', 'add')
                 afterAdd()
             } catch (error) {
                 // Non-request error. API errors will be available under `error` above.
                 logger.error(error)
+                telemetryRecorder.recordEvent('team.members', 'addFail')
             }
         },
-        [afterAdd, teamID, selectedMembers, addMembers]
+        [afterAdd, teamID, selectedMembers, addMembers, telemetryRecorder]
     )
 
     return (

@@ -5,12 +5,13 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, Routes, type NavigateFunction } from 'react-router-dom'
 import { combineLatest, merge, type Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { type ErrorLike, isErrorLike, asError, logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, ErrorMessage } from '@sourcegraph/wildcard'
 
@@ -119,6 +120,7 @@ export interface OrgAreaRouteContext
     extends PlatformContextProps,
         SettingsCascadeProps,
         TelemetryProps,
+        TelemetryV2Props,
         NamespaceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
@@ -170,7 +172,7 @@ export class OrgArea extends React.Component<OrgAreaProps> {
 
         // Fetch organization.
         this.subscriptions.add(
-            combineLatest([nameChanges, merge(this.refreshRequests.pipe(mapTo(false)), of(true))])
+            combineLatest([nameChanges, merge(this.refreshRequests.pipe(map(() => false)), of(true))])
                 .pipe(
                     switchMap(([name, forceRefresh]) => {
                         type PartialStateUpdate = Pick<State, 'orgOrError'>
@@ -237,6 +239,7 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             settingsCascade: this.props.settingsCascade,
             namespace: this.state.orgOrError,
             telemetryService: this.props.telemetryService,
+            telemetryRecorder: this.props.platformContext.telemetryRecorder,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
             batchChangesEnabled: this.props.batchChangesEnabled,
             batchChangesExecutionEnabled: this.props.batchChangesExecutionEnabled,

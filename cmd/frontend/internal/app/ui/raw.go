@@ -20,7 +20,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -75,7 +75,7 @@ func serveRaw(logger log.Logger, db database.DB, gitserverClient gitserver.Clien
 		// - Gitserver content updating
 		// - Consistent error handling (permissions, revision not found, repo not found, etc).
 		//
-		common, err := newCommon(w, r, db, globals.Branding().BrandName, noIndex, serveError)
+		common, err := newCommon(w, r, db, conf.Branding().BrandName, noIndex, serveError)
 		if err != nil {
 			return err
 		}

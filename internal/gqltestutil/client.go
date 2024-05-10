@@ -374,12 +374,22 @@ func (c *Client) GetWithHeaders(url string, header http.Header) (*http.Response,
 
 // Post performs a POST request to the URL with authenticated user.
 func (c *Client) Post(url string, body io.Reader) (*http.Response, error) {
+	return c.PostWithHeader(url, body, nil)
+}
+
+func (c *Client) PostWithHeader(url string, body io.Reader, header http.Header) (*http.Response, error) {
 	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
 		return nil, err
 	}
 
 	c.addCookies(req)
+
+	for name, values := range header {
+		for _, value := range values {
+			req.Header.Add(name, value)
+		}
+	}
 
 	return http.DefaultClient.Do(req)
 }

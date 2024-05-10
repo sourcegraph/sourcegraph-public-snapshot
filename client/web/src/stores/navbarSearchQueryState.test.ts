@@ -157,12 +157,12 @@ describe('navbar query state', () => {
             expect(useNavbarQueryState.getState()).toHaveProperty('searchPatternType', SearchPatternType.regexp)
         })
 
-        it('prefers keyword search over user settings if keyword search is enabled', () => {
+        it('honors default user settings even if keyword search is enabled', () => {
             setQueryStateFromURL(parseSearchURL(''))
             setQueryStateFromSettings({
                 subjects: [],
                 final: {
-                    'search.defaultPatternType': SearchPatternType.standard,
+                    'search.defaultPatternType': SearchPatternType.regexp,
                     experimentalFeatures: {
                         keywordSearch: true,
                     },
@@ -170,7 +170,7 @@ describe('navbar query state', () => {
             })
 
             expect(useNavbarQueryState.getState()).toHaveProperty('searchMode', SearchMode.Precise)
-            expect(useNavbarQueryState.getState()).toHaveProperty('searchPatternType', SearchPatternType.keyword)
+            expect(useNavbarQueryState.getState()).toHaveProperty('searchPatternType', SearchPatternType.regexp)
         })
 
         it('chooses correct defaults when keyword search is enabled', () => {

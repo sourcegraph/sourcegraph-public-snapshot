@@ -571,14 +571,26 @@ func Map(query []Node, fns ...func([]Node) []Node) []Node {
 // ConcatRevFilters removes rev: filters from parameters and attaches their value as @rev to the repo: filters.
 // Invariant: Guaranteed to succeed on a validated Basic query.
 func ConcatRevFilters(b Basic) Basic {
+	// Extract the revision string
 	var revision string
-	nodes := MapField(toNodes(b.Parameters), FieldRev, func(value string, _ bool, _ Annotation) Node {
-		revision = value
-		return nil // remove this node
+	VisitField(toNodes(b.Parameters), FieldRev, func(value string, _ bool, ann Annotation) {
+		if !ann.Labels.IsSet(IsPredicate) {
+			revision = value
+		}
+	})
+	VisitTypedPredicate(toNodes(b.Parameters), func(pred *RevAtTimePredicate) {
+		revision = pred.String()
 	})
 	if revision == "" {
 		return b
 	}
+
+	// Remove any rev: fields
+	nodes := MapField(toNodes(b.Parameters), FieldRev, func(value string, negated bool, ann Annotation) Node {
+		return nil
+	})
+
+	// Add rev to any repo: fields
 	modified := MapField(nodes, FieldRepo, func(value string, negated bool, ann Annotation) Node {
 		if !negated && !ann.Labels.IsSet(IsPredicate) {
 			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated, Annotation: ann}

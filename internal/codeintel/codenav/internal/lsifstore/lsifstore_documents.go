@@ -15,10 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *store) SCIPDocument(ctx context.Context, id int, path string) (_ *scip.Document, err error) {
+func (s *store) SCIPDocument(ctx context.Context, uploadID int, path string) (_ *scip.Document, err error) {
 	ctx, _, endObservation := s.operations.scipDocument.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("path", path),
-		attribute.Int("uploadID", id),
+		attribute.Int("uploadID", uploadID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -39,7 +39,7 @@ func (s *store) SCIPDocument(ctx context.Context, id int, path string) (_ *scip.
 		}
 		return &document, nil
 	})
-	doc, _, err := scanner(s.db.Query(ctx, sqlf.Sprintf(fetchSCIPDocumentQuery, id, path)))
+	doc, _, err := scanner(s.db.Query(ctx, sqlf.Sprintf(fetchSCIPDocumentQuery, uploadID, path)))
 	return doc, err
 }
 

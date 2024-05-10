@@ -12,15 +12,15 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
-	"github.com/sourcegraph/sourcegraph/internal/sams"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/server/samsm2m"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 type Server struct {
@@ -29,7 +29,7 @@ type Server struct {
 	publishOpts events.PublishStreamOptions
 
 	// samsClient is used for M2M authn/authz: go/sams-m2m
-	samsClient sams.Client
+	samsClient *sams.ClientV1
 
 	recordEventsMetrics recordEventsMetrics
 	recordEventMetrics  recordEventMetrics
@@ -43,7 +43,7 @@ var _ telemetrygatewayv1.TelemeteryGatewayServiceServer = (*Server)(nil)
 func New(
 	logger log.Logger,
 	eventsTopic pubsub.TopicPublisher,
-	samsClient sams.Client,
+	samsClient *sams.ClientV1,
 	publishOpts events.PublishStreamOptions,
 ) (*Server, error) {
 	recordEventsRPCMetrics, err := newRecordEventsMetrics()
@@ -140,7 +140,7 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 
 				// 🚨 SECURITY: Only known clients registered in SAMS can submit events
 				// as a managed service.
-				if err := samsm2m.CheckWriteEventsScope(stream.Context(), logger, s.samsClient); err != nil {
+				if err := samsm2m.CheckWriteEventsScope(stream.Context(), logger, s.samsClient.Tokens()); err != nil {
 					return err
 				}
 
@@ -229,7 +229,7 @@ func (s *Server) RecordEvent(ctx context.Context, req *telemetrygatewayv1.Record
 
 		// 🚨 SECURITY: Only known clients registered in SAMS can submit events
 		// as a managed service.
-		if err := samsm2m.CheckWriteEventsScope(ctx, logger, s.samsClient); err != nil {
+		if err := samsm2m.CheckWriteEventsScope(ctx, logger, s.samsClient.Tokens()); err != nil {
 			return nil, err
 		}
 

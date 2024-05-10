@@ -19,7 +19,6 @@ go_library(
         "//dev/sg/internal/usershell",
         "//dev/sg/root",
         "//lib/errors",
-        "//lib/output",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_sourcegraph_run//:run",
         "@dev_bobheadxi_go_streamline//pipeline",

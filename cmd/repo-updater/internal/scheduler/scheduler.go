@@ -8,14 +8,16 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -50,7 +52,7 @@ const (
 // is limited by the gitMaxConcurrentClones site configuration.
 type UpdateScheduler struct {
 	db              database.DB
-	gitserverClient gitserver.Client
+	gitserverClient gitserver.RepositoryServiceClient
 	updateQueue     *updateQueue
 	schedule        *schedule
 	logger          log.Logger
@@ -71,7 +73,7 @@ type configuredRepo struct {
 const notifyChanBuffer = 1
 
 // NewUpdateScheduler returns a new scheduler.
-func NewUpdateScheduler(logger log.Logger, db database.DB, gitserverClient gitserver.Client) *UpdateScheduler {
+func NewUpdateScheduler(logger log.Logger, db database.DB, gitserverClient gitserver.RepositoryServiceClient) *UpdateScheduler {
 	updateSchedLogger := logger.Scoped("UpdateScheduler")
 
 	return &UpdateScheduler{
@@ -179,16 +181,19 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 				// if it doesn't exist or update it if it does. The timeout of this request depends
 				// on the value of conf.GitLongCommandTimeout() or if the passed context has a set
 				// deadline shorter than the value of this config.
-				resp, err := s.gitserverClient.RequestRepoUpdate(ctx, repo.Name)
+				lastFetched, lastChanged, err := s.gitserverClient.FetchRepository(ctx, repo.Name)
 				if err != nil {
-					schedError.WithLabelValues("requestRepoUpdate").Inc()
-					subLogger.Error("error requesting repo update", log.Error(err), log.String("uri", string(repo.Name)))
-				} else if resp != nil && resp.Error != "" {
-					schedError.WithLabelValues("repoUpdateResponse").Inc()
-					// We don't want to spam our logs when the rate limiter has been set to block all
-					// updates
-					if !strings.Contains(resp.Error, ratelimit.ErrBlockAll.Error()) {
-						subLogger.Error("error updating repo", log.String("err", resp.Error), log.String("uri", string(repo.Name)))
+					s, ok := status.FromError(err)
+					if ok && s.Code() == codes.Unavailable {
+						schedError.WithLabelValues("requestRepoUpdate").Inc()
+						subLogger.Error("error requesting repo update", log.Error(err), log.String("uri", string(repo.Name)))
+					} else {
+						schedError.WithLabelValues("repoUpdateResponse").Inc()
+						// We don't want to spam our logs when the rate limiter has been set to block all
+						// updates, or when repo-updater is shutting down.
+						if !strings.Contains(err.Error(), ratelimit.ErrBlockAll.Error()) && ctx.Err() == nil {
+							subLogger.Error("error updating repo", log.Error(err), log.String("uri", string(repo.Name)))
+						}
 					}
 				}
 
@@ -197,16 +202,16 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 					return
 				}
 
-				if err != nil || (resp != nil && resp.Error != "") {
+				if err != nil {
 					// On error we will double the current interval so that we back off and don't
 					// get stuck with problematic repos with low intervals.
 					if currentInterval, ok := s.schedule.getCurrentInterval(repo); ok {
 						s.schedule.updateInterval(repo, currentInterval*2)
 					}
-				} else if resp != nil && resp.LastFetched != nil && resp.LastChanged != nil {
+				} else {
 					// This is the heuristic that is described in the UpdateScheduler documentation.
 					// Update that documentation if you update this logic.
-					interval := resp.LastFetched.Sub(*resp.LastChanged) / 2
+					interval := lastFetched.Sub(lastChanged) / 2
 					s.schedule.updateInterval(repo, interval)
 				}
 			}()

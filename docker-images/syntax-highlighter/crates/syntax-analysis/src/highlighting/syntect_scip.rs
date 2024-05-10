@@ -537,8 +537,9 @@ mod test {
         io::Read,
     };
 
-    use crate::snapshot::{dump_document_with_config, EmitSymbol, EmitSyntax, SnapshotOptions};
     use pretty_assertions::assert_eq;
+
+    use crate::snapshot::{dump_document_with_config, EmitSymbol, EmitSyntax, SnapshotOptions};
 
     fn snapshot_sciptect_documents(doc: &Document, source: &str) -> String {
         dump_document_with_config(

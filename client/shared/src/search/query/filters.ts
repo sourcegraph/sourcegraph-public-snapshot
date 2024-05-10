@@ -3,7 +3,6 @@ import type { Omit } from 'utility-types'
 import type { SearchMatch } from '../stream'
 
 import { languageCompletion } from './languageFilter'
-import { predicateCompletion } from './predicates'
 import { selectorCompletion } from './selectFilter'
 import type { Filter, Literal } from './token'
 
@@ -235,7 +234,6 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from file paths matching the given search pattern.`,
-        discreteValues: () => [...predicateCompletion('file')],
         placeholder: 'regex',
         suggestions: 'path',
     },
@@ -291,7 +289,6 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         discreteValues: (_value, isSourcegraphDotCom) => [
             ...(isSourcegraphDotCom === true ? SOURCEGRAPH_DOT_COM_REPO_COMPLETION : []),
-            ...predicateCompletion('repo'),
         ],
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given search pattern.`,

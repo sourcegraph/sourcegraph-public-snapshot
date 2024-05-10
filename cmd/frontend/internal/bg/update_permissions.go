@@ -53,21 +53,15 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 				return errors.Wrap(err, "creating new permissions")
 			}
 
-			roles := []types.SystemRole{types.SiteAdministratorSystemRole, types.UserSystemRole}
-			excludedRoles := collections.NewSet[rtypes.PermissionNamespace](rbacSchema.ExcludeFromUserRole...)
+			permissionsToIncludeForUserRole := collections.NewSet[rtypes.PermissionNamespace](rbacSchema.UserDefaultNamespaces...)
 			for _, permission := range permissions {
-				// Assign the permission to both SITE_ADMINISTRATOR and USER roles. We do this so
-				// that we don't break the current experience and always assume that everyone has
-				// access until a site administrator revokes that access. Context:
-				// https://sourcegraph.slack.com/archives/C044BUJET7C/p1675292124253779?thread_ts=1675280399.192819&cid=C044BUJET7C
-
-				rolesToAssign := roles
-				if excludedRoles.Has(permission.Namespace) {
-					// The only exception to the above rule (at the moment) is Ownership, because it
-					// is clearly a permission which should be explicitly granted and only
-					// SITE_ADMINISTRATOR has it by default. All exceptions can be added to the
-					// `excludeFromUserRole` attribute of RBAC schema.
-					rolesToAssign = []types.SystemRole{types.SiteAdministratorSystemRole}
+				rolesToAssign := []types.SystemRole{types.SiteAdministratorSystemRole}
+				if permissionsToIncludeForUserRole.Has(permission.Namespace) {
+					// After the incident: https://app.incident.io/sourcegraph/incidents/292?source=slack_bookmark,
+					// we decided to make the permissions assignment to the user role additive. Thus, developers
+					// will have to explicitly state in the rbac schema the permissions they'd like to assign
+					// to the user role.
+					rolesToAssign = append(rolesToAssign, types.UserSystemRole)
 				}
 				if err := rolePermissionStore.BulkAssignPermissionsToSystemRoles(ctx, database.BulkAssignPermissionsToSystemRolesOpts{
 					Roles:        rolesToAssign,

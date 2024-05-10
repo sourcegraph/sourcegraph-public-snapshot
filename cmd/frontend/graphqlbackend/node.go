@@ -226,16 +226,6 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToVulnerability() (resolverstubs.VulnerabilityResolver, bool) {
-	n, ok := r.Node.(resolverstubs.VulnerabilityResolver)
-	return n, ok
-}
-
-func (r *NodeResolver) ToVulnerabilityMatch() (resolverstubs.VulnerabilityMatchResolver, bool) {
-	n, ok := r.Node.(resolverstubs.VulnerabilityMatchResolver)
-	return n, ok
-}
-
 func (r *NodeResolver) ToSiteConfigurationChange() (*SiteConfigurationChangeResolver, bool) {
 	n, ok := r.Node.(*SiteConfigurationChangeResolver)
 	return n, ok
@@ -379,6 +369,11 @@ func (r *NodeResolver) ToCodeHost() (*codeHostResolver, bool) {
 
 func (r *NodeResolver) ToGitserverInstance() (*gitserverResolver, bool) {
 	n, ok := r.Node.(*gitserverResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToIndexedSearchInstance() (*indexedSearchInstance, bool) {
+	n, ok := r.Node.(*indexedSearchInstance)
 	return n, ok
 }
 

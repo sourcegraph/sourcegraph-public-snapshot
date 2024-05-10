@@ -30,7 +30,6 @@ type MigrationsReader interface {
 // sg migration commands, as it doesn't require any GCP authentication, as the migrations are
 // stored in a public GCS bucket.
 type LazyMigrationsReader struct {
-	m       map[string]migrationFiles
 	baseUrl string
 }
 

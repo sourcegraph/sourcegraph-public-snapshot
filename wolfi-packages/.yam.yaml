@@ -1,0 +1,11 @@
+gap:
+  - "."
+  - ".subpackages"
+  - ".data"
+  - ".pipeline"
+
+sort:
+  - ".package.dependencies.runtime"
+  - ".environment.contents.packages"
+
+indent: 2

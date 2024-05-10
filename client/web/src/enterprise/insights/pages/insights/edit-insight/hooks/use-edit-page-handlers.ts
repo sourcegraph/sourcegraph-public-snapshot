@@ -1,11 +1,12 @@
 import { useContext } from 'react'
 
 import { useNavigate } from 'react-router-dom'
+import { lastValueFrom } from 'rxjs'
 
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import type { SubmissionErrors } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../../../../../tracking/eventLogger'
 import { CodeInsightsBackendContext, type CreationInsightInput } from '../../../../core'
 import { useQueryParameters } from '../../../../hooks'
 import { getTrackingTypeByInsightType } from '../../../../pings'
@@ -36,13 +37,16 @@ export function useEditPageHandlers(props: Props): useHandleSubmitOutput {
             return
         }
 
-        await updateInsight({
-            insightId: id,
-            nextInsightData: newInsight,
-        }).toPromise()
+        await lastValueFrom(
+            updateInsight({
+                insightId: id,
+                nextInsightData: newInsight,
+            }),
+            { defaultValue: undefined }
+        )
 
         const insightType = getTrackingTypeByInsightType(newInsight.type)
-        eventLogger.log('InsightEdit', { insightType }, { insightType })
+        EVENT_LOGGER.log('InsightEdit', { insightType }, { insightType })
         telemetryRecorder.recordEvent('insight', 'edit', { metadata: { type: V2InsightType[insightType] } })
         navigate(redirectUrl)
     }

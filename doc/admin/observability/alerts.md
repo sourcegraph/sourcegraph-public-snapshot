@@ -1484,7 +1484,7 @@ Generated query for critical alert: `max((sum by (instance, cmd) (src_gitserver_
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> gitserver: 0.02s+ echo test command duration for 30s
-- <span class="badge badge-critical">critical</span> gitserver: 1s+ echo test command duration
+- <span class="badge badge-critical">critical</span> gitserver: 1s+ echo test command duration for 1m0s
 
 **Next steps**
 
@@ -6565,6 +6565,126 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 <summary>Technical details</summary>
 
 Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^zoekt-webserver.*"})) >= 1)`
+
+</details>
+
+<br />
+
+## zoekt: go_goroutines
+
+<p class="subtitle">maximum active goroutines</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 10000+ maximum active goroutines for 10m0s
+
+**Next steps**
+
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-go-goroutines).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_go_goroutines"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~".*indexed-search-indexer"})) >= 10000)`
+
+</details>
+
+<br />
+
+## zoekt: go_gc_duration_seconds
+
+<p class="subtitle">maximum go garbage collection duration</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 2s+ maximum go garbage collection duration
+
+**Next steps**
+
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-go-gc-duration-seconds).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_go_gc_duration_seconds"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max by (instance) (go_gc_duration_seconds{job=~".*indexed-search-indexer"})) >= 2)`
+
+</details>
+
+<br />
+
+## zoekt: go_goroutines
+
+<p class="subtitle">maximum active goroutines</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 10000+ maximum active goroutines for 10m0s
+
+**Next steps**
+
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-go-goroutines).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_go_goroutines"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~".*indexed-search"})) >= 10000)`
+
+</details>
+
+<br />
+
+## zoekt: go_gc_duration_seconds
+
+<p class="subtitle">maximum go garbage collection duration</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 2s+ maximum go garbage collection duration
+
+**Next steps**
+
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-go-gc-duration-seconds).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_go_gc_duration_seconds"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max by (instance) (go_gc_duration_seconds{job=~".*indexed-search"})) >= 2)`
 
 </details>
 

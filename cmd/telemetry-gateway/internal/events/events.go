@@ -14,9 +14,9 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 type Publisher struct {
@@ -27,6 +27,8 @@ type Publisher struct {
 	opts  PublishStreamOptions
 
 	metadataJSON json.RawMessage
+
+	isSourcegraphInstance bool
 }
 
 type PublishStreamOptions struct {
@@ -53,11 +55,14 @@ func NewPublisherForStream(
 	}
 
 	var source string
+	var isSourcegraphInstance bool
 	switch identifier := metadata.GetIdentifier(); identifier.GetIdentifier().(type) {
 	case *telemetrygatewayv1.Identifier_LicensedInstance:
 		source = "licensed_instance"
+		isSourcegraphInstance = true
 	case *telemetrygatewayv1.Identifier_UnlicensedInstance:
 		source = "unlicensed_instance"
+		isSourcegraphInstance = true
 	case *telemetrygatewayv1.Identifier_ManagedService:
 		// Is a trusted client, so use the service ID directly as the source
 		source = identifier.GetManagedService().ServiceId
@@ -71,6 +76,8 @@ func NewPublisherForStream(
 		topic:        eventsTopic,
 		opts:         opts,
 		metadataJSON: metadataJSON,
+
+		isSourcegraphInstance: isSourcegraphInstance,
 	}, nil
 }
 
@@ -84,11 +91,41 @@ func (p *Publisher) GetSourceName() string {
 	return p.source
 }
 
+// IsSourcegraphInstance indicates that the client is a Sourcegraph instance.
+func (p *Publisher) IsSourcegraphInstance() bool {
+	return p.isSourcegraphInstance
+}
+
 type PublishEventResult struct {
 	// EventID is the ID of the event that was published.
 	EventID string
+	// EventFeature is the feature of the event that was published.
+	EventFeature string
+	// EventAction is the action of the event that was published.
+	EventAction string
+	// EventSource is a string representation of source of the event, as reported
+	// at recording time, in the default proto string format, e.g:
+	//
+	//   server:{version:"..."}  client:{name:"..."}
+	EventSource string
 	// PublishError, if non-nil, indicates an error occurred publishing the event.
 	PublishError error
+	// Retryable indicates the PublishError, if non-nil, may be resolved by
+	// retrying the publish operation.
+	Retryable bool
+}
+
+// NewPublishEventResult returns a PublishEventResult for the given event and error.
+// Should only be used internally or in testing.
+func NewPublishEventResult(event *telemetrygatewayv1.Event, err error, isRetryable bool) PublishEventResult {
+	return PublishEventResult{
+		EventID:      event.GetId(),
+		EventFeature: event.GetFeature(),
+		EventAction:  event.GetAction(),
+		EventSource:  event.GetSource().String(),
+		PublishError: err,
+		Retryable:    isRetryable,
+	}
 }
 
 // Publish emits all events concurrently, up to 100 at a time for each call.
@@ -99,25 +136,24 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 	for _, event := range events {
 		event := event // capture range variable :(
 
-		doPublish := func(event *telemetrygatewayv1.Event) error {
-			// Ensure the most important fields are in place
+		doPublish := func(event *telemetrygatewayv1.Event) (_ error, retryable bool) {
+			// Ensure the most important fields are in place. These validation
+			// errors are NOT retryable.
 			if event.Id == "" {
-				return errors.New("event ID is required")
+				return errors.New("event ID is required"), false
 			}
-			if event.Feature == "" {
-				return errors.New("event feature is required")
-			}
-			if event.Action == "" {
-				return errors.New("event action is required")
+			if err := telemetrygatewayv1.ValidateEventFeatureAction(event.Feature, event.Action); err != nil {
+				return errors.Wrap(err, "invalid event 'feature' or 'action'"), false
 			}
 			if event.Timestamp == nil {
-				return errors.New("event timestamp is required")
+				return errors.New("event timestamp is required"), false
 			}
 
 			// Render JSON format for publishing
 			eventJSON, err := protojson.Marshal(event)
 			if err != nil {
-				return errors.Wrap(err, "marshalling event")
+				// errors are encoding problems, won't be fixed on retry
+				return errors.Wrap(err, "marshalling event"), false
 			}
 
 			// Join our raw JSON payloads into a single message
@@ -126,7 +162,8 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 				"event":    json.RawMessage(eventJSON),
 			})
 			if err != nil {
-				return errors.Wrap(err, "marshalling event payload")
+				// errors are encoding problems, won't be fixed on retry
+				return errors.Wrap(err, "marshalling event payload"), false
 			}
 
 			if p.opts.MessageSizeHistogram != nil {
@@ -139,6 +176,10 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 			// We can't error forever, as the instance will keep trying to deliver
 			// this event - for now, we just pretend the event succeeded, and log
 			// some diagnostics.
+			//
+			// TODO: Maybe we can merge this with how we handle errors in
+			// summarizePublishEventsResults - for now, we stick with this
+			// special handling for extra visibility.
 			if len(payload) >= googlepubsub.MaxPublishRequestBytes {
 				trace.Logger(ctx, p.logger).Error("discarding oversized event",
 					log.Error(errors.Newf("event %s/%s is oversized",
@@ -149,13 +190,17 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 						redact.Safe(event.GetFeature()),
 						redact.Safe(event.GetAction()))),
 					log.String("eventID", event.GetId()),
+					log.String("eventSource", event.GetSource().String()),
 					log.Int("size", len(payload)),
-					// Record a section of the event content for diagnostics
-					log.String("eventSnippet", strings.ToValidUTF8(string(eventJSON[:256]), "�")))
+					// Record a section of the event content for diagnostics.
+					// Keep in mind the size of Context objects in Sentry:
+					// https://develop.sentry.dev/sdk/data-handling/#variable-size
+					// And GCP logging limits: https://cloud.google.com/logging/quotas
+					log.String("eventSnippet", strings.ToValidUTF8(string(eventJSON[:512]), "�")))
 				// We must return nil, pretending the publish succeeded, so that
 				// the client stops attempting to publish an event that will
 				// never succeed.
-				return nil
+				return nil, false
 			}
 
 			// Publish a single message in each callback to manage concurrency
@@ -165,19 +210,17 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 				// Explicitly record the cancel cause if one is provided.
 				if cancelCause := context.Cause(ctx); cancelCause != nil {
 					return errors.Wrapf(err, "interrupted event publish, cause: %s",
-						errors.Safe(cancelCause.Error()))
+						errors.Safe(cancelCause.Error())), true // caller should retry
 				}
-				return errors.Wrap(err, "publishing event")
+				return errors.Wrap(err, "publishing event"), true // caller should retry
 			}
 
-			return nil
+			return nil, false
 		}
 
 		wg.Go(func() PublishEventResult {
-			return PublishEventResult{
-				EventID:      event.GetId(),
-				PublishError: doPublish(event),
-			}
+			err, isRecoverableError := doPublish(event)
+			return NewPublishEventResult(event, err, isRecoverableError)
 		})
 	}
 	return wg.Wait()

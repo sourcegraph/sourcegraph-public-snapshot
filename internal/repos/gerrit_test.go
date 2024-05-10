@@ -40,6 +40,27 @@ func TestGerritSource_ListRepos(t *testing.T) {
 		testutil.AssertGolden(t, "testdata/sources/GERRIT/"+t.Name(), Update(t.Name()), repos)
 	})
 
+	t.Run("ssh enabled", func(t *testing.T) {
+		cf, save := NewClientFactory(t, t.Name())
+		defer save(t)
+
+		svc := typestest.MakeExternalService(t, extsvc.VariantGerrit, &schema.GerritConnection{
+			Url:        "https://gerrit.sgdev.org",
+			Username:   os.Getenv("GERRIT_USERNAME"),
+			Password:   os.Getenv("GERRIT_PASSWORD"),
+			GitURLType: "ssh",
+		})
+
+		ctx := context.Background()
+		src, err := NewGerritSource(ctx, svc, cf)
+		require.NoError(t, err)
+
+		repos, err := ListAll(ctx, src)
+		require.NoError(t, err)
+
+		testutil.AssertGolden(t, "testdata/sources/GERRIT/"+t.Name(), Update(t.Name()), repos)
+	})
+
 	t.Run("with filtering", func(t *testing.T) {
 		cf, save := NewClientFactory(t, t.Name())
 		defer save(t)

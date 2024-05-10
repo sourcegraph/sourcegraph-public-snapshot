@@ -24,7 +24,7 @@ describe('ProgressMessage.svelte', () => {
         })
 
         const progressMessage = document.getElementsByClassName('progress-message')
-        expect(progressMessage[0].textContent).toBe(`Fetching results... ${(5000 / 1000).toFixed(1)}s`)
+        expect(progressMessage[0].textContent).toBe('Fetching results...')
         expect(progressMessage).toHaveLength(1)
     })
 })

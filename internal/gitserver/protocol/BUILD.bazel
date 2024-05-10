@@ -4,7 +4,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "protocol",
     srcs = [
-        "gitolite_phabricator.go",
         "gitserver.go",
         "search.go",
         "search_reduce.go",

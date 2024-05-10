@@ -4,14 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"sync"
+	"time"
 
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,6 +27,7 @@ const NULL CommitId = 0
 
 type Service struct {
 	logger                  log.Logger
+	metrics                 *metrics
 	db                      *sql.DB
 	git                     GitserverClient
 	fetcher                 fetcher.RepositoryFetcher
@@ -43,6 +45,7 @@ type Service struct {
 }
 
 func NewService(
+	observationCtx *observation.Context,
 	db *sql.DB,
 	git GitserverClient,
 	fetcher fetcher.RepositoryFetcher,
@@ -60,15 +63,14 @@ func NewService(
 		indexRequestQueues[i] = make(chan indexRequest, indexRequestsQueueSize)
 	}
 
-	logger := log.Scoped("service")
-
 	service := &Service{
-		logger:                  logger,
+		logger:                  observationCtx.Logger,
+		metrics:                 newMetrics(observationCtx, db),
 		db:                      db,
 		git:                     git,
 		fetcher:                 fetcher,
 		createParser:            createParser,
-		status:                  NewStatus(logger),
+		status:                  NewStatus(),
 		repoUpdates:             make(chan struct{}, 1),
 		maxRepos:                maxRepos,
 		logQueries:              logQueries,
@@ -93,6 +95,7 @@ func (s *Service) startIndexingLoop(indexRequestQueue chan indexRequest) {
 	// We should use an internal actor when doing cross service calls.
 	ctx := actor.WithInternalActor(context.Background())
 	for indexRequest := range indexRequestQueue {
+		s.metrics.queueAge.Observe(time.Since(indexRequest.dateAddedToQueue).Seconds())
 		err := s.Index(ctx, indexRequest.repo, indexRequest.commit)
 		close(indexRequest.done)
 		if err != nil {
@@ -116,30 +119,6 @@ func (s *Service) startCleanupLoop() {
 	}
 }
 
-func getHops(ctx context.Context, tx dbutil.DB, commit int, tasklog *TaskLog) ([]int, error) {
-	tasklog.Start("get hops")
-
-	current := commit
-	spine := []int{current}
-
-	for {
-		_, ancestor, _, present, err := GetCommitById(ctx, tx, current)
-		if err != nil {
-			return nil, errors.Wrap(err, "GetCommitById")
-		} else if !present {
-			break
-		} else {
-			if current == NULL {
-				break
-			}
-			current = ancestor
-			spine = append(spine, current)
-		}
-	}
-
-	return spine, nil
-}
-
 func DeleteOldRepos(ctx context.Context, db *sql.DB, maxRepos int, threadStatus *ThreadStatus) error {
 	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
 	// See doc/dev/background-information/sql/locking_behavior.md for more details.
@@ -161,6 +140,27 @@ func DeleteOldRepos(ctx context.Context, db *sql.DB, maxRepos int, threadStatus 
 	}
 }
 
+func getHops(ctx context.Context, tx dbutil.DB, commit int, tasklog *TaskLog) ([]int, error) {
+	tasklog.Start("get hops")
+
+	current := commit
+	spine := []int{current}
+
+	for {
+		_, ancestor, _, present, err := GetCommitById(ctx, tx, current)
+		if err != nil {
+			return nil, errors.Wrap(err, "GetCommitById")
+		}
+
+		if !present || current == NULL {
+			return spine, nil
+		}
+
+		current = ancestor
+		spine = append(spine, current)
+	}
+}
+
 // Ruler sequence
 //
 // input : 0, 1, 2, 3, 4, 5, 6, 7, 8, ...
@@ -168,11 +168,10 @@ func DeleteOldRepos(ctx context.Context, db *sql.DB, maxRepos int, threadStatus 
 //
 // https://oeis.org/A007814
 func ruler(n int) int {
-	if n == 0 {
-		return 0
+	height := 0
+	for n > 0 && n%2 == 0 {
+		height++
+		n = n / 2
 	}
-	if n%2 != 0 {
-		return 0
-	}
-	return 1 + ruler(n/2)
+	return height
 }

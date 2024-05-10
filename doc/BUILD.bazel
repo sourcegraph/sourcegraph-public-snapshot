@@ -14,6 +14,7 @@ sh_test(
         ["test.sh"],
     ),
     tags = [
+        "manual",  # TODO(JH): remove this test once we've fully switched to a new solution for the dev docs.
         "requires-network",
     ],
 )
@@ -24,6 +25,7 @@ sh_binary(
     args = ["$(location //dev/tools:docsite)"],
     data = [
         "//dev/tools:docsite",
+        "//doc/admin/observability:doc_files",
         "//doc/cli/references:doc_files",
     ] + glob(
         ["**/*"],

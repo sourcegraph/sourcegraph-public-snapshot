@@ -926,6 +926,13 @@
 					1679051112
 				],
 				"PreCreation": false
+			},
+			"v5.4.0": {
+				"RootID": 1000000027,
+				"LeafIDs": [
+					1679051112
+				],
+				"PreCreation": false
 			}
 		}
 	},
@@ -1890,6 +1897,13 @@
 				"PreCreation": false
 			},
 			"v5.3.0": {
+				"RootID": 1000000033,
+				"LeafIDs": [
+					1686315964
+				],
+				"PreCreation": false
+			},
+			"v5.4.0": {
 				"RootID": 1000000033,
 				"LeafIDs": [
 					1686315964
@@ -11192,6 +11206,21 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1713958707,
+				"Name": "search jobs add index on state col",
+				"UpQuery": "CREATE INDEX IF NOT EXISTS exhaustive_search_jobs_state ON exhaustive_search_jobs (state);\nCREATE INDEX IF NOT EXISTS exhaustive_search_repo_jobs_state ON exhaustive_search_repo_jobs (state);\nCREATE INDEX IF NOT EXISTS exhaustive_search_repo_revision_jobs_state ON exhaustive_search_repo_revision_jobs (state);",
+				"DownQuery": "DROP INDEX IF EXISTS exhaustive_search_jobs_state;\nDROP INDEX IF EXISTS exhaustive_search_repo_jobs_state;\nDROP INDEX IF EXISTS exhaustive_search_repo_revision_jobs_state;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1709738515,
+					1711003437,
+					1711538234
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -11446,6 +11475,13 @@
 					1709738515,
 					1711003437,
 					1711538234
+				],
+				"PreCreation": false
+			},
+			"v5.4.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1713958707
 				],
 				"PreCreation": false
 			}

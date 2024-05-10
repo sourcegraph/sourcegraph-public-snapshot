@@ -2,29 +2,24 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 
 import { noop } from 'lodash'
 
-import {
-    Transcript,
-    type TranscriptJSON,
-    type TranscriptJSONScope,
-} from '@sourcegraph/cody-shared/dist/chat/transcript'
-import {
-    useClient,
-    type CodyClient,
-    type CodyClientScope,
-    type CodyClientConfig,
-    type CodyClientEvent,
-} from '@sourcegraph/cody-shared/dist/chat/useClient'
-import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
+import type {
+    TranscriptJSON,
+    TranscriptJSONScope,
+    CodyClient,
+    CodyClientScope,
+    CodyClientConfig,
+    CodyClientEvent,
+} from '@sourcegraph/cody-shared'
+import { Transcript, useClient, NoopEditor } from '@sourcegraph/cody-shared'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../tracking/eventLogger'
 import { EventName } from '../util/constants'
 
 import { isEmailVerificationNeededForCody } from './isCodyEnabled'
-
-export type { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
+import { useCodyIgnore } from './useCodyIgnore'
 
 export interface CodyChatStore
     extends Pick<
@@ -202,7 +197,7 @@ export const useCodyChat = ({
             if (!transcript) {
                 return
             }
-            eventLogger.log(v1EventLabel, { transcriptId: transcript.id, ...eventProperties })
+            EVENT_LOGGER.log(v1EventLabel, { transcriptId: transcript.id, ...eventProperties })
 
             let numericID = new Date(transcript.id).getTime()
             if (isNaN(numericID)) {
@@ -211,6 +206,17 @@ export const useCodyChat = ({
             telemetryRecorder.recordEvent(feature, action, { metadata: { transcriptId: numericID / 1000 } })
         },
         [transcript, telemetryRecorder]
+    )
+
+    const { isRepoIgnored } = useCodyIgnore()
+    const setScopeFromTranscript = useCallback(
+        (t: TranscriptJSON) => {
+            const newScope = { ...scope, ...t.scope }
+            // ensure ignored repositories are not added to scope
+            newScope.repositories = newScope.repositories.filter(repo => !isRepoIgnored(repo))
+            setScopeInternal(newScope)
+        },
+        [scope, setScopeInternal, isRepoIgnored]
     )
 
     const loadTranscriptFromHistory = useCallback(
@@ -224,11 +230,11 @@ export const useCodyChat = ({
                 await setTranscript(Transcript.fromJSON(transcriptToLoad))
 
                 if (transcriptToLoad.scope) {
-                    setScopeInternal({ ...scope, ...transcriptToLoad.scope })
+                    setScopeFromTranscript(transcriptToLoad)
                 }
             }
         },
-        [transcriptHistory, transcript?.id, setTranscript, setScopeInternal, scope]
+        [transcriptHistory, transcript?.id, setTranscript, setScopeFromTranscript]
     )
 
     const updateTranscriptInHistory = useCallback(
@@ -263,7 +269,7 @@ export const useCodyChat = ({
             return
         }
 
-        eventLogger.log(EventName.CODY_CHAT_HISTORY_CLEARED)
+        EVENT_LOGGER.log(EventName.CODY_CHAT_HISTORY_CLEARED)
 
         const newTranscript = initializeNewChatInternal()
         if (newTranscript) {
@@ -297,7 +303,7 @@ export const useCodyChat = ({
                         setTranscript(Transcript.fromJSON(transcriptToLoad)).catch(() => null)
 
                         if (transcriptToLoad.scope) {
-                            setScopeInternal({ ...scope, ...transcriptToLoad.scope })
+                            setScopeFromTranscript(transcriptToLoad)
                         }
                     }
                 }
@@ -307,13 +313,12 @@ export const useCodyChat = ({
         },
         [
             setTranscript,
-            setScopeInternal,
             client.config.needsEmailVerification,
             initializeNewChatInternal,
             transcript?.id,
             setTranscriptHistoryState,
-            scope,
             logTranscriptEvent,
+            setScopeFromTranscript,
         ]
     )
 
@@ -366,7 +371,7 @@ export const useCodyChat = ({
 
     const executeRecipe = useCallback<typeof executeRecipeInternal>(
         async (recipeId, options): Promise<Transcript | null> => {
-            eventLogger.log(`web:codyChat:recipe:${recipeId}:executed`, { recipeId })
+            EVENT_LOGGER.log(`web:codyChat:recipe:${recipeId}:executed`, { recipeId })
 
             const transcript = await executeRecipeInternal(recipeId, options)
 
@@ -405,7 +410,7 @@ export const useCodyChat = ({
                     setTranscript(Transcript.fromJSON(transcriptToLoad)).catch(() => null)
 
                     if (transcriptToLoad.scope) {
-                        setScopeInternal({ ...scope, ...transcriptToLoad.scope })
+                        setScopeFromTranscript(transcriptToLoad)
                     }
                 } else {
                     const newTranscript = new Transcript()
@@ -431,8 +436,7 @@ export const useCodyChat = ({
         setTranscriptHistoryState,
         loadTranscriptFromHistory,
         initializeNewChat,
-        scope,
-        setScopeInternal,
+        setScopeFromTranscript,
     ])
 
     const setScope = useCallback<CodyClient['setScope']>(

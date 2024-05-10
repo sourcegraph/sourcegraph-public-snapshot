@@ -1,26 +1,31 @@
 <script lang="ts">
-    import InfoBadge from '$lib/search/resultsIndicator/InfoBadge.svelte'
+    import { getProgressText } from '@sourcegraph/branded'
+
     import type { Progress } from '$lib/shared'
 
     export let state: 'error' | 'loading' | 'complete'
     export let progress: Progress
-    export let elapsedDuration: number
     export let severity: string
 
     $: isError = state === 'error' || severity === 'error'
     $: loading = state === 'loading'
 </script>
 
-{#if loading}
-    <div class="progress-message">
-        Fetching results... {(elapsedDuration / 1000).toFixed(1)}s
-    </div>
-{:else}
-    <InfoBadge {progress} {isError} />
-{/if}
+<div class="progress-message" class:error-text={isError}>
+    {#if loading}
+        Fetching results...
+    {:else}
+        {getProgressText(progress).visibleText}
+    {/if}
+</div>
 
 <style lang="scss">
     .progress-message {
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-small);
+        color: var(--text-title);
+
+        &.error-text {
+            color: var(--danger);
+        }
     }
 </style>

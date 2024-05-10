@@ -9,8 +9,6 @@ import (
 // CoreTestOperationsOptions should be used ONLY to adjust the behaviour of specific steps,
 // e.g. by adding flags, and not as a condition for adding steps or commands.
 type CoreTestOperationsOptions struct {
-	// for clientChromaticTests
-	ChromaticShouldAutoAccept bool
 	MinimumUpgradeableVersion string
 	ForceReadyForReview       bool
 
@@ -47,7 +45,6 @@ func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreT
 	if diff.Has(changed.Client | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the client as well.
 		clientChecks := operations.NewNamedSet("Client checks",
-			clientChromaticTests(opts),
 			addJetBrainsUnitTests, // ~2.5m
 			addVsceTests,          // ~3.0m
 			addStylelint,

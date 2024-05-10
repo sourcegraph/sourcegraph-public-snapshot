@@ -1,11 +1,48 @@
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
+
 import { AnalyticsDateRange, AnalyticsGrouping } from '../../graphql-operations'
 import { useURLSyncedState } from '../../hooks'
-import { eventLogger } from '../../tracking/eventLogger'
 
 type IAggregation = 'count' | 'uniqueUsers'
 
-interface IProps {
-    name: string
+type ChartName =
+    | 'BatchChanges'
+    | 'Insights'
+    | 'CodeIntel'
+    | 'Extensions'
+    | 'Notebooks'
+    | 'Overview'
+    | 'Search'
+    | 'Users'
+
+const v2ChartTypes: { [key in ChartName]: number } = {
+    BatchChanges: 1,
+    Insights: 2,
+    CodeIntel: 3,
+    Extensions: 4,
+    Notebooks: 5,
+    Overview: 6,
+    Search: 7,
+    Users: 8,
+}
+const v2DateRangeTypes: { [key in AnalyticsDateRange]: number } = {
+    CUSTOM: 1,
+    LAST_MONTH: 2,
+    LAST_THREE_MONTHS: 3,
+    LAST_WEEK: 4,
+}
+const v2AggregationTypes: { [key in IAggregation]: number } = {
+    count: 1,
+    uniqueUsers: 2,
+}
+const v2GroupingTypes: { [key in AnalyticsGrouping]: number } = {
+    DAILY: 1,
+    WEEKLY: 2,
+}
+
+interface IProps extends TelemetryV2Props {
+    name: ChartName
     aggregation?: IAggregation
     dateRange?: AnalyticsDateRange
     grouping?: AnalyticsGrouping
@@ -48,7 +85,10 @@ export function useChartFilters(props: IProps): IResult {
                     grouping:
                         value === AnalyticsDateRange.LAST_WEEK ? AnalyticsGrouping.DAILY : AnalyticsGrouping.WEEKLY,
                 })
-                eventLogger.log(`AdminAnalytics${props.name}DateRange${value}`)
+                EVENT_LOGGER.log(`AdminAnalytics${props.name}DateRange${value}`)
+                props.telemetryRecorder.recordEvent('admin.analytics.dateRange', 'change', {
+                    metadata: { kind: v2ChartTypes[props.name], value: v2DateRangeTypes[value] },
+                })
             },
             items: [
                 { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
@@ -60,7 +100,10 @@ export function useChartFilters(props: IProps): IResult {
             selected: data.aggregation,
             onChange: value => {
                 setData({ aggregation: value })
-                eventLogger.log(`AdminAnalytics${props.name}Aggregate${value === 'count' ? 'Totals' : 'Uniques'}`)
+                EVENT_LOGGER.log(`AdminAnalytics${props.name}Aggregate${value === 'count' ? 'Totals' : 'Uniques'}`)
+                props.telemetryRecorder.recordEvent('admin.analytics.aggregation', 'change', {
+                    metadata: { kind: v2ChartTypes[props.name], value: v2AggregationTypes[value] },
+                })
             },
             items: [
                 {
@@ -80,7 +123,10 @@ export function useChartFilters(props: IProps): IResult {
             label: 'Display as',
             onChange: value => {
                 setData({ grouping: value })
-                eventLogger.log(`AdminAnalytics${props.name}DisplayAs${value}`)
+                EVENT_LOGGER.log(`AdminAnalytics${props.name}DisplayAs${value}`)
+                props.telemetryRecorder.recordEvent('admin.analytics.grouping', 'change', {
+                    metadata: { kind: v2ChartTypes[props.name], value: v2GroupingTypes[value] },
+                })
             },
             items: [
                 { value: AnalyticsGrouping.DAILY, label: 'Daily' },

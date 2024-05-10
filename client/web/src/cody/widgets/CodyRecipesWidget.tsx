@@ -1,13 +1,11 @@
-/* eslint-disable no-void */
-
 import React, { useEffect } from 'react'
 
 import { mdiCardBulletedOutline, mdiDotsVertical, mdiProgressPencil, mdiShuffleVariant } from '@mdi/js'
 
-import { TranslateToLanguage } from '@sourcegraph/cody-shared/dist/chat/recipes/translate'
+import { TranslateToLanguage } from '@sourcegraph/cody-shared'
 import type { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 
-import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import type { CodeMirrorEditor } from '../components/CodeMirrorEditor'
 import type { useCodySidebar } from '../sidebar/Provider'
@@ -21,7 +19,7 @@ export const CodyRecipesWidget: React.FC<{ editor?: CodeMirrorEditor; telemetryR
     telemetryRecorder,
 }) => {
     useEffect(() => {
-        eventLogger.log(EventName.CODY_CHAT_EDITOR_WIDGET_VIEWED)
+        EVENT_LOGGER.log(EventName.CODY_CHAT_EDITOR_WIDGET_VIEWED)
         telemetryRecorder.recordEvent('cody.chat.editor-widget', 'view')
     }, [telemetryRecorder])
 

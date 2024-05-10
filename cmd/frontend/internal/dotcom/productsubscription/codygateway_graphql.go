@@ -35,7 +35,7 @@ func (r codyGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Context)
 	var source graphqlbackend.CodyGatewayRateLimitSource
 	if activeLicense != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
-		rateLimit = licensing.NewCodyGatewayChatRateLimit(licensing.PlanFromTags(activeLicense.LicenseTags), activeLicense.LicenseUserCount, activeLicense.LicenseTags)
+		rateLimit = licensing.NewCodyGatewayChatRateLimit(licensing.PlanFromTags(activeLicense.LicenseTags), activeLicense.LicenseUserCount)
 	}
 
 	// Apply overrides

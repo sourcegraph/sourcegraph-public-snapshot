@@ -7,9 +7,9 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client"
-	"github.com/sourcegraph/sourcegraph/internal/completions/httpapi"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,13 +22,13 @@ var _ graphqlbackend.CompletionsResolver = &completionsResolver{}
 
 // completionsResolver provides chat completions
 type completionsResolver struct {
-	rl     httpapi.RateLimiter
+	rl     completions.RateLimiter
 	db     database.DB
 	logger log.Logger
 }
 
 func NewCompletionsResolver(db database.DB, logger log.Logger) graphqlbackend.CompletionsResolver {
-	rl := httpapi.NewRateLimiter(db, redispool.Store, types.CompletionsFeatureChat)
+	rl := completions.NewRateLimiter(db, redispool.Store, types.CompletionsFeatureChat)
 	return &completionsResolver{rl: rl, db: db, logger: logger}
 }
 
@@ -53,7 +53,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		chatModel = completionsConfig.ChatModel
 	}
 
-	ctx, done := httpapi.Trace(ctx, "resolver", chatModel, int(args.Input.MaxTokensToSample)).
+	ctx, done := completions.Trace(ctx, "resolver", chatModel, int(args.Input.MaxTokensToSample)).
 		WithErrorP(&err).
 		Build()
 	defer done()
@@ -80,7 +80,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 	params := convertParams(args)
 	// No way to configure the model through the request, we hard code to chat.
 	params.Model = chatModel
-	resp, err := client.Complete(ctx, types.CompletionsFeatureChat, version, params)
+	resp, err := client.Complete(ctx, types.CompletionsFeatureChat, version, params, c.logger)
 	if err != nil {
 		return "", errors.Wrap(err, "client.Complete")
 	}

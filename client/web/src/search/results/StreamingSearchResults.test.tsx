@@ -5,13 +5,14 @@ import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
-import { EMPTY, NEVER, of } from 'rxjs'
+import { EMPTY, lastValueFrom, NEVER, of } from 'rxjs'
 import { spy, assert } from 'sinon'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
 import type { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
@@ -48,6 +49,7 @@ describe('StreamingSearchResults', () => {
             settings: NEVER,
             requestGraphQL: () => EMPTY,
             sourcegraphURL: 'https://sourcegraph.com',
+            telemetryRecorder: noOpTelemetryRecorder,
         } as any,
 
         streamSearch: () => of(MULTIPLE_SEARCH_RESULT),
@@ -98,7 +100,7 @@ describe('StreamingSearchResults', () => {
         assert.calledOnce(searchSpy)
         const call = searchSpy.getCall(0)
         // We have to extract the query from the observable since we can't directly compare observables
-        const receivedQuery = await call.args[0].toPromise()
+        const receivedQuery = await lastValueFrom(call.args[0])
         const receivedOptions = call.args[1]
 
         expect(receivedQuery).toEqual('r:golang/oauth2 test f:travis')
@@ -255,7 +257,7 @@ describe('StreamingSearchResults', () => {
             },
             {
                 parsedSearchQuery: 'r:golang/oauth2 (foo count:1) or (bar count:2)',
-                skipReason: ['document-match-limit', 'excluded-fork'] as Skipped['reason'][],
+                skipReason: ['document-match-limit', 'repository-fork'] as Skipped['reason'][],
                 additionalProperties: ['count:1000', 'fork:yes'],
                 want: 'r:golang/oauth2 (foo count:1000) or (bar count:1000) fork:yes',
             },

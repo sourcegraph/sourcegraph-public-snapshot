@@ -37,39 +37,39 @@ func (r *siteResolver) CodyGatewayRateLimitStatus(ctx context.Context) (*[]RateL
 
 	rateLimits := make([]RateLimitStatus, 0, len(limits))
 	for _, limit := range limits {
-		rateLimits = append(rateLimits, &codyRateLimit{
-			rl: limit,
+		rateLimits = append(rateLimits, &CodyRateLimit{
+			RateLimitStatus: limit,
 		})
 	}
 
 	return &rateLimits, nil
 }
 
-type codyRateLimit struct {
-	rl codygateway.LimitStatus
+type CodyRateLimit struct {
+	RateLimitStatus codygateway.LimitStatus
 }
 
-func (c *codyRateLimit) Feature() string {
-	return c.rl.Feature.DisplayName()
+func (c *CodyRateLimit) Feature() string {
+	return c.RateLimitStatus.Feature.DisplayName()
 
 }
 
-func (c *codyRateLimit) Limit() BigInt {
-	return BigInt(c.rl.IntervalLimit)
+func (c *CodyRateLimit) Limit() BigInt {
+	return BigInt(c.RateLimitStatus.IntervalLimit)
 }
 
-func (c *codyRateLimit) Usage() BigInt {
-	return BigInt(c.rl.IntervalUsage)
+func (c *CodyRateLimit) Usage() BigInt {
+	return BigInt(c.RateLimitStatus.IntervalUsage)
 }
 
-func (c *codyRateLimit) PercentUsed() int32 {
-	return int32(c.rl.PercentUsed())
+func (c *CodyRateLimit) PercentUsed() int32 {
+	return int32(c.RateLimitStatus.PercentUsed())
 }
 
-func (c *codyRateLimit) NextLimitReset() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(c.rl.Expiry)
+func (c *CodyRateLimit) NextLimitReset() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(c.RateLimitStatus.Expiry)
 }
 
-func (c *codyRateLimit) Interval() string {
-	return c.rl.TimeInterval
+func (c *CodyRateLimit) Interval() string {
+	return c.RateLimitStatus.TimeInterval
 }

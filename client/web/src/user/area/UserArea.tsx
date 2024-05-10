@@ -194,6 +194,7 @@ export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, isS
         ...childBreadcrumbSetters,
         isSourcegraphDotCom,
         license: getLicenseFeatures(),
+        telemetryRecorder: props.platformContext.telemetryRecorder,
     }
 
     return (

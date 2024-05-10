@@ -9,7 +9,6 @@ go_library(
         "policies.go",
         "ranking.go",
         "root_resolver.go",
-        "sentinel.go",
         "uploads.go",
         "utils.go",
     ],
@@ -17,6 +16,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/codeintel/uploads/shared",
         "//internal/gitserver/gitdomain",
         "//internal/gqlutil",
         "//internal/markdown",

@@ -2,14 +2,15 @@ package graphqlbackend
 
 import (
 	"context"
-	"math"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -23,10 +24,20 @@ func (r *RepositoryResolver) Contributors(args *struct {
 	repositoryContributorsArgs
 	graphqlutil.ConnectionResolverArgs
 }) (*graphqlutil.ConnectionResolver[*repositoryContributorResolver], error) {
+	var after time.Time
+	if args.AfterDate != nil && *args.AfterDate != "" {
+		var err error
+		after, err = query.ParseGitDate(*args.AfterDate, time.Now)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse after date")
+		}
+	}
+
 	connectionStore := &repositoryContributorConnectionStore{
-		db:   r.db,
-		args: &args.repositoryContributorsArgs,
-		repo: r,
+		db:    r.db,
+		args:  &args.repositoryContributorsArgs,
+		after: after,
+		repo:  r,
 	}
 	reverse := false
 	connectionOptions := graphqlutil.ConnectionResolverOptions{
@@ -36,8 +47,9 @@ func (r *RepositoryResolver) Contributors(args *struct {
 }
 
 type repositoryContributorConnectionStore struct {
-	db   database.DB
-	args *repositoryContributorsArgs
+	db    database.DB
+	args  *repositoryContributorsArgs
+	after time.Time
 
 	repo *RepositoryResolver
 
@@ -72,7 +84,7 @@ func (s *repositoryContributorConnectionStore) ComputeNodes(ctx context.Context,
 	}
 
 	var start int
-	results, start, err = offsetBasedCursorSlice(results, args)
+	results, start, err = database.OffsetBasedCursorSlice(results, args)
 	if err != nil {
 		return nil, err
 	}
@@ -103,34 +115,8 @@ func (s *repositoryContributorConnectionStore) compute(ctx context.Context) ([]*
 		if s.args.Path != nil {
 			opt.Path = *s.args.Path
 		}
-		if s.args.AfterDate != nil {
-			opt.After = *s.args.AfterDate
-		}
+		opt.After = s.after
 		s.results, s.err = client.ContributorCount(ctx, s.repo.RepoName(), opt)
 	})
 	return s.results, s.err
-}
-
-func offsetBasedCursorSlice[T any](nodes []T, args *database.PaginationArgs) ([]T, int, error) {
-	start := 0
-	end := 0
-	totalFloat := float64(len(nodes))
-	if args.First != nil {
-		if len(args.After) > 0 {
-			start = int(math.Min(float64(args.After[0].(int))+1, totalFloat))
-		}
-		end = int(math.Min(float64(start+*args.First), totalFloat))
-	} else if args.Last != nil {
-		end = int(totalFloat)
-		if len(args.Before) > 0 {
-			end = int(math.Max(float64(args.Before[0].(int)), 0))
-		}
-		start = int(math.Max(float64(end-*args.Last), 0))
-	} else {
-		return nil, 0, errors.New(`args.First and args.Last are nil`)
-	}
-
-	nodes = nodes[start:end]
-
-	return nodes, start, nil
 }

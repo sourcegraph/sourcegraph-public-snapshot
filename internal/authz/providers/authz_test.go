@@ -813,7 +813,7 @@ func TestPermissionSyncingDisabled(t *testing.T) {
 			authz.SetProviders(true, []authz.Provider{&mockProvider{}})
 		})
 
-		assert.True(t, PermissionSyncingDisabled())
+		assert.True(t, PermissionSyncingDisabled(&conf.Unified{}))
 	})
 
 	t.Run("permissions user mapping enabled", func(t *testing.T) {
@@ -823,7 +823,7 @@ func TestPermissionSyncingDisabled(t *testing.T) {
 			conf.Mock(nil)
 		})
 
-		assert.False(t, PermissionSyncingDisabled())
+		assert.False(t, PermissionSyncingDisabled(&conf.Unified{}))
 	})
 
 	t.Run("license does not have acls feature", func(t *testing.T) {
@@ -831,23 +831,15 @@ func TestPermissionSyncingDisabled(t *testing.T) {
 		t.Cleanup(func() {
 			licensing.MockCheckFeatureError("")
 		})
-		assert.True(t, PermissionSyncingDisabled())
+		assert.True(t, PermissionSyncingDisabled(&conf.Unified{}))
 	})
 
 	t.Run("Auto code host syncs disabled", func(t *testing.T) {
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: true}})
-		t.Cleanup(func() {
-			conf.Mock(nil)
-		})
-		assert.True(t, PermissionSyncingDisabled())
+		assert.True(t, PermissionSyncingDisabled(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: true}}))
 	})
 
 	t.Run("Auto code host syncs enabled", func(t *testing.T) {
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: false}})
-		t.Cleanup(func() {
-			conf.Mock(nil)
-		})
-		assert.False(t, PermissionSyncingDisabled())
+		assert.False(t, PermissionSyncingDisabled(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: false}}))
 	})
 }
 

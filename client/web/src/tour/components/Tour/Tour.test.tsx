@@ -5,6 +5,7 @@ import { afterAll, beforeEach, describe, expect, test } from 'vitest'
 
 import type { TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { Tour } from './Tour'
@@ -48,6 +49,7 @@ const setup = (overrideTasks?: TourTaskType[]): RenderResult =>
             <MockTemporarySettings settings={{}}>
                 <Tour
                     telemetryService={mockedTelemetryService}
+                    telemetryRecorder={noOpTelemetryRecorder}
                     id={tourId}
                     tasks={overrideTasks ?? mockedTasks}
                     defaultSnippets={{}}

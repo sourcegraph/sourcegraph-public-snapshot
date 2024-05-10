@@ -39,7 +39,7 @@ func TestBatchChangeResolver(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec:        bt.TestRawBatchSpec,
@@ -155,7 +155,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 
 	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {

@@ -6,6 +6,7 @@
     "jsx": "react-jsx",
     "rootDir": ".",
     "outDir": "out",
+    "resolveJsonModule": true,
   },
   "references": [
     {
@@ -22,6 +23,12 @@
     },
     {
       "path": "../codeintellify",
+    },
+    {
+      "path": "../cody-shared",
+    },
+    {
+      "path": "../cody-ui",
     },
     {
       "path": "../common",

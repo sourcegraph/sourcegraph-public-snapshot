@@ -141,6 +141,7 @@ func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProvi
 		logger,
 		db,
 		&sessionIssuerHelper{
+			logger:      logger.Scoped("sessionIssuerHelper"),
 			db:          db,
 			CodeHost:    codeHost,
 			clientID:    azureProvider.ClientID,

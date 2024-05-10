@@ -56,6 +56,7 @@ export const enum EventName {
     CODY_ONBOARDING_CHOOSE_EDITOR_VIEWED = 'CodyEditorViewed',
     CODY_ONBOARDING_CHOOSE_EDITOR_SKIPPED = 'CodyEditorSkipped',
     CODY_ONBOARDING_CHOOSE_EDITOR_SELECTED = 'CodyEditorSelected',
+    CODY_HANDRAISER_TEST_ENROLLMENT = 'HubspotFormFromWorkPersonalToHandRaiserTestEnrollment',
 }
 
 export const enum EventLocation {

@@ -1,26 +1,24 @@
 <script lang="ts">
+    import { onDestroy } from 'svelte'
     import { writable } from 'svelte/store'
+    import { browser } from '$app/environment'
+    import { beforeNavigate } from '$app/navigation'
 
-    import { browser, dev } from '$app/environment'
     import { isErrorLike } from '$lib/common'
-    import { classNames } from '$lib/dom'
     import { TemporarySettingsStorage } from '$lib/shared'
-    import { isLightTheme, setAppContext, scrollAll } from '$lib/stores'
+    import { isLightTheme, setAppContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
-
-    import Header from './Header.svelte'
+    import GlobalHeader from '$lib/navigation/GlobalHeader.svelte'
 
     import './styles.scss'
 
-    import { onDestroy } from 'svelte'
-
-    import { beforeNavigate } from '$app/navigation'
-    import { createFeatureFlagStore, featureFlag } from '$lib/featureflags'
+    import { createFeatureFlagStore } from '$lib/featureflags'
     import GlobalNotification from '$lib/global-notifications/GlobalNotifications.svelte'
     import { getGraphQLClient } from '$lib/graphql/apollo'
-    import { isRouteRolledOut } from '$lib/navigation'
+    import { isRouteEnabled } from '$lib/navigation'
 
     import type { LayoutData } from './$types'
+    import FuzzyFinderContainer from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
 
     export let data: LayoutData
 
@@ -57,9 +55,6 @@
         document.documentElement.classList.toggle('theme-dark', !lightTheme)
     }
 
-    $: allRoutesEnabled = featureFlag('web-next')
-    $: rolledoutRoutesEnabled = featureFlag('web-next-rollout')
-
     // Redirect the user to the react app when they navigate to a page that is
     // supported but not enabled.
     // (Routes that are not supported, i.e. don't exist in `routes/` are already
@@ -70,7 +65,7 @@
             return
         }
 
-        if (dev || $allRoutesEnabled || ($rolledoutRoutesEnabled && isRouteRolledOut(navigation.to?.route.id ?? ''))) {
+        if (isRouteEnabled(navigation.to.url.pathname)) {
             // Routes are handled by SvelteKit
             return
         }
@@ -83,18 +78,17 @@
     $: currentUserID = data.user?.id
     $: handleOptOut = currentUserID
         ? async (): Promise<void> => {
-              await data.disableSvelteFeatureFlags(currentUserID)
-              window.location.reload()
+              if (currentUserID) {
+                  await data.disableSvelteFeatureFlags(currentUserID)
+                  window.location.reload()
+              }
           }
         : undefined
 </script>
 
 <svelte:head>
-    <title>Sourcegraph</title>
     <meta name="description" content="Code search" />
 </svelte:head>
-
-<svelte:body use:classNames={$scrollAll ? '' : 'overflowHidden'} />
 
 {#await data.globalSiteAlerts then globalSiteAlerts}
     {#if globalSiteAlerts}
@@ -102,22 +96,20 @@
     {/if}
 {/await}
 
-<Header authenticatedUser={$user} {handleOptOut} />
+<GlobalHeader authenticatedUser={$user} {handleOptOut} />
 
 <main>
     <slot />
 </main>
 
+<FuzzyFinderContainer />
+
 <style lang="scss">
-    :global(body.overflowHidden) {
-        display: flex;
-        flex-direction: column;
+    :global(body) {
         height: 100vh;
         overflow: hidden;
-
-        main {
-            overflow-y: auto;
-        }
+        display: flex;
+        flex-direction: column;
     }
 
     main {
@@ -126,5 +118,6 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+        overflow-y: auto;
     }
 </style>

@@ -587,5 +587,3 @@ func humanizeSchemaName(schemaName string) string {
 
 	return strings.TrimSuffix(schemaName, "_schema_migrations")
 }
-
-var quote = sqlf.Sprintf

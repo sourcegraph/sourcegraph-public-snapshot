@@ -4,13 +4,14 @@ import classNames from 'classnames'
 import type { NavigateFunction } from 'react-router-dom'
 
 import type { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Modal, Select, H3, Form } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 
 import styles from './SavedSearchModal.module.scss'
 
-interface Props extends SearchPatternTypeProps {
+interface Props extends SearchPatternTypeProps, TelemetryV2Props {
     authenticatedUser: Pick<AuthenticatedUser, 'organizations' | 'username'> | null
     query?: string
     onDidCancel: () => void
@@ -35,6 +36,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
         this.state = {
             saveLocation: UserOrOrg.User,
         }
+        props.telemetryRecorder.recordEvent('search.resultsInfoBar.savedQueriesModal', 'view')
     }
 
     private onLocationChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {

@@ -1,4 +1,4 @@
-<script lang="ts">
+<script lang="ts" context="module">
     import { Story } from '@storybook/addon-svelte-csf'
     import { graphql } from 'msw'
     import { SvelteComponent, setContext } from 'svelte'
@@ -6,7 +6,13 @@
 
     import type { HighlightedFileResult, HighlightedFileVariables } from '$lib/graphql-operations'
     import { queryStateStore } from '$lib/search/state'
-    import type { ContentMatch, PathMatch, SearchMatch, SymbolMatch } from '$lib/shared'
+    import {
+        TemporarySettingsStorage,
+        type ContentMatch,
+        type PathMatch,
+        type SearchMatch,
+        type SymbolMatch,
+    } from '$lib/shared'
     import { KEY, type SourcegraphContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
     import {
@@ -43,21 +49,6 @@
         },
     }
 
-    setContext<SourcegraphContext>(KEY, {
-        user: readable(null),
-        settings: readable({}),
-        featureFlags: readable([]),
-        temporarySettingsStorage: createTemporarySettingsStorage(),
-    })
-
-    setSearchResultsContext({
-        isExpanded(_match) {
-            return false
-        },
-        setExpanded(_match, _expanded) {},
-        queryState: queryStateStore(undefined, {}),
-        setPreview(_props: PathMatch | ContentMatch | SymbolMatch | null): void {},
-    })
     // TS complains about up MockSuitFunctions which is not relevant here
     // @ts-ignore
     window.context = { xhrHeaders: {} }
@@ -71,7 +62,24 @@
         ['Person match', PersonSearchResult, createPersonMatch],
         ['Team match', TeamSearchResult, createTeamMatch],
     ]
+</script>
 
+<script lang="ts">
+    setContext<SourcegraphContext>(KEY, {
+        user: readable(null),
+        settings: readable({}),
+        featureFlags: readable([]),
+        temporarySettingsStorage: createTemporarySettingsStorage(new TemporarySettingsStorage(null, false)),
+    })
+
+    setSearchResultsContext({
+        isExpanded(_match) {
+            return false
+        },
+        setExpanded(_match, _expanded) {},
+        queryState: queryStateStore(undefined, {}),
+        setPreview(_props: PathMatch | ContentMatch | SymbolMatch | null): void {},
+    })
     const data = results.map(([, , generator]) => generator())
 
     function randomizeData(i: number) {

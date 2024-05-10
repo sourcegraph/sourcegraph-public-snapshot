@@ -1,8 +1,5 @@
 <article data-testid="search-result">
     <div class="header">
-        <div class="icon">
-            <slot name="icon" />
-        </div>
         <div class="title">
             <slot name="title" />
         </div>
@@ -36,18 +33,11 @@
     .header {
         display: flex;
         align-items: center;
-        padding: 0.5rem;
+        padding: 0.5rem 0.75rem;
         position: sticky;
         top: 0;
-        background-color: var(--body-bg);
+        background-color: var(--search-result-header-bg);
         border-bottom: 1px solid var(--border-color);
-    }
-
-    .icon {
-        display: flex;
-        align-items: center;
-        flex-shrink: 0;
-        --color: var(--text-muted);
     }
 
     .title {
@@ -55,6 +45,7 @@
         overflow: hidden;
         display: flex;
         flex-wrap: wrap;
+        align-items: center;
 
         // .title-inner
         overflow-wrap: anywhere;

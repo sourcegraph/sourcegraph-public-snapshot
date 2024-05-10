@@ -29,7 +29,7 @@ func TestRanges(t *testing.T) {
 		Commit:       "deadbeef1",
 		Path:         "/src/main",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperations := newOperations(observation.TestContextTB(t))
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
@@ -64,7 +64,7 @@ func TestDefinitions(t *testing.T) {
 		Commit:       "deadbeef1",
 		Path:         "/src/main",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperations := newOperations(observation.TestContextTB(t))
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
@@ -99,7 +99,7 @@ func TestReferences(t *testing.T) {
 		Commit:       "deadbeef1",
 		Path:         "/src/main",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperations := newOperations(observation.TestContextTB(t))
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
@@ -152,7 +152,7 @@ func TestReferencesDefaultLimit(t *testing.T) {
 		Commit:       "deadbeef1",
 		Path:         "/src/main",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperations := newOperations(observation.TestContextTB(t))
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
@@ -191,7 +191,7 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 		Commit:       "deadbeef1",
 		Path:         "/src/main",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperations := newOperations(observation.TestContextTB(t))
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
@@ -224,7 +224,7 @@ func TestHover(t *testing.T) {
 		Commit:       "deadbeef1",
 		Path:         "/src/main",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperations := newOperations(observation.TestContextTB(t))
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
@@ -260,7 +260,7 @@ func TestDiagnostics(t *testing.T) {
 		Commit:       "deadbeef1",
 		Path:         "/src/main",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperations := newOperations(observation.TestContextTB(t))
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
@@ -296,7 +296,7 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 		Commit:       "deadbeef1",
 		Path:         "/src/main",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperations := newOperations(observation.TestContextTB(t))
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
@@ -329,7 +329,7 @@ func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 		Commit:       "deadbeef1",
 		Path:         "/src/main",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperations := newOperations(observation.TestContextTB(t))
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
