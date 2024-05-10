@@ -5,6 +5,7 @@ import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import type { ActionItemAction } from '../actions/ActionItem'
 import type { MarkupContent, Badged, AggregableBadge } from '../codeintel/legacy-extensions/api'
 import { EMPTY_SETTINGS_CASCADE, type SettingsCascadeProps } from '../settings/settings'
+import { noOpTelemetryRecorder } from '../telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
 import type { HoverOverlayProps } from './HoverOverlay'
@@ -15,6 +16,7 @@ const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
 export const commonProps = (): HoverOverlayProps & SettingsCascadeProps => ({
     location: history.location,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    telemetryRecorder: noOpTelemetryRecorder,
     extensionsController: NOOP_EXTENSIONS_CONTROLLER,
     overlayPosition: { top: 16, left: 16 },
     settingsCascade: EMPTY_SETTINGS_CASCADE,

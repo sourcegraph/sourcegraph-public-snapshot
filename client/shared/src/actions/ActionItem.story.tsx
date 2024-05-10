@@ -5,6 +5,7 @@ import type * as H from 'history'
 import { subtypeOf } from '@sourcegraph/common'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
+import { noOpTelemetryRecorder } from '../telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
 import { ActionItem, type ActionItemComponentProps, type ActionItemProps } from './ActionItem'
@@ -27,6 +28,7 @@ const commonProps = subtypeOf<Partial<ActionItemProps>>()({
     location: LOCATION,
     extensionsController: EXTENSIONS_CONTROLLER,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    telemetryRecorder: noOpTelemetryRecorder,
     iconClassName: 'icon-inline',
     active: true,
 })

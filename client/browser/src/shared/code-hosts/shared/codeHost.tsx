@@ -72,6 +72,7 @@ import {
 } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import type { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
@@ -289,7 +290,7 @@ export interface FileInfoWithContent extends FileInfoWithRepoName {
     content?: string
 }
 
-export interface CodeIntelligenceProps extends TelemetryProps {
+export interface CodeIntelligenceProps extends TelemetryProps, TelemetryV2Props {
     platformContext: Pick<
         BrowserPlatformContext,
         'urlToFile' | 'requestGraphQL' | 'settings' | 'refreshSettings' | 'sourcegraphURL' | 'clientApplication'
@@ -321,8 +322,12 @@ function initCodeIntelligence({
     extensionsController,
     render,
     telemetryService,
+    telemetryRecorder,
     repoSyncErrors,
-}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
+}: Pick<
+    CodeIntelligenceProps,
+    'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService' | 'telemetryRecorder'
+> & {
     render: Renderer
     mutations: Observable<MutationRecordLike[]>
     repoSyncErrors: Observable<boolean>
@@ -470,6 +475,7 @@ function initCodeIntelligence({
                         {...codeHost.hoverOverlayClassProps}
                         className={classNames(styles.hoverOverlay, codeHost.hoverOverlayClassProps?.className)}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         hoverRef={this.nextOverlayElement}
                         extensionsController={extensionsController}
                         location={H.createLocation(window.location)}
@@ -711,6 +717,7 @@ export async function handleCodeHost({
     extensionsController,
     platformContext,
     telemetryService,
+    telemetryRecorder,
     render,
     minimalUI,
     hideActions,
@@ -778,6 +785,7 @@ export async function handleCodeHost({
         extensionsController,
         platformContext,
         telemetryService,
+        telemetryRecorder,
         render,
         mutations,
         repoSyncErrors,
@@ -1392,6 +1400,7 @@ export function injectCodeIntelligenceToCodeHost(
                     extensionsController,
                     platformContext,
                     telemetryService,
+                    telemetryRecorder: platformContext.telemetryRecorder,
                     render: renderWithThemeProvider as Renderer,
                     minimalUI,
                     hideActions,

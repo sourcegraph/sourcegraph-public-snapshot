@@ -21,6 +21,7 @@ import {
 import type { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { urlForOpenPanel } from '../commands/commands'
 import type { ExtensionsControllerProps } from '../extensions/controller'
+import type { TelemetryV2Props } from '../telemetry'
 import type { TelemetryProps } from '../telemetry/telemetryService'
 
 import styles from './ActionItem.module.scss'
@@ -59,7 +60,7 @@ export interface ActionItemComponentProps extends ExtensionsControllerProps<'exe
     actionItemStyleProps?: ActionItemStyleProps
 }
 
-export interface ActionItemProps extends ActionItemAction, ActionItemComponentProps, TelemetryProps {
+export interface ActionItemProps extends ActionItemAction, ActionItemComponentProps, TelemetryProps, TelemetryV2Props {
     variant?: 'actionItem'
 
     hideLabel?: boolean
@@ -356,6 +357,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
 
         // Record action ID (but not args, which might leak sensitive data).
         this.props.telemetryService.log(action.id)
+        this.props.telemetryRecorder.recordEvent('blob.action', 'executed', { privateMetadata: { action: action.id } })
 
         const emitDidExecute = (): void => {
             if (this.props.onDidExecute) {

@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, test, vi } from 'vitest'
 import { assertAriaEnabled, createBarrier } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
+import { noOpTelemetryRecorder } from '../telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
 import { ActionItem, windowLocation__testingOnly } from './ActionItem'
@@ -22,6 +23,7 @@ describe('ActionItem', () => {
                 active={true}
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
             />
@@ -35,6 +37,7 @@ describe('ActionItem', () => {
                 active={true}
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 variant="actionItem"
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
@@ -49,6 +52,7 @@ describe('ActionItem', () => {
                 active={true}
                 action={{ id: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
             />
@@ -62,6 +66,7 @@ describe('ActionItem', () => {
                 active={true}
                 action={{ id: 'a', command: 'c', actionItem: { pressed: true, label: 'b' } }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 variant="actionItem"
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
@@ -76,6 +81,7 @@ describe('ActionItem', () => {
                 active={true}
                 action={{ id: 'a', command: 'c', actionItem: { pressed: false, label: 'b' } }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 variant="actionItem"
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}
@@ -90,6 +96,7 @@ describe('ActionItem', () => {
                 active={true}
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 variant="actionItem"
                 title={<span>t2</span>}
                 location={history.location}
@@ -107,6 +114,7 @@ describe('ActionItem', () => {
                 active={true}
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 variant="actionItem"
                 disabledDuringExecution={true}
                 location={history.location}
@@ -133,6 +141,7 @@ describe('ActionItem', () => {
                 active={true}
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 variant="actionItem"
                 showLoadingSpinnerDuringExecution={true}
                 location={history.location}
@@ -164,6 +173,7 @@ describe('ActionItem', () => {
                 active={true}
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 variant="actionItem"
                 disabledDuringExecution={true}
                 location={history.location}
@@ -197,6 +207,7 @@ describe('ActionItem', () => {
                     active={true}
                     action={{ id: 'c', command: 'open', commandArguments: ['https://example.com/bar'], title: 't' }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                     location={history.location}
                     extensionsController={NOOP_EXTENSIONS_CONTROLLER}
                 />
@@ -212,6 +223,7 @@ describe('ActionItem', () => {
                     active={true}
                     action={{ id: 'c', command: 'open', commandArguments: ['https://other.com/foo'], title: 't' }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                     location={history.location}
                     extensionsController={NOOP_EXTENSIONS_CONTROLLER}
                 />
@@ -228,6 +240,7 @@ describe('ActionItem', () => {
                     action={{ id: 'c1', command: 'whatever', title: 'primary' }}
                     altAction={{ id: 'c2', command: 'open', commandArguments: ['https://other.com/foo'], title: 'alt' }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                     location={history.location}
                     extensionsController={NOOP_EXTENSIONS_CONTROLLER}
                 />

@@ -16,6 +16,7 @@ import type { DocumentHighlight, ReferenceContext } from '../codeintel/legacy-ex
 import type { Occurrence } from '../codeintel/scip'
 import type { ConfiguredExtension } from '../extensions/extension'
 import type { SettingsCascade } from '../settings/settings'
+import type { TelemetryV2Props } from '../telemetry'
 
 import type { SettingsEdit } from './client/services/settings'
 import type { ExecutableExtension } from './extension/activation'
@@ -175,8 +176,15 @@ export interface MainThreadAPI {
 
     /**
      * Log an event (by sending it to the server).
+     *
+     * @deprecated use recordEvent instead
      */
     logEvent: (eventName: string, eventProperties?: any) => void
+
+    /**
+     * Get a TelemetryRecorder for recording telemetry events to the server.
+     */
+    getTelemetryRecorder: () => TelemetryV2Props['telemetryRecorder']
 
     /**
      * Log messages from extensions in the main thread. Makes it easier to debug extensions for applications

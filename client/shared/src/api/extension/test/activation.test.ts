@@ -17,7 +17,7 @@ describe('Extension activation', () => {
         it('logs events for activated extensions', async () => {
             const logEvent = sinon.spy()
 
-            const mockMain = pretendRemote<Pick<MainThreadAPI, 'logEvent'>>({
+            const mockMain = pretendRemote<Pick<MainThreadAPI, 'logEvent' | 'getTelemetryRecorder'>>({
                 logEvent,
             })
 
