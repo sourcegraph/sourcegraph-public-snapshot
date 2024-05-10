@@ -43,6 +43,6 @@ const (
 	// for configuring Cloudflare TLS.
 	SecretSourcegraphWildcardKey  = "SOURCEGRAPH_WILDCARD_KEY"
 	SecretSourcegraphWildcardCert = "SOURCEGRAPH_WILDCARD_CERT"
-	// SecretMSPDeployNotifEndpoint is the endpoint that MSP uses for cloud deploy push notifications
+	// SecretMSPDeployNotifEndpoint is the endpoint that MSP uses for cloud deploy push notifications.
 	SecretMSPDeployNotifEndpoint = "MSP_DEPLOY_NOTIF_ENDPOINT"
 )
