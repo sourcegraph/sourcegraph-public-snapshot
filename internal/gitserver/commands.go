@@ -1064,46 +1064,20 @@ func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoNam
 	})
 	defer endObservation(1, observation.Args{})
 
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		return c.hasCommitAfterWithFiltering(ctx, repo, date, revspec)
-	}
-
 	if revspec == "" {
 		revspec = "HEAD"
 	}
 
-	commitid, err := c.ResolveRevision(ctx, repo, revspec, ResolveRevisionOptions{EnsureRevision: false})
+	// TODO: Because N: 1 currently has a special meaning because of `isRequestForSingleCommit`,
+	// we ask for two commits here, but the second one we never actually need.
+	// One we figure out why `isRequestForSingleCommit` exists in the first place,
+	// we should update this.
+	commits, err := c.Commits(ctx, repo, CommitsOptions{N: 2, After: date, Range: revspec})
 	if err != nil {
 		return false, err
 	}
 
-	args, err := commitLogArgs([]string{"rev-list", "--count"}, CommitsOptions{
-		N:     1,
-		After: date,
-		Range: string(commitid),
-	})
-	if err != nil {
-		return false, err
-	}
-
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.Output(ctx)
-	if err != nil {
-		return false, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
-	}
-
-	out = bytes.TrimSpace(out)
-	n, err := strconv.Atoi(string(out))
-	return n > 0, err
-}
-
-func (c *clientImplementor) hasCommitAfterWithFiltering(ctx context.Context, repo api.RepoName, date, revspec string) (bool, error) {
-	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec}); err != nil {
-		return false, err
-	} else if len(commits) > 0 {
-		return true, nil
-	}
-	return false, nil
+	return len(commits) > 0, nil
 }
 
 func isBadObjectErr(output, obj string) bool {
