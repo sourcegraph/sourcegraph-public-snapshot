@@ -29,7 +29,7 @@ func Init(
 ) error {
 	// Enforce the license's max user count by preventing the creation of new users when the max is
 	// reached.
-	database.BeforeCreateUser = nil // enforcement.NewBeforeCreateUserHook()
+	database.BeforeCreateUser = enforcement.NewBeforeCreateUserHook()
 
 	// Enforce non-site admin roles in Free tier.
 	database.AfterCreateUser = enforcement.NewAfterCreateUserHook()
