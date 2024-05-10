@@ -31,9 +31,13 @@ type Options struct {
 // AddDocumentNote adds a note to the markdown document with details about
 // how this documentation was generated.
 func (o Options) AddDocumentNote(md *markdown.Builder) {
+	shortRevision := o.ManagedServicesRevision
+	if len(shortRevision) > 7 {
+		shortRevision = shortRevision[:7]
+	}
 	generatedFromComment := fmt.Sprintf("Generated from: %s",
-		markdown.Linkf(fmt.Sprintf("sourcegraph/managed-services@%s", o.ManagedServicesRevision),
-			"https://github.com/sourcegraph/managed-services/%s", o.ManagedServicesRevision))
+		markdown.Linkf(fmt.Sprintf("sourcegraph/managed-services@%s", shortRevision),
+			"https://github.com/sourcegraph/managed-services/%s", shortRevision))
 	if o.ManagedServicesRevision == "" {
 		generatedFromComment = fmt.Sprintf("Generated from: unknown revision of %s",
 			markdown.Linkf("sourcegraph/managed-services", "https://github.com/sourcegraph/managed-services"))
