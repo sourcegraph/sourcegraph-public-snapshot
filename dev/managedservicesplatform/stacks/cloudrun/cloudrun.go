@@ -471,7 +471,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			Name: pointers.Ptr("clouddeploy-operations"),
 		})
 
-		// Get cloud-relay endpoint from secret manager
+		// Get cloud-relay endpoint from GSM.
 		endpoint := datagooglesecretmanagersecretversion.NewDataGoogleSecretManagerSecretVersion(stack, id.TerraformID("clouddeploy-endpoint"), &datagooglesecretmanagersecretversion.DataGoogleSecretManagerSecretVersionConfig{
 			Project: pointers.Ptr(googlesecretsmanager.SharedSecretsProjectID),
 			Secret:  pointers.Ptr(googlesecretsmanager.SecretMSPDeployNotifEndpoint),
