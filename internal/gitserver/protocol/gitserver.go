@@ -543,7 +543,6 @@ func (r *GetObjectResponse) FromProto(p *proto.GetObjectResponse) {
 	*r = GetObjectResponse{
 		Object: gitObj,
 	}
-
 }
 
 // IsPerforcePathCloneableRequest is the request to check if a Perforce path is cloneable.
