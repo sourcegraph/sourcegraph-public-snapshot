@@ -3,6 +3,7 @@ package gitdomain
 import (
 	"encoding/hex"
 	"fmt"
+	"io/fs"
 	"os"
 	"strings"
 	"time"
@@ -10,7 +11,9 @@ import (
 	"github.com/gobwas/glob"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -39,6 +42,7 @@ const (
 // (os.ModeDevice) beyond the Git "160000" commit mode bits. The choice of os.ModeDevice is
 // arbitrary.
 const ModeSubmodule = 0o160000 | os.ModeDevice
+const ModeSymlink = 0o20000
 
 // Submodule holds information about a Git submodule and is
 // returned in the FileInfo's Sys field by Stat/ReadDir calls.
@@ -581,3 +585,58 @@ func (gs RefGlobs) Match(ref string) bool {
 // Pathspec is a git term for a pattern that matches paths using glob-like syntax.
 // https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
 type Pathspec string
+
+func FSFileInfoToProto(fi fs.FileInfo) *v1.FileInfo {
+	p := &proto.FileInfo{
+		Name: []byte(fi.Name()),
+		Size: fi.Size(),
+		Mode: uint32(fi.Mode()),
+	}
+	sys := fi.Sys()
+	switch s := sys.(type) {
+	case Submodule:
+		p.Submodule = &proto.GitSubmodule{
+			Url:       s.URL,
+			CommitSha: string(s.CommitID),
+			Path:      []byte(s.Path),
+		}
+	case ObjectInfo:
+		p.BlobOid = s.OID().String()
+	}
+	return p
+}
+
+func ProtoFileInfoToFS(fi *v1.FileInfo) fs.FileInfo {
+	var sys any
+	if sm := fi.GetSubmodule(); sm != nil {
+		sys = Submodule{
+			URL:      sm.GetUrl(),
+			Path:     string(sm.GetPath()),
+			CommitID: api.CommitID(sm.GetCommitSha()),
+		}
+	} else {
+		oid, _ := decodeOID(fi.GetBlobOid())
+		sys = objectInfo(oid)
+	}
+	return &fileutil.FileInfo{
+		Name_:    string(fi.GetName()),
+		Mode_:    fs.FileMode(fi.GetMode()),
+		Size_:    fi.GetSize(),
+		ModTime_: time.Time{}, // Not supported.
+		Sys_:     sys,
+	}
+}
+
+func decodeOID(sha string) (OID, error) {
+	oidBytes, err := hex.DecodeString(sha)
+	if err != nil {
+		return OID{}, err
+	}
+	var oid OID
+	copy(oid[:], oidBytes)
+	return oid, nil
+}
+
+type objectInfo OID
+
+func (oid objectInfo) OID() OID { return OID(oid) }

@@ -1,11 +1,7 @@
 > [!NOTE]
 > Generated from: unknown revision of [sourcegraph/managed-services](https://github.com/sourcegraph/managed-services)
 
-This document describes operational guidance for msp-testbed infrastructure.
-This service is operated on the [Managed Services Platform (MSP)](https://sourcegraph.notion.site/712a0389f54c4d3a90d069aa2d979a59).
-
-> [!IMPORTANT]
-> If this is your first time here, you must follow the [sourcegraph/managed-services 'Tooling setup' guide](https://github.com/sourcegraph/managed-services/blob/main/README.md) as well to clone the service definitions repository and set up the prerequisite tooling.
+This document describes operational guidance for msp-testbed infrastructure. This service is operated on the [Managed Services Platform (MSP)](https://sourcegraph.notion.site/712a0389f54c4d3a90d069aa2d979a59).
 
 If you need assistance with MSP infrastructure, reach out to the [Core Services](https://sourcegraph.notion.site/ed8af5ecf15545b292816ebba261a93c) team in #discuss-core-services.
 
@@ -22,6 +18,9 @@ If you need assistance with MSP infrastructure, reach out to the [Core Services]
 # Environments
 
 ## test
+
+> [!IMPORTANT]
+> If this is your first time here, you must follow the [sourcegraph/managed-services 'Tooling setup' guide](https://github.com/sourcegraph/managed-services/blob/main/README.md) as well to clone the service definitions repository and set up the prerequisite tooling.
 
 - Project ID: [`msp-testbed-test-77589aae45d0`](https://console.cloud.google.com/run?project=msp-testbed-test-77589aae45d0)
 - Category: **test**
@@ -96,20 +95,15 @@ View the [generated architecture diagram](https://github.com/sourcegraph/managed
 
 ### test Terraform Cloud
 
-This service's configuration is defined in [`sourcegraph/managed-services/services/msp-testbed/service.yaml`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml), and `sg msp generate msp-testbed test` generates the required infrastructure configuration for this environment in Terraform.
-Terraform Cloud (TFC) workspaces specific to each service then provisions the required infrastructure from this configuration.
-You may want to check your service environment's TFC workspaces if a Terraform apply fails (reported via GitHub commit status checks in the [`sourcegraph/managed-services`](https://github.com/sourcegraph/managed-services) repository, or in #alerts-msp-tfc).
+This service's configuration is defined in [`sourcegraph/managed-services/services/msp-testbed/service.yaml`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml), and `sg msp generate msp-testbed test` generates the required infrastructure configuration for this environment in Terraform. Terraform Cloud (TFC) workspaces specific to each service then provisions the required infrastructure from this configuration. You may want to check your service environment's TFC workspaces if a Terraform apply fails (reported via GitHub commit status checks in the [`sourcegraph/managed-services`](https://github.com/sourcegraph/managed-services) repository, or in #alerts-msp-tfc).
 
 > [!NOTE]
-> If you are looking for service logs, see the [test Cloud Run](#test-cloud-run) section instead. In general:
-> check service logs if your service has gone down or is misbehaving, and check TFC workspaces for infrastructure provisioning or configuration issues.
+> If you are looking for service logs, see the [test Cloud Run](#test-cloud-run) section instead. In general:  check service logs if your service has gone down or is misbehaving, and check TFC workspaces for infrastructure provisioning or configuration issues.
 
-To access this environment's Terraform Cloud workspaces, you will need to [log in to Terraform Cloud](https://app.terraform.io/app/sourcegraph) and then [request Entitle access to membership in the "Managed Services Platform Operator" TFC team](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjM2MDAiLCJqdXN0aWZpY2F0aW9uIjoiSlVTVElGSUNBVElPTiBIRVJFIiwicm9sZUlkcyI6W3siaWQiOiJiMzg3MzJjYy04OTUyLTQ2Y2QtYmIxZS1lZjI2ODUwNzIyNmIiLCJ0aHJvdWdoIjoiYjM4NzMyY2MtODk1Mi00NmNkLWJiMWUtZWYyNjg1MDcyMjZiIiwidHlwZSI6InJvbGUifV19).
-The "Managed Services Platform Operator" team has access to all MSP TFC workspaces.
+"To access this environment's Terraform Cloud workspaces, you will need to [log in to Terraform Cloud](https://app.terraform.io/app/sourcegraph) and then [request Entitle access to membership in the "Managed Services Platform Operator" TFC team](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjM2MDAiLCJqdXN0aWZpY2F0aW9uIjoiSlVTVElGSUNBVElPTiBIRVJFIiwicm9sZUlkcyI6W3siaWQiOiJiMzg3MzJjYy04OTUyLTQ2Y2QtYmIxZS1lZjI2ODUwNzIyNmIiLCJ0aHJvdWdoIjoiYjM4NzMyY2MtODk1Mi00NmNkLWJiMWUtZWYyNjg1MDcyMjZiIiwidHlwZSI6InJvbGUifV19).The "Managed Services Platform Operator" team has access to all MSP TFC workspaces.
 
 > [!WARNING]
-> You **must [log in to Terraform Cloud](https://app.terraform.io/app/sourcegraph) before making your Entitle request**.
-> If you make your Entitle request, then log in, you will be removed from any team memberships granted through Entitle by Terraform Cloud's SSO implementation.
+> You **must [log in to Terraform Cloud](https://app.terraform.io/app/sourcegraph) before making your Entitle request**.If you make your Entitle request, then log in, you will be removed from any team memberships granted through Entitle by Terraform Cloud's SSO implementation.
 
 The Terraform Cloud workspaces for this service environment are [grouped under the `msp-msp-testbed-test` tag](https://app.terraform.io/app/sourcegraph/workspaces?tag=msp-msp-testbed-test), or you can use:
 
@@ -117,11 +111,28 @@ The Terraform Cloud workspaces for this service environment are [grouped under t
 sg msp tfc view msp-testbed test
 ```
 
-# Alert Policies
+# Incident response
+
+Here to start [start an incident](https://sourcegraph.notion.site/cfaad186302545968eccdbe9174b1f80?pvs=74) for msp-testbed for a reported problem or a service alert?
+
+First, create an incident in Slack using the `/incident` command, populating the template with the appropriate details. In particular, make sure to select **msp-testbed** in the **Affected services** field of the incident creation form - all Managed Services are automatically added as options.
+
+Refer to the appropriate per-service-environment guidance above to request access via Entitle to the prerequisite resources and find how to access various infrastructure components.
+
+If you received an alert, refer to the alert policies reference below to get some initial guidance on how to root-cause the issue and possibly resolve it.
+
+Additional generalized MSP incident response guidance is also available in the [MSP incident response](https://sourcegraph.notion.site/e63152f113844ba3bca6e456d6ba9349?pvs=74) page.
+
+> [!NOTE]
+> If you need additional assistance with MSP infrastructure, tag the `@core-services-support` Slack handle to request assistance, or reach out in #discuss-core-services.
+
+# Alert policies
 
 The following alert policies are defined for each of this service's environments. An overview dashboard is also available for each environment:
 
-- [Dashboard](https://console.cloud.google.com/monitoring/dashboards?pageState=%28%22dashboards%22%3A%28%22t%22%3A%22All%22%29%2C%22dashboardList%22%3A%28%22f%22%3A%22%255B%257B_22k_22_3A_22Type_22_2C_22t_22_3A10_2C_22v_22_3A_22_5C_22Custom_5C_22_22_2C_22s_22_3Atrue_2C_22i_22_3A_22category_22%257D%255D%22%29%29&project=msp-testbed-test-77589aae45d0) for "test" environment
+- **test**: [Dashboard](https://console.cloud.google.com/monitoring/dashboards?pageState=%28%22dashboards%22%3A%28%22t%22%3A%22All%22%29%2C%22dashboardList%22%3A%28%22f%22%3A%22%255B%257B_22k_22_3A_22Type_22_2C_22t_22_3A10_2C_22v_22_3A_22_5C_22Custom_5C_22_22_2C_22s_22_3Atrue_2C_22i_22_3A_22category_22%257D%255D%22%29%29&project=msp-testbed-test-77589aae45d0)
+
+Refer to the [Incident response](#incident-response) section to start an incident if necessary.
 
 ## High Container CPU Utilization
 

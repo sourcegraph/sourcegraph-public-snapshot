@@ -111,8 +111,8 @@ def go_dependencies():
         name = "com_github_alecthomas_chroma_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/alecthomas/chroma/v2",
-        sum = "h1:CQCdj1BiBV17sD4Bd32b/Bzuiq/EqoNTrnIhyQAZ+Rk=",
-        version = "v2.5.0",
+        sum = "h1:Wh8qLEgMMsN7mgyG8/qIpegky2Hvzr4By6gEF7cmWgw=",
+        version = "v2.12.0",
     )
     go_repository(
         name = "com_github_alecthomas_kingpin",
@@ -701,6 +701,27 @@ def go_dependencies():
         importpath = "github.com/beorn7/perks",
         sum = "h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=",
         version = "v1.0.1",
+    )
+    go_repository(
+        name = "com_github_bevzzz_nb",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/bevzzz/nb",
+        sum = "h1:Pg2p4TXttIRquLZjz5cfffPfWeUCHVBPUhdcDhwbccI=",
+        version = "v0.3.0",
+    )
+    go_repository(
+        name = "com_github_bevzzz_nb_extension_extra_goldmark_jupyter",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/bevzzz/nb/extension/extra/goldmark-jupyter",
+        sum = "h1:F/vUmFPZ6+URUo2WXyraB0JUkcpcHBFws9QYcv673l0=",
+        version = "v0.0.0-20240131001330-e69229bd9da4",
+    )
+    go_repository(
+        name = "com_github_bevzzz_nb_synth",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/bevzzz/nb-synth",
+        sum = "h1:CH1+0p2ywCtqQbDL2KpwRn+XL71Peyhlshusdbn13kk=",
+        version = "v0.0.0-20240128164931-35fdda0583a0",
     )
     go_repository(
         name = "com_github_bgentry_speakeasy",
@@ -5128,6 +5149,13 @@ def go_dependencies():
         version = "v1.3.0",
     )
     go_repository(
+        name = "com_github_robert_nix_ansihtml",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/robert-nix/ansihtml",
+        sum = "h1:VTiyQ6/+AxSJoSSLsMecnkh8i0ZqOEdiRl/odOc64fc=",
+        version = "v1.0.1",
+    )
+    go_repository(
         name = "com_github_rogpeppe_fastuuid",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/rogpeppe/fastuuid",
@@ -5633,8 +5661,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_notionreposync",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/notionreposync",
-        sum = "h1:+ghayvC6PL3/8g4tqRsQCYKeH296tkogGSzpov6Ae+M=",
-        version = "v0.0.0-20240502050143-447b6b9e6763",
+        sum = "h1:XB04N3LJEZaJFzI9+q3qxSXNRNw3UvwPL5zbIFvLvaM=",
+        version = "v0.0.0-20240510213306-87052870048d",
     )
     go_repository(
         name = "com_github_sourcegraph_run",

@@ -46,6 +46,7 @@ go_test(
     name = "rockskip_test",
     timeout = "short",
     srcs = [
+        "mocks_test.go",
         "search_test.go",
         "server_test.go",
     ],
@@ -62,6 +63,7 @@ go_test(
         "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/search",
+        "//internal/search/result",
         "//lib/errors",
         "//lib/pointers",
         "@com_github_google_go_cmp//cmp",

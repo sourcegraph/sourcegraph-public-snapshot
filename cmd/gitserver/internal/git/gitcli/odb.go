@@ -1,17 +1,25 @@
 package gitcli
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/go-git/go-git/v5/plumbing/format/config"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -276,3 +284,285 @@ func (g *gitCLIBackend) FirstEverCommit(ctx context.Context) (api.CommitID, erro
 }
 
 const revListUsageString = `usage: git rev-list [<options>] <commit>... [--] [<path>...]`
+
+func (g *gitCLIBackend) Stat(ctx context.Context, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
+	if err := checkSpecArgSafety(string(commit)); err != nil {
+		return nil, err
+	}
+
+	path = filepath.Clean(rel(path))
+
+	// Special case root, which is not returned by `git ls-tree`.
+	if path == "" || path == "." {
+		rev, err := g.revParse(ctx, string(commit)+"^{tree}")
+		if err != nil {
+			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				return nil, &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
+			}
+			return nil, err
+		}
+		oid, err := decodeOID(rev)
+		if err != nil {
+			return nil, err
+		}
+		return &fileutil.FileInfo{Mode_: os.ModeDir, Sys_: objectInfo(oid)}, nil
+	}
+
+	it, err := g.lsTree(ctx, commit, path, false)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		closeErr := it.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
+
+	fi, err := it.Next()
+	if err != nil {
+		if err == io.EOF {
+			return nil, &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
+		}
+		return nil, err
+	}
+
+	return fi, nil
+}
+
+func (g *gitCLIBackend) ReadDir(ctx context.Context, commit api.CommitID, path string, recursive bool) (git.ReadDirIterator, error) {
+	if err := checkSpecArgSafety(string(commit)); err != nil {
+		return nil, err
+	}
+
+	if path != "" {
+		// Trailing slash is necessary to ls-tree under the dir (not just
+		// to list the dir's tree entry in its parent dir).
+		path = filepath.Clean(rel(path)) + "/"
+	}
+
+	return g.lsTree(ctx, commit, path, recursive)
+}
+
+func (g *gitCLIBackend) lsTree(ctx context.Context, commit api.CommitID, path string, recurse bool) (_ git.ReadDirIterator, err error) {
+	// Note: We don't call filepath.Clean(path) because ReadDir needs to pass
+	// path with a trailing slash.
+
+	args := []string{
+		"ls-tree",
+		"--long", // show size
+		"--full-name",
+		"-z",
+		string(commit),
+	}
+	if recurse {
+		args = append(args, "-r", "-t") // -t: Show tree entries even when going to recurse them.
+	}
+	if path != "" {
+		// Note: We need to use :(literal) here to prevent glob expansion which
+		// would lead to incorrect results.
+		args = append(args, "--", pathspecLiteral(filepath.ToSlash(path)))
+	}
+
+	r, err := g.NewCommand(ctx, WithArguments(args...))
+	if err != nil {
+		return nil, err
+	}
+
+	sc := bufio.NewScanner(r)
+	sc.Split(byteutils.ScanNullLines)
+
+	return &readDirIterator{
+		ctx:      ctx,
+		g:        g,
+		sc:       sc,
+		repoName: g.repoName,
+		commit:   commit,
+		path:     path,
+		r:        r,
+	}, nil
+}
+
+type readDirIterator struct {
+	ctx      context.Context
+	g        *gitCLIBackend
+	sc       *bufio.Scanner
+	repoName api.RepoName
+	commit   api.CommitID
+	path     string
+	fdsSeen  int
+	r        io.ReadCloser
+}
+
+func (it *readDirIterator) Next() (fs.FileInfo, error) {
+	for it.sc.Scan() {
+		line := it.sc.Bytes()
+		if len(line) == 0 {
+			continue
+		}
+
+		tabPos := bytes.IndexByte(line, '\t')
+		if tabPos == -1 {
+			return nil, errors.Errorf("invalid `git ls-tree` output: %q", line)
+		}
+		info := bytes.SplitN(line[:tabPos], []byte(" "), 4)
+
+		if len(info) != 4 {
+			return nil, errors.Errorf("invalid `git ls-tree` output: %q", line)
+		}
+
+		name := string(line[tabPos+1:])
+		typ := info[1]
+		sha := info[2]
+		if !gitdomain.IsAbsoluteRevision(string(sha)) {
+			return nil, errors.Errorf("invalid `git ls-tree` SHA output: %q", sha)
+		}
+		oid, err := decodeOID(api.CommitID(sha))
+		if err != nil {
+			return nil, err
+		}
+
+		sizeStr := string(bytes.TrimSpace(info[3]))
+		var size int64
+		if sizeStr != "-" {
+			// Size of "-" indicates a dir or submodule.
+			size, err = strconv.ParseInt(sizeStr, 10, 64)
+			if err != nil || size < 0 {
+				return nil, errors.Errorf("invalid `git ls-tree` size output: %q (error: %s)", sizeStr, err)
+			}
+		}
+
+		var sys any
+		modeVal, err := strconv.ParseInt(string(info[0]), 8, 32)
+		if err != nil {
+			return nil, err
+		}
+
+		loadModConf := sync.OnceValues(func() (config.Config, error) {
+			return it.g.gitModulesConfig(it.ctx, it.commit)
+		})
+
+		mode := os.FileMode(modeVal)
+		switch string(typ) {
+		case "blob":
+			if mode&gitdomain.ModeSymlink != 0 {
+				mode = os.ModeSymlink
+			} else {
+				// Regular file.
+				mode = mode | 0o644
+			}
+		case "commit":
+			mode = gitdomain.ModeSubmodule
+
+			modconf, err := loadModConf()
+			if err != nil {
+				return nil, err
+			}
+
+			submodule := gitdomain.Submodule{
+				URL:      modconf.Section("submodule").Subsection(name).Option("url"),
+				Path:     modconf.Section("submodule").Subsection(name).Option("path"),
+				CommitID: api.CommitID(oid.String()),
+			}
+
+			sys = submodule
+		case "tree":
+			mode = mode | os.ModeDir
+		}
+
+		if sys == nil {
+			// Some callers might find it useful to know the object's OID.
+			sys = objectInfo(oid)
+		}
+
+		it.fdsSeen++
+
+		return &fileutil.FileInfo{
+			Name_: name, // full path relative to root (not just basename)
+			Mode_: mode,
+			Size_: size,
+			Sys_:  sys,
+		}, nil
+	}
+
+	if err := it.sc.Err(); err != nil {
+		var cfe *CommandFailedError
+		if errors.As(err, &cfe) {
+			if bytes.Contains(cfe.Stderr, []byte("exists on disk, but not in")) {
+				return nil, &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(it.path), Err: os.ErrNotExist}
+			}
+			if cfe.ExitStatus == 128 && bytes.Contains(cfe.Stderr, []byte("fatal: not a tree object")) {
+				return nil, &gitdomain.RevisionNotFoundError{Repo: it.repoName, Spec: string(it.commit)}
+			}
+			if cfe.ExitStatus == 128 && bytes.Contains(cfe.Stderr, []byte("fatal: Not a valid object name")) {
+				return nil, &gitdomain.RevisionNotFoundError{Repo: it.repoName, Spec: string(it.commit)}
+			}
+		}
+		return nil, err
+	}
+
+	// If we are listing the empty root tree, we will have no output.
+	if it.fdsSeen == 0 && filepath.Clean(it.path) != "." {
+		return nil, &os.PathError{Op: "git ls-tree", Path: it.path, Err: os.ErrNotExist}
+	}
+
+	return nil, io.EOF
+}
+
+func (it *readDirIterator) Close() error {
+	if err := it.r.Close(); err != nil {
+		var cfe *CommandFailedError
+		if errors.As(err, &cfe) {
+			if bytes.Contains(cfe.Stderr, []byte("exists on disk, but not in")) {
+				return &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(it.path), Err: os.ErrNotExist}
+			}
+			if cfe.ExitStatus == 128 && bytes.Contains(cfe.Stderr, []byte("fatal: not a tree object")) {
+				return &gitdomain.RevisionNotFoundError{Repo: it.repoName, Spec: string(it.commit)}
+			}
+		}
+		return err
+	}
+
+	return nil
+}
+
+// gitModulesConfig returns the gitmodules configuration for the given commit.
+func (g *gitCLIBackend) gitModulesConfig(ctx context.Context, commit api.CommitID) (config.Config, error) {
+	r, err := g.ReadFile(ctx, commit, ".gitmodules")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return config.Config{}, nil
+		}
+		return config.Config{}, err
+	}
+	defer r.Close()
+
+	modfile, err := io.ReadAll(r)
+	if err != nil {
+		return config.Config{}, err
+	}
+
+	var cfg config.Config
+	err = config.NewDecoder(bytes.NewBuffer(modfile)).Decode(&cfg)
+	if err != nil {
+		return config.Config{}, errors.Wrap(err, "error parsing .gitmodules")
+	}
+	return cfg, nil
+}
+
+// rel strips the leading "/" prefix from the path string, effectively turning
+// an absolute path into one relative to the root directory. A path that is just
+// "/" is treated specially, returning just ".".
+//
+// The elements in a file path are separated by slash ('/', U+002F) characters,
+// regardless of host operating system convention.
+func rel(path string) string {
+	if path == "/" {
+		return "."
+	}
+	return strings.TrimPrefix(path, "/")
+}
+
+type objectInfo gitdomain.OID
+
+func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }
