@@ -1,10 +1,8 @@
 package search
 
 import (
-	"bufio"
 	"bytes"
 	"context"
-	"io"
 	"os/exec"
 	"strings"
 
@@ -15,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -83,7 +82,6 @@ const (
 
 type CommitSearcher struct {
 	Logger               log.Logger
-	RepoDir              string
 	Query                MatchTree
 	Revisions            []string
 	IncludeDiff          bool
@@ -156,25 +154,17 @@ func revsToGitArgs(revs []string) []string {
 }
 
 func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
+	gs := gitserver.NewClient("search.commits")
+
+	// TODO: Need to fix that running in a repo with zero commits yet returns
+	// no error, right now this would fail.
 	cmd := exec.CommandContext(ctx, "git", cs.gitArgs()...)
-	cmd.Dir = cs.RepoDir
-	stdoutReader, err := cmd.StdoutPipe()
+	commits, err := gs.Commits(ctx, cs.RepoName, gitserver.CommitsOptions{
+		NameOnly: cs.IncludeModifiedFiles,
+	})
 	if err != nil {
 		return err
 	}
-	var stderrBuf bytes.Buffer
-	cmd.Stderr = &stderrBuf
-
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-
-	defer func() {
-		// Always call cmd.Wait to avoid leaving zombie processes around.
-		if e := cmd.Wait(); e != nil {
-			err = errors.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String(), cs.Logger))
-		}
-	}()
 
 	batch := make([]*RawCommit, 0, batchSize)
 	sendBatch := func() {
@@ -187,13 +177,16 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 		batch = make([]*RawCommit, 0, batchSize)
 	}
 
-	scanner := NewCommitScanner(stdoutReader)
-	for scanner.Scan() {
+	for _, commit := range commits {
 		if ctx.Err() != nil {
 			return nil
 		}
-		cv := scanner.NextRawCommit()
-		batch = append(batch, cv)
+		c := &RawCommit{
+			Hash:          []byte(commit.ID),
+			RefNames:      []string{commit.ID},
+			CommitterDate: commit.Committer.Date,
+		}
+		batch = append(batch, c)
 		if len(batch) == batchSize {
 			sendBatch()
 		}
@@ -203,20 +196,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 		sendBatch()
 	}
 
-	return scanner.Err()
-}
-
-func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string, logger log.Logger) error {
-	if ctx.Err() != nil {
-		// Ignore errors when context is cancelled
-		return nil
-	}
-	if strings.Contains(stderr, "does not have any commits yet") {
-		// Ignore no commits error error
-		return nil
-	}
-	logger.Warn("git search command exited with non-zero status code", log.String("stderr", stderr))
-	return err
+	return nil
 }
 
 func getSubRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) func(string) (bool, error) {
@@ -230,13 +210,6 @@ func getSubRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionCh
 }
 
 func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
-	// Create a new diff fetcher subprocess for each worker
-	diffFetcher, err := NewDiffFetcher(cs.RepoDir)
-	if err != nil {
-		return err
-	}
-	defer diffFetcher.Stop()
-
 	startBuf := make([]byte, 1024)
 
 	runJob := func(j job) error {
@@ -249,16 +222,16 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 			}
 
 			lc := &LazyCommit{
-				RawCommit:   cv,
-				diffFetcher: diffFetcher,
-				LowerBuf:    startBuf,
+				Commit:   cv,
+				LowerBuf: startBuf,
+				repo:     cs.RepoName,
 			}
-			mergedResult, highlights, err := cs.Query.Match(lc)
+			mergedResult, highlights, err := cs.Query.Match(ctx, lc)
 			if err != nil {
 				return err
 			}
 			if mergedResult.Satisfies() {
-				cm, err := CreateCommitMatch(lc, highlights, cs.IncludeDiff, getSubRepoFilterFunc(ctx, authz.DefaultSubRepoPermsChecker, cs.RepoName))
+				cm, err := CreateCommitMatch(ctx, lc, highlights, cs.IncludeDiff, getSubRepoFilterFunc(ctx, authz.DefaultSubRepoPermsChecker, cs.RepoName))
 				if err != nil {
 					return err
 				}
@@ -291,104 +264,7 @@ type RawCommit struct {
 	ModifiedFiles  [][]byte
 }
 
-type CommitScanner struct {
-	scanner *bufio.Scanner
-	next    *RawCommit
-	err     error
-}
-
-// NewCommitScanner creates a scanner that does a shallow parse of the stdout of git log.
-// Like the bufio.Scanner() API, call Scan() to ingest the next result, which will return
-// false if it hits an error or EOF, then call NextRawCommit() to get the scanned commit.
-func NewCommitScanner(r io.Reader) *CommitScanner {
-	scanner := bufio.NewScanner(r)
-	scanner.Buffer(make([]byte, 1024), 1<<22)
-
-	// Split by commit
-	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if len(data) == 0 {
-			if !atEOF {
-				// Read more data
-				return 0, nil, nil
-			}
-			return 0, nil, errors.Errorf("incomplete data")
-		}
-
-		if !bytes.HasPrefix(data, commitSeparator) {
-			// Each commit should always start with our separator
-			return 0, nil, errors.Errorf("expected commit separator")
-		}
-
-		// Find the index of the next separator
-		idx := bytes.Index(data[1:], commitSeparator)
-		if idx == -1 {
-			if !atEOF {
-				return 0, nil, nil
-			}
-			return len(data), data[1:], nil
-		}
-		token = data[1 : idx+1]
-
-		return len(token) + 1, token, nil
-	})
-
-	return &CommitScanner{
-		scanner: scanner,
-	}
-}
-
-func (c *CommitScanner) Scan() bool {
-	if !c.scanner.Scan() {
-		return false
-	}
-
-	// Make a copy so the view can outlive the next scan
-	buf := make([]byte, len(c.scanner.Bytes()))
-	copy(buf, c.scanner.Bytes())
-
-	parts := bytes.Split(buf, sep)
-	if len(parts) < len(commitFields) {
-		c.err = errors.Errorf("invalid commit log entry: %q", parts)
-		return false
-	}
-
-	// Filter out empty modified files, which can happen due to how
-	// --name-status formats its output. Also trim spaces on the files
-	// for the same reason.
-	modifiedFiles := parts[11:11]
-	for _, part := range parts[11:] {
-		if len(part) > 0 {
-			modifiedFiles = append(modifiedFiles, bytes.TrimSpace(part))
-		}
-	}
-
-	c.next = &RawCommit{
-		Hash:           parts[0],
-		RefNames:       parts[1],
-		SourceRefs:     parts[2],
-		AuthorName:     parts[3],
-		AuthorEmail:    parts[4],
-		AuthorDate:     parts[5],
-		CommitterName:  parts[6],
-		CommitterEmail: parts[7],
-		CommitterDate:  parts[8],
-		Message:        bytes.TrimSpace(parts[9]),
-		ParentHashes:   parts[10],
-		ModifiedFiles:  modifiedFiles,
-	}
-
-	return true
-}
-
-func (c *CommitScanner) NextRawCommit() *RawCommit {
-	return c.next
-}
-
-func (c *CommitScanner) Err() error {
-	return c.err
-}
-
-func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool, filterFunc func(string) (bool, error)) (*protocol.CommitMatch, error) {
+func CreateCommitMatch(ctx context.Context, lc *LazyCommit, hc MatchedCommit, includeDiff bool, filterFunc func(string) (bool, error)) (*protocol.CommitMatch, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return nil, err
@@ -401,7 +277,7 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool, filte
 
 	diff := result.MatchedString{}
 	if includeDiff {
-		rawDiff, err := lc.Diff()
+		rawDiff, err := lc.Diff(ctx)
 		if err != nil {
 			return nil, err
 		}

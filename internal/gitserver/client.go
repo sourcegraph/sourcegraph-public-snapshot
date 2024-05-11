@@ -402,11 +402,6 @@ type Client interface {
 	// is returned, but the second return value `found` will be false.
 	RevAtTime(ctx context.Context, repo api.RepoName, spec string, t time.Time) (oid api.CommitID, found bool, err error)
 
-	// Search executes a search as specified by args, streaming the results as
-	// it goes by calling onMatches with each set of results it receives in
-	// response.
-	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
-
 	// Stat returns a FileInfo describing the named file at commit.
 	Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error)
 
@@ -636,49 +631,6 @@ type readCloseWrapper struct {
 func (r *readCloseWrapper) Close() error {
 	r.closeFn()
 	return nil
-}
-
-func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (_ bool, err error) {
-	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			args.Repo.Attr(),
-			attribute.Stringer("query", args.Query),
-			attribute.Bool("diff", args.IncludeDiff),
-			attribute.Int("limit", args.Limit),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	client, err := c.clientSource.ClientForRepo(ctx, args.Repo)
-	if err != nil {
-		return false, err
-	}
-
-	cs, err := client.Search(ctx, args.ToProto())
-	if err != nil {
-		return false, err
-	}
-
-	limitHit := false
-	for {
-		msg, err := cs.Recv()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				return limitHit, nil
-			}
-			return limitHit, err
-		}
-
-		switch m := msg.Message.(type) {
-		case *proto.SearchResponse_LimitHit:
-			limitHit = limitHit || m.LimitHit
-		case *proto.SearchResponse_Match:
-			onMatches([]protocol.CommitMatch{protocol.CommitMatchFromProto(m.Match)})
-		default:
-			return false, errors.Newf("unknown message type %T", m)
-		}
-	}
 }
 
 func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitCommand {

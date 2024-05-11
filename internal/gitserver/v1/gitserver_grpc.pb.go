@@ -161,7 +161,6 @@ const (
 	GitserverService_GetObject_FullMethodName                   = "/gitserver.v1.GitserverService/GetObject"
 	GitserverService_IsRepoCloneable_FullMethodName             = "/gitserver.v1.GitserverService/IsRepoCloneable"
 	GitserverService_ListGitolite_FullMethodName                = "/gitserver.v1.GitserverService/ListGitolite"
-	GitserverService_Search_FullMethodName                      = "/gitserver.v1.GitserverService/Search"
 	GitserverService_Archive_FullMethodName                     = "/gitserver.v1.GitserverService/Archive"
 	GitserverService_RepoCloneProgress_FullMethodName           = "/gitserver.v1.GitserverService/RepoCloneProgress"
 	GitserverService_IsPerforcePathCloneable_FullMethodName     = "/gitserver.v1.GitserverService/IsPerforcePathCloneable"
@@ -206,7 +205,6 @@ type GitserverServiceClient interface {
 	GetObject(ctx context.Context, in *GetObjectRequest, opts ...grpc.CallOption) (*GetObjectResponse, error)
 	IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error)
 	ListGitolite(ctx context.Context, in *ListGitoliteRequest, opts ...grpc.CallOption) (*ListGitoliteResponse, error)
-	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
 	// Archive creates an archive for the given treeish in the given format.
 	// If paths are specified, only those paths are included in the archive.
 	//
@@ -508,40 +506,8 @@ func (c *gitserverServiceClient) ListGitolite(ctx context.Context, in *ListGitol
 	return out, nil
 }
 
-func (c *gitserverServiceClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[2], GitserverService_Search_FullMethodName, opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &gitserverServiceSearchClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type GitserverService_SearchClient interface {
-	Recv() (*SearchResponse, error)
-	grpc.ClientStream
-}
-
-type gitserverServiceSearchClient struct {
-	grpc.ClientStream
-}
-
-func (x *gitserverServiceSearchClient) Recv() (*SearchResponse, error) {
-	m := new(SearchResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func (c *gitserverServiceClient) Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[3], GitserverService_Archive_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[2], GitserverService_Archive_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -663,7 +629,7 @@ func (c *gitserverServiceClient) MergeBase(ctx context.Context, in *MergeBaseReq
 }
 
 func (c *gitserverServiceClient) Blame(ctx context.Context, in *BlameRequest, opts ...grpc.CallOption) (GitserverService_BlameClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[4], GitserverService_Blame_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[3], GitserverService_Blame_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -704,7 +670,7 @@ func (c *gitserverServiceClient) DefaultBranch(ctx context.Context, in *DefaultB
 }
 
 func (c *gitserverServiceClient) ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[5], GitserverService_ReadFile_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[4], GitserverService_ReadFile_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -754,7 +720,7 @@ func (c *gitserverServiceClient) ResolveRevision(ctx context.Context, in *Resolv
 }
 
 func (c *gitserverServiceClient) ListRefs(ctx context.Context, in *ListRefsRequest, opts ...grpc.CallOption) (GitserverService_ListRefsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[6], GitserverService_ListRefs_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[5], GitserverService_ListRefs_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -795,7 +761,7 @@ func (c *gitserverServiceClient) RevAtTime(ctx context.Context, in *RevAtTimeReq
 }
 
 func (c *gitserverServiceClient) RawDiff(ctx context.Context, in *RawDiffRequest, opts ...grpc.CallOption) (GitserverService_RawDiffClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[7], GitserverService_RawDiff_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[6], GitserverService_RawDiff_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -854,7 +820,7 @@ func (c *gitserverServiceClient) BehindAhead(ctx context.Context, in *BehindAhea
 }
 
 func (c *gitserverServiceClient) ChangedFiles(ctx context.Context, in *ChangedFilesRequest, opts ...grpc.CallOption) (GitserverService_ChangedFilesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[8], GitserverService_ChangedFiles_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[7], GitserverService_ChangedFiles_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -895,7 +861,7 @@ func (c *gitserverServiceClient) Stat(ctx context.Context, in *StatRequest, opts
 }
 
 func (c *gitserverServiceClient) ReadDir(ctx context.Context, in *ReadDirRequest, opts ...grpc.CallOption) (GitserverService_ReadDirClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[9], GitserverService_ReadDir_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[8], GitserverService_ReadDir_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -943,7 +909,6 @@ type GitserverServiceServer interface {
 	GetObject(context.Context, *GetObjectRequest) (*GetObjectResponse, error)
 	IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error)
 	ListGitolite(context.Context, *ListGitoliteRequest) (*ListGitoliteResponse, error)
-	Search(*SearchRequest, GitserverService_SearchServer) error
 	// Archive creates an archive for the given treeish in the given format.
 	// If paths are specified, only those paths are included in the archive.
 	//
@@ -1158,9 +1123,6 @@ func (UnimplementedGitserverServiceServer) IsRepoCloneable(context.Context, *IsR
 func (UnimplementedGitserverServiceServer) ListGitolite(context.Context, *ListGitoliteRequest) (*ListGitoliteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListGitolite not implemented")
 }
-func (UnimplementedGitserverServiceServer) Search(*SearchRequest, GitserverService_SearchServer) error {
-	return status.Errorf(codes.Unimplemented, "method Search not implemented")
-}
 func (UnimplementedGitserverServiceServer) Archive(*ArchiveRequest, GitserverService_ArchiveServer) error {
 	return status.Errorf(codes.Unimplemented, "method Archive not implemented")
 }
@@ -1366,27 +1328,6 @@ func _GitserverService_ListGitolite_Handler(srv interface{}, ctx context.Context
 		return srv.(GitserverServiceServer).ListGitolite(ctx, req.(*ListGitoliteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
-}
-
-func _GitserverService_Search_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(SearchRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(GitserverServiceServer).Search(m, &gitserverServiceSearchServer{stream})
-}
-
-type GitserverService_SearchServer interface {
-	Send(*SearchResponse) error
-	grpc.ServerStream
-}
-
-type gitserverServiceSearchServer struct {
-	grpc.ServerStream
-}
-
-func (x *gitserverServiceSearchServer) Send(m *SearchResponse) error {
-	return x.ServerStream.SendMsg(m)
 }
 
 func _GitserverService_Archive_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -1965,11 +1906,6 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Exec",
 			Handler:       _GitserverService_Exec_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "Search",
-			Handler:       _GitserverService_Search_Handler,
 			ServerStreams: true,
 		},
 		{

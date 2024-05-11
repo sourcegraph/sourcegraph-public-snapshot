@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -40,7 +42,6 @@ type DoSearchFunc func(*gitprotocol.SearchRequest) error
 type CodeMonitorHook func(context.Context, database.DB, GitserverClient, *gitprotocol.SearchRequest, api.RepoID, DoSearchFunc) error
 
 type GitserverClient interface {
-	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
 	ResolveRevision(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error)
 }
 
@@ -67,18 +68,17 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 			IncludeModifiedFiles: j.IncludeModifiedFiles,
 		}
 
-		onMatches := func(in []protocol.CommitMatch) {
-			res := make([]result.Match, 0, len(in))
-			for _, protocolMatch := range in {
-				res = append(res, protocolMatchToCommitMatch(repoRev.Repo, j.Diff, protocolMatch))
-			}
+		onMatch := func(in *protocol.CommitMatch) error {
 			stream.Send(streaming.SearchEvent{
-				Results: res,
+				Results: []result.Match{
+					protocolMatchToCommitMatch(repoRev.Repo, j.Diff, *in),
+				},
 			})
+			return nil
 		}
 
 		doSearch := func(args *gitprotocol.SearchRequest) error {
-			limitHit, err := clients.Gitserver.Search(ctx, args, onMatches)
+			limitHit, err := searchWithObservability(ctx, log.Scoped(""), trace.FromContext(ctx), args, onMatch)
 			statusMap, err := search.HandleRepoSearchResult(repoRev.Repo.ID, repoRev.Revs, limitHit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{

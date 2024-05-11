@@ -1,4 +1,4 @@
-package internal
+package commit
 
 import (
 	"context"
@@ -13,33 +13,31 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/search/commit/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var (
 	searchRunning = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_search_running",
-		Help: "number of gitserver.Search running concurrently.",
+		Name: "src_commit_search_running",
+		Help: "number of commit searches running concurrently.",
 	})
 	searchDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_gitserver_search_duration_seconds",
-		Help:    "gitserver.Search duration in seconds.",
+		Name:    "src_commit_search_duration_seconds",
+		Help:    "commit search duration in seconds.",
 		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 	}, []string{"error"})
 	searchLatency = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name:    "src_gitserver_search_latency_seconds",
-		Help:    "gitserver.Search latency (time until first result is sent) in seconds.",
+		Name:    "src_commit_search_latency_seconds",
+		Help:    "commit search latency (time until first result is sent) in seconds.",
 		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 	})
 )
 
-func searchWithObservability(ctx context.Context, logger log.Logger, repoDir common.GitDir, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
+func searchWithObservability(ctx context.Context, logger log.Logger, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
 	searchStart := time.Now()
 
 	searchRunning.Inc()
@@ -59,10 +57,10 @@ func searchWithObservability(ctx context.Context, logger log.Logger, repoDir com
 			WithLabelValues(strconv.FormatBool(err != nil)).
 			Observe(time.Since(searchStart).Seconds())
 
-		if honey.Enabled() || traceLogs {
+		if honey.Enabled() {
 			act := actor.FromContext(ctx)
-			ev := honey.NewEvent("gitserver-search")
-			ev.SetSampleRate(gitcli.HoneySampleRate("", act))
+			ev := honey.NewEvent("commit-search")
+			ev.SetSampleRate(8)
 			ev.AddField("repo", args.Repo)
 			ev.AddField("revisions", args.Revisions)
 			ev.AddField("include_diff", args.IncludeDiff)
@@ -81,9 +79,6 @@ func searchWithObservability(ctx context.Context, logger log.Logger, repoDir com
 			if honey.Enabled() {
 				_ = ev.Send()
 			}
-			if traceLogs {
-				logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
-			}
 		}
 	}()
 
@@ -96,12 +91,12 @@ func searchWithObservability(ctx context.Context, logger log.Logger, repoDir com
 		return onMatch(cm)
 	}
 
-	return doSearch(ctx, logger, repoDir, args, onMatchWithLatency)
+	return doSearch(ctx, logger, args, onMatchWithLatency)
 }
 
 // doSearch handles the core logic of the search. It is passed a matchesBuf so it doesn't need to
 // concern itself with event types, and all instrumentation is handled in the calling function.
-func doSearch(ctx context.Context, logger log.Logger, repoDir common.GitDir, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
+func doSearch(ctx context.Context, logger log.Logger, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
 	}
@@ -139,7 +134,6 @@ func doSearch(ctx context.Context, logger log.Logger, repoDir common.GitDir, arg
 	searcher := &search.CommitSearcher{
 		Logger:               logger,
 		RepoName:             args.Repo,
-		RepoDir:              string(repoDir),
 		Revisions:            args.Revisions,
 		Query:                mt,
 		IncludeDiff:          args.IncludeDiff,

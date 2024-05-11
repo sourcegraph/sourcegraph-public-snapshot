@@ -27,7 +27,6 @@ type operations struct {
 	readDir                  *observation.Operation
 	resolveRevision          *observation.Operation
 	revAtTime                *observation.Operation
-	search                   *observation.Operation
 	stat                     *observation.Operation
 	streamBlameFile          *observation.Operation
 	systemsInfo              *observation.Operation
@@ -110,7 +109,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		readDir:                  op("ReadDir"),
 		resolveRevision:          resolveRevisionOperation,
 		revAtTime:                op("RevAtTime"),
-		search:                   op("Search"),
 		stat:                     op("Stat"),
 		streamBlameFile:          op("StreamBlameFile"),
 		systemsInfo:              op("SystemsInfo"),

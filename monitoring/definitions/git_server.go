@@ -524,53 +524,6 @@ func GitServer() *monitoring.Dashboard {
 				},
 			},
 
-			{
-				Title:  "Search",
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						{
-							Name:           "search_latency",
-							Description:    "mean time until first result is sent",
-							Query:          "rate(src_gitserver_search_latency_seconds_sum[5m]) / rate(src_gitserver_search_latency_seconds_count[5m])",
-							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: "Mean latency (time to first result) of gitserver search requests",
-						},
-						{
-							Name:           "search_duration",
-							Description:    "mean search duration",
-							Query:          "rate(src_gitserver_search_duration_seconds_sum[5m]) / rate(src_gitserver_search_duration_seconds_count[5m])",
-							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: "Mean duration of gitserver search requests",
-						},
-					},
-					{
-						{
-							Name:           "search_rate",
-							Description:    "rate of searches run by pod",
-							Query:          "rate(src_gitserver_search_latency_seconds_count{instance=~`${shard:regex}`}[5m])",
-							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: "The rate of searches executed on gitserver by pod",
-						},
-						{
-							Name:           "running_searches",
-							Description:    "number of searches currently running by pod",
-							Query:          "sum by (instance) (src_gitserver_search_running{instance=~`${shard:regex}`})",
-							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: "The number of searches currently executing on gitserver by pod",
-						},
-					},
-				},
-			},
-
 			genVCSMetricsGroup(vcsMetricsOptions{
 				operation:                 "clone",
 				metric:                    "vcssyncer_clone_duration_seconds",

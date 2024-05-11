@@ -2,6 +2,7 @@ package search
 
 import (
 	"bytes"
+	"context"
 	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
@@ -69,7 +70,7 @@ func Visit(mt MatchTree, f func(MatchTree)) {
 type MatchTree interface {
 	// Match returns whether the given predicate matches a commit and, if it does,
 	// the portions of the commit that match in the form of *CommitHighlights
-	Match(*LazyCommit) (CommitFilterResult, MatchedCommit, error)
+	Match(context.Context, *LazyCommit) (CommitFilterResult, MatchedCommit, error)
 }
 
 // AuthorMatches is a predicate that matches if the author's name or email address
@@ -78,8 +79,8 @@ type AuthorMatches struct {
 	*casetransform.Regexp
 }
 
-func (a *AuthorMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	if a.Regexp.Match(lc.AuthorName, &lc.LowerBuf) || a.Regexp.Match(lc.AuthorEmail, &lc.LowerBuf) {
+func (a *AuthorMatches) Match(ctx context.Context, lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+	if a.Regexp.Match([]byte(lc.Author.Name), &lc.LowerBuf) || a.Regexp.Match([]byte(lc.Author.Email), &lc.LowerBuf) {
 		return filterResult(true), MatchedCommit{}, nil
 	}
 	return filterResult(false), MatchedCommit{}, nil
@@ -91,8 +92,8 @@ type CommitterMatches struct {
 	*casetransform.Regexp
 }
 
-func (c *CommitterMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	if c.Regexp.Match(lc.CommitterName, &lc.LowerBuf) || c.Regexp.Match(lc.CommitterEmail, &lc.LowerBuf) {
+func (c *CommitterMatches) Match(ctx context.Context, lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+	if c.Regexp.Match([]byte(lc.Committer.Name), &lc.LowerBuf) || c.Regexp.Match([]byte(lc.Committer.Email), &lc.LowerBuf) {
 		return filterResult(true), MatchedCommit{}, nil
 	}
 	return filterResult(false), MatchedCommit{}, nil
@@ -103,7 +104,7 @@ type CommitBefore struct {
 	protocol.CommitBefore
 }
 
-func (c *CommitBefore) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+func (c *CommitBefore) Match(_ context.Context, lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
 	committerDate, err := lc.CommitterDate()
 	if err != nil {
 		return filterResult(false), MatchedCommit{}, err
@@ -116,7 +117,7 @@ type CommitAfter struct {
 	protocol.CommitAfter
 }
 
-func (c *CommitAfter) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+func (c *CommitAfter) Match(ctx context.Context, lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
 	committerDate, err := lc.CommitterDate()
 	if err != nil {
 		return filterResult(false), MatchedCommit{}, err
@@ -130,14 +131,14 @@ type MessageMatches struct {
 	*casetransform.Regexp
 }
 
-func (m *MessageMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	results := m.FindAllIndex(lc.Message, -1, &lc.LowerBuf)
+func (m *MessageMatches) Match(ctx context.Context, lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+	results := m.FindAllIndex([]byte(lc.Message), -1, &lc.LowerBuf)
 	if results == nil {
 		return filterResult(false), MatchedCommit{}, nil
 	}
 
 	return filterResult(true), MatchedCommit{
-		Message: matchesToRanges(lc.Message, results),
+		Message: matchesToRanges([]byte(lc.Message), results),
 	}, nil
 }
 
@@ -147,8 +148,8 @@ type DiffMatches struct {
 	*casetransform.Regexp
 }
 
-func (dm *DiffMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	diff, err := lc.Diff()
+func (dm *DiffMatches) Match(ctx context.Context, lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+	diff, err := lc.Diff(ctx)
 	if err != nil {
 		return filterResult(false), MatchedCommit{}, err
 	}
@@ -210,7 +211,7 @@ type DiffModifiesFile struct {
 	*casetransform.Regexp
 }
 
-func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+func (dmf *DiffModifiesFile) Match(ctx context.Context, lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
 	{
 		// This block pre-filters a commit based on the output of the `--name-status` output.
 		// It is significantly cheaper to get the changed file names compared to generating the full
@@ -228,7 +229,7 @@ func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (CommitFilterResult, MatchedC
 		}
 	}
 
-	diff, err := lc.Diff()
+	diff, err := lc.Diff(ctx)
 	if err != nil {
 		return filterResult(false), MatchedCommit{}, err
 	}
@@ -257,7 +258,7 @@ type Constant struct {
 	Value bool
 }
 
-func (c *Constant) Match(*LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+func (c *Constant) Match(context.Context, *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
 	return filterResult(c.Value), MatchedCommit{}, nil
 }
 
@@ -266,14 +267,14 @@ type Operator struct {
 	Operands []MatchTree
 }
 
-func (o *Operator) Match(commit *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+func (o *Operator) Match(ctx context.Context, commit *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
 	switch o.Kind {
 	case protocol.Not:
-		cfr, _, err := o.Operands[0].Match(commit)
+		cfr, _, err := o.Operands[0].Match(ctx, commit)
 		if err != nil {
 			return filterResult(false), MatchedCommit{}, err
 		}
-		cfr.Invert(commit)
+		cfr.Invert(ctx, commit)
 		return cfr, MatchedCommit{}, nil
 	case protocol.And:
 		resultMatches := MatchedCommit{}
@@ -281,7 +282,7 @@ func (o *Operator) Match(commit *LazyCommit) (CommitFilterResult, MatchedCommit,
 		// Start with everything matching, then intersect
 		mergedCFR := CommitFilterResult{CommitMatched: true, MatchedFileDiffs: nil}
 		for _, operand := range o.Operands {
-			cfr, matches, err := operand.Match(commit)
+			cfr, matches, err := operand.Match(ctx, commit)
 			if err != nil {
 				return filterResult(false), MatchedCommit{}, err
 			}
@@ -299,7 +300,7 @@ func (o *Operator) Match(commit *LazyCommit) (CommitFilterResult, MatchedCommit,
 		// Start with no matches, then union
 		mergedCFR := CommitFilterResult{CommitMatched: false, MatchedFileDiffs: make(map[int]struct{})}
 		for _, operand := range o.Operands {
-			cfr, matches, err := operand.Match(commit)
+			cfr, matches, err := operand.Match(ctx, commit)
 			if err != nil {
 				return filterResult(false), MatchedCommit{}, err
 			}
@@ -380,7 +381,7 @@ func (c CommitFilterResult) Satisfies() bool {
 // Invert inverts the filter result. It inverts whether any commit fields matched, as well
 // as inverts the indices of single file diffs that match. We pass `LazyCommit` in so we can get
 // the number of single file diffs in the commit's diff.
-func (c *CommitFilterResult) Invert(lc *LazyCommit) {
+func (c *CommitFilterResult) Invert(ctx context.Context, lc *LazyCommit) {
 	c.CommitMatched = !c.CommitMatched
 	if c.MatchedFileDiffs == nil {
 		c.MatchedFileDiffs = make(map[int]struct{})
@@ -389,7 +390,7 @@ func (c *CommitFilterResult) Invert(lc *LazyCommit) {
 		c.MatchedFileDiffs = nil
 		return
 	}
-	diff, err := lc.Diff() // error already checked
+	diff, err := lc.Diff(ctx) // error already checked
 	if err != nil {
 		panic("unexpected error: " + err.Error())
 	}

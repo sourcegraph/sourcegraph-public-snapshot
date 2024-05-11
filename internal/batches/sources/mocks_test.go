@@ -11073,9 +11073,6 @@ type MockGitserverClient struct {
 	// ScopedFunc is an instance of a mock function object controlling the
 	// behavior of the method Scoped.
 	ScopedFunc *GitserverClientScopedFunc
-	// SearchFunc is an instance of a mock function object controlling the
-	// behavior of the method Search.
-	SearchFunc *GitserverClientSearchFunc
 	// StatFunc is an instance of a mock function object controlling the
 	// behavior of the method Stat.
 	StatFunc *GitserverClientStatFunc
@@ -11246,11 +11243,6 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		ScopedFunc: &GitserverClientScopedFunc{
 			defaultHook: func(string) (r0 gitserver.Client) {
-				return
-			},
-		},
-		SearchFunc: &GitserverClientSearchFunc{
-			defaultHook: func(context.Context, *protocol.SearchRequest, func([]protocol.CommitMatch)) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -11436,11 +11428,6 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.Scoped")
 			},
 		},
-		SearchFunc: &GitserverClientSearchFunc{
-			defaultHook: func(context.Context, *protocol.SearchRequest, func([]protocol.CommitMatch)) (bool, error) {
-				panic("unexpected invocation of MockGitserverClient.Search")
-			},
-		},
 		StatFunc: &GitserverClientStatFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, string) (fs.FileInfo, error) {
 				panic("unexpected invocation of MockGitserverClient.Stat")
@@ -11561,9 +11548,6 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		},
 		ScopedFunc: &GitserverClientScopedFunc{
 			defaultHook: i.Scoped,
-		},
-		SearchFunc: &GitserverClientSearchFunc{
-			defaultHook: i.Search,
 		},
 		StatFunc: &GitserverClientStatFunc{
 			defaultHook: i.Stat,
@@ -15055,117 +15039,6 @@ func (c GitserverClientScopedFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverClientScopedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// GitserverClientSearchFunc describes the behavior when the Search method
-// of the parent MockGitserverClient instance is invoked.
-type GitserverClientSearchFunc struct {
-	defaultHook func(context.Context, *protocol.SearchRequest, func([]protocol.CommitMatch)) (bool, error)
-	hooks       []func(context.Context, *protocol.SearchRequest, func([]protocol.CommitMatch)) (bool, error)
-	history     []GitserverClientSearchFuncCall
-	mutex       sync.Mutex
-}
-
-// Search delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) Search(v0 context.Context, v1 *protocol.SearchRequest, v2 func([]protocol.CommitMatch)) (bool, error) {
-	r0, r1 := m.SearchFunc.nextHook()(v0, v1, v2)
-	m.SearchFunc.appendCall(GitserverClientSearchFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Search method of the
-// parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientSearchFunc) SetDefaultHook(hook func(context.Context, *protocol.SearchRequest, func([]protocol.CommitMatch)) (bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Search method of the parent MockGitserverClient instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *GitserverClientSearchFunc) PushHook(hook func(context.Context, *protocol.SearchRequest, func([]protocol.CommitMatch)) (bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientSearchFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, *protocol.SearchRequest, func([]protocol.CommitMatch)) (bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientSearchFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, *protocol.SearchRequest, func([]protocol.CommitMatch)) (bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientSearchFunc) nextHook() func(context.Context, *protocol.SearchRequest, func([]protocol.CommitMatch)) (bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientSearchFunc) appendCall(r0 GitserverClientSearchFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientSearchFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientSearchFunc) History() []GitserverClientSearchFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientSearchFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientSearchFuncCall is an object that describes an invocation
-// of method Search on an instance of MockGitserverClient.
-type GitserverClientSearchFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *protocol.SearchRequest
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 func([]protocol.CommitMatch)
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientSearchFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientSearchFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitserverClientStatFunc describes the behavior when the Stat method of

@@ -1,71 +1,66 @@
 package search
 
 import (
-	"bytes"
-	"strconv"
+	"context"
+	"errors"
+	"io"
 	"strings"
 	"time"
 
 	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // LazyCommit wraps a RawCommit and a DiffFetcher so that we can have a unified interface
 // that makes all the information we need available without paying the cost of fetching
 // diffs or parsing times when they're not unneeded.
 type LazyCommit struct {
-	*RawCommit
+	*gitdomain.Commit
+
+	repo api.RepoName
 
 	// diff is the parsed output from the diff fetcher, cached here for performance
-	diff        []*godiff.FileDiff
-	diffFetcher *DiffFetcher
+	diff []*godiff.FileDiff
 
 	// LowerBuf is a re-usable buffer for doing case-transformations on the fields of LazyCommit
 	LowerBuf []byte
 }
 
 func (l *LazyCommit) AuthorDate() (time.Time, error) {
-	unixSeconds, err := strconv.Atoi(string(l.RawCommit.AuthorDate))
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	return time.Unix(int64(unixSeconds), 0), nil
+	return l.Commit.Author.Date, nil
 }
 
 func (l *LazyCommit) CommitterDate() (time.Time, error) {
-	unixSeconds, err := strconv.Atoi(string(l.RawCommit.CommitterDate))
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	return time.Unix(int64(unixSeconds), 0), nil
-}
-
-// RawDiff returns the diff exactly as returned by git diff-tree
-func (l *LazyCommit) RawDiff() ([]byte, error) {
-	return l.diffFetcher.Fetch(l.Hash)
+	return l.Commit.Committer.Date, nil
 }
 
 // Diff fetches the diff, then parses it with go-diff, caching the result
-func (l *LazyCommit) Diff() ([]*godiff.FileDiff, error) {
+func (l *LazyCommit) Diff(ctx context.Context) ([]*godiff.FileDiff, error) {
 	if l.diff != nil {
 		return l.diff, nil
 	}
 
-	rawDiff, err := l.RawDiff()
+	gs := gitserver.NewClient("search.lazycommit")
+	diff, err := gs.Diff(ctx, l.repo, gitserver.DiffOptions{
+		Head: string(l.Commit.ID),
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	r := godiff.NewMultiFileDiffReader(bytes.NewReader(rawDiff))
-	diff, err := r.ReadAllFiles()
-	if err != nil {
-		return nil, err
+	for {
+		diff, err := diff.Next()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return nil, err
+		}
+		l.diff = append(l.diff, diff)
 	}
-	l.diff = diff
-	return diff, nil
+	return l.diff, nil
 }
 
 func (l *LazyCommit) ParentIDs() ([]api.CommitID, error) {

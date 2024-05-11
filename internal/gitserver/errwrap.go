@@ -142,23 +142,6 @@ func (r *errorTranslatingClient) ListGitolite(ctx context.Context, in *proto.Lis
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
-func (r *errorTranslatingClient) Search(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error) {
-	cc, err := r.base.Search(ctx, in, opts...)
-	if err != nil {
-		return nil, convertGRPCErrorToGitDomainError(err)
-	}
-	return &errorTranslatingSearchClient{cc}, nil
-}
-
-type errorTranslatingSearchClient struct {
-	proto.GitserverService_SearchClient
-}
-
-func (r *errorTranslatingSearchClient) Recv() (*proto.SearchResponse, error) {
-	res, err := r.GitserverService_SearchClient.Recv()
-	return res, convertGRPCErrorToGitDomainError(err)
-}
-
 func (r *errorTranslatingClient) Archive(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
 	cc, err := r.base.Archive(ctx, in, opts...)
 	if err != nil {

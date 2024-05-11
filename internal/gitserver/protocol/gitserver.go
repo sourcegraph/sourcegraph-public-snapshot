@@ -22,42 +22,6 @@ type SearchRequest struct {
 	IncludeModifiedFiles bool
 }
 
-func (r *SearchRequest) ToProto() *proto.SearchRequest {
-	revs := make([]*proto.RevisionSpecifier, 0, len(r.Revisions))
-	for _, rev := range r.Revisions {
-		revs = append(revs, &proto.RevisionSpecifier{RevSpec: rev})
-	}
-	return &proto.SearchRequest{
-		Repo:                 string(r.Repo),
-		Revisions:            revs,
-		Query:                r.Query.ToProto(),
-		IncludeDiff:          r.IncludeDiff,
-		Limit:                int64(r.Limit),
-		IncludeModifiedFiles: r.IncludeModifiedFiles,
-	}
-}
-
-func SearchRequestFromProto(p *proto.SearchRequest) (*SearchRequest, error) {
-	query, err := NodeFromProto(p.GetQuery())
-	if err != nil {
-		return nil, err
-	}
-
-	revisions := make([]string, 0, len(p.GetRevisions()))
-	for _, rev := range p.GetRevisions() {
-		revisions = append(revisions, rev.GetRevSpec())
-	}
-
-	return &SearchRequest{
-		Repo:                 api.RepoName(p.GetRepo()),
-		Revisions:            revisions,
-		Query:                query,
-		IncludeDiff:          p.GetIncludeDiff(),
-		Limit:                int(p.GetLimit()),
-		IncludeModifiedFiles: p.GetIncludeModifiedFiles(),
-	}, nil
-}
-
 type SearchEventMatches []CommitMatch
 
 type SearchEventDone struct {
@@ -103,114 +67,10 @@ type CommitMatch struct {
 	ModifiedFiles []string             `json:",omitempty"`
 }
 
-func (cm *CommitMatch) ToProto() *proto.CommitMatch {
-	parents := make([]string, 0, len(cm.Parents))
-	for _, parent := range cm.Parents {
-		parents = append(parents, string(parent))
-	}
-	return &proto.CommitMatch{
-		Oid:           string(cm.Oid),
-		Author:        cm.Author.ToProto(),
-		Committer:     cm.Committer.ToProto(),
-		Parents:       parents,
-		Refs:          cm.Refs,
-		SourceRefs:    cm.SourceRefs,
-		Message:       matchedStringToProto(cm.Message),
-		Diff:          matchedStringToProto(cm.Diff),
-		ModifiedFiles: cm.ModifiedFiles,
-	}
-}
-
-func CommitMatchFromProto(p *proto.CommitMatch) CommitMatch {
-	parents := make([]api.CommitID, 0, len(p.GetParents()))
-	for _, parent := range p.GetParents() {
-		parents = append(parents, api.CommitID(parent))
-	}
-	return CommitMatch{
-		Oid:           api.CommitID(p.GetOid()),
-		Author:        SignatureFromProto(p.GetAuthor()),
-		Committer:     SignatureFromProto(p.GetCommitter()),
-		Parents:       parents,
-		Refs:          p.GetRefs(),
-		SourceRefs:    p.GetSourceRefs(),
-		Message:       matchedStringFromProto(p.GetMessage()),
-		Diff:          matchedStringFromProto(p.GetDiff()),
-		ModifiedFiles: p.GetModifiedFiles(),
-	}
-}
-
-func matchedStringFromProto(p *proto.CommitMatch_MatchedString) result.MatchedString {
-	ranges := make([]result.Range, 0, len(p.GetRanges()))
-	for _, rr := range p.GetRanges() {
-		ranges = append(ranges, rangeFromProto(rr))
-	}
-	return result.MatchedString{
-		Content:       p.GetContent(),
-		MatchedRanges: ranges,
-	}
-}
-
-func matchedStringToProto(ms result.MatchedString) *proto.CommitMatch_MatchedString {
-	rrs := make([]*proto.CommitMatch_Range, 0, len(ms.MatchedRanges))
-	for _, rr := range ms.MatchedRanges {
-		rrs = append(rrs, rangeToProto(rr))
-	}
-	return &proto.CommitMatch_MatchedString{
-		Content: ms.Content,
-		Ranges:  rrs,
-	}
-}
-
-func rangeToProto(r result.Range) *proto.CommitMatch_Range {
-	return &proto.CommitMatch_Range{
-		Start: locationToProto(r.Start),
-		End:   locationToProto(r.End),
-	}
-}
-
-func rangeFromProto(p *proto.CommitMatch_Range) result.Range {
-	return result.Range{
-		Start: locationFromProto(p.GetStart()),
-		End:   locationFromProto(p.GetEnd()),
-	}
-}
-
-func locationToProto(l result.Location) *proto.CommitMatch_Location {
-	return &proto.CommitMatch_Location{
-		Offset: uint32(l.Offset),
-		Line:   uint32(l.Line),
-		Column: uint32(l.Column),
-	}
-}
-
-func locationFromProto(p *proto.CommitMatch_Location) result.Location {
-	return result.Location{
-		Offset: int(p.GetOffset()),
-		Line:   int(p.GetLine()),
-		Column: int(p.GetColumn()),
-	}
-}
-
 type Signature struct {
 	Name  string `json:",omitempty"`
 	Email string `json:",omitempty"`
 	Date  time.Time
-}
-
-func (s *Signature) ToProto() *proto.CommitMatch_Signature {
-	return &proto.CommitMatch_Signature{
-		Name:  s.Name,
-		Email: s.Email,
-		Date:  timestamppb.New(s.Date),
-	}
-}
-
-func SignatureFromProto(p *proto.CommitMatch_Signature) Signature {
-	return Signature{
-		Name:  p.GetName(),
-		Email: p.GetEmail(),
-		Date:  p.GetDate().AsTime(),
-	}
 }
 
 // ExecRequest is a request to execute a command inside a git repository.

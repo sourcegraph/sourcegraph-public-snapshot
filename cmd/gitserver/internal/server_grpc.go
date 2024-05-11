@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/chunk"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -385,43 +384,6 @@ func (gs *grpcServer) ListGitolite(ctx context.Context, req *proto.ListGitoliteR
 	return &proto.ListGitoliteResponse{
 		Repos: protoRepos,
 	}, nil
-}
-
-func (gs *grpcServer) Search(req *proto.SearchRequest, ss proto.GitserverService_SearchServer) error {
-	args, err := protocol.SearchRequestFromProto(req)
-	if err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	if req.GetRepo() == "" {
-		return status.New(codes.InvalidArgument, "repo must be specified").Err()
-	}
-
-	repoName := api.RepoName(req.GetRepo())
-
-	if err := gs.checkRepoExists(ss.Context(), repoName); err != nil {
-		return err
-	}
-
-	onMatch := func(match *protocol.CommitMatch) error {
-		return ss.Send(&proto.SearchResponse{
-			Message: &proto.SearchResponse_Match{Match: match.ToProto()},
-		})
-	}
-
-	tr, ctx := trace.New(ss.Context(), "search")
-	defer tr.End()
-
-	limitHit, err := searchWithObservability(ctx, gs.logger, gs.fs.RepoDir(args.Repo), tr, args, onMatch)
-	if err != nil {
-		return err
-	}
-
-	return ss.Send(&proto.SearchResponse{
-		Message: &proto.SearchResponse_LimitHit{
-			LimitHit: limitHit,
-		},
-	})
 }
 
 func (gs *grpcServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneProgressRequest) (*proto.RepoCloneProgressResponse, error) {

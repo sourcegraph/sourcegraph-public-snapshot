@@ -60,11 +60,6 @@ func (r *automaticRetryClient) ListGitolite(ctx context.Context, in *proto.ListG
 	return r.base.ListGitolite(ctx, in, opts...)
 }
 
-func (r *automaticRetryClient) Search(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error) {
-	opts = append(defaults.RetryPolicy, opts...)
-	return r.base.Search(ctx, in, opts...)
-}
-
 func (r *automaticRetryClient) Archive(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.Archive(ctx, in, opts...)
