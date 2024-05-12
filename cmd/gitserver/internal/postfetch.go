@@ -53,12 +53,6 @@ func postRepoFetchActions(
 		errs = errors.Append(errs, errors.Wrap(err, "failed to update last changed time"))
 	}
 
-	// Successfully updated, best-effort updating of db fetch state based on
-	// disk state.
-	if err := setLastFetched(ctx, db, shardID, dir, repo); err != nil {
-		errs = errors.Append(errs, errors.Wrap(err, "failed setting last fetch in DB"))
-	}
-
 	// Successfully updated, best-effort calculation of the repo size.
 	repoSizeBytes, err := fs.DirSize(dir.Path())
 	if err != nil {
@@ -142,22 +136,4 @@ func setLastChanged(logger log.Logger, dir common.GitDir) error {
 	}
 
 	return nil
-}
-
-func setLastFetched(ctx context.Context, db database.DB, shardID string, dir common.GitDir, name api.RepoName) error {
-	lastFetched, err := repoLastFetched(dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get last fetched for %s", name)
-	}
-
-	lastChanged, err := repoLastChanged(dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get last changed for %s", name)
-	}
-
-	return db.GitserverRepos().SetLastFetched(ctx, name, database.GitserverFetchData{
-		LastFetched: lastFetched,
-		LastChanged: lastChanged,
-		ShardID:     shardID,
-	})
 }
