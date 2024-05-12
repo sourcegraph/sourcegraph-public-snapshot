@@ -1150,6 +1150,33 @@ func fetchRepositoryRequestToLogFields(req *proto.FetchRepositoryRequest) []log.
 	}
 }
 
+func (l *loggingRepositoryServiceServer) ListRepositories(ctx context.Context, request *proto.ListRepositoriesRequest) (resp *proto.ListRepositoriesResponse, err error) {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+
+			proto.GitserverRepositoryService_ListRepositories_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			listRepositoriesRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.ListRepositories(ctx, request)
+}
+
+func listRepositoriesRequestToLogFields(req *proto.ListRepositoriesRequest) []log.Field {
+	return []log.Field{
+		log.Int("page_size", int(req.GetPageSize())),
+	}
+}
+
 var (
 	_ proto.GitserverServiceServer           = &loggingGRPCServer{}
 	_ proto.GitserverRepositoryServiceServer = &loggingRepositoryServiceServer{}
