@@ -616,8 +616,6 @@ type GitserverFetchData struct {
 	LastFetched time.Time
 	// LastChanged was the last time a fetch changed the contents of the repo (gitserver_repos.last_changed).
 	LastChanged time.Time
-	// ShardID is the name of the gitserver the fetch ran on (gitserver.shard_id).
-	ShardID string
 }
 
 func (s *gitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error {
@@ -627,11 +625,10 @@ SET
 	corrupted_at = NULL,
 	last_fetched = %s,
 	last_changed = %s,
-	shard_id = %s,
 	clone_status = %s,
 	updated_at = NOW()
 WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
-`, data.LastFetched, data.LastChanged, data.ShardID, types.CloneStatusCloned, name))
+`, data.LastFetched, data.LastChanged, types.CloneStatusCloned, name))
 	if err != nil {
 		return errors.Wrap(err, "setting last fetched")
 	}

@@ -18,6 +18,37 @@ service GitserverRepositoryService {
   rpc FetchRepository(FetchRepositoryRequest) returns (FetchRepositoryResponse) {
     option idempotency_level = IDEMPOTENT;
   }
+  // ListRepositories returns a list of all repositories on disk.
+  rpc ListRepositories(ListRepositoriesRequest) returns (ListRepositoriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message ListRepositoriesRequest {
+  // page_size is the maximum number of repositories to return in a single response.
+  // Must be > 0 and should be chosen so that the maximum gRPC message size is not
+  // exceeded.
+  uint32 page_size = 1;
+  // page_token is a token that can be used to request the next page of repositories.
+  string page_token = 2;
+}
+
+message ListRepositoriesResponse {
+  // GitRepository represents a git repository on disk.
+  message GitRepository {
+    // path is the absolute path to the repository on disk, minus the data dir prefix,
+    // usually /data/repos.
+    bytes path = 1;
+    // name is the name of the repository as gitserver infers it. This may not match
+    // a repository name in the database because we have a poor reverse mapping from
+    // path to name at the moment.
+    string name = 2;
+  }
+  repeated GitRepository repositories = 1;
+  // next_page_token is the token to use to request the next page of repositories.
+  // Pass it to page_token in ListRepositoriesRequest to get the next page.
+  // If this is empty, there are no more repositories to return.
+  string next_page_token = 2;
 }
 
 message DeleteRepositoryRequest {

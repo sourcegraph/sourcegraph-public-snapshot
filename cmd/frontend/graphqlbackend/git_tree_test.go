@@ -25,9 +25,9 @@ func TestGitTree_History(t *testing.T) {
 	ctx := context.Background()
 	gs := gitserver.NewMockClientFrom(gitserver.NewTestClient(t))
 	gs.ResolveRevisionFunc.SetDefaultReturn("deadbeef", nil)
-	gs.ReadDirFunc.SetDefaultReturn([]fs.FileInfo{
+	gs.ReadDirFunc.SetDefaultReturn(gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 		&fileutil.FileInfo{Name_: "file1"},
-	}, nil)
+	}), nil)
 	gs.CommitsFunc.SetDefaultReturn([]*gitdomain.Commit{
 		{ID: "deadbeef"},
 	}, nil)
@@ -56,11 +56,11 @@ func TestGitTree_Entries(t *testing.T) {
 
 	wantPath := ""
 
-	gitserverClient.ReadDirFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recursive bool) ([]fs.FileInfo, error) {
+	gitserverClient.ReadDirFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recursive bool) (gitserver.ReadDirIterator, error) {
 		switch path {
 		case "", ".", "/":
 			if recursive {
-				return []fs.FileInfo{
+				return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 					CreateFileInfo(".aspect/", true),
 					CreateFileInfo(".aspect/rules/", true),
 					CreateFileInfo(".aspect/rules/external_repository_action_cache/", true),
@@ -78,17 +78,17 @@ func TestGitTree_Entries(t *testing.T) {
 					CreateFileInfo("folder2/", true),
 					CreateFileInfo("folder2/file", false),
 					CreateFileInfo("file", false),
-				}, nil
+				}), nil
 			}
-			return []fs.FileInfo{
+			return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 				CreateFileInfo(".aspect/", true),
 				CreateFileInfo("folder/", true),
 				CreateFileInfo("folder2/", true),
 				CreateFileInfo("file", false),
-			}, nil
+			}), nil
 		case "folder/", "folder":
 			if recursive {
-				return []fs.FileInfo{
+				return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 					CreateFileInfo("folder/", true),
 					CreateFileInfo("folder/nestedfile", false),
 					CreateFileInfo("folder/subfolder/", true),
@@ -96,16 +96,16 @@ func TestGitTree_Entries(t *testing.T) {
 					CreateFileInfo("folder/subfolder2/", true),
 					CreateFileInfo("folder/subfolder2/file", false),
 					CreateFileInfo("folder/subfolder2/file2", false),
-				}, nil
+				}), nil
 			}
-			return []fs.FileInfo{
+			return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 				CreateFileInfo("folder/nestedfile", false),
 				CreateFileInfo("folder/subfolder/", true),
 				CreateFileInfo("folder/subfolder2/", true),
-			}, nil
+			}), nil
 		case ".aspect/", ".aspect":
 			if recursive {
-				return []fs.FileInfo{
+				return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 					CreateFileInfo(".aspect/", true),
 					CreateFileInfo(".aspect/rules/", true),
 					CreateFileInfo(".aspect/rules/external_repository_action_cache/", true),
@@ -113,83 +113,83 @@ func TestGitTree_Entries(t *testing.T) {
 					CreateFileInfo(".aspect/cli/", true),
 					CreateFileInfo(".aspect/cli/file1", false),
 					CreateFileInfo(".aspect/cli/file2", false),
-				}, nil
+				}), nil
 			}
-			return []fs.FileInfo{
+			return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 				CreateFileInfo(".aspect/rules/", true),
 				CreateFileInfo(".aspect/cli/", true),
-			}, nil
+			}), nil
 		case ".aspect/rules/", ".aspect/rules":
 			if recursive {
-				return []fs.FileInfo{
+				return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 					CreateFileInfo(".aspect/", true),
 					CreateFileInfo(".aspect/rules/", true),
 					CreateFileInfo(".aspect/rules/external_repository_action_cache/", true),
 					CreateFileInfo(".aspect/rules/external_repository_action_cache/file", false),
-				}, nil
+				}), nil
 			}
-			return []fs.FileInfo{
+			return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 				CreateFileInfo(".aspect/rules/external_repository_action_cache/", true),
-			}, nil
+			}), nil
 		case ".aspect/rules/external_repository_action_cache/", ".aspect/rules/external_repository_action_cache":
 			if recursive {
-				return []fs.FileInfo{
+				return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 					CreateFileInfo(".aspect/", true),
 					CreateFileInfo(".aspect/rules/", true),
 					CreateFileInfo(".aspect/rules/external_repository_action_cache/", true),
 					CreateFileInfo(".aspect/rules/external_repository_action_cache/file", false),
-				}, nil
+				}), nil
 			}
-			return []fs.FileInfo{
+			return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 				CreateFileInfo(".aspect/rules/external_repository_action_cache/file", false),
-			}, nil
+			}), nil
 		case ".aspect/cli/", ".aspect/cli":
 			if recursive {
-				return []fs.FileInfo{
+				return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 					CreateFileInfo(".aspect/", true),
 					CreateFileInfo(".aspect/cli/", true),
 					CreateFileInfo(".aspect/cli/file1", false),
 					CreateFileInfo(".aspect/cli/file2", false),
-				}, nil
+				}), nil
 			}
-			return []fs.FileInfo{
+			return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 				CreateFileInfo(".aspect/cli/file1", false),
 				CreateFileInfo(".aspect/cli/file2", false),
-			}, nil
+			}), nil
 		case "folder/subfolder/", "folder/subfolder":
 			if recursive {
-				return []fs.FileInfo{
+				return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 					CreateFileInfo("folder/", true),
 					CreateFileInfo("folder/subfolder/", true),
 					CreateFileInfo("folder/subfolder/deeplynestedfile", false),
-				}, nil
+				}), nil
 			}
-			return []fs.FileInfo{
+			return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 				CreateFileInfo("folder/subfolder/deeplynestedfile", false),
-			}, nil
+			}), nil
 		case "folder/subfolder2/", "folder/subfolder2":
 			if recursive {
-				return []fs.FileInfo{
+				return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 					CreateFileInfo("folder/", true),
 					CreateFileInfo("folder/subfolder2/", true),
 					CreateFileInfo("folder/subfolder2/file", false),
 					CreateFileInfo("folder/subfolder2/file2", false),
-				}, nil
+				}), nil
 			}
-			return []fs.FileInfo{
+			return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 				CreateFileInfo("folder/subfolder2/file", false),
 				CreateFileInfo("folder/subfolder2/file2", false),
-			}, nil
+			}), nil
 		case "folder2/", "folder2":
 			if recursive {
-				return []fs.FileInfo{
+				return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 					CreateFileInfo("folder2/", true),
 					CreateFileInfo("folder2/file", false),
-				}, nil
+				}), nil
 			}
-			return []fs.FileInfo{
+			return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 				CreateFileInfo("folder2/file", false),
-			}, nil
+			}), nil
 		default:
 			return nil, errors.Newf("bad argument %q", path)
 		}
@@ -443,16 +443,16 @@ func TestGitTree(t *testing.T) {
 func setupGitserverClient(t *testing.T) gitserver.Client {
 	t.Helper()
 	gsClient := gitserver.NewMockClient()
-	gsClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
+	gsClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, name string, recurse bool) (gitserver.ReadDirIterator, error) {
 		assert.Equal(t, api.CommitID(exampleCommitSHA1), commit)
 		assert.Equal(t, "foo bar", name)
 		assert.False(t, recurse)
-		return []fs.FileInfo{
+		return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 			&fileutil.FileInfo{Name_: name + "/testDirectory", Mode_: os.ModeDir},
 			&fileutil.FileInfo{Name_: name + "/Geoffrey's random queries.32r242442bf", Mode_: os.ModeDir},
 			&fileutil.FileInfo{Name_: name + "/testFile", Mode_: 0},
 			&fileutil.FileInfo{Name_: name + "/% token.4288249258.sql", Mode_: 0},
-		}, nil
+		}), nil
 	})
 	gsClient.StatFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 		assert.Equal(t, api.CommitID(exampleCommitSHA1), commit)

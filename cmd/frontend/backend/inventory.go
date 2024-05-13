@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"golang.org/x/sync/semaphore"
 	"io"
 	"io/fs"
 	"strconv"
+
+	"golang.org/x/sync/semaphore"
+
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 
 	"github.com/sourcegraph/log"
 
@@ -73,7 +75,24 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 			}
 			defer gitServerSemaphore.Release(1)
 			// Using recurse=true does not yield a significant performance improvement. See https://github.com/sourcegraph/sourcegraph/pull/62011/files#r1577513913.
-			return gsClient.ReadDir(ctx, repo, commitID, path, false)
+
+			fds := make([]fs.FileInfo, 0)
+			it, err := gsClient.ReadDir(ctx, repo, commitID, path, false)
+			if err != nil {
+				return nil, err
+			}
+			defer it.Close()
+			for {
+				fd, err := it.Next()
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				if err != nil {
+					return nil, err
+				}
+				fds = append(fds, fd)
+			}
+			return fds, nil
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
 			trc, ctx := trace.New(ctx, "NewFileReader waits for semaphore")
