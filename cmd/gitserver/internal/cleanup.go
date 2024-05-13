@@ -328,7 +328,7 @@ func cleanupRepos(
 	}
 
 	collectSize := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		last, err := getLastSizeCalculation(ctx, backend.Config())
+		last, err := getLastSizeCalculation(dir)
 		if err != nil {
 			return false, err
 		}
@@ -344,7 +344,7 @@ func cleanupRepos(
 		}
 		repoToSize[repoName] = size
 
-		return false, setLastSizeCalculation(ctx, backend.Config())
+		return false, setLastSizeCalculation(dir, time.Now())
 	}
 
 	maybeRemoveCorrupt := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, _ error) {
@@ -409,11 +409,6 @@ func cleanupRepos(
 	}
 
 	maybeReclone := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		repoType, err := git.GetRepositoryType(ctx, backend.Config())
-		if err != nil {
-			return false, err
-		}
-
 		// Add a jitter to spread out re-cloning of repos cloned at the same time.
 		var reason string
 		const maybeCorrupt = "maybeCorrupt"
@@ -457,8 +452,14 @@ func cleanupRepos(
 		// We believe converting a Perforce depot to a Git repository is generally a
 		// very expensive operation, therefore we do not try to re-clone/redo the
 		// conversion only because it is old or slow to do "git gc".
-		if repoType == "perforce" && reason != maybeCorrupt {
-			reason = ""
+		if reason != maybeCorrupt {
+			repoType, err := git.GetRepositoryType(ctx, backend.Config())
+			if err != nil {
+				return false, err
+			}
+			if repoType == "perforce" {
+				reason = ""
+			}
 		}
 
 		if reason == "" {
@@ -1205,7 +1206,6 @@ func mockRemoveNonExistingReposConfig(value bool) {
 }
 
 const (
-	sizeCalculationConfigKey = "sourcegraph.sizeCalculationTime"
 	// We recalculate the repository size every day at most in the janitor.
 	// There's no need to recalculate it more often than that, since fetches
 	// update it anyways. So this will only be useful for "housekeeping" purposes
@@ -1213,34 +1213,34 @@ const (
 	repoSizeRecalcInterval = 24 * time.Hour
 )
 
+const lastSizeCalculationFilepath = ".sourcegraph-last-size-calculation"
+
 // getLastSizeCalculation returns the time the repository size was last calculated
 // by the janitor. We don't set this timestamp in fetches, so janitor still runs
 // this task every now and then.
-func getLastSizeCalculation(ctx context.Context, c git.GitConfigBackend) (time.Time, error) {
-	value, err := c.Get(ctx, sizeCalculationConfigKey)
+func getLastSizeCalculation(dir common.GitDir) (time.Time, error) {
+	path := dir.Path(lastSizeCalculationFilepath)
+	fd, err := os.Stat(path)
 	if err != nil {
-		return time.Unix(0, 0), errors.Wrap(err, "failed to determine last size calculation timestamp")
-	}
-	if value == "" {
-		// Return a time long in the past, to force an initial run.
-		return time.Time{}, setLastSizeCalculation(ctx, c)
-	}
-
-	sec, err := strconv.ParseInt(value, 10, 0)
-	if err != nil {
-		// If the value is bad update it to the current time
-		err2 := setLastSizeCalculation(ctx, c)
-		if err2 != nil {
-			err = err2
+		// If the file doesn't exist yet, we return a zero time.
+		if os.IsNotExist(err) {
+			return time.Time{}, nil
 		}
-		// And return a time long in the past, to force an update.
+		// Stat failed, error.
 		return time.Time{}, err
 	}
-
-	return time.Unix(sec, 0), nil
+	// We use modtime to track the last time fetched.
+	return fd.ModTime(), nil
 }
 
-func setLastSizeCalculation(ctx context.Context, c git.GitConfigBackend) error {
-	now := time.Now()
-	return c.Set(ctx, sizeCalculationConfigKey, strconv.FormatInt(now.Unix(), 10))
+func setLastSizeCalculation(dir common.GitDir, when time.Time) error {
+	path := dir.Path(lastSizeCalculationFilepath)
+	f, err := os.Create(path)
+	if err != nil && !os.IsExist(err) {
+		// If creating the file failed, and not because it already exists, error.
+		return err
+	}
+	_ = f.Close()
+	// We use modtime to track the last time fetched.
+	return os.Chtimes(path, time.Time{}, when)
 }
