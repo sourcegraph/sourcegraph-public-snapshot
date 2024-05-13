@@ -122,7 +122,7 @@
 
     .loading {
         // Indent with two rem since loading represents next nested level
-        margin-left: calc(var(--tree-node-nested-level) * 1rem + 2rem);
+        margin-left: calc(var(--tree-node-nested-level) * 1.25rem + 1.55rem);
         margin-top: 0.25rem;
     }
 
@@ -130,7 +130,8 @@
         display: flex;
         align-items: center;
         padding-right: 0.25rem;
-        padding-left: calc(var(--tree-node-nested-level) * 0.75rem + 0.35rem);
+        gap: 0.25rem;
+        padding-left: calc(var(--tree-node-nested-level) * 1.25rem + 0.35rem);
 
         color: var(--tree-node-lable-color, var(--text-body));
         --icon-fill-color: var(--tree-node-expand-icon-color);
