@@ -45,7 +45,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
     const [actionResult, setActionResult] = useState<{ message: string; isError: boolean } | null>(null)
     const setRole = useCallback(
         async (accountId: string, newRole: 'member' | 'admin'): Promise<void> => {
-            if (!loading) {
+            if (!loading) { // Avoids sending multiple requests at once
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.revokeAdmin', 'click', {
                     privateMetadata: { teamId, accountId },
@@ -72,7 +72,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
 
     const revokeInvite = useCallback(
         async (inviteId: string): Promise<void> => {
-            if (!loading) {
+            if (!loading) { // Avoids sending multiple requests at once
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
 
@@ -94,7 +94,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
 
     const resendInvite = useCallback(
         async (inviteId: string): Promise<void> => {
-            if (!loading) {
+            if (!loading) { // Avoids sending multiple requests at once
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
 
