@@ -64,11 +64,18 @@ filegroup(
 """
 
 CHROMIUM_MAC_ARM_BUILDFILE = """
-filegroup(
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+js_library(
     name = "chromium",
     srcs = ["chrome-mac/Chromium.app/Contents/MacOS/Chromium"],
     visibility = ["//visibility:public"],
 )
+#
+# filegroup(
+#     name = "chromium",
+#     srcs = ["chrome-mac/Chromium.app/Contents/MacOS/Chromium"],
+#     visibility = ["//visibility:public"],
+# )
 """
 
 def tool_deps():

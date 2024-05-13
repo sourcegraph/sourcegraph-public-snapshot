@@ -179,6 +179,7 @@ playwright_test_bin.playwright_test(
             "src/testing/*.ts",
         ],
     ) + [
+        "@chromium_mac_arm64//:chromium",
         "playwright.config.ts",
         ":generate-graphql-types",
         ":test_app_assets",
@@ -187,11 +188,8 @@ playwright_test_bin.playwright_test(
     env = {
         "BAZEL": "1",
         "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/build/_sk",
-        "CHROMIUM_BIN": "$(rootpath @gh_darwin-arm64//:bin/gh)",
+        "CHROMIUM_BIN": "$(location @chromium_mac_arm64//:chromium)",
     },
-    tools = [
-        "@gh_darwin-arm64//:bin/gh",
-    ],
 )
 
 TESTS = glob([
