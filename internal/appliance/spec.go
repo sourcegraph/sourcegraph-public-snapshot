@@ -19,7 +19,7 @@ const (
 	ManagementStateUnmanaged ManagementStateType = "Unmanaged"
 )
 
-type DatabaseSpec struct {
+type DatabaseConnectionSpec struct {
 	Host     string `json:"host,omitempty"`
 	Port     string `json:"port,omitempty"`
 	User     string `json:"user,omitempty"`
@@ -46,7 +46,7 @@ type CodeInsightsDBSpec struct {
 	ExistingSecret string `json:"existingSecret,omitempty"`
 
 	// Database allows for custom database connection details.
-	Database *DatabaseSpec `json:"database,omitempty"`
+	Database *DatabaseConnectionSpec `json:"database,omitempty"`
 
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 200Gi
@@ -66,7 +66,7 @@ type CodeIntelDBSpec struct {
 	ExistingSecret string `json:"existingSecret,omitempty"`
 
 	// Database allows for custom database connection details.
-	Database *DatabaseSpec `json:"database,omitempty"`
+	Database *DatabaseConnectionSpec `json:"database,omitempty"`
 
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 200Gi
@@ -137,24 +137,16 @@ type IndexedSearchIndexerSpec struct {
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
-// PGSQLSpec defines the desired state of the PostgreSQL server.
+// PGSQLSpec defines the desired state of the Postgres server.
 type PGSQLSpec struct {
-	// Disabled defines if pgsql is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
+	config.StandardConfig
 
-	// ExistingSecret is the name of an existing secret to use for Postgres credentials.
-	ExistingSecret string `json:"existingSecret,omitempty"`
-
-	// Database allows for custom database connection details.
-	Database *DatabaseSpec `json:"database,omitempty"`
+	// DatabaseConnection allows for custom database connection details.
+	DatabaseConnection *DatabaseConnectionSpec `json:"database,omitempty"`
 
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 200Gi
 	StorageSize string `json:"storageSize,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 type PostgresExporterSpec struct {
