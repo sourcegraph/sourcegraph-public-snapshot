@@ -1421,7 +1421,10 @@ func TestGRPCServer_ReadDir(t *testing.T) {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
 		}
 
-		b.ReadDirFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{})
+		it = git.NewMockReadDirIterator()
+		it.NextFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{})
+		it.CloseFunc.SetDefaultReturn(&gitdomain.RevisionNotFoundError{})
+		b.ReadDirFunc.SetDefaultReturn(it, nil)
 		cc, err = cli.ReadDir(context.Background(), &v1.ReadDirRequest{
 			RepoName:  "therepo",
 			CommitSha: "HEAD",
@@ -1431,7 +1434,10 @@ func TestGRPCServer_ReadDir(t *testing.T) {
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RevisionNotFoundPayload{})
 
-		b.ReadDirFunc.SetDefaultReturn(nil, os.ErrNotExist)
+		it = git.NewMockReadDirIterator()
+		it.NextFunc.SetDefaultReturn(nil, os.ErrNotExist)
+		it.CloseFunc.SetDefaultReturn(os.ErrNotExist)
+		b.ReadDirFunc.SetDefaultReturn(it, nil)
 		cc, err = cli.ReadDir(context.Background(), &v1.ReadDirRequest{
 			RepoName:  "therepo",
 			CommitSha: "HEAD",
@@ -1440,7 +1446,6 @@ func TestGRPCServer_ReadDir(t *testing.T) {
 		_, err = cc.Recv()
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.FileNotFoundPayload{})
-
 	})
 }
 
