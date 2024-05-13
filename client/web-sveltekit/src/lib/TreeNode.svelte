@@ -71,7 +71,7 @@
 >
     <span bind:this={label} class="label" data-treeitem-label>
         <!-- hide the open/close button to preserve alignment with expandable entries -->
-        <span class:hidden={!expandable}>
+        <span class="expandable-icon-container" class:hidden={!expandable}>
             <!-- We have to stop even propagation because the tree root listens for click events for
                  selecting items. We don't want the item to be selected when the open/close button is pressed.
              -->
@@ -121,7 +121,9 @@
     }
 
     .loading {
-        margin-left: calc(var(--tree-node-nested-level) * 1rem + 1rem);
+        // Indent with two rem since loading represents next nested level
+        margin-left: calc(var(--tree-node-nested-level) * 1rem + 2rem);
+        margin-top: 0.25rem;
     }
 
     .label {
@@ -129,6 +131,19 @@
         align-items: center;
         padding-right: 0.25rem;
         padding-left: calc(var(--tree-node-nested-level) * 0.75rem + 0.35rem);
+
+        color: var(--tree-node-lable-color, var(--text-body));
+        --icon-fill-color: var(--tree-node-expand-icon-color);
+
+        li[data-treeitem][aria-selected='true'] > & {
+            color: var(--tree-node-lable-color, var(--body-bg));
+        }
+    }
+
+    .expandable-icon-container {
+        // in order to center/align expandable icon exactly by the item center
+        display: flex;
+        flex-shrink: 0;
     }
 
     .hidden {

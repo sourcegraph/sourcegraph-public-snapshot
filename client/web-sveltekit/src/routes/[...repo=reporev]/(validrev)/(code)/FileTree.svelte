@@ -137,6 +137,7 @@
         }
 
         :global([data-treeitem][aria-selected='true']) > :global([data-treeitem-label]) {
+            --tree-node-expand-icon-color: var(--body-bg);
             background-color: var(--primary);
 
             &:hover {
@@ -146,22 +147,13 @@
     }
 
     a {
-        color: var(--text-body);
         flex: 1;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
         text-decoration: none;
         padding: 0.2rem 0.25rem 0.2rem 0;
-
-        :global([data-treeitem][aria-selected='true']) > & {
-            color: var(--body-bg);
-        }
-
-        &:hover {
-            color: var(--text-title);
-            text-decoration: none;
-        }
+        color: inherit;
     }
 
     .note {
