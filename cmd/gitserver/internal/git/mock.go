@@ -588,6 +588,9 @@ type MockGitBackend struct {
 	// ListRefsFunc is an instance of a mock function object controlling the
 	// behavior of the method ListRefs.
 	ListRefsFunc *GitBackendListRefsFunc
+	// MaintenanceFunc is an instance of a mock function object controlling
+	// the behavior of the method Maintenance.
+	MaintenanceFunc *GitBackendMaintenanceFunc
 	// MergeBaseFunc is an instance of a mock function object controlling
 	// the behavior of the method MergeBase.
 	MergeBaseFunc *GitBackendMergeBaseFunc
@@ -686,6 +689,11 @@ func NewMockGitBackend() *MockGitBackend {
 		},
 		ListRefsFunc: &GitBackendListRefsFunc{
 			defaultHook: func(context.Context, ListRefsOpts) (r0 RefIterator, r1 error) {
+				return
+			},
+		},
+		MaintenanceFunc: &GitBackendMaintenanceFunc{
+			defaultHook: func() (r0 MaintenanceBackend) {
 				return
 			},
 		},
@@ -811,6 +819,11 @@ func NewStrictMockGitBackend() *MockGitBackend {
 				panic("unexpected invocation of MockGitBackend.ListRefs")
 			},
 		},
+		MaintenanceFunc: &GitBackendMaintenanceFunc{
+			defaultHook: func() MaintenanceBackend {
+				panic("unexpected invocation of MockGitBackend.Maintenance")
+			},
+		},
 		MergeBaseFunc: &GitBackendMergeBaseFunc{
 			defaultHook: func(context.Context, string, string) (api.CommitID, error) {
 				panic("unexpected invocation of MockGitBackend.MergeBase")
@@ -906,6 +919,9 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 		},
 		ListRefsFunc: &GitBackendListRefsFunc{
 			defaultHook: i.ListRefs,
+		},
+		MaintenanceFunc: &GitBackendMaintenanceFunc{
+			defaultHook: i.Maintenance,
 		},
 		MergeBaseFunc: &GitBackendMergeBaseFunc{
 			defaultHook: i.MergeBase,
@@ -2356,6 +2372,105 @@ func (c GitBackendListRefsFuncCall) Args() []interface{} {
 // invocation.
 func (c GitBackendListRefsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitBackendMaintenanceFunc describes the behavior when the Maintenance
+// method of the parent MockGitBackend instance is invoked.
+type GitBackendMaintenanceFunc struct {
+	defaultHook func() MaintenanceBackend
+	hooks       []func() MaintenanceBackend
+	history     []GitBackendMaintenanceFuncCall
+	mutex       sync.Mutex
+}
+
+// Maintenance delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitBackend) Maintenance() MaintenanceBackend {
+	r0 := m.MaintenanceFunc.nextHook()()
+	m.MaintenanceFunc.appendCall(GitBackendMaintenanceFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Maintenance method
+// of the parent MockGitBackend instance is invoked and the hook queue is
+// empty.
+func (f *GitBackendMaintenanceFunc) SetDefaultHook(hook func() MaintenanceBackend) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Maintenance method of the parent MockGitBackend instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GitBackendMaintenanceFunc) PushHook(hook func() MaintenanceBackend) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitBackendMaintenanceFunc) SetDefaultReturn(r0 MaintenanceBackend) {
+	f.SetDefaultHook(func() MaintenanceBackend {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitBackendMaintenanceFunc) PushReturn(r0 MaintenanceBackend) {
+	f.PushHook(func() MaintenanceBackend {
+		return r0
+	})
+}
+
+func (f *GitBackendMaintenanceFunc) nextHook() func() MaintenanceBackend {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitBackendMaintenanceFunc) appendCall(r0 GitBackendMaintenanceFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitBackendMaintenanceFuncCall objects
+// describing the invocations of this function.
+func (f *GitBackendMaintenanceFunc) History() []GitBackendMaintenanceFuncCall {
+	f.mutex.Lock()
+	history := make([]GitBackendMaintenanceFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitBackendMaintenanceFuncCall is an object that describes an invocation
+// of method Maintenance on an instance of MockGitBackend.
+type GitBackendMaintenanceFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 MaintenanceBackend
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitBackendMaintenanceFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitBackendMaintenanceFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // GitBackendMergeBaseFunc describes the behavior when the MergeBase method

@@ -535,6 +535,96 @@ func (hr *observableCommitLogIterator) Close() error {
 	return err
 }
 
+func (b *observableBackend) Maintenance() MaintenanceBackend {
+	return &observableMaintenanceBackend{
+		backend:    b.backend.Maintenance(),
+		operations: b.operations,
+	}
+}
+
+type observableMaintenanceBackend struct {
+	backend    MaintenanceBackend
+	operations *operations
+}
+
+func (b *observableMaintenanceBackend) WriteCommitGraph(ctx context.Context, replaceChain bool) (err error) {
+	ctx, _, endObservation := b.operations.writeCommitGraph.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.Bool("replaceChain", replaceChain),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("WriteCommitGraph").Inc()
+	defer concurrentOps.WithLabelValues("WriteCommitGraph").Dec()
+
+	return b.backend.WriteCommitGraph(ctx, replaceChain)
+}
+
+func (b *observableMaintenanceBackend) PackRefs(ctx context.Context) (err error) {
+	ctx, _, endObservation := b.operations.packRefs.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{},
+	})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("PackRefs").Inc()
+	defer concurrentOps.WithLabelValues("PackRefs").Dec()
+
+	return b.backend.PackRefs(ctx)
+}
+
+func (b *observableMaintenanceBackend) PruneObjects(ctx context.Context, expiry time.Time) (err error) {
+	ctx, _, endObservation := b.operations.pruneObjects.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.String("expiry", expiry.Format(time.RFC3339)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("PruneObjects").Inc()
+	defer concurrentOps.WithLabelValues("PruneObjects").Dec()
+
+	return b.backend.PruneObjects(ctx, expiry)
+}
+
+func (b *observableMaintenanceBackend) Repack(ctx context.Context, opts RepackOptions) (err error) {
+	ctx, _, endObservation := b.operations.repack.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			// TODO
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("Repack").Inc()
+	defer concurrentOps.WithLabelValues("Repack").Dec()
+
+	return b.backend.Repack(ctx, opts)
+}
+
+func (b *observableMaintenanceBackend) PackObjects(ctx context.Context) (err error) {
+	ctx, _, endObservation := b.operations.packObjects.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{},
+	})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("PackObjects").Inc()
+	defer concurrentOps.WithLabelValues("PackObjects").Dec()
+
+	return b.backend.PackObjects(ctx)
+}
+
+func (b *observableMaintenanceBackend) PrunePacked(ctx context.Context) (err error) {
+	ctx, _, endObservation := b.operations.prunePacked.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{},
+	})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("PrunePacked").Inc()
+	defer concurrentOps.WithLabelValues("PrunePacked").Dec()
+
+	return b.backend.PrunePacked(ctx)
+}
+
 type operations struct {
 	configGet             *observation.Operation
 	configSet             *observation.Operation
@@ -561,6 +651,12 @@ type operations struct {
 	latestCommitTimestamp *observation.Operation
 	refHash               *observation.Operation
 	commitLog             *observation.Operation
+	writeCommitGraph      *observation.Operation
+	packRefs              *observation.Operation
+	pruneObjects          *observation.Operation
+	repack                *observation.Operation
+	packObjects           *observation.Operation
+	prunePacked           *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -614,6 +710,12 @@ func newOperations(observationCtx *observation.Context) *operations {
 		latestCommitTimestamp: op("latest-commit-timestamp"),
 		refHash:               op("ref-hash"),
 		commitLog:             op("commit-log"),
+		writeCommitGraph:      op("write-commit-graph"),
+		packRefs:              op("pack-refs"),
+		pruneObjects:          op("prune-objects"),
+		repack:                op("repack"),
+		packObjects:           op("pack-objects"),
+		prunePacked:           op("prune-packed"),
 	}
 }
 

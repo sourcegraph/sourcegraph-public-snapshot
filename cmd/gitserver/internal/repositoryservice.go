@@ -157,3 +157,26 @@ func (s *repositoryServiceServer) ListRepositories(ctx context.Context, req *pro
 		NextPageToken: nextCursor,
 	}, nil
 }
+
+func (s *repositoryServiceServer) OptimizeRepository(ctx context.Context, req *proto.OptimizeRepositoryRequest) (*proto.OptimizeRepositoryResponse, error) {
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo_name must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+
+	cloned, err := s.fs.RepoCloned(repoName)
+	if err != nil {
+		return nil, status.New(codes.Internal, "failed to determine clone status").Err()
+	}
+
+	if !cloned {
+		return nil, newRepoNotFoundError(repoName, false, "")
+	}
+
+	// TODO: Optimize repo here.
+
+	return &proto.OptimizeRepositoryResponse{
+		// TODO: Fill.
+	}, nil
+}

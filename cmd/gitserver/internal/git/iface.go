@@ -167,6 +167,59 @@ type GitBackend interface {
 	// This value can be used to determine if a repository changed since the last
 	// time the hash has been computed.
 	RefHash(ctx context.Context) ([]byte, error)
+
+	// Maintenance returns the maintenance backend for the repository.
+	Maintenance() MaintenanceBackend
+}
+
+// MaintenanceBackend is a backend extension for methods used to maintain the
+// repository on disk.
+type MaintenanceBackend interface {
+	// WriteCommitGraph generates a commit graph for the repository. If replaceChain
+	// is true, the commit-graph is completely regenerated, otherwise an incremental
+	// update is made.
+	WriteCommitGraph(ctx context.Context, replaceChain bool) error
+	// PackRefs creates a packed refs file for the repository and prunes the refs
+	// that have been packed into it.
+	PackRefs(ctx context.Context) error
+	// PruneObjects removes all unreachable objects that are older than the given
+	// expiry time.
+	PruneObjects(ctx context.Context, expiry time.Time) error
+	// Repack repacks loose objects and packfiles in the repository, considering
+	// the given options.
+	Repack(ctx context.Context, opts RepackOptions) error
+	// PackObjects packs all objects in the repository.
+	PackObjects(ctx context.Context) error
+	// PrunePacked removes all packed refs that have been packed into the packed_refs
+	// file.
+	PrunePacked(ctx context.Context) error
+}
+
+// RepackOptions are the options for the Repack method to control how the repository
+// is repacked.
+type RepackOptions struct {
+	// WriteMultiPackIndex indicates whether a multi-pack-index should be written.
+	WriteMultiPackIndex bool
+	// WriteBitmap indicates whether a bitmap should be written.
+	// Git will write a reachability bitmap index as part of the repack.
+	// This option has no effect if multiple packfiles are created, unless writing
+	// a MIDX (in which case a multi-pack bitmap is created).
+	WriteBitmap bool
+	// Geometric indicates whether the repack should be in geometric mode. Using
+	// geometric sequences, repacking of large packfiles is much faster on average.
+	// We use a geometric factor 2 for now.
+	Geometric bool
+	// DeleteLoose indicates whether loose objects should be deleted after they have
+	// been packed into a packfile.
+	DeleteLoose bool
+	// Local will be useful with pool repos. For now, this flag does not matter.
+	Local bool
+	// Craft indicates whether the repack should create a cruft pack. Cruft packs
+	// contain loose objects that are not reachable, and have a corresponding mtimes
+	// index.
+	Cruft bool
+	// CruftExpiration is the expiration time for entries in cruft packs.
+	CruftExpiration time.Time
 }
 
 // CommitLogOrder is the order of the commits returned by CommitLog.

@@ -39,7 +39,18 @@ type Config struct {
 	JanitorInterval                       time.Duration
 	JanitorDisableDeleteReposOnWrongShard bool
 
+	EnableExperimentalJanitor      bool
+	PauseExperimentalJanitor       bool
+	ExperimentalJanitorConcurrency int
+	// The time of day in UTC timezone at which the janitor should start running.
+	ExperimentalJanitorTimeOfDay TimeOfDay
+
 	ExhaustiveRequestLoggingEnabled bool
+}
+
+type TimeOfDay struct {
+	Hour   int
+	Minute int
 }
 
 func (c *Config) Load() {
@@ -88,4 +99,19 @@ func (c *Config) Load() {
 	c.JanitorDisableDeleteReposOnWrongShard = c.GetBool("SRC_REPOS_JANITOR_DISABLE_DELETE_REPOS_ON_WRONG_SHARD", "false", "Disable deleting repos on wrong shard")
 
 	c.ExhaustiveRequestLoggingEnabled = c.GetBool("SRC_GITSERVER_EXHAUSTIVE_LOGGING_ENABLED", "false", "Enable exhaustive request logging in gitserver")
+
+	c.EnableExperimentalJanitor = c.GetBool("SRC_GITSERVER_ENABLE_EXPERIMENTAL_JANITOR", "false", "Enable experimental janitor. DO NOT USE THIS IN PRODUCTION, IT MIGHT CORRUPT ALL REPOS AND RECOVERY WILL REQUIRE A FULL RECLONE OF ALL REPOS.")
+	c.ExperimentalJanitorConcurrency = c.GetInt("SRC_GITSERVER_EXPERIMENTAL_JANITOR_CONCURRENCY", "1", "Concurrency of experimental janitor, up to N repos will be optimized in parallel.")
+	if c.ExperimentalJanitorConcurrency <= 0 {
+		c.AddError(errors.Errorf("SRC_GITSERVER_EXPERIMENTAL_JANITOR_CONCURRENCY must be >= 0"))
+	}
+	c.PauseExperimentalJanitor = c.GetBool("SRC_GITSERVER_PAUSE_EXPERIMENTAL_JANITOR", "false", "Pause the experimental janitor. Can be useful to temporarily lower impact of the janitor on the system. DO NOT USE THIS IN PRODUCTION, IT MIGHT CORRUPT ALL REPOS AND RECOVERY WILL REQUIRE A FULL RECLONE OF ALL REPOS.")
+	c.ExperimentalJanitorTimeOfDay.Hour = c.GetInt("SRC_GITSERVER_EXPERIMENTAL_JANITOR_SCHEDULE_HOUR", "2", "The time of day at which to start the daily maintenance janitor. 24h format.")
+	if c.ExperimentalJanitorTimeOfDay.Hour < 0 || c.ExperimentalJanitorTimeOfDay.Hour > 23 {
+		c.AddError(errors.Errorf("SRC_GITSERVER_EXPERIMENTAL_JANITOR_SCHEDULE_HOUR is invalid, expected to be in range [0, 23]"))
+	}
+	c.ExperimentalJanitorTimeOfDay.Minute = c.GetInt("SRC_GITSERVER_EXPERIMENTAL_JANITOR_SCHEDULE_MINUTE", "0", "The time of day at which to start the daily maintenance janitor.")
+	if c.ExperimentalJanitorTimeOfDay.Minute < 0 || c.ExperimentalJanitorTimeOfDay.Hour > 59 {
+		c.AddError(errors.Errorf("SRC_GITSERVER_EXPERIMENTAL_JANITOR_SCHEDULE_MINUTE is invalid, expected to be in range [0, 59]"))
+	}
 }
