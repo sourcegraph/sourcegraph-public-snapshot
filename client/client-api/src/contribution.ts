@@ -1,5 +1,6 @@
 import type { Primitive } from 'utility-types'
 
+import type { KnownString } from '@sourcegraph/telemetry'
 import type { Expression, TemplateExpression } from '@sourcegraph/template-parser'
 
 /**
@@ -126,6 +127,14 @@ export interface ActionContribution {
      * (e.g., because the client is not graphical), then the client may hide the item from the toolbar.
      */
     actionItem?: ActionItem
+
+    /**
+     * Properties to enable event telemetry to be recorded when an action is executed.
+     */
+    telemetryProps: {
+        feature: KnownString
+        action: KnownString
+    }
 }
 
 /**
