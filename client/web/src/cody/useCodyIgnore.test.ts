@@ -26,6 +26,7 @@ describe('getFilterFnsFromCodyContextFilters', () => {
             expect(gotRepos).toEqual(testCase.includedRepos)
 
             const gotFileChunks = testCase.fileChunks.filter(fc => !isFileIgnored(fc.repo.name, fc.path))
+
             expect(gotFileChunks).toEqual(testCase.includedFileChunks)
         })
     }
