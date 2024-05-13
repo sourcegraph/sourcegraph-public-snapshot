@@ -18,6 +18,7 @@ go_library(
         "//internal/gqlutil",
         "//internal/telemetry/teestore",
         "//internal/telemetrygateway/event",
+        "//internal/trace",
         "//internal/version",
         "//lib/errors",
         "//lib/pointers",

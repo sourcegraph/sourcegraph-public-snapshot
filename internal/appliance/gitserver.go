@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/container"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pod"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pvc"
@@ -37,14 +38,21 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *Sour
 	cfg := sg.Spec.GitServer
 	name := "gitserver"
 
-	ctr := container.NewContainer(name, cfg, corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("4"),
-			corev1.ResourceMemory: resource.MustParse("8Gi"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("4"),
-			corev1.ResourceMemory: resource.MustParse("8Gi"),
+	defaultImage, err := getDefaultImage(sg, name)
+	if err != nil {
+		return err
+	}
+	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
+		Image: defaultImage,
+		Resources: &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("4"),
+				corev1.ResourceMemory: resource.MustParse("8Gi"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("4"),
+				corev1.ResourceMemory: resource.MustParse("8Gi"),
+			},
 		},
 	})
 
@@ -52,9 +60,6 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *Sour
 	if err != nil {
 		return errors.Wrap(err, "parsing storage size")
 	}
-
-	// TODO: https://github.com/sourcegraph/sourcegraph/issues/62076
-	ctr.Image = "index.docker.io/sourcegraph/gitserver:5.3.2@sha256:6c6042cf3e5f3f16de9b82e3d4ab1647f8bb924cd315245bd7a3162f5489e8c4"
 
 	ctr.Env = append(ctr.Env, container.EnvVarsRedis()...)
 	ctr.Env = append(ctr.Env, container.EnvVarsOtel()...)
@@ -114,7 +119,7 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *Sour
 func (r *Reconciler) reconcileGitServerService(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
 	svc := service.NewService("gitserver", sg.Namespace, sg.Spec.GitServer)
 	svc.Spec.Ports = []corev1.ServicePort{
-		{Name: "unused", TargetPort: intstr.FromInt(10811), Port: 10811},
+		{Name: "unused", TargetPort: intstr.FromInt32(10811), Port: 10811},
 	}
 	svc.Spec.Selector = map[string]string{
 		"app":  "gitserver",

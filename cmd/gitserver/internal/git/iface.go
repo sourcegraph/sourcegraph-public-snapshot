@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"io"
+	"io/fs"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -18,6 +19,8 @@ type GitBackend interface {
 	// Config returns a backend for interacting with git configuration at .git/config.
 	Config() GitConfigBackend
 	// GetObject allows to read a git object from the git object database.
+	//
+	// If the object specified by objectName does not exist, a RevisionNotFoundError is returned.
 	GetObject(ctx context.Context, objectName string) (*gitdomain.GitObject, error)
 	// MergeBase finds the merge base commit for the given base and head revspecs.
 	// Returns an empty string and no error if no common merge-base was found.
@@ -90,6 +93,19 @@ type GitBackend interface {
 	// Aggregations are done by email address.
 	// If range does not exist, a RevisionNotFoundError is returned.
 	ContributorCounts(ctx context.Context, opt ContributorCountsOpts) ([]*gitdomain.ContributorCount, error)
+	// Stat returns the file info for the given path at the given commit.
+	// If the file does not exist, a os.PathError is returned.
+	// If the commit does not exist, a RevisionNotFoundError is returned.
+	// Stat supports submodules, symlinks, directories and files.
+	Stat(ctx context.Context, commit api.CommitID, path string) (fs.FileInfo, error)
+	// ReadDir returns the list of files and directories in the given path at the given commit.
+	// Path can be used to read subdirectories.
+	// If the path does not exist, a os.PathError is returned.
+	// If the commit does not exist, a RevisionNotFoundError is returned.
+	// ReadDir supports submodules, symlinks, directories and files.
+	// If recursive is true, ReadDir will return the contents of all subdirectories.
+	// The caller must call Close on the returned ReadDirIterator when done.
+	ReadDir(ctx context.Context, commit api.CommitID, path string, recursive bool) (ReadDirIterator, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
@@ -121,6 +137,16 @@ type GitBackend interface {
 	// If one of the two given revspecs does not exist, a RevisionNotFoundError
 	// is returned.
 	BehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error)
+
+	// ChangedFiles returns the list of files that have been added, modified, or
+	// deleted in the entire repository between the two given <tree-ish> identifiers (e.g., commit, branch, tag).
+	//
+	// Renamed files are considered as a deletion and an addition.
+	//
+	// If base is omitted, the parent of head is used as the base.
+	//
+	// If either the base or head <tree-ish> id does not exist, a RevisionNotFoundError is returned.
+	ChangedFiles(ctx context.Context, base, head string) (ChangedFilesIterator, error)
 }
 
 type GitDiffComparisonType int
@@ -198,6 +224,20 @@ type ListRefsOpts struct {
 	Contains []api.CommitID
 }
 
+// ChangedFilesIterator iterates over changed files. The iterator must be closed
+// via Close() when the caller is done with it.
+type ChangedFilesIterator interface {
+	// Next returns the next changed file, or an error. The iterator must be closed
+	// via Close() when the caller is done with it.
+	//
+	// If there are no more files, io.EOF is returned.
+	Next() (gitdomain.PathStatus, error)
+	// Close releases resources associated with the iterator.
+	//
+	// After Close() is called, Next() will always return io.EOF.
+	Close() error
+}
+
 // RefIterator iterates over refs.
 type RefIterator interface {
 	// Next returns the next ref.
@@ -218,4 +258,15 @@ type ContributorCountsOpts struct {
 	// If set, only count commits that are in the given path. Can be a pathspec
 	// (e.g., "foo/bar/").
 	Path string
+}
+
+// ReadDirIterator is an iterator for the contents of a directory.
+// The caller MUST Close() this iterator when done, regardless of whether an error
+// was returned from Next().
+type ReadDirIterator interface {
+	// Next returns the next file in the directory. io.EOF is returned at the end
+	// of the stream.
+	Next() (fs.FileInfo, error)
+	// Close closes the iterator.
+	Close() error
 }

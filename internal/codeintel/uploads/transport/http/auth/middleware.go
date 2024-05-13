@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -53,13 +54,18 @@ func AuthMiddleware(
 			ctx, trace, endObservation := operation.With(r.Context(), &err, observation.Args{})
 			defer endObservation(1, observation.Args{})
 
+			user, err := isLoggedIn(ctx, userStore, trace)
+			if err != nil {
+				return http.StatusUnauthorized, err
+			}
+
 			query := r.URL.Query()
 			repositoryName := getQuery(r, "repository")
 
-			if isSiteAdmin(ctx, userStore, operation.Logger) {
+			if user.isSiteAdmin() {
 				// If `AuthzEnforceForSiteAdmins` is set we should still check repo permissions for site admins
 				if conf.Get().AuthzEnforceForSiteAdmins {
-					statusCode, err := userCanAccessRepository(ctx, repoStore, repositoryName, trace)
+					statusCode, err := user.canAccessRepository(ctx, repoStore, repositoryName, trace)
 					if err != nil {
 						return statusCode, err
 					}
@@ -69,7 +75,7 @@ func AuthMiddleware(
 
 			// Non site-admin users can upload indices if auth is not enabled in the instance's site configuration
 			if !conf.Get().LsifEnforceAuth {
-				statusCode, err := userCanAccessRepository(ctx, repoStore, repositoryName, trace)
+				statusCode, err := user.canAccessRepository(ctx, repoStore, repositoryName, trace)
 				if err != nil {
 					return statusCode, err
 				}
@@ -105,25 +111,40 @@ func AuthMiddleware(
 	})
 }
 
-func userCanAccessRepository(ctx context.Context, repoStore backend.ReposService, repositoryName string, trace observation.TraceLogger) (int, error) {
-	_, err := repoStore.GetByName(ctx, api.RepoName(repositoryName))
-	if err != nil {
+type loggedInUserDoNotCreateThisTypeDirectly struct {
+	user *types.User
+}
+
+func isLoggedIn(ctx context.Context, userStore UserStore, trace observation.TraceLogger) (out loggedInUserDoNotCreateThisTypeDirectly, err error) {
+	user, err := userStore.GetByCurrentAuthUser(ctx)
+	if err == nil {
+		out.user = user
+	}
+	if err != nil && !(errcode.IsNotFound(err) || err == database.ErrNoCurrentUser) {
+		trace.Error("codeintel.httpapi: failed to find current user", sglog.Error(err))
+	}
+	return out, err
+}
+
+func (u *loggedInUserDoNotCreateThisTypeDirectly) canAccessRepository(
+	ctx context.Context,
+	repoStore backend.ReposService,
+	repositoryName string,
+	trace observation.TraceLogger,
+) (int, error) {
+	if u.user == nil {
+		panic("This method should not be called if the user was not known")
+	}
+	if _, err := repoStore.GetByName(ctx, api.RepoName(repositoryName)); err != nil {
 		trace.AddEvent("siteadmin failed auth check")
 		return errcode.HTTP(err), err
 	}
 	return 0, nil
 }
 
-func isSiteAdmin(ctx context.Context, userStore UserStore, logger sglog.Logger) bool {
-	user, err := userStore.GetByCurrentAuthUser(ctx)
-	if err != nil {
-		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
-			return false
-		}
-
-		logger.Error("codeintel.httpapi: failed to get up current user", sglog.Error(err))
-		return false
+func (u *loggedInUserDoNotCreateThisTypeDirectly) isSiteAdmin() bool {
+	if u.user == nil {
+		panic("This method should not be called if the user was not known")
 	}
-
-	return user != nil && user.SiteAdmin
+	return u.user.SiteAdmin
 }

@@ -154,6 +154,57 @@ func TestConfiguration_Estimate(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("infinite loop", func(t *testing.T) {
+		// Reproduces a scenario that caused an infinite loop when running Estimate.
+		// See #62597.
+
+		cfg, err := NewConfiguration(&[]*schema.BatchChangeRolloutWindow{
+			{
+				Rate: "15/hour",
+			},
+			{
+				Days:  []string{"monday", "tuesday", "wednesday", "thursday", "friday"},
+				End:   "23:59",
+				Rate:  "10/hour",
+				Start: "13:00",
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		now := time.Date(2024, 3, 10, 15, 35, 0, 0, time.UTC)
+		estimate := cfg.Estimate(now, 1000)
+		if estimate == nil {
+			t.Fatal("expected non-nil estimate")
+		}
+	})
+
+}
+
+func FuzzEstimate(f *testing.F) {
+	cfg, err := NewConfiguration(&[]*schema.BatchChangeRolloutWindow{
+		{
+			Rate: "15/hour",
+		},
+		{
+			Days:  []string{"monday", "tuesday", "wednesday", "thursday", "friday"},
+			End:   "23:59",
+			Rate:  "10/hour",
+			Start: "13:00",
+		},
+	})
+	if err != nil {
+		f.Fatal(err)
+	}
+
+	now := time.Date(2024, 3, 10, 15, 35, 0, 0, time.UTC)
+
+	f.Add(int64(0), uint32(1000))
+	f.Fuzz(func(t *testing.T, seconds int64, n uint32) {
+		cfg.Estimate(now.Add(time.Duration(seconds)*time.Second), int(n))
+	})
 }
 
 func TestConfiguration_Schedule(t *testing.T) {

@@ -47,7 +47,7 @@ func retrieveToken(ctx context.Context, out *std.Output) (string, error) {
 	}
 
 	token, err := store.GetExternal(ctx, secrets.ExternalSecret{
-		Project: "sourcegraph-local-dev",
+		Project: secrets.LocalDevProject,
 		Name:    "SG_BUILDKITE_TOKEN",
 	}, func(_ context.Context) (string, error) {
 		return getTokenFromUser(out)
@@ -121,7 +121,7 @@ func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number s
 	b, _, err := c.bk.Builds.Get(BuildkiteOrg, pipeline, number, nil)
 	if err != nil {
 		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil, errors.New("no build found")
+			return nil, errors.Newf("build %s not found on pipeline %q", number, pipeline)
 		}
 		return nil, err
 	}
@@ -210,6 +210,10 @@ func (c *Client) GetJobAnnotationsByBuildNumber(ctx context.Context, pipeline st
 	}
 
 	return result, nil
+}
+
+func (c *Client) CancelBuild(ctx context.Context, org, pipeline, number string) (*buildkite.Build, error) {
+	return c.bk.Builds.Cancel(org, pipeline, number)
 }
 
 // TriggerBuild request a build on Buildkite API and returns that build.

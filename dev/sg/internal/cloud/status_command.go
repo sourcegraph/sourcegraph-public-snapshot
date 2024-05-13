@@ -13,8 +13,8 @@ import (
 
 var StatusEphemeralCommand = cli.Command{
 	Name:        "status",
-	Usage:       "sg could status",
-	Description: "get the status of the ephemeral cloud instance for this branch or instance with the provided slug",
+	Usage:       "get status of ephemeral cloud instance",
+	Description: "get the status of the ephemeral cloud instance for this branch or instance with the provided name",
 	Action:      wipAction(statusCloudEphemeral),
 	Flags: []cli.Flag{
 		&cli.StringFlag{
@@ -53,8 +53,7 @@ func statusCloudEphemeral(ctx *cli.Context) error {
 	}
 	name = sanitizeInstanceName(name)
 
-	cloudEmoji := "☁️"
-	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Getting status of ephemeral instance %q", name))
+	pending := std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Getting status of ephemeral instance %q", name))
 	inst, err := cloudClient.GetInstance(ctx.Context, name)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "getting status of %q failed", name))

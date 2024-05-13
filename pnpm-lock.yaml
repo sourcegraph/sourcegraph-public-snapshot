@@ -136,6 +136,12 @@ importers:
       '@sourcegraph/extension-api-classes':
         specifier: ^1.1.0
         version: 1.1.0(sourcegraph@client+extension-api)
+      '@stripe/react-stripe-js':
+        specifier: ^2.7.0
+        version: 2.7.0(@stripe/stripe-js@3.3.0)(react-dom@18.1.0)(react@18.1.0)
+      '@stripe/stripe-js':
+        specifier: ^3.3.0
+        version: 3.3.0
       '@testing-library/react':
         specifier: ^13.4.0
         version: 13.4.0(react-dom@18.1.0)(react@18.1.0)
@@ -248,8 +254,8 @@ importers:
         specifier: ^5.2.0
         version: 5.2.0
       fzf:
-        specifier: ^0.5.1
-        version: 0.5.1
+        specifier: ^0.5.2
+        version: 0.5.2
       got:
         specifier: ^11.5.2
         version: 11.8.5
@@ -536,6 +542,9 @@ importers:
       '@slack/web-api':
         specifier: ^5.15.0
         version: 5.15.0
+      '@sourcegraph/cody-context-filters-test-dataset':
+        specifier: ^1.0.0
+        version: 1.0.0
       '@sourcegraph/eslint-config':
         specifier: 0.37.1
         version: 0.37.1(@testing-library/dom@8.13.0)(eslint@8.57.0)(typescript@5.4.2)
@@ -1551,6 +1560,9 @@ importers:
       copy-to-clipboard:
         specifier: ^3.3.1
         version: 3.3.1
+      fzf:
+        specifier: ^0.5.2
+        version: 0.5.2
       highlight.js:
         specifier: ^10.0.0
         version: 10.7.3
@@ -8417,6 +8429,10 @@ packages:
       '@sourcegraph/codemod-toolkit-ts': 1.0.1
     dev: true
 
+  /@sourcegraph/cody-context-filters-test-dataset@1.0.0:
+    resolution: {integrity: sha512-Uf7wMo5Fu3+g03gl2jvU2qHMaDp0p9RK9U2ucmy6VxWaavxALCC8iy47JL5GdgR5qG3ekEd5mAQV0dIIfoKELA==}
+    dev: true
+
   /@sourcegraph/eslint-config@0.37.1(@testing-library/dom@8.13.0)(eslint@8.57.0)(typescript@5.4.2):
     resolution: {integrity: sha512-3G0d3OUgifaADfd27Bdk/kSpECj21BfQ6srbYMY/HVWOv/N8AVuFWNwUMT4Y4slt026RXO5XcwoZhfnaskr5hQ==}
     dependencies:
@@ -10396,6 +10412,24 @@ packages:
       '@storybook/channels': 8.0.5
       '@types/express': 4.17.11
       file-system-cache: 2.3.0
+
+  /@stripe/react-stripe-js@2.7.0(@stripe/stripe-js@3.3.0)(react-dom@18.1.0)(react@18.1.0):
+    resolution: {integrity: sha512-kTkIZl2ZleBuDR9c6fDy/s4m33llII8a5al6BDAMSTrfVq/4gSZv3RBO5KS/xvnxS+fDapJ3bKvjD8Lqj+AKdQ==}
+    peerDependencies:
+      '@stripe/stripe-js': ^1.44.1 || ^2.0.0 || ^3.0.0
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      '@stripe/stripe-js': 3.3.0
+      prop-types: 15.8.1
+      react: 18.1.0
+      react-dom: 18.1.0(react@18.1.0)
+    dev: false
+
+  /@stripe/stripe-js@3.3.0:
+    resolution: {integrity: sha512-dUgAsko9KoYC1U2TIawHzbkQJzPoApxCc1Qf6/j318d1ArViyh6ROHVYTxnU3RlOQL/utUD9I4/QoyiCowsgrw==}
+    engines: {node: '>=12.16'}
+    dev: false
 
   /@sveltejs/adapter-auto@3.1.1(@sveltejs/kit@2.4.2):
     resolution: {integrity: sha512-6LeZft2Fo/4HfmLBi5CucMYmgRxgcETweQl/yQoZo/895K3S9YWYN4Sfm/IhwlIpbJp3QNvhKmwCHbsqQNYQpw==}
@@ -16620,8 +16654,8 @@ packages:
   /functions-have-names@1.2.3:
     resolution: {integrity: sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ==}
 
-  /fzf@0.5.1:
-    resolution: {integrity: sha512-AJ9BBt/3K/IyCF+pQjdG194kVSS1hU/v/RnZgiCtYZzA0rj2OBVwwjBRUOclo9yJl2ovjtdw3C31/8/rnT0uug==}
+  /fzf@0.5.2:
+    resolution: {integrity: sha512-Tt4kuxLXFKHy8KT40zwsUPUkg1CrsgY25FxA2U/j/0WgEDCk3ddc/zLTCCcbSHX9FcKtLuVaDGtGE/STWC+j3Q==}
     dev: false
 
   /gauge@2.7.4:

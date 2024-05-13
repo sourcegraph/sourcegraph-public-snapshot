@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"sync"
 	"time"
@@ -389,6 +390,76 @@ func (b *observableBackend) FirstEverCommit(ctx context.Context) (_ api.CommitID
 	return b.backend.FirstEverCommit(ctx)
 }
 
+func (b *observableBackend) ChangedFiles(ctx context.Context, base, head string) (ChangedFilesIterator, error) {
+	ctx, _, endObservation := b.operations.changedFiles.With(ctx, nil, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("ChangedFiles").Inc()
+	defer concurrentOps.WithLabelValues("ChangedFiles").Dec()
+
+	return b.backend.ChangedFiles(ctx, base, head)
+}
+
+func (b *observableBackend) Stat(ctx context.Context, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
+	ctx, _, endObservation := b.operations.stat.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.String("commit", string(commit)),
+			attribute.String("path", path),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("Stat").Inc()
+	defer concurrentOps.WithLabelValues("Stat").Dec()
+
+	return b.backend.Stat(ctx, commit, path)
+}
+
+func (b *observableBackend) ReadDir(ctx context.Context, commit api.CommitID, path string, recursive bool) (_ ReadDirIterator, err error) {
+	ctx, errCollector, endObservation := b.operations.readDir.WithErrors(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.String("commit", string(commit)),
+			attribute.String("path", path),
+			attribute.Bool("recursive", recursive),
+		},
+	})
+	ctx, cancel := context.WithCancel(ctx)
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	concurrentOps.WithLabelValues("ReadDir").Inc()
+
+	it, err := b.backend.ReadDir(ctx, commit, path, recursive)
+	if err != nil {
+		concurrentOps.WithLabelValues("ReadDir").Dec()
+		cancel()
+		return nil, err
+	}
+
+	return &observableReadDirIterator{
+		inner: it,
+		onClose: func(err error) {
+			concurrentOps.WithLabelValues("ReadDir").Dec()
+			errCollector.Collect(&err)
+			cancel()
+		},
+	}, nil
+}
+
+type observableReadDirIterator struct {
+	inner   ReadDirIterator
+	onClose func(err error)
+}
+
+func (hr *observableReadDirIterator) Next() (fs.FileInfo, error) {
+	return hr.inner.Next()
+}
+
+func (hr *observableReadDirIterator) Close() error {
+	err := hr.inner.Close()
+	hr.onClose(err)
+	return err
+}
+
 type operations struct {
 	configGet         *observation.Operation
 	configSet         *observation.Operation
@@ -409,6 +480,9 @@ type operations struct {
 	contributorCounts *observation.Operation
 	firstEverCommit   *observation.Operation
 	getBehindAhead    *observation.Operation
+	changedFiles      *observation.Operation
+	stat              *observation.Operation
+	readDir           *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -456,6 +530,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 		contributorCounts: op("contributor-counts"),
 		firstEverCommit:   op("first-ever-commit"),
 		getBehindAhead:    op("get-behind-ahead"),
+		changedFiles:      op("changed-files"),
+		stat:              op("stat"),
+		readDir:           op("read-dir"),
 	}
 }
 

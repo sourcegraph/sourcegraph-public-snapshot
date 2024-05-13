@@ -6,15 +6,15 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
-// GitserverRepositoryService exposes operations to be performed by repo-updater.
-// These methods are not meant to be used by other services, and should be considered
-// an implementation detail of gitserver.
+// GitserverRepositoryService exposes operations to be performed by
+// repo-updater. These methods are not meant to be used by other services, and
+// should be considered an implementation detail of gitserver.
 service GitserverRepositoryService {
   // DeleteRepository deletes a repository on disk if it exists.
   // If it doesn't, an error is returned.
   rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse) {}
-  // FetchRepository fetches a repository from a remote. If the repository is not
-  // yet cloned, it will be cloned. Otherwise, it will be updated.
+  // FetchRepository fetches a repository from a remote. If the repository is
+  // not yet cloned, it will be cloned. Otherwise, it will be updated.
   rpc FetchRepository(FetchRepositoryRequest) returns (FetchRepositoryResponse) {
     option idempotency_level = IDEMPOTENT;
   }
@@ -47,6 +47,14 @@ service GitserverService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
+
+  // GetObject returns the object with the given OID in the given repository.
+  //
+  // If the object is not found, an error with a RevisionNotFoundPayload is
+  // returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
   rpc GetObject(GetObjectRequest) returns (GetObjectResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -67,11 +75,14 @@ service GitserverService {
   // currently not filter parts of the archive, so this would be considered
   // leaking information.
   //
-  // If the given treeish does not exist, an error with a RevisionNotFoundPayload
+  // If the given treeish does not exist, an error with a
+  // RevisionNotFoundPayload is returned.
+  //
+  // If the given paths are not found in the given treeish, an error with a FileNotFoundPayload
   // is returned.
   //
-  // If the given repo is not cloned, it will be enqueued for cloning and a
-  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -114,8 +125,10 @@ service GitserverService {
   // hunks as they are found. The --incremental flag is used on the git CLI
   // level to achieve this behavior.
   //
-  // If the given repo is not cloned, it will be enqueued for cloning and a
-  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  // If the given path is not found, an error with a FileNotFoundPayload is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
   rpc Blame(BlameRequest) returns (stream BlameResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -130,8 +143,10 @@ service GitserverService {
   }
   // ReadFile gets a file from the repo ODB and streams the contents back.
   //
-  // If the given repo is not cloned, it will be enqueued for cloning and a
-  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
+  // If the given path is not found, an error with a FileNotFoundPayload is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
   rpc ReadFile(ReadFileRequest) returns (stream ReadFileResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -166,18 +181,17 @@ service GitserverService {
   rpc ResolveRevision(ResolveRevisionRequest) returns (ResolveRevisionResponse) {
     option idempotency_level = IDEMPOTENT;
   }
-  // ListRefs returns a list of all the refs known to the repository, this includes
-  // heads, tags, and other potential refs, but filters can be applied.
+  // ListRefs returns a list of all the refs known to the repository, this
+  // includes heads, tags, and other potential refs, but filters can be applied.
   //
   // The refs are ordered in the following order:
   // HEAD first, if part of the result set.
-  // The rest will be ordered by creation date, in descending order, i.e., newest
-  // first.
-  // If two resources are created at the same timestamp, the records are ordered
-  // alphabetically.
+  // The rest will be ordered by creation date, in descending order, i.e.,
+  // newest first. If two resources are created at the same timestamp, the
+  // records are ordered alphabetically.
   //
-  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-  // error will be returned, with a RepoNotFoundPayload in the details.
+  // If the given repo is not cloned, it will be enqueued for cloning and a
+  // NotFound error will be returned, with a RepoNotFoundPayload in the details.
   rpc ListRefs(ListRefsRequest) returns (stream ListRefsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -200,8 +214,8 @@ service GitserverService {
   // - No a/ b/ prefixes
   // - Rename detection
   //
-  // If either base or head are not found, an error with a RevisionNotFoundPayload
-  // is returned.
+  // If either base or head are not found, an error with a
+  // RevisionNotFoundPayload is returned.
   //
   // If the given repo is not cloned, it will be enqueued for cloning and a
   // NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -215,22 +229,23 @@ service GitserverService {
   rpc ContributorCounts(ContributorCountsRequest) returns (ContributorCountsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-
   // FirstEverCommit returns the first commit ever made to the repository.
   //
-  // If the given repository is empty, an error with a RevisionNotFoundPayload is
-  // returned.
+  // If the given repository is empty, an error with a RevisionNotFoundPayload
+  // is returned.
   rpc FirstEverCommit(FirstEverCommitRequest) returns (FirstEverCommitResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
-  // BehindAhead returns the behind/ahead commit counts information for the symmetric difference left...right (both Git
-  // revspecs).
+  // BehindAhead returns the behind/ahead commit counts information for the
+  // symmetric difference left...right (both Git revspecs).
   //
-  // Behind is the number of commits that are solely reachable in "left" but not "right".
-  // Ahead is the number of commits that are solely reachable in "right" but not "left".
+  // Behind is the number of commits that are solely reachable in "left" but not
+  // "right". Ahead is the number of commits that are solely reachable in
+  // "right" but not "left".
   //
-  //  For the example, given the graph below, BehindAhead("A", "B") would return {Behind: 3, Ahead: 2}.
+  //  For the example, given the graph below, BehindAhead("A", "B") would return
+  //  {Behind: 3, Ahead: 2}.
   //
   //	     y---b---b  branch B
   //	    / \ /
@@ -238,14 +253,59 @@ service GitserverService {
   //	  /   / \
   //	 o---x---a---a---a  branch A
   //
-  // If either left or right are the empty string (""), the HEAD commit is implicitly used.
+  // If either left or right are the empty string (""), the HEAD commit is
+  // implicitly used.
   //
-  // If one of the two given revspecs does not exist, an error with a RevisionNotFoundPayload is
-  // is returned.
+  // If one of the two given revspecs does not exist, an error with a
+  // RevisionNotFoundPayload is is returned.
   //
   // If the given repo is not cloned, it will be enqueued for cloning and a
   // NotFound error will be returned, with a RepoNotFoundPayload in the details.
   rpc BehindAhead(BehindAheadRequest) returns (BehindAheadResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // ChangedFiles returns the list of files that have been added, modified, or
+  // deleted in the entire repository between the two given <tree-ish>
+  // identifiers (e.g., commit, branch, tag).
+  //
+  // - Renamed files are represented as a deletion of the old path and an
+  // addition of the new path.
+  // - No copy detection is performed.
+  // - The only file status codes returned are 'A' (added), 'M' (modified), or
+  // 'D' (deleted).
+  //
+  // If `base` is omitted, the parent of `head` is used as the base.
+  //
+  // If either the `base` or `head` <tree-ish> id does not exist, an error with
+  // a `RevisionNotFoundPayload` is returned.
+  rpc ChangedFiles(ChangedFilesRequest) returns (stream ChangedFilesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // Stat returns a FileInfo describing the named file descriptor at the given commit.
+  // Stat supports submodules, symlinks, directories and files.
+  //
+  // If the commit does not exist, an error with RevisionNotFoundPayload is
+  // returned.
+  //
+  // If the given path is not found, an error with a FileNotFoundPayload is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
+  rpc Stat(StatRequest) returns (StatResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // ReadDir returns a list of FileInfos describing the files and subdirectories
+  // in the given directory.
+  //
+  // If the commit does not exist, an error with RevisionNotFoundPayload is
+  // returned.
+  //
+  // If the given path is not found, an error with a FileNotFoundPayload is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
+  rpc ReadDir(ReadDirRequest) returns (stream ReadDirResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -254,12 +314,13 @@ message ContributorCountsRequest {
   // repo_name is the name of the repo to run the blame operation in.
   // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
   string repo_name = 2;
-  // Optional range to limit the commits inspected. If not given, all commits are considered.
-  // This can either be a revspec, which will be interpreted as "every commit since
-  // root until this commit", or a range, with either .. or ... separator.
+  // Optional range to limit the commits inspected. If not given, all commits
+  // are considered. This can either be a revspec, which will be interpreted as
+  // "every commit since root until this commit", or a range, with either .. or
+  // ... separator.
   bytes range = 3;
-  // After is an optional parameter to specify the earliest commit to consider in
-  // the aggregation. If not specified, all commits will be returned.
+  // After is an optional parameter to specify the earliest commit to consider
+  // in the aggregation. If not specified, all commits will be returned.
   google.protobuf.Timestamp after = 4;
   // path can optionally be specified to limit the commits to a single path.
   // If not specified, the commits will be returned for all paths.
@@ -288,17 +349,18 @@ message RawDiffRequest {
   bytes head_rev_spec = 4;
   enum ComparisonType {
     COMPARISON_TYPE_UNSPECIFIED = 0;
-    // Corresponds to the BASE..HEAD syntax that only returns any commits that are
-    // in HEAD but not in BASE.
+    // Corresponds to the BASE..HEAD syntax that only returns any commits that
+    // are in HEAD but not in BASE.
     COMPARISON_TYPE_ONLY_IN_HEAD = 1;
-    // Corresponds to the BASE...HEAD syntax that returns any commits that are not
-    // in both BASE and HEAD.
+    // Corresponds to the BASE...HEAD syntax that returns any commits that are
+    // not in both BASE and HEAD.
     COMPARISON_TYPE_INTERSECTION = 2;
   }
   // comparison_type is the type of comparison to perform. If unspecified, will
   // fall back to COMPARISON_TYPE_INTERSECTION.
   ComparisonType comparison_type = 5;
-  // paths is a list of paths to filter the diff to. If empty, all paths are diffed.
+  // paths is a list of paths to filter the diff to. If empty, all paths are
+  // diffed.
   repeated bytes paths = 6;
 }
 
@@ -315,8 +377,8 @@ message ListRefsRequest {
   bool heads_only = 3;
   // If true, only tags are returned. Can be combined with heads_only.
   bool tags_only = 4;
-  // If set, only return refs that point at the given commit sha. Multiple values
-  // will be ORed together.
+  // If set, only return refs that point at the given commit sha. Multiple
+  // values will be ORed together.
   repeated string points_at_commit = 5;
   // If set, only return refs that contain the given commit sha.
   optional string contains_sha = 6;
@@ -327,18 +389,19 @@ message ListRefsResponse {
 }
 
 message GitRef {
-  // ref_name is the unabbreviated name of the reference, i.e., refs/heads/main, or refs/tags/1.0.
+  // ref_name is the unabbreviated name of the reference, i.e., refs/heads/main,
+  // or refs/tags/1.0.
   bytes ref_name = 1;
   // short_ref_name is the abbreviated name of the reference, if unambiguous.
   // I.e., main, or 1.0.
   bytes short_ref_name = 2;
-  // target_commit is the hash of the commit the reference is currently pointing at.
-  // For a head reference, this is the commit the head is currently pointing at.
-  // For a tag, this is the commit that the tag is attached to.
+  // target_commit is the hash of the commit the reference is currently pointing
+  // at. For a head reference, this is the commit the head is currently pointing
+  // at. For a tag, this is the commit that the tag is attached to.
   string target_commit = 3;
   // ref_oid is the full object ID of the reference. For a head reference and
-  // a lightweight tag, this value is the same as target_commit. For annotated tags,
-  // it is the object ID of the tag.
+  // a lightweight tag, this value is the same as target_commit. For annotated
+  // tags, it is the object ID of the tag.
   string ref_oid = 4;
   // created_at is the timestamp when the ref was created or modified last.
   google.protobuf.Timestamp created_at = 5;
@@ -352,6 +415,59 @@ message GitRef {
   RefType ref_type = 6;
   // is_head is true if the reference is the HEAD reference.
   bool is_head = 7;
+}
+
+message StatRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // The commit at which we want to stat the file.
+  string commit_sha = 3;
+  // The path to the file to stat.
+  bytes path = 4;
+}
+
+message StatResponse {
+  FileInfo file_info = 1;
+}
+
+message ReadDirRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // The commit at which we want to read the directory.
+  string commit_sha = 3;
+  // The path to the directory to read. Empty means root.
+  optional bytes path = 4;
+  // recursive indicates whether to read the directory recursively. The default is false.
+  bool recursive = 5;
+}
+
+message ReadDirResponse {
+  repeated FileInfo file_info = 1;
+}
+
+message GitSubmodule {
+  // URL is the submodule repository clone URL.
+  string url = 1;
+  // Path is the path of the submodule relative to the repository root.
+  bytes path = 2;
+  // CommitSHA is the pinned commit ID of the submodule (in the submodule repository's
+  // commit ID space).
+  string commit_sha = 3;
+}
+
+message FileInfo {
+  // The file name, relative to the repository root.
+  bytes name = 1;
+  // The file size.
+  int64 size = 2;
+  // The file mode.
+  uint32 mode = 3;
+  // The blob OID in the git ODB.
+  string blob_oid = 4;
+  // If this FileInfo describes a submodule, this field will be populated.
+  optional GitSubmodule submodule = 5;
 }
 
 message ResolveRevisionRequest {
@@ -400,14 +516,16 @@ message GetCommitRequest {
   // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
   string repo_name = 2;
   string commit = 3;
-  // If true, the modified_files field in the GetCommitResponse will be populated.
+  // If true, the modified_files field in the GetCommitResponse will be
+  // populated.
   bool include_modified_files = 4;
 }
 
 message GetCommitResponse {
   GitCommit commit = 1;
   // Contains the list of files the commit modified.
-  // NOTE: Only populated if include_modified_files in the GetCommitRequest is true.
+  // NOTE: Only populated if include_modified_files in the GetCommitRequest is
+  // true.
   repeated bytes modified_files = 2;
 }
 
@@ -1079,8 +1197,40 @@ message BehindAheadRequest {
 }
 
 message BehindAheadResponse {
-  // behind is the number of commits that are solely reachable in "left" but not "right".
+  // behind is the number of commits that are solely reachable in "left" but not
+  // "right".
   uint32 behind = 1;
-  // ahead is the number of commits that are solely reachable in "right" but not "left".
+  // ahead is the number of commits that are solely reachable in "right" but not
+  // "left".
   uint32 ahead = 2;
+}
+
+message ChangedFilesRequest {
+  // repo_name is the name of the repo to get the changed files for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // base is a <tree-ish> id, for now, we allow non-utf8 revspecs.
+  //
+  // If base is empty, the parent of the head is used.
+  optional bytes base = 3;
+  // head is a <tree-ish> id, for now, we allow non-utf8 revspecs.
+  bytes head = 4;
+}
+
+message ChangedFilesResponse {
+  repeated ChangedFile files = 1;
+}
+
+message ChangedFile {
+  // path is the file path of the file that the status is for.
+  bytes path = 1;
+  // status is the status of the path.
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_ADDED = 1;
+    STATUS_MODIFIED = 2;
+    STATUS_DELETED = 3;
+    STATUS_TYPE_CHANGED = 4;
+  }
+  Status status = 2;
 }

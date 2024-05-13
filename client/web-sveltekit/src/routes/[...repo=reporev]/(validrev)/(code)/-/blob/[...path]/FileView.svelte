@@ -233,7 +233,8 @@
             <a href="{repoURL}/-/raw/{filePath}" target="_blank" download>Download file</a>
         </Alert>
     {:else if blob && showFormattedView}
-        <div class={`rich ${markdownStyles.markdown}`}>
+        <!-- jupyter is a global style -->
+        <div class={`rich jupyter ${markdownStyles.markdown}`}>
             {@html blob.richHTML}
         </div>
     {:else if blob}
@@ -294,6 +295,7 @@
         gap: 1rem;
         padding: 0.5rem;
         color: var(--text-muted);
+        background-color: var(--color-bg-1);
         box-shadow: var(--fileheader-shadow);
 
         // Allows for its shadow to cascade over the code panel

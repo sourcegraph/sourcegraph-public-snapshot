@@ -93,7 +93,7 @@
 <style lang="scss">
     .header {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         padding: 0.25rem 0.5rem;
         background-color: var(--color-bg-1);
         border-bottom: 1px solid var(--border-color);

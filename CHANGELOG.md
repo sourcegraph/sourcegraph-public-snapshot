@@ -17,6 +17,14 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## 5.4.0
+
+### Added
+
 - Added rate and latency instrumentation for git / package repository syncing operations. These are visible in the gitserver dashboards (VCS "Clone/Fetch/IsCloneable" Metrics). [#61708](https://github.com/sourcegraph/sourcegraph/pull/61708)
 - Added syntax highlighting for the [Pkl](https://pkl-lang.org/) configuration language. [#61478](https://github.com/sourcegraph/sourcegraph/pull/61478)
 - New `rev:at.time()` search filter that allows you to search a branch at a point in time. [#61513](https://github.com/sourcegraph/sourcegraph/pull/61513)
@@ -34,6 +42,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code insights drilldown behavior has been changed from a diff search to a point-in-time search with the new `rev:at.time()`. [#61953](https://github.com/sourcegraph/sourcegraph/pull/61953)
 - The `FirstEverCommit` gitserver client method has been changed to use a new bespoke gRPC endpoint instead of the legacy `exec` endpoint. [#62173](https://github.com/sourcegraph/sourcegraph/pull/62173)
 - The `GetBehindAhead` gitserver client method has been changed to use a new bespoke gRPC endpoint instead of the legacy `exec` endpoint. [#62217](https://github.com/sourcegraph/sourcegraph/pull/62217)
+- All uses of the `DiffSymbols` gitserver client method have been replaced with the new `ChangedFiles` method. As such, the `DiffSymbos` method has been removed [#62355](https://github.com/sourcegraph/sourcegraph/pull/62355)
 
 ### Fixed
 

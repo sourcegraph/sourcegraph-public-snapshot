@@ -22,8 +22,8 @@ type GitserverClient interface {
 	// determine if the error is a bad request (eg invalid repo).
 	FetchTar(context.Context, api.RepoName, api.CommitID, []string) (io.ReadCloser, error)
 
-	// GitDiff returns the paths that have changed between two commits.
-	GitDiff(context.Context, api.RepoName, api.CommitID, api.CommitID) (Changes, error)
+	// ChangedFiles returns an iterator that yields the paths that have changed between two commits.
+	ChangedFiles(context.Context, api.RepoName, api.CommitID, api.CommitID) (gitserver.ChangedFilesIterator, error)
 
 	// NewFileReader returns an io.ReadCloser reading from the named file at commit.
 	// The caller should always close the reader after use.
@@ -75,7 +75,7 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 	return c.innerClient.ArchiveReader(ctx, repo, opts)
 }
 
-func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ Changes, err error) {
+func (c *gitserverClient) ChangedFiles(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (iterator gitserver.ChangedFilesIterator, err error) {
 	ctx, _, endObservation := c.operations.gitDiff.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		repo.Attr(),
 		attribute.String("commitA", string(commitA)),
@@ -83,14 +83,7 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 	}})
 	defer endObservation(1, observation.Args{})
 
-	output, err := c.innerClient.DiffSymbols(ctx, repo, commitA, commitB)
-
-	changes, err := parseGitDiffOutput(output)
-	if err != nil {
-		return Changes{}, errors.Wrap(err, "failed to parse git diff output")
-	}
-
-	return changes, nil
+	return c.innerClient.ChangedFiles(ctx, repo, string(commitA), string(commitB))
 }
 
 func (c *gitserverClient) NewFileReader(ctx context.Context, repoCommitPath types.RepoCommitPath) (io.ReadCloser, error) {
@@ -108,7 +101,7 @@ func (c *gitserverClient) RevList(ctx context.Context, repo string, commit strin
 	for {
 		var commits []api.CommitID
 		var err error
-		commits, nextCursor, err = c.innerClient.RevList(ctx, api.RepoName(repo), nextCursor, revListPageSize)
+		commits, nextCursor, err = c.paginatedRevList(ctx, api.RepoName(repo), nextCursor, revListPageSize)
 		if err != nil {
 			return err
 		}
@@ -125,6 +118,31 @@ func (c *gitserverClient) RevList(ctx context.Context, repo string, commit strin
 			return nil
 		}
 	}
+}
+
+func (c *gitserverClient) paginatedRevList(ctx context.Context, repo api.RepoName, commit string, count int) ([]api.CommitID, string, error) {
+	commits, err := c.innerClient.Commits(ctx, repo, gitserver.CommitsOptions{
+		N:           uint(count + 1),
+		Range:       commit,
+		FirstParent: true,
+	})
+	if err != nil {
+		return nil, "", err
+	}
+
+	commitIDs := make([]api.CommitID, 0, count+1)
+
+	for _, commit := range commits {
+		commitIDs = append(commitIDs, commit.ID)
+	}
+
+	var nextCursor string
+	if len(commitIDs) > count {
+		nextCursor = string(commitIDs[len(commitIDs)-1])
+		commitIDs = commitIDs[:count]
+	}
+
+	return commitIDs, nextCursor, nil
 }
 
 var NUL = []byte{0}

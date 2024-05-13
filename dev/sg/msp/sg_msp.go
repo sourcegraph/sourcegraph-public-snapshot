@@ -2,7 +2,6 @@
 package msp
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -454,30 +453,37 @@ This command supports completions on services and environments.
 						}
 						opts := operationdocs.Options{
 							ManagedServicesRevision: repoRev,
-							GenerateCommand:         strings.Join(os.Args, " "),
+							GeneratedBy: func() string {
+								if os.Getenv("GITHUB_ACTIONS") == "true" {
+									// Probably running in CI, tell them about
+									// our GitHub action
+									return "[Update Handbook GitHub Action](https://github.com/sourcegraph/managed-services/actions/workflows/update-handbook.yaml)"
+								}
+								return fmt.Sprintf("`%s`", strings.Join(os.Args, " "))
+							}(),
 							// This command is for generating Notion pages.
 							Notion: true,
 						}
 
-						sec, err := secrets.FromContext(c.Context)
-						if err != nil {
-							return err
-						}
-						notionToken, err := sec.GetExternal(c.Context,
-							secrets.ExternalSecret{
-								Project: "sourcegraph-secrets",
-								Name:    "CORE_SERVICES_NOTION_API_TOKEN",
-							},
-							func(ctx context.Context) (string, error) {
-								v, ok := os.LookupEnv("NOTION_API_TOKEN")
-								if !ok {
-									return "", errors.New("environment variable NOTION_API_TOKEN not set")
-								}
-								std.Out.WriteSuggestionf("Using NOTION_API_TOKEN from environment")
-								return v, nil
-							})
-						if err != nil {
-							return errors.Wrap(err, "failed to get Notion token from gcloud secrets")
+						// Prefer env token for ease of integration in GitHub
+						// Actions, before falling back to using the token stored
+						// in GSM.
+						notionToken, ok := os.LookupEnv("NOTION_API_TOKEN")
+						if ok && len(notionToken) > 0 {
+							std.Out.WriteSuggestionf("Using NOTION_API_TOKEN from environment")
+						} else {
+							sec, err := secrets.FromContext(c.Context)
+							if err != nil {
+								return err
+							}
+							notionToken, err = sec.GetExternal(c.Context,
+								secrets.ExternalSecret{
+									Project: "sourcegraph-secrets",
+									Name:    "CORE_SERVICES_NOTION_API_TOKEN",
+								})
+							if err != nil {
+								return errors.Wrap(err, "failed to get Notion token")
+							}
 						}
 						notionClient := notionapi.NewClient(notionapi.Token(notionToken))
 
@@ -746,7 +752,7 @@ This command supports completions on services and environments.
 							connectionName,
 							serviceAccountEmail,
 							proxyPort,
-							svc.Service.GetGoLink(env.ID))
+							svc.Service.GetHandbookPageURL())
 						if err != nil {
 							return err
 						}
@@ -842,7 +848,7 @@ This command supports completions on services and environments.
 						},
 						&cli.StringFlag{
 							Name:  "workspace-run-mode",
-							Usage: "One of 'vcs', 'cli'",
+							Usage: "One of 'vcs', 'cli', or 'ignore' (to respect existing configuration)",
 							Value: "vcs",
 						},
 						&cli.BoolFlag{
@@ -872,9 +878,10 @@ This command supports completions on services and environments.
 							return errors.Wrap(err, "get TFC OAuth client ID")
 						}
 
+						runMode := terraformcloud.WorkspaceRunMode(c.String("workspace-run-mode"))
 						tfcClient, err := terraformcloud.NewClient(tfcAccessToken, tfcOAuthClient,
 							terraformcloud.WorkspaceConfig{
-								RunMode: terraformcloud.WorkspaceRunMode(c.String("workspace-run-mode")),
+								RunMode: runMode,
 							})
 						if err != nil {
 							return errors.Wrap(err, "init Terraform Cloud client")
@@ -891,8 +898,56 @@ This command supports completions on services and environments.
 							return syncEnvironmentWorkspaces(c, tfcClient, svc.Service, *env)
 						}
 
+						if c.Args().Len() == 0 {
+							// No service specified, sync them all
+							if c.Bool("delete") {
+								// Simple safeguard, there's additional safeguards
+								// in syncEnvironmentWorkspaces but let's fail
+								// fast here
+								return errors.New("cannot delete workspaces for all services")
+							}
+
+							confirmAction := "Syncing all environments for all services"
+							if runMode != terraformcloud.WorkspaceRunModeIgnore {
+								// This action may override custom run mode
+								// configurations, which may unexpectedly deploy
+								// new changes
+								confirmAction = fmt.Sprintf("%s, including setting ALL workspaces to use run mode %q (use '-workspace-run-mode=ignore' to respect the existing run mode)",
+									confirmAction, runMode)
+							}
+							std.Out.Promptf("%s - are you sure? (y/N) ", confirmAction)
+							var input string
+							if _, err := fmt.Scan(&input); err != nil {
+								return err
+							}
+							if input != "y" {
+								return errors.New("aborting")
+							}
+
+							// Iterate all services
+							services, err := msprepo.ListServices()
+							if err != nil {
+								return err
+							}
+							for _, serviceID := range services {
+								serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
+								svc, err := spec.Open(serviceSpecPath)
+								if err != nil {
+									return errors.Wrap(err, serviceID)
+								}
+								for _, env := range svc.Environments {
+									if err := syncEnvironmentWorkspaces(c, tfcClient, svc.Service, env); err != nil {
+										return errors.Wrapf(err, "%s: sync env %q", serviceID, env.ID)
+									}
+								}
+							}
+
+							// Done!
+							return nil
+						}
+
 						// Otherwise, we are syncing all environments for a service.
-						std.Out.WriteNoticef("Syncing all environments for a specific service ...")
+						std.Out.WriteNoticef("Syncing all environments for the specified service ...")
 						svc, err := useServiceArgument(c, true)
 						if err != nil {
 							return err

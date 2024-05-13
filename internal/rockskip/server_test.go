@@ -1,102 +1,44 @@
 package rockskip
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"os"
-	"os/exec"
-	"path"
 	"sort"
-	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/go-ctags"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// mockParser converts each line to a symbol.
-type mockParser struct{}
-
-func (mockParser) Parse(path string, bytes []byte) ([]*ctags.Entry, error) {
-	symbols := []*ctags.Entry{}
-
-	for lineNumber, line := range strings.Split(string(bytes), "\n") {
-		if line == "" {
-			continue
-		}
-
-		symbols = append(symbols, &ctags.Entry{Name: line, Line: lineNumber + 1})
-	}
-
-	return symbols, nil
-}
-
-func (mockParser) Close() {}
 
 func TestIndex(t *testing.T) {
 	gitserver.ClientMocks.LocalGitserver = true
 	t.Cleanup(gitserver.ResetClientMocks)
 	repo, repoDir := gitserver.MakeGitRepositoryAndReturnDir(t)
-
-	state := map[string][]string{}
-
-	gitRun := func(args ...string) {
-		out, err := gitserver.CreateGitCommand(repoDir, "git", args...).CombinedOutput()
-		require.NoError(t, err, string(out))
-	}
-
-	add := func(filename string, contents string) {
-		require.NoError(t, os.WriteFile(path.Join(repoDir, filename), []byte(contents), 0644), "os.WriteFile")
-		gitRun("add", filename)
-		symbols, err := mockParser{}.Parse(filename, []byte(contents))
-		require.NoError(t, err)
-		state[filename] = []string{}
-		for _, symbol := range symbols {
-			state[filename] = append(state[filename], symbol.Name)
-		}
-	}
-
-	rm := func(filename string) {
-		gitRun("rm", filename)
-		delete(state, filename)
-	}
-
-	gitRun("init")
 	// Needed in CI
-	gitRun("config", "user.email", "test@sourcegraph.com")
+	gitRun(t, repoDir, "config", "user.email", "test@sourcegraph.com")
 
-	git, err := NewSubprocessGit(t, repoDir)
+	git, err := newSubprocessGit(t, repoDir)
 	require.NoError(t, err)
 	defer git.Close()
 
-	db := dbtest.NewDB(t)
+	db, service := mockService(t, git)
 	defer db.Close()
 
-	createParser := func() (ctags.Parser, error) { return mockParser{}, nil }
-
-	service, err := NewService(db, git, newMockRepositoryFetcher(git), createParser, 1, 1, false, 1, 1, 1, false)
-	require.NoError(t, err)
-
+	state := map[string][]string{}
 	verifyBlobs := func() {
 		out, err := gitserver.CreateGitCommand(repoDir, "git", "rev-parse", "HEAD").CombinedOutput()
 		require.NoError(t, err, string(out))
 		commit := string(bytes.TrimSpace(out))
 
 		args := search.SymbolsParameters{
-			Repo:         api.RepoName(repo),
+			Repo:         repo,
 			CommitID:     api.CommitID(commit),
 			Query:        "",
 			IncludeLangs: []string{"Text"}}
@@ -149,196 +91,117 @@ func TestIndex(t *testing.T) {
 		}
 	}
 
-	commit := func(message string) {
-		gitRun("commit", "--allow-empty", "-m", message)
-		verifyBlobs()
-	}
+	gitAdd(t, repoDir, state, "a.txt", "sym1\n")
+	verifyBlobs()
 
-	add("a.txt", "sym1\n")
-	commit("add a file with 1 symbol")
+	gitAdd(t, repoDir, state, "b.txt", "sym1\n")
+	verifyBlobs()
 
-	add("b.txt", "sym1\n")
-	commit("add another file with 1 symbol")
+	gitAdd(t, repoDir, state, "c.txt", "sym1\nsym2")
+	verifyBlobs()
 
-	add("c.txt", "sym1\nsym2")
-	commit("add another file with 2 symbols")
+	gitAdd(t, repoDir, state, "a.java", "sym1\nsym2")
+	verifyBlobs()
 
-	add("a.java", "sym1\nsym2")
-	commit("System.out.println(\"hello, world!\"")
+	gitAdd(t, repoDir, state, "a.txt", "sym1\nsym2")
+	verifyBlobs()
 
-	add("a.txt", "sym1\nsym2")
-	commit("add a symbol to a.txt")
-
-	commit("empty")
-
-	rm("a.txt")
-	commit("rm a.txt")
+	gitRm(t, repoDir, state, "a.txt")
+	verifyBlobs()
 }
 
-type SubprocessGit struct {
-	gitDir        string
-	catFileCmd    *exec.Cmd
-	catFileStdin  io.WriteCloser
-	catFileStdout bufio.Reader
-	gs            gitserver.Client
-}
-
-func NewSubprocessGit(t testing.TB, gitDir string) (*SubprocessGit, error) {
-	cmd := exec.Command("git", "cat-file", "--batch")
-	cmd.Dir = gitDir
-
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return nil, err
+func TestRuler(t *testing.T) {
+	testCases := []struct {
+		n    int
+		want int
+	}{
+		{0, 0},
+		{1, 0},
+		{2, 1},
+		{3, 0},
+		{4, 2},
+		{5, 0},
+		{6, 1},
+		{7, 0},
+		{8, 3},
+		{64, 6},
+		{96, 5},
+		{123, 0},
 	}
 
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-
-	err = cmd.Start()
-	if err != nil {
-		return nil, err
-	}
-
-	return &SubprocessGit{
-		gitDir:        gitDir,
-		catFileCmd:    cmd,
-		catFileStdin:  stdin,
-		catFileStdout: *bufio.NewReader(stdout),
-		gs:            gitserver.NewTestClient(t),
-	}, nil
-}
-
-func (g SubprocessGit) Close() error {
-	err := g.catFileStdin.Close()
-	if err != nil {
-		return err
-	}
-	return g.catFileCmd.Wait()
-}
-
-func (g SubprocessGit) LogReverseEach(ctx context.Context, repo string, givenCommit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) (returnError error) {
-	log := exec.Command("git", gitdomain.LogReverseArgs(n, givenCommit)...)
-	log.Dir = g.gitDir
-	output, err := log.StdoutPipe()
-	if err != nil {
-		return err
-	}
-
-	err = log.Start()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err = log.Wait()
-		if err != nil {
-			returnError = err
-		}
-	}()
-
-	return gitdomain.ParseLogReverseEach(output, onLogEntry)
-}
-
-func (g *SubprocessGit) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
-	nextCursor := commit
-	for {
-		var commits []api.CommitID
-		var err error
-		commits, nextCursor, err = g.gs.RevList(ctx, api.RepoName(repo), nextCursor, 100)
-		if err != nil {
-			return err
-		}
-		for _, c := range commits {
-			shouldContinue, err := onCommit(string(c))
-			if err != nil {
-				return err
-			}
-			if !shouldContinue {
-				return nil
-			}
-		}
-		if nextCursor == "" {
-			return nil
+	for _, tc := range testCases {
+		got := ruler(tc.n)
+		if got != tc.want {
+			t.Errorf("ruler(%d): got %d, want %d", tc.n, got, tc.want)
 		}
 	}
 }
 
-func newMockRepositoryFetcher(git *SubprocessGit) fetcher.RepositoryFetcher {
-	return &mockRepositoryFetcher{git: git}
-}
+func TestGetHops(t *testing.T) {
+	ctx := context.Background()
+	repoId := 42
 
-type mockRepositoryFetcher struct{ git *SubprocessGit }
+	db := dbtest.NewDB(t)
+	defer db.Close()
 
-func (f *mockRepositoryFetcher) FetchRepositoryArchive(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) <-chan fetcher.ParseRequestOrError {
-	ch := make(chan fetcher.ParseRequestOrError)
+	// Insert some initial commits.
+	commit0, err := InsertCommit(ctx, db, repoId, "0000", 0, NULL)
+	require.NoError(t, err)
 
-	go func() {
-		for _, p := range paths {
-			_, err := f.git.catFileStdin.Write([]byte(fmt.Sprintf("%s:%s\n", commit, p)))
-			if err != nil {
-				ch <- fetcher.ParseRequestOrError{
-					Err: errors.Wrap(err, "writing to cat-file stdin"),
-				}
-				return
-			}
+	commit1, err := InsertCommit(ctx, db, repoId, "1111", 0, commit0)
+	require.NoError(t, err)
 
-			line, err := f.git.catFileStdout.ReadString('\n')
-			if err != nil {
-				ch <- fetcher.ParseRequestOrError{
-					Err: errors.Wrap(err, "read newline"),
-				}
-				return
-			}
-			line = line[:len(line)-1] // Drop the trailing newline
-			parts := strings.Split(line, " ")
-			if len(parts) != 3 {
-				ch <- fetcher.ParseRequestOrError{
-					Err: errors.Newf("unexpected cat-file output: %q", line),
-				}
-				return
-			}
-			size, err := strconv.ParseInt(parts[2], 10, 64)
-			if err != nil {
-				ch <- fetcher.ParseRequestOrError{
-					Err: errors.Wrap(err, "parse size"),
-				}
-				return
-			}
+	commit2, err := InsertCommit(ctx, db, repoId, "2222", 1, commit0)
+	require.NoError(t, err)
 
-			fileContents, err := io.ReadAll(io.LimitReader(&f.git.catFileStdout, size))
-			if err != nil {
-				ch <- fetcher.ParseRequestOrError{
-					Err: errors.Wrap(err, "read contents"),
-				}
-				return
-			}
+	commit3, err := InsertCommit(ctx, db, repoId, "3333", 0, commit2)
+	require.NoError(t, err)
 
-			discarded, err := f.git.catFileStdout.Discard(1) // Discard the trailing newline
-			if err != nil {
-				ch <- fetcher.ParseRequestOrError{
-					Err: errors.Wrap(err, "discard newline"),
-				}
-				return
-			}
-			if discarded != 1 {
-				ch <- fetcher.ParseRequestOrError{
-					Err: errors.Newf("expected to discard 1 byte, but discarded %d", discarded),
-				}
-				return
-			}
+	commit4, err := InsertCommit(ctx, db, repoId, "4444", 2, NULL)
+	require.NoError(t, err)
 
-			ch <- fetcher.ParseRequestOrError{
-				ParseRequest: fetcher.ParseRequest{
-					Path: p,
-					Data: fileContents,
-				},
-			}
-		}
+	tests := []struct {
+		name   string
+		commit CommitId
+		want   []int
+	}{
+		{
+			name:   "commit0",
+			commit: commit0,
+			want:   []CommitId{commit0, NULL},
+		},
+		{
+			name:   "commit1",
+			commit: commit1,
+			want:   []CommitId{commit1, commit0, NULL},
+		},
+		{
+			name:   "commit2",
+			commit: commit2,
+			want:   []CommitId{commit2, commit0, NULL},
+		},
+		{
+			name:   "commit3",
+			commit: commit3,
+			want:   []CommitId{commit3, commit2, commit0, NULL},
+		},
+		{
+			name:   "commit4",
+			commit: commit4,
+			want:   []CommitId{commit4, NULL},
+		},
+		{
+			name:   "nonexistent",
+			commit: 42,
+			want:   []CommitId{42},
+		},
+	}
 
-		close(ch)
-	}()
-
-	return ch
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getHops(ctx, db, tt.commit, NewTaskLog())
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
 }

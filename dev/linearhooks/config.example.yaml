@@ -1,0 +1,20 @@
+spec:
+  mover:
+    # rules is a list of rules that define the conditions for moving issues between teams
+    # Only the first rule that matches the issue will be applied, the rest will be ignored
+    rules:
+      - src:
+          # teamId is the identifier of the source team. Only issues from this team will be evaluated for this rule
+          # Either identifier (i.e. unique team prefix) or UUID is accepted. Use 'Any Team' to match any incoming team.
+          teamId: FOO
+          # labels is a list of labels that the issue must have to be evaluated for this rule
+          labels: [team/bar]
+        dst:
+          # teamId is the identifier of the destination team. Issues that match the rule will be moved to this team.
+          # Either identifier (i.e. unique team prefix) or UUID is accepted
+          teamId: BAR
+          # modifier is an optional field that allows for additional configuration when moving the issue.
+          # Any errors encountered while applying the modifier will be logged, but the issue will still be moved regardless.
+          modifier:
+            # (optional) projectName is the name of the project that the issue will be moved to in the destination team
+            projectName: 'Test Project 1'

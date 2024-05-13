@@ -12,6 +12,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -71,7 +72,7 @@ var scanDirtyRepositories = basestore.NewSliceScanner(func(s dbutil.Scanner) (dr
 func (s *store) UpdateUploadsVisibleToCommits(
 	ctx context.Context,
 	repositoryID int,
-	commitGraph *gitdomain.CommitGraph,
+	commitGraph *commitgraph.CommitGraph,
 	refs map[string][]gitdomain.Ref,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
@@ -339,7 +340,7 @@ ORDER BY u.finished_at DESC
 
 // FindClosestCompletedUploadsFromGraphFragment returns the set of uploads that can most accurately answer queries for the given repository, commit,
 // path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestCompletedUploads for additional details.
-func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context, opts shared.UploadMatchingOptions, commitGraph *gitdomain.CommitGraph) (_ []shared.CompletedUpload, err error) {
+func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context, opts shared.UploadMatchingOptions, commitGraph *commitgraph.CommitGraph) (_ []shared.CompletedUpload, err error) {
 	ctx, trace, endObservation := s.operations.findClosestCompletedUploadsFromGraphFragment.With(ctx, &err,
 		observation.Args{Attrs: append(opts.Attrs(), attribute.Int("numCommitGraphKeys", len(commitGraph.Order())))})
 	defer endObservation(1, observation.Args{})
@@ -368,7 +369,7 @@ func (s *store) FindClosestCompletedUploadsFromGraphFragment(ctx context.Context
 		attribute.Int("numCommitGraphViewTokenKeys", len(commitGraphView.Tokens)))
 
 	var ids []*sqlf.Query
-	for _, uploadMeta := range commitgraph.NewGraph(commitGraph, commitGraphView).UploadsVisibleAtCommit(opts.Commit) {
+	for _, uploadMeta := range commitgraph.NewGraph(commitGraph, commitGraphView).UploadsVisibleAtCommit(api.CommitID(opts.Commit)) {
 		ids = append(ids, sqlf.Sprintf("%d", uploadMeta.UploadID))
 	}
 	if len(ids) == 0 {
@@ -460,7 +461,8 @@ func scanCommitGraphView(rows *sql.Rows, queryErr error) (_ *commitgraph.CommitG
 
 	for rows.Next() {
 		var meta commitgraph.UploadMeta
-		var commit, token string
+		var commit api.CommitID
+		var token string
 
 		if err := rows.Scan(&meta.UploadID, &commit, &token, &meta.Distance); err != nil {
 			return nil, err
@@ -637,7 +639,7 @@ func sanitizeCommitInput(
 				continue
 			}
 
-			for _, uploadMeta := range graph.UploadsVisibleAtCommit(commit) {
+			for _, uploadMeta := range graph.UploadsVisibleAtCommit(api.CommitID(commit)) {
 				if !countingWrite(
 					ctx,
 					uploadsVisibleAtTipRowValues,

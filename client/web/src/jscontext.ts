@@ -302,6 +302,11 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         knownRoutes: string[]
         showToggle: boolean
     }
+
+    /** Configuration for Cody Pro-tier functionality, if applicable. */
+    frontendCodyProConfig?: {
+        stripePublishableKey: string
+    }
 }
 
 export interface BrandAssets {

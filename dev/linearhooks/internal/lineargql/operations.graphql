@@ -1,0 +1,33 @@
+# GetTeamById returns a team by its identifier or UUID
+query GetTeamById($id: String!) {
+    team(id: $id) {
+        id
+        name
+        key
+    }
+}
+
+# MoveIssueToTeam moves issue between teams
+# - issueId: UUID or identifier of the issue to move, required
+# - teamId: UUID of the team to move the issue to, required
+# - projectId: UUID of the project to move the issue to, optional
+mutation MoveIssueToTeam($issueId: String!, $teamId: String!, $projectId: String) {
+    issueUpdate(id: $issueId, input: { teamId: $teamId, projectId: $projectId }) {
+        lastSyncId
+    }
+}
+
+# GetProjectsByTeamID returns a list of projects for a team with matching name
+# - teamID: UUID or identifier of the team
+# - projectName: name of the project to filter by
+# It is possible to return multiple projects with the same name but different IDs
+query GetProjectsByTeamId($teamId: String!, $projectName: String!) {
+    team(id: $teamId) {
+        projects(filter: { name: { eq: $projectName } }) {
+            nodes {
+                name
+                id
+            }
+        }
+    }
+}

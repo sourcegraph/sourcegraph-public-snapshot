@@ -29,7 +29,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
 
@@ -228,7 +228,11 @@ export const SearchFiltersSidebar = forwardRef<HTMLElement, PropsWithChildren<Se
                         clearSearchOnChange: false,
                     }}
                 >
-                    {getSearchReferenceFactory({ telemetryService, setQueryState: onNavbarQueryChange })}
+                    {getSearchReferenceFactory({
+                        telemetryService,
+                        telemetryRecorder,
+                        setQueryState: onNavbarQueryChange,
+                    })}
                 </SearchSidebarSection>
 
                 <SearchSidebarSection sectionId={SectionID.SEARCH_SNIPPETS} header="Search snippets">

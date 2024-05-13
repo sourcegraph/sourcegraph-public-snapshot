@@ -22,7 +22,7 @@ func (w *Window) covers(when timeOfDay) bool {
 		return true
 	}
 
-	return !(when.before(*w.start) || when.after(*w.end))
+	return !(when.before(*w.start) || when.after(*w.end) || when.equal(*w.end))
 }
 
 // IsOpen checks if this window is currently open.

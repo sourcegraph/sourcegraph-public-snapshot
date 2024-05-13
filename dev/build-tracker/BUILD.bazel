@@ -1,3 +1,4 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
@@ -9,6 +10,7 @@ go_library(
     name = "build-tracker_lib",
     srcs = [
         "background.go",
+        "bigquery.go",
         "main.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/build-tracker",
@@ -27,6 +29,7 @@ go_library(
         "@com_github_buildkite_go_buildkite_v3//buildkite",
         "@com_github_gorilla_mux//:mux",
         "@com_github_sourcegraph_log//:log",
+        "@com_google_cloud_go_bigquery//:bigquery",
         "@org_golang_x_exp//maps",
     ],
 )
@@ -43,6 +46,7 @@ go_test(
     srcs = [
         "integration_test.go",
         "main_test.go",
+        "mocks_test.go",
         "server_test.go",
     ],
     embed = [":build-tracker_lib"],
@@ -57,6 +61,7 @@ go_test(
         "@com_github_gorilla_mux//:mux",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
+        "@com_google_cloud_go_bigquery//:bigquery",
     ],
 )
 
@@ -106,4 +111,15 @@ msp_delivery(
     gcp_project = "build-tracker-prod-59bf",
     msp_service_id = "build-tracker",
     repository = "us.gcr.io/sourcegraph-dev/build-tracker",
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [":build-tracker_lib"],
 )

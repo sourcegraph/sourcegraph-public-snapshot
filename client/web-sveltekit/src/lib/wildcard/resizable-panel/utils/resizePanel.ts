@@ -12,11 +12,11 @@ export function resizePanel({
     panelConstraints: PanelConstraints[]
     panelIndex: number
     size: number
-}) {
+}): number {
     const panelConstraints = panelConstraintsArray[panelIndex]
-    assert(panelConstraints != null, `Panel constraints not found for index ${panelIndex}`)
+    assert(panelConstraints !== null, `Panel constraints not found for index ${panelIndex}`)
 
-    let { collapsedSize = 0, collapsible, maxSize = 100, minSize = 0 } = panelConstraints
+    const { collapsedSize = 0, collapsible, maxSize = 100, minSize = 0 } = panelConstraints
 
     if (fuzzyCompareNumbers(size, minSize) < 0) {
         if (collapsible) {

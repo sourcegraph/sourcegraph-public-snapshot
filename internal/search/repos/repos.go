@@ -613,7 +613,7 @@ func (r *Resolver) filterHasCommitAfter(
 		for _, rev := range allRevs {
 			rev := rev
 			p.Go(func(ctx context.Context) error {
-				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev); err != nil {
+				if hasCommitAfter, err := hasCommitAfter(ctx, r.gitserver, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev); err != nil {
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 						// If the revision does not exist or the repo does not exist,
 						// it certainly does not have any commits after some time.
@@ -648,6 +648,25 @@ func (r *Resolver) filterHasCommitAfter(
 	}
 
 	return filteredRepoRevs, nil
+}
+
+// hasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
+// contains a commit past a specified date.
+func hasCommitAfter(ctx context.Context, gitserverClient gitserver.Client, repoName api.RepoName, timeRef string, revspec string) (bool, error) {
+	if revspec == "" {
+		revspec = "HEAD"
+	}
+
+	// TODO: Because N: 1 currently has a special meaning because of `isRequestForSingleCommit`,
+	// we ask for two commits here, but the second one we never actually need.
+	// One we figure out why `isRequestForSingleCommit` exists in the first place,
+	// we should update this.
+	commits, err := gitserverClient.Commits(ctx, repoName, gitserver.CommitsOptions{N: 2, After: timeRef, Range: revspec})
+	if err != nil {
+		return false, err
+	}
+
+	return len(commits) > 0, nil
 }
 
 // filterRepoHasFileContent filters a page of repos to only those that match the

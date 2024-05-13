@@ -30,8 +30,8 @@ type GitserverRepositoryServiceClient interface {
 	// DeleteRepository deletes a repository on disk if it exists.
 	// If it doesn't, an error is returned.
 	DeleteRepository(ctx context.Context, in *DeleteRepositoryRequest, opts ...grpc.CallOption) (*DeleteRepositoryResponse, error)
-	// FetchRepository fetches a repository from a remote. If the repository is not
-	// yet cloned, it will be cloned. Otherwise, it will be updated.
+	// FetchRepository fetches a repository from a remote. If the repository is
+	// not yet cloned, it will be cloned. Otherwise, it will be updated.
 	FetchRepository(ctx context.Context, in *FetchRepositoryRequest, opts ...grpc.CallOption) (*FetchRepositoryResponse, error)
 }
 
@@ -68,8 +68,8 @@ type GitserverRepositoryServiceServer interface {
 	// DeleteRepository deletes a repository on disk if it exists.
 	// If it doesn't, an error is returned.
 	DeleteRepository(context.Context, *DeleteRepositoryRequest) (*DeleteRepositoryResponse, error)
-	// FetchRepository fetches a repository from a remote. If the repository is not
-	// yet cloned, it will be cloned. Otherwise, it will be updated.
+	// FetchRepository fetches a repository from a remote. If the repository is
+	// not yet cloned, it will be cloned. Otherwise, it will be updated.
 	FetchRepository(context.Context, *FetchRepositoryRequest) (*FetchRepositoryResponse, error)
 	mustEmbedUnimplementedGitserverRepositoryServiceServer()
 }
@@ -184,6 +184,9 @@ const (
 	GitserverService_ContributorCounts_FullMethodName           = "/gitserver.v1.GitserverService/ContributorCounts"
 	GitserverService_FirstEverCommit_FullMethodName             = "/gitserver.v1.GitserverService/FirstEverCommit"
 	GitserverService_BehindAhead_FullMethodName                 = "/gitserver.v1.GitserverService/BehindAhead"
+	GitserverService_ChangedFiles_FullMethodName                = "/gitserver.v1.GitserverService/ChangedFiles"
+	GitserverService_Stat_FullMethodName                        = "/gitserver.v1.GitserverService/Stat"
+	GitserverService_ReadDir_FullMethodName                     = "/gitserver.v1.GitserverService/ReadDir"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -193,6 +196,13 @@ type GitserverServiceClient interface {
 	CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error)
 	DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
+	// GetObject returns the object with the given OID in the given repository.
+	//
+	// If the object is not found, an error with a RevisionNotFoundPayload is
+	// returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	GetObject(ctx context.Context, in *GetObjectRequest, opts ...grpc.CallOption) (*GetObjectResponse, error)
 	IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error)
 	ListGitolite(ctx context.Context, in *ListGitoliteRequest, opts ...grpc.CallOption) (*ListGitoliteResponse, error)
@@ -205,11 +215,14 @@ type GitserverServiceClient interface {
 	// currently not filter parts of the archive, so this would be considered
 	// leaking information.
 	//
-	// If the given treeish does not exist, an error with a RevisionNotFoundPayload
+	// If the given treeish does not exist, an error with a
+	// RevisionNotFoundPayload is returned.
+	//
+	// If the given paths are not found in the given treeish, an error with a FileNotFoundPayload
 	// is returned.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a
-	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
 	RepoCloneProgress(ctx context.Context, in *RepoCloneProgressRequest, opts ...grpc.CallOption) (*RepoCloneProgressResponse, error)
 	IsPerforcePathCloneable(ctx context.Context, in *IsPerforcePathCloneableRequest, opts ...grpc.CallOption) (*IsPerforcePathCloneableResponse, error)
@@ -230,8 +243,10 @@ type GitserverServiceClient interface {
 	// hunks as they are found. The --incremental flag is used on the git CLI
 	// level to achieve this behavior.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a
-	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	Blame(ctx context.Context, in *BlameRequest, opts ...grpc.CallOption) (GitserverService_BlameClient, error)
 	// DefaultBranch resolves HEAD to ref name and current commit SHA it points
 	// to. If HEAD points to an empty branch, it returns an error with a
@@ -242,8 +257,10 @@ type GitserverServiceClient interface {
 	DefaultBranch(ctx context.Context, in *DefaultBranchRequest, opts ...grpc.CallOption) (*DefaultBranchResponse, error)
 	// ReadFile gets a file from the repo ODB and streams the contents back.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a
-	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error)
 	// GetCommit gets a commit from the repo ODB.
 	//
@@ -272,18 +289,17 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ResolveRevision(ctx context.Context, in *ResolveRevisionRequest, opts ...grpc.CallOption) (*ResolveRevisionResponse, error)
-	// ListRefs returns a list of all the refs known to the repository, this includes
-	// heads, tags, and other potential refs, but filters can be applied.
+	// ListRefs returns a list of all the refs known to the repository, this
+	// includes heads, tags, and other potential refs, but filters can be applied.
 	//
 	// The refs are ordered in the following order:
 	// HEAD first, if part of the result set.
-	// The rest will be ordered by creation date, in descending order, i.e., newest
-	// first.
-	// If two resources are created at the same timestamp, the records are ordered
-	// alphabetically.
+	// The rest will be ordered by creation date, in descending order, i.e.,
+	// newest first. If two resources are created at the same timestamp, the
+	// records are ordered alphabetically.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ListRefs(ctx context.Context, in *ListRefsRequest, opts ...grpc.CallOption) (GitserverService_ListRefsClient, error)
 	// RevAtTime looks up the OID of the nearest ancestor of `spec` that has a
 	// commit time before the given time. To simplify the logic, it only follows
@@ -302,8 +318,8 @@ type GitserverServiceClient interface {
 	// - No a/ b/ prefixes
 	// - Rename detection
 	//
-	// If either base or head are not found, an error with a RevisionNotFoundPayload
-	// is returned.
+	// If either base or head are not found, an error with a
+	// RevisionNotFoundPayload is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -315,16 +331,18 @@ type GitserverServiceClient interface {
 	ContributorCounts(ctx context.Context, in *ContributorCountsRequest, opts ...grpc.CallOption) (*ContributorCountsResponse, error)
 	// FirstEverCommit returns the first commit ever made to the repository.
 	//
-	// If the given repository is empty, an error with a RevisionNotFoundPayload is
-	// returned.
+	// If the given repository is empty, an error with a RevisionNotFoundPayload
+	// is returned.
 	FirstEverCommit(ctx context.Context, in *FirstEverCommitRequest, opts ...grpc.CallOption) (*FirstEverCommitResponse, error)
-	// BehindAhead returns the behind/ahead commit counts information for the symmetric difference left...right (both Git
-	// revspecs).
+	// BehindAhead returns the behind/ahead commit counts information for the
+	// symmetric difference left...right (both Git revspecs).
 	//
-	// Behind is the number of commits that are solely reachable in "left" but not "right".
-	// Ahead is the number of commits that are solely reachable in "right" but not "left".
+	// Behind is the number of commits that are solely reachable in "left" but not
+	// "right". Ahead is the number of commits that are solely reachable in
+	// "right" but not "left".
 	//
-	//	 For the example, given the graph below, BehindAhead("A", "B") would return {Behind: 3, Ahead: 2}.
+	//	 For the example, given the graph below, BehindAhead("A", "B") would return
+	//	 {Behind: 3, Ahead: 2}.
 	//
 	//		     y---b---b  branch B
 	//		    / \ /
@@ -332,14 +350,52 @@ type GitserverServiceClient interface {
 	//		  /   / \
 	//		 o---x---a---a---a  branch A
 	//
-	// If either left or right are the empty string (""), the HEAD commit is implicitly used.
+	// If either left or right are the empty string (""), the HEAD commit is
+	// implicitly used.
 	//
-	// If one of the two given revspecs does not exist, an error with a RevisionNotFoundPayload is
-	// is returned.
+	// If one of the two given revspecs does not exist, an error with a
+	// RevisionNotFoundPayload is is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	BehindAhead(ctx context.Context, in *BehindAheadRequest, opts ...grpc.CallOption) (*BehindAheadResponse, error)
+	// ChangedFiles returns the list of files that have been added, modified, or
+	// deleted in the entire repository between the two given <tree-ish>
+	// identifiers (e.g., commit, branch, tag).
+	//
+	// - Renamed files are represented as a deletion of the old path and an
+	// addition of the new path.
+	// - No copy detection is performed.
+	// - The only file status codes returned are 'A' (added), 'M' (modified), or
+	// 'D' (deleted).
+	//
+	// If `base` is omitted, the parent of `head` is used as the base.
+	//
+	// If either the `base` or `head` <tree-ish> id does not exist, an error with
+	// a `RevisionNotFoundPayload` is returned.
+	ChangedFiles(ctx context.Context, in *ChangedFilesRequest, opts ...grpc.CallOption) (GitserverService_ChangedFilesClient, error)
+	// Stat returns a FileInfo describing the named file descriptor at the given commit.
+	// Stat supports submodules, symlinks, directories and files.
+	//
+	// If the commit does not exist, an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	Stat(ctx context.Context, in *StatRequest, opts ...grpc.CallOption) (*StatResponse, error)
+	// ReadDir returns a list of FileInfos describing the files and subdirectories
+	// in the given directory.
+	//
+	// If the commit does not exist, an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	ReadDir(ctx context.Context, in *ReadDirRequest, opts ...grpc.CallOption) (GitserverService_ReadDirClient, error)
 }
 
 type gitserverServiceClient struct {
@@ -797,6 +853,79 @@ func (c *gitserverServiceClient) BehindAhead(ctx context.Context, in *BehindAhea
 	return out, nil
 }
 
+func (c *gitserverServiceClient) ChangedFiles(ctx context.Context, in *ChangedFilesRequest, opts ...grpc.CallOption) (GitserverService_ChangedFilesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[8], GitserverService_ChangedFiles_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gitserverServiceChangedFilesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GitserverService_ChangedFilesClient interface {
+	Recv() (*ChangedFilesResponse, error)
+	grpc.ClientStream
+}
+
+type gitserverServiceChangedFilesClient struct {
+	grpc.ClientStream
+}
+
+func (x *gitserverServiceChangedFilesClient) Recv() (*ChangedFilesResponse, error) {
+	m := new(ChangedFilesResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *gitserverServiceClient) Stat(ctx context.Context, in *StatRequest, opts ...grpc.CallOption) (*StatResponse, error) {
+	out := new(StatResponse)
+	err := c.cc.Invoke(ctx, GitserverService_Stat_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gitserverServiceClient) ReadDir(ctx context.Context, in *ReadDirRequest, opts ...grpc.CallOption) (GitserverService_ReadDirClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[9], GitserverService_ReadDir_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gitserverServiceReadDirClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GitserverService_ReadDirClient interface {
+	Recv() (*ReadDirResponse, error)
+	grpc.ClientStream
+}
+
+type gitserverServiceReadDirClient struct {
+	grpc.ClientStream
+}
+
+func (x *gitserverServiceReadDirClient) Recv() (*ReadDirResponse, error) {
+	m := new(ReadDirResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -804,6 +933,13 @@ type GitserverServiceServer interface {
 	CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error
 	DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error)
 	Exec(*ExecRequest, GitserverService_ExecServer) error
+	// GetObject returns the object with the given OID in the given repository.
+	//
+	// If the object is not found, an error with a RevisionNotFoundPayload is
+	// returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	GetObject(context.Context, *GetObjectRequest) (*GetObjectResponse, error)
 	IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error)
 	ListGitolite(context.Context, *ListGitoliteRequest) (*ListGitoliteResponse, error)
@@ -816,11 +952,14 @@ type GitserverServiceServer interface {
 	// currently not filter parts of the archive, so this would be considered
 	// leaking information.
 	//
-	// If the given treeish does not exist, an error with a RevisionNotFoundPayload
+	// If the given treeish does not exist, an error with a
+	// RevisionNotFoundPayload is returned.
+	//
+	// If the given paths are not found in the given treeish, an error with a FileNotFoundPayload
 	// is returned.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a
-	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
 	RepoCloneProgress(context.Context, *RepoCloneProgressRequest) (*RepoCloneProgressResponse, error)
 	IsPerforcePathCloneable(context.Context, *IsPerforcePathCloneableRequest) (*IsPerforcePathCloneableResponse, error)
@@ -841,8 +980,10 @@ type GitserverServiceServer interface {
 	// hunks as they are found. The --incremental flag is used on the git CLI
 	// level to achieve this behavior.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a
-	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	Blame(*BlameRequest, GitserverService_BlameServer) error
 	// DefaultBranch resolves HEAD to ref name and current commit SHA it points
 	// to. If HEAD points to an empty branch, it returns an error with a
@@ -853,8 +994,10 @@ type GitserverServiceServer interface {
 	DefaultBranch(context.Context, *DefaultBranchRequest) (*DefaultBranchResponse, error)
 	// ReadFile gets a file from the repo ODB and streams the contents back.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a
-	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error
 	// GetCommit gets a commit from the repo ODB.
 	//
@@ -883,18 +1026,17 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ResolveRevision(context.Context, *ResolveRevisionRequest) (*ResolveRevisionResponse, error)
-	// ListRefs returns a list of all the refs known to the repository, this includes
-	// heads, tags, and other potential refs, but filters can be applied.
+	// ListRefs returns a list of all the refs known to the repository, this
+	// includes heads, tags, and other potential refs, but filters can be applied.
 	//
 	// The refs are ordered in the following order:
 	// HEAD first, if part of the result set.
-	// The rest will be ordered by creation date, in descending order, i.e., newest
-	// first.
-	// If two resources are created at the same timestamp, the records are ordered
-	// alphabetically.
+	// The rest will be ordered by creation date, in descending order, i.e.,
+	// newest first. If two resources are created at the same timestamp, the
+	// records are ordered alphabetically.
 	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a RepoNotFoundPayload in the details.
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	ListRefs(*ListRefsRequest, GitserverService_ListRefsServer) error
 	// RevAtTime looks up the OID of the nearest ancestor of `spec` that has a
 	// commit time before the given time. To simplify the logic, it only follows
@@ -913,8 +1055,8 @@ type GitserverServiceServer interface {
 	// - No a/ b/ prefixes
 	// - Rename detection
 	//
-	// If either base or head are not found, an error with a RevisionNotFoundPayload
-	// is returned.
+	// If either base or head are not found, an error with a
+	// RevisionNotFoundPayload is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
@@ -926,16 +1068,18 @@ type GitserverServiceServer interface {
 	ContributorCounts(context.Context, *ContributorCountsRequest) (*ContributorCountsResponse, error)
 	// FirstEverCommit returns the first commit ever made to the repository.
 	//
-	// If the given repository is empty, an error with a RevisionNotFoundPayload is
-	// returned.
+	// If the given repository is empty, an error with a RevisionNotFoundPayload
+	// is returned.
 	FirstEverCommit(context.Context, *FirstEverCommitRequest) (*FirstEverCommitResponse, error)
-	// BehindAhead returns the behind/ahead commit counts information for the symmetric difference left...right (both Git
-	// revspecs).
+	// BehindAhead returns the behind/ahead commit counts information for the
+	// symmetric difference left...right (both Git revspecs).
 	//
-	// Behind is the number of commits that are solely reachable in "left" but not "right".
-	// Ahead is the number of commits that are solely reachable in "right" but not "left".
+	// Behind is the number of commits that are solely reachable in "left" but not
+	// "right". Ahead is the number of commits that are solely reachable in
+	// "right" but not "left".
 	//
-	//	 For the example, given the graph below, BehindAhead("A", "B") would return {Behind: 3, Ahead: 2}.
+	//	 For the example, given the graph below, BehindAhead("A", "B") would return
+	//	 {Behind: 3, Ahead: 2}.
 	//
 	//		     y---b---b  branch B
 	//		    / \ /
@@ -943,14 +1087,52 @@ type GitserverServiceServer interface {
 	//		  /   / \
 	//		 o---x---a---a---a  branch A
 	//
-	// If either left or right are the empty string (""), the HEAD commit is implicitly used.
+	// If either left or right are the empty string (""), the HEAD commit is
+	// implicitly used.
 	//
-	// If one of the two given revspecs does not exist, an error with a RevisionNotFoundPayload is
-	// is returned.
+	// If one of the two given revspecs does not exist, an error with a
+	// RevisionNotFoundPayload is is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	BehindAhead(context.Context, *BehindAheadRequest) (*BehindAheadResponse, error)
+	// ChangedFiles returns the list of files that have been added, modified, or
+	// deleted in the entire repository between the two given <tree-ish>
+	// identifiers (e.g., commit, branch, tag).
+	//
+	// - Renamed files are represented as a deletion of the old path and an
+	// addition of the new path.
+	// - No copy detection is performed.
+	// - The only file status codes returned are 'A' (added), 'M' (modified), or
+	// 'D' (deleted).
+	//
+	// If `base` is omitted, the parent of `head` is used as the base.
+	//
+	// If either the `base` or `head` <tree-ish> id does not exist, an error with
+	// a `RevisionNotFoundPayload` is returned.
+	ChangedFiles(*ChangedFilesRequest, GitserverService_ChangedFilesServer) error
+	// Stat returns a FileInfo describing the named file descriptor at the given commit.
+	// Stat supports submodules, symlinks, directories and files.
+	//
+	// If the commit does not exist, an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	Stat(context.Context, *StatRequest) (*StatResponse, error)
+	// ReadDir returns a list of FileInfos describing the files and subdirectories
+	// in the given directory.
+	//
+	// If the commit does not exist, an error with RevisionNotFoundPayload is
+	// returned.
+	//
+	// If the given path is not found, an error with a FileNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	ReadDir(*ReadDirRequest, GitserverService_ReadDirServer) error
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -1044,6 +1226,15 @@ func (UnimplementedGitserverServiceServer) FirstEverCommit(context.Context, *Fir
 }
 func (UnimplementedGitserverServiceServer) BehindAhead(context.Context, *BehindAheadRequest) (*BehindAheadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BehindAhead not implemented")
+}
+func (UnimplementedGitserverServiceServer) ChangedFiles(*ChangedFilesRequest, GitserverService_ChangedFilesServer) error {
+	return status.Errorf(codes.Unimplemented, "method ChangedFiles not implemented")
+}
+func (UnimplementedGitserverServiceServer) Stat(context.Context, *StatRequest) (*StatResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Stat not implemented")
+}
+func (UnimplementedGitserverServiceServer) ReadDir(*ReadDirRequest, GitserverService_ReadDirServer) error {
+	return status.Errorf(codes.Unimplemented, "method ReadDir not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1609,6 +1800,66 @@ func _GitserverService_BehindAhead_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GitserverService_ChangedFiles_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ChangedFilesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GitserverServiceServer).ChangedFiles(m, &gitserverServiceChangedFilesServer{stream})
+}
+
+type GitserverService_ChangedFilesServer interface {
+	Send(*ChangedFilesResponse) error
+	grpc.ServerStream
+}
+
+type gitserverServiceChangedFilesServer struct {
+	grpc.ServerStream
+}
+
+func (x *gitserverServiceChangedFilesServer) Send(m *ChangedFilesResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _GitserverService_Stat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).Stat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_Stat_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).Stat(ctx, req.(*StatRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GitserverService_ReadDir_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ReadDirRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GitserverServiceServer).ReadDir(m, &gitserverServiceReadDirServer{stream})
+}
+
+type GitserverService_ReadDirServer interface {
+	Send(*ReadDirResponse) error
+	grpc.ServerStream
+}
+
+type gitserverServiceReadDirServer struct {
+	grpc.ServerStream
+}
+
+func (x *gitserverServiceReadDirServer) Send(m *ReadDirResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1700,6 +1951,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "BehindAhead",
 			Handler:    _GitserverService_BehindAhead_Handler,
 		},
+		{
+			MethodName: "Stat",
+			Handler:    _GitserverService_Stat_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
@@ -1740,6 +1995,16 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "RawDiff",
 			Handler:       _GitserverService_RawDiff_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ChangedFiles",
+			Handler:       _GitserverService_ChangedFiles_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ReadDir",
+			Handler:       _GitserverService_ReadDir_Handler,
 			ServerStreams: true,
 		},
 	},

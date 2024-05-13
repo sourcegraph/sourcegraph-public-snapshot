@@ -1,0 +1,99 @@
+{
+  "action": "update",
+  "actor": {
+    "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "name": "Michael Lin",
+    "type": "user"
+  },
+  "createdAt": "2024-05-01T22:05:23.876Z",
+  "data": {
+    "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "createdAt": "2024-05-01T21:58:58.543Z",
+    "updatedAt": "2024-05-01T22:05:23.876Z",
+    "archivedAt": null,
+    "number": 5,
+    "title": "slkdajflasdlf",
+    "priority": 0,
+    "estimate": null,
+    "boardOrder": 0,
+    "sortOrder": -3180,
+    "startedAt": null,
+    "completedAt": null,
+    "startedTriageAt": null,
+    "triagedAt": null,
+    "canceledAt": null,
+    "autoClosedAt": null,
+    "autoArchivedAt": null,
+    "dueDate": null,
+    "slaStartedAt": null,
+    "slaBreachesAt": null,
+    "trashed": null,
+    "snoozedUntilAt": null,
+    "labelIds": [
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx"
+    ],
+    "teamId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "cycleId": null,
+    "projectId": null,
+    "projectMilestoneId": null,
+    "lastAppliedTemplateId": null,
+    "previousIdentifiers": [],
+    "creatorId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "externalUserCreatorId": null,
+    "assigneeId": null,
+    "snoozedById": null,
+    "stateId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "subIssueSortOrder": null,
+    "priorityLabel": "No priority",
+    "sourceCommentId": null,
+    "botActor": null,
+    "identifier": "FOO-5",
+    "url": "https://linear.app/sourcegraph/issue/FOO-5/slkdajflasdlf",
+    "parentId": null,
+    "state": {
+      "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+      "color": "#bec2c8",
+      "name": "Backlog",
+      "type": "backlog"
+    },
+    "team": {
+      "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+      "key": "FOO",
+      "name": "Foo's Test"
+    },
+    "subscriberIds": [
+      "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx"
+    ],
+    "labels": [
+      {
+        "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+        "color": "#c52828",
+        "name": "bug"
+      },
+      {
+        "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+        "color": "#FFB6C1",
+        "name": "graph/backend"
+      },
+      {
+        "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+        "color": "#bec2c8",
+        "name": "auto-index"
+      }
+    ],
+    "description": "fsdjlafjasl\n\nsjflkasjdflf",
+    "descriptionData": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"fsdjlafjasl\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"sjflkasjdflf\"}]}]}"
+  },
+  "updatedFrom": {
+    "description": "fsdjlafjaslk\n\nsjflkasjdfl",
+    "descriptionData": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"text\":\"fsdjlafjaslk\",\"type\":\"text\"}]},{\"type\":\"paragraph\"},{\"type\":\"paragraph\",\"content\":[{\"text\":\"sjflkasjdfl\",\"type\":\"text\"}]}]}",
+    "updatedAt": "2024-05-01T22:05:23.876Z"
+  },
+  "url": "https://linear.app/sourcegraph/issue/FOO-5/slkdajflasdlf",
+  "type": "Issue",
+  "organizationId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+  "webhookTimestamp": 1714601124089,
+  "webhookId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx"
+}

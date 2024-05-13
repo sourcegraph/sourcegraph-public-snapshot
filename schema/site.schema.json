@@ -601,6 +601,11 @@
               "default": "useFileContents"
             }
           }
+        },
+        "codeintelSyntacticIndexing.enabled": {
+          "description": "When enabled, syntactic indexing jobs will be scheduled for all enabled repos",
+          "type": "boolean",
+          "default": false
         }
       },
       "examples": [

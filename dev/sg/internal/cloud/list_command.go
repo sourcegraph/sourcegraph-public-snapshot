@@ -1,16 +1,19 @@
 package cloud
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var ListEphemeralCommand = cli.Command{
 	Name:        "list",
-	Usage:       "sg could list",
+	Usage:       "list ephemeral cloud instances",
 	Description: "list ephemeral cloud instances attached to your GCP account",
 	Action:      wipAction(listCloudEphemeral),
 	Flags: []cli.Flag{
@@ -40,10 +43,18 @@ func listCloudEphemeral(ctx *cli.Context) error {
 		return err
 	}
 
+	msg := "Fetching list of instances..."
+	if !ctx.Bool("all") {
+		msg = fmt.Sprintf("Fetching list of instances attached to your GCP account %q", email)
+	}
+
+	pending := std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, msg))
 	instances, err := cloudClient.ListInstances(ctx.Context, ctx.Bool("all"))
 	if err != nil {
+		pending.Complete(output.Linef(CloudEmoji, output.StyleFailure, "failed to list instances: %v", err))
 		return errors.Wrapf(err, "failed to list instances %v", err)
 	}
+	pending.Complete(output.Linef(CloudEmoji, output.StyleSuccess, "Fetched %d instances", len(instances)))
 	var printer Printer
 	switch {
 	case ctx.Bool("json"):

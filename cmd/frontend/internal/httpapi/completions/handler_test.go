@@ -6,16 +6,23 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 	t.Cleanup(func() { conf.Mock(nil) })
+
+	featureFlags := dbmocks.NewMockFeatureFlagStore()
+	db := dbmocks.NewMockDB()
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	mockRequest := func(q url.Values) *http.Request {
 		target := "/.api/completions/code" + "?" + q.Encode()
@@ -28,10 +35,11 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 	}
 
 	tests := []struct {
-		name string
-		ccf  *schema.CodyContextFilters
-		q    url.Values
-		want *codyIgnoreCompatibilityError
+		name                          string
+		ccf                           *schema.CodyContextFilters
+		q                             url.Values
+		want                          *codyIgnoreCompatibilityError
+		allowPreReleaseClientVersions bool
 	}{
 		{
 			name: "Cody context filters not defined in the site config",
@@ -260,6 +268,58 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			want: nil,
 		},
 		{
+			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
+			name: "jetbrains: pre-release version doesn't match constraint if \"cody-context-filters-allow-pre-release-client-versions\" feature flag is enabled",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientJetbrains)},
+				"client-version": []string{"5.9-localbuild"},
+			},
+			want: &codyIgnoreCompatibilityError{
+				reason:     fmt.Sprintf("Cody for %s version \"5.9-localbuild\" doesn't match version constraint \">= 6.0.0-0\"", types.CodyClientJetbrains),
+				statusCode: http.StatusNotAcceptable,
+			},
+			allowPreReleaseClientVersions: true,
+		},
+		{
+			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
+			name: "jetbrains: pre-release version matches constraint if \"cody-context-filters-allow-pre-release-client-versions\" feature flag is enabled",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientJetbrains)},
+				"client-version": []string{"6.0.0"},
+			},
+			want:                          nil,
+			allowPreReleaseClientVersions: true,
+		},
+		{
+			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
+			name: "jetbrains: pre-release version doesn't match constraint if \"cody-context-filters-allow-pre-release-client-versions\" feature flag is not enabled",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientJetbrains)},
+				"client-version": []string{"6.0-localbuild"},
+			},
+			want: &codyIgnoreCompatibilityError{
+				reason:     fmt.Sprintf("Cody for %s version \"6.0-localbuild\" doesn't match version constraint \">= 6.0.0\"", types.CodyClientJetbrains),
+				statusCode: http.StatusNotAcceptable,
+			},
+		},
+		{
+			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
+			name: "vscode: pre-release version doesn't match constraint if \"cody-context-filters-allow-pre-release-client-versions\" feature flag is enabled (feature flag should work only for jetbrains client)",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"1.22.0-alpha"},
+			},
+			want: &codyIgnoreCompatibilityError{
+				reason:     fmt.Sprintf("Cody for %s version \"1.22.0-alpha\" doesn't match version constraint \">= 1.20.0\"", types.CodyClientVscode),
+				statusCode: http.StatusNotAcceptable,
+			},
+			allowPreReleaseClientVersions: true,
+		},
+		{
 			name: "web: version param not required",
 			ccf:  ccf,
 			q: url.Values{
@@ -271,6 +331,8 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Cleanup(func() { featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, nil) })
+
 			if tt.ccf != nil {
 				conf.Mock(&conf.Unified{
 					SiteConfiguration: schema.SiteConfiguration{
@@ -278,8 +340,20 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 					},
 				})
 			}
+
+			if tt.allowPreReleaseClientVersions {
+				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&featureflag.FeatureFlag{
+					Name:      "cody-context-filters-allow-pre-release-client-versions",
+					Bool:      &featureflag.FeatureFlagBool{Value: true},
+					Rollout:   nil,
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+					DeletedAt: nil,
+				}, nil)
+			}
+
 			req := mockRequest(tt.q)
-			got := checkClientCodyIgnoreCompatibility(req)
+			got := checkClientCodyIgnoreCompatibility(req.Context(), db, req)
 			require.Equal(t, tt.want, got)
 		})
 	}

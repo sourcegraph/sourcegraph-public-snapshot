@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"io/fs"
 	"os"
 	"testing"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -18,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -29,8 +30,14 @@ type fakeGitServer struct {
 	fileContents map[string]string
 }
 
-func (f fakeGitServer) LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error) {
-	return f.files, nil
+func (f fakeGitServer) ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recursive bool) ([]fs.FileInfo, error) {
+	fis := make([]fs.FileInfo, 0, len(f.files))
+	for _, file := range f.files {
+		fis = append(fis, &fileutil.FileInfo{
+			Name_: file,
+		})
+	}
+	return fis, nil
 }
 
 func (f fakeGitServer) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
