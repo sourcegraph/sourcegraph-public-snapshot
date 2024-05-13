@@ -235,10 +235,10 @@ func (c *clientImplementor) ChangedFiles(ctx context.Context, repo api.RepoName,
 			attribute.String("head", head),
 		},
 	})
-	defer endObservation(1, observation.Args{})
 
 	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
@@ -251,13 +251,13 @@ func (c *clientImplementor) ChangedFiles(ctx context.Context, repo api.RepoName,
 	})
 	if err != nil {
 		cancel()
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
 	fetchFunc := func() ([]gitdomain.PathStatus, error) {
 		resp, err := stream.Recv()
 		if err != nil {
-			cancel()
 			return nil, err
 		}
 
@@ -273,6 +273,7 @@ func (c *clientImplementor) ChangedFiles(ctx context.Context, repo api.RepoName,
 
 	closeFunc := func() {
 		cancel()
+		endObservation(1, observation.Args{})
 	}
 
 	return newChangedFilesIterator(fetchFunc, closeFunc), nil
