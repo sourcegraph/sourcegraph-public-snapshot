@@ -17,9 +17,10 @@ import { type TeamInvite, TeamMemberList, type TeamMember } from './TeamMembers'
 import { WhiteIcon } from './WhiteIcon'
 
 import styles from './CodyManageTeamPage.module.scss'
+import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 
 interface CodyManageTeamPageProps extends TelemetryV2Props {
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: AuthenticatedUser
 }
 
 // TODO: Remove this mock data
@@ -63,7 +64,7 @@ const mockInvites: TeamInvite[] = [
     },
 ]
 
-export const CodyManageTeamPage: React.FunctionComponent<CodyManageTeamPageProps> = ({
+const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPageProps> = ({
     authenticatedUser,
     telemetryRecorder,
 }) => {
@@ -255,3 +256,5 @@ export const CodyManageTeamPage: React.FunctionComponent<CodyManageTeamPageProps
         </>
     )
 }
+
+export const CodyManageTeamPage = withAuthenticatedUser(AuthenticatedCodyManageTeamPage)
