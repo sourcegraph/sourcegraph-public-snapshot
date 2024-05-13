@@ -20,7 +20,7 @@ func TestNewCodyGatewayChatRateLimit(t *testing.T) {
 			plan:      PlanEnterprise1,
 			userCount: pointers.Ptr(50),
 			want: CodyGatewayRateLimit{
-				AllowedModels:   []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1", "anthropic/claude-instant-1.2", "anthropic/claude-3-sonnet-20240229", "anthropic/claude-3-opus-20240229", "anthropic/claude-3-haiku-20240307", "openai/gpt-3.5-turbo", "openai/gpt-4", "openai/gpt-4-turbo", "openai/gpt-4-turbo-preview", "gpt-4o"},
+				AllowedModels:   []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1", "anthropic/claude-instant-1.2", "anthropic/claude-3-sonnet-20240229", "anthropic/claude-3-opus-20240229", "anthropic/claude-3-haiku-20240307", "openai/gpt-3.5-turbo", "openai/gpt-4", "openai/gpt-4-turbo", "openai/gpt-4-turbo-preview", "openai/gpt-4o"},
 				Limit:           2500,
 				IntervalSeconds: 60 * 60 * 24,
 			},
@@ -29,7 +29,7 @@ func TestNewCodyGatewayChatRateLimit(t *testing.T) {
 			name: "Enterprise plan with no user count",
 			plan: PlanEnterprise1,
 			want: CodyGatewayRateLimit{
-				AllowedModels:   []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1", "anthropic/claude-instant-1.2", "anthropic/claude-3-sonnet-20240229", "anthropic/claude-3-opus-20240229", "anthropic/claude-3-haiku-20240307", "openai/gpt-3.5-turbo", "openai/gpt-4", "openai/gpt-4-turbo", "openai/gpt-4-turbo-preview", "gpt-4o"},
+				AllowedModels:   []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1", "anthropic/claude-instant-1.2", "anthropic/claude-3-sonnet-20240229", "anthropic/claude-3-opus-20240229", "anthropic/claude-3-haiku-20240307", "openai/gpt-3.5-turbo", "openai/gpt-4", "openai/gpt-4-turbo", "openai/gpt-4-turbo-preview", "openai/gpt-4o"},
 				Limit:           50,
 				IntervalSeconds: 60 * 60 * 24,
 			},
@@ -38,7 +38,7 @@ func TestNewCodyGatewayChatRateLimit(t *testing.T) {
 			name: "Non-enterprise plan with no user count",
 			plan: "unknown",
 			want: CodyGatewayRateLimit{
-				AllowedModels:   []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1", "anthropic/claude-instant-1.2", "anthropic/claude-3-sonnet-20240229", "anthropic/claude-3-opus-20240229", "anthropic/claude-3-haiku-20240307", "openai/gpt-3.5-turbo", "openai/gpt-4", "openai/gpt-4-turbo", "openai/gpt-4-turbo-preview", "gpt-4o"},
+				AllowedModels:   []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1", "anthropic/claude-instant-1.2", "anthropic/claude-3-sonnet-20240229", "anthropic/claude-3-opus-20240229", "anthropic/claude-3-haiku-20240307", "openai/gpt-3.5-turbo", "openai/gpt-4", "openai/gpt-4-turbo", "openai/gpt-4-turbo-preview", "openai/gpt-4o"},
 				Limit:           10,
 				IntervalSeconds: 60 * 60 * 24,
 			},
