@@ -8,6 +8,7 @@ import { ButtonLink, H2, Link, Text, H3, TextArea } from '@sourcegraph/wildcard'
 import { isValidEmailAddress, fetchThroughSSCProxy } from '../util'
 
 import styles from './CodyManageTeamPage.module.scss'
+import { pluralize } from '@sourcegraph/common'
 
 interface InviteUsersProps extends TelemetryV2Props {
     teamId: string | null
@@ -105,8 +106,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                         </div>
                         <div className="flex-1 d-flex flex-column">
                             <H2 className={classNames('mb-4', styles.inviteUsersHeader)}>
-                                <strong>Invite users</strong> – You have {remainingInviteCount} free seat
-                                {remainingInviteCount === 1 ? '' : 's'}
+                                <strong>Invite users</strong> – You have {remainingInviteCount} free {pluralize('seat', remainingInviteCount)}
                             </H2>
                             <TextArea
                                 className={classNames('mb-2')}
