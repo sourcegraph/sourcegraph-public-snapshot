@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -50,7 +49,7 @@ type JanitorConfig struct {
 	DisableDeleteReposOnWrongShard bool
 }
 
-func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, fs gitserverfs.FS, rcf *wrexec.RecordingCommandFactory, logger log.Logger) goroutine.BackgroundRoutine {
+func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, fs gitserverfs.FS, gitBackendSource git.GitBackendSource, rcf *wrexec.RecordingCommandFactory, logger log.Logger) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
@@ -88,7 +87,7 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, fs gitse
 
 			gitserverAddrs := connection.NewGitserverAddresses(conf.Get())
 			// TODO: Should this return an error?
-			cleanupRepos(ctx, logger, db, fs, rcf, cfg.ShardID, gitserverAddrs, cfg.DisableDeleteReposOnWrongShard)
+			cleanupRepos(ctx, logger, db, fs, gitBackendSource, rcf, cfg.ShardID, gitserverAddrs, cfg.DisableDeleteReposOnWrongShard)
 
 			return nil
 		}),
@@ -244,6 +243,7 @@ func cleanupRepos(
 	logger log.Logger,
 	db database.DB,
 	fs gitserverfs.FS,
+	gitBackendSource git.GitBackendSource,
 	rcf *wrexec.RecordingCommandFactory,
 	shardID string,
 	gitServerAddrs connection.GitserverAddresses,
@@ -287,7 +287,7 @@ func cleanupRepos(
 		}
 	}()
 
-	maybeDeleteWrongShardRepos := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	maybeDeleteWrongShardRepos := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		// Record the number of repos that should not belong on this instance and
 		// remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
 		addr := gitServerAddrs.AddrForRepo(ctx, repoName)
@@ -327,8 +327,7 @@ func cleanupRepos(
 		return true, nil
 	}
 
-	collectSize := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
+	collectSize := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		last, err := getLastSizeCalculation(ctx, backend.Config())
 		if err != nil {
 			return false, err
@@ -348,7 +347,7 @@ func cleanupRepos(
 		return false, setLastSizeCalculation(ctx, backend.Config())
 	}
 
-	maybeRemoveCorrupt := func(repoName api.RepoName, dir common.GitDir) (done bool, _ error) {
+	maybeRemoveCorrupt := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, _ error) {
 		corrupt, reason, err := checkRepoDirCorrupt(rcf, repoName, dir)
 		if !corrupt || err != nil {
 			return false, err
@@ -373,7 +372,7 @@ func cleanupRepos(
 		return true, nil
 	}
 
-	maybeRemoveNonExisting := func(repoName api.RepoName, dir common.GitDir) (bool, error) {
+	maybeRemoveNonExisting := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (bool, error) {
 		if !removeNonExistingRepos {
 			return false, nil
 		}
@@ -401,19 +400,15 @@ func cleanupRepos(
 		return true, err
 	}
 
-	ensureGitAttributes := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	ensureGitAttributes := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, git.SetGitAttributes(dir)
 	}
 
-	ensureAutoGC := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
-
+	ensureAutoGC := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, gitSetAutoGC(ctx, backend.Config())
 	}
 
-	maybeReclone := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
-
+	maybeReclone := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		repoType, err := git.GetRepositoryType(ctx, backend.Config())
 		if err != nil {
 			return false, err
@@ -495,7 +490,7 @@ func cleanupRepos(
 		return true, nil
 	}
 
-	removeStaleLocks := func(repoName api.RepoName, gitDir common.GitDir) (done bool, err error) {
+	removeStaleLocks := func(backend git.GitBackend, repoName api.RepoName, gitDir common.GitDir) (done bool, err error) {
 		// if removing a lock fails, we still want to try the other locks.
 		var multi error
 
@@ -547,23 +542,21 @@ func cleanupRepos(
 		return false, multi
 	}
 
-	performGC := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
-
+	performGC := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, gitGC(ctx, logger, backend, rcf, repoName, dir)
 	}
 
-	performSGMaintenance := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	performSGMaintenance := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, sgMaintenance(logger, dir)
 	}
 
-	performGitPrune := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	performGitPrune := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, pruneIfNeeded(rcf, repoName, dir, looseObjectsLimit)
 	}
 
 	type cleanupFn struct {
 		Name string
-		Do   func(api.RepoName, common.GitDir) (bool, error)
+		Do   func(git.GitBackend, api.RepoName, common.GitDir) (bool, error)
 	}
 	cleanups := []cleanupFn{
 		// First, check if we should even be having this repo on disk anymore,
@@ -622,6 +615,7 @@ func cleanupRepos(
 	reposCleaned := 0
 
 	err := fs.ForEachRepo(func(repo api.RepoName, gitDir common.GitDir) (done bool) {
+		backend := gitBackendSource(gitDir, repo)
 		for _, cfn := range cleanups {
 			// Check if context has been canceled, if so skip the rest of the repos.
 			select {
@@ -632,7 +626,7 @@ func cleanupRepos(
 			}
 
 			start := time.Now()
-			done, err := cfn.Do(repo, gitDir)
+			done, err := cfn.Do(backend, repo, gitDir)
 			if err != nil {
 				logger.Error("error running cleanup command",
 					log.String("name", cfn.Name),
