@@ -1,15 +1,13 @@
 > [!NOTE]
 > Generated from: unknown revision of [sourcegraph/managed-services](https://github.com/sourcegraph/managed-services)
 
-These pages contain generated operational guidance for the infrastructure of the 4 [Managed Services Platform (MSP)](https://sourcegraph.notion.site/712a0389f54c4d3a90d069aa2d979a59) services (across 6 environments) currently in operation at Sourcegraph.
-This includes information about each service, configured environments, Entitle requests, common tasks, monitoring, custom documentation provided by service operators, and so on.
-In addition to service-specific guidance, [General guidance](#general-guidance) is also available.
+These pages contain generated operational guidance for the infrastructure of the 4 [Managed Services Platform (MSP)](https://sourcegraph.notion.site/712a0389f54c4d3a90d069aa2d979a59) services (across 6 environments) currently in operation at Sourcegraph. This includes information about each service, configured environments, Entitle requests, common tasks, monitoring, custom documentation provided by service operators, and so on. In addition to service-specific guidance, [General guidance](#general-guidance) is also available.
 
 MSP is owned by [Core Services](https://sourcegraph.notion.site/ed8af5ecf15545b292816ebba261a93c), but individual teams are responsible for the services they operate on the platform.
 
 Services are defined in [`sourcegraph/managed-services`](https://github.com/sourcegraph/managed-services), though service source code may live elsewhere.
 
-> [!NOTE]
+> [!IMPORTANT]
 > This page may be out of date if a service or environment was recently added or updated - reach out to #discuss-core-services for help updating these pages, or use `sg msp operations $SERVICE_ID` to view the generated documentation in your terminal.
 
 # team-a
@@ -31,11 +29,9 @@ Managed Services Platform services owned by `team-b`:
 
 ## Infrastructure access
 
-For MSP service environments other than `category: test`, access needs to be requested through Entitle.
-Test environments are placed in the "Engineering Projects" GCP folder, which should have access granted to engineers by default.
+For MSP service environments other than `category: test`, access needs to be requested through Entitle. Test environments are placed in the "Engineering Projects" GCP folder, which should have access granted to engineers by default.
 
-Entitle access to a production MSP project is generally provisioned through the `mspServiceReader` and `mspServiceEditor` custom GCP roles, which provide read-only and editing access respectively.
-Convenience links for requesting these roles are available in the per-service operation pages above, based on each environment.
+Entitle access to a production MSP project is generally provisioned through the `mspServiceReader` and `mspServiceEditor` custom GCP roles, which provide read-only and editing access respectively. Convenience links for requesting these roles are available in the per-service operation pages above, based on each environment.
 
 You can also choose to request access to an individual project in Entitle by following these steps:
 
@@ -53,10 +49,8 @@ The custom roles used for MSP infrastructure access are [configured in `sourcegr
 
 Terraform Cloud (TFC) workspaces for MSP [can be found using the `msp` workspace tag](https://app.terraform.io/app/sourcegraph/workspaces?tag=msp).
 
-To gain access to MSP project TFC workspaces, [log in to Terraform Cloud](https://app.terraform.io/app/sourcegraph) and _then_ [request membership to the `Managed Services Platform Operators` TFC team via Entitle](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjM2MDAiLCJqdXN0aWZpY2F0aW9uIjoiRU5URVIgSlVTVElGSUNBVElPTiBIRVJFIiwicm9sZUlkcyI6W3siaWQiOiJiMzg3MzJjYy04OTUyLTQ2Y2QtYmIxZS1lZjI2ODUwNzIyNmIiLCJ0aHJvdWdoIjoiYjM4NzMyY2MtODk1Mi00NmNkLWJiMWUtZWYyNjg1MDcyMjZiIiwidHlwZSI6InJvbGUifV19).
-This TFC team has access to all MSP workspaces, and is [configured here](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/infrastructure/-/blob/terraform-cloud/terraform.tfvars?L44:1-48:4).
+To gain access to MSP project TFC workspaces, [log in to Terraform Cloud](https://app.terraform.io/app/sourcegraph) and _then_ [request membership to the `Managed Services Platform Operators` TFC team via Entitle](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjM2MDAiLCJqdXN0aWZpY2F0aW9uIjoiRU5URVIgSlVTVElGSUNBVElPTiBIRVJFIiwicm9sZUlkcyI6W3siaWQiOiJiMzg3MzJjYy04OTUyLTQ2Y2QtYmIxZS1lZjI2ODUwNzIyNmIiLCJ0aHJvdWdoIjoiYjM4NzMyY2MtODk1Mi00NmNkLWJiMWUtZWYyNjg1MDcyMjZiIiwidHlwZSI6InJvbGUifV19). This TFC team has access to all MSP workspaces, and is [configured here](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/infrastructure/-/blob/terraform-cloud/terraform.tfvars?L44:1-48:4).
 
-Note that you **must [log in to Terraform Cloud](https://app.terraform.io/app/sourcegraph) before making your Entitle request**.
-If you make your Entitle request, then log in, you will be removed from any team memberships granted through Entitle by Terraform Cloud's SSO implementation.
+Note that you **must [log in to Terraform Cloud](https://app.terraform.io/app/sourcegraph) before making your Entitle request**. If you make your Entitle request, then log in, you will be removed from any team memberships granted through Entitle by Terraform Cloud's SSO implementation.
 
 For more details, also see [creating and configuring services](https://github.com/sourcegraph/managed-services#operations).

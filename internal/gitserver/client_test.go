@@ -403,9 +403,9 @@ var _ quick.Generator = fuzzTime{}
 func TestNewChangedFilesIteratorFromSlice(t *testing.T) {
 	t.Run("IterateThroughFiles", func(t *testing.T) {
 		files := []gitdomain.PathStatus{
-			{Path: "file1.txt", Status: gitdomain.AddedAMD},
-			{Path: "file2.txt", Status: gitdomain.ModifiedAMD},
-			{Path: "file3.txt", Status: gitdomain.DeletedAMD},
+			{Path: "file1.txt", Status: gitdomain.StatusAdded},
+			{Path: "file2.txt", Status: gitdomain.StatusModified},
+			{Path: "file3.txt", Status: gitdomain.StatusDeleted},
 		}
 
 		iter := gitserver.NewChangedFilesIteratorFromSlice(files)
@@ -431,7 +431,7 @@ func TestNewChangedFilesIteratorFromSlice(t *testing.T) {
 
 	t.Run("Close", func(t *testing.T) {
 		files := []gitdomain.PathStatus{
-			{Path: "file1.txt", Status: gitdomain.AddedAMD},
+			{Path: "file1.txt", Status: gitdomain.StatusAdded},
 		}
 
 		iter := gitserver.NewChangedFilesIteratorFromSlice(files)

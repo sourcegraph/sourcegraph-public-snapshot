@@ -1,0 +1,41 @@
+name: Restrict Doc Image Sizes
+on:
+  pull_request:
+    paths:
+      - 'doc/**/*.{jpg,jpeg,png,gif}'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            doc
+          fetch-depth: 1  # Limit the git history to only the last commit.
+
+      - name: Get all test, doc and src files that have changed
+        id: changed-files
+        uses: tj-actions/changed-files@5e85e31a0187e8df23b438284aa04f21b55f1510
+        with:
+          files: doc/**/*.{jpg,jpeg,png,gif}
+      - name: Check image sizes
+        run: |
+          IFS=' ' read -ra FILES <<< "${{ steps.changed-files.outputs.all_changed_files }}"
+          oversized_files=()
+          for file in "${FILES[@]}"; do
+            size=$(stat -c %s "$file")
+            if [ $size -gt 100000 ]; then
+              oversized_files+=("$file")
+            fi
+          done
+
+          if [ ${#oversized_files[@]} -gt 0 ]; then
+            echo "The following files exceed 100 KB:"
+            for file in "${oversized_files[@]}"; do
+              echo "- $file"
+            done
+            echo "Please move these images to google cloud storage according to https://docs.sourcegraph.com/dev/how-to/documentation_implementation#adding-images-to-the-documentation."
+            exit 1
+          fi
+        shell: bash

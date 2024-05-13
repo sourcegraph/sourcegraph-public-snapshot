@@ -15,7 +15,7 @@ var ListEphemeralCommand = cli.Command{
 	Name:        "list",
 	Usage:       "list ephemeral cloud instances",
 	Description: "list ephemeral cloud instances attached to your GCP account",
-	Action:      wipAction(listCloudEphemeral),
+	Action:      listCloudEphemeral,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:  "json",

@@ -423,3 +423,8 @@
         - service
         - RepositoryLocker
         - RepositoryLock
+- filename: dev/build-tracker/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/dev/build-tracker
+  package: main
+  interfaces:
+    - BigQueryWriter

@@ -28,6 +28,7 @@ const (
 	dotcomSrcCliVersionCacheGitHubToken         = "dotcomSrcCliVersionCacheGitHubToken"
 	dotcomSrcCliVersionCacheGitHubWebhookSecret = "dotcomSrcCliVersionCacheGitHubWebhookSecret"
 	dotcomSAMSClientSecret                      = "dotcomSAMSClientSecret"
+	scimAuthToken                               = "scimAuthToken"
 )
 
 func TestValidate(t *testing.T) {
@@ -233,6 +234,7 @@ func TestRedactSecrets(t *testing.T) {
 					dotcomSrcCliVersionCacheGitHubWebhookSecret: dotcomSrcCliVersionCacheGitHubWebhookSecret,
 					dotcomSAMSClientSecret:                      dotcomSAMSClientSecret,
 					authUnlockAccountLinkSigningKey:             authUnlockAccountLinkSigningKey,
+					scimAuthToken:                               scimAuthToken,
 				},
 			),
 		},
@@ -378,6 +380,7 @@ func TestUnredactSecrets(t *testing.T) {
 			dotcomSrcCliVersionCacheGitHubToken:         dotcomSrcCliVersionCacheGitHubToken,
 			dotcomSrcCliVersionCacheGitHubWebhookSecret: dotcomSrcCliVersionCacheGitHubWebhookSecret,
 			authUnlockAccountLinkSigningKey:             authUnlockAccountLinkSigningKey,
+			scimAuthToken:                               scimAuthToken,
 		},
 	)
 
@@ -405,6 +408,7 @@ func TestUnredactSecrets(t *testing.T) {
 				dotcomSrcCliVersionCacheGitHubToken:         redactedSecret,
 				dotcomSrcCliVersionCacheGitHubWebhookSecret: redactedSecret,
 				authUnlockAccountLinkSigningKey:             redactedSecret,
+				scimAuthToken:                               redactedSecret,
 			},
 		)
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
@@ -426,6 +430,7 @@ func TestUnredactSecrets(t *testing.T) {
 				dotcomSrcCliVersionCacheGitHubToken:         dotcomSrcCliVersionCacheGitHubToken,
 				dotcomSrcCliVersionCacheGitHubWebhookSecret: dotcomSrcCliVersionCacheGitHubWebhookSecret,
 				authUnlockAccountLinkSigningKey:             authUnlockAccountLinkSigningKey,
+				scimAuthToken:                               scimAuthToken,
 			},
 		)
 		assert.Equal(t, want, unredactedSite)
@@ -448,6 +453,7 @@ func TestUnredactSecrets(t *testing.T) {
 				dotcomSrcCliVersionCacheGitHubToken:         redactedSecret,
 				dotcomSrcCliVersionCacheGitHubWebhookSecret: redactedSecret,
 				authUnlockAccountLinkSigningKey:             redactedSecret,
+				scimAuthToken:                               scimAuthToken,
 			},
 			newEmail,
 		)
@@ -470,6 +476,7 @@ func TestUnredactSecrets(t *testing.T) {
 				dotcomSrcCliVersionCacheGitHubToken:         dotcomSrcCliVersionCacheGitHubToken,
 				dotcomSrcCliVersionCacheGitHubWebhookSecret: dotcomSrcCliVersionCacheGitHubWebhookSecret,
 				authUnlockAccountLinkSigningKey:             authUnlockAccountLinkSigningKey,
+				scimAuthToken:                               scimAuthToken,
 			},
 			newEmail,
 		)
@@ -494,6 +501,7 @@ func getTestSiteWithRedactedSecrets() string {
 			dotcomSrcCliVersionCacheGitHubWebhookSecret: redactedSecret,
 			dotcomSAMSClientSecret:                      redactedSecret,
 			authUnlockAccountLinkSigningKey:             redactedSecret,
+			scimAuthToken:                               redactedSecret,
 		},
 	)
 }
@@ -513,6 +521,7 @@ type testSecrets struct {
 	dotcomSrcCliVersionCacheGitHubWebhookSecret string
 	dotcomSAMSClientSecret                      string
 	authUnlockAccountLinkSigningKey             string
+	scimAuthToken                               string
 }
 
 func getTestSiteWithSecrets(testSecrets testSecrets, optionalEdit ...string) string {
@@ -585,6 +594,7 @@ func getTestSiteWithSecrets(testSecrets testSecrets, optionalEdit ...string) str
     "sams.clientSecret": "%s"
   },
   "auth.unlockAccountLinkSigningKey": "%s",
+  "scim.authToken": "%s"
 }`,
 		email,
 		testSecrets.executorsAccessToken,
@@ -602,5 +612,6 @@ func getTestSiteWithSecrets(testSecrets testSecrets, optionalEdit ...string) str
 		testSecrets.dotcomSrcCliVersionCacheGitHubWebhookSecret,
 		testSecrets.dotcomSAMSClientSecret,
 		testSecrets.authUnlockAccountLinkSigningKey,
+		testSecrets.scimAuthToken,
 	)
 }

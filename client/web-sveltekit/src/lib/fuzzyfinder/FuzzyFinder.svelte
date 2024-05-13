@@ -11,7 +11,7 @@
     import FileIcon from '$lib/repo/FileIcon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import EmphasizedLabel from '$lib/search/EmphasizedLabel.svelte'
-    import SymbolKind from '$lib/search/SymbolKind.svelte'
+    import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
     import TabsHeader, { type Tab } from '$lib/TabsHeader.svelte'
     import { Input } from '$lib/wildcard'
     import Button from '$lib/wildcard/Button.svelte'
@@ -238,7 +238,7 @@
                                 </a>
                             {:else if item.item.type == 'symbol'}
                                 <a href={item.item.symbol.location.url} on:click={handleClick}>
-                                    <SymbolKind symbolKind={item.item.symbol.kind} />
+                                    <SymbolKindIcon symbolKind={item.item.symbol.kind} />
                                     <span
                                         ><EmphasizedLabel
                                             label={item.item.symbol.name}

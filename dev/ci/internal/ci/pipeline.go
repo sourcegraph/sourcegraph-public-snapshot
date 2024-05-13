@@ -89,7 +89,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "5.3.0"
+	const minimumUpgradeableVersion = "5.4.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()

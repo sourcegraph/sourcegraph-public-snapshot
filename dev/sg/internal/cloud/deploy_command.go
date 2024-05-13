@@ -26,7 +26,7 @@ var DeployEphemeralCommand = cli.Command{
 	Name:        "deploy",
 	Usage:       "create a cloud ephemeral deployment",
 	Description: "Deploy the specified branch or tag to an ephemeral Sourcegraph Cloud environment",
-	Action:      wipAction(deployCloudEphemeral),
+	Action:      deployCloudEphemeral,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "name",

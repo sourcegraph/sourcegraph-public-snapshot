@@ -15,7 +15,7 @@ func TestPathStatus_RoundTrip(t *testing.T) {
 	if err := quick.Check(func(path string, status fuzzStatus) bool {
 		original := &PathStatus{
 			Path:   path,
-			Status: StatusAMD(status),
+			Status: Status(status),
 		}
 
 		converted := PathStatusFromProto(original.ToProto())
@@ -35,29 +35,29 @@ func TestStatusAMD_RoundTrip(t *testing.T) {
 	// so we can't fuzz since it would use the full range of int.
 	tests := []struct {
 		name string
-		amd  StatusAMD
+		amd  Status
 	}{
 		{
 			name: "AddedAMD",
-			amd:  AddedAMD,
+			amd:  StatusAdded,
 		},
 		{
 			name: "ModifiedAMD",
-			amd:  ModifiedAMD,
+			amd:  StatusModified,
 		},
 		{
 			name: "DeletedAMD",
-			amd:  DeletedAMD,
+			amd:  StatusDeleted,
 		},
 		{
 			name: "StatusUnspecifiedAMD",
-			amd:  StatusUnspecifiedAMD,
+			amd:  StatusUnspecified,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			converted := StatusAMDFromProto(test.amd.ToProto())
+			converted := StatusFromProto(test.amd.ToProto())
 
 			if diff := cmp.Diff(test.amd, converted); diff != "" {
 				t.Errorf("StatusAMD roundtrip mismatch (-want +got):\n%s", diff)
@@ -66,11 +66,11 @@ func TestStatusAMD_RoundTrip(t *testing.T) {
 	}
 }
 
-type fuzzStatus StatusAMD
+type fuzzStatus Status
 
 func (fuzzStatus) Generate(rand *rand.Rand, _ int) reflect.Value {
-	validValues := []StatusAMD{AddedAMD, ModifiedAMD, DeletedAMD, StatusUnspecifiedAMD}
+	validValues := []Status{StatusAdded, StatusModified, StatusDeleted, StatusUnspecified, StatusTypeChanged}
 	return reflect.ValueOf(fuzzStatus(validValues[rand.Intn(len(validValues))]))
 }
 
-var _ quick.Generator = fuzzStatus(AddedAMD)
+var _ quick.Generator = fuzzStatus(StatusAdded)

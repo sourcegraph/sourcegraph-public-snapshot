@@ -15,7 +15,7 @@ var StatusEphemeralCommand = cli.Command{
 	Name:        "status",
 	Usage:       "get status of ephemeral cloud instance",
 	Description: "get the status of the ephemeral cloud instance for this branch or instance with the provided name",
-	Action:      wipAction(statusCloudEphemeral),
+	Action:      statusCloudEphemeral,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "name",

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -65,11 +66,19 @@ func (s *repositoryServiceServer) DeleteRepository(ctx context.Context, req *pro
 	}
 
 	if !cloned {
-		return nil, status.New(codes.NotFound, "repository not found").Err()
+		return nil, newRepoNotFoundError(repoName, false, "")
 	}
 
-	if err := deleteRepo(ctx, s.db, s.hostname, s.fs, repoName); err != nil {
+	err = s.fs.RemoveRepo(repoName)
+	if err != nil {
+		err = errors.Wrap(err, "removing repo directory")
 		s.logger.Error("failed to delete repository", log.String("repo", string(repoName)), log.Error(err))
+		return &proto.DeleteRepositoryResponse{}, status.Errorf(codes.Internal, "failed to delete repository %s: %s", repoName, err)
+	}
+
+	err = s.db.GitserverRepos().SetCloneStatus(ctx, repoName, types.CloneStatusNotCloned, s.hostname)
+	if err != nil {
+		err = errors.Wrap(err, "setting clone status after delete")
 		return &proto.DeleteRepositoryResponse{}, status.Errorf(codes.Internal, "failed to delete repository %s: %s", repoName, err)
 	}
 
