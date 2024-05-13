@@ -8,6 +8,7 @@ import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Icon, PageHeader, Button, Link, Text, H3, useSearchParameters } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
+import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { fetchThroughSSCProxy } from '../util'
@@ -17,7 +18,6 @@ import { type TeamInvite, TeamMemberList, type TeamMember } from './TeamMembers'
 import { WhiteIcon } from './WhiteIcon'
 
 import styles from './CodyManageTeamPage.module.scss'
-import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 
 interface CodyManageTeamPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser

@@ -2,13 +2,13 @@ import React, { useState, useCallback } from 'react'
 
 import classNames from 'classnames'
 
+import { pluralize } from '@sourcegraph/common'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { ButtonLink, H2, Link, Text, H3, TextArea } from '@sourcegraph/wildcard'
 
 import { isValidEmailAddress, fetchThroughSSCProxy } from '../util'
 
 import styles from './CodyManageTeamPage.module.scss'
-import { pluralize } from '@sourcegraph/common'
 
 interface InviteUsersProps extends TelemetryV2Props {
     teamId: string | null
@@ -26,7 +26,10 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
     const [invitesSendingErrorMessage, setInvitesSendingErrorMessage] = useState<string | null>(null)
 
     const onSendInvitesClicked = useCallback(async () => {
-        const {emails: emailAddresses, error: emailParsingError} = parseEmailList(emailAddressesString, remainingInviteCount)
+        const { emails: emailAddresses, error: emailParsingError } = parseEmailList(
+            emailAddressesString,
+            remainingInviteCount
+        )
         if (emailParsingError) {
             setEmailAddressErrorMessage(emailParsingError)
             return
@@ -106,7 +109,8 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                         </div>
                         <div className="flex-1 d-flex flex-column">
                             <H2 className={classNames('mb-4', styles.inviteUsersHeader)}>
-                                <strong>Invite users</strong> – You have {remainingInviteCount} free {pluralize('seat', remainingInviteCount)}
+                                <strong>Invite users</strong> – You have {remainingInviteCount} free{' '}
+                                {pluralize('seat', remainingInviteCount)}
                             </H2>
                             <TextArea
                                 className={classNames('mb-2')}
@@ -135,18 +139,24 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
 function parseEmailList(emailAddressesString: string, remainingInviteCount: number) {
     const emails = emailAddressesString.split(',').map(email => email.trim())
     if (emails.length === 0) {
-        return {emails, error: 'Please enter at least one email address.'}
+        return { emails, error: 'Please enter at least one email address.' }
     }
 
     if (emails.length > remainingInviteCount) {
-        return {emails, error: `${emails.length} email addresses entered, but you only have ${remainingInviteCount} seats.`}
+        return {
+            emails,
+            error: `${emails.length} email addresses entered, but you only have ${remainingInviteCount} seats.`,
+        }
     }
 
     const invalidEmails = emails.filter(email => !isValidEmailAddress(email))
 
     if (invalidEmails.length > 0) {
-        return {emails, error: `Invalid email address${invalidEmails.length > 1 ? 'es' : ''}: ${invalidEmails.join(', ')}`}
+        return {
+            emails,
+            error: `Invalid email address${invalidEmails.length > 1 ? 'es' : ''}: ${invalidEmails.join(', ')}`,
+        }
     }
 
-    return {emails, error: null}
+    return { emails, error: null }
 }
