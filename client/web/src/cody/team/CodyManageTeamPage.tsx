@@ -91,21 +91,11 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
     const isProUser = subscriptionData?.isProUser
     const [subscriptionDataError, setSubscriptionDataError] = useState<null | Error>(null)
     const [teamId, setTeamId] = useState<string | null>(null)
-    // const [teamDataError, setTeamDataError] = useState<null | Error>(null)
     const [teamMembers, setTeamMembers] = useState<TeamMember[] | null>(null)
     const [membersDataError, setMembersDataError] = useState<null | Error>(null)
     const [teamInvites, setTeamInvites] = useState<TeamInvite[] | null>(null)
     const [invitesDataError, setInvitesDataError] = useState<null | Error>(null)
     useEffect(() => {
-        // async function loadTeamData(): Promise<void> {
-        //     try {
-        //         const response = await fetchThroughSSCProxy('/team/current', 'GET')
-        //         const responseJson = await response.json()
-        //         setTeamId((responseJson as { id: string }).id)
-        //     } catch (error) {
-        //         setTeamDataError(error)
-        //     }
-        // }
         async function loadSubscriptionData(): Promise<void> {
             try {
                 const response = await fetchThroughSSCProxy('/team/current/subscription', 'GET')
