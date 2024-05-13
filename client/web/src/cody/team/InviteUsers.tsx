@@ -25,30 +25,11 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
     const [invitesSendingErrorMessage, setInvitesSendingErrorMessage] = useState<string | null>(null)
 
     const onSendInvitesClicked = useCallback(async () => {
-        const emailAddresses = emailAddressesString.split(',').map(email => email.trim())
-        if (emailAddresses.length === 0) {
-            setEmailAddressErrorMessage('Please enter at least one email address.')
+        const {emails: emailAddresses, error: emailParsingError} = parseEmailList(emailAddressesString, remainingInviteCount)
+        if (emailParsingError) {
+            setEmailAddressErrorMessage(emailParsingError)
             return
         }
-
-        if (emailAddresses.length > remainingInviteCount) {
-            setEmailAddressErrorMessage(
-                `${emailAddresses.length} email addresses entered, but you only have ${remainingInviteCount} seats.`
-            )
-            return
-        }
-
-        const invalidEmailAddresses = emailAddresses.filter(email => !isValidEmailAddress(email))
-
-        if (invalidEmailAddresses.length > 0) {
-            setEmailAddressErrorMessage(
-                `Invalid email address${invalidEmailAddresses.length > 1 ? 'es' : ''}: ${invalidEmailAddresses.join(
-                    ', '
-                )}`
-            )
-            return
-        }
-
         telemetryRecorder.recordEvent('cody.team.sendInvites', 'click', {
             metadata: { count: emailAddresses.length },
             privateMetadata: { teamId, emailAddresses },
@@ -149,4 +130,23 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
             )}
         </>
     )
+}
+
+function parseEmailList(emailAddressesString: string, remainingInviteCount: number) {
+    const emails = emailAddressesString.split(',').map(email => email.trim())
+    if (emails.length === 0) {
+        return {emails, error: 'Please enter at least one email address.'}
+    }
+
+    if (emails.length > remainingInviteCount) {
+        return {emails, error: `${emails.length} email addresses entered, but you only have ${remainingInviteCount} seats.`}
+    }
+
+    const invalidEmails = emails.filter(email => !isValidEmailAddress(email))
+
+    if (invalidEmails.length > 0) {
+        return {emails, error: `Invalid email address${invalidEmails.length > 1 ? 'es' : ''}: ${invalidEmails.join(', ')}`}
+    }
+
+    return {emails, error: null}
 }
