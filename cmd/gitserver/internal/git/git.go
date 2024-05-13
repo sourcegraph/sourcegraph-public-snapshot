@@ -1,16 +1,11 @@
 package git
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"sync"
-	"syscall"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
@@ -105,38 +100,6 @@ var badRefs = sync.OnceValue(func() []string {
 	}
 	return refs
 })
-
-// ComputeRefHash returns a hash of the refs for dir. The hash should only
-// change if the set of refs and the commits they point to change.
-func ComputeRefHash(dir common.GitDir) ([]byte, error) {
-	// Do not use CommandContext since this is a fast operation we do not want
-	// to interrupt.
-	cmd := exec.Command("git", "show-ref")
-	dir.Set(cmd)
-	output, err := cmd.Output()
-	if err != nil {
-		// Ignore the failure for an empty repository: show-ref fails with
-		// empty output and an exit code of 1
-		var e *exec.ExitError
-		if !errors.As(err, &e) || len(output) != 0 || len(e.Stderr) != 0 || e.Sys().(syscall.WaitStatus).ExitStatus() != 1 {
-			return nil, err
-		}
-	}
-
-	// TODO: This seems like it could require a lot of memory for very large repos.
-	lines := bytes.Split(output, []byte("\n"))
-	sort.Slice(lines, func(i, j int) bool {
-		return bytes.Compare(lines[i], lines[j]) < 0
-	})
-	hasher := sha256.New()
-	for _, b := range lines {
-		_, _ = hasher.Write(b)
-		_, _ = hasher.Write([]byte("\n"))
-	}
-	hash := make([]byte, hex.EncodedLen(hasher.Size()))
-	hex.Encode(hash, hasher.Sum(nil))
-	return hash, nil
-}
 
 // MakeBareRepo initializes a new bare repo at the given dir.
 func MakeBareRepo(ctx context.Context, dir string) error {

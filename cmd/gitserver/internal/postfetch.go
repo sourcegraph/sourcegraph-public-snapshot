@@ -95,7 +95,7 @@ func gitSetAutoGC(ctx context.Context, c git.GitConfigBackend) error {
 // If a timestamp already exists, we want to update it if and only if
 // the set of references (as determined by `git show-ref`) has changed.
 //
-// To accomplish this, we assert that the file `sg_refhash` in the git
+// To accomplish this, we assert that the file `sg_refhash_v2` in the git
 // directory should, if it exists, contain a hash of the output of
 // `git show-ref`, and have a timestamp of "the last time this changed",
 // except that if we're creating that file for the first time, we set
@@ -108,17 +108,20 @@ func gitSetAutoGC(ctx context.Context, c git.GitConfigBackend) error {
 // that is possibly causing our data to be incorrect, which should
 // be reported.
 func setLastChanged(ctx context.Context, logger log.Logger, dir common.GitDir, backend git.GitBackend) error {
-	hashFile := dir.Path("sg_refhash")
+	hashFile := dir.Path("sg_refhash_v2")
 
-	hash, err := git.ComputeRefHash(dir)
+	// Best effort delete the old refhash file.
+	_ = os.Remove(dir.Path("sg_refhash"))
+
+	hash, err := backend.RefHash(ctx)
 	if err != nil {
-		return errors.Wrapf(err, "computeRefHash failed for %s", dir)
+		return errors.Wrapf(err, "computing ref hash failed for %s", dir)
 	}
 
 	var stamp time.Time
 	if _, err := os.Stat(hashFile); os.IsNotExist(err) {
 		// This is the first time we are calculating the hash. Give a more
-		// approriate timestamp for sg_refhash than the current time.
+		// approriate timestamp for sg_refhash_v2 than the current time.
 		stamp, err = backend.LatestCommitTimestamp(ctx)
 		if err != nil {
 			logger.Warn("failed to get latest commit timestamp, using current time", log.Error(err))

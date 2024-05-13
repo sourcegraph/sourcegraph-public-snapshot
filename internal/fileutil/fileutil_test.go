@@ -9,7 +9,7 @@ import (
 func TestUpdateFileIfDifferent(t *testing.T) {
 	dir := t.TempDir()
 
-	target := filepath.Join(dir, "sg_refhash")
+	target := filepath.Join(dir, "sg_refhash_v2")
 
 	write := func(content string) {
 		err := os.WriteFile(target, []byte(content), 0600)

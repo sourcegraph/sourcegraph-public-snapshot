@@ -333,6 +333,9 @@ type MockGitBackend struct {
 	// ReadFileFunc is an instance of a mock function object controlling the
 	// behavior of the method ReadFile.
 	ReadFileFunc *GitBackendReadFileFunc
+	// RefHashFunc is an instance of a mock function object controlling the
+	// behavior of the method RefHash.
+	RefHashFunc *GitBackendRefHashFunc
 	// ResolveRevisionFunc is an instance of a mock function object
 	// controlling the behavior of the method ResolveRevision.
 	ResolveRevisionFunc *GitBackendResolveRevisionFunc
@@ -431,6 +434,11 @@ func NewMockGitBackend() *MockGitBackend {
 		},
 		ReadFileFunc: &GitBackendReadFileFunc{
 			defaultHook: func(context.Context, api.CommitID, string) (r0 io.ReadCloser, r1 error) {
+				return
+			},
+		},
+		RefHashFunc: &GitBackendRefHashFunc{
+			defaultHook: func(context.Context) (r0 []byte, r1 error) {
 				return
 			},
 		},
@@ -546,6 +554,11 @@ func NewStrictMockGitBackend() *MockGitBackend {
 				panic("unexpected invocation of MockGitBackend.ReadFile")
 			},
 		},
+		RefHashFunc: &GitBackendRefHashFunc{
+			defaultHook: func(context.Context) ([]byte, error) {
+				panic("unexpected invocation of MockGitBackend.RefHash")
+			},
+		},
 		ResolveRevisionFunc: &GitBackendResolveRevisionFunc{
 			defaultHook: func(context.Context, string) (api.CommitID, error) {
 				panic("unexpected invocation of MockGitBackend.ResolveRevision")
@@ -625,6 +638,9 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 		},
 		ReadFileFunc: &GitBackendReadFileFunc{
 			defaultHook: i.ReadFile,
+		},
+		RefHashFunc: &GitBackendRefHashFunc{
+			defaultHook: i.RefHash,
 		},
 		ResolveRevisionFunc: &GitBackendResolveRevisionFunc{
 			defaultHook: i.ResolveRevision,
@@ -2411,6 +2427,111 @@ func (c GitBackendReadFileFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitBackendReadFileFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitBackendRefHashFunc describes the behavior when the RefHash method of
+// the parent MockGitBackend instance is invoked.
+type GitBackendRefHashFunc struct {
+	defaultHook func(context.Context) ([]byte, error)
+	hooks       []func(context.Context) ([]byte, error)
+	history     []GitBackendRefHashFuncCall
+	mutex       sync.Mutex
+}
+
+// RefHash delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitBackend) RefHash(v0 context.Context) ([]byte, error) {
+	r0, r1 := m.RefHashFunc.nextHook()(v0)
+	m.RefHashFunc.appendCall(GitBackendRefHashFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RefHash method of
+// the parent MockGitBackend instance is invoked and the hook queue is
+// empty.
+func (f *GitBackendRefHashFunc) SetDefaultHook(hook func(context.Context) ([]byte, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RefHash method of the parent MockGitBackend instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GitBackendRefHashFunc) PushHook(hook func(context.Context) ([]byte, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitBackendRefHashFunc) SetDefaultReturn(r0 []byte, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]byte, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitBackendRefHashFunc) PushReturn(r0 []byte, r1 error) {
+	f.PushHook(func(context.Context) ([]byte, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitBackendRefHashFunc) nextHook() func(context.Context) ([]byte, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitBackendRefHashFunc) appendCall(r0 GitBackendRefHashFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitBackendRefHashFuncCall objects
+// describing the invocations of this function.
+func (f *GitBackendRefHashFunc) History() []GitBackendRefHashFuncCall {
+	f.mutex.Lock()
+	history := make([]GitBackendRefHashFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitBackendRefHashFuncCall is an object that describes an invocation of
+// method RefHash on an instance of MockGitBackend.
+type GitBackendRefHashFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []byte
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitBackendRefHashFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitBackendRefHashFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
