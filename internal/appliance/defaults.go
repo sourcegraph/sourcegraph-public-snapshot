@@ -71,6 +71,12 @@ func newDefaultConfig() Sourcegraph {
 				},
 				StorageSize: "100Gi",
 			},
+			SyntectServer: SyntectServerSpec{
+				StandardConfig: config.StandardConfig{
+					PrometheusPort: pointers.Ptr(6060),
+				},
+				Replicas: 1,
+			},
 		},
 	}
 }
@@ -93,6 +99,7 @@ var defaultImagesForVersion_5_3_9104 = map[string]string{
 	"redis-store":    "redis-store:5.3.2@sha256:0e3270a5eb293c158093f41145810eb5a154f61a74c9a896690dfdecd1b98b39",
 	"repo-updater":   "repo-updater:5.3.2@sha256:5a414aa030c7e0922700664a43b449ee5f3fafa68834abef93988c5992c747c6",
 	"symbols":        "symbols:5.3.2@sha256:dd7f923bdbd5dbd231b749a7483110d40d59159084477b9fff84afaf58aad98e",
+	"syntect-server": "syntax-highlighter:5.3.2@sha256:3d16ab2a0203fea85063dcfe2e9d476540ef3274c28881dc4bbd5ca77933d8e8",
 }
 
 func getDefaultImage(sg *Sourcegraph, component string) (string, error) {

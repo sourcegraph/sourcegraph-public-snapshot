@@ -210,12 +210,11 @@ type SymbolsSpec struct {
 
 // SyntectServerSpec defines the desired state of the Syntect server service.
 type SyntectServerSpec struct {
+	config.StandardConfig
+
 	// Replicas defines the number of Syntect Server pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 type WorkerSpec struct {
