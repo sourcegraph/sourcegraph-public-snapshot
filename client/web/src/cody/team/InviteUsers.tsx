@@ -136,7 +136,10 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
     )
 }
 
-function parseEmailList(emailAddressesString: string, remainingInviteCount: number) {
+function parseEmailList(
+    emailAddressesString: string,
+    remainingInviteCount: number
+): { emails: string[]; error: string | null } {
     const emails = emailAddressesString.split(',').map(email => email.trim())
     if (emails.length === 0) {
         return { emails, error: 'Please enter at least one email address.' }
