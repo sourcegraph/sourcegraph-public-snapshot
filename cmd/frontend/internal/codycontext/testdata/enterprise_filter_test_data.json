@@ -1,7 +1,7 @@
 {
   "testCases": [
     {
-      "name": "Cody context filters are not defined",
+      "name": "Test: Cody context filters are not defined",
       "description": "Any repo should be included.",
       "cody.contextFilters": null,
       "repos": [
