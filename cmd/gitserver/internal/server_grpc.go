@@ -46,13 +46,13 @@ type GRPCServerConfig struct {
 
 func NewGRPCServer(server *Server, config *GRPCServerConfig) proto.GitserverServiceServer {
 	var srv proto.GitserverServiceServer = &grpcServer{
-		logger:         server.logger,
-		db:             server.db,
-		hostname:       server.hostname,
-		locker:         server.locker,
-		getBackendFunc: server.getBackendFunc,
-		svc:            server,
-		fs:             server.fs,
+		logger:           server.logger,
+		db:               server.db,
+		hostname:         server.hostname,
+		locker:           server.locker,
+		gitBackendSource: server.gitBackendSource,
+		svc:              server,
+		fs:               server.fs,
 	}
 
 	if config.ExhaustiveRequestLoggingEnabled {
@@ -68,13 +68,13 @@ func NewGRPCServer(server *Server, config *GRPCServerConfig) proto.GitserverServ
 }
 
 type grpcServer struct {
-	logger         log.Logger
-	db             database.DB
-	hostname       string
-	locker         RepositoryLocker
-	getBackendFunc Backender
-	fs             gitserverfs.FS
-	svc            service
+	logger           log.Logger
+	db               database.DB
+	hostname         string
+	locker           RepositoryLocker
+	gitBackendSource git.GitBackendSource
+	fs               gitserverfs.FS
+	svc              service
 
 	proto.UnimplementedGitserverServiceServer
 }
@@ -155,7 +155,7 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 
 	repoName := api.RepoName(req.GetRepo())
 	repoDir := gs.fs.RepoDir(repoName)
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
@@ -283,7 +283,7 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 	ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel()
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	r, err := backend.ArchiveReader(ctx, format, req.GetTreeish(), byteSlicesToStrings(req.GetPaths()))
 	if err != nil {
@@ -336,7 +336,7 @@ func (gs *grpcServer) GetObject(ctx context.Context, req *proto.GetObjectRequest
 		return nil, err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	obj, err := backend.GetObject(ctx, req.GetObjectName())
 	if err != nil {
@@ -764,7 +764,7 @@ func (gs *grpcServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 		return nil, err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	sha, err := backend.MergeBase(ctx, string(req.GetBase()), string(req.GetHead()))
 	if err != nil {
@@ -812,7 +812,7 @@ func (gs *grpcServer) GetCommit(ctx context.Context, req *proto.GetCommitRequest
 		return nil, err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	commit, err := backend.GetCommit(ctx, api.CommitID(req.GetCommit()), req.GetIncludeModifiedFiles())
 	if err != nil {
@@ -872,7 +872,7 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 		return err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	opts := git.BlameOptions{
 		IgnoreWhitespace: req.GetIgnoreWhitespace(),
@@ -951,7 +951,7 @@ func (gs *grpcServer) DefaultBranch(ctx context.Context, req *proto.DefaultBranc
 		return nil, err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	refName, err := backend.SymbolicRefHead(ctx, req.GetShortRef())
 	if err != nil {
@@ -1012,7 +1012,7 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 		return err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	r, err := backend.ReadFile(ctx, api.CommitID(req.GetCommit()), req.GetPath())
 	if err != nil {
@@ -1072,7 +1072,7 @@ func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRev
 
 	revspec := string(req.GetRevSpec())
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	// First, try to resolve the revspec.
 	sha, err := backend.ResolveRevision(ctx, revspec)
@@ -1128,7 +1128,7 @@ func (gs *grpcServer) RevAtTime(ctx context.Context, req *proto.RevAtTimeRequest
 		return nil, err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	commitID, err := backend.RevAtTime(ctx, string(req.GetRevSpec()), req.GetTime().AsTime())
 	if err != nil {
@@ -1169,7 +1169,7 @@ func (gs *grpcServer) ListRefs(req *proto.ListRefsRequest, ss proto.GitserverSer
 		return err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	pointsAtCommit := []api.CommitID{}
 	for _, c := range req.GetPointsAtCommit() {
@@ -1267,7 +1267,7 @@ func (gs *grpcServer) RawDiff(req *proto.RawDiffRequest, ss proto.GitserverServi
 		return err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	paths := make([]string, len(req.GetPaths()))
 	for i, p := range req.GetPaths() {
@@ -1328,7 +1328,7 @@ func (gs *grpcServer) ContributorCounts(ctx context.Context, req *proto.Contribu
 		return nil, err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	counts, err := backend.ContributorCounts(ctx, git.ContributorCountsOpts{
 		Range: string(req.GetRange()),
@@ -1378,7 +1378,7 @@ func (gs *grpcServer) FirstEverCommit(ctx context.Context, request *proto.FirstE
 		return nil, err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	id, err := backend.FirstEverCommit(ctx)
 	if err != nil {
@@ -1440,7 +1440,7 @@ func (gs *grpcServer) BehindAhead(ctx context.Context, req *proto.BehindAheadReq
 		return nil, err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	behindAhead, err := backend.BehindAhead(ctx, string(req.GetLeft()), string(req.GetRight()))
 	if err != nil {
@@ -1487,7 +1487,7 @@ func (gs *grpcServer) ChangedFiles(req *proto.ChangedFilesRequest, ss proto.Gits
 		return err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	iterator, err := backend.ChangedFiles(ctx, string(req.GetBase()), string(req.GetHead()))
 	if err != nil {
@@ -1566,7 +1566,7 @@ func (gs *grpcServer) Stat(ctx context.Context, req *proto.StatRequest) (*proto.
 		return nil, err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	fi, err := backend.Stat(ctx, api.CommitID(req.GetCommitSha()), string(req.GetPath()))
 	if err != nil {
@@ -1633,7 +1633,7 @@ func (gs *grpcServer) ReadDir(req *proto.ReadDirRequest, ss proto.GitserverServi
 		return err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	it, err := backend.ReadDir(ctx, api.CommitID(req.GetCommitSha()), string(req.GetPath()), req.GetRecursive())
 	if err != nil {

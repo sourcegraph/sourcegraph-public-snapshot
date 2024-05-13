@@ -6,9 +6,13 @@ import (
 	"io/fs"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
+
+// GitBackendSource is a function that returns a GitBackend for a given repository.
+type GitBackendSource func(dir common.GitDir, repoName api.RepoName) GitBackend
 
 // GitBackend is the interface through which operations on a git repository can
 // be performed. It encapsulates the underlying git implementation and allows
