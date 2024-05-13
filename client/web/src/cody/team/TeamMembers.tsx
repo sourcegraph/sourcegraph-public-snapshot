@@ -43,13 +43,6 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
 }) => {
     const [loading, setLoading] = useState(false)
     const [actionResult, setActionResult] = useState<{ message: string; isError: boolean } | null>(null)
-    const setActionResultWithTimeout = useCallback((message: string, isError: boolean) => {
-        setLoading(false)
-        setActionResult({ message, isError })
-        setTimeout(() => {
-            setActionResult(null)
-        }, 5000)
-    }, [])
     const setRole = useCallback(
         async (accountId: string, newRole: 'member' | 'admin'): Promise<void> => {
             if (!loading) {
@@ -63,13 +56,18 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                     'PATCH'
                 )
                 if (!response.ok) {
-                    setActionResultWithTimeout('Failed to revoke admin. Error code was: ' + response.status, true)
+                    setLoading(false)
+                    setActionResult({
+                        message: 'Failed to revoke admin. Error code was: ' + response.status,
+                        isError: true,
+                    })
                 } else {
-                    setActionResultWithTimeout('Admin revoked.', false)
+                    setLoading(false)
+                    setActionResult({ message: 'Admin revoked.', isError: false })
                 }
             }
         },
-        [loading, telemetryRecorder, teamId, setActionResultWithTimeout]
+        [loading, telemetryRecorder, teamId]
     )
 
     const revokeInvite = useCallback(
@@ -80,13 +78,18 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
 
                 const response = await fetchThroughSSCProxy(`/team/current/invites/${inviteId}/cancel`, 'POST')
                 if (!response.ok) {
-                    setActionResultWithTimeout('Failed to revoke invite. Error code was: ' + response.status, true)
+                    setLoading(false)
+                    setActionResult({
+                        message: 'Failed to revoke invite. Error code was: ' + response.status,
+                        isError: true,
+                    })
                 } else {
-                    setActionResultWithTimeout('Invite revoked.', false)
+                    setLoading(false)
+                    setActionResult({ message: 'Invite revoked.', isError: false })
                 }
             }
         },
-        [loading, telemetryRecorder, teamId, setActionResultWithTimeout]
+        [loading, telemetryRecorder, teamId]
     )
 
     const resendInvite = useCallback(
@@ -97,15 +100,20 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
 
                 const response = await fetchThroughSSCProxy(`/team/current/invites/${inviteId}/resend`, 'POST')
                 if (!response.ok) {
-                    setActionResultWithTimeout('Failed to resend invite. Error code was: ' + response.status, true)
+                    setLoading(false)
+                    setActionResult({
+                        message: 'Failed to resend invite. Error code was: ' + response.status,
+                        isError: true,
+                    })
                 } else {
-                    setActionResultWithTimeout('Invite resent.', false)
+                    setLoading(false)
+                    setActionResult({ message: 'Invite resent.', isError: false })
                 }
             }
 
             telemetryRecorder.recordEvent('cody.team.resendInvite', 'click', { privateMetadata: { teamId } })
         },
-        [loading, telemetryRecorder, teamId, setActionResultWithTimeout]
+        [loading, telemetryRecorder, teamId]
     )
 
     const removeMember = useCallback(
@@ -118,13 +126,18 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
 
                 const response = await fetchThroughSSCProxy(`/team/current/members/${accountId}`, 'DELETE')
                 if (!response.ok) {
-                    setActionResultWithTimeout('Failed to remove team member. Error code was: ' + response.status, true)
+                    setLoading(false)
+                    setActionResult({
+                        message: 'Failed to remove team member. Error code was: ' + response.status,
+                        isError: true,
+                    })
                 } else {
-                    setActionResultWithTimeout('Team member removed.', false)
+                    setLoading(false)
+                    setActionResult({ message: 'Team member removed.', isError: false })
                 }
             }
         },
-        [telemetryRecorder, teamId, loading, setActionResultWithTimeout]
+        [telemetryRecorder, teamId, loading]
     )
 
     const adminCount = useMemo(() => teamMembers?.filter(member => member.role === 'admin').length ?? 0, [teamMembers])
