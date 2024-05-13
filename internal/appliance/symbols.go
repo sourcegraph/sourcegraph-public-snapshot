@@ -65,7 +65,7 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *Source
 	cacheSize := float64(storageSize.Value()) * 0.9
 	cacheSizeMB := int(math.Floor(cacheSize / 1024 / 1024))
 
-	ctr.Env = container.EnvVarsRedis()
+	ctr.Env = append(ctr.Env, container.EnvVarsRedis()...)
 	ctr.Env = append(
 		ctr.Env,
 		corev1.EnvVar{Name: "SYMBOLS_CACHE_SIZE_MB", Value: fmt.Sprintf("%d", cacheSizeMB)},
