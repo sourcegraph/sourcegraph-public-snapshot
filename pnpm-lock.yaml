@@ -1208,6 +1208,9 @@ importers:
 
   client/client-api:
     dependencies:
+      '@sourcegraph/telemetry':
+        specifier: ^0.16.0
+        version: 0.16.0
       '@sourcegraph/template-parser':
         specifier: workspace:*
         version: link:../template-parser
@@ -1391,8 +1394,8 @@ importers:
         specifier: workspace:*
         version: link:../http-client
       '@sourcegraph/telemetry':
-        specifier: ^0.11.0
-        version: 0.11.0
+        specifier: ^0.16.0
+        version: 0.16.0
       '@sourcegraph/template-parser':
         specifier: workspace:*
         version: link:../template-parser
@@ -1503,8 +1506,8 @@ importers:
         specifier: workspace:*
         version: link:../shared
       '@sourcegraph/telemetry':
-        specifier: ^0.11.0
-        version: 0.11.0
+        specifier: ^0.16.0
+        version: 0.16.0
       '@sourcegraph/wildcard':
         specifier: workspace:*
         version: link:../wildcard
@@ -8565,8 +8568,8 @@ packages:
       stylelint: 14.3.0
     dev: true
 
-  /@sourcegraph/telemetry@0.11.0:
-    resolution: {integrity: sha512-cOlkCwX3V5lVJO/F8w7VauhMZob3PrMbE4DApTKwasTMwm4+OxtT6+afC5wJTwZwNWc31V83sNjV2nBkEtFPZg==}
+  /@sourcegraph/telemetry@0.16.0:
+    resolution: {integrity: sha512-/LTbGWwscy/iNOYc0JS2Sl5Q21WOaiIhABlGynwJLMfPYy0YoJQfEtrCEGTSYWY735dSdUBW3wcTgCOCz8EEjA==}
     dependencies:
       rxjs: 7.8.1
     dev: false
