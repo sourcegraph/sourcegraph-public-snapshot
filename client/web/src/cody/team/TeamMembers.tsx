@@ -58,12 +58,12 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 if (!response.ok) {
                     setLoading(false)
                     setActionResult({
-                        message: 'Failed to revoke admin. Error code was: ' + response.status,
+                        message: `We couldn't modify the user's role (${response.status}). Please try again later.`,
                         isError: true,
                     })
                 } else {
                     setLoading(false)
-                    setActionResult({ message: 'Admin revoked.', isError: false })
+                    setActionResult({ message: 'Team role updated.', isError: false })
                 }
             }
         },
@@ -80,7 +80,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 if (!response.ok) {
                     setLoading(false)
                     setActionResult({
-                        message: 'Failed to revoke invite. Error code was: ' + response.status,
+                        message: `We couldn't revoke the invite (${response.status}). Please try again later.`,
                         isError: true,
                     })
                 } else {
@@ -102,7 +102,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 if (!response.ok) {
                     setLoading(false)
                     setActionResult({
-                        message: 'Failed to resend invite. Error code was: ' + response.status,
+                        message: `We couldn't resend the invite (${response.status}). Please try again later.`,
                         isError: true,
                     })
                 } else {
@@ -128,7 +128,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 if (!response.ok) {
                     setLoading(false)
                     setActionResult({
-                        message: 'Failed to remove team member. Error code was: ' + response.status,
+                        message: `We couldn't remove the team member. (${response.status}). Please try again later.`,
                         isError: true,
                     })
                 } else {
