@@ -59,5 +59,6 @@
             "prefix": "TestFeatureFlagStore",
             "reason": "We remove constraints and the old tests checked that we were failing"
         }
-    ]
+    ],
+    "5.4.0": [],
 }
