@@ -233,7 +233,8 @@
             <a href="{repoURL}/-/raw/{filePath}" target="_blank" download>Download file</a>
         </Alert>
     {:else if blob && showFormattedView}
-        <div class={`rich ${markdownStyles.markdown}`}>
+        <!-- jupyter is a global style -->
+        <div class={`rich jupyter ${markdownStyles.markdown}`}>
             {@html blob.richHTML}
         </div>
     {:else if blob}

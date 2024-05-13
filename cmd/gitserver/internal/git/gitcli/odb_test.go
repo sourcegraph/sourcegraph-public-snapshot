@@ -4,17 +4,21 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
 
+	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -170,7 +174,7 @@ func TestGitCLIBackend_ReadFile_GoroutineLeak(t *testing.T) {
 	require.Equal(t, routinesBefore, routinesAfter)
 }
 
-func TestRepository_GetCommit(t *testing.T) {
+func TestGitCLIBackend_GetCommit(t *testing.T) {
 	ctx := context.Background()
 
 	// Prepare repo state:
@@ -419,5 +423,399 @@ func TestGitCLIBackend_GetBehindAhead(t *testing.T) {
 		require.Error(t, err)
 		var e *gitdomain.RevisionNotFoundError
 		require.True(t, errors.As(err, &e))
+	})
+}
+func TestGitCLIBackend_Stat(t *testing.T) {
+	ctx := context.Background()
+
+	// Prepare repo state:
+	submodDir := RepoWithCommands(t,
+		// simple file
+		"echo abcd > file1",
+		"git add file1",
+		"git commit -m commit --author='Foo Author <foo@sourcegraph.com>'",
+	)
+
+	backend := BackendWithRepoCommands(t,
+		"echo abcd > file1",
+		"git add file1",
+		"mkdir nested",
+		"echo efgh > nested/file",
+		"git add nested/file",
+		"ln -s nested/file link",
+		"git add link",
+		"git -c protocol.file.allow=always submodule add "+filepath.ToSlash(string(submodDir))+" submodule",
+		"git commit -m commit --author='Foo Author <foo@sourcegraph.com>'",
+		"echo defg > file2",
+		"git add file2",
+		"git commit -m commit2 --author='Foo Author <foo@sourcegraph.com>'",
+	)
+
+	commitID, err := backend.RevParseHead(ctx)
+	require.NoError(t, err)
+
+	c, err := backend.GetCommit(ctx, commitID, false)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(c.Parents))
+
+	t.Run("non existent file", func(t *testing.T) {
+		_, err := backend.Stat(ctx, commitID, "file0")
+		require.Error(t, err)
+		require.True(t, os.IsNotExist(err))
+	})
+
+	t.Run("file exists but not at commit", func(t *testing.T) {
+		_, err := backend.Stat(ctx, commitID, "file2")
+		require.NoError(t, err)
+
+		_, err = backend.Stat(ctx, c.Parents[0], "file0")
+		require.Error(t, err)
+		require.True(t, os.IsNotExist(err))
+	})
+
+	t.Run("non existent commit", func(t *testing.T) {
+		_, err := backend.Stat(ctx, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", "file1")
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+
+	t.Run("stat root", func(t *testing.T) {
+		fi, err := backend.Stat(ctx, commitID, "")
+		require.NoError(t, err)
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+			Name_: "",
+			Size_: 0,
+			Sys_:  fi.Sys(),
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+		require.True(t, fi.IsDir())
+		require.False(t, fi.Mode().IsRegular())
+		fi, err = backend.Stat(ctx, commitID, ".")
+		require.NoError(t, err)
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+			Name_: "",
+			Size_: 0,
+			Sys_:  fi.Sys(),
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+		require.True(t, fi.IsDir())
+		require.False(t, fi.Mode().IsRegular())
+	})
+
+	t.Run("stat file", func(t *testing.T) {
+		fi, err := backend.Stat(ctx, commitID, "file1")
+		require.NoError(t, err)
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+			Name_: "file1",
+			Size_: 5,
+			Sys_:  fi.Sys(),
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+		require.False(t, fi.IsDir())
+		require.True(t, fi.Mode().IsRegular())
+		fi, err = backend.Stat(ctx, commitID, "nested/../file1")
+		require.NoError(t, err)
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+			Name_: "file1",
+			Size_: 5,
+			Sys_:  fi.Sys(),
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+		require.False(t, fi.IsDir())
+		require.True(t, fi.Mode().IsRegular())
+		fi, err = backend.Stat(ctx, commitID, "/file1")
+		require.NoError(t, err)
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+			Name_: "file1",
+			Size_: 5,
+			Sys_:  fi.Sys(),
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+		require.False(t, fi.IsDir())
+		require.True(t, fi.Mode().IsRegular())
+	})
+
+	t.Run("stat symlink", func(t *testing.T) {
+		fi, err := backend.Stat(ctx, commitID, "link")
+		require.NoError(t, err)
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+			Name_: "link",
+			Size_: 11,
+			Sys_:  fi.Sys(),
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+		require.False(t, fi.IsDir())
+
+		cfg, err := backend.(*gitCLIBackend).gitModulesConfig(ctx, commitID)
+		require.NoError(t, err)
+		require.Equal(t, config.Config{
+			Sections: config.Sections{
+				{
+					Name: "submodule",
+					Subsections: config.Subsections{
+						{
+							Name: "submodule",
+							Options: config.Options{
+								{
+									Key:   "path",
+									Value: "submodule",
+								},
+								{
+									Key:   "url",
+									Value: string(submodDir),
+								},
+							},
+						},
+					},
+				},
+			},
+		}, cfg)
+	})
+
+	t.Run("stat submodule", func(t *testing.T) {
+		fi, err := backend.Stat(ctx, commitID, "submodule")
+		require.NoError(t, err)
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+			Name_: "submodule",
+			Size_: 0,
+			Sys_: gitdomain.Submodule{
+				URL:      string(submodDir),
+				Path:     "submodule",
+				CommitID: "405b565ed446e271bc1998a91dbf4fb50dbfabfe",
+			},
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+		require.Equal(t, gitdomain.ModeSubmodule, fi.Mode())
+		require.False(t, fi.Mode().IsRegular())
+	})
+
+	t.Run("stat dir", func(t *testing.T) {
+		fi, err := backend.Stat(ctx, commitID, "nested")
+		require.NoError(t, err)
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+			Name_: "nested",
+			Size_: 0,
+			Sys_:  fi.Sys(),
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+		require.True(t, fi.IsDir())
+		require.False(t, fi.Mode().IsRegular())
+		fi, err = backend.Stat(ctx, commitID, "nested/")
+		require.NoError(t, err)
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+			Name_: "nested",
+			Size_: 0,
+			Sys_:  fi.Sys(),
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+		require.True(t, fi.IsDir())
+		require.False(t, fi.Mode().IsRegular())
+	})
+
+	t.Run("stat nested file", func(t *testing.T) {
+		fi, err := backend.Stat(ctx, commitID, "nested/file")
+		require.NoError(t, err)
+		require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+			Name_: "nested/file",
+			Size_: 5,
+			Sys_:  fi.Sys(),
+		}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+		require.False(t, fi.IsDir())
+		require.True(t, fi.Mode().IsRegular())
+	})
+}
+
+func TestGitCLIBackend_Stat_specialchars(t *testing.T) {
+	ctx := context.Background()
+
+	backend := BackendWithRepoCommands(t,
+		`touch ⊗.txt '".txt' \\.txt`,
+		`git add ⊗.txt '".txt' \\.txt`,
+		"git commit -m commit --author='Foo Author <foo@sourcegraph.com>'",
+	)
+
+	commitID, err := backend.RevParseHead(ctx)
+	require.NoError(t, err)
+
+	fi, err := backend.Stat(ctx, commitID, "⊗.txt")
+	require.NoError(t, err)
+	require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+		Name_: "⊗.txt",
+		Size_: 0,
+		Sys_:  fi.Sys(),
+	}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+	require.False(t, fi.IsDir())
+	require.True(t, fi.Mode().IsRegular())
+	fi, err = backend.Stat(ctx, commitID, `".txt`)
+	require.NoError(t, err)
+	require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+		Name_: `".txt`,
+		Size_: 0,
+		Sys_:  fi.Sys(),
+	}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+	require.False(t, fi.IsDir())
+	require.True(t, fi.Mode().IsRegular())
+	fi, err = backend.Stat(ctx, commitID, `\.txt`)
+	require.NoError(t, err)
+	require.Empty(t, cmp.Diff(&fileutil.FileInfo{
+		Name_: `\.txt`,
+		Size_: 0,
+		Sys_:  fi.Sys(),
+	}, fi, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+	require.False(t, fi.IsDir())
+	require.True(t, fi.Mode().IsRegular())
+}
+
+func TestGitCLIBackend_ReadDir(t *testing.T) {
+	ctx := context.Background()
+
+	// Prepare repo state:
+	submodDir := RepoWithCommands(t,
+		// simple file
+		"echo abcd > file1",
+		"git add file1",
+		"git commit -m commit --author='Foo Author <foo@sourcegraph.com>'",
+	)
+
+	backend := BackendWithRepoCommands(t,
+		"echo abcd > file1",
+		"git add file1",
+		"mkdir nested",
+		"echo efgh > nested/file",
+		"git add nested/file",
+		"ln -s nested/file link",
+		"git add link",
+		"git -c protocol.file.allow=always submodule add "+filepath.ToSlash(string(submodDir))+" submodule",
+		"git commit -m commit --author='Foo Author <foo@sourcegraph.com>'",
+	)
+
+	commitID, err := backend.RevParseHead(ctx)
+	require.NoError(t, err)
+
+	t.Run("bad input", func(t *testing.T) {
+		_, err := backend.ReadDir(ctx, "-commit", "file", false)
+		require.Error(t, err)
+	})
+
+	t.Run("non existent path", func(t *testing.T) {
+		it, err := backend.ReadDir(ctx, commitID, "404dir", false)
+		require.NoError(t, err)
+		t.Cleanup(func() { it.Close() })
+		_, err = it.Next()
+		require.Error(t, err)
+		require.True(t, os.IsNotExist(err))
+	})
+
+	t.Run("non existent tree-ish", func(t *testing.T) {
+		it, err := backend.ReadDir(ctx, "notfound", "nested", false)
+		require.NoError(t, err)
+		t.Cleanup(func() { it.Close() })
+		_, err = it.Next()
+		require.Error(t, err)
+
+		t.Log(err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+
+	t.Run("non existent commit", func(t *testing.T) {
+		it, err := backend.ReadDir(ctx, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", "nested", false)
+		require.NoError(t, err)
+		t.Cleanup(func() { it.Close() })
+		_, err = it.Next()
+		require.Error(t, err)
+
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+
+	t.Run("read root", func(t *testing.T) {
+		it, err := backend.ReadDir(ctx, commitID, "", false)
+		require.NoError(t, err)
+		fis := make([]fs.FileInfo, 0)
+		for {
+			fi, err := it.Next()
+			if err == io.EOF {
+				break
+			}
+			require.NoError(t, err)
+			fis = append(fis, fi)
+		}
+		require.Empty(t, cmp.Diff([]fs.FileInfo{
+			&fileutil.FileInfo{
+				Name_: ".gitmodules",
+				Size_: fis[0].Size(),
+				Sys_:  fis[0].Sys(),
+			},
+			&fileutil.FileInfo{
+				Name_: "file1",
+				Size_: 5,
+				Sys_:  fis[1].Sys(),
+			},
+			&fileutil.FileInfo{
+				Name_: "link",
+				Size_: 11,
+				Sys_:  fis[2].Sys(),
+			},
+			&fileutil.FileInfo{
+				Name_: "nested",
+				Size_: 0,
+				Sys_:  fis[3].Sys(),
+			},
+			&fileutil.FileInfo{
+				Name_: "submodule",
+				Size_: 0,
+				Sys_:  fis[4].Sys(),
+			},
+		}, fis, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+		require.True(t, fis[3].IsDir())
+		it, err = backend.ReadDir(ctx, commitID, ".", false)
+		require.NoError(t, err)
+		dotFis := make([]fs.FileInfo, 0)
+		for {
+			fi, err := it.Next()
+			if err == io.EOF {
+				break
+			}
+			require.NoError(t, err)
+			dotFis = append(dotFis, fi)
+		}
+		require.Empty(t, cmp.Diff(fis, dotFis, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+	})
+
+	t.Run("read root recursive", func(t *testing.T) {
+		it, err := backend.ReadDir(ctx, commitID, "", true)
+		require.NoError(t, err)
+		fis := make([]fs.FileInfo, 0)
+		for {
+			fi, err := it.Next()
+			if err == io.EOF {
+				break
+			}
+			require.NoError(t, err)
+			fis = append(fis, fi)
+		}
+		require.Empty(t, cmp.Diff([]fs.FileInfo{
+			&fileutil.FileInfo{
+				Name_: ".gitmodules",
+				Size_: fis[0].Size(),
+				Sys_:  fis[0].Sys(),
+			},
+			&fileutil.FileInfo{
+				Name_: "file1",
+				Size_: 5,
+				Sys_:  fis[1].Sys(),
+			},
+			&fileutil.FileInfo{
+				Name_: "link",
+				Size_: 11,
+				Sys_:  fis[2].Sys(),
+			},
+			&fileutil.FileInfo{
+				Name_: "nested",
+				Size_: 0,
+				Sys_:  fis[3].Sys(),
+			},
+			&fileutil.FileInfo{
+				Name_: "nested/file",
+				Size_: 5,
+				Sys_:  fis[4].Sys(),
+			},
+			&fileutil.FileInfo{
+				Name_: "submodule",
+				Size_: 0,
+				Sys_:  fis[5].Sys(),
+			},
+		}, fis, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
+		require.True(t, fis[3].IsDir())
 	})
 }

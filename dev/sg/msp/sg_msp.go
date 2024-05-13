@@ -453,7 +453,14 @@ This command supports completions on services and environments.
 						}
 						opts := operationdocs.Options{
 							ManagedServicesRevision: repoRev,
-							GenerateCommand:         strings.Join(os.Args, " "),
+							GeneratedBy: func() string {
+								if os.Getenv("GITHUB_ACTIONS") == "true" {
+									// Probably running in CI, tell them about
+									// our GitHub action
+									return "[Update Handbook GitHub Action](https://github.com/sourcegraph/managed-services/actions/workflows/update-handbook.yaml)"
+								}
+								return fmt.Sprintf("`%s`", strings.Join(os.Args, " "))
+							}(),
 							// This command is for generating Notion pages.
 							Notion: true,
 						}

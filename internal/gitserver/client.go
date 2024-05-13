@@ -253,14 +253,6 @@ func (o *BlameRange) Attrs() []attribute.KeyValue {
 	}
 }
 
-type CommitLog struct {
-	AuthorEmail  string
-	AuthorName   string
-	Timestamp    time.Time
-	SHA          string
-	ChangedFiles []string
-}
-
 // ListRefsOpts are additional options passed to ListRefs.
 type ListRefsOpts struct {
 	// If true, only heads are returned. Can be combined with TagsOnly.
@@ -379,10 +371,6 @@ type Client interface {
 	// GetObject fetches git object data in the supplied repo
 	GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
 
-	// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
-	// contains a commit past a specified date.
-	HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string) (bool, error)
-
 	// IsRepoCloneable returns nil if the repository is cloneable.
 	IsRepoCloneable(context.Context, api.RepoName) error
 
@@ -454,31 +442,10 @@ type Client interface {
 	// FirstEverCommit returns the first commit ever made to the repository.
 	FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit, error)
 
-	// ListDirectoryChildren fetches the list of children under the given directory
-	// names. The result is a map keyed by the directory names with the list of files
-	// under each.
-	ListDirectoryChildren(ctx context.Context, repo api.RepoName, commit api.CommitID, dirnames []string) (map[string][]string, error)
-
 	// Diff returns an iterator that can be used to access the diff between two
 	// commits on a per-file basis. The iterator must be closed with Close when no
 	// longer required.
 	Diff(ctx context.Context, repo api.RepoName, opts DiffOptions) (*DiffFileIterator, error)
-
-	// CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
-	// is to separate the first line (the metadata line) from the remaining lines (the files), and then parse the metadata line
-	// into component parts separately.
-	CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error)
-
-	// CommitsUniqueToBranch returns a map from commits that exist on a particular
-	// branch in the given repository to their committer date. This set of commits is
-	// determined by listing `{branchName} ^HEAD`, which is interpreted as: all
-	// commits on {branchName} not also on the tip of the default branch. If the
-	// supplied branch name is the default branch, then this method instead returns
-	// all commits reachable from HEAD.
-	CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
-
-	// LsFiles returns the output of `git ls-files`.
-	LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
 
 	// GetCommit returns the commit with the given commit ID, or RevisionNotFoundError if no such commit
 	// exists.

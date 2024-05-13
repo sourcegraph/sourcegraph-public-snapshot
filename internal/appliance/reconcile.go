@@ -66,7 +66,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// Sourcegraph is a kubebuilder-scaffolded custom type, but we do not
-	// actually ask operators to install CRDs. Therefore we set its namespace
+	// actually ask operators to install CRDs. Therefore, we set its namespace
 	// based on the actual object being reconciled, so that more deeply-nested
 	// code can treat it like a CRD.
 	sourcegraph.Namespace = applianceSpec.GetNamespace()
@@ -91,6 +91,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 	if err := r.reconcileRedis(ctx, &sourcegraph, &applianceSpec); err != nil {
 		return ctrl.Result{}, errors.Newf("failed to reconcile redis: %w", err)
+	}
+	if err := r.reconcilePGSQL(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile pgsql: %w", err)
+	}
+	if err := r.reconcileSyntect(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile syntect: %w", err)
 	}
 
 	// Set the current version annotation in case migration logic depends on it.
