@@ -3,7 +3,7 @@
   "templates": "_resources/templates",
   "content": ".",
   "baseURLPath": "/",
-  "rootURL": "https://docs.sourcegraph.com",
+  "rootURL": "https://docs-legacy.sourcegraph.com",
   "assets": "_resources/assets",
   "assetsBaseURLPath": "/assets/",
   "check": {
