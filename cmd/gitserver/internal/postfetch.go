@@ -49,7 +49,7 @@ func postRepoFetchActions(
 	}
 
 	// Update the last-changed stamp on disk.
-	if err := setLastChanged(logger, dir); err != nil {
+	if err := setLastChanged(ctx, logger, dir, backend); err != nil {
 		errs = errors.Append(errs, errors.Wrap(err, "failed to update last changed time"))
 	}
 
@@ -107,7 +107,7 @@ func gitSetAutoGC(ctx context.Context, c git.GitConfigBackend) error {
 // an empty repository (not an error) or some kind of actual error
 // that is possibly causing our data to be incorrect, which should
 // be reported.
-func setLastChanged(logger log.Logger, dir common.GitDir) error {
+func setLastChanged(ctx context.Context, logger log.Logger, dir common.GitDir, backend git.GitBackend) error {
 	hashFile := dir.Path("sg_refhash")
 
 	hash, err := git.ComputeRefHash(dir)
@@ -119,7 +119,11 @@ func setLastChanged(logger log.Logger, dir common.GitDir) error {
 	if _, err := os.Stat(hashFile); os.IsNotExist(err) {
 		// This is the first time we are calculating the hash. Give a more
 		// approriate timestamp for sg_refhash than the current time.
-		stamp = git.LatestCommitTimestamp(logger, dir)
+		stamp, err = backend.LatestCommitTimestamp(ctx)
+		if err != nil {
+			logger.Warn("failed to get latest commit timestamp, using current time", log.Error(err))
+			stamp = time.Now().UTC()
+		}
 	}
 
 	_, err = fileutil.UpdateFileIfDifferent(hashFile, hash)

@@ -147,6 +147,10 @@ type GitBackend interface {
 	//
 	// If either the base or head <tree-ish> id does not exist, a RevisionNotFoundError is returned.
 	ChangedFiles(ctx context.Context, base, head string) (ChangedFilesIterator, error)
+
+	// LatestCommitTimestamp returns the timestamp of the most recent commit, if any.
+	// If there are no commits or the latest commit is in the future, time.Now is returned.
+	LatestCommitTimestamp(ctx context.Context) (time.Time, error)
 }
 
 type GitDiffComparisonType int

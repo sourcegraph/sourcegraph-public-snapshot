@@ -9,12 +9,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"sync"
 	"syscall"
-	"time"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
@@ -109,44 +105,6 @@ var badRefs = sync.OnceValue(func() []string {
 	}
 	return refs
 })
-
-// LatestCommitTimestamp returns the timestamp of the most recent commit if any.
-// If there are no commits or the latest commit is in the future, or there is any
-// error, time.Now is returned.
-func LatestCommitTimestamp(logger log.Logger, dir common.GitDir) time.Time {
-	logger = logger.Scoped("LatestCommitTimestamp").
-		With(log.String("repo", string(dir)))
-
-	now := time.Now() // return current time if we don't find a more accurate time
-	cmd := exec.Command("git", "rev-list", "--all", "--timestamp", "-n", "1")
-	dir.Set(cmd)
-	output, err := cmd.Output()
-	// If we don't have a more specific stamp, we'll return the current time,
-	// and possibly an error.
-	if err != nil {
-		logger.Warn("failed to execute, defaulting to time.Now", log.Error(err))
-		return now
-	}
-
-	words := bytes.Split(output, []byte(" "))
-	// An empty rev-list output, without an error, is okay.
-	if len(words) < 2 {
-		return now
-	}
-
-	// We should have a timestamp and a commit hash; format is
-	// 1521316105 ff03fac223b7f16627b301e03bf604e7808989be
-	epoch, err := strconv.ParseInt(string(words[0]), 10, 64)
-	if err != nil {
-		logger.Warn("ignoring corrupted timestamp, defaulting to time.Now", log.String("timestamp", string(words[0])))
-		return now
-	}
-	stamp := time.Unix(epoch, 0)
-	if stamp.After(now) {
-		return now
-	}
-	return stamp
-}
 
 // ComputeRefHash returns a hash of the refs for dir. The hash should only
 // change if the set of refs and the commits they point to change.
