@@ -34,12 +34,12 @@ func (b *BuildkiteAgentEvent) Save() (row map[string]bigquery.Value, insertID st
 
 	return map[string]bigquery.Value{
 		"event":      strings.TrimPrefix(b.event, "agent."),
-		"name":       b.Name,
-		"hostname":   b.Hostname,
-		"version":    b.Version,
-		"ip_address": b.IPAddress,
-		"queues":     strings.Join(queues, ","),
-		"user_agent": b.UserAgent,
+		"name":       *b.Name,
+		"hostname":   *b.Hostname,
+		"version":    *b.Version,
+		"ip_address": *b.IPAddress,
+		"queues":     queues,
+		"user_agent": *b.UserAgent,
 		"uuid":       strings.TrimPrefix(string(uuid), "Agent---"),
 	}, "", nil
 }
