@@ -703,8 +703,12 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 		t.Cleanup(func() { it.Close() })
 		_, err = it.Next()
 		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 
-		t.Log(err)
+		// Read no entries:
+		it, err = backend.ReadDir(ctx, "notfound", "nested", false)
+		require.NoError(t, err)
+		err = it.Close()
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 	})
 

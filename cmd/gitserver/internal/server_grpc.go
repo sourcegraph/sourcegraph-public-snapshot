@@ -1637,28 +1637,6 @@ func (gs *grpcServer) ReadDir(req *proto.ReadDirRequest, ss proto.GitserverServi
 
 	it, err := backend.ReadDir(ctx, api.CommitID(req.GetCommitSha()), string(req.GetPath()), req.GetRecursive())
 	if err != nil {
-		if os.IsNotExist(err) {
-			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
-				Repo:   req.GetRepoName(),
-				Commit: string(req.GetCommitSha()),
-				Path:   string(req.GetPath()),
-			})
-			if err != nil {
-				return err
-			}
-			return s.Err()
-		}
-		var e *gitdomain.RevisionNotFoundError
-		if errors.As(err, &e) {
-			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
-				Repo: req.GetRepoName(),
-				Spec: e.Spec,
-			})
-			if err != nil {
-				return err
-			}
-			return s.Err()
-		}
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
 		return err
 	}
@@ -1669,12 +1647,10 @@ func (gs *grpcServer) ReadDir(req *proto.ReadDirRequest, ss proto.GitserverServi
 			return
 		}
 
-		if err != nil {
-			err = errors.Append(err, closeErr)
+		if err == nil {
+			err = closeErr
 			return
 		}
-
-		err = closeErr
 	}()
 
 	sendFunc := func(fis []*proto.FileInfo) error {
@@ -1692,6 +1668,28 @@ func (gs *grpcServer) ReadDir(req *proto.ReadDirRequest, ss proto.GitserverServi
 		if err != nil {
 			if err == io.EOF {
 				break
+			}
+			if os.IsNotExist(err) {
+				s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
+					Repo:   req.GetRepoName(),
+					Commit: string(req.GetCommitSha()),
+					Path:   string(req.GetPath()),
+				})
+				if err != nil {
+					return err
+				}
+				return s.Err()
+			}
+			var e *gitdomain.RevisionNotFoundError
+			if errors.As(err, &e) {
+				s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+					Repo: req.GetRepoName(),
+					Spec: e.Spec,
+				})
+				if err != nil {
+					return err
+				}
+				return s.Err()
 			}
 			return err
 		}
