@@ -61,7 +61,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                     fetchThroughSSCProxy('/team/current/invites', 'POST', { email: emailAddress, role: 'member' })
                 )
             )
-            if (responses.some(response => !response.status.toString().startsWith('2'))) {
+            if (responses.some(response => response.status !== 200)) {
                 const responsesText = await Promise.all(responses.map(response => response.text()))
                 setInvitesSendingStatus('error')
                 setInvitesSendingErrorMessage(`Error sending invites: ${responsesText.join(', ')}`)
