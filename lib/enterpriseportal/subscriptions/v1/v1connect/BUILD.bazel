@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1/v1connect",
     visibility = ["//visibility:public"],
     deps = [
-        "//lib/enterpriseportal/subscriptions/v1:subscriptions",  # keep
+        "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "@com_connectrpc_connect//:connect",
     ],
 )

@@ -1,6 +1,5 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
-load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
 load("@rules_buf//buf:defs.bzl", "buf_lint_test")
 
 # Bazel-generated files are different from what is generated locally by buf and
@@ -15,17 +14,6 @@ proto_library(
     strip_import_prefix = "/lib",  # keep
     visibility = ["//visibility:public"],
     deps = ["@com_google_protobuf//:duration_proto"],
-)
-
-go_proto_library(
-    name = "v1_go_proto",
-    compilers = [
-        "//:gen-go-grpc",
-        "@io_bazel_rules_go//proto:go_proto",
-    ],
-    importpath = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1",
-    proto = ":v1_proto",
-    visibility = ["//visibility:public"],
 )
 
 go_library(
