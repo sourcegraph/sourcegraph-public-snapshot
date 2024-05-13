@@ -470,6 +470,16 @@ func (b *observableBackend) LatestCommitTimestamp(ctx context.Context) (_ time.T
 	return b.backend.LatestCommitTimestamp(ctx)
 }
 
+func (b *observableBackend) RefHash(ctx context.Context) (_ []byte, err error) {
+	ctx, _, endObservation := b.operations.refHash.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("RefHash").Inc()
+	defer concurrentOps.WithLabelValues("RefHash").Dec()
+
+	return b.backend.RefHash(ctx)
+}
+
 type operations struct {
 	configGet             *observation.Operation
 	configSet             *observation.Operation
@@ -494,6 +504,7 @@ type operations struct {
 	stat                  *observation.Operation
 	readDir               *observation.Operation
 	latestCommitTimestamp *observation.Operation
+	refHash               *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -545,6 +556,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		stat:                  op("stat"),
 		readDir:               op("read-dir"),
 		latestCommitTimestamp: op("latest-commit-timestamp"),
+		refHash:               op("ref-hash"),
 	}
 }
 

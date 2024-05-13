@@ -151,6 +151,12 @@ type GitBackend interface {
 	// LatestCommitTimestamp returns the timestamp of the most recent commit, if any.
 	// If there are no commits or the latest commit is in the future, time.Now is returned.
 	LatestCommitTimestamp(ctx context.Context) (time.Time, error)
+
+	// RefHash computes a hash of all the refs. The hash only changes if the set
+	// of refs and the commits they point to change.
+	// This value can be used to determine if a repository changed since the last
+	// time the hash has been computed.
+	RefHash(ctx context.Context) ([]byte, error)
 }
 
 type GitDiffComparisonType int
