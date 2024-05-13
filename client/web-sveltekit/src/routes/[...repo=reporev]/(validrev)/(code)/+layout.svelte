@@ -159,6 +159,10 @@
     }
 
     function handleGoToRoot(): void {
+        // Without this if we go to the root from the before scoped directory
+        // (and we were in the root before) fileTreeStore caching omits
+        // new file tree provider creating, this would lead to not updating
+        // file tree as we go to the root
         fileTreeStore.resetTopPathCache(repoName, resolvedRevision.commitID)
     }
 

@@ -103,7 +103,7 @@ export function createFileTreeStore(options: FileTreeStoreOptions): FileTreeStor
 
     return {
         subscribe,
-        set(args, reset?: boolean) {
+        set(args) {
             repoRevPath.next(args)
         },
         resetTopPathCache(repoName: string, revision: string): void {
