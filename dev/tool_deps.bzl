@@ -13,10 +13,8 @@ PGUTILS_VERSION = "ad082497"
 LINEAR_SDK_VERSION = "21.1.0"
 
 GH_BUILDFILE = """
-filegroup(
-    name = "gh",
+exports_files(
     srcs = ["bin/gh"],
-    visibility = ["//visibility:public"],
 )
 """
 
@@ -62,6 +60,14 @@ package(default_visibility = ["//visibility:public"])
 filegroup(
     name = "files",
     srcs = glob(["**/*"]),
+)
+"""
+
+CHROMIUM_MAC_ARM_BUILDFILE = """
+filegroup(
+    name = "chromium",
+    srcs = ["chrome-mac/Chromium.app/Contents/MacOS/Chromium"],
+    visibility = ["//visibility:public"],
 )
 """
 
@@ -333,6 +339,12 @@ def tool_deps():
         url = "https://github.com/cedarai/embedded-postgres-binaries/releases/download/13.6-with-tools-20220304/postgresql-13.6-darwin-arm64.txz",
         build_file_content = PGUTILS_BUILDFILE,
         sha256 = "32fd723dc8a64efaebc18e78f293bc7c5523fbb659a82be0f9da900f3a28c510",
+    )
+
+    http_archive(
+        name = "chromium_mac_arm64",
+        url = "https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Mac_Arm%2F1294254%2Fchrome-mac.zip?generation=1714478220994098&alt=media",
+        build_file_content = CHROMIUM_MAC_ARM_BUILDFILE,
     )
 
     http_file(

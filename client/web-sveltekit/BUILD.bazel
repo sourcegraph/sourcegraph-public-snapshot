@@ -187,8 +187,11 @@ playwright_test_bin.playwright_test(
     env = {
         "BAZEL": "1",
         "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/build/_sk",
-        "CHROMIUM_BIN": "$(rootpath @org_chromium_chromium_macos_arm64//:chrome-mac)",
+        "CHROMIUM_BIN": "$(rootpath @gh_darwin-arm64//:bin/gh)",
     },
+    tools = [
+        "@gh_darwin-arm64//:bin/gh",
+    ],
 )
 
 TESTS = glob([
