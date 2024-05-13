@@ -72,7 +72,6 @@ func NewSyntacticJobScheduler(observationCtx *observation.Context, db *sql.DB) (
 	}, nil
 }
 
-// Schedule implements SyntacticJobScheduler.
 func (s *syntacticJobScheduler) Schedule(observationCtx *observation.Context, ctx context.Context, currentTime time.Time) error {
 	observationCtx.Logger.Info("Launching syntactic indexer...")
 	batchOptions := reposcheduler.NewBatchOptions(config.RepositoryProcessDelay, true, &config.PolicyBatchSize, config.RepositoryBatchSize)

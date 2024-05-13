@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -73,7 +74,13 @@ func newSchedulerJob(
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(context.Background()),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			return scheduler.Schedule(observationCtx, ctx, time.Now())
+			config := conf.Get().ExperimentalFeatures
+			if config != nil && config.CodeintelSyntacticIndexingEnabled {
+				return scheduler.Schedule(observationCtx, ctx, time.Now())
+			} else {
+				observationCtx.Logger.Info("Syntactic indexing is disabled")
+				return nil
+			}
 		}),
 		goroutine.WithName("codeintel.syntactic-indexing-background-scheduler"),
 		goroutine.WithDescription("schedule syntactic indexing jobs in the background"),
