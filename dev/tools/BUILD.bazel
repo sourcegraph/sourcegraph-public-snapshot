@@ -117,3 +117,13 @@ alias(
     }),
     visibility = ["//visibility:public"],
 )
+
+sh_binary(
+    name = "chromium",
+    srcs = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@chromium-darwin-x86_64//:chromium"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@chromium-darwin-arm64//:chromium"],
+        "@bazel_tools//src/conditions:linux_x86_64": ["@chromium-linux-x86_64//:chromium"],
+    }),
+    visibility = ["//visibility:public"],
+)

@@ -63,19 +63,13 @@ filegroup(
 )
 """
 
-CHROMIUM_MAC_ARM_BUILDFILE = """
+CHROMIUM_BUILDFILE = """
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 js_library(
     name = "chromium",
-    srcs = ["chrome-mac/Chromium.app/Contents/MacOS/Chromium"],
+    srcs = ["{}"],
     visibility = ["//visibility:public"],
 )
-#
-# filegroup(
-#     name = "chromium",
-#     srcs = ["chrome-mac/Chromium.app/Contents/MacOS/Chromium"],
-#     visibility = ["//visibility:public"],
-# )
 """
 
 def tool_deps():
@@ -348,14 +342,29 @@ def tool_deps():
         sha256 = "32fd723dc8a64efaebc18e78f293bc7c5523fbb659a82be0f9da900f3a28c510",
     )
 
-    http_archive(
-        name = "chromium_mac_arm64",
-        url = "https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Mac_Arm%2F1294254%2Fchrome-mac.zip?generation=1714478220994098&alt=media",
-        build_file_content = CHROMIUM_MAC_ARM_BUILDFILE,
-    )
-
     http_file(
         name = "linear-sdk-graphql-schema",
         url = "https://raw.githubusercontent.com/linear/linear/%40linear/sdk%40{0}/packages/sdk/src/schema.graphql".format(LINEAR_SDK_VERSION),
         integrity = "sha256-9WUYPWt4iWcE/fhm6guqrfbk41y+Hb3jIR9I0/yCzwk=",
+    )
+
+    # Chromium deps for playwright
+    # to find the update URLs try running:
+    # npx playwright install --dry-run
+    http_archive(
+        name = "chromium-darwin-arm64",
+        url = "https://playwright.azureedge.net/builds/chromium/1117/chromium-mac-arm64.zip",
+        build_file_content = CHROMIUM_BUILDFILE.format("chrome-mac/Chromium.app/Contents/MacOS/Chromium"),
+    )
+
+    http_archive(
+        name = "chromium-darwin-x86_64",
+        url = "https://playwright.azureedge.net/builds/chromium/1117/chromium-mac-arm64.zip",
+        build_file_content = CHROMIUM_BUILDFILE.format("chrome-mac/Chromium.app/Contents/MacOS/Chromium"),
+    )
+
+    http_archive(
+        name = "chromium-linux-x86_64",
+        url = "https://playwright.azureedge.net/builds/chromium/1117/chromium-linux.zip",
+        build_file_content = CHROMIUM_BUILDFILE.format("chrome-linux/chrome"),
     )

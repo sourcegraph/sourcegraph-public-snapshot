@@ -167,6 +167,16 @@ copy_to_directory(
     ],
 )
 
+sh_binary(
+    name = "dummy",
+    srcs = ["dummy.sh"],
+    args = ["$(location //dev/tools:chromium)"],
+    data = ["//dev/tools:chromium"],
+    env = {
+        "CHROMIUM_BIN": "$(location //dev/tools:chromium)",
+    },
+)
+
 playwright_test_bin.playwright_test(
     name = "e2e_test",
     args = [
@@ -179,16 +189,16 @@ playwright_test_bin.playwright_test(
             "src/testing/*.ts",
         ],
     ) + [
-        "@chromium_mac_arm64//:chromium",
         "playwright.config.ts",
         ":generate-graphql-types",
         ":test_app_assets",
         "//cmd/frontend/graphqlbackend:graphql_schema",
+        "@chromium-darwin-arm64//:chromium",
     ] + PLAYWRIGHT_DEPS,
     env = {
         "BAZEL": "1",
         "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/build/_sk",
-        "CHROMIUM_BIN": "$(location @chromium_mac_arm64//:chromium)",
+        "CHROMIUM_BIN": "$(location @chromium-darwin-arm64//:chromium)",
     },
 )
 
