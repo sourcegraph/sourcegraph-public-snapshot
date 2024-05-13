@@ -62,10 +62,35 @@ func TestParseRemote(t *testing.T) {
 }
 
 func TestInferRoot(t *testing.T) {
+	gitDir, err := os.MkdirTemp("", "temp-test-infer-root-rep")
+	if err != nil {
+		t.Fatalf("unexpected error creating temporary directory: %s", err)
+	}
+
+	t.Cleanup(func() {
+		if t.Failed() {
+			t.Logf("git dir %s left intact for inspection", gitDir)
+		} else {
+			os.RemoveAll(gitDir)
+		}
+	})
+
+	// Needed in CI
+	_, err = runGitCommand("init")
+	if err != nil {
+		t.Fatalf("unexpected error initializing git repo: %v", err)
+	}
+	_, err = runGitCommand("config", "user.email", "test@sourcegraph.com")
+	if err != nil {
+		t.Fatalf("unexpected error configuring git repo: %v", err)
+	}
+
+	repoRootPath := "../.."
+
 	testCases := map[string]string{
-		"gitutil.go":            filepath.Join("internal", "codeintel"),
-		"../../cmd/src/lsif.go": filepath.Join("cmd", "src"),
-		"../../README.md":       ".",
+		"gitutil.go":            ".",
+		"../../cmd/src/lsif.go": filepath.Join(repoRootPath, "cmd", "src"),
+		"../../README.md":       repoRootPath,
 	}
 
 	for input, expectedOutput := range testCases {
