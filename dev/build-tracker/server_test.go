@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/bigquery"
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log/logtest"
@@ -315,22 +317,51 @@ func TestProcessEvent(t *testing.T) {
 
 	t.Run("agent webhooks", func(t *testing.T) {
 		mockBq := NewMockBigQueryWriter()
-		server := NewServer(":8080", logger, config.Config{}, mockBq)
-
-		server.processEvent(&build.Event{
-			Name: "agent.connected",
-			Agent: buildkite.Agent{
-				ID:             pointers.Ptr("QWdlbnQtLS0wMThmNjI4Yy1jY2M0LTRhMmEtOTJjOS1kN2NjODE5MDZiNzc="),
-				Name:           pointers.Ptr("banana-agent-default"),
-				ConnectedState: pointers.Ptr("connected"),
-				Hostname:       pointers.Ptr("banana-agent-deadbeef"),
-				IPAddress:      pointers.Ptr("10.0.0.5"),
-				UserAgent:      pointers.Ptr("buildkite-agent/4.2.0 (linux; amd64)"),
-				Version:        pointers.Ptr("4.2.0"),
-				Metadata:       []string{"queue=express"},
-			},
+		mockBq.WriteFunc.SetDefaultHook(func(ctx context.Context, vs ...bigquery.ValueSaver) error {
+			for _, v := range vs {
+				if _, _, err := v.Save(); err != nil {
+					return err
+				}
+			}
+			return nil
 		})
 
+		server := NewServer(":8080", logger, config.Config{
+			BuildkiteWebhookToken: "asdf",
+		}, mockBq)
+
+		rw := httptest.NewRecorder()
+		body := bytes.NewBufferString(`{
+			"event": "agent.disconnected",
+			"agent": {
+				"id": "4b7d474e-828d-4ca6-afac-fb7732aef91c",
+				"url": "https://api.buildkite.com/v2/organizations/sourcegraph/agents/4b7d474e-828d-4ca6-afac-fb7732aef91c",
+				"web_url": "https://buildkite.com/organizations/sourcegraph/agents/4b7d474e-828d-4ca6-afac-fb7732aef91c",
+				"name": "buildkite-agent-stateless-1af9aadc73a9401b9e9e66e7dfa3202dndjnv-1",
+				"connection_state": "disconnected",
+				"ip_address": "240.240.240.240",
+				"hostname": "buildkite-agent-stateless-1af9aadc73a9401b9e9e66e7dfa3202dndjnv",
+				"user_agent": "buildkite-agent/3.61.0.7770 (linux; amd64)",
+				"version": "3.61.0",
+				"meta_data": [
+					"something=random",
+					"queue=stateless",
+					"queue=standard",
+					"queue=default",
+					"queue=job"
+				]
+			},
+			"sender": {
+				"id": "da8fdab8-2ce9-4630-88eb-712f20008eee",
+				"name": "Not Me"
+			}
+		}`)
+		req := httptest.NewRequest("POST", "/buildkite", body)
+		req.Header.Add("X-Buildkite-Token", "asdf")
+		req.Header.Add("X-Buildkite-Event", "agent.disconnected")
+		server.handleEvent(rw, req)
+
+		require.Equal(t, 200, rw.Code)
 		require.Equal(t, 1, len(mockBq.WriteFunc.History()))
 	})
 }
