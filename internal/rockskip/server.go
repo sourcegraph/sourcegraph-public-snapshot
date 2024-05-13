@@ -267,5 +267,8 @@ func ruler(n int) int {
 	if n <= 0 {
 		return 0
 	}
+	// ruler(n) is equivalent to asking how many times can you divide n by 2
+	// before you get an odd number. That is the number of 0's at the end of n
+	// when n is written in base 2.
 	return bits.TrailingZeros(uint(n))
 }
