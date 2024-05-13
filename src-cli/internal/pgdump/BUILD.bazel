@@ -17,7 +17,6 @@ go_test(
     srcs = ["extensions_test.go"],
     embed = [":pgdump"],
     deps = [
-        "@com_github_hexops_autogold//:autogold",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
