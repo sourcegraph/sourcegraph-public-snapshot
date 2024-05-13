@@ -3,6 +3,7 @@ package uploadstore
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"io"
 	"strings"
 	"sync"
@@ -250,7 +251,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 			Bucket:     multipartUpload.Bucket,
 			Key:        multipartUpload.Key,
 			UploadId:   multipartUpload.UploadId,
-			PartNumber: int32(partNumber),
+			PartNumber: pointers.Ptr(int32(partNumber)),
 			CopySource: aws.String(fmt.Sprintf("%s/%s", s.bucket, source)),
 		})
 		if err != nil {
@@ -272,7 +273,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 
 		parts = append(parts, s3types.CompletedPart{
 			ETag:       etags[partNumber],
-			PartNumber: int32(partNumber),
+			PartNumber: pointers.Ptr(int32(partNumber)),
 		})
 	}
 
@@ -293,7 +294,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 		return 0, errors.Wrap(err, "failed to stat composed object")
 	}
 
-	return obj.ContentLength, nil
+	return pointers.Deref(obj.ContentLength, 0), nil
 }
 
 func (s *s3Store) Delete(ctx context.Context, key string) (err error) {
