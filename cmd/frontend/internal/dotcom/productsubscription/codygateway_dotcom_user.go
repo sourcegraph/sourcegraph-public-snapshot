@@ -369,6 +369,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"openai/gpt-3.5-turbo",
 			"openai/gpt-4-turbo",
 			"openai/gpt-4-turbo-preview",
+			"openai/gpt-4o",
 
 			// Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",

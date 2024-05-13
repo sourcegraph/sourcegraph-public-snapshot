@@ -41,6 +41,7 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int) CodyGatewayRateLimit
 		"openai/gpt-4",
 		"openai/gpt-4-turbo",
 		"openai/gpt-4-turbo-preview",
+		"openai/gpt-4o",
 	}
 	switch plan {
 	// TODO: This is just an example for now.
