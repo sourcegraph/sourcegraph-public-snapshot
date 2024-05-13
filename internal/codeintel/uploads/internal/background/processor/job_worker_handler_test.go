@@ -72,16 +72,16 @@ func TestHandle(t *testing.T) {
 	mockUploadStore.GetFunc.SetDefaultHook(copyTestDumpScip)
 
 	// Allowlist all files in dump
-	gitserverClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, path string, _ bool) ([]fs.FileInfo, error) {
+	gitserverClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, path string, _ bool) (gitserver.ReadDirIterator, error) {
 		children, ok := scipDirectoryChildren[path]
 		if !ok {
-			return nil, nil
+			return gitserver.NewReadDirIteratorFromSlice(nil), nil
 		}
 		fis := make([]fs.FileInfo, 0, len(children))
 		for _, c := range children {
 			fis = append(fis, &fileutil.FileInfo{Name_: c})
 		}
-		return fis, nil
+		return gitserver.NewReadDirIteratorFromSlice(fis), nil
 	})
 
 	expectedCommitDate := time.Unix(1587396557, 0).UTC()
@@ -323,6 +323,8 @@ func TestHandleError(t *testing.T) {
 			},
 		}, nil
 	})
+
+	gitserverClient.ReadDirFunc.SetDefaultReturn(gitserver.NewReadDirIteratorFromSlice(nil), nil)
 
 	// Set a different tip commit
 	mockDBStore.SetRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))

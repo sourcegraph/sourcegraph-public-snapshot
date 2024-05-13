@@ -342,7 +342,7 @@ func (i *changedFilesIterator) Close() {
 	})
 }
 
-func (c *clientImplementor) ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) (_ []fs.FileInfo, err error) {
+func (c *clientImplementor) ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) (_ ReadDirIterator, err error) {
 	ctx, _, endObservation := c.operations.readDir.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
@@ -352,77 +352,124 @@ func (c *clientImplementor) ReadDir(ctx context.Context, repo api.RepoName, comm
 			attribute.Bool("recurse", recurse),
 		},
 	})
-	defer endObservation(1, observation.Args{})
 
 	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
-	res, err := client.ReadDir(ctx, &proto.ReadDirRequest{
+	// We create a context here to have a way to cancel the RPC if the caller
+	// doesn't read the entire result.
+	ctx, cancel := context.WithCancel(ctx)
+	cc, err := client.ReadDir(ctx, &proto.ReadDirRequest{
 		RepoName:  string(repo),
 		CommitSha: string(commit),
 		Path:      []byte(path),
 		Recursive: recurse,
 	})
 	if err != nil {
+		cancel()
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
-	fis := []fs.FileInfo{}
+	// We receive the first chunk here so that we can return an error if the
+	// file/path is not found.
+	firstChunk, err := cc.Recv()
+	if err != nil {
+		defer endObservation(1, observation.Args{})
+		defer cancel()
 
-	for {
-		chunk, err := res.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			if s, ok := status.FromError(err); ok {
-				// If sub repo permissions deny access to the file, we return os.ErrNotExist.
-				if s.Code() == codes.NotFound {
-					for _, d := range s.Details() {
-						fp, ok := d.(*proto.FileNotFoundPayload)
-						if ok {
-							return nil, &os.PathError{Op: "open", Path: fp.Path, Err: os.ErrNotExist}
-						}
+		if s, ok := status.FromError(err); ok {
+			if s.Code() == codes.NotFound {
+				for _, d := range s.Details() {
+					fp, ok := d.(*proto.FileNotFoundPayload)
+					if ok {
+						return nil, &os.PathError{Op: "open", Path: fp.Path, Err: os.ErrNotExist}
 					}
 				}
 			}
-
-			return nil, err
 		}
-		for _, fi := range chunk.GetFileInfo() {
-			fis = append(fis, gitdomain.ProtoFileInfoToFS(fi))
-		}
+
+		return nil, err
 	}
 
-	if err != nil || !authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		return fis, err
-	}
-
-	a := actor.FromContext(ctx)
-	filtered, filteringErr := authz.FilterActorFileInfos(ctx, c.subRepoPermsChecker, a, repo, fis)
-	if filteringErr != nil {
-		return nil, errors.Wrap(err, "filtering paths")
-	} else {
-		return filtered, nil
-	}
+	return &readDirIterator{
+		ctx:        ctx,
+		firstChunk: firstChunk,
+		cc:         cc,
+		onClose: func() {
+			cancel()
+			endObservation(1, observation.Args{})
+		},
+		subRepoPermsChecker: c.subRepoPermsChecker,
+		repo:                repo,
+	}, nil
 }
 
-func pathspecsToStrings(pathspecs []gitdomain.Pathspec) []string {
-	var strings []string
-	for _, pathspec := range pathspecs {
-		strings = append(strings, string(pathspec))
-	}
-	return strings
+type readDirIterator struct {
+	ctx                 context.Context
+	firstChunk          *proto.ReadDirResponse
+	firstChunkConsumed  bool
+	cc                  proto.GitserverService_ReadDirClient
+	onClose             func()
+	subRepoPermsChecker authz.SubRepoPermissionChecker
+	repo                api.RepoName
+	buffer              []fs.FileInfo
 }
 
-func pathspecsToBytes(pathspecs []gitdomain.Pathspec) [][]byte {
-	var s [][]byte
-	for _, pathspec := range pathspecs {
-		s = append(s, []byte(pathspec))
+func (i *readDirIterator) Next() (fs.FileInfo, error) {
+	if len(i.buffer) == 0 {
+		for {
+			if i.ctx.Err() != nil {
+				return nil, i.ctx.Err()
+			}
+
+			chunk, err := i.fetchChunk()
+			if err != nil {
+				return nil, err
+			}
+			fds := []fs.FileInfo{}
+			for _, f := range chunk.GetFileInfo() {
+				fds = append(fds, gitdomain.ProtoFileInfoToFS(f))
+			}
+			if authz.SubRepoEnabled(i.subRepoPermsChecker) {
+				a := actor.FromContext(i.ctx)
+				filtered, filteringErr := authz.FilterActorFileInfos(i.ctx, i.subRepoPermsChecker, a, i.repo, fds)
+				if filteringErr != nil {
+					return nil, errors.Wrap(err, "filtering paths")
+				}
+				i.buffer = filtered
+			} else {
+				i.buffer = fds
+			}
+			if len(i.buffer) > 0 {
+				break
+			}
+		}
 	}
-	return s
+
+	if len(i.buffer) == 0 {
+		return nil, io.EOF
+	}
+
+	fd := i.buffer[0]
+	i.buffer = i.buffer[1:]
+
+	return fd, nil
+}
+
+func (i *readDirIterator) fetchChunk() (*proto.ReadDirResponse, error) {
+	if !i.firstChunkConsumed {
+		i.firstChunkConsumed = true
+		return i.firstChunk, nil
+	}
+	return i.cc.Recv()
+}
+
+func (i *readDirIterator) Close() {
+	i.onClose()
 }
 
 func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) (err error) {

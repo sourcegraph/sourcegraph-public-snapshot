@@ -2,6 +2,7 @@ package background
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -66,15 +67,24 @@ func (r *analyticsIndexer) indexRepo(ctx context.Context, repoId api.RepoID, che
 	if err != nil {
 		return errcode.MakeNonRetryable(errors.Wrapf(err, "cannot resolve HEAD"))
 	}
-	files, err := r.client.ReadDir(ctx, repo.Name, commitID, "", true)
+	it, err := r.client.ReadDir(ctx, repo.Name, commitID, "", true)
 	if err != nil {
 		return errors.Wrap(err, "ls-tree")
 	}
+	defer it.Close()
+
 	isOwnedViaCodeowners := r.codeowners(ctx, repo, commitID)
 	isOwnedViaAssignedOwnership := r.assignedOwners(ctx, repo, commitID)
 	var totalCount int
 	var ownCounts database.PathAggregateCounts
-	for _, f := range files {
+	for {
+		f, err := it.Next()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
 		if f.IsDir() {
 			continue
 		}
