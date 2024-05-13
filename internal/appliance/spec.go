@@ -155,12 +155,13 @@ type PostgresExporterSpec struct {
 }
 
 type PreciseCodeIntelSpec struct {
+	config.StandardConfig
+
+	NumWorkers int `json:"numWorkers"`
+
 	// Replicas defines the number of Precise Code Intel Worker pod replicas.
 	// Default: 2
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 // RedisSpec defines the desired state of a Redis-based service.
@@ -210,12 +211,11 @@ type SymbolsSpec struct {
 
 // SyntectServerSpec defines the desired state of the Syntect server service.
 type SyntectServerSpec struct {
+	config.StandardConfig
+
 	// Replicas defines the number of Syntect Server pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 type WorkerSpec struct {

@@ -971,6 +971,8 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// BatchChangesEnablePerforce description: When enabled, batch changes will be executable on Perforce depots.
 	BatchChangesEnablePerforce bool `json:"batchChanges.enablePerforce,omitempty"`
+	// CodeintelSyntacticIndexingEnabled description: When enabled, syntactic indexing jobs will be scheduled for all enabled repos
+	CodeintelSyntacticIndexingEnabled bool `json:"codeintelSyntacticIndexing.enabled,omitempty"`
 	// CodyContextIgnore description: Enabled filtering of remote Cody context based on repositories ./cody/ignore file
 	CodyContextIgnore *bool `json:"codyContextIgnore,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
@@ -1068,6 +1070,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "batchChanges.enablePerforce")
+	delete(m, "codeintelSyntacticIndexing.enabled")
 	delete(m, "codyContextIgnore")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
@@ -2578,10 +2581,8 @@ type SettingsExperimentalFeatures struct {
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
 	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
 	// SymbolKindTags description: Show the initial letter of the symbol kind instead of icons.
-	SymbolKindTags bool `json:"symbolKindTags,omitempty"`
-	// SyntacticIndexing description: Whether syntactic indexing is enabled
-	SyntacticIndexing bool           `json:"syntacticIndexing,omitempty"`
-	Additional        map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
+	SymbolKindTags bool           `json:"symbolKindTags,omitempty"`
+	Additional     map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
 }
 
 func (v SettingsExperimentalFeatures) MarshalJSON() ([]byte, error) {
@@ -2642,7 +2643,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "showCodeMonitoringLogs")
 	delete(m, "showMultilineSearchConsole")
 	delete(m, "symbolKindTags")
-	delete(m, "syntacticIndexing")
 	if len(m) > 0 {
 		v.Additional = make(map[string]any, len(m))
 	}

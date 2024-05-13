@@ -269,7 +269,7 @@ func generateTerraform(service *spec.Spec, opts generateTerraformOptions) error 
 			// additional configuration for the rollout pipeline that we can't
 			// yet provide with Terraform. In the future, we can hopefully
 			// replace this with a pure-Terraform version.
-			region := cloudrun.GCPRegion // region is currently fixed
+			region := env.GetLocationSpec().GCPRegion
 			deploySpec, err := clouddeploy.RenderSpec(
 				service.Service,
 				service.Build,

@@ -1033,6 +1033,62 @@ func changedFilesRequestToLogFields(req *proto.ChangedFilesRequest) []log.Field 
 	}
 }
 
+func (l *loggingGRPCServer) Stat(ctx context.Context, request *proto.StatRequest) (resp *proto.StatResponse, err error) {
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+			proto.GitserverService_Stat_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			statRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.Stat(ctx, request)
+}
+
+func statRequestToLogFields(req *proto.StatRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.String("commit", string(req.GetCommitSha())),
+		log.String("path", string(req.GetPath())),
+	}
+}
+
+func (l *loggingGRPCServer) ReadDir(request *proto.ReadDirRequest, server proto.GitserverService_ReadDirServer) error {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+			proto.GitserverService_ReadDir_FullMethodName,
+			status.Code(server.Context().Err()),
+			trace.Context(server.Context()).TraceID,
+			elapsed,
+
+			readDirRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.ReadDir(request, server)
+}
+
+func readDirRequestToLogFields(req *proto.ReadDirRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.String("commit", string(req.GetCommitSha())),
+		log.String("path", string(req.GetPath())),
+		log.Bool("recursive", req.GetRecursive()),
+	}
+}
+
 type loggingRepositoryServiceServer struct {
 	base   proto.GitserverRepositoryServiceServer
 	logger log.Logger
@@ -1091,6 +1147,33 @@ func (l *loggingRepositoryServiceServer) FetchRepository(ctx context.Context, re
 func fetchRepositoryRequestToLogFields(req *proto.FetchRepositoryRequest) []log.Field {
 	return []log.Field{
 		log.String("repoName", req.GetRepoName()),
+	}
+}
+
+func (l *loggingRepositoryServiceServer) ListRepositories(ctx context.Context, request *proto.ListRepositoriesRequest) (resp *proto.ListRepositoriesResponse, err error) {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+
+			proto.GitserverRepositoryService_ListRepositories_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			listRepositoriesRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.ListRepositories(ctx, request)
+}
+
+func listRepositoriesRequestToLogFields(req *proto.ListRepositoriesRequest) []log.Field {
+	return []log.Field{
+		log.Int("page_size", int(req.GetPageSize())),
 	}
 }
 

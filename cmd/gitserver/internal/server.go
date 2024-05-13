@@ -49,8 +49,6 @@ func init() {
 	traceLogs, _ = strconv.ParseBool(env.Get("SRC_GITSERVER_TRACE", "false", "Toggles trace logging to stderr"))
 }
 
-type Backender func(common.GitDir, api.RepoName) git.GitBackend
-
 type ServerOpts struct {
 	// Logger should be used for all logging and logger creation.
 	Logger log.Logger
@@ -59,9 +57,9 @@ type ServerOpts struct {
 	// name on disk and map a dir on disk back to a repo name.
 	FS gitserverfs.FS
 
-	// GetBackendFunc is a function which returns the git backend for a
+	// GitBackendSource is a function which returns the git backend for a
 	// repository.
-	GetBackendFunc Backender
+	GitBackendSource git.GitBackendSource
 
 	// GetRemoteURLFunc is a function which returns the remote URL for a
 	// repository. This is used when cloning or fetching a repository. In
@@ -120,7 +118,7 @@ func NewServer(opt *ServerOpts) *Server {
 
 	return &Server{
 		logger:                  opt.Logger,
-		getBackendFunc:          opt.GetBackendFunc,
+		gitBackendSource:        opt.GitBackendSource,
 		getRemoteURLFunc:        opt.GetRemoteURLFunc,
 		getVCSSyncer:            opt.GetVCSSyncer,
 		hostname:                opt.Hostname,
@@ -146,9 +144,9 @@ type Server struct {
 	// name on disk and map a dir on disk back to a repo name.
 	fs gitserverfs.FS
 
-	// getBackendFunc is a function which returns the git backend for a
+	// gitBackendSource is a function which returns the git backend for a
 	// repository.
-	getBackendFunc Backender
+	gitBackendSource git.GitBackendSource
 
 	// getRemoteURLFunc is a function which returns the remote URL for a
 	// repository. This is used when cloning or fetching a repository. In
@@ -522,7 +520,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, lock Reposito
 		return errors.Wrapf(cloneErr, "clone failed. Output: %s", output.String())
 	}
 
-	if err := postRepoFetchActions(ctx, logger, s.fs, s.db, s.getBackendFunc(common.GitDir(tmpPath), repo), s.hostname, repo, common.GitDir(tmpPath), syncer); err != nil {
+	if err := postRepoFetchActions(ctx, logger, s.fs, s.db, s.gitBackendSource(common.GitDir(tmpPath), repo), s.hostname, repo, common.GitDir(tmpPath), syncer); err != nil {
 		return err
 	}
 
@@ -705,13 +703,6 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, lock Repos
 			return errors.Wrap(err, "get VCS syncer")
 		}
 
-		// drop temporary pack files after a fetch. this function won't
-		// return until this fetch has completed or definitely-failed,
-		// either way they can't still be in use. we don't care exactly
-		// when the cleanup happens, just that it does.
-		// TODO: Should be done in janitor.
-		defer git.CleanTmpPackFiles(s.logger, dir)
-
 		// ensure the background update doesn't hang forever
 		fetchCtx, cancelTimeout := context.WithTimeout(ctx, fetchTimeout)
 		defer cancelTimeout()
@@ -746,7 +737,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, lock Repos
 			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, output.String())
 		}
 
-		return postRepoFetchActions(ctx, logger, s.fs, s.db, s.getBackendFunc(dir, repo), s.hostname, repo, dir, syncer)
+		return postRepoFetchActions(ctx, logger, s.fs, s.db, s.gitBackendSource(dir, repo), s.hostname, repo, dir, syncer)
 	}(ctx)
 
 	if errors.Is(err, context.DeadlineExceeded) {

@@ -4,18 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/fs"
 	"math/rand"
 	"os"
-	"path/filepath"
 	"reflect"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -144,379 +140,11 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 	}
 }
 
-func TestLsFiles(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit string) ([]string, error) {
-		client := NewTestClient(t).WithChecker(checker)
-		return client.LsFiles(ctx, repo, api.CommitID(commit))
-	})
-}
-
-// runFileListingTest tests the specified function which must return a list of filenames and an error. The test first
-// tests the basic case (all paths returned), then the case with sub-repo permissions specified.
-func runFileListingTest(t *testing.T,
-	listingFunctionToTest func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string) ([]string, error),
-) {
-	t.Helper()
-	gitCommands := []string{
-		"touch file1",
-		"mkdir dir",
-		"touch dir/file2",
-		"touch dir/file3",
-		"git add file1 dir/file2 dir/file3",
-		"git commit -m commit1",
-	}
-
-	repo, dir := MakeGitRepositoryAndReturnDir(t, gitCommands...)
-	headCommit := GetHeadCommitFromGitDir(t, dir)
-	ctx := context.Background()
-
-	checker := authz.NewMockSubRepoPermissionChecker()
-	// Start disabled
-	checker.EnabledFunc.SetDefaultHook(func() bool {
-		return false
-	})
-
-	files, err := listingFunctionToTest(ctx, checker, repo, headCommit)
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := []string{
-		"dir/file2", "dir/file3", "file1",
-	}
-	if diff := cmp.Diff(want, files); diff != "" {
-		t.Fatal(diff)
-	}
-
-	// With filtering
-	checker.EnabledFunc.SetDefaultHook(func() bool {
-		return true
-	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		if content.Path == "dir/file2" {
-			return authz.Read, nil
-		}
-		return authz.None, nil
-	})
-	usePermissionsForFilePermissionsFunc(checker)
-	ctx = actor.WithActor(ctx, &actor.Actor{
-		UID: 1,
-	})
-	files, err = listingFunctionToTest(ctx, checker, repo, headCommit)
-	if err != nil {
-		t.Fatal(err)
-	}
-	want = []string{
-		"dir/file2",
-	}
-	if diff := cmp.Diff(want, files); diff != "" {
-		t.Fatal(diff)
-	}
-}
-
-func TestParseDirectoryChildrenRoot(t *testing.T) {
-	dirnames := []string{""}
-	paths := []string{
-		".github",
-		".gitignore",
-		"LICENSE",
-		"README.md",
-		"cmd",
-		"go.mod",
-		"go.sum",
-		"internal",
-		"protocol",
-	}
-
-	expected := map[string][]string{
-		"": paths,
-	}
-
-	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
-		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
-	}
-}
-
-func TestParseDirectoryChildrenNonRoot(t *testing.T) {
-	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
-	paths := []string{
-		"cmd/lsif-go",
-		"protocol/protocol.go",
-		"protocol/writer.go",
-	}
-
-	expected := map[string][]string{
-		"cmd/":          {"cmd/lsif-go"},
-		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
-		"cmd/protocol/": nil,
-	}
-
-	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
-		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
-	}
-}
-
-func TestParseDirectoryChildrenDifferentDepths(t *testing.T) {
-	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
-	paths := []string{
-		"cmd/lsif-go",
-		"protocol/protocol.go",
-		"protocol/writer.go",
-		"cmd/protocol/main.go",
-	}
-
-	expected := map[string][]string{
-		"cmd/":          {"cmd/lsif-go"},
-		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
-		"cmd/protocol/": {"cmd/protocol/main.go"},
-	}
-
-	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
-		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
-	}
-}
-
-func TestCleanDirectoriesForLsTree(t *testing.T) {
-	args := []string{"", "foo", "bar/", "baz"}
-	actual := cleanDirectoriesForLsTree(args)
-	expected := []string{".", "foo/", "bar/", "baz/"}
-
-	if diff := cmp.Diff(expected, actual); diff != "" {
-		t.Errorf("unexpected ls-tree args (-want +got):\n%s", diff)
-	}
-}
-
-func TestListDirectoryChildren(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	gitCommands := []string{
-		"mkdir -p dir{1..3}/sub{1..3}",
-		"touch dir1/sub1/file",
-		"touch dir1/sub2/file",
-		"touch dir2/sub1/file",
-		"touch dir2/sub2/file",
-		"touch dir3/sub1/file",
-		"touch dir3/sub3/file",
-		"git add .",
-		"git commit -m commit1",
-	}
-
-	repo := MakeGitRepository(t, gitCommands...)
-
-	ctx := context.Background()
-
-	checker := authz.NewMockSubRepoPermissionChecker()
-	// Start disabled
-	checker.EnabledFunc.SetDefaultHook(func() bool {
-		return false
-	})
-	client1 := NewTestClient(t).WithChecker(checker)
-
-	dirnames := []string{"dir1/", "dir2/", "dir3/"}
-	children, err := client1.ListDirectoryChildren(ctx, repo, "HEAD", dirnames)
-	if err != nil {
-		t.Fatal(err)
-	}
-	expected := map[string][]string{
-		"dir1/": {"dir1/sub1", "dir1/sub2"},
-		"dir2/": {"dir2/sub1", "dir2/sub2"},
-		"dir3/": {"dir3/sub1", "dir3/sub3"},
-	}
-	if diff := cmp.Diff(expected, children); diff != "" {
-		t.Fatal(diff)
-	}
-
-	// With filtering
-	checker.EnabledFunc.SetDefaultHook(func() bool {
-		return true
-	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		if strings.Contains(content.Path, "dir1/") {
-			return authz.Read, nil
-		}
-		return authz.None, nil
-	})
-	usePermissionsForFilePermissionsFunc(checker)
-	client2 := NewTestClient(t).WithChecker(checker)
-	ctx = actor.WithActor(ctx, &actor.Actor{
-		UID: 1,
-	})
-	children, err = client2.ListDirectoryChildren(ctx, repo, "HEAD", dirnames)
-	if err != nil {
-		t.Fatal(err)
-	}
-	expected = map[string][]string{
-		"dir1/": {"dir1/sub1", "dir1/sub2"},
-		"dir2/": nil,
-		"dir3/": nil,
-	}
-	if diff := cmp.Diff(expected, children); diff != "" {
-		t.Fatal(diff)
-	}
-}
-
-func TestRepository_FileSystem_Symlinks(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	gitCommands := []string{
-		"touch file1",
-		"mkdir dir1",
-		"ln -s file1 link1",
-		"ln -s ../file1 dir1/link2",
-		"touch --date=2006-01-02T15:04:05Z file1 link1 dir1/link2 || touch -t " + Times[0] + " file1 link1 dir1/link2",
-		"git add link1 file1 dir1/link2",
-		"git commit -m commit1",
-	}
-
-	// map of path to size of content
-	symlinks := map[string]int64{
-		"link1":      5, // file1
-		"dir1/link2": 8, // ../file1
-	}
-
-	dir := InitGitRepository(t, gitCommands...)
-	repo := api.RepoName(filepath.Base(dir))
-
-	client := NewClient("test")
-
-	commitID := api.CommitID(ComputeCommitHash(dir, true))
-
-	ctx := context.Background()
-
-	// file1 should be a file.
-	file1Info, err := client.Stat(ctx, repo, commitID, "file1")
-	if err != nil {
-		t.Fatalf("fs.Stat(file1): %s", err)
-	}
-	if !file1Info.Mode().IsRegular() {
-		t.Errorf("file1 Stat !IsRegular (mode: %o)", file1Info.Mode())
-	}
-
-	checkSymlinkFileInfo := func(name string, link fs.FileInfo) {
-		t.Helper()
-		if link.Mode()&os.ModeSymlink == 0 {
-			t.Errorf("link mode is not symlink (mode: %o)", link.Mode())
-		}
-		if link.Name() != name {
-			t.Errorf("got link.Name() == %q, want %q", link.Name(), name)
-		}
-	}
-
-	// Check symlinks are links
-	for symlink := range symlinks {
-		fi, err := client.Stat(ctx, repo, commitID, symlink)
-		if err != nil {
-			t.Fatalf("fs.Stat(%s): %s", symlink, err)
-		}
-		if runtime.GOOS != "windows" {
-			// TODO(alexsaveliev) make it work on Windows too
-			checkSymlinkFileInfo(symlink, fi)
-		}
-	}
-
-	// Also check the FileInfo returned by ReadDir to ensure it's
-	// consistent with the FileInfo returned by lStat.
-	entries, err := client.ReadDir(ctx, repo, commitID, ".", false)
-	if err != nil {
-		t.Fatalf("fs.ReadDir(.): %s", err)
-	}
-	found := false
-	for _, entry := range entries {
-		if entry.Name() == "link1" {
-			found = true
-			if runtime.GOOS != "windows" {
-				checkSymlinkFileInfo("link1", entry)
-			}
-		}
-	}
-	if !found {
-		t.Fatal("readdir did not return link1")
-	}
-
-	for symlink, size := range symlinks {
-		fi, err := client.Stat(ctx, repo, commitID, symlink)
-		if err != nil {
-			t.Fatalf("fs.Stat(%s): %s", symlink, err)
-		}
-		if fi.Mode()&fs.ModeSymlink == 0 {
-			t.Errorf("%s Stat is not a symlink (mode: %o)", symlink, fi.Mode())
-		}
-		if fi.Name() != symlink {
-			t.Errorf("got Name %q, want %q", fi.Name(), symlink)
-		}
-		if fi.Size() != size {
-			t.Errorf("got %s Size %d, want %d", symlink, fi.Size(), size)
-		}
-	}
-}
-
-func TestStat(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	gitCommands := []string{
-		"mkdir dir1",
-		"touch dir1/file1",
-		"git add dir1/file1",
-		"git commit -m commit1",
-	}
-
-	dir := InitGitRepository(t, gitCommands...)
-	repo := api.RepoName(filepath.Base(dir))
-	checker := authz.NewMockSubRepoPermissionChecker()
-	// Start disabled
-	checker.EnabledFunc.SetDefaultHook(func() bool {
-		return false
-	})
-	client := NewTestClient(t).WithChecker(checker)
-
-	commitID := api.CommitID(ComputeCommitHash(dir, true))
-
-	ctx := context.Background()
-
-	fileInfo, err := client.Stat(ctx, repo, commitID, "dir1/file1")
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := "dir1/file1"
-	if diff := cmp.Diff(want, fileInfo.Name()); diff != "" {
-		t.Fatal(diff)
-	}
-
-	ctx = actor.WithActor(ctx, &actor.Actor{
-		UID: 1,
-	})
-
-	// With filtering
-	checker.EnabledFunc.SetDefaultHook(func() bool {
-		return true
-	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		if strings.HasPrefix(content.Path, "dir2") {
-			return authz.Read, nil
-		}
-		return authz.None, nil
-	})
-	usePermissionsForFilePermissionsFunc(checker)
-	_, err = client.Stat(ctx, repo, commitID, "dir1/file1")
-	if err == nil {
-		t.Fatal(err)
-	}
-	want = "ls-tree dir1/file1: file does not exist"
-	if diff := cmp.Diff(want, err.Error()); diff != "" {
-		t.Fatal(diff)
-	}
-}
-
-var NonExistentCommitID = api.CommitID(strings.Repeat("a", 40))
-
 func TestLogPartsPerCommitInSync(t *testing.T) {
 	require.Equal(t, partsPerCommit-1, strings.Count(logFormatWithoutRefs, "%x00"))
 }
 
-func TestRepository_HasCommitAfter(t *testing.T) {
+func TestCommits_After(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
@@ -595,24 +223,22 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.label, func(t *testing.T) {
-				client := NewTestClient(t).WithClientSource(NewTestClientSource(t, []string{"test"}, func(o *TestClientSourceOptions) {
-					o.ClientFunc = func(conn *grpc.ClientConn) proto.GitserverServiceClient {
-						c := NewMockGitserverServiceClient()
-						c.ResolveRevisionFunc.SetDefaultReturn(&proto.ResolveRevisionResponse{
-							CommitSha: tc.revspec,
-						}, nil)
-						return c
-					}
-				}))
+				client := NewTestClient(t)
 
 				gitCommands := make([]string, len(tc.commitDates))
 				for i, date := range tc.commitDates {
 					gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
 				}
 				repo := MakeGitRepository(t, gitCommands...)
-				got, err := client.HasCommitAfter(ctx, repo, tc.after, tc.revspec)
-				if err != nil || got != tc.want {
-					t.Errorf("got %t hascommitafter, want %t", got, tc.want)
+				got, err := client.Commits(ctx, repo, CommitsOptions{
+					N:     2,
+					Range: tc.revspec,
+					After: tc.after,
+				})
+				require.NoError(t, err)
+
+				if len(got) > 0 != tc.want {
+					t.Errorf("got %t commits, want %t", len(got) > 0, tc.want)
 				}
 			})
 		}
@@ -631,28 +257,38 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 				checker := getTestSubRepoPermsChecker("file2")
 				client := NewTestClient(t).WithChecker(checker)
 				repo := MakeGitRepository(t, gitCommands...)
-				got, err := client.HasCommitAfter(ctx, repo, tc.after, tc.revspec)
+				got, err := client.Commits(ctx, repo, CommitsOptions{
+					N:     2,
+					After: tc.after,
+					Range: tc.revspec,
+				})
 				if err != nil {
 					t.Errorf("got error: %s", err)
 				}
-				if got != tc.want {
-					t.Errorf("got %t hascommitafter, want %t", got, tc.want)
+				if len(got) > 0 != tc.want {
+					t.Errorf("got %t commits, want %t", len(got) > 0, tc.want)
 				}
 
-				// Case where user can't view commit 1 or commit 2, which will mean in some cases since HasCommitAfter will be false due to those commits not being visible.
+				// Case where user can't view commit 1 or commit 2, which will mean in some cases since len(Commits)>0 will be false due to those commits not being visible.
 				checker = getTestSubRepoPermsChecker("file1", "file2")
 				client = NewTestClient(t).WithChecker(checker)
-				got, err = client.HasCommitAfter(ctx, repo, tc.after, tc.revspec)
+				got, err = client.Commits(ctx, repo, CommitsOptions{
+					N:     2,
+					After: tc.after,
+					Range: tc.revspec,
+				})
 				if err != nil {
 					t.Errorf("got error: %s", err)
 				}
-				if got != tc.wantSubRepoTest {
-					t.Errorf("got %t hascommitafter, want %t", got, tc.wantSubRepoTest)
+				if len(got) > 0 != tc.wantSubRepoTest {
+					t.Errorf("got %t commits, want %t", len(got) > 0, tc.wantSubRepoTest)
 				}
 			})
 		}
 	})
 }
+
+var nonExistentCommitID = api.CommitID(strings.Repeat("a", 40))
 
 func TestRepository_Commits(t *testing.T) {
 	ClientMocks.LocalGitserver = true
@@ -703,7 +339,7 @@ func TestRepository_Commits(t *testing.T) {
 				testCommits(ctx, label, test.repo, CommitsOptions{Range: string(test.id)}, checker, test.wantCommits, t)
 
 				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := client.Commits(ctx, test.repo, CommitsOptions{Range: string(NonExistentCommitID)}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				if _, err := client.Commits(ctx, test.repo, CommitsOptions{Range: string(nonExistentCommitID)}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 				}
 			})
@@ -1009,7 +645,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	gitCommands := []string{
 		"git commit --allow-empty -m commit1",
 		"touch file1",
-		"touch --date=2006-01-02T15:04:05Z file1 || touch -t " + Times[0] + " file1",
+		"touch --date=2006-01-02T15:04:05Z file1 || touch -t " + times[0] + " file1",
 		"git add file1",
 		"git commit -m commit2",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
@@ -1063,93 +699,6 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	runCommitsTest(checker)
 }
 
-func TestParseCommitsUniqueToBranch(t *testing.T) { // KEEP
-	commits, err := parseCommitsUniqueToBranch([]string{
-		"c165bfff52e9d4f87891bba497e3b70fea144d89:2020-08-04T08:23:30-05:00",
-		"f73ee8ed601efea74f3b734eeb073307e1615606:2020-04-16T16:06:21-04:00",
-		"6057f7ed8d331c82030c713b650fc8fd2c0c2347:2020-04-16T16:20:26-04:00",
-		"7886287b8758d1baf19cf7b8253856128369a2a7:2020-04-16T16:55:58-04:00",
-		"b69f89473bbcc04dc52cafaf6baa504e34791f5a:2020-04-20T12:10:49-04:00",
-		"172b7fcf8b8c49b37b231693433586c2bfd1619e:2020-04-20T12:37:36-04:00",
-		"5bc35c78fb5fb388891ca944cd12d85fd6dede95:2020-05-05T12:53:18-05:00",
-	})
-	if err != nil {
-		t.Fatalf("unexpected error parsing commits: %s", err)
-	}
-
-	expectedCommits := map[string]time.Time{
-		"c165bfff52e9d4f87891bba497e3b70fea144d89": *mustParseDate("2020-08-04T08:23:30-05:00", t),
-		"f73ee8ed601efea74f3b734eeb073307e1615606": *mustParseDate("2020-04-16T16:06:21-04:00", t),
-		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": *mustParseDate("2020-04-16T16:20:26-04:00", t),
-		"7886287b8758d1baf19cf7b8253856128369a2a7": *mustParseDate("2020-04-16T16:55:58-04:00", t),
-		"b69f89473bbcc04dc52cafaf6baa504e34791f5a": *mustParseDate("2020-04-20T12:10:49-04:00", t),
-		"172b7fcf8b8c49b37b231693433586c2bfd1619e": *mustParseDate("2020-04-20T12:37:36-04:00", t),
-		"5bc35c78fb5fb388891ca944cd12d85fd6dede95": *mustParseDate("2020-05-05T12:53:18-05:00", t),
-	}
-	if diff := cmp.Diff(expectedCommits, commits); diff != "" {
-		t.Errorf("unexpected commits (-want +got):\n%s", diff)
-	}
-}
-
-func TestCommitsUniqueToBranch(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
-	gitCommands := append([]string{"git checkout -b my-branch"}, getGitCommandsWithFiles("file1", "file2")...)
-	gitCommands = append(gitCommands, getGitCommandsWithFiles("file3", "file-with-no-access")...)
-	repo := MakeGitRepository(t, gitCommands...)
-
-	client := NewClient("test")
-	commits, err := client.CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{})
-	if err != nil {
-		t.Errorf("err calling CommitsUniqueToBranch: %s", err)
-	}
-	expectedCommits := map[string]time.Time{
-		"2775e60f523d3151a2a34ffdc659f500d0e73022": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-		"791ce7cd8ca2d855e12f47f8692a62bc42477edc": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-	}
-	if diff := cmp.Diff(expectedCommits, commits); diff != "" {
-		t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
-	}
-}
-
-func TestFilterCommitsUniqueToBranch(t *testing.T) {
-	commitMap := map[string]time.Time{
-		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
-		"2775e60f523d3151a2a34ffdc659f500d0e73022": {},
-		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
-		"9019942b8b92d5a70a7f546d97c451621c5059a6": {},
-	}
-
-	client := NewTestClient(t).WithClientSource(NewTestClientSource(t, []string{"test"}, func(o *TestClientSourceOptions) {
-		o.ClientFunc = func(conn *grpc.ClientConn) proto.GitserverServiceClient {
-			c := NewMockGitserverServiceClient()
-			c.GetCommitFunc.SetDefaultHook(func(ctx context.Context, gcr *proto.GetCommitRequest, co ...grpc.CallOption) (*proto.GetCommitResponse, error) {
-				if gcr.GetCommit() == "2775e60f523d3151a2a34ffdc659f500d0e73022" {
-					s, err := status.New(codes.NotFound, "bad revision").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
-					require.NoError(t, err)
-					return nil, s.Err()
-				}
-				return &proto.GetCommitResponse{}, nil
-			})
-			return c
-		}
-	})).(*clientImplementor)
-	filtered := client.filterCommitsUniqueToBranch(context.Background(), "repo", commitMap)
-	expected := map[string]time.Time{
-		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
-		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
-		"9019942b8b92d5a70a7f546d97c451621c5059a6": {},
-	}
-	if diff := cmp.Diff(expected, filtered); diff != "" {
-		t.Errorf("unexpected commits in result (-want +got):\n%s", diff)
-	}
-}
-
 func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantCommits []*gitdomain.Commit, t *testing.T) {
 	t.Helper()
 	client := NewTestClient(t).WithChecker(checker)
@@ -1197,41 +746,6 @@ func getTestSubRepoPermsChecker(noAccessPaths ...string) authz.SubRepoPermission
 	})
 	usePermissionsForFilePermissionsFunc(checker)
 	return checker
-}
-
-func getGitCommandsWithFileLists(filenamesPerCommit ...[]string) []string {
-	cmds := make([]string, 0, len(filenamesPerCommit)*3)
-	for i, filenames := range filenamesPerCommit {
-		for _, fn := range filenames {
-			cmds = append(cmds,
-				fmt.Sprintf("touch %s", fn),
-				fmt.Sprintf("echo my_content_%d > %s", i, fn),
-				fmt.Sprintf("git add %s", fn))
-		}
-		cmds = append(cmds,
-			fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05=%dZ git commit -m commit%d --author='a <a@a.com>' --date 2006-01-02T15:04:0%dZ", i, i, i))
-	}
-	return cmds
-}
-
-func getGitCommandsWithFiles(fileName1, fileName2 string) []string {
-	return []string{
-		fmt.Sprintf("touch %s", fileName1),
-		fmt.Sprintf("git add %s", fileName1),
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		fmt.Sprintf("touch %s", fileName2),
-		fmt.Sprintf("git add %s", fileName2),
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-	}
-}
-
-func mustParseDate(s string, t *testing.T) *time.Time {
-	t.Helper()
-	date, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		t.Fatalf("unexpected error parsing date string: %s", err)
-	}
-	return &date
 }
 
 func CommitsEqual(a, b *gitdomain.Commit) bool {
@@ -1706,81 +1220,6 @@ func TestClient_GetCommit(t *testing.T) {
 		_, err := c.GetCommit(context.Background(), "repo", "deadbeef")
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
-	})
-}
-
-func Test_CommitLog(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-
-	tests := map[string]struct {
-		extraGitCommands []string
-		wantFiles        [][]string // put these in log reverse order
-		wantCommits      int
-		wantErr          string
-	}{
-		"commit changes files": {
-			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt", "file2.txt"}, []string{"file3.txt"}),
-			wantFiles:        [][]string{{"file3.txt"}, {"file1.txt", "file2.txt"}},
-			wantCommits:      2,
-		},
-		"no commits": {
-			wantErr: "gitCommand fatal: your current branch 'master' does not have any commits yet: exit status 128",
-		},
-		"one file two commits": {
-			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt"}, []string{"file1.txt"}),
-			wantFiles:        [][]string{{"file1.txt"}, {"file1.txt"}},
-			wantCommits:      2,
-		},
-		"one commit": {
-			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt"}),
-			wantFiles:        [][]string{{"file1.txt"}},
-			wantCommits:      1,
-		},
-	}
-
-	for label, test := range tests {
-		t.Run(label, func(t *testing.T) {
-			repo := MakeGitRepository(t, test.extraGitCommands...)
-			logResults, err := NewClient("test").CommitLog(context.Background(), repo, time.Time{})
-			if err != nil {
-				require.ErrorContains(t, err, test.wantErr)
-			}
-
-			t.Log(test)
-			for i, result := range logResults {
-				t.Log(result)
-				assert.Equal(t, "a@a.com", result.AuthorEmail)
-				assert.Equal(t, "a", result.AuthorName)
-				assert.Equal(t, 40, len(result.SHA))
-				assert.ElementsMatch(t, test.wantFiles[i], result.ChangedFiles)
-			}
-			assert.Equal(t, test.wantCommits, len(logResults))
-		})
-	}
-}
-
-func TestErrorMessageTruncateOutput(t *testing.T) {
-	cmd := []string{"git", "ls-files"}
-
-	t.Run("short output", func(t *testing.T) {
-		shortOutput := "aaaaaaaaaab"
-		message := errorMessageTruncatedOutput(cmd, []byte(shortOutput))
-		want := fmt.Sprintf("git command [git ls-files] failed (output: %q)", shortOutput)
-
-		if diff := cmp.Diff(want, message); diff != "" {
-			t.Fatalf("wrong message. diff: %s", diff)
-		}
-	})
-
-	t.Run("truncating output", func(t *testing.T) {
-		longOutput := strings.Repeat("a", 5000) + "b"
-		message := errorMessageTruncatedOutput(cmd, []byte(longOutput))
-		want := fmt.Sprintf("git command [git ls-files] failed (truncated output: %q, 1 more)", longOutput[:5000])
-
-		if diff := cmp.Diff(want, message); diff != "" {
-			t.Fatalf("wrong message. diff: %s", diff)
-		}
 	})
 }
 
@@ -2555,5 +1994,349 @@ func TestChangedFilesIterator(t *testing.T) {
 		// Test closing the iterator multiple times
 		iter.Close()
 		require.Equal(t, closeCount, 1)
+	})
+}
+
+func TestClient_GetObject(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		expectedID := gitdomain.OID{0xde, 0xad, 0xbe, 0xef, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.GetObjectFunc.SetDefaultReturn(&proto.GetObjectResponse{
+					Object: &proto.GitObject{
+						Id:   expectedID[:],
+						Type: proto.GitObject_OBJECT_TYPE_BLOB,
+					},
+				}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		object, err := c.GetObject(context.Background(), "repo", "deadbeef")
+		require.NoError(t, err)
+		require.Equal(t, &gitdomain.GitObject{
+			ID:   expectedID,
+			Type: gitdomain.ObjectTypeBlob,
+		}, object)
+	})
+
+	t.Run("returns well known error types", func(t *testing.T) {
+		t.Run("repository not found", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					s, err := status.New(codes.NotFound, "repository not found").WithDetails(&proto.RepoNotFoundPayload{Repo: "repo", CloneInProgress: true})
+					require.NoError(t, err)
+					c.GetObjectFunc.PushReturn(nil, s.Err())
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			_, err := c.GetObject(context.Background(), "repo", "deadbeef")
+			require.Error(t, err)
+			require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
+		})
+
+		t.Run("object not found", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					s, err := status.New(codes.NotFound, "object not found").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
+					require.NoError(t, err)
+					c.GetObjectFunc.SetDefaultReturn(nil, s.Err())
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			_, err := c.GetObject(context.Background(), "repo", "deadbeef")
+			require.Error(t, err)
+			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		})
+	})
+}
+
+func TestClient_Stat(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.StatFunc.SetDefaultReturn(&proto.StatResponse{
+					FileInfo: &proto.FileInfo{
+						Name: []byte("file"),
+						Size: 10,
+						Mode: 0644,
+					},
+				}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		res, err := c.Stat(context.Background(), "repo", "HEAD", "file")
+		require.NoError(t, err)
+		require.Equal(t, "file", res.Name())
+	})
+
+	t.Run("returns common errors correctly", func(t *testing.T) {
+		t.Run("RevisionNotFound", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+						Repo: "repo",
+						Spec: "HEAD",
+					})
+					require.NoError(t, err)
+					c.StatFunc.PushReturn(nil, s.Err())
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			_, err := c.Stat(context.Background(), "repo", "HEAD", "file")
+			require.Error(t, err)
+			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		})
+
+		t.Run("FileNotFound", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
+						Repo: "repo",
+						Path: "file",
+					})
+					require.NoError(t, err)
+					c.StatFunc.PushReturn(nil, s.Err())
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			_, err := c.Stat(context.Background(), "repo", "HEAD", "file")
+			require.Error(t, err)
+			require.True(t, os.IsNotExist(err))
+		})
+	})
+	t.Run("subrepo permissions", func(t *testing.T) {
+		ctx := actor.WithActor(context.Background(), actor.FromUser(1))
+
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.StatFunc.SetDefaultReturn(&proto.StatResponse{
+					FileInfo: &proto.FileInfo{
+						Name: []byte("file"),
+						Size: 10,
+						Mode: 0644,
+					},
+				}, nil)
+				return c
+			}
+		})
+
+		checker := getTestSubRepoPermsChecker("file")
+		c := NewTestClient(t).WithClientSource(source).WithChecker(checker)
+
+		_, err := c.Stat(ctx, "repo", "HEAD", "file")
+		require.Error(t, err)
+		require.True(t, os.IsNotExist(err))
+	})
+}
+
+func TestClient_ReadDir(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s := NewMockGitserverService_ReadDirClient()
+				s.RecvFunc.PushReturn(&proto.ReadDirResponse{
+					FileInfo: []*proto.FileInfo{
+						{
+							Name: []byte("file"),
+							Size: 10,
+							Mode: 0644,
+						},
+					},
+				}, nil)
+				s.RecvFunc.PushReturn(&proto.ReadDirResponse{
+					FileInfo: []*proto.FileInfo{
+						{
+							Name: []byte("dir/file"),
+							Size: 12,
+							Mode: 0644,
+						},
+					},
+				}, nil)
+				s.RecvFunc.PushReturn(nil, io.EOF)
+				c.ReadDirFunc.SetDefaultReturn(s, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		it, err := c.ReadDir(context.Background(), "repo", "HEAD", "", true)
+		require.NoError(t, err)
+
+		fd, err := it.Next()
+		require.NoError(t, err)
+		require.Equal(t, "file", fd.Name())
+
+		fd, err = it.Next()
+		require.NoError(t, err)
+		require.Equal(t, "dir/file", fd.Name())
+
+		_, err = it.Next()
+		require.Equal(t, io.EOF, err)
+
+		it.Close()
+	})
+
+	t.Run("correctly memoizes multiple results in one chunk", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s := NewMockGitserverService_ReadDirClient()
+				s.RecvFunc.PushReturn(&proto.ReadDirResponse{
+					FileInfo: []*proto.FileInfo{
+						{
+							Name: []byte("file"),
+							Size: 10,
+							Mode: 0644,
+						},
+						{
+							Name: []byte("dir/file"),
+							Size: 12,
+							Mode: 0644,
+						},
+					},
+				}, nil)
+				s.RecvFunc.PushReturn(nil, io.EOF)
+				c.ReadDirFunc.SetDefaultReturn(s, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		it, err := c.ReadDir(context.Background(), "repo", "HEAD", "", true)
+		require.NoError(t, err)
+
+		fd, err := it.Next()
+		require.NoError(t, err)
+		require.Equal(t, "file", fd.Name())
+
+		fd, err = it.Next()
+		require.NoError(t, err)
+		require.Equal(t, "dir/file", fd.Name())
+
+		_, err = it.Next()
+		require.Equal(t, io.EOF, err)
+
+		it.Close()
+	})
+
+	t.Run("returns common errors correctly", func(t *testing.T) {
+		t.Run("RevisionNotFound", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					ss := NewMockGitserverService_ReadDirClient()
+					s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+						Repo: "repo",
+						Spec: "HEAD",
+					})
+					ss.RecvFunc.SetDefaultReturn(nil, s.Err())
+					require.NoError(t, err)
+					c.ReadDirFunc.PushReturn(ss, nil)
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			_, err := c.ReadDir(context.Background(), "repo", "HEAD", "file", true)
+			require.Error(t, err)
+			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		})
+
+		t.Run("FileNotFound", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					ss := NewMockGitserverService_ReadDirClient()
+					s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
+						Repo: "repo",
+						Path: "file",
+					})
+					ss.RecvFunc.SetDefaultReturn(nil, s.Err())
+					require.NoError(t, err)
+					c.ReadDirFunc.PushReturn(ss, nil)
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			_, err := c.ReadDir(context.Background(), "repo", "HEAD", "file", true)
+			require.Error(t, err)
+			require.True(t, os.IsNotExist(err))
+		})
+	})
+	t.Run("subrepo permissions", func(t *testing.T) {
+		ctx := actor.WithActor(context.Background(), actor.FromUser(1))
+
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s := NewMockGitserverService_ReadDirClient()
+				s.RecvFunc.PushReturn(&proto.ReadDirResponse{
+					FileInfo: []*proto.FileInfo{
+						{
+							Name: []byte("file"),
+							Size: 10,
+							Mode: 0644,
+						},
+					},
+				}, nil)
+				s.RecvFunc.PushReturn(&proto.ReadDirResponse{
+					FileInfo: []*proto.FileInfo{
+						{
+							Name: []byte("dir/file"),
+							Size: 12,
+							Mode: 0644,
+						},
+					},
+				}, nil)
+				s.RecvFunc.PushReturn(nil, io.EOF)
+				c.ReadDirFunc.SetDefaultReturn(s, nil)
+				return c
+			}
+		})
+
+		checker := getTestSubRepoPermsChecker("file")
+		c := NewTestClient(t).WithClientSource(source).WithChecker(checker)
+
+		it, err := c.ReadDir(ctx, "repo", "HEAD", "file", true)
+		require.NoError(t, err)
+		fd, err := it.Next()
+		require.NoError(t, err)
+		require.Equal(t, "dir/file", fd.Name())
+		_, err = it.Next()
+		require.Equal(t, io.EOF, err)
+
+		it.Close()
 	})
 }

@@ -96,6 +96,9 @@ type MockGitserverServiceClient struct {
 	// RawDiffFunc is an instance of a mock function object controlling the
 	// behavior of the method RawDiff.
 	RawDiffFunc *GitserverServiceClientRawDiffFunc
+	// ReadDirFunc is an instance of a mock function object controlling the
+	// behavior of the method ReadDir.
+	ReadDirFunc *GitserverServiceClientReadDirFunc
 	// ReadFileFunc is an instance of a mock function object controlling the
 	// behavior of the method ReadFile.
 	ReadFileFunc *GitserverServiceClientReadFileFunc
@@ -111,6 +114,9 @@ type MockGitserverServiceClient struct {
 	// SearchFunc is an instance of a mock function object controlling the
 	// behavior of the method Search.
 	SearchFunc *GitserverServiceClientSearchFunc
+	// StatFunc is an instance of a mock function object controlling the
+	// behavior of the method Stat.
+	StatFunc *GitserverServiceClientStatFunc
 }
 
 // NewMockGitserverServiceClient creates a new mock of the
@@ -243,6 +249,11 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 				return
 			},
 		},
+		ReadDirFunc: &GitserverServiceClientReadDirFunc{
+			defaultHook: func(context.Context, *v1.ReadDirRequest, ...grpc.CallOption) (r0 v1.GitserverService_ReadDirClient, r1 error) {
+				return
+			},
+		},
 		ReadFileFunc: &GitserverServiceClientReadFileFunc{
 			defaultHook: func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (r0 v1.GitserverService_ReadFileClient, r1 error) {
 				return
@@ -265,6 +276,11 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 		},
 		SearchFunc: &GitserverServiceClientSearchFunc{
 			defaultHook: func(context.Context, *v1.SearchRequest, ...grpc.CallOption) (r0 v1.GitserverService_SearchClient, r1 error) {
+				return
+			},
+		},
+		StatFunc: &GitserverServiceClientStatFunc{
+			defaultHook: func(context.Context, *v1.StatRequest, ...grpc.CallOption) (r0 *v1.StatResponse, r1 error) {
 				return
 			},
 		},
@@ -401,6 +417,11 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.RawDiff")
 			},
 		},
+		ReadDirFunc: &GitserverServiceClientReadDirFunc{
+			defaultHook: func(context.Context, *v1.ReadDirRequest, ...grpc.CallOption) (v1.GitserverService_ReadDirClient, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.ReadDir")
+			},
+		},
 		ReadFileFunc: &GitserverServiceClientReadFileFunc{
 			defaultHook: func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (v1.GitserverService_ReadFileClient, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.ReadFile")
@@ -424,6 +445,11 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 		SearchFunc: &GitserverServiceClientSearchFunc{
 			defaultHook: func(context.Context, *v1.SearchRequest, ...grpc.CallOption) (v1.GitserverService_SearchClient, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.Search")
+			},
+		},
+		StatFunc: &GitserverServiceClientStatFunc{
+			defaultHook: func(context.Context, *v1.StatRequest, ...grpc.CallOption) (*v1.StatResponse, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.Stat")
 			},
 		},
 	}
@@ -509,6 +535,9 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		RawDiffFunc: &GitserverServiceClientRawDiffFunc{
 			defaultHook: i.RawDiff,
 		},
+		ReadDirFunc: &GitserverServiceClientReadDirFunc{
+			defaultHook: i.ReadDir,
+		},
 		ReadFileFunc: &GitserverServiceClientReadFileFunc{
 			defaultHook: i.ReadFile,
 		},
@@ -523,6 +552,9 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		},
 		SearchFunc: &GitserverServiceClientSearchFunc{
 			defaultHook: i.Search,
+		},
+		StatFunc: &GitserverServiceClientStatFunc{
+			defaultHook: i.Stat,
 		},
 	}
 }
@@ -3549,6 +3581,125 @@ func (c GitserverServiceClientRawDiffFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// GitserverServiceClientReadDirFunc describes the behavior when the ReadDir
+// method of the parent MockGitserverServiceClient instance is invoked.
+type GitserverServiceClientReadDirFunc struct {
+	defaultHook func(context.Context, *v1.ReadDirRequest, ...grpc.CallOption) (v1.GitserverService_ReadDirClient, error)
+	hooks       []func(context.Context, *v1.ReadDirRequest, ...grpc.CallOption) (v1.GitserverService_ReadDirClient, error)
+	history     []GitserverServiceClientReadDirFuncCall
+	mutex       sync.Mutex
+}
+
+// ReadDir delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) ReadDir(v0 context.Context, v1 *v1.ReadDirRequest, v2 ...grpc.CallOption) (v1.GitserverService_ReadDirClient, error) {
+	r0, r1 := m.ReadDirFunc.nextHook()(v0, v1, v2...)
+	m.ReadDirFunc.appendCall(GitserverServiceClientReadDirFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ReadDir method of
+// the parent MockGitserverServiceClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverServiceClientReadDirFunc) SetDefaultHook(hook func(context.Context, *v1.ReadDirRequest, ...grpc.CallOption) (v1.GitserverService_ReadDirClient, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReadDir method of the parent MockGitserverServiceClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverServiceClientReadDirFunc) PushHook(hook func(context.Context, *v1.ReadDirRequest, ...grpc.CallOption) (v1.GitserverService_ReadDirClient, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientReadDirFunc) SetDefaultReturn(r0 v1.GitserverService_ReadDirClient, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.ReadDirRequest, ...grpc.CallOption) (v1.GitserverService_ReadDirClient, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientReadDirFunc) PushReturn(r0 v1.GitserverService_ReadDirClient, r1 error) {
+	f.PushHook(func(context.Context, *v1.ReadDirRequest, ...grpc.CallOption) (v1.GitserverService_ReadDirClient, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientReadDirFunc) nextHook() func(context.Context, *v1.ReadDirRequest, ...grpc.CallOption) (v1.GitserverService_ReadDirClient, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientReadDirFunc) appendCall(r0 GitserverServiceClientReadDirFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverServiceClientReadDirFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverServiceClientReadDirFunc) History() []GitserverServiceClientReadDirFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientReadDirFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientReadDirFuncCall is an object that describes an
+// invocation of method ReadDir on an instance of
+// MockGitserverServiceClient.
+type GitserverServiceClientReadDirFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.ReadDirRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1.GitserverService_ReadDirClient
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientReadDirFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientReadDirFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // GitserverServiceClientReadFileFunc describes the behavior when the
 // ReadFile method of the parent MockGitserverServiceClient instance is
 // invoked.
@@ -4149,6 +4300,124 @@ func (c GitserverServiceClientSearchFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientSearchFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverServiceClientStatFunc describes the behavior when the Stat
+// method of the parent MockGitserverServiceClient instance is invoked.
+type GitserverServiceClientStatFunc struct {
+	defaultHook func(context.Context, *v1.StatRequest, ...grpc.CallOption) (*v1.StatResponse, error)
+	hooks       []func(context.Context, *v1.StatRequest, ...grpc.CallOption) (*v1.StatResponse, error)
+	history     []GitserverServiceClientStatFuncCall
+	mutex       sync.Mutex
+}
+
+// Stat delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) Stat(v0 context.Context, v1 *v1.StatRequest, v2 ...grpc.CallOption) (*v1.StatResponse, error) {
+	r0, r1 := m.StatFunc.nextHook()(v0, v1, v2...)
+	m.StatFunc.appendCall(GitserverServiceClientStatFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Stat method of the
+// parent MockGitserverServiceClient instance is invoked and the hook queue
+// is empty.
+func (f *GitserverServiceClientStatFunc) SetDefaultHook(hook func(context.Context, *v1.StatRequest, ...grpc.CallOption) (*v1.StatResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Stat method of the parent MockGitserverServiceClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitserverServiceClientStatFunc) PushHook(hook func(context.Context, *v1.StatRequest, ...grpc.CallOption) (*v1.StatResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientStatFunc) SetDefaultReturn(r0 *v1.StatResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.StatRequest, ...grpc.CallOption) (*v1.StatResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientStatFunc) PushReturn(r0 *v1.StatResponse, r1 error) {
+	f.PushHook(func(context.Context, *v1.StatRequest, ...grpc.CallOption) (*v1.StatResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientStatFunc) nextHook() func(context.Context, *v1.StatRequest, ...grpc.CallOption) (*v1.StatResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientStatFunc) appendCall(r0 GitserverServiceClientStatFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverServiceClientStatFuncCall objects
+// describing the invocations of this function.
+func (f *GitserverServiceClientStatFunc) History() []GitserverServiceClientStatFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientStatFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientStatFuncCall is an object that describes an
+// invocation of method Stat on an instance of MockGitserverServiceClient.
+type GitserverServiceClientStatFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.StatRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.StatResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientStatFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientStatFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -13782,6 +14051,1759 @@ func (c GitserverService_RawDiffServerSetTrailerFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverService_RawDiffServerSetTrailerFuncCall) Results() []interface{} {
+	return []interface{}{}
+}
+
+// MockGitserverService_ReadDirClient is a mock implementation of the
+// GitserverService_ReadDirClient interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/gitserver/v1) used for unit
+// testing.
+type MockGitserverService_ReadDirClient struct {
+	// CloseSendFunc is an instance of a mock function object controlling
+	// the behavior of the method CloseSend.
+	CloseSendFunc *GitserverService_ReadDirClientCloseSendFunc
+	// ContextFunc is an instance of a mock function object controlling the
+	// behavior of the method Context.
+	ContextFunc *GitserverService_ReadDirClientContextFunc
+	// HeaderFunc is an instance of a mock function object controlling the
+	// behavior of the method Header.
+	HeaderFunc *GitserverService_ReadDirClientHeaderFunc
+	// RecvFunc is an instance of a mock function object controlling the
+	// behavior of the method Recv.
+	RecvFunc *GitserverService_ReadDirClientRecvFunc
+	// RecvMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method RecvMsg.
+	RecvMsgFunc *GitserverService_ReadDirClientRecvMsgFunc
+	// SendMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method SendMsg.
+	SendMsgFunc *GitserverService_ReadDirClientSendMsgFunc
+	// TrailerFunc is an instance of a mock function object controlling the
+	// behavior of the method Trailer.
+	TrailerFunc *GitserverService_ReadDirClientTrailerFunc
+}
+
+// NewMockGitserverService_ReadDirClient creates a new mock of the
+// GitserverService_ReadDirClient interface. All methods return zero values
+// for all results, unless overwritten.
+func NewMockGitserverService_ReadDirClient() *MockGitserverService_ReadDirClient {
+	return &MockGitserverService_ReadDirClient{
+		CloseSendFunc: &GitserverService_ReadDirClientCloseSendFunc{
+			defaultHook: func() (r0 error) {
+				return
+			},
+		},
+		ContextFunc: &GitserverService_ReadDirClientContextFunc{
+			defaultHook: func() (r0 context.Context) {
+				return
+			},
+		},
+		HeaderFunc: &GitserverService_ReadDirClientHeaderFunc{
+			defaultHook: func() (r0 metadata.MD, r1 error) {
+				return
+			},
+		},
+		RecvFunc: &GitserverService_ReadDirClientRecvFunc{
+			defaultHook: func() (r0 *v1.ReadDirResponse, r1 error) {
+				return
+			},
+		},
+		RecvMsgFunc: &GitserverService_ReadDirClientRecvMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SendMsgFunc: &GitserverService_ReadDirClientSendMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		TrailerFunc: &GitserverService_ReadDirClientTrailerFunc{
+			defaultHook: func() (r0 metadata.MD) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockGitserverService_ReadDirClient creates a new mock of the
+// GitserverService_ReadDirClient interface. All methods panic on
+// invocation, unless overwritten.
+func NewStrictMockGitserverService_ReadDirClient() *MockGitserverService_ReadDirClient {
+	return &MockGitserverService_ReadDirClient{
+		CloseSendFunc: &GitserverService_ReadDirClientCloseSendFunc{
+			defaultHook: func() error {
+				panic("unexpected invocation of MockGitserverService_ReadDirClient.CloseSend")
+			},
+		},
+		ContextFunc: &GitserverService_ReadDirClientContextFunc{
+			defaultHook: func() context.Context {
+				panic("unexpected invocation of MockGitserverService_ReadDirClient.Context")
+			},
+		},
+		HeaderFunc: &GitserverService_ReadDirClientHeaderFunc{
+			defaultHook: func() (metadata.MD, error) {
+				panic("unexpected invocation of MockGitserverService_ReadDirClient.Header")
+			},
+		},
+		RecvFunc: &GitserverService_ReadDirClientRecvFunc{
+			defaultHook: func() (*v1.ReadDirResponse, error) {
+				panic("unexpected invocation of MockGitserverService_ReadDirClient.Recv")
+			},
+		},
+		RecvMsgFunc: &GitserverService_ReadDirClientRecvMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_ReadDirClient.RecvMsg")
+			},
+		},
+		SendMsgFunc: &GitserverService_ReadDirClientSendMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_ReadDirClient.SendMsg")
+			},
+		},
+		TrailerFunc: &GitserverService_ReadDirClientTrailerFunc{
+			defaultHook: func() metadata.MD {
+				panic("unexpected invocation of MockGitserverService_ReadDirClient.Trailer")
+			},
+		},
+	}
+}
+
+// NewMockGitserverService_ReadDirClientFrom creates a new mock of the
+// MockGitserverService_ReadDirClient interface. All methods delegate to the
+// given implementation, unless overwritten.
+func NewMockGitserverService_ReadDirClientFrom(i v1.GitserverService_ReadDirClient) *MockGitserverService_ReadDirClient {
+	return &MockGitserverService_ReadDirClient{
+		CloseSendFunc: &GitserverService_ReadDirClientCloseSendFunc{
+			defaultHook: i.CloseSend,
+		},
+		ContextFunc: &GitserverService_ReadDirClientContextFunc{
+			defaultHook: i.Context,
+		},
+		HeaderFunc: &GitserverService_ReadDirClientHeaderFunc{
+			defaultHook: i.Header,
+		},
+		RecvFunc: &GitserverService_ReadDirClientRecvFunc{
+			defaultHook: i.Recv,
+		},
+		RecvMsgFunc: &GitserverService_ReadDirClientRecvMsgFunc{
+			defaultHook: i.RecvMsg,
+		},
+		SendMsgFunc: &GitserverService_ReadDirClientSendMsgFunc{
+			defaultHook: i.SendMsg,
+		},
+		TrailerFunc: &GitserverService_ReadDirClientTrailerFunc{
+			defaultHook: i.Trailer,
+		},
+	}
+}
+
+// GitserverService_ReadDirClientCloseSendFunc describes the behavior when
+// the CloseSend method of the parent MockGitserverService_ReadDirClient
+// instance is invoked.
+type GitserverService_ReadDirClientCloseSendFunc struct {
+	defaultHook func() error
+	hooks       []func() error
+	history     []GitserverService_ReadDirClientCloseSendFuncCall
+	mutex       sync.Mutex
+}
+
+// CloseSend delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ReadDirClient) CloseSend() error {
+	r0 := m.CloseSendFunc.nextHook()()
+	m.CloseSendFunc.appendCall(GitserverService_ReadDirClientCloseSendFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CloseSend method of
+// the parent MockGitserverService_ReadDirClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ReadDirClientCloseSendFunc) SetDefaultHook(hook func() error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CloseSend method of the parent MockGitserverService_ReadDirClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ReadDirClientCloseSendFunc) PushHook(hook func() error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ReadDirClientCloseSendFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func() error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ReadDirClientCloseSendFunc) PushReturn(r0 error) {
+	f.PushHook(func() error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ReadDirClientCloseSendFunc) nextHook() func() error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ReadDirClientCloseSendFunc) appendCall(r0 GitserverService_ReadDirClientCloseSendFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ReadDirClientCloseSendFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ReadDirClientCloseSendFunc) History() []GitserverService_ReadDirClientCloseSendFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ReadDirClientCloseSendFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ReadDirClientCloseSendFuncCall is an object that
+// describes an invocation of method CloseSend on an instance of
+// MockGitserverService_ReadDirClient.
+type GitserverService_ReadDirClientCloseSendFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ReadDirClientCloseSendFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ReadDirClientCloseSendFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ReadDirClientContextFunc describes the behavior when the
+// Context method of the parent MockGitserverService_ReadDirClient instance
+// is invoked.
+type GitserverService_ReadDirClientContextFunc struct {
+	defaultHook func() context.Context
+	hooks       []func() context.Context
+	history     []GitserverService_ReadDirClientContextFuncCall
+	mutex       sync.Mutex
+}
+
+// Context delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ReadDirClient) Context() context.Context {
+	r0 := m.ContextFunc.nextHook()()
+	m.ContextFunc.appendCall(GitserverService_ReadDirClientContextFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Context method of
+// the parent MockGitserverService_ReadDirClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ReadDirClientContextFunc) SetDefaultHook(hook func() context.Context) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Context method of the parent MockGitserverService_ReadDirClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ReadDirClientContextFunc) PushHook(hook func() context.Context) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ReadDirClientContextFunc) SetDefaultReturn(r0 context.Context) {
+	f.SetDefaultHook(func() context.Context {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ReadDirClientContextFunc) PushReturn(r0 context.Context) {
+	f.PushHook(func() context.Context {
+		return r0
+	})
+}
+
+func (f *GitserverService_ReadDirClientContextFunc) nextHook() func() context.Context {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ReadDirClientContextFunc) appendCall(r0 GitserverService_ReadDirClientContextFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ReadDirClientContextFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ReadDirClientContextFunc) History() []GitserverService_ReadDirClientContextFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ReadDirClientContextFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ReadDirClientContextFuncCall is an object that describes
+// an invocation of method Context on an instance of
+// MockGitserverService_ReadDirClient.
+type GitserverService_ReadDirClientContextFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 context.Context
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ReadDirClientContextFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ReadDirClientContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ReadDirClientHeaderFunc describes the behavior when the
+// Header method of the parent MockGitserverService_ReadDirClient instance
+// is invoked.
+type GitserverService_ReadDirClientHeaderFunc struct {
+	defaultHook func() (metadata.MD, error)
+	hooks       []func() (metadata.MD, error)
+	history     []GitserverService_ReadDirClientHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// Header delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ReadDirClient) Header() (metadata.MD, error) {
+	r0, r1 := m.HeaderFunc.nextHook()()
+	m.HeaderFunc.appendCall(GitserverService_ReadDirClientHeaderFuncCall{r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Header method of the
+// parent MockGitserverService_ReadDirClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ReadDirClientHeaderFunc) SetDefaultHook(hook func() (metadata.MD, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Header method of the parent MockGitserverService_ReadDirClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ReadDirClientHeaderFunc) PushHook(hook func() (metadata.MD, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ReadDirClientHeaderFunc) SetDefaultReturn(r0 metadata.MD, r1 error) {
+	f.SetDefaultHook(func() (metadata.MD, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ReadDirClientHeaderFunc) PushReturn(r0 metadata.MD, r1 error) {
+	f.PushHook(func() (metadata.MD, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverService_ReadDirClientHeaderFunc) nextHook() func() (metadata.MD, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ReadDirClientHeaderFunc) appendCall(r0 GitserverService_ReadDirClientHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ReadDirClientHeaderFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ReadDirClientHeaderFunc) History() []GitserverService_ReadDirClientHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ReadDirClientHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ReadDirClientHeaderFuncCall is an object that describes
+// an invocation of method Header on an instance of
+// MockGitserverService_ReadDirClient.
+type GitserverService_ReadDirClientHeaderFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 metadata.MD
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ReadDirClientHeaderFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ReadDirClientHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverService_ReadDirClientRecvFunc describes the behavior when the
+// Recv method of the parent MockGitserverService_ReadDirClient instance is
+// invoked.
+type GitserverService_ReadDirClientRecvFunc struct {
+	defaultHook func() (*v1.ReadDirResponse, error)
+	hooks       []func() (*v1.ReadDirResponse, error)
+	history     []GitserverService_ReadDirClientRecvFuncCall
+	mutex       sync.Mutex
+}
+
+// Recv delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ReadDirClient) Recv() (*v1.ReadDirResponse, error) {
+	r0, r1 := m.RecvFunc.nextHook()()
+	m.RecvFunc.appendCall(GitserverService_ReadDirClientRecvFuncCall{r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Recv method of the
+// parent MockGitserverService_ReadDirClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ReadDirClientRecvFunc) SetDefaultHook(hook func() (*v1.ReadDirResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Recv method of the parent MockGitserverService_ReadDirClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ReadDirClientRecvFunc) PushHook(hook func() (*v1.ReadDirResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ReadDirClientRecvFunc) SetDefaultReturn(r0 *v1.ReadDirResponse, r1 error) {
+	f.SetDefaultHook(func() (*v1.ReadDirResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ReadDirClientRecvFunc) PushReturn(r0 *v1.ReadDirResponse, r1 error) {
+	f.PushHook(func() (*v1.ReadDirResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverService_ReadDirClientRecvFunc) nextHook() func() (*v1.ReadDirResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ReadDirClientRecvFunc) appendCall(r0 GitserverService_ReadDirClientRecvFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_ReadDirClientRecvFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_ReadDirClientRecvFunc) History() []GitserverService_ReadDirClientRecvFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ReadDirClientRecvFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ReadDirClientRecvFuncCall is an object that describes an
+// invocation of method Recv on an instance of
+// MockGitserverService_ReadDirClient.
+type GitserverService_ReadDirClientRecvFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.ReadDirResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ReadDirClientRecvFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ReadDirClientRecvFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverService_ReadDirClientRecvMsgFunc describes the behavior when the
+// RecvMsg method of the parent MockGitserverService_ReadDirClient instance
+// is invoked.
+type GitserverService_ReadDirClientRecvMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_ReadDirClientRecvMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// RecvMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ReadDirClient) RecvMsg(v0 interface{}) error {
+	r0 := m.RecvMsgFunc.nextHook()(v0)
+	m.RecvMsgFunc.appendCall(GitserverService_ReadDirClientRecvMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RecvMsg method of
+// the parent MockGitserverService_ReadDirClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ReadDirClientRecvMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecvMsg method of the parent MockGitserverService_ReadDirClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ReadDirClientRecvMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ReadDirClientRecvMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ReadDirClientRecvMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ReadDirClientRecvMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ReadDirClientRecvMsgFunc) appendCall(r0 GitserverService_ReadDirClientRecvMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ReadDirClientRecvMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ReadDirClientRecvMsgFunc) History() []GitserverService_ReadDirClientRecvMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ReadDirClientRecvMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ReadDirClientRecvMsgFuncCall is an object that describes
+// an invocation of method RecvMsg on an instance of
+// MockGitserverService_ReadDirClient.
+type GitserverService_ReadDirClientRecvMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ReadDirClientRecvMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ReadDirClientRecvMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ReadDirClientSendMsgFunc describes the behavior when the
+// SendMsg method of the parent MockGitserverService_ReadDirClient instance
+// is invoked.
+type GitserverService_ReadDirClientSendMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_ReadDirClientSendMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// SendMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ReadDirClient) SendMsg(v0 interface{}) error {
+	r0 := m.SendMsgFunc.nextHook()(v0)
+	m.SendMsgFunc.appendCall(GitserverService_ReadDirClientSendMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendMsg method of
+// the parent MockGitserverService_ReadDirClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ReadDirClientSendMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendMsg method of the parent MockGitserverService_ReadDirClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ReadDirClientSendMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ReadDirClientSendMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ReadDirClientSendMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ReadDirClientSendMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ReadDirClientSendMsgFunc) appendCall(r0 GitserverService_ReadDirClientSendMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ReadDirClientSendMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ReadDirClientSendMsgFunc) History() []GitserverService_ReadDirClientSendMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ReadDirClientSendMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ReadDirClientSendMsgFuncCall is an object that describes
+// an invocation of method SendMsg on an instance of
+// MockGitserverService_ReadDirClient.
+type GitserverService_ReadDirClientSendMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ReadDirClientSendMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ReadDirClientSendMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ReadDirClientTrailerFunc describes the behavior when the
+// Trailer method of the parent MockGitserverService_ReadDirClient instance
+// is invoked.
+type GitserverService_ReadDirClientTrailerFunc struct {
+	defaultHook func() metadata.MD
+	hooks       []func() metadata.MD
+	history     []GitserverService_ReadDirClientTrailerFuncCall
+	mutex       sync.Mutex
+}
+
+// Trailer delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ReadDirClient) Trailer() metadata.MD {
+	r0 := m.TrailerFunc.nextHook()()
+	m.TrailerFunc.appendCall(GitserverService_ReadDirClientTrailerFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Trailer method of
+// the parent MockGitserverService_ReadDirClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ReadDirClientTrailerFunc) SetDefaultHook(hook func() metadata.MD) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Trailer method of the parent MockGitserverService_ReadDirClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ReadDirClientTrailerFunc) PushHook(hook func() metadata.MD) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ReadDirClientTrailerFunc) SetDefaultReturn(r0 metadata.MD) {
+	f.SetDefaultHook(func() metadata.MD {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ReadDirClientTrailerFunc) PushReturn(r0 metadata.MD) {
+	f.PushHook(func() metadata.MD {
+		return r0
+	})
+}
+
+func (f *GitserverService_ReadDirClientTrailerFunc) nextHook() func() metadata.MD {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ReadDirClientTrailerFunc) appendCall(r0 GitserverService_ReadDirClientTrailerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ReadDirClientTrailerFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ReadDirClientTrailerFunc) History() []GitserverService_ReadDirClientTrailerFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ReadDirClientTrailerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ReadDirClientTrailerFuncCall is an object that describes
+// an invocation of method Trailer on an instance of
+// MockGitserverService_ReadDirClient.
+type GitserverService_ReadDirClientTrailerFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 metadata.MD
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ReadDirClientTrailerFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ReadDirClientTrailerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockGitserverService_ReadDirServer is a mock implementation of the
+// GitserverService_ReadDirServer interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/gitserver/v1) used for unit
+// testing.
+type MockGitserverService_ReadDirServer struct {
+	// ContextFunc is an instance of a mock function object controlling the
+	// behavior of the method Context.
+	ContextFunc *GitserverService_ReadDirServerContextFunc
+	// RecvMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method RecvMsg.
+	RecvMsgFunc *GitserverService_ReadDirServerRecvMsgFunc
+	// SendFunc is an instance of a mock function object controlling the
+	// behavior of the method Send.
+	SendFunc *GitserverService_ReadDirServerSendFunc
+	// SendHeaderFunc is an instance of a mock function object controlling
+	// the behavior of the method SendHeader.
+	SendHeaderFunc *GitserverService_ReadDirServerSendHeaderFunc
+	// SendMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method SendMsg.
+	SendMsgFunc *GitserverService_ReadDirServerSendMsgFunc
+	// SetHeaderFunc is an instance of a mock function object controlling
+	// the behavior of the method SetHeader.
+	SetHeaderFunc *GitserverService_ReadDirServerSetHeaderFunc
+	// SetTrailerFunc is an instance of a mock function object controlling
+	// the behavior of the method SetTrailer.
+	SetTrailerFunc *GitserverService_ReadDirServerSetTrailerFunc
+}
+
+// NewMockGitserverService_ReadDirServer creates a new mock of the
+// GitserverService_ReadDirServer interface. All methods return zero values
+// for all results, unless overwritten.
+func NewMockGitserverService_ReadDirServer() *MockGitserverService_ReadDirServer {
+	return &MockGitserverService_ReadDirServer{
+		ContextFunc: &GitserverService_ReadDirServerContextFunc{
+			defaultHook: func() (r0 context.Context) {
+				return
+			},
+		},
+		RecvMsgFunc: &GitserverService_ReadDirServerRecvMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SendFunc: &GitserverService_ReadDirServerSendFunc{
+			defaultHook: func(*v1.ReadDirResponse) (r0 error) {
+				return
+			},
+		},
+		SendHeaderFunc: &GitserverService_ReadDirServerSendHeaderFunc{
+			defaultHook: func(metadata.MD) (r0 error) {
+				return
+			},
+		},
+		SendMsgFunc: &GitserverService_ReadDirServerSendMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SetHeaderFunc: &GitserverService_ReadDirServerSetHeaderFunc{
+			defaultHook: func(metadata.MD) (r0 error) {
+				return
+			},
+		},
+		SetTrailerFunc: &GitserverService_ReadDirServerSetTrailerFunc{
+			defaultHook: func(metadata.MD) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockGitserverService_ReadDirServer creates a new mock of the
+// GitserverService_ReadDirServer interface. All methods panic on
+// invocation, unless overwritten.
+func NewStrictMockGitserverService_ReadDirServer() *MockGitserverService_ReadDirServer {
+	return &MockGitserverService_ReadDirServer{
+		ContextFunc: &GitserverService_ReadDirServerContextFunc{
+			defaultHook: func() context.Context {
+				panic("unexpected invocation of MockGitserverService_ReadDirServer.Context")
+			},
+		},
+		RecvMsgFunc: &GitserverService_ReadDirServerRecvMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_ReadDirServer.RecvMsg")
+			},
+		},
+		SendFunc: &GitserverService_ReadDirServerSendFunc{
+			defaultHook: func(*v1.ReadDirResponse) error {
+				panic("unexpected invocation of MockGitserverService_ReadDirServer.Send")
+			},
+		},
+		SendHeaderFunc: &GitserverService_ReadDirServerSendHeaderFunc{
+			defaultHook: func(metadata.MD) error {
+				panic("unexpected invocation of MockGitserverService_ReadDirServer.SendHeader")
+			},
+		},
+		SendMsgFunc: &GitserverService_ReadDirServerSendMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_ReadDirServer.SendMsg")
+			},
+		},
+		SetHeaderFunc: &GitserverService_ReadDirServerSetHeaderFunc{
+			defaultHook: func(metadata.MD) error {
+				panic("unexpected invocation of MockGitserverService_ReadDirServer.SetHeader")
+			},
+		},
+		SetTrailerFunc: &GitserverService_ReadDirServerSetTrailerFunc{
+			defaultHook: func(metadata.MD) {
+				panic("unexpected invocation of MockGitserverService_ReadDirServer.SetTrailer")
+			},
+		},
+	}
+}
+
+// NewMockGitserverService_ReadDirServerFrom creates a new mock of the
+// MockGitserverService_ReadDirServer interface. All methods delegate to the
+// given implementation, unless overwritten.
+func NewMockGitserverService_ReadDirServerFrom(i v1.GitserverService_ReadDirServer) *MockGitserverService_ReadDirServer {
+	return &MockGitserverService_ReadDirServer{
+		ContextFunc: &GitserverService_ReadDirServerContextFunc{
+			defaultHook: i.Context,
+		},
+		RecvMsgFunc: &GitserverService_ReadDirServerRecvMsgFunc{
+			defaultHook: i.RecvMsg,
+		},
+		SendFunc: &GitserverService_ReadDirServerSendFunc{
+			defaultHook: i.Send,
+		},
+		SendHeaderFunc: &GitserverService_ReadDirServerSendHeaderFunc{
+			defaultHook: i.SendHeader,
+		},
+		SendMsgFunc: &GitserverService_ReadDirServerSendMsgFunc{
+			defaultHook: i.SendMsg,
+		},
+		SetHeaderFunc: &GitserverService_ReadDirServerSetHeaderFunc{
+			defaultHook: i.SetHeader,
+		},
+		SetTrailerFunc: &GitserverService_ReadDirServerSetTrailerFunc{
+			defaultHook: i.SetTrailer,
+		},
+	}
+}
+
+// GitserverService_ReadDirServerContextFunc describes the behavior when the
+// Context method of the parent MockGitserverService_ReadDirServer instance
+// is invoked.
+type GitserverService_ReadDirServerContextFunc struct {
+	defaultHook func() context.Context
+	hooks       []func() context.Context
+	history     []GitserverService_ReadDirServerContextFuncCall
+	mutex       sync.Mutex
+}
+
+// Context delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ReadDirServer) Context() context.Context {
+	r0 := m.ContextFunc.nextHook()()
+	m.ContextFunc.appendCall(GitserverService_ReadDirServerContextFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Context method of
+// the parent MockGitserverService_ReadDirServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ReadDirServerContextFunc) SetDefaultHook(hook func() context.Context) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Context method of the parent MockGitserverService_ReadDirServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ReadDirServerContextFunc) PushHook(hook func() context.Context) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ReadDirServerContextFunc) SetDefaultReturn(r0 context.Context) {
+	f.SetDefaultHook(func() context.Context {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ReadDirServerContextFunc) PushReturn(r0 context.Context) {
+	f.PushHook(func() context.Context {
+		return r0
+	})
+}
+
+func (f *GitserverService_ReadDirServerContextFunc) nextHook() func() context.Context {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ReadDirServerContextFunc) appendCall(r0 GitserverService_ReadDirServerContextFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ReadDirServerContextFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ReadDirServerContextFunc) History() []GitserverService_ReadDirServerContextFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ReadDirServerContextFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ReadDirServerContextFuncCall is an object that describes
+// an invocation of method Context on an instance of
+// MockGitserverService_ReadDirServer.
+type GitserverService_ReadDirServerContextFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 context.Context
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ReadDirServerContextFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ReadDirServerContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ReadDirServerRecvMsgFunc describes the behavior when the
+// RecvMsg method of the parent MockGitserverService_ReadDirServer instance
+// is invoked.
+type GitserverService_ReadDirServerRecvMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_ReadDirServerRecvMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// RecvMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ReadDirServer) RecvMsg(v0 interface{}) error {
+	r0 := m.RecvMsgFunc.nextHook()(v0)
+	m.RecvMsgFunc.appendCall(GitserverService_ReadDirServerRecvMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RecvMsg method of
+// the parent MockGitserverService_ReadDirServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ReadDirServerRecvMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecvMsg method of the parent MockGitserverService_ReadDirServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ReadDirServerRecvMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ReadDirServerRecvMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ReadDirServerRecvMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ReadDirServerRecvMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ReadDirServerRecvMsgFunc) appendCall(r0 GitserverService_ReadDirServerRecvMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ReadDirServerRecvMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ReadDirServerRecvMsgFunc) History() []GitserverService_ReadDirServerRecvMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ReadDirServerRecvMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ReadDirServerRecvMsgFuncCall is an object that describes
+// an invocation of method RecvMsg on an instance of
+// MockGitserverService_ReadDirServer.
+type GitserverService_ReadDirServerRecvMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ReadDirServerRecvMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ReadDirServerRecvMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ReadDirServerSendFunc describes the behavior when the
+// Send method of the parent MockGitserverService_ReadDirServer instance is
+// invoked.
+type GitserverService_ReadDirServerSendFunc struct {
+	defaultHook func(*v1.ReadDirResponse) error
+	hooks       []func(*v1.ReadDirResponse) error
+	history     []GitserverService_ReadDirServerSendFuncCall
+	mutex       sync.Mutex
+}
+
+// Send delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ReadDirServer) Send(v0 *v1.ReadDirResponse) error {
+	r0 := m.SendFunc.nextHook()(v0)
+	m.SendFunc.appendCall(GitserverService_ReadDirServerSendFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Send method of the
+// parent MockGitserverService_ReadDirServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ReadDirServerSendFunc) SetDefaultHook(hook func(*v1.ReadDirResponse) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Send method of the parent MockGitserverService_ReadDirServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ReadDirServerSendFunc) PushHook(hook func(*v1.ReadDirResponse) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ReadDirServerSendFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(*v1.ReadDirResponse) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ReadDirServerSendFunc) PushReturn(r0 error) {
+	f.PushHook(func(*v1.ReadDirResponse) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ReadDirServerSendFunc) nextHook() func(*v1.ReadDirResponse) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ReadDirServerSendFunc) appendCall(r0 GitserverService_ReadDirServerSendFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_ReadDirServerSendFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_ReadDirServerSendFunc) History() []GitserverService_ReadDirServerSendFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ReadDirServerSendFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ReadDirServerSendFuncCall is an object that describes an
+// invocation of method Send on an instance of
+// MockGitserverService_ReadDirServer.
+type GitserverService_ReadDirServerSendFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *v1.ReadDirResponse
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ReadDirServerSendFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ReadDirServerSendFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ReadDirServerSendHeaderFunc describes the behavior when
+// the SendHeader method of the parent MockGitserverService_ReadDirServer
+// instance is invoked.
+type GitserverService_ReadDirServerSendHeaderFunc struct {
+	defaultHook func(metadata.MD) error
+	hooks       []func(metadata.MD) error
+	history     []GitserverService_ReadDirServerSendHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// SendHeader delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverService_ReadDirServer) SendHeader(v0 metadata.MD) error {
+	r0 := m.SendHeaderFunc.nextHook()(v0)
+	m.SendHeaderFunc.appendCall(GitserverService_ReadDirServerSendHeaderFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendHeader method of
+// the parent MockGitserverService_ReadDirServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ReadDirServerSendHeaderFunc) SetDefaultHook(hook func(metadata.MD) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendHeader method of the parent MockGitserverService_ReadDirServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ReadDirServerSendHeaderFunc) PushHook(hook func(metadata.MD) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ReadDirServerSendHeaderFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ReadDirServerSendHeaderFunc) PushReturn(r0 error) {
+	f.PushHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ReadDirServerSendHeaderFunc) nextHook() func(metadata.MD) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ReadDirServerSendHeaderFunc) appendCall(r0 GitserverService_ReadDirServerSendHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ReadDirServerSendHeaderFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ReadDirServerSendHeaderFunc) History() []GitserverService_ReadDirServerSendHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ReadDirServerSendHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ReadDirServerSendHeaderFuncCall is an object that
+// describes an invocation of method SendHeader on an instance of
+// MockGitserverService_ReadDirServer.
+type GitserverService_ReadDirServerSendHeaderFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ReadDirServerSendHeaderFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ReadDirServerSendHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ReadDirServerSendMsgFunc describes the behavior when the
+// SendMsg method of the parent MockGitserverService_ReadDirServer instance
+// is invoked.
+type GitserverService_ReadDirServerSendMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_ReadDirServerSendMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// SendMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ReadDirServer) SendMsg(v0 interface{}) error {
+	r0 := m.SendMsgFunc.nextHook()(v0)
+	m.SendMsgFunc.appendCall(GitserverService_ReadDirServerSendMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendMsg method of
+// the parent MockGitserverService_ReadDirServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ReadDirServerSendMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendMsg method of the parent MockGitserverService_ReadDirServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_ReadDirServerSendMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ReadDirServerSendMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ReadDirServerSendMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ReadDirServerSendMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ReadDirServerSendMsgFunc) appendCall(r0 GitserverService_ReadDirServerSendMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ReadDirServerSendMsgFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ReadDirServerSendMsgFunc) History() []GitserverService_ReadDirServerSendMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ReadDirServerSendMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ReadDirServerSendMsgFuncCall is an object that describes
+// an invocation of method SendMsg on an instance of
+// MockGitserverService_ReadDirServer.
+type GitserverService_ReadDirServerSendMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ReadDirServerSendMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ReadDirServerSendMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ReadDirServerSetHeaderFunc describes the behavior when
+// the SetHeader method of the parent MockGitserverService_ReadDirServer
+// instance is invoked.
+type GitserverService_ReadDirServerSetHeaderFunc struct {
+	defaultHook func(metadata.MD) error
+	hooks       []func(metadata.MD) error
+	history     []GitserverService_ReadDirServerSetHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// SetHeader delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_ReadDirServer) SetHeader(v0 metadata.MD) error {
+	r0 := m.SetHeaderFunc.nextHook()(v0)
+	m.SetHeaderFunc.appendCall(GitserverService_ReadDirServerSetHeaderFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetHeader method of
+// the parent MockGitserverService_ReadDirServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ReadDirServerSetHeaderFunc) SetDefaultHook(hook func(metadata.MD) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetHeader method of the parent MockGitserverService_ReadDirServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ReadDirServerSetHeaderFunc) PushHook(hook func(metadata.MD) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ReadDirServerSetHeaderFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ReadDirServerSetHeaderFunc) PushReturn(r0 error) {
+	f.PushHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_ReadDirServerSetHeaderFunc) nextHook() func(metadata.MD) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ReadDirServerSetHeaderFunc) appendCall(r0 GitserverService_ReadDirServerSetHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ReadDirServerSetHeaderFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ReadDirServerSetHeaderFunc) History() []GitserverService_ReadDirServerSetHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ReadDirServerSetHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ReadDirServerSetHeaderFuncCall is an object that
+// describes an invocation of method SetHeader on an instance of
+// MockGitserverService_ReadDirServer.
+type GitserverService_ReadDirServerSetHeaderFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ReadDirServerSetHeaderFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ReadDirServerSetHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_ReadDirServerSetTrailerFunc describes the behavior when
+// the SetTrailer method of the parent MockGitserverService_ReadDirServer
+// instance is invoked.
+type GitserverService_ReadDirServerSetTrailerFunc struct {
+	defaultHook func(metadata.MD)
+	hooks       []func(metadata.MD)
+	history     []GitserverService_ReadDirServerSetTrailerFuncCall
+	mutex       sync.Mutex
+}
+
+// SetTrailer delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverService_ReadDirServer) SetTrailer(v0 metadata.MD) {
+	m.SetTrailerFunc.nextHook()(v0)
+	m.SetTrailerFunc.appendCall(GitserverService_ReadDirServerSetTrailerFuncCall{v0})
+	return
+}
+
+// SetDefaultHook sets function that is called when the SetTrailer method of
+// the parent MockGitserverService_ReadDirServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_ReadDirServerSetTrailerFunc) SetDefaultHook(hook func(metadata.MD)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetTrailer method of the parent MockGitserverService_ReadDirServer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverService_ReadDirServerSetTrailerFunc) PushHook(hook func(metadata.MD)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_ReadDirServerSetTrailerFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(metadata.MD) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_ReadDirServerSetTrailerFunc) PushReturn() {
+	f.PushHook(func(metadata.MD) {
+		return
+	})
+}
+
+func (f *GitserverService_ReadDirServerSetTrailerFunc) nextHook() func(metadata.MD) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_ReadDirServerSetTrailerFunc) appendCall(r0 GitserverService_ReadDirServerSetTrailerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_ReadDirServerSetTrailerFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_ReadDirServerSetTrailerFunc) History() []GitserverService_ReadDirServerSetTrailerFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_ReadDirServerSetTrailerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_ReadDirServerSetTrailerFuncCall is an object that
+// describes an invocation of method SetTrailer on an instance of
+// MockGitserverService_ReadDirServer.
+type GitserverService_ReadDirServerSetTrailerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_ReadDirServerSetTrailerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_ReadDirServerSetTrailerFuncCall) Results() []interface{} {
 	return []interface{}{}
 }
 

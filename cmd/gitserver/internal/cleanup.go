@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -50,7 +49,7 @@ type JanitorConfig struct {
 	DisableDeleteReposOnWrongShard bool
 }
 
-func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, fs gitserverfs.FS, rcf *wrexec.RecordingCommandFactory, logger log.Logger) goroutine.BackgroundRoutine {
+func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, fs gitserverfs.FS, gitBackendSource git.GitBackendSource, rcf *wrexec.RecordingCommandFactory, logger log.Logger) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
@@ -88,7 +87,7 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, fs gitse
 
 			gitserverAddrs := connection.NewGitserverAddresses(conf.Get())
 			// TODO: Should this return an error?
-			cleanupRepos(ctx, logger, db, fs, rcf, cfg.ShardID, gitserverAddrs, cfg.DisableDeleteReposOnWrongShard)
+			cleanupRepos(ctx, logger, db, fs, gitBackendSource, rcf, cfg.ShardID, gitserverAddrs, cfg.DisableDeleteReposOnWrongShard)
 
 			return nil
 		}),
@@ -244,6 +243,7 @@ func cleanupRepos(
 	logger log.Logger,
 	db database.DB,
 	fs gitserverfs.FS,
+	gitBackendSource git.GitBackendSource,
 	rcf *wrexec.RecordingCommandFactory,
 	shardID string,
 	gitServerAddrs connection.GitserverAddresses,
@@ -287,7 +287,7 @@ func cleanupRepos(
 		}
 	}()
 
-	maybeDeleteWrongShardRepos := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	maybeDeleteWrongShardRepos := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		// Record the number of repos that should not belong on this instance and
 		// remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
 		addr := gitServerAddrs.AddrForRepo(ctx, repoName)
@@ -327,9 +327,8 @@ func cleanupRepos(
 		return true, nil
 	}
 
-	collectSize := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
-		last, err := getLastSizeCalculation(ctx, backend.Config())
+	collectSize := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+		last, err := getLastSizeCalculation(dir)
 		if err != nil {
 			return false, err
 		}
@@ -345,10 +344,10 @@ func cleanupRepos(
 		}
 		repoToSize[repoName] = size
 
-		return false, setLastSizeCalculation(ctx, backend.Config())
+		return false, setLastSizeCalculation(dir, time.Now())
 	}
 
-	maybeRemoveCorrupt := func(repoName api.RepoName, dir common.GitDir) (done bool, _ error) {
+	maybeRemoveCorrupt := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, _ error) {
 		corrupt, reason, err := checkRepoDirCorrupt(rcf, repoName, dir)
 		if !corrupt || err != nil {
 			return false, err
@@ -373,7 +372,7 @@ func cleanupRepos(
 		return true, nil
 	}
 
-	maybeRemoveNonExisting := func(repoName api.RepoName, dir common.GitDir) (bool, error) {
+	maybeRemoveNonExisting := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (bool, error) {
 		if !removeNonExistingRepos {
 			return false, nil
 		}
@@ -401,24 +400,15 @@ func cleanupRepos(
 		return true, err
 	}
 
-	ensureGitAttributes := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	ensureGitAttributes := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, git.SetGitAttributes(dir)
 	}
 
-	ensureAutoGC := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
-
+	ensureAutoGC := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, gitSetAutoGC(ctx, backend.Config())
 	}
 
-	maybeReclone := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
-
-		repoType, err := git.GetRepositoryType(ctx, backend.Config())
-		if err != nil {
-			return false, err
-		}
-
+	maybeReclone := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		// Add a jitter to spread out re-cloning of repos cloned at the same time.
 		var reason string
 		const maybeCorrupt = "maybeCorrupt"
@@ -462,8 +452,14 @@ func cleanupRepos(
 		// We believe converting a Perforce depot to a Git repository is generally a
 		// very expensive operation, therefore we do not try to re-clone/redo the
 		// conversion only because it is old or slow to do "git gc".
-		if repoType == "perforce" && reason != maybeCorrupt {
-			reason = ""
+		if reason != maybeCorrupt {
+			repoType, err := git.GetRepositoryType(ctx, backend.Config())
+			if err != nil {
+				return false, err
+			}
+			if repoType == "perforce" {
+				reason = ""
+			}
 		}
 
 		if reason == "" {
@@ -495,7 +491,7 @@ func cleanupRepos(
 		return true, nil
 	}
 
-	removeStaleLocks := func(repoName api.RepoName, gitDir common.GitDir) (done bool, err error) {
+	removeStaleLocks := func(backend git.GitBackend, repoName api.RepoName, gitDir common.GitDir) (done bool, err error) {
 		// if removing a lock fails, we still want to try the other locks.
 		var multi error
 
@@ -544,26 +540,43 @@ func cleanupRepos(
 				log.Duration("age", gcPIDMaxAge))
 		}
 
+		// drop temporary pack files that can be left behind by a fetch.
+		packdir := gitDir.Path("objects", "pack")
+		err = gitserverfs.BestEffortWalk(packdir, func(path string, d os.DirEntry) error {
+			if path != packdir && d.IsDir() {
+				return filepath.SkipDir
+			}
+
+			file := filepath.Base(path)
+			if !strings.HasPrefix(file, "tmp_pack_") {
+				return nil
+			}
+
+			_, err := removeFileOlderThan(logger, path, 2*conf.GitLongCommandTimeout())
+			return err
+		})
+		if err != nil {
+			multi = errors.Append(multi, err)
+		}
+
 		return false, multi
 	}
 
-	performGC := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
-
+	performGC := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, gitGC(ctx, logger, backend, rcf, repoName, dir)
 	}
 
-	performSGMaintenance := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	performSGMaintenance := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, sgMaintenance(logger, dir)
 	}
 
-	performGitPrune := func(repoName api.RepoName, dir common.GitDir) (done bool, err error) {
+	performGitPrune := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
 		return false, pruneIfNeeded(rcf, repoName, dir, looseObjectsLimit)
 	}
 
 	type cleanupFn struct {
 		Name string
-		Do   func(api.RepoName, common.GitDir) (bool, error)
+		Do   func(git.GitBackend, api.RepoName, common.GitDir) (bool, error)
 	}
 	cleanups := []cleanupFn{
 		// First, check if we should even be having this repo on disk anymore,
@@ -622,6 +635,7 @@ func cleanupRepos(
 	reposCleaned := 0
 
 	err := fs.ForEachRepo(func(repo api.RepoName, gitDir common.GitDir) (done bool) {
+		backend := gitBackendSource(gitDir, repo)
 		for _, cfn := range cleanups {
 			// Check if context has been canceled, if so skip the rest of the repos.
 			select {
@@ -632,7 +646,7 @@ func cleanupRepos(
 			}
 
 			start := time.Now()
-			done, err := cfn.Do(repo, gitDir)
+			done, err := cfn.Do(backend, repo, gitDir)
 			if err != nil {
 				logger.Error("error running cleanup command",
 					log.String("name", cfn.Name),
@@ -1192,7 +1206,6 @@ func mockRemoveNonExistingReposConfig(value bool) {
 }
 
 const (
-	sizeCalculationConfigKey = "sourcegraph.sizeCalculationTime"
 	// We recalculate the repository size every day at most in the janitor.
 	// There's no need to recalculate it more often than that, since fetches
 	// update it anyways. So this will only be useful for "housekeeping" purposes
@@ -1200,34 +1213,34 @@ const (
 	repoSizeRecalcInterval = 24 * time.Hour
 )
 
+const lastSizeCalculationFilepath = ".sourcegraph-last-size-calculation"
+
 // getLastSizeCalculation returns the time the repository size was last calculated
 // by the janitor. We don't set this timestamp in fetches, so janitor still runs
 // this task every now and then.
-func getLastSizeCalculation(ctx context.Context, c git.GitConfigBackend) (time.Time, error) {
-	value, err := c.Get(ctx, sizeCalculationConfigKey)
+func getLastSizeCalculation(dir common.GitDir) (time.Time, error) {
+	path := dir.Path(lastSizeCalculationFilepath)
+	fd, err := os.Stat(path)
 	if err != nil {
-		return time.Unix(0, 0), errors.Wrap(err, "failed to determine last size calculation timestamp")
-	}
-	if value == "" {
-		// Return a time long in the past, to force an initial run.
-		return time.Time{}, setLastSizeCalculation(ctx, c)
-	}
-
-	sec, err := strconv.ParseInt(value, 10, 0)
-	if err != nil {
-		// If the value is bad update it to the current time
-		err2 := setLastSizeCalculation(ctx, c)
-		if err2 != nil {
-			err = err2
+		// If the file doesn't exist yet, we return a zero time.
+		if os.IsNotExist(err) {
+			return time.Time{}, nil
 		}
-		// And return a time long in the past, to force an update.
+		// Stat failed, error.
 		return time.Time{}, err
 	}
-
-	return time.Unix(sec, 0), nil
+	// We use modtime to track the last time fetched.
+	return fd.ModTime(), nil
 }
 
-func setLastSizeCalculation(ctx context.Context, c git.GitConfigBackend) error {
-	now := time.Now()
-	return c.Set(ctx, sizeCalculationConfigKey, strconv.FormatInt(now.Unix(), 10))
+func setLastSizeCalculation(dir common.GitDir, when time.Time) error {
+	path := dir.Path(lastSizeCalculationFilepath)
+	f, err := os.Create(path)
+	if err != nil && !os.IsExist(err) {
+		// If creating the file failed, and not because it already exists, error.
+		return err
+	}
+	_ = f.Close()
+	// We use modtime to track the last time fetched.
+	return os.Chtimes(path, time.Time{}, when)
 }

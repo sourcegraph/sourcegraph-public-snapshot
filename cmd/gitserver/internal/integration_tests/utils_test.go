@@ -90,7 +90,7 @@ func InitGitserver() {
 	s := server.NewServer(&server.ServerOpts{
 		Logger: sglog.Scoped("server"),
 		FS:     fs,
-		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+		GitBackendSource: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return gitcli.NewBackend(logtest.Scoped(&t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
 		GetRemoteURLFunc: getRemoteURLFunc,

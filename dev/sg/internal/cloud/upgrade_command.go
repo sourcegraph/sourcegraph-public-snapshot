@@ -15,7 +15,7 @@ var UpgradeEphemeralCommand = cli.Command{
 	Name:        "upgrade",
 	Usage:       "upgrade a cloud ephemeral",
 	Description: "Upgrade the given Ephemeral deployment with the specified version",
-	Action:      wipAction(upgradeCloudEphemeral),
+	Action:      upgradeCloudEphemeral,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "name",

@@ -42,11 +42,12 @@ type Server struct {
 	config       *config.Config
 	notifyClient notify.NotificationClient
 	bkClient     *buildkite.Client
+	bqWriter     BigQueryWriter
 	http         *http.Server
 }
 
 // NewServer creatse a new server to listen for Buildkite webhook events.
-func NewServer(addr string, logger log.Logger, c config.Config) *Server {
+func NewServer(addr string, logger log.Logger, c config.Config, bqWriter BigQueryWriter) *Server {
 	logger = logger.Scoped("server")
 
 	if testutil.IsTest && c.BuildkiteToken == "" {
@@ -64,6 +65,7 @@ func NewServer(addr string, logger log.Logger, c config.Config) *Server {
 		store:        build.NewBuildStore(logger),
 		config:       &c,
 		notifyClient: notify.NewClient(logger, c.SlackToken, c.SlackChannel),
+		bqWriter:     bqWriter,
 		bkClient:     buildkite.NewClient(bk.Client()),
 	}
 
@@ -188,7 +190,11 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	go s.processEvent(&event)
+	if testutil.IsTest {
+		s.processEvent(&event)
+	} else {
+		go s.processEvent(&event)
+	}
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -288,18 +294,27 @@ func (s *Server) triggerMetricsPipeline(b *build.Build) error {
 // full build which includes all recorded jobs for the build and send a notification.
 // processEvent delegates the decision to actually send a notifcation
 func (s *Server) processEvent(event *build.Event) {
-	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.GetBuildNumber()), log.String("jobName", event.GetJobName()))
-	s.store.Add(event)
-	b := s.store.GetByBuildNumber(event.GetBuildNumber())
-	if event.IsBuildFinished() {
-		if *event.Build.Branch == "main" {
-			if err := s.notifyIfFailed(b); err != nil {
-				s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
+	if event.Build.Number != nil {
+		s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.GetBuildNumber()), log.String("jobName", event.GetJobName()))
+		s.store.Add(event)
+		b := s.store.GetByBuildNumber(event.GetBuildNumber())
+		if event.IsBuildFinished() {
+			if *event.Build.Branch == "main" {
+				if err := s.notifyIfFailed(b); err != nil {
+					s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
+				}
+			}
+
+			if err := s.triggerMetricsPipeline(b); err != nil {
+				s.logger.Error("failed to trigger metrics pipeline for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
 			}
 		}
-
-		if err := s.triggerMetricsPipeline(b); err != nil {
-			s.logger.Error("failed to trigger metrics pipeline for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
+	} else if event.Agent.ID != nil {
+		if err := s.bqWriter.Write(context.Background(), &BuildkiteAgentEvent{
+			event: event.Name,
+			Agent: event.Agent,
+		}); err != nil {
+			s.logger.Error("failed to write agent event to BigQuery", log.String("event", event.Name), log.String("agentID", *event.Agent.ID))
 		}
 	}
 }
@@ -362,7 +377,7 @@ func getDevxServiceLatestCommit(token string) (string, error) {
 	}
 	req.Header.Add("Authorization", "Bearer "+token)
 	req.Header.Add("Accept", "application/vnd.github+json")
-	// I d as the docs command https://docs.github.com/en/rest/branches/branches#get-a-branch
+	// I do as the docs command https://docs.github.com/en/rest/branches/branches#get-a-branch
 	req.Header.Add("X-GitHub-Api-Version", "2022-11-28")
 
 	resp, err := http.DefaultClient.Do(req)
@@ -398,7 +413,12 @@ type Service struct{}
 func (s Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.Contract, config config.Config) (background.Routine, error) {
 	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", config.SlackChannel), log.Bool("Production", config.Production)))
 
-	server := NewServer(fmt.Sprintf(":%d", contract.Port), logger, config)
+	bqWriter, err := contract.BigQuery.GetTableWriter(context.Background(), "agent_status")
+	if err != nil {
+		return nil, err
+	}
+
+	server := NewServer(fmt.Sprintf(":%d", contract.Port), logger, config, bqWriter)
 
 	return background.CombinedRoutine{
 		server,

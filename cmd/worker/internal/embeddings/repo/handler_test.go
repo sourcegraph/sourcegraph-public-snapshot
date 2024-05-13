@@ -32,8 +32,8 @@ func TestDiff(t *testing.T) {
 	})
 
 	readDirFunc := &gitserver.ClientReadDirFunc{}
-	readDirFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
-		return []fs.FileInfo{
+	readDirFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, bool) (gitserver.ReadDirIterator, error) {
+		return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 			FakeFileInfo{
 				name: "modifiedFile",
 				size: 900,
@@ -50,7 +50,7 @@ func TestDiff(t *testing.T) {
 				name: "anotherFile",
 				size: 1200,
 			},
-		}, nil
+		}), nil
 	})
 
 	mockGitServer := &gitserver.MockClient{

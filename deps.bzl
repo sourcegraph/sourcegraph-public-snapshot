@@ -5633,8 +5633,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry",
-        sum = "h1:wHEDTUur95a2HtUUodA8OXQi0Uefwa60CvhN4fLIuhU=",
-        version = "v0.0.0-20240109225336-01188650a68d",
+        sum = "h1:d5gmGcmHVcSHS1rk/vmVnPi4olpYa+t90WCNWsIsiFs=",
+        version = "v0.0.0-20240513135716-8702bd2752fb",
     )
     go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_slack",
@@ -5661,8 +5661,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_notionreposync",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/notionreposync",
-        sum = "h1:+ghayvC6PL3/8g4tqRsQCYKeH296tkogGSzpov6Ae+M=",
-        version = "v0.0.0-20240502050143-447b6b9e6763",
+        sum = "h1:XB04N3LJEZaJFzI9+q3qxSXNRNw3UvwPL5zbIFvLvaM=",
+        version = "v0.0.0-20240510213306-87052870048d",
     )
     go_repository(
         name = "com_github_sourcegraph_run",

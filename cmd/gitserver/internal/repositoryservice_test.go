@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"testing"
 	"time"
 
@@ -13,7 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
@@ -93,6 +96,70 @@ func TestRepositoryServiceServer_FetchRepository(t *testing.T) {
 		mockassert.Called(t, svc.FetchRepositoryFunc)
 		require.Equal(t, lastFetched, response.LastFetched.AsTime())
 		require.Equal(t, lastChanged, response.LastChanged.AsTime())
+	})
+}
+
+func TestRepositoryServiceServer_ListRepositories(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &repositoryServiceServer{}
+		_, err := gs.ListRepositories(ctx, &proto.ListRepositoriesRequest{PageSize: 0})
+		require.ErrorContains(t, err, "page_size must be > 0")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("e2e", func(t *testing.T) {
+		tts := []struct {
+			repos    []string
+			pageSize uint32
+		}{
+			// No repos
+			{pageSize: 10},
+			// 1 repo, 1 not full page
+			{repos: []string{"repo1"}, pageSize: 10},
+			// 10 repos, 1 full page
+			{repos: []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8", "repo9", "repo10"}, pageSize: 10},
+			// 10 repos, 10 full pages
+			{repos: []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8", "repo9", "repo10"}, pageSize: 1},
+		}
+		for i, tt := range tts {
+			t.Run(strconv.Itoa(i), func(t *testing.T) {
+				fs := gitserverfs.NewMockFS()
+				fs.ForEachRepoFunc.SetDefaultHook(func(cb func(api.RepoName, common.GitDir) bool) error {
+					for _, repo := range tt.repos {
+						if cb(api.RepoName(repo), common.GitDir("/data/repos/"+repo)) {
+							break
+						}
+					}
+
+					return nil
+				})
+
+				rs := &repositoryServiceServer{
+					fs: fs,
+				}
+
+				cli := spawnRepositoryServer(t, rs)
+				var haveRepos []string
+				var pageToken string
+				for {
+					response, err := cli.ListRepositories(ctx, &proto.ListRepositoriesRequest{
+						PageSize:  tt.pageSize,
+						PageToken: pageToken,
+					})
+					require.NoError(t, err)
+					for _, r := range response.GetRepositories() {
+						haveRepos = append(haveRepos, r.Name)
+					}
+					if response.GetNextPageToken() == "" {
+						break
+					}
+					pageToken = response.GetNextPageToken()
+				}
+				require.Equal(t, tt.repos, haveRepos)
+			})
+		}
 	})
 }
 
