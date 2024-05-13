@@ -47,6 +47,7 @@ go_library(
         "//internal/database/connections/live",
         "//internal/debugserver",
         "//internal/env",
+        "//internal/httpcli",
         "//internal/observation",
         "//internal/oobmigration/migrations/register",
         "//internal/service",

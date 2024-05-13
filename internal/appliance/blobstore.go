@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/container"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/deployment"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pod"
@@ -35,20 +36,11 @@ func (r *Reconciler) reconcileBlobstore(ctx context.Context, sg *Sourcegraph, ow
 
 func buildBlobstorePersistentVolumeClaim(sg *Sourcegraph) (corev1.PersistentVolumeClaim, error) {
 	storage := sg.Spec.Blobstore.StorageSize
-	if storage == "" {
-		storage = "100Gi"
-	}
-
 	if _, err := resource.ParseQuantity(storage); err != nil {
 		return corev1.PersistentVolumeClaim{}, errors.Errorf("invalid blobstore storage size: %s", storage)
 	}
 
-	storageClassName := sg.Spec.StorageClass.Name
-	if storageClassName == "" {
-		storageClassName = "sourcegraph"
-	}
-
-	p := pvc.NewPersistentVolumeClaim("blobstore", sg.Namespace, resource.MustParse(storage), storageClassName)
+	p := pvc.NewPersistentVolumeClaim("blobstore", sg.Namespace, resource.MustParse(storage), sg.Spec.StorageClass.Name)
 
 	return p, nil
 }
@@ -85,7 +77,7 @@ func (r *Reconciler) reconcileBlobstoreServices(ctx context.Context, sg *Sourceg
 	return reconcileObject(ctx, r, sg.Spec.Blobstore, &s, &corev1.Service{}, sg, owner)
 }
 
-func buildBlobstoreDeployment(sg *Sourcegraph) appsv1.Deployment {
+func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
 	name := "blobstore"
 
 	containerPorts := []corev1.ContainerPort{{
@@ -104,19 +96,23 @@ func buildBlobstoreDeployment(sg *Sourcegraph) appsv1.Deployment {
 		},
 	}
 
-	defaultContainer := container.NewContainer(name, sg.Spec.Blobstore, corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1"),
-			corev1.ResourceMemory: resource.MustParse("500M"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1"),
-			corev1.ResourceMemory: resource.MustParse("500M"),
+	defaultImage, err := getDefaultImage(sg, name)
+	if err != nil {
+		return appsv1.Deployment{}, err
+	}
+	defaultContainer := container.NewContainer(name, sg.Spec.Blobstore, config.ContainerConfig{
+		Image: defaultImage,
+		Resources: &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("1"),
+				corev1.ResourceMemory: resource.MustParse("500M"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("1"),
+				corev1.ResourceMemory: resource.MustParse("500M"),
+			},
 		},
 	})
-
-	// TODO: https://github.com/sourcegraph/sourcegraph/issues/62076
-	defaultContainer.Image = "index.docker.io/sourcegraph/blobstore:5.3.2@sha256:d625be1eefe61cc42f94498e3c588bf212c4159c8b20c519db84eae4ff715efa"
 
 	defaultContainer.Ports = containerPorts
 	defaultContainer.VolumeMounts = containerVolumeMounts
@@ -149,10 +145,13 @@ func buildBlobstoreDeployment(sg *Sourcegraph) appsv1.Deployment {
 	)
 	defaultDeployment.Spec.Template = podTemplate.Template
 
-	return defaultDeployment
+	return defaultDeployment, nil
 }
 
 func (r *Reconciler) reconcileBlobstoreDeployments(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
-	d := buildBlobstoreDeployment(sg)
+	d, err := buildBlobstoreDeployment(sg)
+	if err != nil {
+		return err
+	}
 	return reconcileObject(ctx, r, sg.Spec.Blobstore, &d, &appsv1.Deployment{}, sg, owner)
 }

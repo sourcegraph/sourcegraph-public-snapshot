@@ -423,7 +423,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                     )}
                     <Badge
                         variant="info"
-                        href="https://github.com/sourcegraph/sourcegraph/discussions/42874"
+                        href="https://community.sourcegraph.com/t/experimental-fuzzy-finder-in-code-search/230"
                         tooltip="Provide feedback on this experimental feature"
                         className={styles.experimentalBadge}
                     >

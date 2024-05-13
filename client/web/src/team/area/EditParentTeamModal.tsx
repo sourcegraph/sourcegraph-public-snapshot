@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import { logger } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, ErrorAlert, Form, H3, Label, Modal } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
@@ -9,7 +10,7 @@ import { ParentTeamSelect } from '../new/team-select/ParentTeamSelect'
 
 import { useAssignParentTeam } from './backend'
 
-interface EditParentTeamModalProps {
+interface EditParentTeamModalProps extends TelemetryV2Props {
     teamID: Scalars['ID']
     teamName: string
     parentTeamName: string | null
@@ -24,6 +25,7 @@ export const EditParentTeamModal: React.FunctionComponent<React.PropsWithChildre
     parentTeamName: currentParentTeamName,
     onCancel,
     afterEdit,
+    telemetryRecorder,
 }) => {
     const labelId = 'editParentTeam'
 
@@ -42,13 +44,15 @@ export const EditParentTeamModal: React.FunctionComponent<React.PropsWithChildre
             }
             try {
                 await editTeam({ variables: { id: teamID, parentTeamName: parentTeam } })
+                telemetryRecorder.recordEvent('team.parentTeam', 'edit')
                 afterEdit()
             } catch (error) {
                 // Non-request error. API errors will be available under `error` above.
                 logger.error(error)
+                telemetryRecorder.recordEvent('team.parentTeam', 'editFail')
             }
         },
-        [afterEdit, teamID, parentTeam, editTeam]
+        [afterEdit, teamID, parentTeam, editTeam, telemetryRecorder]
     )
 
     return (

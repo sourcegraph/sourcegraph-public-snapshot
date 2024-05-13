@@ -25,7 +25,8 @@
     export let history: HistoryPanel_HistoryConnection | null
     export let fetchMore: (afterCursor: string | null) => void
     export let loading: boolean = false
-    export let enableInlineDiffs: boolean
+    export let enableInlineDiff: boolean = false
+    export let enableViewAtCommit: boolean = false
 
     export function capture(): Capture {
         return {
@@ -75,7 +76,7 @@
                         <Badge variant="link"><a href={commit.canonicalURL}>{commit.abbreviatedOID}</a></Badge>
                     </td>
                     <td class="subject">
-                        {#if enableInlineDiffs}
+                        {#if enableInlineDiff}
                             <a href="?rev={commit.oid}&diff=1">{commit.subject}</a>
                         {:else}
                             {commit.subject}
@@ -86,11 +87,13 @@
                         {commit.author.person.displayName}
                     </td>
                     <td><Timestamp date={new Date(commit.author.date)} strict /></td>
-                    <td>
-                        <Tooltip tooltip="View file at commit">
-                            <a href="?rev={commit.oid}"><Icon svgPath={mdiFileDocumentOutline} inline /></a>
-                        </Tooltip>
-                    </td>
+                    {#if enableViewAtCommit}
+                        <td>
+                            <Tooltip tooltip="View at commit">
+                                <a href="?rev={commit.oid}"><Icon svgPath={mdiFileDocumentOutline} inline /></a>
+                            </Tooltip>
+                        </td>
+                    {/if}
                     <td>
                         <Tooltip tooltip="Browse files at commit">
                             <a

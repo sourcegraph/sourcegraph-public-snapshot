@@ -24,7 +24,7 @@ func NewService(db database.DB) *Service {
 	return newService(
 		observationCtx,
 		luasandbox.NewService(),
-		NewDefaultGitService(nil),
+		NewDefaultGitService(),
 		ratelimit.NewInstrumentedLimiter("InferenceService", rate.NewLimiter(rate.Limit(gitserverRequestRateLimit), 1)),
 		maximumFilesWithContentCount,
 		maximumFileWithContentSizeBytes,

@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "assets",
+    srcs = ["assets.go"],
+    embedsrcs = [
+        "bigquery",
+        "cloudarmor",
+        "cloudflare",
+        "cloudmemorystore",
+        "cloudmonitoring",
+        "cloudrun",
+        "cloudsql",
+        "cloudtrace",
+        "externalipaddress",
+        "internet",
+        "loadbalancer",
+        "opsgenie",
+        "sentry",
+        "vpc",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/diagram/assets",
+    visibility = ["//visibility:public"],
+)

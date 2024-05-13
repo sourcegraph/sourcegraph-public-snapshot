@@ -18,6 +18,7 @@
     import { isRouteEnabled } from '$lib/navigation'
 
     import type { LayoutData } from './$types'
+    import FuzzyFinderContainer from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
 
     export let data: LayoutData
 
@@ -86,7 +87,6 @@
 </script>
 
 <svelte:head>
-    <title>Sourcegraph</title>
     <meta name="description" content="Code search" />
 </svelte:head>
 
@@ -101,6 +101,8 @@
 <main>
     <slot />
 </main>
+
+<FuzzyFinderContainer />
 
 <style lang="scss">
     :global(body) {

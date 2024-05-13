@@ -30,14 +30,9 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	}
 
 	releaseBranch := v.String()
-	if v.Patch() == 0 {
-		releaseBranch = fmt.Sprintf("%d.%d", v.Major(), v.Minor()) // 5.3 not 5.3.0
-	}
-
 	defaultBranch := cctx.String("branch")
 
 	ctx := cctx.Context
-	fmt.Println("releaseBranch", releaseBranch)
 	releaseGitRepoBranch := repo.NewGitRepo(releaseBranch, releaseBranch)
 	defaultGitRepoBranch := repo.NewGitRepo(defaultBranch, defaultBranch)
 
@@ -88,7 +83,7 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Local branch is up to date with remote"))
 
 	p = std.Out.Pending(output.Styled(output.StylePending, "Creating release branch..."))
-	if err := releaseGitRepoBranch.Checkout(ctx); err != nil {
+	if err := releaseGitRepoBranch.CheckoutNewBranch(ctx); err != nil {
 		p.Destroy()
 		return errors.Wrap(err, "failed to create release branch")
 	}

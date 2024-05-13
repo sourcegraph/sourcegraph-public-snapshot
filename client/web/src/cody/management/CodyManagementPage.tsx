@@ -21,8 +21,8 @@ import {
 import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
-import { useCodyPaymentsUrl } from '../subscription/CodySubscriptionPage'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
+import { manageSubscriptionRedirectURL } from '../util'
 
 import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
@@ -74,9 +74,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     const [selectedEditorStep, setSelectedEditorStep] = React.useState<EditorStep | null>(null)
 
     const subscription = data?.currentUser?.codySubscription
-
-    const codyPaymentsUrl = useCodyPaymentsUrl()
-    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
 
     useEffect(() => {
         if (!!data && !data?.currentUser) {

@@ -320,7 +320,19 @@ func (*rootTreeFileInfo) Size() int64        { return 0 }
 func (*rootTreeFileInfo) Sys() any           { return nil }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
-	return r.gitserverClient.LsFiles(ctx, r.gitRepo, api.CommitID(r.oid))
+	fds, err := r.gitserverClient.ReadDir(ctx, r.gitRepo, api.CommitID(r.oid), "", true)
+	if err != nil {
+		return nil, err
+	}
+
+	names := make([]string, 0, len(fds))
+	for _, fd := range fds {
+		if fd.IsDir() {
+			continue
+		}
+		names = append(names, fd.Name())
+	}
+	return names, nil
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
@@ -394,7 +406,7 @@ func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {
 func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
-	counts, err := r.gitserverClient.GetBehindAhead(ctx, r.gitRepo, args.Revspec, string(r.oid))
+	counts, err := r.gitserverClient.BehindAhead(ctx, r.gitRepo, args.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
 	}

@@ -156,9 +156,6 @@
 
     registerHotkey({
         keys: { key: '/' },
-        // Allows `/` symbol to populate input's value
-        // when input is focused
-        allowDefault: true,
         handler: () => {
             // If the search input doesn't have focus, focus it
             // and disallow `/` symbol populate the input value
@@ -200,6 +197,11 @@
         // this, SvelteKit will not re-run the loader because the URL hasn't changed.
         await invalidate(`search:${url}`)
         void goto(url)
+
+        // Reset interaction state since after success submit we should hide
+        // suggestions UI but still keep focus on input, after user interacts with
+        // search input again we show suggestion panel
+        userHasInteracted = false
     }
 
     async function handleSubmit(event: Event) {
@@ -299,8 +301,6 @@
 </form>
 
 <style lang="scss">
-    @use '$lib/breakpoints';
-
     form {
         isolation: isolate;
         width: 100%;

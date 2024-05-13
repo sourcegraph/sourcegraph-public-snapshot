@@ -176,6 +176,48 @@ func BatchChangesRestrictedToAdmins() bool {
 	return false
 }
 
+func init() {
+	ContributeValidator(func(querier conftypes.SiteConfigQuerier) (problems Problems) {
+		cm := querier.SiteConfig().CodeMonitors
+		if cm == nil {
+			return nil
+		}
+		if cm.Concurrency < 0 {
+			problems = append(problems, NewSiteProblem("codeMonitors.concurrency must be greater than zero"))
+		}
+		if cm.PollInterval != "" {
+			if _, err := time.ParseDuration(cm.PollInterval); err != nil {
+				problems = append(problems, NewSiteProblem("codeMonitors.pollInterval must be parseable as a duration"))
+			}
+		}
+		return problems
+	})
+}
+
+type ComputedCodeMonitors struct {
+	Concurrency  int
+	PollInterval time.Duration
+}
+
+func CodeMonitors() ComputedCodeMonitors {
+	// Start with default values and override if set
+	res := ComputedCodeMonitors{
+		Concurrency:  4,
+		PollInterval: 5 * time.Minute,
+	}
+	if cm := Get().CodeMonitors; cm != nil {
+		if cm.Concurrency != 0 {
+			res.Concurrency = cm.Concurrency
+		}
+		if cm.PollInterval != "" {
+			// ignore err since it's validated above
+			dur, _ := time.ParseDuration(cm.PollInterval)
+			res.PollInterval = dur
+		}
+	}
+	return res
+}
+
 // CodyEnabled returns whether Cody is enabled on this instance.
 //
 // If `cody.enabled` is not set or set to false, it's not enabled.
@@ -434,13 +476,13 @@ func RankingMaxQueueSizeBytes() int {
 
 // SearchFlushWallTime controls the amount of time that Zoekt shards collect and rank results. For
 // larger codebases, it can be helpful to increase this to improve the ranking stability and quality.
-func SearchFlushWallTime(keywordScoring bool) time.Duration {
+func SearchFlushWallTime(bm25Scoring bool) time.Duration {
 	ranking := ExperimentalFeatures().Ranking
 	if ranking != nil && ranking.FlushWallTimeMS > 0 {
 		return time.Duration(ranking.FlushWallTimeMS) * time.Millisecond
 	} else {
-		if keywordScoring {
-			// Keyword scoring takes longer than standard searches, so use a higher FlushWallTime
+		if bm25Scoring {
+			// BM25 scoring takes longer than standard searches, so use a higher FlushWallTime
 			// to help ensure ranking is stable
 			return 2 * time.Second
 		} else {

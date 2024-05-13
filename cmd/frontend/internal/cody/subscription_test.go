@@ -2,7 +2,6 @@ package cody
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -130,7 +129,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 					accounts = append(accounts, &extsvc.Account{AccountSpec: extsvc.AccountSpec{
 						AccountID:   MockSSCValue.SAMSAccountID,
 						ServiceType: "openidconnect",
-						ServiceID:   fmt.Sprintf("https://%s/", ssc.GetSAMSHostName()),
+						ServiceID:   ssc.GetSAMSServiceID(),
 					}})
 				}
 

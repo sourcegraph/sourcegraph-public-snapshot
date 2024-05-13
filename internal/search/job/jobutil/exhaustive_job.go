@@ -82,6 +82,7 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 			Diff:                 diff,
 			Limit:                b.MaxResults(inputs.DefaultLimit()),
 			IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
+			Concurrency:          4,
 		}
 
 		planJob =

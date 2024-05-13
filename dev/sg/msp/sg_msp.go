@@ -10,9 +10,13 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jomei/notionapi" // we use this for file uploads
 	"github.com/urfave/cli/v2"
+	"go.uber.org/atomic"
 	"golang.org/x/exp/maps"
 
+	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/notionreposync/notion"
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
@@ -32,6 +36,7 @@ import (
 	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -410,9 +415,8 @@ This command supports completions on services and environments.
 					return errors.Wrap(err, "CollectAlertPolicies")
 				}
 
-				doc, err := operationdocs.Render(*svc, operationdocs.Options{
+				doc, err := operationdocs.Render(*svc, collectedAlerts, operationdocs.Options{
 					ManagedServicesRevision: repoRev,
-					AlertPolicies:           collectedAlerts,
 				})
 				if err != nil {
 					return errors.Wrap(err, "operationdocs.Render")
@@ -425,37 +429,19 @@ This command supports completions on services and environments.
 			},
 			Subcommands: []*cli.Command{
 				{
-					Name:   "generate-handbook-pages",
-					Usage:  "Generate operations handbook pages for all services",
-					Hidden: true, // not meant for day-to-day use
-					Description: `By default, we expect the 'sourcegraph/handbook' repository to be checked out adjacent to the 'sourcegraph/managed-services' repository, i.e.:
-	/
-	├─ managed-services/ <-- current directory
-	├─ handbook/         <-- github.com/sourcegraph/handbook
-
-The '-handbook-path' flag can also be used to specify where sourcegraph/handbook is cloned.`,
-					Before: msprepo.UseManagedServicesRepo,
+					Name:        "generate-handbook-pages",
+					Usage:       "Generate operations handbook pages in Notion for all services",
+					Hidden:      true, // not meant for day-to-day use
+					Description: `Requires NOTION_API_TOKEN or access to sourcegraph-secrets/CORE_SERVICES_NOTION_API_TOKEN.`,
+					Before:      msprepo.UseManagedServicesRepo,
 					Flags: []cli.Flag{
-						&cli.StringFlag{
-							Name:  "handbook-path",
-							Usage: "Path to the directory in which sourcegraph/handbook is cloned",
-							Value: "../handbook",
-							Action: func(_ *cli.Context, v string) error {
-								// 'Required: true' will error out even if a default
-								// value is set, so do our own validation here.
-								if v == "" {
-									return errors.New("cannot be empty")
-								}
-								return nil
-							},
+						&cli.IntFlag{
+							Name:  "concurrency",
+							Value: 3,
+							Usage: "Maximum number of concurrent updates to Notion pages",
 						},
 					},
-					Action: func(c *cli.Context) error {
-						handbookPath := c.String("handbook-path")
-						if err := isHandbookRepo(handbookPath); err != nil {
-							return errors.Wrapf(err, "expecting github.com/sourcegraph/handbook at %q", handbookPath)
-						}
-
+					Action: func(c *cli.Context) (err error) {
 						services, err := msprepo.ListServices()
 						if err != nil {
 							return err
@@ -465,55 +451,163 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 						if err != nil {
 							return errors.Wrap(err, "msprepo.GitRevision")
 						}
-
 						opts := operationdocs.Options{
 							ManagedServicesRevision: repoRev,
-							GenerateCommand:         strings.Join(os.Args, " "),
-							Handbook:                true,
+							GeneratedBy: func() string {
+								if os.Getenv("GITHUB_ACTIONS") == "true" {
+									// Probably running in CI, tell them about
+									// our GitHub action
+									return "[Update Handbook GitHub Action](https://github.com/sourcegraph/managed-services/actions/workflows/update-handbook.yaml)"
+								}
+								return fmt.Sprintf("`%s`", strings.Join(os.Args, " "))
+							}(),
+							// This command is for generating Notion pages.
+							Notion: true,
 						}
 
-						// Reset directory to ensure we don't have lingering references
-						{
-							dir := filepath.Join(handbookPath, operationdocs.HandbookDirectory)
-							_ = os.RemoveAll(dir)
-							_ = os.Mkdir(dir, os.ModePerm)
-							std.Out.Writef("Reset destination directory %q.", dir)
+						// Prefer env token for ease of integration in GitHub
+						// Actions, before falling back to using the token stored
+						// in GSM.
+						notionToken, ok := os.LookupEnv("NOTION_API_TOKEN")
+						if ok && len(notionToken) > 0 {
+							std.Out.WriteSuggestionf("Using NOTION_API_TOKEN from environment")
+						} else {
+							sec, err := secrets.FromContext(c.Context)
+							if err != nil {
+								return err
+							}
+							notionToken, err = sec.GetExternal(c.Context,
+								secrets.ExternalSecret{
+									Project: "sourcegraph-secrets",
+									Name:    "CORE_SERVICES_NOTION_API_TOKEN",
+								})
+							if err != nil {
+								return errors.Wrap(err, "failed to get Notion token")
+							}
 						}
+						notionClient := notionapi.NewClient(notionapi.Token(notionToken))
 
+						type task struct {
+							svc          *spec.Spec
+							noNotionPage bool
+						}
+						var tasks []task
 						var serviceSpecs []*spec.Spec
+						var statusBars []*output.StatusBar
 						for _, s := range services {
+							status := output.NewStatusBarWithLabel(s)
+							statusBars = append(statusBars, status)
+
 							svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
 							if err != nil {
 								return errors.Wrapf(err, "load service %q", s)
 							}
 							serviceSpecs = append(serviceSpecs, svc)
-							collectedAlerts, err := collectAlertPolicies(svc)
-							opts.AlertPolicies = collectedAlerts
-							if err != nil {
-								return errors.Wrapf(err, "%s: CollectAlertPolicies", s)
+							if svc.Service.NotionPageID == nil {
+								tasks = append(tasks, task{
+									svc:          svc,
+									noNotionPage: true,
+								})
+								continue
 							}
-							doc, err := operationdocs.Render(*svc, opts)
-							if err != nil {
-								return errors.Wrap(err, s)
-							}
-							pagePath := filepath.Join(handbookPath,
-								operationdocs.ServiceHandbookPath(s))
-							if err := os.WriteFile(pagePath, []byte(doc), 0o644); err != nil {
-								return errors.Wrap(err, s)
-							}
-							std.Out.WriteNoticef("[%s]\tWrote %q", s, pagePath)
+							tasks = append(tasks, task{svc: svc})
 						}
 
-						indexDoc := operationdocs.RenderIndexPage(serviceSpecs, opts)
-						indexPath := filepath.Join(handbookPath,
-							operationdocs.IndexPathHandbookPath())
-						if err := os.WriteFile(indexPath, []byte(indexDoc), 0o644); err != nil {
-							return errors.Wrap(err, "index page")
+						// Prepare nice progress bars to look at while slowly
+						// updating Notion pages
+						concurrency := c.Int("concurrency")
+						prog := std.Out.ProgressWithStatusBars(
+							[]output.ProgressBar{{
+								Label: fmt.Sprintf("Generating service handbook pages (concurrency: %d)", concurrency),
+								Max:   float64(len(services)),
+							}},
+							statusBars,
+							nil)
+
+						// Do work concurrently, counting how many tasks are done
+						wg := pool.New().WithErrors().WithMaxGoroutines(concurrency)
+						completedCount := atomic.NewInt32(0)
+						for i, t := range tasks {
+							if t.noNotionPage {
+								prog.SetValue(0, float64(completedCount.Inc()))
+								prog.StatusBarCompletef(i, "Skipped: no Notion page provided in service spec")
+								continue
+							}
+							svc := t.svc
+							s := svc.Service.ID
+
+							wg.Go(func() (err error) {
+								defer func() {
+									if err != nil {
+										prog.StatusBarFailf(i, err.Error())
+									}
+								}()
+
+								prog.StatusBarUpdatef(i, "Collecting alert policies")
+								collectedAlerts, err := collectAlertPolicies(svc)
+								if err != nil {
+									return errors.Wrapf(err, "%s: CollectAlertPolicies", s)
+								}
+
+								prog.StatusBarUpdatef(i, "Rendering Markdown docs")
+								doc, err := operationdocs.Render(*svc, collectedAlerts, opts)
+								if err != nil {
+									return errors.Wrap(err, s)
+								}
+
+								prog.StatusBarUpdatef(i, "Preparing target Notion page %s",
+									operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
+								if err := resetNotionPage(
+									c.Context,
+									notionClient,
+									*svc.Service.NotionPageID,
+									fmt.Sprintf("%s infrastructure operations", svc.Service.GetName()),
+								); err != nil {
+									return errors.Wrapf(err, "%s: reset page %s",
+										s, operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
+								}
+
+								prog.StatusBarUpdatef(i, "Rendering target Notion page %s",
+									operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
+								blockUpdater := notion.NewPageBlockUpdater(notionClient, *svc.Service.NotionPageID)
+								if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
+									ProcessMarkdown([]byte(doc)); err != nil {
+									return errors.Wrap(err, s)
+								}
+
+								prog.StatusBarCompletef(i, "Wrote %q",
+									operationdocs.NotionHandbookURL(*svc.Service.NotionPageID))
+								prog.SetValue(0, float64(completedCount.Inc()))
+								return nil
+							})
 						}
-						std.Out.WriteNoticef("[index]\tWrote %q", indexPath)
+						if err := wg.Wait(); err != nil {
+							prog.Close()
+							return errors.Wrap(err, "failed to generate some pages")
+						}
+						prog.Complete()
+
+						pending := std.Out.Pending(output.StylePending.Linef(
+							"Generating MSP operations index page"))
+						if err := resetNotionPage(
+							c.Context,
+							notionClient,
+							operationdocs.IndexNotionPageID(),
+							"Managed Services infrastructure",
+						); err != nil {
+							return errors.Wrapf(err, "index: reset page %s",
+								operationdocs.NotionHandbookURL(operationdocs.IndexNotionPageID()))
+						}
+						blockUpdater := notion.NewPageBlockUpdater(notionClient, operationdocs.IndexNotionPageID())
+						doc := operationdocs.RenderIndexPage(serviceSpecs, opts)
+						if err := operationdocs.NewNotionConverter(c.Context, blockUpdater).
+							ProcessMarkdown([]byte(doc)); err != nil {
+							return errors.Wrap(err, "apply index page")
+						}
+						pending.Complete(output.Linef(output.EmojiSuccess, output.StyleReset,
+							"Wrote index page %q", operationdocs.NotionHandbookURL(operationdocs.IndexNotionPageID())))
 
 						std.Out.WriteSuccessf("All pages generated!")
-						std.Out.WriteSuggestionf("Make sure to commit the generated changes and open a pull request in github.com/sourcegraph/handbook.")
 						return nil
 					},
 				},
@@ -658,7 +752,7 @@ This command supports completions on services and environments.
 							connectionName,
 							serviceAccountEmail,
 							proxyPort,
-							svc.Service.GetGoLink(env.ID))
+							svc.Service.GetHandbookPageURL())
 						if err != nil {
 							return err
 						}
@@ -754,7 +848,7 @@ This command supports completions on services and environments.
 						},
 						&cli.StringFlag{
 							Name:  "workspace-run-mode",
-							Usage: "One of 'vcs', 'cli'",
+							Usage: "One of 'vcs', 'cli', or 'ignore' (to respect existing configuration)",
 							Value: "vcs",
 						},
 						&cli.BoolFlag{
@@ -784,9 +878,10 @@ This command supports completions on services and environments.
 							return errors.Wrap(err, "get TFC OAuth client ID")
 						}
 
+						runMode := terraformcloud.WorkspaceRunMode(c.String("workspace-run-mode"))
 						tfcClient, err := terraformcloud.NewClient(tfcAccessToken, tfcOAuthClient,
 							terraformcloud.WorkspaceConfig{
-								RunMode: terraformcloud.WorkspaceRunMode(c.String("workspace-run-mode")),
+								RunMode: runMode,
 							})
 						if err != nil {
 							return errors.Wrap(err, "init Terraform Cloud client")
@@ -803,8 +898,56 @@ This command supports completions on services and environments.
 							return syncEnvironmentWorkspaces(c, tfcClient, svc.Service, *env)
 						}
 
+						if c.Args().Len() == 0 {
+							// No service specified, sync them all
+							if c.Bool("delete") {
+								// Simple safeguard, there's additional safeguards
+								// in syncEnvironmentWorkspaces but let's fail
+								// fast here
+								return errors.New("cannot delete workspaces for all services")
+							}
+
+							confirmAction := "Syncing all environments for all services"
+							if runMode != terraformcloud.WorkspaceRunModeIgnore {
+								// This action may override custom run mode
+								// configurations, which may unexpectedly deploy
+								// new changes
+								confirmAction = fmt.Sprintf("%s, including setting ALL workspaces to use run mode %q (use '-workspace-run-mode=ignore' to respect the existing run mode)",
+									confirmAction, runMode)
+							}
+							std.Out.Promptf("%s - are you sure? (y/N) ", confirmAction)
+							var input string
+							if _, err := fmt.Scan(&input); err != nil {
+								return err
+							}
+							if input != "y" {
+								return errors.New("aborting")
+							}
+
+							// Iterate all services
+							services, err := msprepo.ListServices()
+							if err != nil {
+								return err
+							}
+							for _, serviceID := range services {
+								serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
+								svc, err := spec.Open(serviceSpecPath)
+								if err != nil {
+									return errors.Wrap(err, serviceID)
+								}
+								for _, env := range svc.Environments {
+									if err := syncEnvironmentWorkspaces(c, tfcClient, svc.Service, env); err != nil {
+										return errors.Wrapf(err, "%s: sync env %q", serviceID, env.ID)
+									}
+								}
+							}
+
+							// Done!
+							return nil
+						}
+
 						// Otherwise, we are syncing all environments for a service.
-						std.Out.WriteNoticef("Syncing all environments for a specific service ...")
+						std.Out.WriteNoticef("Syncing all environments for the specified service ...")
 						svc, err := useServiceArgument(c, true)
 						if err != nil {
 							return err

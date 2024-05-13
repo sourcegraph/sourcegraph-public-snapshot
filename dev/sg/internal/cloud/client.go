@@ -3,17 +3,21 @@ package cloud
 import (
 	"context"
 	"net/http"
-	"os"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 	cloudapiv1 "github.com/sourcegraph/cloud-api/go/cloudapi/v1"
 	"github.com/sourcegraph/cloud-api/go/cloudapi/v1/cloudapiv1connect"
 	"github.com/sourcegraph/run"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+// ErrInstanceNotFound is returned when an instance is not found.
+var ErrInstanceNotFound error = errors.New("instance not found")
 
 // HeaderUserToken is the header name for the user token when communicating with the Cloud API.
 const HeaderUserToken = "X-GCP-User-Token"
@@ -24,9 +28,14 @@ const APIEndpoint = "https://cloud-ops-dev.sgdev.org/api"
 // DevEnvironment is the environment where Cloud allows ephemeral instance types
 const DevEnvironment = "dev"
 
-// EphemeralInstanceType is the instace type we should use when creating an instance with the cloud API.
-// It is set to internal because in cloud, internal instance types does not have metrics or security enabled.
-const EphemeralInstanceType = "internal"
+var _ EphemeralClient = &Client{}
+
+type EphemeralClient interface {
+	CreateInstance(context.Context, *DeploymentSpec) (*Instance, error)
+	GetInstance(context.Context, string) (*Instance, error)
+	ListInstances(context.Context, bool) ([]*Instance, error)
+	DeleteInstance(context.Context, string) error
+}
 
 type Client struct {
 	client cloudapiv1connect.InstanceServiceClient
@@ -37,16 +46,18 @@ type Client struct {
 type DeploymentSpec struct {
 	Name             string
 	Version          string
+	License          string
 	InstanceFeatures map[string]string
 }
 
-func NewDeploymentSpec(name, version string) *DeploymentSpec {
+func NewDeploymentSpec(name, version, license string) *DeploymentSpec {
+	features := newInstanceFeatures()
+	features.SetEphemeralInstance(true)
 	return &DeploymentSpec{
-		Name:    name,
-		Version: version,
-		InstanceFeatures: map[string]string{
-			"ephemeral": "true", // need to have this to make the instance ephemeral
-		},
+		Name:             name,
+		Version:          version,
+		License:          license,
+		InstanceFeatures: features.Value(),
 	}
 }
 
@@ -88,12 +99,35 @@ func newRequestWithToken[T any](token string, message *T) *connect.Request[T] {
 	return req
 }
 
-func (c *Client) ListInstances(ctx context.Context) ([]*Instance, error) {
-	req := newRequestWithToken(c.token, &cloudapiv1.ListInstancesRequest{
-		InstanceFilter: &cloudapiv1.InstanceFilter{
+func (c *Client) GetInstance(ctx context.Context, name string) (*Instance, error) {
+	req := newRequestWithToken(c.token, &cloudapiv1.GetInstanceRequest{
+		Name:        name,
+		Environment: DevEnvironment,
+	},
+	)
+
+	resp, err := c.client.GetInstance(ctx, req)
+	if err != nil {
+		// the error received doesn't unpack properly into grpc Status or connErr, so for now we just check that the
+		// string representation contains "not found" for the instance
+		if strings.Contains(err.Error(), "not found") {
+			return nil, ErrInstanceNotFound
+		}
+		return nil, errors.Wrapf(err, "failed to get instance %q", name)
+	}
+
+	return newInstance(resp.Msg.GetInstance())
+}
+
+func (c *Client) ListInstances(ctx context.Context, all bool) ([]*Instance, error) {
+	listReq := cloudapiv1.ListInstancesRequest{}
+	if !all {
+		listReq.InstanceFilter = &cloudapiv1.InstanceFilter{
 			AdminEmail: &c.email,
-		},
-	})
+		}
+	}
+
+	req := newRequestWithToken(c.token, &listReq)
 	resp, err := c.client.ListInstances(
 		ctx,
 		req,
@@ -102,12 +136,11 @@ func (c *Client) ListInstances(ctx context.Context) ([]*Instance, error) {
 		return nil, errors.Wrap(err, "failed to list instances")
 	}
 
-	return toInstances(resp.Msg.GetInstances()...), nil
+	return toInstances(resp.Msg.GetInstances()...)
 }
 
-func (c *Client) DeployVersion(ctx context.Context, spec *DeploymentSpec) (*Instance, error) {
-	// TODO(burmudar): Better method to get LicenseKeys
-	licenseKey := os.Getenv("EPHEMERAL_LICENSE_KEY")
+func (c *Client) CreateInstance(ctx context.Context, spec *DeploymentSpec) (*Instance, error) {
+	licenseKey := spec.License
 	if licenseKey == "" {
 		return nil, errors.New("no license key - the env var 'EPHEMERAL_LICENSE_KEY' is empty")
 	}
@@ -128,9 +161,41 @@ func (c *Client) DeployVersion(ctx context.Context, spec *DeploymentSpec) (*Inst
 		return nil, errors.Wrap(err, "failed to deploy instance")
 	}
 
-	return newInstance(resp.Msg.GetInstance()), nil
+	return newInstance(resp.Msg.GetInstance())
+}
+
+func (c *Client) UpgradeInstance(ctx context.Context, spec *DeploymentSpec) (*Instance, error) {
+	req := newRequestWithToken(c.token, &cloudapiv1.UpdateInstanceVersionRequest{
+		Name:        spec.Name,
+		Environment: DevEnvironment,
+		Version:     spec.Version,
+	})
+	resp, err := c.client.UpdateInstanceVersion(ctx, req)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to upgrade instance")
+	}
+
+	return newInstance(resp.Msg.GetInstance())
 }
 
 func (c *Client) DeleteInstance(ctx context.Context, name string) error {
 	return nil
+}
+
+func (c *Client) ExtendLease(ctx context.Context, name string, extendTime time.Time) (*Instance, error) {
+	req := newRequestWithToken(c.token, &cloudapiv1.UpdateInstanceLeaseRequest{
+		Name:        name,
+		Environment: DevEnvironment,
+		Lease: &timestamppb.Timestamp{
+			Seconds: extendTime.Unix(),
+			Nanos:   0,
+		},
+	})
+
+	resp, err := c.client.UpdateInstanceLease(ctx, req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to extend lease for instance %q", name)
+	}
+
+	return newInstance(resp.Msg.GetInstance())
 }

@@ -25,6 +25,8 @@ function loadDiffView({ params, url }: PageLoadEvent) {
 
     return {
         type: 'DiffView' as const,
+        enableInlineDiff: true,
+        enableViewAtCommit: true,
         filePath: params.path,
         commit: client
             .query(BlobDiffViewCommitQuery, {
@@ -69,6 +71,8 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
 
     return {
         type: 'FileView' as const,
+        enableInlineDiff: true,
+        enableViewAtCommit: true,
         graphQLClient: client,
         lineOrPosition,
         filePath: params.path,
@@ -91,7 +95,7 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
                 })
             )
             .then(mapOrThrow(result => result.data?.repository?.commit?.blob?.highlight ?? null)),
-        // We can ignore the error because if the revision doesn't exist, other queryies will fail as well
+        // We can ignore the error because if the revision doesn't exist, other queries will fail as well
         revisionOverride: revisionOverride
             ? await client
                   .query(BlobFileViewCommitQuery_revisionOverride, {

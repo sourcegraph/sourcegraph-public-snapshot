@@ -80,6 +80,13 @@ var aboutRedirects = map[string]string{
 	"help/terms": "terms",
 }
 
+type staticPageInfo struct {
+	// Specify either path OR pathPrefix.
+	path, pathPrefix string
+	name, title      string
+	index            bool
+}
+
 // Router returns the router that serves pages for our web app.
 func Router() *mux.Router {
 	return uirouter.Router
@@ -111,13 +118,8 @@ func InitRouter(db database.DB) {
 	ghAppRouter := r.PathPrefix("/githubapp/").Subrouter()
 	githubapp.SetupGitHubAppRoutes(ghAppRouter, db)
 
-	// Basic pages with static titles
-	for _, p := range []struct {
-		// Specify either path OR pathPrefix.
-		path, pathPrefix string
-		name, title      string
-		index            bool
-	}{
+	// Basic pages with static titles.
+	staticPages := []staticPageInfo{
 		// with index:
 		{pathPrefix: "/insights", name: "insights", title: "Insights", index: true},
 		{pathPrefix: "/search-jobs", name: "search-jobs", title: "Search Jobs", index: true},
@@ -160,7 +162,18 @@ func InitRouter(db database.DB) {
 		{path: "/survey", name: "survey", title: "Survey", index: false},
 		{path: "/survey/{score}", name: "survey-score", title: "Survey", index: false},
 		{path: "/welcome", name: "welcome", title: "Welcome", index: false},
-	} {
+	}
+
+	config := conf.Get()
+	// Register Sourcegraph.com-specific pages as applicable.
+	if config.Dotcom != nil && config.Dotcom.CodyProConfig != nil {
+		staticPages = append(staticPages, staticPageInfo{
+			path: "/cody/manage/subscription/new", name: "cody",
+			title: "New Cody Pro Subscription", index: false,
+		})
+	}
+
+	for _, p := range staticPages {
 		var handler http.Handler
 		if p.index {
 			handler = brandedIndex(p.title)

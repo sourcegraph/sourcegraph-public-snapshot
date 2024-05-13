@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react'
 
 import { logger } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, ErrorAlert, Form, H3, Modal, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
@@ -8,7 +9,7 @@ import type { Scalars } from '../../graphql-operations'
 
 import { useRemoveParentTeam } from './backend'
 
-interface RemoveParentTeamModalProps {
+interface RemoveParentTeamModalProps extends TelemetryV2Props {
     teamID: Scalars['ID']
     teamName: string
     onCancel: () => void
@@ -20,6 +21,7 @@ export const RemoveParentTeamModal: React.FunctionComponent<React.PropsWithChild
     teamName,
     onCancel,
     afterEdit,
+    telemetryRecorder,
 }) => {
     const labelId = 'removeParentTeam'
 
@@ -33,13 +35,15 @@ export const RemoveParentTeamModal: React.FunctionComponent<React.PropsWithChild
             }
             try {
                 await editTeam({ variables: { id: teamID } })
+                telemetryRecorder.recordEvent('team.parentTeam', 'remove')
                 afterEdit()
             } catch (error) {
+                telemetryRecorder.recordEvent('team.parentTeam', 'removeFail')
                 // Non-request error. API errors will be available under `error` above.
                 logger.error(error)
             }
         },
-        [afterEdit, teamID, editTeam]
+        [afterEdit, teamID, editTeam, telemetryRecorder]
     )
 
     return (

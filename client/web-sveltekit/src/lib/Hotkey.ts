@@ -3,6 +3,43 @@ import { onDestroy } from 'svelte'
 
 import { isLinuxPlatform, isMacPlatform, isWindowsPlatform } from './common'
 
+const LINUX_KEYNAME_MAP: Record<string, string> = {
+    ctrl: 'Ctrl',
+    shift: 'Shift',
+    alt: 'Alt',
+}
+const WINDOWS_KEYNAME_MAP: Record<string, string> = LINUX_KEYNAME_MAP
+const MAC_KEYNAME_MAP: Record<string, string> = {
+    ctrl: '⌃',
+    shift: '⇧',
+    alt: '⌥',
+    cmd: '⌘',
+}
+
+/**
+ * Formats a key combination for display, properly replacing the key names with their platform-specific
+ * counterparts.
+ */
+export function formatShortcut(keys: Keys): string {
+    const key = evaluateKey(keys)
+
+    const parts = key.split('+')
+    const out: string[] = []
+
+    const keymap = isMacPlatform() ? MAC_KEYNAME_MAP : isLinuxPlatform() ? LINUX_KEYNAME_MAP : WINDOWS_KEYNAME_MAP
+
+    for (const part of parts) {
+        const lower = part.toLowerCase()
+        if (keymap[lower]) {
+            out.push(keymap[lower])
+        } else {
+            out.push(part.toUpperCase())
+        }
+    }
+
+    return out.join(isMacPlatform() ? '' : '+')
+}
+
 export function evaluateKey(keys: { mac?: string; linux?: string; windows?: string; key: string }): string {
     if (keys.mac && isMacPlatform()) {
         return keys.mac
@@ -56,23 +93,22 @@ function isContentField(event: KeyboardEvent): boolean {
 
 function wrapHandler(handler: KeyHandler, allowDefault: boolean = false, ignoreInputFields: boolean = true) {
     return (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => {
+        // "Pass through" ignored events to allow them being processed by the target element
+        if (ignoreInputFields && isContentField(keyboardEvent)) {
+            return true
+        }
+
         // When we use hotkeys.trigger, the event is null. That's why we need to check if the event and its function exist.
         if (!allowDefault && keyboardEvent?.preventDefault) {
             // Prevent the default refresh event under WINDOWS system
             keyboardEvent.preventDefault()
         }
 
-        if (!(ignoreInputFields && isContentField(keyboardEvent))) {
-            return handler(keyboardEvent, hotkeysEvent) ?? allowDefault
-        }
-
-        // Returning false stops the event and prevents default browser events on macOS.
-        // It doesn't work for all default though, e.g. command+t will still open a new tab.
-        return allowDefault
+        return handler(keyboardEvent, hotkeysEvent) ?? allowDefault
     }
 }
 
-interface Keys {
+export interface Keys {
     /**
      * The default key which should trigger the action.
      */

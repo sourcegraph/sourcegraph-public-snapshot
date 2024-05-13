@@ -14,6 +14,7 @@ import (
 // releasePromoteImages runs a script that iterates through all defined images that we're producing that has been uploaded
 // on the internal registry with a given version and retags them to the public registry.
 func releasePromoteImages(c Config) operations.Operation {
+	additionalProdRegistries := strings.Join([]string{images.SourcegraphArtifactRegistryPublicRegistry, images.CloudEphemeralRegistry}, " ")
 	image_args := strings.Join(images.SourcegraphDockerImages, " ")
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep("Promote release to public",
@@ -21,7 +22,7 @@ func releasePromoteImages(c Config) operations.Operation {
 			bk.Env("VERSION", c.Version),
 			bk.Env("INTERNAL_REGISTRY", images.SourcegraphInternalReleaseRegistry),
 			bk.Env("PUBLIC_REGISTRY", images.SourcegraphDockerPublishRegistry),
-			bk.Env("ADDITIONAL_PROD_REGISTRY", images.SourcegraphArtifactRegistryPublicRegistry),
+			bk.Env("ADDITIONAL_PROD_REGISTRIES", additionalProdRegistries),
 			bk.AnnotatedCmd(
 				fmt.Sprintf("./tools/release/promote_images.sh %s", image_args),
 				bk.AnnotatedCmdOpts{

@@ -123,5 +123,6 @@ write_source_files(
         "//lib/background:generate_mocks",
         "//cmd/gitserver/internal/gitserverfs:generate_mocks",
         "//cmd/repo-updater/internal/gitserver:generate_mocks",
+        "//dev/build-tracker:generate_mocks",
     ],
 )

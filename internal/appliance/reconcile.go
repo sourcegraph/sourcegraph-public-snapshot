@@ -60,13 +60,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, errors.New("failed to get sourcegraph spec from configmap")
 	}
 
-	var sourcegraph Sourcegraph
+	sourcegraph := newDefaultConfig()
 	if err := yaml.Unmarshal([]byte(data), &sourcegraph); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	// Sourcegraph is a kubebuilder-scaffolded custom type, but we do not
-	// actually ask operators to install CRDs. Therefore we set its namespace
+	// actually ask operators to install CRDs. Therefore, we set its namespace
 	// based on the actual object being reconciled, so that more deeply-nested
 	// code can treat it like a CRD.
 	sourcegraph.Namespace = applianceSpec.GetNamespace()
@@ -85,6 +85,18 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 	if err := r.reconcileSymbols(ctx, &sourcegraph, &applianceSpec); err != nil {
 		return ctrl.Result{}, errors.Newf("failed to reconcile symbols service: %w", err)
+	}
+	if err := r.reconcileGitServer(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile gitserver: %w", err)
+	}
+	if err := r.reconcileRedis(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile redis: %w", err)
+	}
+	if err := r.reconcilePGSQL(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile pgsql: %w", err)
+	}
+	if err := r.reconcileSyntect(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile syntect: %w", err)
 	}
 
 	// Set the current version annotation in case migration logic depends on it.

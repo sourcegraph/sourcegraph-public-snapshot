@@ -33,7 +33,6 @@ go_library(
         "//internal/dotcom",
         "//internal/env",
         "//internal/hashutil",
-        "//internal/httpcli",
         "//internal/jsonc",
         "//internal/license",
         "//internal/src-cli",

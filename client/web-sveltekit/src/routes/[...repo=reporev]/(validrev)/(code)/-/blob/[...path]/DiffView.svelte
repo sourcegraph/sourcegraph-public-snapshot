@@ -1,4 +1,9 @@
 <script lang="ts">
+    import { mdiClose } from '@mdi/js'
+
+    import { page } from '$app/stores'
+    import { SourcegraphURL } from '$lib/common'
+    import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import FileDiffHunks from '$lib/repo/FileDiffHunks.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
@@ -7,7 +12,6 @@
     import { Alert } from '$lib/wildcard'
 
     import type { PageData } from './$types'
-    import CloseViewAction from './CloseViewAction.svelte'
     import DiffSummaryHeader from './DiffSummaryHeader.svelte'
 
     export let data: Extract<PageData, { type: 'DiffView' }>
@@ -20,12 +24,15 @@
     {#if $commit.value?.blob}
         <FileIcon slot="icon" file={$commit.value.blob} inline />
     {/if}
-    <CloseViewAction slot="actions" label="Close diff" />
 </FileHeader>
 
-<div class="file-info">
+<div class="info">
     {#if $commit.value}
         <DiffSummaryHeader commit={$commit.value} />
+        <a href={SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString()}>
+            <Icon svgPath={mdiClose} inline />
+            <span>Close diff</span>
+        </a>
     {/if}
 </div>
 
@@ -45,7 +52,6 @@
     .content {
         overflow: auto;
         flex: 1;
-        background-color: var(--color-bg-1);
 
         &.center {
             align-items: center;
@@ -54,12 +60,29 @@
         }
     }
 
-    .file-info {
-        background: var(--color-bg-1);
-        padding: 0.5rem;
-        color: var(--text-muted);
+    .info {
         display: flex;
-        gap: 1rem;
+        justify-content: space-between;
         align-items: baseline;
+        gap: 1rem;
+        padding: 0.5rem 1rem;
+        color: var(--text-muted);
+        background-color: var(--code-bg);
+        box-shadow: var(--file-header-shadow);
+
+        // Allows for its shadow to cascade over the code panel
+        z-index: 1;
+        border-top: 1px solid var(--border-color);
+
+        align-items: center;
+
+        // This is used to avoid having the whitespace being underlined on hover
+        a {
+            text-decoration: none;
+
+            &:hover span {
+                text-decoration: underline;
+            }
+        }
     }
 </style>

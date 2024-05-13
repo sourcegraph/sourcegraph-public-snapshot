@@ -610,6 +610,14 @@ type CloudKMSEncryptionKey struct {
 	Type            string `json:"type"`
 }
 
+// CodeMonitors description: Configuration options for code monitors
+type CodeMonitors struct {
+	// Concurrency description: The number of code monitor jobs allowed to run concurrenctly. Decrease to reduce peak load.
+	Concurrency int `json:"concurrency,omitempty"`
+	// PollInterval description: The interval at which a monitor checks for new changes. Increase to reduce average load.
+	PollInterval string `json:"pollInterval,omitempty"`
+}
+
 // Codeintel description: The configuration for the codeintel queue.
 type Codeintel struct {
 	// Limit description: The maximum number of dequeues allowed within the expiration window.
@@ -1323,6 +1331,8 @@ type GitHubConnection struct {
 	// RepositoryQuery description: An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph. The valid values are:
 	//
 	// - `public` mirrors all public repositories for GitHub Enterprise and is the equivalent of `none` for GitHub
+	//
+	// - `internal` mirrors all internal repositories for GitHub Enterprise and is the equivalent of `none` for GitHub
 	//
 	// - `affiliated` mirrors all repositories affiliated with the configured token's user:
 	// 	- Private repositories with read access
@@ -2762,6 +2772,8 @@ type SiteConfiguration struct {
 	CodeIntelRankingDocumentReferenceCountsGraphKey string `json:"codeIntelRanking.documentReferenceCountsGraphKey,omitempty"`
 	// CodeIntelRankingStaleResultsAge description: The interval at which to run the reduce job that computes document reference counts. Default is 24hrs.
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
+	// CodeMonitors description: Configuration options for code monitors
+	CodeMonitors *CodeMonitors `json:"codeMonitors,omitempty"`
 	// CodyContextFilters description: Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
 	CodyContextFilters *CodyContextFilters `json:"cody.contextFilters,omitempty"`
 	// CodyEnabled description: Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.
@@ -3034,6 +3046,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelRanking.documentReferenceCountsEnabled")
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")
 	delete(m, "codeIntelRanking.staleResultsAge")
+	delete(m, "codeMonitors")
 	delete(m, "cody.contextFilters")
 	delete(m, "cody.enabled")
 	delete(m, "cody.permissions")

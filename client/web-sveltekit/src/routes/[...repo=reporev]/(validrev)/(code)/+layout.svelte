@@ -20,28 +20,28 @@
     import { mdiHistory, mdiListBoxOutline } from '@mdi/js'
     import { tick } from 'svelte'
 
-    import { afterNavigate, goto } from '$app/navigation'
     import { page } from '$app/stores'
+    import { afterNavigate, goto } from '$app/navigation'
+
+    import { Alert, PanelGroup, Panel, PanelResizeHandle } from '$lib/wildcard'
     import { isErrorLike, SourcegraphURL } from '$lib/common'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
-    import HistoryPanel, { type Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
-    import LastCommit from '$lib/repo/LastCommit.svelte'
-    import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
-    import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
-    import TabPanel from '$lib/TabPanel.svelte'
-    import Tabs from '$lib/Tabs.svelte'
-    import { Alert } from '$lib/wildcard'
     import type { LastCommitFragment } from '$testing/graphql-type-mocks'
+
+    import Tabs from '$lib/Tabs.svelte'
+    import TabPanel from '$lib/TabPanel.svelte'
+    import LastCommit from '$lib/repo/LastCommit.svelte'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
+    import HistoryPanel, { type Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
     import { createFileTreeStore } from './fileTreeStore'
-
-    import type { GitHistory_HistoryConnection, RepoPage_ReferencesLocationConnection } from './layout.gql'
     import RepositoryRevPicker from './RepositoryRevPicker.svelte'
     import ReferencePanel from './ReferencePanel.svelte'
+    import type { GitHistory_HistoryConnection, RepoPage_ReferencesLocationConnection } from './layout.gql'
 
     enum TabPanels {
         History,
@@ -74,23 +74,13 @@
         },
     }
 
-    async function selectTab(event: { detail: number | null }) {
-        trackHistoryPanelTabAction(selectedTab, event.detail)
-
-        if (event.detail === null) {
-            const url = new URL($page.url)
-            url.searchParams.delete('rev')
-            await goto(url, { replaceState: true, keepFocus: true, noScroll: true })
-        }
-        selectedTab = event.detail
-    }
-
-    const fileTreeStore = createFileTreeStore({ fetchFileTreeData: fetchSidebarFileTree })
     let selectedTab: number | null = null
+    let bottomPanel: Panel
     let historyPanel: HistoryPanel
+    let lastCommit: LastCommitFragment | null
     let commitHistory: GitHistory_HistoryConnection | null
     let references: RepoPage_ReferencesLocationConnection | null
-    let lastCommit: LastCommitFragment | null
+    const fileTreeStore = createFileTreeStore({ fetchFileTreeData: fetchSidebarFileTree })
 
     $: ({ revision = '', parentPath, repoName, resolvedRevision } = data)
     $: fileTreeStore.set({ repoName, revision: resolvedRevision.commitID, path: parentPath })
@@ -112,9 +102,6 @@
 
     $: commitHistory = $commitHistoryQuery?.data?.repository?.commit?.ancestors ?? null
     $: lastCommit = $lastCommitQuery?.data?.repository?.lastCommit?.ancestors?.nodes[0] ?? null
-
-    const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
-    $: sidebarWidth = `max(320px, ${$sidebarSize * 100}%)`
 
     // The observable query to fetch references (due to infinite scrolling)
     $: sgURL = SourcegraphURL.from($page.url)
@@ -139,77 +126,164 @@
             selectedTab = null
         }
     })
+
+    async function selectTab(event: { detail: number | null }) {
+        trackHistoryPanelTabAction(selectedTab, event.detail)
+
+        if (event.detail === null) {
+            const url = new URL($page.url)
+            url.searchParams.delete('rev')
+            await goto(url, { replaceState: true, keepFocus: true, noScroll: true })
+        }
+        selectedTab = event.detail
+    }
+
+    function handleBottomPanelExpand() {
+        if (selectedTab == null) {
+            selectedTab = 0
+        }
+    }
+
+    function handleBottomPanelCollapse() {
+        selectedTab = null
+    }
+
+    $: {
+        if (selectedTab == null) {
+            bottomPanel?.collapse()
+        } else if (!bottomPanel?.isExpanded()) {
+            bottomPanel?.expand()
+        }
+    }
 </script>
 
-<section>
-    <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
-        <header>
-            <h3>
-                <SidebarToggleButton />&nbsp; Files
-            </h3>
-            <RepositoryRevPicker
-                repoURL={data.repoURL}
-                revision={data.revision}
-                resolvedRevision={data.resolvedRevision}
-                getRepositoryBranches={data.getRepoBranches}
-                getRepositoryCommits={data.getRepoCommits}
-                getRepositoryTags={data.getRepoTags}
-            />
-        </header>
-        {#if $fileTreeStore}
-            {#if isErrorLike($fileTreeStore)}
-                <Alert variant="danger">
-                    Unable to fetch file tree data:
-                    {$fileTreeStore.message}
-                </Alert>
-            {:else}
-                <FileTree {repoName} {revision} treeProvider={$fileTreeStore} selectedPath={$page.params.path ?? ''} />
-            {/if}
-        {:else}
-            <LoadingSpinner center={false} />
-        {/if}
-    </div>
+<PanelGroup id="blob-page-panels" direction="horizontal">
     {#if $sidebarOpen}
-        <Separator currentPosition={sidebarSize} />
-    {/if}
-    <div class="main">
-        <slot />
-        <div class="bottom-panel" class:open={selectedTab !== null}>
-            <Tabs selected={selectedTab} toggable on:select={selectTab}>
-                <TabPanel title="History" icon={mdiHistory}>
-                    {#key $page.params.path}
-                        <HistoryPanel
-                            bind:this={historyPanel}
-                            history={commitHistory}
-                            loading={$commitHistoryQuery?.fetching ?? true}
-                            fetchMore={commitHistoryQuery.fetchMore}
-                            enableInlineDiffs={$page.route.id?.includes('/blob/') ?? false}
-                        />
-                    {/key}
-                </TabPanel>
-                <TabPanel title="References" icon={mdiListBoxOutline}>
-                    <ReferencePanel
-                        connection={references}
-                        loading={referencesLoading}
-                        on:more={referenceQuery?.fetchMore}
+        <Panel id="sidebar-panel" order={1} defaultSize={25} minSize={25} maxSize={35}>
+            <div class="sidebar">
+                <header>
+                    <h3>
+                        <SidebarToggleButton />&nbsp; Files
+                    </h3>
+                    <RepositoryRevPicker
+                        repoURL={data.repoURL}
+                        revision={data.revision}
+                        resolvedRevision={data.resolvedRevision}
+                        getRepositoryBranches={data.getRepoBranches}
+                        getRepositoryCommits={data.getRepoCommits}
+                        getRepositoryTags={data.getRepoTags}
                     />
-                </TabPanel>
-            </Tabs>
-            {#if lastCommit}
-                <div class="last-commit">
-                    <LastCommit {lastCommit} />
+                </header>
+                {#if $fileTreeStore}
+                    {#if isErrorLike($fileTreeStore)}
+                        <Alert variant="danger">
+                            Unable to fetch file tree data:
+                            {$fileTreeStore.message}
+                        </Alert>
+                    {:else}
+                        <FileTree
+                            {repoName}
+                            {revision}
+                            treeProvider={$fileTreeStore}
+                            selectedPath={$page.params.path ?? ''}
+                        />
+                    {/if}
+                {:else}
+                    <LoadingSpinner center={false} />
+                {/if}
+            </div>
+        </Panel>
+        <PanelResizeHandle id="blob-page-panels-separator" />
+    {/if}
+
+    <Panel id="blob-content-panels" order={2}>
+        <PanelGroup id="content-panels" direction="vertical">
+            <Panel id="main-content-panel" order={1}>
+                <slot />
+            </Panel>
+            <PanelResizeHandle />
+            <Panel
+                bind:this={bottomPanel}
+                id="bottom-actions-panel"
+                order={2}
+                defaultSize={1}
+                minSize={20}
+                maxSize={50}
+                collapsible
+                collapsedSize={1}
+                onExpand={handleBottomPanelExpand}
+                onCollapse={handleBottomPanelCollapse}
+                let:isCollapsed
+            >
+                <div class="bottom-panel">
+                    <Tabs selected={selectedTab} toggable on:select={selectTab}>
+                        <TabPanel title="History" icon={mdiHistory}>
+                            {#key $page.params.path}
+                                <HistoryPanel
+                                    bind:this={historyPanel}
+                                    history={commitHistory}
+                                    loading={$commitHistoryQuery?.fetching ?? true}
+                                    fetchMore={commitHistoryQuery.fetchMore}
+                                    enableInlineDiff={$page.data.enableInlineDiff}
+                                    enableViewAtCommit={$page.data.enableViewAtCommit}
+                                />
+                            {/key}
+                        </TabPanel>
+                        <TabPanel title="References" icon={mdiListBoxOutline}>
+                            <ReferencePanel
+                                connection={references}
+                                loading={referencesLoading}
+                                on:more={referenceQuery?.fetchMore}
+                            />
+                        </TabPanel>
+                    </Tabs>
+                    {#if lastCommit && isCollapsed}
+                        <div class="last-commit">
+                            <LastCommit {lastCommit} />
+                        </div>
+                    {/if}
                 </div>
-            {/if}
-        </div>
-    </div>
-</section>
+            </Panel>
+        </PanelGroup>
+    </Panel>
+</PanelGroup>
 
 <style lang="scss">
-    section {
-        display: flex;
-        flex: 1;
-        background-color: var(--code-bg);
+    :global([data-panel-group-id='blob-page-panels']) {
         overflow: hidden;
+        background-color: var(--code-bg);
+    }
+
+    // Forcing the left sidebar panel (file-tree) to be over
+    // right content panel to make sure that box-shadow of the
+    // sidebar is rendered over content panel.
+    :global([data-panel-id='sidebar-panel']) {
+        z-index: 1;
+        isolation: isolate;
+        box-shadow: var(--sidebar-shadow);
+    }
+
+    :global([data-panel-id='blob-content-panels']) {
+        z-index: 0;
+        isolation: isolate;
+    }
+
+    :global([data-panel-resize-handle-id='blob-page-panels-separator']) {
+        &::before {
+            // Even though side-panel shadow should be rendered over
+            // the right content panel, resize handle still should be rendered
+            // over any panel elements
+            z-index: 2 !important;
+        }
+    }
+
+    .sidebar {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding: 0.5rem 0.5rem 0 0.5rem;
+        background-color: var(--color-bg-1);
     }
 
     header {
@@ -218,28 +292,6 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 0.5rem;
-    }
-
-    .sidebar {
-        &.open {
-            display: flex;
-            flex-direction: column;
-        }
-        display: none;
-        overflow: hidden;
-        background-color: var(--color-bg-1);
-        padding: 0.5rem;
-        padding-bottom: 0;
-        box-shadow: var(--sidebar-shadow);
-        z-index: 1;
-    }
-
-    .main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        overflow: hidden;
     }
 
     h3 {
@@ -256,6 +308,18 @@
         overflow: hidden;
     }
 
+    :global([data-panel-id='main-content-panel']) {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    :global([data-panel-id='bottom-actions-panel']) {
+        min-height: 2.5625rem; // 41px which is bottom panel compact size
+        box-shadow: var(--bottom-panel-shadow);
+    }
+
     .bottom-panel {
         --align-tabs: flex-start;
 
@@ -264,19 +328,12 @@
         flex-flow: row nowrap;
         justify-content: space-between;
         overflow: hidden;
-        border-top: 1px solid var(--border-color);
-        box-shadow: var(--bottom-panel-shadow);
-        background-color: var(--code-bg);
-        padding: 0 0.25rem;
+        height: 100%;
+        background-color: var(--color-bg-1);
+        color: var(--text-body);
 
-        &.open {
-            height: 32vh;
-            // Disable flex layout so that tabs simply fill the available space
-            display: block;
-
-            .last-commit {
-                display: none;
-            }
+        :global([data-tabs]) {
+            width: 100%;
         }
     }
 </style>

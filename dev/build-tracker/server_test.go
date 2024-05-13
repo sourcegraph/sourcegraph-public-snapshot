@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/config"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestGetBuild(t *testing.T) {
@@ -25,7 +26,7 @@ func TestGetBuild(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodGet, "/-/debug/1234", nil)
 	req = mux.SetURLVars(req, map[string]string{"buildNumber": "1234"})
 	t.Run("401 Unauthorized when in production mode and incorrect credentials", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{Production: true, DebugPassword: "this is a test"})
+		server := NewServer(":8080", logger, config.Config{Production: true, DebugPassword: "this is a test"}, nil)
 		rec := httptest.NewRecorder()
 		server.handleGetBuild(rec, req)
 
@@ -38,7 +39,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("404 for build that does not exist", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		rec := httptest.NewRecorder()
 		server.handleGetBuild(rec, req)
 
@@ -46,7 +47,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("get marshalled json for build", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		rec := httptest.NewRecorder()
 
 		num := 1234
@@ -99,7 +100,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("200 with valid credentials in production mode", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{Production: true, DebugPassword: "this is a test"})
+		server := NewServer(":8080", logger, config.Config{Production: true, DebugPassword: "this is a test"}, nil)
 		rec := httptest.NewRecorder()
 
 		req.SetBasicAuth("devx", server.config.DebugPassword)
@@ -131,7 +132,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 	}
 
 	t.Run("All old builds get removed", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		b := finishedBuild(1, "passed", time.Now().AddDate(-1, 0, 0))
 		server.store.Set(b)
 
@@ -153,7 +154,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		}
 	})
 	t.Run("1 build left after old builds are removed", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		b := finishedBuild(1, "canceled", time.Now().AddDate(-1, 0, 0))
 		server.store.Set(b)
 
@@ -214,27 +215,29 @@ func TestProcessEvent(t *testing.T) {
 		state := "done"
 		pipelineID := "pipeline"
 		pipeline := &buildkite.Pipeline{
-			ID:   &pipelineID,
-			Name: &pipelineID,
+			ID:         &pipelineID,
+			Name:       &pipelineID,
+			Repository: pointers.Ptr("banana"),
 		}
 		jobState := build.JobPassedState
 		if jobExitCode != 0 {
 			jobState = build.JobFailedState
 		}
 		job := buildkite.Job{Name: &name, ExitStatus: &jobExitCode, State: &jobState}
-		return &build.Event{Name: build.EventJobFinished, Build: buildkite.Build{State: &state, Number: &buildNumber, Pipeline: pipeline}, Job: job}
+		return &build.Event{Name: build.EventJobFinished, Build: buildkite.Build{State: &state, Number: &buildNumber, Pipeline: pipeline}, Job: job, Pipeline: *pipeline}
 	}
 	newBuildEvent := func(name string, buildNumber int, state string, branch string, jobExitCode int) *build.Event {
 		job := newJobEvent(name, buildNumber, jobExitCode)
 		pipelineID := "pipeline"
 		pipeline := &buildkite.Pipeline{
-			ID:   &pipelineID,
-			Name: &pipelineID,
+			ID:         &pipelineID,
+			Name:       &pipelineID,
+			Repository: pointers.Ptr("banana"),
 		}
-		return &build.Event{Name: build.EventBuildFinished, Build: buildkite.Build{State: &state, Branch: &branch, Number: &buildNumber, Pipeline: pipeline}, Job: job.Job}
+		return &build.Event{Name: build.EventBuildFinished, Build: buildkite.Build{State: &state, Branch: &branch, Number: &buildNumber, Pipeline: pipeline}, Job: job.Job, Pipeline: *pipeline}
 	}
 	t.Run("no send notification on unfinished builds", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
@@ -251,7 +254,7 @@ func TestProcessEvent(t *testing.T) {
 	})
 
 	t.Run("failed build sends notification", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
@@ -267,7 +270,7 @@ func TestProcessEvent(t *testing.T) {
 	})
 
 	t.Run("passed build sends notification", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
@@ -283,7 +286,7 @@ func TestProcessEvent(t *testing.T) {
 	})
 
 	t.Run("failed build, then passed build sends fixed notification", func(t *testing.T) {
-		server := NewServer(":8080", logger, config.Config{})
+		server := NewServer(":8080", logger, config.Config{}, nil)
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
 		buildNumber := 1234
@@ -308,5 +311,26 @@ func TestProcessEvent(t *testing.T) {
 
 		// fixed notification
 		require.Equal(t, 2, mockNotifyClient.sendCalled)
+	})
+
+	t.Run("agent webhooks", func(t *testing.T) {
+		mockBq := NewMockBigQueryWriter()
+		server := NewServer(":8080", logger, config.Config{}, mockBq)
+
+		server.processEvent(&build.Event{
+			Name: "agent.connected",
+			Agent: buildkite.Agent{
+				ID:             pointers.Ptr("QWdlbnQtLS0wMThmNjI4Yy1jY2M0LTRhMmEtOTJjOS1kN2NjODE5MDZiNzc="),
+				Name:           pointers.Ptr("banana-agent-default"),
+				ConnectedState: pointers.Ptr("connected"),
+				Hostname:       pointers.Ptr("banana-agent-deadbeef"),
+				IPAddress:      pointers.Ptr("10.0.0.5"),
+				UserAgent:      pointers.Ptr("buildkite-agent/4.2.0 (linux; amd64)"),
+				Version:        pointers.Ptr("4.2.0"),
+				Metadata:       []string{"queue=express"},
+			},
+		})
+
+		require.Equal(t, 1, len(mockBq.WriteFunc.History()))
 	})
 }

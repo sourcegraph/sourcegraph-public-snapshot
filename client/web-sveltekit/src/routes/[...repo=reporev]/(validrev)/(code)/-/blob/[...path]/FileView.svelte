@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-    import { mdiFileEyeOutline, mdiMapSearch, mdiWrap, mdiWrapDisabled } from '@mdi/js'
+    import { mdiClose, mdiFileEyeOutline, mdiMapSearch, mdiWrap, mdiWrapDisabled } from '@mdi/js'
     import { capitalize } from 'lodash'
     import { from } from 'rxjs'
     import { writable } from 'svelte/store'
@@ -27,15 +27,14 @@
     import markdownStyles from '$lib/wildcard/Markdown.module.scss'
 
     import type { PageData } from './$types'
-    import CloseDiffViewAction from './CloseViewAction.svelte'
     import { FileViewGitBlob, FileViewHighlightedFile } from './FileView.gql'
     import FileViewModeSwitcher from './FileViewModeSwitcher.svelte'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
     import { CodeViewMode, toCodeViewMode } from './util'
 
-    export let embedded: boolean
-    export let disableCodeIntel: boolean
     export let data: Extract<PageData, { type: 'FileView' }>
+    export let embedded: boolean = false
+    export let disableCodeIntel: boolean = false
 
     export function capture(): ScrollSnapshot | null {
         return cmblob?.getScrollSnapshot() ?? null
@@ -76,15 +75,17 @@
     }
     $: fileLoadingError = !$blobLoader.pending && $blobLoader.error
     $: fileNotFound = !$blobLoader.pending && !blob
-    $: codeViewMode = toCodeViewMode($page.url.searchParams.get('view'))
-    $: isFormatted = !!blob?.richHTML
-    $: showBlame = codeViewMode === CodeViewMode.Blame
-    $: showFormatted = isFormatted && codeViewMode === CodeViewMode.Default && !showBlame
-    $: isBinary = blob?.binary ?? false
-    $: showFileModeSwitcher = blob && !isBinary && !embedded
-    $: showCodeView = !isBinary && !isFormatted
+
+    $: fileViewModeFromURL = toCodeViewMode($page.url.searchParams.get('view'))
+    $: isRichFile = !!blob?.richHTML
+    $: isBinaryFile = blob?.binary ?? false
+
+    $: showFileModeSwitcher = blob && !isBinaryFile && !embedded
+    $: showFormattedView = isRichFile && fileViewModeFromURL === CodeViewMode.Default
+    $: showBlameView = fileViewModeFromURL === CodeViewMode.Blame
+
     $: codeIntelAPI =
-        showCodeView && !disableCodeIntel
+        !isBinaryFile && !showFormattedView && !disableCodeIntel
             ? createCodeIntelAPI({
                   settings: setting => (isErrorLike($settings?.final) ? undefined : $settings?.final?.[setting]),
                   requestGraphQL(options) {
@@ -97,7 +98,7 @@
         switch (viewMode) {
             case CodeViewMode.Code: {
                 const url = SourcegraphURL.from($page.url)
-                if (isFormatted) {
+                if (isRichFile) {
                     url.setSearchParameter('view', 'raw')
                 } else {
                     url.deleteSearchParameter('view')
@@ -147,16 +148,13 @@
 {:else if revisionOverride}
     <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
         <FileIcon slot="icon" file={blob} inline />
-        <svelte:fragment slot="actions">
-            <CloseDiffViewAction label="Close commit" />
-        </svelte:fragment>
     </FileHeader>
 {:else}
     <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
             {#await data.externalServiceType then externalServiceType}
-                {#if externalServiceType && !isBinary}
+                {#if externalServiceType && !isBinaryFile}
                     <OpenInEditor {externalServiceType} />
                 {/if}
             {/await}
@@ -171,7 +169,7 @@
             </MenuLink>
             <MenuButton
                 on:click={() => lineWrap.update(wrap => !wrap)}
-                disabled={codeViewMode === CodeViewMode.Default && isFormatted}
+                disabled={fileViewModeFromURL === CodeViewMode.Default && isRichFile}
             >
                 <Icon svgPath={$lineWrap ? mdiWrap : mdiWrapDisabled} inline />
                 {$lineWrap ? 'Disable' : 'Enable'} wrapping long lines
@@ -180,23 +178,29 @@
     </FileHeader>
 {/if}
 
-<div class="file-info">
-    {#if revisionOverride}
+{#if revisionOverride}
+    <div class="revision-info">
         <Badge variant="link">
             <a href={revisionOverride.canonicalURL}>{revisionOverride.abbreviatedOID}</a>
         </Badge>
-    {:else if showFileModeSwitcher}
+        <a href={SourcegraphURL.from($page.url).deleteSearchParameter('rev').toString()}>
+            <Icon svgPath={mdiClose} inline />
+            <span>Close commit</span>
+        </a>
+    </div>
+{:else if showFileModeSwitcher}
+    <div class="file-info">
         <FileViewModeSwitcher
             aria-label="View mode"
-            value={codeViewMode}
-            options={isFormatted
+            value={fileViewModeFromURL}
+            options={isRichFile
                 ? [CodeViewMode.Default, CodeViewMode.Code, CodeViewMode.Blame]
                 : [CodeViewMode.Default, CodeViewMode.Blame]}
             on:preload={event => preloadData(viewModeURL(event.detail))}
             on:change={onViewModeChange}
         >
             <svelte:fragment slot="label" let:value>
-                {value === CodeViewMode.Default ? (isFormatted ? 'Formatted' : 'Code') : capitalize(value)}
+                {value === CodeViewMode.Default ? (isRichFile ? 'Formatted' : 'Code') : capitalize(value)}
             </svelte:fragment>
         </FileViewModeSwitcher>
         {#if blob}
@@ -205,10 +209,14 @@
                 {pluralize('line', blob.totalLines)} · {formatBytes(blob.byteSize)}
             </code>
         {/if}
-    {/if}
-</div>
+    </div>
+{/if}
 
-<div class="content" class:loading={$blobLoader.pending} class:center={fileLoadingError || fileNotFound || isBinary}>
+<div
+    class="content"
+    class:loading={$blobLoader.pending}
+    class:center={fileLoadingError || fileNotFound || isBinaryFile}
+>
     {#if fileLoadingError}
         <Alert variant="danger">
             Unable to load file data: {fileLoadingError.message}
@@ -218,17 +226,18 @@
             <Icon svgPath={mdiMapSearch} --icon-size="80px" />
         </div>
         <h2>File not found</h2>
-    {:else if isBinary}
+    {:else if isBinaryFile}
         <Alert variant="info">
             This is a binary file and cannot be displayed.
             <br />
             <a href="{repoURL}/-/raw/{filePath}" target="_blank" download>Download file</a>
         </Alert>
-    {:else if blob && showFormatted}
-        <div class={`rich ${markdownStyles.markdown}`}>
+    {:else if blob && showFormattedView}
+        <!-- jupyter is a global style -->
+        <div class={`rich jupyter ${markdownStyles.markdown}`}>
             {@html blob.richHTML}
         </div>
-    {:else if blob && showCodeView}
+    {:else if blob}
         <!--
             This ensures that a new CodeMirror instance is created when the file changes.
             This makes the CodeMirror behavior more predictable and avoids issues with
@@ -248,7 +257,7 @@
                     filePath,
                 }}
                 highlights={highlights?.lsif ?? ''}
-                {showBlame}
+                showBlame={showBlameView}
                 blameData={$blameData}
                 wrapLines={$lineWrap}
                 selectedLines={selectedPosition?.line ? selectedPosition : null}
@@ -270,7 +279,7 @@
     .content {
         overflow: auto;
         flex: 1;
-        background-color: var(--color-bg-1);
+        background-color: var(--code-bg);
 
         &.center {
             display: flex;
@@ -279,13 +288,34 @@
         }
     }
 
+    .revision-info,
     .file-info {
-        background: var(--color-bg-1);
+        display: flex;
+        align-items: baseline;
+        gap: 1rem;
         padding: 0.5rem;
         color: var(--text-muted);
-        display: flex;
-        gap: 1rem;
-        align-items: baseline;
+        background-color: var(--color-bg-1);
+        box-shadow: var(--fileheader-shadow);
+
+        // Allows for its shadow to cascade over the code panel
+        z-index: 1;
+    }
+
+    .revision-info {
+        justify-content: space-between;
+        // Increasing the padding makes the switch between the file view and the diff view
+        // less jarring (the code view switcher increases the height of the info bar).
+        padding: 0.75rem;
+
+        // This is used to avoid having the whitespace being underlined on hover
+        a {
+            text-decoration: none;
+
+            &:hover span {
+                text-decoration: underline;
+            }
+        }
     }
 
     .loading {

@@ -4,10 +4,10 @@ import corev1 "k8s.io/api/core/v1"
 
 type StandardComponent interface {
 	Disableable
+	GetContainerConfig() map[string]ContainerConfig
 	GetPodTemplateConfig() PodTemplateConfig
-	GetResources() map[string]corev1.ResourceRequirements
 	GetServiceAccountAnnotations() map[string]string
-	PrometheusPort() *int
+	GetPrometheusPort() *int
 }
 
 type Disableable interface {
@@ -15,13 +15,27 @@ type Disableable interface {
 }
 
 type StandardConfig struct {
-	Disabled                  bool                                   `json:"disabled,omitempty"`
-	PodTemplateConfig         PodTemplateConfig                      `json:"podTemplateConfig,omitempty"`
-	Resources                 map[string]corev1.ResourceRequirements `json:"resources,omitempty"`
-	ServiceAccountAnnotations map[string]string                      `json:"serviceAccountAnnotations,omitempty"`
+	Disabled                  bool                       `json:"disabled,omitempty"`
+	ContainerConfig           map[string]ContainerConfig `json:"containerConfig,omitempty"`
+	PodTemplateConfig         PodTemplateConfig          `json:"podTemplateConfig,omitempty"`
+	PrometheusPort            *int                       `json:"prometheusPort,omitempty"`
+	ServiceAccountAnnotations map[string]string          `json:"serviceAccountAnnotations,omitempty"`
 }
 
-// Config that applies to all Pod templates produced by a Service. If this needs
+type ContainerConfig struct {
+	Image string `json:"image,omitempty"`
+
+	// Set BestEffortQOS=true to configure a container without resource limits
+	// or requests. This can be useful for local development.
+	// We need this flag to disambiguate between Resources being null because
+	// the admin is not overriding defaults, or because they do not want to
+	// configure resources.
+	// https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/
+	BestEffortQOS bool                         `json:"bestEffortQOS,omitempty"`
+	Resources     *corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+// PodTemplateConfig is a config that applies to all Pod templates produced by a Service. If this needs
 // to differ between pod templates, split another service definition.
 type PodTemplateConfig struct {
 	Affinity         *corev1.Affinity              `json:"affinity,omitempty"`
@@ -30,9 +44,10 @@ type PodTemplateConfig struct {
 	Tolerations      []corev1.Toleration           `json:"tolerations,omitempty"`
 }
 
-func (c StandardConfig) IsDisabled() bool                                     { return c.Disabled }
-func (c StandardConfig) GetPodTemplateConfig() PodTemplateConfig              { return c.PodTemplateConfig }
-func (c StandardConfig) GetResources() map[string]corev1.ResourceRequirements { return c.Resources }
+func (c StandardConfig) IsDisabled() bool                               { return c.Disabled }
+func (c StandardConfig) GetContainerConfig() map[string]ContainerConfig { return c.ContainerConfig }
+func (c StandardConfig) GetPodTemplateConfig() PodTemplateConfig        { return c.PodTemplateConfig }
+func (c StandardConfig) GetPrometheusPort() *int                        { return c.PrometheusPort }
 func (c StandardConfig) GetServiceAccountAnnotations() map[string]string {
 	return c.ServiceAccountAnnotations
 }

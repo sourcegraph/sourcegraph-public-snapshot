@@ -3,7 +3,7 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 import { readable, type Readable } from 'svelte/store'
 
 import { browser } from '$app/environment'
-import { FileTreeProvider, type FileTreeData, type FileTreeLoader } from '$lib/repo/api/tree'
+import { FileTreeProvider, ROOT_PATH, type FileTreeData, type FileTreeLoader } from '$lib/repo/api/tree'
 
 /**
  * Keeps track of the top-level directory that has been visited for each repository and revision.
@@ -56,7 +56,7 @@ export function createFileTreeStore(options: FileTreeStoreOptions): FileTreeStor
                     ({ repoName, revision }, { repoName: nextRepoName, revision: nextRevision, path: nextPath }) => {
                         if (browser && repoName === nextRepoName && revision === nextRevision) {
                             const topPath = topTreePathByRepoAndRevision.get(repoName)?.get(revision)
-                            return topPath ? topPath === '.' || nextPath.startsWith(topPath) : false
+                            return topPath !== undefined ? topPath === ROOT_PATH || nextPath.startsWith(topPath) : false
                         }
                         return false
                     }
@@ -65,7 +65,7 @@ export function createFileTreeStore(options: FileTreeStoreOptions): FileTreeStor
                 map(({ repoName, revision, path }) => {
                     if (browser) {
                         const topPath = topTreePathByRepoAndRevision.get(repoName)?.get(revision)
-                        if (topPath && (topPath === '.' || path.startsWith(topPath))) {
+                        if (topPath !== undefined && (topPath === ROOT_PATH || path.startsWith(topPath))) {
                             return { repoName, revision, path: topPath }
                         } else {
                             // new path is new top path

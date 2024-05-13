@@ -81,6 +81,8 @@ SELECT
 FROM (
 	SELECT
 		t.*,
+		-- NOTE(id: closest-uploads-postcondition) Only return a single result
+		-- for an (indexer, root) pair, see also the WHERE clause at the end.
 		row_number() OVER (PARTITION BY root, indexer ORDER BY distance) AS r
 	FROM (
 		-- Select the set of uploads visible from the given commit. This is done by looking

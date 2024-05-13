@@ -934,6 +934,22 @@
       "default": -1,
       "group": "External services"
     },
+    "codeMonitors": {
+      "description": "Configuration options for code monitors",
+      "type": "object",
+      "properties": {
+        "pollInterval": {
+          "description": "The interval at which a monitor checks for new changes. Increase to reduce average load.",
+          "type": "string",
+          "default": "5m"
+        },
+        "concurrency": {
+          "description": "The number of code monitor jobs allowed to run concurrenctly. Decrease to reduce peak load.",
+          "type": "integer",
+          "default": 4
+        }
+      }
+    },
     "syntaxHighlighting": {
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",

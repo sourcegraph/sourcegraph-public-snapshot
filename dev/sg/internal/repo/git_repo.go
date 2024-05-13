@@ -63,17 +63,32 @@ func WithPushRefSpec(ref, branch string) pushOpt {
 // * Does the commit exist remotely?
 func (g *GitRepo) IsOutOfSync(ctx context.Context) (bool, error) {
 	if ok, err := g.HasRemoteBranch(ctx); err != nil {
+		println("HAS REMOTE ERR")
+		println("HAS REMOTE ERR")
+		println("HAS REMOTE ERR")
 		return false, err
 	} else if !ok {
-		return false, nil
+		// We don't have a remote branch, so we're definitely out of sync
+		return true, nil
 	}
 
+	// Now lets check if the commit exists in the remote branch
 	return !g.HasRemoteCommit(ctx), nil
 }
 
-func (g *GitRepo) Checkout(ctx context.Context) error {
-	err := run.Cmd(ctx, "git", "checkout", g.Branch).Run().Wait()
+func (g *GitRepo) checkout(ctx context.Context, args ...string) error {
+	checkoutArgs := []string{"git", "checkout"}
+	checkoutArgs = append(checkoutArgs, args...)
+	err := run.Cmd(ctx, checkoutArgs...).Run().Wait()
 	return err
+}
+
+func (g *GitRepo) Checkout(ctx context.Context) error {
+	return g.checkout(ctx, g.Branch)
+}
+
+func (g *GitRepo) CheckoutNewBranch(ctx context.Context) error {
+	return g.checkout(ctx, "-b", g.Branch)
 }
 
 // ListChangedFiles lists the files that have changed since the last commit

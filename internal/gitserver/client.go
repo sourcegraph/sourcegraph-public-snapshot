@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -252,14 +253,6 @@ func (o *BlameRange) Attrs() []attribute.KeyValue {
 	}
 }
 
-type CommitLog struct {
-	AuthorEmail  string
-	AuthorName   string
-	Timestamp    time.Time
-	SHA          string
-	ChangedFiles []string
-}
-
 // ListRefsOpts are additional options passed to ListRefs.
 type ListRefsOpts struct {
 	// If true, only heads are returned. Can be combined with TagsOnly.
@@ -378,10 +371,6 @@ type Client interface {
 	// GetObject fetches git object data in the supplied repo
 	GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
 
-	// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
-	// contains a commit past a specified date.
-	HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string) (bool, error)
-
 	// IsRepoCloneable returns nil if the repository is cloneable.
 	IsRepoCloneable(context.Context, api.RepoName) error
 
@@ -439,8 +428,13 @@ type Client interface {
 	// If the specified commit does not exist, a RevisionNotFoundError is returned.
 	NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error)
 
-	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
-	DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
+	// ChangedFiles returns the list of files that have been added, modified, or
+	// deleted in the entire repository between the two given <tree-ish> identifiers (e.g., commit, branch, tag).
+	//
+	// If base is omitted, the parent of head is used as the base.
+	//
+	// If either the base or head <tree-ish> id does not exist, a gitdomain.RevisionNotFoundError is returned.
+	ChangedFiles(ctx context.Context, repo api.RepoName, base, head string) (ChangedFilesIterator, error)
 
 	// Commits returns all commits matching the options.
 	Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error)
@@ -448,55 +442,24 @@ type Client interface {
 	// FirstEverCommit returns the first commit ever made to the repository.
 	FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit, error)
 
-	// ListDirectoryChildren fetches the list of children under the given directory
-	// names. The result is a map keyed by the directory names with the list of files
-	// under each.
-	ListDirectoryChildren(ctx context.Context, repo api.RepoName, commit api.CommitID, dirnames []string) (map[string][]string, error)
-
 	// Diff returns an iterator that can be used to access the diff between two
 	// commits on a per-file basis. The iterator must be closed with Close when no
 	// longer required.
 	Diff(ctx context.Context, repo api.RepoName, opts DiffOptions) (*DiffFileIterator, error)
 
-	// CommitGraph returns the commit graph for the given repository as a mapping
-	// from a commit to its parents. If a commit is supplied, the returned graph will
-	// be rooted at the given commit. If a non-zero limit is supplied, at most that
-	// many commits will be returned.
-	CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error)
-
-	// CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
-	// is to separate the first line (the metadata line) from the remaining lines (the files), and then parse the metadata line
-	// into component parts separately.
-	CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error)
-
-	// CommitsUniqueToBranch returns a map from commits that exist on a particular
-	// branch in the given repository to their committer date. This set of commits is
-	// determined by listing `{branchName} ^HEAD`, which is interpreted as: all
-	// commits on {branchName} not also on the tip of the default branch. If the
-	// supplied branch name is the default branch, then this method instead returns
-	// all commits reachable from HEAD.
-	CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
-
-	// LsFiles returns the output of `git ls-files`.
-	LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
-
 	// GetCommit returns the commit with the given commit ID, or RevisionNotFoundError if no such commit
 	// exists.
 	GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (*gitdomain.Commit, error)
 
-	// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+	// BehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 	// revspecs).
-	GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error)
+	BehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error)
 
 	// ContributorCount returns the number of commits grouped by contributor
 	ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error)
 
 	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
 	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
-
-	// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided
-	// onCommit function for each.
-	RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (bool, error)) error
 
 	// SystemsInfo returns information about all gitserver instances associated with a Sourcegraph instance.
 	SystemsInfo(ctx context.Context) ([]protocol.SystemInfo, error)
@@ -1200,3 +1163,60 @@ func (c *clientImplementor) ListGitoliteRepos(ctx context.Context, gitoliteHost 
 
 	return list, nil
 }
+
+// ChangedFilesIterator is an iterator for retrieving the status of changed files in a Git repository.
+// It allows iterating over the changed files and retrieving their paths and statuses.
+//
+// The caller must ensure that they call Close() when the iterator is no longer needed to release any associated resources.
+type ChangedFilesIterator interface {
+	// Next returns the next changed file's path and status.
+	//
+	// If there are no more changed files, Next returns an io.EOF error.
+	// If an error occurs during iteration, Next returns the error that occurred.
+	Next() (gitdomain.PathStatus, error)
+
+	// Close closes the iterator and releases any associated resources.
+	//
+	// It is important to call Close when the iterator is no longer needed to avoid resource leaks.
+	// After calling Close, any subsequent calls to Next will return an io.EOF error.
+	Close()
+}
+
+// NewChangedFilesIteratorFromSlice returns a new ChangedFilesIterator that iterates over the given slice of changed files (in order),
+// which is useful for testing.
+func NewChangedFilesIteratorFromSlice(files []gitdomain.PathStatus) ChangedFilesIterator {
+	return &changedFilesSliceIterator{files: files}
+}
+
+type changedFilesSliceIterator struct {
+	mu     sync.Mutex
+	files  []gitdomain.PathStatus
+	closed bool
+}
+
+func (c *changedFilesSliceIterator) Next() (gitdomain.PathStatus, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.closed {
+		return gitdomain.PathStatus{}, io.EOF
+	}
+
+	if len(c.files) == 0 {
+		return gitdomain.PathStatus{}, io.EOF
+	}
+
+	file := c.files[0]
+	c.files = c.files[1:]
+
+	return file, nil
+}
+
+func (c *changedFilesSliceIterator) Close() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.closed = true
+}
+
+var _ ChangedFilesIterator = &changedFilesSliceIterator{}

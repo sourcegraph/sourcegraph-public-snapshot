@@ -127,7 +127,7 @@ const blameDecorationTheme = EditorView.theme({
         // Move the start of the line to after the blame decoration.
         // This is necessary because the start of the line is used for
         // aligning tab characters.
-        paddingLeft: 'var(--blame-decoration-width) !important',
+        paddingLeft: 'calc(var(--blame-decoration-width) + 10px) !important',
         lineHeight: '1.5rem',
         // Avoid jumping when blame decorations are streamed in because we use a border
         // borderTop: '1px solid transparent',
@@ -283,6 +283,7 @@ const blameGutter: Extension = [
 
     // Gutter for recency indicator
     gutter({
+        class: 'sg-recency-gutter',
         lineMarker(view, line) {
             const lineNumber = view.state.doc.lineAt(line.from).number
             const hunks = view.state.facet(blameDataFacet).lines
@@ -307,6 +308,10 @@ const blameGutter: Extension = [
         '.blame-gutter': {
             background: 'var(--body-bg)',
             width: 'var(--blame-decoration-width)',
+        },
+        '.sg-recency-gutter': {
+            width: 'var(--blame-recency-width)',
+            minWidth: 'var(--blame-recency-width)',
         },
         '.sg-recency-marker': {
             position: 'relative',

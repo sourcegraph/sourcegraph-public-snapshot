@@ -28,6 +28,10 @@
     $: queryState.setSettings($settings)
 </script>
 
+<svelte:head>
+    <title>{data.queryFromURL ? `${data.queryFromURL} - ` : ''}Sourcegraph</title>
+</svelte:head>
+
 {#if data.searchStream}
     <SearchResults
         bind:this={searchResults}

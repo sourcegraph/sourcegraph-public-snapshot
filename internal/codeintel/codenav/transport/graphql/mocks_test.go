@@ -219,7 +219,7 @@ type MockCodeNavService struct {
 func NewMockCodeNavService() *MockCodeNavService {
 	return &MockCodeNavService{
 		GetClosestCompletedUploadsForBlobFunc: &CodeNavServiceGetClosestCompletedUploadsForBlobFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string) (r0 []shared.CompletedUpload, r1 error) {
+			defaultHook: func(context.Context, shared.UploadMatchingOptions) (r0 []shared.CompletedUpload, r1 error) {
 				return
 			},
 		},
@@ -281,7 +281,7 @@ func NewMockCodeNavService() *MockCodeNavService {
 func NewStrictMockCodeNavService() *MockCodeNavService {
 	return &MockCodeNavService{
 		GetClosestCompletedUploadsForBlobFunc: &CodeNavServiceGetClosestCompletedUploadsForBlobFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string) ([]shared.CompletedUpload, error) {
+			defaultHook: func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error) {
 				panic("unexpected invocation of MockCodeNavService.GetClosestCompletedUploadsForBlob")
 			},
 		},
@@ -383,24 +383,24 @@ func NewMockCodeNavServiceFrom(i CodeNavService) *MockCodeNavService {
 // behavior when the GetClosestCompletedUploadsForBlob method of the parent
 // MockCodeNavService instance is invoked.
 type CodeNavServiceGetClosestCompletedUploadsForBlobFunc struct {
-	defaultHook func(context.Context, int, string, string, bool, string) ([]shared.CompletedUpload, error)
-	hooks       []func(context.Context, int, string, string, bool, string) ([]shared.CompletedUpload, error)
+	defaultHook func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error)
+	hooks       []func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error)
 	history     []CodeNavServiceGetClosestCompletedUploadsForBlobFuncCall
 	mutex       sync.Mutex
 }
 
 // GetClosestCompletedUploadsForBlob delegates to the next hook function in
 // the queue and stores the parameter and result values of this invocation.
-func (m *MockCodeNavService) GetClosestCompletedUploadsForBlob(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string) ([]shared.CompletedUpload, error) {
-	r0, r1 := m.GetClosestCompletedUploadsForBlobFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.GetClosestCompletedUploadsForBlobFunc.appendCall(CodeNavServiceGetClosestCompletedUploadsForBlobFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
+func (m *MockCodeNavService) GetClosestCompletedUploadsForBlob(v0 context.Context, v1 shared.UploadMatchingOptions) ([]shared.CompletedUpload, error) {
+	r0, r1 := m.GetClosestCompletedUploadsForBlobFunc.nextHook()(v0, v1)
+	m.GetClosestCompletedUploadsForBlobFunc.appendCall(CodeNavServiceGetClosestCompletedUploadsForBlobFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
 // GetClosestCompletedUploadsForBlob method of the parent MockCodeNavService
 // instance is invoked and the hook queue is empty.
-func (f *CodeNavServiceGetClosestCompletedUploadsForBlobFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string) ([]shared.CompletedUpload, error)) {
+func (f *CodeNavServiceGetClosestCompletedUploadsForBlobFunc) SetDefaultHook(hook func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error)) {
 	f.defaultHook = hook
 }
 
@@ -409,7 +409,7 @@ func (f *CodeNavServiceGetClosestCompletedUploadsForBlobFunc) SetDefaultHook(hoo
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *CodeNavServiceGetClosestCompletedUploadsForBlobFunc) PushHook(hook func(context.Context, int, string, string, bool, string) ([]shared.CompletedUpload, error)) {
+func (f *CodeNavServiceGetClosestCompletedUploadsForBlobFunc) PushHook(hook func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -418,19 +418,19 @@ func (f *CodeNavServiceGetClosestCompletedUploadsForBlobFunc) PushHook(hook func
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *CodeNavServiceGetClosestCompletedUploadsForBlobFunc) SetDefaultReturn(r0 []shared.CompletedUpload, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, bool, string) ([]shared.CompletedUpload, error) {
+	f.SetDefaultHook(func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *CodeNavServiceGetClosestCompletedUploadsForBlobFunc) PushReturn(r0 []shared.CompletedUpload, r1 error) {
-	f.PushHook(func(context.Context, int, string, string, bool, string) ([]shared.CompletedUpload, error) {
+	f.PushHook(func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeNavServiceGetClosestCompletedUploadsForBlobFunc) nextHook() func(context.Context, int, string, string, bool, string) ([]shared.CompletedUpload, error) {
+func (f *CodeNavServiceGetClosestCompletedUploadsForBlobFunc) nextHook() func(context.Context, shared.UploadMatchingOptions) ([]shared.CompletedUpload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -470,19 +470,7 @@ type CodeNavServiceGetClosestCompletedUploadsForBlobFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 bool
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 string
+	Arg1 shared.UploadMatchingOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []shared.CompletedUpload
@@ -494,7 +482,7 @@ type CodeNavServiceGetClosestCompletedUploadsForBlobFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c CodeNavServiceGetClosestCompletedUploadsForBlobFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
