@@ -5,6 +5,12 @@ query Init {
 
     viewerSettings {
         final
+        subjects {
+            id
+            latestSettings {
+                id
+            }
+        }
     }
 
     evaluatedFeatureFlags {

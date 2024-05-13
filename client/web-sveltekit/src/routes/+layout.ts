@@ -37,10 +37,13 @@ export const load: LayoutLoad = async ({ fetch }) => {
         error(500, `Failed to parse user settings: ${settings.message}`)
     }
 
+    const subjects = result.data.viewerSettings.subjects
+
     return {
         user: result.data.currentUser,
         // Initial user settings
         settings,
+        subjects,
         featureFlags: result.data.evaluatedFeatureFlags,
         globalSiteAlerts: globalSiteAlerts.then(result => result.data?.site),
         fetchEvaluatedFeatureFlags: async () => {

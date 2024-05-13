@@ -14,6 +14,8 @@ import {
     BlobFileViewHighlightedFileQuery,
     BlobFileViewCommitQuery_revisionOverride,
     BlobFileViewBlobQuery,
+    EditSettings,
+    LatestSettingsQuery,
 } from './page.gql'
 
 function loadDiffView({ params, url }: PageLoadEvent) {
@@ -111,6 +113,46 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
                 return null
             }),
         blameData,
+        updateEditor: async (subject: string, lastID: number, editorPath: string, editorId: string) => {
+            const mutationResult1 = await client.mutation(
+                EditSettings,
+                {
+                    lastID,
+                    subject,
+                    edit: {
+                        value: editorPath,
+                        keyPath: [{ property: 'openInEditor' }, { property: 'projectPaths.default' }],
+                    },
+                },
+                { requestPolicy: 'network-only', fetch }
+            )
+            if (!mutationResult1.data || mutationResult1.error) {
+                throw new Error(`Failed to update editor path: ${mutationResult1.error}`)
+            }
+            const settingsResult = await client.query(LatestSettingsQuery, {})
+            if (!settingsResult.data || settingsResult.error) {
+                throw new Error(`Failed to fetch latest settings during editor update: ${settingsResult.error}`)
+            }
+            const newLastId = settingsResult.data.viewerSettings.subjects.at(-1)?.latestSettings?.id
+            if (!newLastId) {
+                throw new Error('Failed to get new last ID from settings result')
+            }
+            const mutationResult2 = await client.mutation(
+                EditSettings,
+                {
+                    lastID: newLastId,
+                    subject,
+                    edit: {
+                        value: [editorId],
+                        keyPath: [{ property: 'openInEditor' }, { property: 'editorIds' }],
+                    },
+                },
+                { requestPolicy: 'network-only', fetch }
+            )
+            if (!mutationResult2.data || mutationResult2.error) {
+                throw new Error(`Failed to update editor id: ${mutationResult2.error}`)
+            }
+        },
     }
 }
 

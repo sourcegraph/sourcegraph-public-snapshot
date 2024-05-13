@@ -59,3 +59,24 @@ query BlobFileViewCommitQuery_revisionOverride($repoName: String!, $revspec: Str
 fragment BlobPage_ResolvedRevision on Repository {
     ...FileView_ResolvedRevision
 }
+
+mutation EditSettings($subject: ID!, $lastID: Int, $edit: SettingsEdit!) {
+    settingsMutation(input: { subject: $subject, lastID: $lastID }) {
+        editSettings(edit: $edit) {
+            empty {
+                alwaysNil
+            }
+        }
+    }
+}
+
+query LatestSettingsQuery {
+    viewerSettings {
+        subjects {
+            id
+            latestSettings {
+                id
+            }
+        }
+    }
+}

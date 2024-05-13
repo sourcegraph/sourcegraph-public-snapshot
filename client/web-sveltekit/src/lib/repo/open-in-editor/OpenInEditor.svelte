@@ -16,8 +16,12 @@
     import Popover from '$lib/Popover.svelte';
     import {Button} from '$lib/wildcard';
     import {supportedEditors} from '$lib/web';
+    import type {
+        PageData
+    } from '$root/client/web-sveltekit/.svelte-kit/types/src/routes/[...repo=reporev]/(validrev)/(code)/-/blob/[...path]/$types';
 
     export let externalServiceType: ExternalRepository['serviceType'] = ''
+    export let data: Extract<PageData, { type: 'FileView' }>
 
     $: openInEditor = $settings?.openInEditor
 
@@ -30,16 +34,19 @@
     $: ({repoName, filePath, position, range} = parseBrowserRepoURL($page.url.toString()))
     $: start = position ?? range?.start
 
-    function onSubmit(event: Event) {
-        event.preventDefault();
-        // Handle the submit logic here
-        alert('submitted')
-    }
+    $: latestSettings = data.subjects.at(-1)
+    $: handleEditorUpdate = latestSettings?.latestSettings
+        ? async (): Promise<void> => {
+            if (latestSettings?.latestSettings) {
+                await data.updateEditor(latestSettings.id, latestSettings.latestSettings.id, defaultProjectPath, selectedEditorId)
+                window.location.reload()
+            }
+        }
+        : undefined
 
     let defaultProjectPath = ''; // Assume initial state or fetch from a store
     let selectedEditorId = ''; // Assume initial state or fetch from a store
     $: areSettingsValid = !!selectedEditorId && isProjectPathValid(defaultProjectPath);
-    $: console.log({areSettingsValid})
 
 </script>
 
@@ -74,7 +81,7 @@
             </span>
         </Tooltip>
         <div slot="content" class="open-in-editor-popover">
-            <form on:submit={onSubmit} novalidate>
+            <form on:submit={handleEditorUpdate} novalidate>
                 <h3>Set your preferred editor</h3>
                 <p>
                     Open this and other files directly in your editor. Set your path and editor to get started. Update
@@ -106,7 +113,8 @@
                     {/each}
                 </select>
                 <p class="small form-info">Use a different editor?{' '}
-                <a href="/help/integration/open_in_editor" target="_blank" rel="noreferrer noopener">Set up a different editor</a>
+                    <a href="/help/integration/open_in_editor" target="_blank" rel="noreferrer noopener">Set up a
+                        different editor</a>
                 </p>
                 <Button variant="primary" type="submit" disabled={!areSettingsValid}>
                     Save
