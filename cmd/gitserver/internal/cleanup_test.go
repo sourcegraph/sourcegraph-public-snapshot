@@ -1445,3 +1445,30 @@ func TestSGMaintenanceRemovesLock(t *testing.T) {
 		t.Fatal("sg maintenance should have removed the lockfile it created")
 	}
 }
+
+func TestGetSetLastSizeCalculation(t *testing.T) {
+	dir := common.GitDir(t.TempDir())
+	cmd := exec.Command("git", "--bare", "init")
+	dir.Set(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+	at, err := getLastSizeCalculation(dir)
+	require.NoError(t, err)
+	// Never computed, should be zero.
+	require.True(t, at.IsZero())
+	now := time.Now().Truncate(time.Millisecond)
+	// Setting the value should work.
+	err = setLastSizeCalculation(dir, now)
+	require.NoError(t, err)
+	at, err = getLastSizeCalculation(dir)
+	require.NoError(t, err)
+	require.Equal(t, now, at)
+	// Setting again should work.
+	now = time.Now().Truncate(time.Millisecond)
+	err = setLastSizeCalculation(dir, now)
+	require.NoError(t, err)
+	at, err = getLastSizeCalculation(dir)
+	require.NoError(t, err)
+	require.Equal(t, now, at)
+}
