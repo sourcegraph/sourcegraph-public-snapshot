@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -51,8 +50,7 @@ CREATE TABLE bobhead (
 	_, err = io.Copy(&dst, src)
 	assert.NoError(t, err)
 
-	// Assert contents (update with -update)
-	autogold.Want("partial-copy-without-extensions", `-- Some comment
+	expected := `-- Some comment
 
 CREATE EXTENSION foobar
 
@@ -66,5 +64,6 @@ CREATE TABLE robert (
 
 CREATE TABLE bobhead (
 	...
-)`).Equal(t, dst.String())
+)`
+	assert.Equal(t, expected, dst.String())
 }
