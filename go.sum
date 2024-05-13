@@ -1723,8 +1723,12 @@ github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-202
 github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20230822024612-edb48c530722/go.mod h1:Djd6jHBZqe4/+MEpiBxKvzPS24NqYxNBbAYv/0074JI=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20240424172240-25e368a6e822 h1:9QVB0ZqqgBg8RRDN7M25nqZHpSWpHz8Vk+lBt18zp38=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20240424172240-25e368a6e822/go.mod h1:P1liUcPEczidOp1kyPvi2eqil4243IuPJ+tCOASCHEk=
+github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20240513203650-e2b1273f1c1a h1:Pn4H0coHJdKScWcznY2eKDLkN7YT0E2B4Bq3fdUhGBI=
+github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20240513203650-e2b1273f1c1a/go.mod h1:P1liUcPEczidOp1kyPvi2eqil4243IuPJ+tCOASCHEk=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20240424172240-25e368a6e822 h1://hXSqfVctNn0aDcmgAKCD1amMkITUVpIwMo3mEHQBA=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20240424172240-25e368a6e822/go.mod h1:/z34dv4NLXti+0VQsUoRTXBeH6n7OWtPv/iWFX6z5dg=
+github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20240513203650-e2b1273f1c1a h1:AkPNJAX4DqhE4DJ4z8cFv1L38bupC5Oidw+gwTAgSUg=
+github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20240513203650-e2b1273f1c1a/go.mod h1:/z34dv4NLXti+0VQsUoRTXBeH6n7OWtPv/iWFX6z5dg=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/nobl9 v0.0.0-20240131130226-cb88836e6df8 h1:kzWUr3tOgSaWLH6tRre+nQWaIspel2Adh07xlstYKrA=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/nobl9 v0.0.0-20240131130226-cb88836e6df8/go.mod h1:1HTn7/xUQWdIjhr9ROmAVAwgG2mdJB6aJjKyi5aCDCg=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie v0.0.0-20231230001101-a13188f9c749 h1:h0n42wBNI4h28Bb42A7TJbSLwmcpIvYI9NZrprPUt/A=
