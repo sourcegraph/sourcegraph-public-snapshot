@@ -426,8 +426,8 @@ def go_dependencies():
         name = "com_github_aws_aws_sdk_go_v2_service_appconfig",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/aws/aws-sdk-go-v2/service/appconfig",
-        sum = "h1:qS1MppnAyqKu9YJ4JO+Cv1CW+ef+f2Fk+YIZS7C/jCI=",
-        version = "v1.29.3",
+        sum = "h1:5fez51yE//mtmaEkh9JTAcLl4xg60Ha86pE+FIqinGc=",
+        version = "v1.4.2",
     )
     go_repository(
         name = "com_github_aws_aws_sdk_go_v2_service_cloudwatch",
