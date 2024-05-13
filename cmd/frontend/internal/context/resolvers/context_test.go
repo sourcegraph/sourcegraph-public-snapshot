@@ -35,7 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestContextResolver(t *testing.T) {
+func TestCodyIgnore(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
@@ -121,7 +121,7 @@ func TestContextResolver(t *testing.T) {
 	}
 
 	mockGitserver := gitserver.NewMockClient()
-	mockGitserver.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
+	mockGitserver.GetDefaultBranchFunc.SetDefaultReturn("main", "abc123", nil)
 	mockGitserver.StatFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName, _ api.CommitID, fileName string) (fs.FileInfo, error) {
 		return fakeFileInfo{path: fileName}, nil
 	})
@@ -259,4 +259,51 @@ type fakeFileInfo struct {
 
 func (f fakeFileInfo) Name() string {
 	return f.path
+}
+
+func TestCountLines(t *testing.T) {
+	tests := []struct {
+		name     string
+		content  string
+		numRunes int
+		want     int
+	}{
+		{
+			name:     "empty string",
+			content:  "",
+			numRunes: 1024,
+			want:     0,
+		},
+		{
+			name:     "single line",
+			content:  "Hello world",
+			numRunes: 1024,
+			want:     1,
+		},
+		{
+			name:     "multiple lines",
+			content:  "Hello\nWorld\nGo is awesome\n",
+			numRunes: 1024,
+			want:     3,
+		},
+		{
+			name:     "should truncate content",
+			content:  "Hello\nWorld\nGo is awesome\n",
+			numRunes: 12,
+			want:     2,
+		},
+		{
+			name:     "no trailing newline",
+			content:  "Hello\nWorld\nGo is awesome",
+			numRunes: 9,
+			want:     2,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := countLines(tt.content, tt.numRunes); got != tt.want {
+				t.Errorf("countLines() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
