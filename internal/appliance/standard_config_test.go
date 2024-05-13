@@ -15,6 +15,7 @@ func (suite *ApplianceTestSuite) TestStandardFeatures() {
 		{name: "standard/repo-updater-with-sa-annotations"},
 		{name: "standard/symbols-with-custom-image"},
 		{name: "standard/redis-with-multiple-custom-images"},
+		{name: "standard/precise-code-intel-with-env-vars"},
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMap(tc.name)

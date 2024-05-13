@@ -155,12 +155,13 @@ type PostgresExporterSpec struct {
 }
 
 type PreciseCodeIntelSpec struct {
+	config.StandardConfig
+
+	NumWorkers int `json:"numWorkers"`
+
 	// Replicas defines the number of Precise Code Intel Worker pod replicas.
 	// Default: 2
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 // RedisSpec defines the desired state of a Redis-based service.
