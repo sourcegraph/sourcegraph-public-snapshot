@@ -9,17 +9,24 @@ jobs:
   comment-on-pr:
     runs-on: ubuntu-latest
     steps:
-      - name: Check PR Changes
-        id: pr-changes
-        run: echo "::set-output name=changes::${{ toJson(github.event.pull_request.changed_files) }}"
+      - name: Set Comment Identifier
+        id: comment-identifier
+        run: echo "::set-output name=identifier::<!-- cody-context-filters-test-dataset-release-required -->"
+
+      - name: Check Existing Comments
+        id: check-comments
+        run: |
+          COMMENT_IDENTIFIER="${{ steps.comment-identifier.outputs.identifier }}"
+          COMMENTS_URL="https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+          COMMENTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" $COMMENTS_URL)
+          echo "::set-output name=already_commented::$(echo $COMMENTS | grep -q \"$COMMENT_IDENTIFIER\" && echo 'true' || echo 'false')"
 
       - name: Create Comment
-        if: steps.pr-changes.outputs.changes != '[]'
+        if: steps.check-comments.outputs.already_commented == 'false'
         run: |
-          # Use GitHub API to create a comment on the PR
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          COMMENT="Your checklist comment here"
           GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           COMMENT_URL="https://api.github.com/repos/${{ github.repository }}/issues/${PR_NUMBER}/comments"
-
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          COMMENT_IDENTIFIER="${{ steps.comment-identifier.outputs.identifier }}"
+          COMMENT="> [!IMPORTANT]  \n> This PR changes the Cody context filters test dataset, which is shared among Cody clients. Please consider releasing a new version of [@sourcegraph/cody-context-filters-test-dataset](https://www.npmjs.com/package/@sourcegraph/cody-context-filters-test-dataset) to ensure consistency across all implementations.\n $COMMENT_IDENTIFIER"
           curl -s -H "Authorization: token ${GITHUB_TOKEN}" -X POST $COMMENT_URL -d "{\"body\":\"$COMMENT\"}"
