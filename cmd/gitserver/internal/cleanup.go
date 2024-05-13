@@ -539,6 +539,25 @@ func cleanupRepos(
 				log.Duration("age", gcPIDMaxAge))
 		}
 
+		// drop temporary pack files that can be left behind by a fetch.
+		packdir := gitDir.Path("objects", "pack")
+		err = gitserverfs.BestEffortWalk(packdir, func(path string, d os.DirEntry) error {
+			if path != packdir && d.IsDir() {
+				return filepath.SkipDir
+			}
+
+			file := filepath.Base(path)
+			if !strings.HasPrefix(file, "tmp_pack_") {
+				return nil
+			}
+
+			_, err := removeFileOlderThan(logger, path, 2*conf.GitLongCommandTimeout())
+			return err
+		})
+		if err != nil {
+			multi = errors.Append(multi, err)
+		}
+
 		return false, multi
 	}
 

@@ -703,13 +703,6 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, lock Repos
 			return errors.Wrap(err, "get VCS syncer")
 		}
 
-		// drop temporary pack files after a fetch. this function won't
-		// return until this fetch has completed or definitely-failed,
-		// either way they can't still be in use. we don't care exactly
-		// when the cleanup happens, just that it does.
-		// TODO: Should be done in janitor.
-		defer git.CleanTmpPackFiles(s.logger, dir)
-
 		// ensure the background update doesn't hang forever
 		fetchCtx, cancelTimeout := context.WithTimeout(ctx, fetchTimeout)
 		defer cancelTimeout()

@@ -5,7 +5,6 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "git",
     srcs = [
-        "cleanup.go",
         "git.go",
         "iface.go",
         "mock.go",
@@ -16,9 +15,7 @@ go_library(
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//cmd/gitserver/internal/common",
-        "//cmd/gitserver/internal/gitserverfs",
         "//internal/api",
-        "//internal/conf",
         "//internal/fileutil",
         "//internal/gitserver/gitdomain",
         "//internal/metrics",
