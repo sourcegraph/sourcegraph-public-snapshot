@@ -358,8 +358,8 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         // Record action ID (but not args, which might leak sensitive data).
         this.props.telemetryService.log(action.id)
         if (action.telemetryProps) {
-            this.props.telemetryRecorder.recordEvent('blob.' + action.telemetryProps.feature, 'executed', {
-                privateMetadata: { action: action.id },
+            this.props.telemetryRecorder.recordEvent(action.telemetryProps.feature, 'executed', {
+                privateMetadata: { action: action.id, ...action.telemetryProps.privateMetadata },
             })
         } else {
             this.props.telemetryRecorder.recordEvent('blob.action', 'executed', {

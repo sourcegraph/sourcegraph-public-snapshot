@@ -133,7 +133,11 @@ export interface ActionContribution {
      */
     telemetryProps: {
         feature: KnownString
-        action: KnownString
+
+        // No `action` prop is provided, because action items only log telemetry when executed (and thus use an
+        // 'executed' action.
+
+        privateMetadata?: { [key: string]: any }
     }
 }
 
