@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"strings"
 
 	"cloud.google.com/go/bigquery"
@@ -27,20 +26,15 @@ func (b *BuildkiteAgentEvent) Save() (row map[string]bigquery.Value, insertID st
 		}
 	}
 
-	uuid, err := base64.StdEncoding.DecodeString(*b.ID)
-	if err != nil {
-		return nil, "", err
-	}
-
 	return map[string]bigquery.Value{
 		"event":      strings.TrimPrefix(b.event, "agent."),
+		"uuid":       *b.ID,
 		"name":       *b.Name,
 		"hostname":   *b.Hostname,
 		"version":    *b.Version,
 		"ip_address": *b.IPAddress,
 		"queues":     queues,
 		"user_agent": *b.UserAgent,
-		"uuid":       strings.TrimPrefix(string(uuid), "Agent---"),
 	}, "", nil
 }
 
