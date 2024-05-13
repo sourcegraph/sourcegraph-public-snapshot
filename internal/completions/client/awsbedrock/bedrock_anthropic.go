@@ -234,9 +234,9 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 	}
 
 	if stream {
-		apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", requestParams.Model)
+		apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", url.PathEscape(requestParams.Model))
 	} else {
-		apiURL.Path = fmt.Sprintf("/model/%s/invoke", requestParams.Model)
+		apiURL.Path = fmt.Sprintf("/model/%s/invoke", url.PathEscape(requestParams.Model))
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL.String(), bytes.NewReader(reqBody))
