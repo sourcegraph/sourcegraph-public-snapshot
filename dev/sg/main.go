@@ -13,18 +13,15 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/ci"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/release"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
-	"github.com/sourcegraph/sourcegraph/dev/sg/msp"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -265,50 +262,7 @@ var sg = &cli.App{
 		return nil
 	},
 	Commands: []*cli.Command{
-		// Common dev tasks
-		startCommand,
-		runCommand,
-		ci.Command,
-		testCommand,
-		lintCommand,
-		generateCommand,
-		bazelCommand,
-		dbCommand,
-		migrationCommand,
-		insightsCommand,
-		telemetryCommand,
-		monitoringCommand,
-		contextCommand,
-		deployCommand,
-		wolfiCommand,
-		backportCommand,
-
-		// Dev environment
-		secretCommand,
-		setupCommand,
-		srcCommand,
-		srcInstanceCommand,
-		imagesCommand,
-
-		// Company
-		teammateCommand,
-		rfcCommand,
-		liveCommand,
-		opsCommand,
-		auditCommand,
-		pageCommand,
-		cloudCommand,
-		msp.Command,
-
-		// Util
-		analyticsCommand,
-		doctorCommand,
-		funkyLogoCommand,
-		helpCommand,
-		installCommand,
-		release.Command,
-		updateCommand,
-		versionCommand,
+		debugBedrockCommand,
 	},
 	ExitErrHandler: func(cmd *cli.Context, err error) {
 		if err == nil {

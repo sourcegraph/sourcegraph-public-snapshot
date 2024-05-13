@@ -244,13 +244,13 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	etags := map[int]*string{}
 
 	if err := ForEachString(sources, func(index int, source string) error {
-		partNumber := index + 1
+		partNumber := int32(index + 1)
 
 		copyResult, err := s.client.UploadPartCopy(ctx, &s3.UploadPartCopyInput{
 			Bucket:     multipartUpload.Bucket,
 			Key:        multipartUpload.Key,
 			UploadId:   multipartUpload.UploadId,
-			PartNumber: int32(partNumber),
+			PartNumber: &partNumber,
 			CopySource: aws.String(fmt.Sprintf("%s/%s", s.bucket, source)),
 		})
 		if err != nil {
@@ -258,7 +258,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 		}
 
 		m.Lock()
-		etags[partNumber] = copyResult.CopyPartResult.ETag
+		etags[int(partNumber)] = copyResult.CopyPartResult.ETag
 		m.Unlock()
 
 		return nil
@@ -268,11 +268,11 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 
 	var parts []s3types.CompletedPart
 	for i := range len(sources) {
-		partNumber := i + 1
+		partNumber := int32(i + 1)
 
 		parts = append(parts, s3types.CompletedPart{
-			ETag:       etags[partNumber],
-			PartNumber: int32(partNumber),
+			ETag:       etags[int(partNumber)],
+			PartNumber: &partNumber,
 		})
 	}
 
@@ -293,7 +293,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 		return 0, errors.Wrap(err, "failed to stat composed object")
 	}
 
-	return obj.ContentLength, nil
+	return *obj.ContentLength, nil
 }
 
 func (s *s3Store) Delete(ctx context.Context, key string) (err error) {

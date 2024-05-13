@@ -16,6 +16,7 @@ go_library(
         "sg_bazel.go",
         "sg_cloud.go",
         "sg_db.go",
+        "sg_debug.go",
         "sg_deploy.go",
         "sg_doctor.go",
         "sg_embeddings_qa.go",

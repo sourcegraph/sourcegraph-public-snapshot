@@ -10,14 +10,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream"
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
@@ -26,27 +23,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewClient(cli httpcli.Doer, endpoint, accessToken string, tokenManager tokenusage.Manager) types.CompletionsClient {
-	return &awsBedrockAnthropicCompletionStreamClient{
-		cli:          cli,
-		accessToken:  accessToken,
-		endpoint:     endpoint,
-		tokenManager: tokenManager,
-	}
-}
-
-const (
-	clientID = "sourcegraph/1.0"
-)
-
-type awsBedrockAnthropicCompletionStreamClient struct {
+type awsBedrockTitanCompletionStreamClient struct {
 	cli          httpcli.Doer
 	accessToken  string
 	endpoint     string
 	tokenManager tokenusage.Manager
 }
 
-func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
+type awsTitanTitanCompletionStreamClient struct {
+	cli          httpcli.Doer
+	accessToken  string
+	endpoint     string
+	tokenManager tokenusage.Manager
+}
+
+func (c *awsBedrockTitanCompletionStreamClient) Complete(
 	ctx context.Context,
 	feature types.CompletionsFeature,
 	version types.CompletionsVersion,
@@ -59,7 +50,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 	}
 	defer resp.Body.Close()
 
-	var response bedrockAnthropicNonStreamingResponse
+	var response bedrockTitanNonStreamingResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, errors.Wrap(err, "decoding response")
 	}
@@ -68,7 +59,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 		completion += content.Text
 	}
 
-	err = c.tokenManager.UpdateTokenCountsFromModelUsage(response.Usage.InputTokens, response.Usage.OutputTokens, "anthropic/"+requestParams.Model, string(feature), tokenusage.AwsBedrock)
+	err = c.tokenManager.UpdateTokenCountsFromModelUsage(response.Usage.InputTokens, response.Usage.OutputTokens, "titan/"+requestParams.Model, string(feature), tokenusage.AwsBedrock)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +69,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 	}, nil
 }
 
-func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
+func (a *awsBedrockTitanCompletionStreamClient) Stream(
 	ctx context.Context,
 	feature types.CompletionsFeature,
 	version types.CompletionsVersion,
@@ -94,7 +85,7 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 	var sentEvent bool
 
 	// totalCompletion is the complete completion string, bedrock already uses
-	// the new incremental Anthropic API, but our clients still expect a full
+	// the new incremental Titan API, but our clients still expect a full
 	// response in each event.
 	var totalCompletion string
 	var inputPromptTokens int
@@ -129,13 +120,13 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 
 		data := p.Bytes
 
-		// Gracefully skip over any data that isn't JSON-like. Anthropic's API sometimes sends
+		// Gracefully skip over any data that isn't JSON-like. Titan's API sometimes sends
 		// non-documented data over the stream, like timestamps.
 		if !bytes.HasPrefix(data, []byte("{")) {
 			continue
 		}
 
-		var event bedrockAnthropicStreamingResponse
+		var event bedrockTitanStreamingResponse
 		if err := json.Unmarshal(data, &event); err != nil {
 			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
 		}
@@ -153,7 +144,7 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 		case "message_delta":
 			if event.Delta != nil {
 				stopReason = event.Delta.StopReason
-				err = a.tokenManager.UpdateTokenCountsFromModelUsage(inputPromptTokens, event.Usage.OutputTokens, "anthropic/"+requestParams.Model, string(feature), tokenusage.AwsBedrock)
+				err = a.tokenManager.UpdateTokenCountsFromModelUsage(inputPromptTokens, event.Usage.OutputTokens, "titan/"+requestParams.Model, string(feature), tokenusage.AwsBedrock)
 				if err != nil {
 					logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 				}
@@ -172,11 +163,7 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 	}
 }
 
-type awsEventStreamPayload struct {
-	Bytes []byte `json:"bytes"`
-}
-
-func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, stream bool) (*http.Response, error) {
+func (c *awsBedrockTitanCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, stream bool) (*http.Response, error) {
 	defaultConfig, err := config.LoadDefaultConfig(ctx, awsConfigOptsForKeyConfig(c.endpoint, c.accessToken)...)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading aws config")
@@ -205,7 +192,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 		convertedMessages = types.ConvertFromLegacyMessages(convertedMessages)
 	}
 
-	messages, err := toAnthropicMessages(convertedMessages)
+	messages, err := toTitanMessages(convertedMessages)
 	if err != nil {
 		return nil, err
 	}
@@ -217,15 +204,15 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 		messages = messages[1:]
 	}
 
-	payload := bedrockAnthropicCompletionsRequestParameters{
-		StopSequences:    stopSequences,
-		Temperature:      requestParams.Temperature,
-		MaxTokens:        requestParams.MaxTokensToSample,
-		TopP:             requestParams.TopP,
-		TopK:             requestParams.TopK,
-		Messages:         messages,
-		System:           system,
-		AnthropicVersion: "bedrock-2023-05-31",
+	payload := bedrockTitanCompletionsRequestParameters{
+		StopSequences: stopSequences,
+		Temperature:   requestParams.Temperature,
+		MaxTokens:     requestParams.MaxTokensToSample,
+		TopP:          requestParams.TopP,
+		TopK:          requestParams.TopK,
+		Messages:      messages,
+		System:        system,
+		TitanVersion:  "bedrock-2023-05-31",
 	}
 
 	reqBody, err := json.Marshal(payload)
@@ -282,110 +269,68 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 	return resp, nil
 }
 
-func awsConfigOptsForKeyConfig(endpoint string, accessToken string) []func(*config.LoadOptions) error {
-	configOpts := []func(*config.LoadOptions) error{}
-	if endpoint != "" {
-		apiURL, err := url.Parse(endpoint)
-		if err != nil || apiURL.Scheme == "" { // this is not a url assume it is a region
-			configOpts = append(configOpts, config.WithRegion(endpoint))
-		} else { // this is a url just use it directly
-			configOpts = append(configOpts, config.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(
-				func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-					return aws.Endpoint{URL: endpoint}, nil
-				})))
-		}
-	}
-
-	// We use the accessToken field to provide multiple values.
-	// If it consists of two parts, separated by a `:`, the first part is
-	// the aws access key, and the second is the aws secret key.
-	// If there are three parts, the third part is the aws session token.
-	// If no access token is given, we default to the AWS default credential provider
-	// chain, which supports all basic known ways of connecting to AWS.
-	if accessToken != "" {
-		parts := strings.SplitN(accessToken, ":", 3)
-		if len(parts) == 2 {
-			configOpts = append(configOpts, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(parts[0], parts[1], "")))
-		} else if len(parts) == 3 {
-			configOpts = append(configOpts, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(parts[0], parts[1], parts[2])))
-		}
-	}
-
-	return configOpts
+type bedrockTitanNonStreamingResponse struct {
+	Content    []bedrockTitanMessageContent      `json:"content"`
+	StopReason string                            `json:"stop_reason"`
+	Usage      bedrockTitanMessagesResponseUsage `json:"usage"`
 }
 
-type bedrockAnthropicNonStreamingResponse struct {
-	Content    []bedrockAnthropicMessageContent      `json:"content"`
-	StopReason string                                `json:"stop_reason"`
-	Usage      bedrockAnthropicMessagesResponseUsage `json:"usage"`
+// TitanMessagesStreamingResponse captures all relevant-to-us fields from each relevant SSE event from https://docs.anthropic.com/claude/reference/messages_post.
+type bedrockTitanStreamingResponse struct {
+	Type         string                                   `json:"type"`
+	Delta        *bedrockTitanStreamingResponseTextBucket `json:"delta"`
+	ContentBlock *bedrockTitanStreamingResponseTextBucket `json:"content_block"`
+	Usage        *bedrockTitanMessagesResponseUsage       `json:"usage"`
+	Message      *bedrockTitanStreamingResponseMessage    `json:"message"`
 }
 
-// AnthropicMessagesStreamingResponse captures all relevant-to-us fields from each relevant SSE event from https://docs.anthropic.com/claude/reference/messages_post.
-type bedrockAnthropicStreamingResponse struct {
-	Type         string                                       `json:"type"`
-	Delta        *bedrockAnthropicStreamingResponseTextBucket `json:"delta"`
-	ContentBlock *bedrockAnthropicStreamingResponseTextBucket `json:"content_block"`
-	Usage        *bedrockAnthropicMessagesResponseUsage       `json:"usage"`
-	Message      *bedrockAnthropicStreamingResponseMessage    `json:"message"`
+type bedrockTitanStreamingResponseMessage struct {
+	Usage *bedrockTitanMessagesResponseUsage `json:"usage"`
 }
 
-type bedrockAnthropicStreamingResponseMessage struct {
-	Usage *bedrockAnthropicMessagesResponseUsage `json:"usage"`
-}
-
-type bedrockAnthropicMessagesResponseUsage struct {
+type bedrockTitanMessagesResponseUsage struct {
 	InputTokens  int `json:"input_tokens"`
 	OutputTokens int `json:"output_tokens"`
 }
 
-type bedrockAnthropicStreamingResponseTextBucket struct {
+type bedrockTitanStreamingResponseTextBucket struct {
 	Text       string `json:"text"`        // for event `content_block_delta`
 	StopReason string `json:"stop_reason"` // for event `message_delta`
 }
 
-type bedrockAnthropicCompletionsRequestParameters struct {
-	Messages      []bedrockAnthropicMessage `json:"messages,omitempty"`
-	Temperature   float32                   `json:"temperature,omitempty"`
-	TopP          float32                   `json:"top_p,omitempty"`
-	TopK          int                       `json:"top_k,omitempty"`
-	Stream        bool                      `json:"stream,omitempty"`
-	StopSequences []string                  `json:"stop_sequences,omitempty"`
-	MaxTokens     int                       `json:"max_tokens,omitempty"`
+type bedrockTitanCompletionsRequestParameters struct {
+	Messages      []bedrockTitanMessage `json:"messages,omitempty"`
+	Temperature   float32               `json:"temperature,omitempty"`
+	TopP          float32               `json:"top_p,omitempty"`
+	TopK          int                   `json:"top_k,omitempty"`
+	Stream        bool                  `json:"stream,omitempty"`
+	StopSequences []string              `json:"stop_sequences,omitempty"`
+	MaxTokens     int                   `json:"max_tokens,omitempty"`
 
 	// These are not accepted from the client an instead are only used to talk to the upstream LLM
 	// APIs directly (these do NOT need to be set when talking to Cody Gateway)
-	System           string `json:"system,omitempty"`
-	AnthropicVersion string `json:"anthropic_version"`
+	System       string `json:"system,omitempty"`
+	TitanVersion string `json:"anthropic_version"`
 }
 
-type bedrockAnthropicMessage struct {
-	Role    string                           `json:"role"` // "user", "assistant", or "system" (only allowed for the first message)
-	Content []bedrockAnthropicMessageContent `json:"content"`
+type bedrockTitanMessage struct {
+	Role    string                       `json:"role"` // "user", "assistant", or "system" (only allowed for the first message)
+	Content []bedrockTitanMessageContent `json:"content"`
 }
 
-type bedrockAnthropicMessageContent struct {
+type bedrockTitanMessageContent struct {
 	Type string `json:"type"` // "text" or "image" (not yet supported)
 	Text string `json:"text"`
 }
 
-func removeWhitespaceOnlySequences(sequences []string) []string {
-	var result []string
-	for _, sequence := range sequences {
-		if len(strings.TrimSpace(sequence)) > 0 {
-			result = append(result, sequence)
-		}
-	}
-	return result
-}
-
-func toAnthropicMessages(messages []types.Message) ([]bedrockAnthropicMessage, error) {
-	anthropicMessages := make([]bedrockAnthropicMessage, 0, len(messages))
+func toTitanMessages(messages []types.Message) ([]bedrockTitanMessage, error) {
+	titanMessages := make([]bedrockTitanMessage, 0, len(messages))
 
 	for i, message := range messages {
 		speaker := message.Speaker
 		text := message.Text
 
-		anthropicRole := message.Speaker
+		titanRole := message.Speaker
 
 		switch speaker {
 		case types.SYSTEM_MESSAGE_SPEAKER:
@@ -394,7 +339,7 @@ func toAnthropicMessages(messages []types.Message) ([]bedrockAnthropicMessage, e
 			}
 		case types.ASSISTANT_MESSAGE_SPEAKER:
 		case types.HUMAN_MESSAGE_SPEAKER:
-			anthropicRole = "user"
+			titanRole = "user"
 		default:
 			return nil, errors.Errorf("unexpected role: %s", text)
 		}
@@ -403,11 +348,11 @@ func toAnthropicMessages(messages []types.Message) ([]bedrockAnthropicMessage, e
 			return nil, errors.New("message content cannot be empty")
 		}
 
-		anthropicMessages = append(anthropicMessages, bedrockAnthropicMessage{
-			Role:    anthropicRole,
-			Content: []bedrockAnthropicMessageContent{{Text: text, Type: "text"}},
+		titanMessages = append(titanMessages, bedrockTitanMessage{
+			Role:    titanRole,
+			Content: []bedrockTitanMessageContent{{Text: text, Type: "text"}},
 		})
 	}
 
-	return anthropicMessages, nil
+	return titanMessages, nil
 }

@@ -163,7 +163,7 @@ func TestCompleteApiToMessages(t *testing.T) {
 	t.Run("Stream", func(t *testing.T) {
 		logger := log.Scoped("completions")
 		stream := true
-		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{Messages: messages, Stream: &stream}, func(event types.CompletionResponse) error { return nil }, logger)
+		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionsV1, types.CompletionRequestParameters{Messages: messages, Stream: &stream}, func(event types.CompletionResponse) error { return nil }, logger)
 		require.Error(t, err)
 
 		assert.NotNil(t, response)
