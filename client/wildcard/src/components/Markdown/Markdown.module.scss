@@ -23,8 +23,13 @@
         a:global(.anchor) {
             opacity: 0;
             font-size: 1rem; // keep consistently-sized anchor links
-            margin-left: -1rem;
             padding: 0.125rem;
+
+            // Ensure we reserve exactly the width we shift
+            margin-left: -1rem;
+            width: 1rem;
+            display: inline-block;
+
             &::before {
                 content: '#';
             }
