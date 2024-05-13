@@ -25,10 +25,10 @@ go_library(
         "//src-cli/internal/batches/graphql",
         "//src-cli/internal/batches/workspace",
         "//src-cli/internal/cmderrors",
-        "@com_github_creack_goselect//:go_default_library",
+        "@com_github_creack_goselect//:goselect",
         "@com_github_derision_test_glock//:glock",
-        "@com_github_dineshappavoo_basex//:go_default_library",
-        "@com_github_neelance_parallel//:go_default_library",
+        "@com_github_dineshappavoo_basex//:basex",
+        "@com_github_neelance_parallel//:parallel",
         "@com_github_sourcegraph_go_diff//diff",
     ],
 )

@@ -9,14 +9,14 @@ go_library(
     deps = [
         "//lib/errors",
         "//src-cli/internal/scout",
-        "@com_github_charmbracelet_lipgloss//:go_default_library",
+        "@com_github_charmbracelet_lipgloss//:lipgloss",
         "@in_gopkg_inf_v0//:inf_v0",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/api/resource",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
         "@io_k8s_client_go//kubernetes/scheme",
         "@io_k8s_client_go//tools/remotecommand",
-        "@io_k8s_metrics//pkg/apis/metrics/v1beta1:go_default_library",
+        "@io_k8s_metrics//pkg/apis/metrics/v1beta1",
     ],
 )
 
