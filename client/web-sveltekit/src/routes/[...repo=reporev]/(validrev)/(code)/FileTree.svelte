@@ -52,6 +52,15 @@
         }
     }
 
+    function handleScopeChange(scopedTreeProvider: FileTreeProvider): void {
+        treeProvider = scopedTreeProvider.copy({ parent: undefined })
+        const root = treeProvider.getRoot()
+
+        if (root !== NODE_LIMIT) {
+            goto(replaceRevisionInURL(root.canonicalURL, revision), { keepFocus: true })
+        }
+    }
+
     /**
      * For a given path (e.g. foo/bar/baz) returns a list of ancestor paths (e.g.
      * [foo, foo/bar]
@@ -81,18 +90,24 @@
     // we need to dynamically sync any changes to the corresponding
     // file tree state store
     const treeState = createForwardStore(getSidebarFileTreeStateForRepo(repoName))
+
     // Propagating the tree state via context yielded better performance than passing
     // it via props.
     setTreeContext(treeState)
 
     $: treeRoot = treeProvider.getRoot()
     $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoName))
+
     // Update open and selected nodes when the path changes.
     $: markSelected(selectedPath)
 </script>
 
 <div tabindex="-1">
-    <TreeView {treeProvider} on:select={event => handleSelect(event.detail)}>
+    <TreeView
+        {treeProvider}
+        on:select={event => handleSelect(event.detail)}
+        on:scope-change={event => handleScopeChange(event.detail.provider)}
+    >
         <svelte:fragment let:entry let:expanded>
             {@const isRoot = entry === treeRoot}
             {#if entry === NODE_LIMIT}
@@ -104,9 +119,9 @@
                     Using a link here allows us to benefit from data preloading.
                 -->
                 <a
+                    tabindex={-1}
                     href={replaceRevisionInURL(entry.canonicalURL, revision)}
                     on:click|preventDefault={() => {}}
-                    tabindex={-1}
                     data-go-up={isRoot ? true : undefined}
                 >
                     {#if entry.isDirectory}
@@ -114,7 +129,7 @@
                     {:else}
                         <FileIcon inline file={entry.__typename === 'GitBlob' ? entry : null} />
                     {/if}
-                    {isRoot ? '..' : entry.name}
+                    {entry.name}
                 </a>
             {/if}
         </svelte:fragment>

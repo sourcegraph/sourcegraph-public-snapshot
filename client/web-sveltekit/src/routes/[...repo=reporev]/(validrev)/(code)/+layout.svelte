@@ -158,6 +158,10 @@
         }
     }
 
+    function handleGoToRoot(): void {
+        fileTreeStore.resetTopPathCache(repoName, resolvedRevision.commitID)
+    }
+
     $: {
         if (selectedTab == null) {
             bottomPanel?.collapse()
@@ -211,7 +215,7 @@
                     <Tooltip tooltip="Go to the repository root">
                         <Button variant="secondary" outline size="sm">
                             <svelte:fragment slot="custom" let:buttonClass>
-                                <a class={buttonClass} href="/{repoName}">
+                                <a class={buttonClass} href="/{repoName}" on:click={handleGoToRoot}>
                                     <Icon svgPath={mdiHome} inline />
                                 </a>
                             </svelte:fragment>
