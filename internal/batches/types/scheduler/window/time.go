@@ -25,6 +25,10 @@ func (t timeOfDay) after(other timeOfDay) bool {
 	return t.cmp > other.cmp
 }
 
+func (t timeOfDay) equal(other timeOfDay) bool {
+	return t.cmp == other.cmp
+}
+
 func (t timeOfDay) before(other timeOfDay) bool {
 	return t.cmp < other.cmp
 }
