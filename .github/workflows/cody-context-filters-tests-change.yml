@@ -5,12 +5,21 @@ on:
     paths:
       - 'cmd/frontend/internal/codycontext/testdata/enterprise_filter_test_data.json'
 
-permissions:
-  issues: write
-
 jobs:
-  check-action:
+  comment-on-pr:
     runs-on: ubuntu-latest
     steps:
-      - name: Echo a Message
-        run: echo "The action has triggered successfully!"
+      - name: Check PR Changes
+        id: pr-changes
+        run: echo "::set-output name=changes::${{ toJson(github.event.pull_request.changed_files) }}"
+
+      - name: Create Comment
+        if: steps.pr-changes.outputs.changes != '[]'
+        run: |
+          # Use GitHub API to create a comment on the PR
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          COMMENT="Your checklist comment here"
+          GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          COMMENT_URL="https://api.github.com/repos/${{ github.repository }}/issues/${PR_NUMBER}/comments"
+
+          curl -s -H "Authorization: token ${GITHUB_TOKEN}" -X POST $COMMENT_URL -d "{\"body\":\"$COMMENT\"}"
