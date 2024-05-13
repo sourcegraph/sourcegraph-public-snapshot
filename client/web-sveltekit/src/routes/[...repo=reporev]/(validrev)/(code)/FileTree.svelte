@@ -56,7 +56,11 @@
         treeProvider = scopedTreeProvider.copy({ parent: undefined })
         const root = treeProvider.getRoot()
 
-        if (root !== NODE_LIMIT) {
+        if (root === NODE_LIMIT) {
+            return
+        }
+
+        if (!selectedPath.startsWith(root.path)) {
             goto(replaceRevisionInURL(root.canonicalURL, revision), { keepFocus: true })
         }
     }
@@ -129,7 +133,7 @@
                     {:else}
                         <FileIcon inline file={entry.__typename === 'GitBlob' ? entry : null} />
                     {/if}
-                    {entry.name}
+                    {isRoot ? '..' : entry.name}
                 </a>
             {/if}
         </svelte:fragment>

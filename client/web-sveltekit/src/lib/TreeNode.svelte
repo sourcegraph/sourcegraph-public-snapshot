@@ -84,7 +84,7 @@
         <span class="expandable-icon-container" class:hidden={!expandable}>
             <span class="scope-container">
                 <Button variant="icon" on:click={handleScopeChange}>
-                     <Icon svgPath={mdiImageFilterCenterFocusStrong} inline />
+                    <Icon svgPath={mdiImageFilterCenterFocusStrong} inline />
                 </Button>
             </span>
 
