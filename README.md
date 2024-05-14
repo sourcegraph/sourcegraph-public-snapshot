@@ -47,7 +47,7 @@
 
 ## Development
 
-Refer to the [Developing Sourcegraph guide](https://sourcegraph.com/docs/dev) to get started.
+Refer to the [Developing Sourcegraph guide](https://docs-legacy.sourcegraph.com/dev) to get started.
 
 ### Documentation
 
