@@ -5,9 +5,9 @@ For example:
 
 <Popover ...>
     [triggering element ...]
-    <div slot="content">
+    <svelte:fragment slot="content">
         <RepoPopover ... />
-    </div>
+    </svelte:fragment>
 </Popover>
 -->
 <script lang="ts">
@@ -225,6 +225,8 @@ For example:
             .author {
                 display: flex;
                 flex-flow: row nowrap;
+                justify-content: center;
+                align-items: center;
                 color: var(--text-muted);
                 gap: 0.5rem 0.25rem;
             }
