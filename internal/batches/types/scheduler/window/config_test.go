@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -35,26 +34,6 @@ func TestConfiguration_Estimate(t *testing.T) {
 		} else if *have != now {
 			t.Errorf("unexpected estimate: have=%v want=%v", *have, now)
 		}
-	})
-
-	t.Run("customer test", func(t *testing.T) {
-		cfg, err := NewConfiguration(&[]*schema.BatchChangeRolloutWindow{
-			&schema.BatchChangeRolloutWindow{
-				Rate: "15/hour",
-			},
-			&schema.BatchChangeRolloutWindow{
-				Days:  []string{"monday", "tuesday", "wednesday", "thursday", "friday"},
-				End:   "23:59",
-				Rate:  "10/hour",
-				Start: "13:00",
-			},
-		})
-
-		if err != nil {
-			panic(err)
-		}
-
-		t.Log(cfg.Estimate(timeutil.Now(), 1000))
 	})
 
 	t.Run("multiple windows", func(t *testing.T) {
