@@ -12,17 +12,17 @@
     export let rev: string | undefined
     export let highlights: [number, number][] = []
 
-    const fetchPopoverInfo = async (repo: string) => {
+    const fetchPopoverInfo = async () => {
         const client = getGraphQLClient()
         const popoverInfo = await client.query(RepoPopoverQuery, { repoName })
         if (popoverInfo.data) {
             return popoverInfo.data.repository
         }
-        console.error('Failed to fetch popover info for', repo)
-        throw new Error('Failed to fetch popover info')
+        console.error('Failed to fetch popover info for', popoverInfo.error)
+        throw new Error('Failed to fetch popover info', popoverInfo.error)
     }
 
-    $: popoverInfo = fetchPopoverInfo(repoName)
+    $: popoverInfo = fetchPopoverInfo()
     $: href = `/${repoName}${rev ? `@${rev}` : ''}`
     $: displayName = displayRepoName(repoName)
     $: if (displayName !== repoName) {
