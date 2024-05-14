@@ -15,6 +15,7 @@
     import { isErrorLike, pluralize, SourcegraphURL, type LineOrPositionOrRange } from '$lib/common'
     import { getGraphQLClient, toGraphQLResult } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
+    import { renderMermaid } from '$lib/mermaid'
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
     import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
@@ -233,10 +234,13 @@
             <a href="{repoURL}/-/raw/{filePath}" target="_blank" download>Download file</a>
         </Alert>
     {:else if blob && showFormattedView}
-        <!-- jupyter is a global style -->
-        <div class={`rich jupyter ${markdownStyles.markdown}`}>
-            {@html blob.richHTML}
-        </div>
+        <!-- key on the HTML content so renderMermaid gets re-run -->
+        {#key blob.richHTML}
+            <!-- jupyter is a global style -->
+            <div use:renderMermaid={'pre:has(code.language-mermaid)'} class={`rich jupyter ${markdownStyles.markdown}`}>
+                {@html blob.richHTML}
+            </div>
+        {/key}
     {:else if blob}
         <!--
             This ensures that a new CodeMirror instance is created when the file changes.
