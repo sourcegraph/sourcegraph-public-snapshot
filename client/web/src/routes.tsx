@@ -5,7 +5,7 @@ import { Navigate, useNavigate, type RouteObject } from 'react-router-dom'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { useEmbeddedCodyProUi } from './cody/util'
+import { isEmbeddedCodyProUIEnabled } from './cody/util'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
@@ -437,7 +437,7 @@ export const routes: RouteObject[] = [
                     <CodyManageTeamPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
                 )}
                 condition={({ isSourcegraphDotCom, licenseFeatures }) =>
-                    isSourcegraphDotCom && licenseFeatures.isCodyEnabled && useEmbeddedCodyProUi()
+                    isSourcegraphDotCom && licenseFeatures.isCodyEnabled && isEmbeddedCodyProUIEnabled()
                 }
             />
         ),
@@ -453,7 +453,7 @@ export const routes: RouteObject[] = [
                     />
                 )}
                 condition={({ isSourcegraphDotCom, licenseFeatures }) =>
-                    isSourcegraphDotCom && licenseFeatures.isCodyEnabled && useEmbeddedCodyProUi()
+                    isSourcegraphDotCom && licenseFeatures.isCodyEnabled && isEmbeddedCodyProUIEnabled()
                 }
             />
         ),

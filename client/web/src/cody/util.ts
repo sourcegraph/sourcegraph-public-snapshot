@@ -2,15 +2,13 @@
 export const manageSubscriptionRedirectURL = 'https://accounts.sourcegraph.com/cody/subscription'
 
 /**
- * Note: This is _not_ meant to be used as a React hook, despite the name "use*".
- *
  * useEmbeddedCodyProUi returns if we expect the Cody Pro UI to be served from sourcegraph.com. Meaning
  * we should direct the user to `/cody/manage/subscription` for making changes.
  *
  * If false, we rely on the current behavior. Where users are directed to https://accounts.sourcegraph.com/cody
  * for managing their Cody Pro subscription information.
  */
-export function useEmbeddedCodyProUi(): boolean {
+export function isEmbeddedCodyProUIEnabled(): boolean {
     return !!(window.context.frontendCodyProConfig as { stripePublishableKey: string } | undefined)
         ?.stripePublishableKey
 }
