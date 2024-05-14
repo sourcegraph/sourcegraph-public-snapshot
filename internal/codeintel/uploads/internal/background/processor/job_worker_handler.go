@@ -224,11 +224,25 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		allFDs := make([]fs.FileInfo, 0)
 		seen := make(map[string]struct{})
 		for _, d := range dirnames {
-			fds, err := h.gitserverClient.ReadDir(ctx, repo.Name, api.CommitID(upload.Commit), d, false)
+			it, err := h.gitserverClient.ReadDir(ctx, repo.Name, api.CommitID(upload.Commit), d, false)
 			if err != nil {
+				// Ignore non-existent directories, we request all directories in the
+				// upload and some might not exist in the repo, for example node_modules.
+				if os.IsNotExist(err) {
+					continue
+				}
 				return nil, errors.Wrap(err, "gitserverClient.ReadDir")
 			}
-			for _, fd := range fds {
+			defer it.Close()
+
+			for {
+				fd, err := it.Next()
+				if err != nil {
+					if errors.Is(err, io.EOF) {
+						break
+					}
+					return nil, errors.Wrap(err, "gitserverClient.ReadDir.Next")
+				}
 				if fd.IsDir() {
 					continue
 				}

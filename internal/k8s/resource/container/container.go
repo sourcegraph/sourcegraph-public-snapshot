@@ -29,6 +29,10 @@ func NewContainer(name string, cfg config.StandardComponent, defaults config.Con
 
 	if cfg != nil {
 		if ctrConfig, ok := cfg.GetContainerConfig()[name]; ok {
+			for k, v := range ctrConfig.EnvVars {
+				ctr.Env = append(ctr.Env, corev1.EnvVar{Name: k, Value: v})
+			}
+
 			if ctrConfig.BestEffortQOS {
 				ctr.Resources = corev1.ResourceRequirements{}
 			} else if ctrConfig.Resources != nil {

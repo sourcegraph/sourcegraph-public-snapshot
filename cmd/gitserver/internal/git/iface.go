@@ -6,9 +6,13 @@ import (
 	"io/fs"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
+
+// GitBackendSource is a function that returns a GitBackend for a given repository.
+type GitBackendSource func(dir common.GitDir, repoName api.RepoName) GitBackend
 
 // GitBackend is the interface through which operations on a git repository can
 // be performed. It encapsulates the underlying git implementation and allows
@@ -147,6 +151,16 @@ type GitBackend interface {
 	//
 	// If either the base or head <tree-ish> id does not exist, a RevisionNotFoundError is returned.
 	ChangedFiles(ctx context.Context, base, head string) (ChangedFilesIterator, error)
+
+	// LatestCommitTimestamp returns the timestamp of the most recent commit, if any.
+	// If there are no commits or the latest commit is in the future, time.Now is returned.
+	LatestCommitTimestamp(ctx context.Context) (time.Time, error)
+
+	// RefHash computes a hash of all the refs. The hash only changes if the set
+	// of refs and the commits they point to change.
+	// This value can be used to determine if a repository changed since the last
+	// time the hash has been computed.
+	RefHash(ctx context.Context) ([]byte, error)
 }
 
 type GitDiffComparisonType int

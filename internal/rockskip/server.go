@@ -3,6 +3,7 @@ package rockskip
 import (
 	"context"
 	"database/sql"
+	"math/bits"
 	"sync"
 	"time"
 
@@ -168,10 +169,11 @@ func getHops(ctx context.Context, tx dbutil.DB, commit int, tasklog *TaskLog) ([
 //
 // https://oeis.org/A007814
 func ruler(n int) int {
-	height := 0
-	for n > 0 && n%2 == 0 {
-		height++
-		n = n / 2
+	if n <= 0 {
+		return 0
 	}
-	return height
+	// ruler(n) is equivalent to asking how many times can you divide n by 2
+	// before you get an odd number. That is the number of 0's at the end of n
+	// when n is written in base 2.
+	return bits.TrailingZeros(uint(n))
 }

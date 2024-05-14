@@ -93,11 +93,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
 	locker := server.NewRepositoryLocker()
 	hostname := config.ExternalAddress
+	backendSource := func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+		return git.NewObservableBackend(gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName))
+	}
 	gitserver := server.NewServer(&server.ServerOpts{
-		Logger: logger,
-		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
-			return git.NewObservableBackend(gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName))
-		},
+		Logger:           logger,
+		GitBackendSource: backendSource,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
 			return getRemoteURLFunc(ctx, db, repo)
 		},
@@ -194,6 +195,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			},
 			db,
 			fs,
+			backendSource,
 			recordingCommandFactory,
 			logger,
 		),

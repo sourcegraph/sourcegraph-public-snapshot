@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"io"
 	"io/fs"
 	"path"
 	"path/filepath"
@@ -47,13 +48,27 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 		return nil, errors.Newf("invalid argument for first, must be non-negative")
 	}
 
-	entries, err := r.gitserverClient.ReadDir(ctx, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), r.Path(), args.Recursive)
+	it, err := r.gitserverClient.ReadDir(ctx, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), r.Path(), args.Recursive)
 	if err != nil {
 		if strings.Contains(err.Error(), "file does not exist") { // TODO proper error value
 			// empty tree is not an error
 		} else {
 			return nil, err
 		}
+	}
+	defer it.Close()
+
+	entries := make([]fs.FileInfo, 0)
+
+	for {
+		entry, err := it.Next()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return nil, err
+		}
+		entries = append(entries, entry)
 	}
 
 	// When using recursive: true on gitserverClient.ReadDir, we get entries for

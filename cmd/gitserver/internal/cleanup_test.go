@@ -81,6 +81,11 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 		logger,
 		db,
 		fs,
+		func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			b := git.NewMockGitBackend()
+			b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+			return b
+		},
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
 		connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
@@ -142,6 +147,11 @@ func TestCleanupInactive(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		fs,
+		func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			b := git.NewMockGitBackend()
+			b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+			return b
+		},
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
 		connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
@@ -181,6 +191,11 @@ func TestCleanupWrongShard(t *testing.T) {
 			logtest.Scoped(t),
 			newMockedGitserverDB(),
 			fs,
+			func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+				b := git.NewMockGitBackend()
+				b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+				return b
+			},
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"does-not-exist",
 			connection.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}},
@@ -218,6 +233,11 @@ func TestCleanupWrongShard(t *testing.T) {
 			logtest.Scoped(t),
 			newMockedGitserverDB(),
 			fs,
+			func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+				b := git.NewMockGitBackend()
+				b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+				return b
+			},
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"gitserver-0",
 			connection.GitserverAddresses{Addresses: []string{"gitserver-0.cluster.local:3178", "gitserver-1.cluster.local:3178"}},
@@ -255,6 +275,11 @@ func TestCleanupWrongShard(t *testing.T) {
 			logtest.Scoped(t),
 			newMockedGitserverDB(),
 			fs,
+			func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+				b := git.NewMockGitBackend()
+				b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+				return b
+			},
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"gitserver-0",
 			connection.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}},
@@ -327,6 +352,11 @@ func TestGitGCAuto(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		fs,
+		func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			b := git.NewMockGitBackend()
+			b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+			return b
+		},
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
 		connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
@@ -420,6 +450,9 @@ func TestCleanupBroken(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		fs,
+		func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+		},
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
 		connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
@@ -471,6 +504,11 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			logtest.Scoped(t),
 			mockDB,
 			fs,
+			func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+				b := git.NewMockGitBackend()
+				b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+				return b
+			},
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"test-gitserver",
 			connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
@@ -500,6 +538,11 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			logtest.Scoped(t),
 			mockDB,
 			fs,
+			func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+				b := git.NewMockGitBackend()
+				b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+				return b
+			},
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"test-gitserver",
 			connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
@@ -652,6 +695,11 @@ func TestCleanupOldLocks(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		fs,
+		func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			b := git.NewMockGitBackend()
+			b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+			return b
+		},
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
 		connection.GitserverAddresses{Addresses: []string{"gitserver-0"}},
@@ -1396,4 +1444,31 @@ func TestSGMaintenanceRemovesLock(t *testing.T) {
 	if !errors.Is(err, fs.ErrNotExist) {
 		t.Fatal("sg maintenance should have removed the lockfile it created")
 	}
+}
+
+func TestGetSetLastSizeCalculation(t *testing.T) {
+	dir := common.GitDir(t.TempDir())
+	cmd := exec.Command("git", "--bare", "init")
+	dir.Set(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+	at, err := getLastSizeCalculation(dir)
+	require.NoError(t, err)
+	// Never computed, should be zero.
+	require.True(t, at.IsZero())
+	now := time.Now().Truncate(time.Millisecond)
+	// Setting the value should work.
+	err = setLastSizeCalculation(dir, now)
+	require.NoError(t, err)
+	at, err = getLastSizeCalculation(dir)
+	require.NoError(t, err)
+	require.Equal(t, now, at)
+	// Setting again should work.
+	now = time.Now().Truncate(time.Millisecond)
+	err = setLastSizeCalculation(dir, now)
+	require.NoError(t, err)
+	at, err = getLastSizeCalculation(dir)
+	require.NoError(t, err)
+	require.Equal(t, now, at)
 }

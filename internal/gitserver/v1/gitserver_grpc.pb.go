@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	GitserverRepositoryService_DeleteRepository_FullMethodName = "/gitserver.v1.GitserverRepositoryService/DeleteRepository"
 	GitserverRepositoryService_FetchRepository_FullMethodName  = "/gitserver.v1.GitserverRepositoryService/FetchRepository"
+	GitserverRepositoryService_ListRepositories_FullMethodName = "/gitserver.v1.GitserverRepositoryService/ListRepositories"
 )
 
 // GitserverRepositoryServiceClient is the client API for GitserverRepositoryService service.
@@ -33,6 +34,8 @@ type GitserverRepositoryServiceClient interface {
 	// FetchRepository fetches a repository from a remote. If the repository is
 	// not yet cloned, it will be cloned. Otherwise, it will be updated.
 	FetchRepository(ctx context.Context, in *FetchRepositoryRequest, opts ...grpc.CallOption) (*FetchRepositoryResponse, error)
+	// ListRepositories returns a list of all repositories on disk.
+	ListRepositories(ctx context.Context, in *ListRepositoriesRequest, opts ...grpc.CallOption) (*ListRepositoriesResponse, error)
 }
 
 type gitserverRepositoryServiceClient struct {
@@ -61,6 +64,15 @@ func (c *gitserverRepositoryServiceClient) FetchRepository(ctx context.Context, 
 	return out, nil
 }
 
+func (c *gitserverRepositoryServiceClient) ListRepositories(ctx context.Context, in *ListRepositoriesRequest, opts ...grpc.CallOption) (*ListRepositoriesResponse, error) {
+	out := new(ListRepositoriesResponse)
+	err := c.cc.Invoke(ctx, GitserverRepositoryService_ListRepositories_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverRepositoryServiceServer is the server API for GitserverRepositoryService service.
 // All implementations must embed UnimplementedGitserverRepositoryServiceServer
 // for forward compatibility
@@ -71,6 +83,8 @@ type GitserverRepositoryServiceServer interface {
 	// FetchRepository fetches a repository from a remote. If the repository is
 	// not yet cloned, it will be cloned. Otherwise, it will be updated.
 	FetchRepository(context.Context, *FetchRepositoryRequest) (*FetchRepositoryResponse, error)
+	// ListRepositories returns a list of all repositories on disk.
+	ListRepositories(context.Context, *ListRepositoriesRequest) (*ListRepositoriesResponse, error)
 	mustEmbedUnimplementedGitserverRepositoryServiceServer()
 }
 
@@ -83,6 +97,9 @@ func (UnimplementedGitserverRepositoryServiceServer) DeleteRepository(context.Co
 }
 func (UnimplementedGitserverRepositoryServiceServer) FetchRepository(context.Context, *FetchRepositoryRequest) (*FetchRepositoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FetchRepository not implemented")
+}
+func (UnimplementedGitserverRepositoryServiceServer) ListRepositories(context.Context, *ListRepositoriesRequest) (*ListRepositoriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRepositories not implemented")
 }
 func (UnimplementedGitserverRepositoryServiceServer) mustEmbedUnimplementedGitserverRepositoryServiceServer() {
 }
@@ -134,6 +151,24 @@ func _GitserverRepositoryService_FetchRepository_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GitserverRepositoryService_ListRepositories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRepositoriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverRepositoryServiceServer).ListRepositories(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverRepositoryService_ListRepositories_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverRepositoryServiceServer).ListRepositories(ctx, req.(*ListRepositoriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverRepositoryService_ServiceDesc is the grpc.ServiceDesc for GitserverRepositoryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -148,6 +183,10 @@ var GitserverRepositoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FetchRepository",
 			Handler:    _GitserverRepositoryService_FetchRepository_Handler,
+		},
+		{
+			MethodName: "ListRepositories",
+			Handler:    _GitserverRepositoryService_ListRepositories_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

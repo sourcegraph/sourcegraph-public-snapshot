@@ -2187,10 +2187,65 @@ func TestClient_ReadDir(t *testing.T) {
 
 		c := NewTestClient(t).WithClientSource(source)
 
-		res, err := c.ReadDir(context.Background(), "repo", "HEAD", "", true)
+		it, err := c.ReadDir(context.Background(), "repo", "HEAD", "", true)
 		require.NoError(t, err)
-		require.Equal(t, "file", res[0].Name())
-		require.Equal(t, "dir/file", res[1].Name())
+
+		fd, err := it.Next()
+		require.NoError(t, err)
+		require.Equal(t, "file", fd.Name())
+
+		fd, err = it.Next()
+		require.NoError(t, err)
+		require.Equal(t, "dir/file", fd.Name())
+
+		_, err = it.Next()
+		require.Equal(t, io.EOF, err)
+
+		it.Close()
+	})
+
+	t.Run("correctly memoizes multiple results in one chunk", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s := NewMockGitserverService_ReadDirClient()
+				s.RecvFunc.PushReturn(&proto.ReadDirResponse{
+					FileInfo: []*proto.FileInfo{
+						{
+							Name: []byte("file"),
+							Size: 10,
+							Mode: 0644,
+						},
+						{
+							Name: []byte("dir/file"),
+							Size: 12,
+							Mode: 0644,
+						},
+					},
+				}, nil)
+				s.RecvFunc.PushReturn(nil, io.EOF)
+				c.ReadDirFunc.SetDefaultReturn(s, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		it, err := c.ReadDir(context.Background(), "repo", "HEAD", "", true)
+		require.NoError(t, err)
+
+		fd, err := it.Next()
+		require.NoError(t, err)
+		require.Equal(t, "file", fd.Name())
+
+		fd, err = it.Next()
+		require.NoError(t, err)
+		require.Equal(t, "dir/file", fd.Name())
+
+		_, err = it.Next()
+		require.Equal(t, io.EOF, err)
+
+		it.Close()
 	})
 
 	t.Run("returns common errors correctly", func(t *testing.T) {
@@ -2274,9 +2329,14 @@ func TestClient_ReadDir(t *testing.T) {
 		checker := getTestSubRepoPermsChecker("file")
 		c := NewTestClient(t).WithClientSource(source).WithChecker(checker)
 
-		res, err := c.ReadDir(ctx, "repo", "HEAD", "file", true)
+		it, err := c.ReadDir(ctx, "repo", "HEAD", "file", true)
 		require.NoError(t, err)
-		require.Len(t, res, 1)
-		require.Equal(t, "dir/file", res[0].Name())
+		fd, err := it.Next()
+		require.NoError(t, err)
+		require.Equal(t, "dir/file", fd.Name())
+		_, err = it.Next()
+		require.Equal(t, io.EOF, err)
+
+		it.Close()
 	})
 }

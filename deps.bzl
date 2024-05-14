@@ -5633,8 +5633,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry",
-        sum = "h1:wHEDTUur95a2HtUUodA8OXQi0Uefwa60CvhN4fLIuhU=",
-        version = "v0.0.0-20240109225336-01188650a68d",
+        sum = "h1:d5gmGcmHVcSHS1rk/vmVnPi4olpYa+t90WCNWsIsiFs=",
+        version = "v0.0.0-20240513135716-8702bd2752fb",
     )
     go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_slack",

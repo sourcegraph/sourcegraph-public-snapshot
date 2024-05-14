@@ -82,7 +82,7 @@ func TestGRPCServer_Blame(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -176,7 +176,7 @@ func TestGRPCServer_DefaultBranch(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -239,7 +239,7 @@ func TestGRPCServer_MergeBase(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				b := git.NewMockGitBackend()
 				b.MergeBaseFunc.SetDefaultReturn("", &gitdomain.RevisionNotFoundError{Repo: "therepo", Spec: "b2"})
 				return b
@@ -260,7 +260,7 @@ func TestGRPCServer_MergeBase(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -320,7 +320,7 @@ func TestGRPCServer_ReadFile(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -415,7 +415,7 @@ func TestGRPCServer_Archive(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -517,7 +517,7 @@ func TestGRPCServer_GetCommit(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -598,7 +598,7 @@ func TestGRPCServer_ResolveRevision(t *testing.T) {
 		gs := &grpcServer{
 			svc: svc,
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -677,7 +677,7 @@ func TestGRPCServer_RevAtTime(t *testing.T) {
 		gs := &grpcServer{
 			svc: svc,
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -746,7 +746,7 @@ func TestGRPCServer_GetObject(t *testing.T) {
 			svc:    NewMockService(),
 			fs:     fs,
 			logger: logtest.Scoped(t),
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -815,7 +815,7 @@ func TestGRPCServer_ListRefs(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -888,7 +888,7 @@ func TestGRPCServer_RawDiff(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -963,7 +963,7 @@ func TestGRPCServer_ContributorCounts(t *testing.T) {
 		gs := &grpcServer{
 			svc: svc,
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -1028,7 +1028,7 @@ func TestGRPCServer_ChangedFiles(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				b := git.NewMockGitBackend()
 				b.ChangedFilesFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{Repo: "therepo", Spec: "base...head"})
 				return b
@@ -1055,7 +1055,7 @@ func TestGRPCServer_ChangedFiles(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -1142,7 +1142,7 @@ func TestGRPCServer_FirstCommitEver(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -1204,7 +1204,7 @@ func TestGRPCServer_BehindAhead(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				b := git.NewMockGitBackend()
 				b.BehindAheadFunc.SetDefaultReturn(&gitdomain.BehindAhead{}, &gitdomain.RevisionNotFoundError{Repo: "therepo", Spec: "base...head"})
 				return b
@@ -1228,7 +1228,7 @@ func TestGRPCServer_BehindAhead(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -1285,7 +1285,7 @@ func TestGRPCServer_Stat(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				b := git.NewMockGitBackend()
 				b.StatFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{Repo: "therepo", Spec: "base...head"})
 				return b
@@ -1308,7 +1308,7 @@ func TestGRPCServer_Stat(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -1390,7 +1390,7 @@ func TestGRPCServer_ReadDir(t *testing.T) {
 		gs := &grpcServer{
 			svc: NewMockService(),
 			fs:  fs,
-			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
 				return b
 			},
 		}
@@ -1421,7 +1421,10 @@ func TestGRPCServer_ReadDir(t *testing.T) {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
 		}
 
-		b.ReadDirFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{})
+		it = git.NewMockReadDirIterator()
+		it.NextFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{})
+		it.CloseFunc.SetDefaultReturn(&gitdomain.RevisionNotFoundError{})
+		b.ReadDirFunc.SetDefaultReturn(it, nil)
 		cc, err = cli.ReadDir(context.Background(), &v1.ReadDirRequest{
 			RepoName:  "therepo",
 			CommitSha: "HEAD",
@@ -1431,7 +1434,10 @@ func TestGRPCServer_ReadDir(t *testing.T) {
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RevisionNotFoundPayload{})
 
-		b.ReadDirFunc.SetDefaultReturn(nil, os.ErrNotExist)
+		it = git.NewMockReadDirIterator()
+		it.NextFunc.SetDefaultReturn(nil, os.ErrNotExist)
+		it.CloseFunc.SetDefaultReturn(os.ErrNotExist)
+		b.ReadDirFunc.SetDefaultReturn(it, nil)
 		cc, err = cli.ReadDir(context.Background(), &v1.ReadDirRequest{
 			RepoName:  "therepo",
 			CommitSha: "HEAD",
@@ -1440,7 +1446,6 @@ func TestGRPCServer_ReadDir(t *testing.T) {
 		_, err = cc.Recv()
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.FileNotFoundPayload{})
-
 	})
 }
 

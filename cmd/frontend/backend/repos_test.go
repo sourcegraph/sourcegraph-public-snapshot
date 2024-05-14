@@ -173,18 +173,18 @@ func TestReposGetInventory(t *testing.T) {
 		}
 		return &fileutil.FileInfo{Name_: path, Mode_: os.ModeDir, Sys_: gitObjectInfo(wantRootOID)}, nil
 	})
-	gitserverClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, name string, _ bool) ([]fs.FileInfo, error) {
+	gitserverClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, name string, _ bool) (gitserver.ReadDirIterator, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
 		switch name {
 		case "":
-			return []fs.FileInfo{
+			return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 				&fileutil.FileInfo{Name_: "a", Mode_: os.ModeDir, Sys_: gitObjectInfo("oid-a")},
 				&fileutil.FileInfo{Name_: "b.go", Size_: 12},
-			}, nil
+			}), nil
 		case "a":
-			return []fs.FileInfo{&fileutil.FileInfo{Name_: "a/c.m", Size_: 24}}, nil
+			return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{&fileutil.FileInfo{Name_: "a/c.m", Size_: 24}}), nil
 		default:
 			panic("unhandled mock ReadDir " + name)
 		}

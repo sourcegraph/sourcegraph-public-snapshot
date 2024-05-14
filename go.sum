@@ -1733,8 +1733,8 @@ github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-202
 github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20231220215815-b87ebb3e8c47/go.mod h1:lQ1E8rSHgTmL8GmtcQFXS75rqQrCmuQRXZWh7A+Fp6s=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230822024612-edb48c530722 h1:N0OxHqeujHxvVU666KQY9whauLyw4s3BJGBLxx6gKR0=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230822024612-edb48c530722/go.mod h1:TiUqRvYs/Gah8bGw/toyVWCaP3dnCB4tBh3jf5HGdo0=
-github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry v0.0.0-20240109225336-01188650a68d h1:wHEDTUur95a2HtUUodA8OXQi0Uefwa60CvhN4fLIuhU=
-github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry v0.0.0-20240109225336-01188650a68d/go.mod h1:RyE/dPHsCoF0m2QevmerpS/JPm7ixgwmkUiqYKaxxNw=
+github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry v0.0.0-20240513135716-8702bd2752fb h1:d5gmGcmHVcSHS1rk/vmVnPi4olpYa+t90WCNWsIsiFs=
+github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry v0.0.0-20240513135716-8702bd2752fb/go.mod h1:RyE/dPHsCoF0m2QevmerpS/JPm7ixgwmkUiqYKaxxNw=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/slack v0.0.0-20240103014439-025608ddf849 h1:Iip3TVeiTF8HyeRsK0MKMZ1vQ87fqFqwz0cVq1dib6E=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/slack v0.0.0-20240103014439-025608ddf849/go.mod h1:TYxLrVLdpyViPv8f6le0oSmILOLIQVMq3WvQFIPS964=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20231218231056-4749baca142f h1:sCs3+EDrM4pp7PI0/efZPZZK+u955+gwr0byWGg+AVg=

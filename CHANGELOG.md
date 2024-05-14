@@ -21,6 +21,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fix a bug that caused Bedrock Provisioned Throughput model names to fail [#62642](https://github.com/sourcegraph/sourcegraph/pull/62642)
+
 ## 5.4.0
 
 ### Added

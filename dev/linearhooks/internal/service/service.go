@@ -55,6 +55,11 @@ func (s Service) Initialize(
 
 	h := http.NewServeMux()
 	h.Handle("/issue-mover", http.HandlerFunc(handlers.HandleIssueMover))
+	// implement MSP contentional healthz endpoint
+	h.Handle("/-/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	}))
 
 	return background.CombinedRoutine{
 		&httpRoutine{

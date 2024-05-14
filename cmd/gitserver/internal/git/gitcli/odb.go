@@ -519,6 +519,9 @@ func (it *readDirIterator) Close() error {
 			if cfe.ExitStatus == 128 && bytes.Contains(cfe.Stderr, []byte("fatal: not a tree object")) {
 				return &gitdomain.RevisionNotFoundError{Repo: it.repoName, Spec: string(it.commit)}
 			}
+			if cfe.ExitStatus == 128 && bytes.Contains(cfe.Stderr, []byte("fatal: Not a valid object name")) {
+				return &gitdomain.RevisionNotFoundError{Repo: it.repoName, Spec: string(it.commit)}
+			}
 		}
 		return err
 	}
