@@ -37,20 +37,20 @@
     <CodeHostIcon repository={repoName} />
     <!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
     {#key highlights}
-        <Popover showOnHover let:registerTrigger placement="bottom-start" useDefaultBorder={false}>
+        <Popover showOnHover let:registerTrigger placement="bottom-start" delay={300}>
             <a class="repo-link" {href} use:highlightRanges={{ ranges: highlights }} use:registerTrigger>
                 {displayRepoName(repoName)}
                 {#if rev}
                     <small class="rev"> @ {rev}</small>
                 {/if}
             </a>
-            <div slot="content">
+            <svelte:fragment slot="content">
                 {#await popoverInfo then popoverInfo}
                     {#if popoverInfo !== null}
                         <RepoPopover repo={popoverInfo} withHeader={true} />
                     {/if}
                 {/await}
-            </div>
+            </svelte:fragment>
         </Popover>
     {/key}
 </span>
