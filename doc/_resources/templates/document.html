@@ -1,5 +1,6 @@
 {{define "seo"}}
   <meta property="og:locale" content="en_EN">
+  <meta name="robots" content="noindex,nofollow">
 
   <!-- Always set a title -->
   {{ if .Content }}
@@ -60,7 +61,7 @@
 {{define "head"}}
     {{ if .ContentVersion }}
         <!-- don't index pages from older versions -->
-        <meta name="robots" content="noindex">
+        <!-- <meta name="robots" content="noindex"> -->
     {{ end }}
 {{end}}
 
