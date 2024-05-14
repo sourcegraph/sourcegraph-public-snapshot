@@ -25,7 +25,7 @@ export AWS_SECRET_ACCESS_KEY="${AWS_EXECUTOR_AMI_SECRET_KEY}"
 
 # Point to GCP boot disk image/AMI built by //cmd/executor/vm-image:ami.build
 NAME="${IMAGE_FAMILY}"
-if [ "${RELEASE_INTERNAL:-}" != "true" ]; then
+if [ "${RELEASE_INTERNAL:-}" == "true" ]; then
   NAME="${NAME}-${BUILDKITE_BUILD_NUMBER}"
 fi
 
