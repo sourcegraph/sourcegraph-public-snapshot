@@ -3,11 +3,16 @@ package git
 import (
 	"context"
 	"io"
+	"io/fs"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
+
+// GitBackendSource is a function that returns a GitBackend for a given repository.
+type GitBackendSource func(dir common.GitDir, repoName api.RepoName) GitBackend
 
 // GitBackend is the interface through which operations on a git repository can
 // be performed. It encapsulates the underlying git implementation and allows
@@ -18,6 +23,8 @@ type GitBackend interface {
 	// Config returns a backend for interacting with git configuration at .git/config.
 	Config() GitConfigBackend
 	// GetObject allows to read a git object from the git object database.
+	//
+	// If the object specified by objectName does not exist, a RevisionNotFoundError is returned.
 	GetObject(ctx context.Context, objectName string) (*gitdomain.GitObject, error)
 	// MergeBase finds the merge base commit for the given base and head revspecs.
 	// Returns an empty string and no error if no common merge-base was found.
@@ -90,11 +97,70 @@ type GitBackend interface {
 	// Aggregations are done by email address.
 	// If range does not exist, a RevisionNotFoundError is returned.
 	ContributorCounts(ctx context.Context, opt ContributorCountsOpts) ([]*gitdomain.ContributorCount, error)
+	// Stat returns the file info for the given path at the given commit.
+	// If the file does not exist, a os.PathError is returned.
+	// If the commit does not exist, a RevisionNotFoundError is returned.
+	// Stat supports submodules, symlinks, directories and files.
+	Stat(ctx context.Context, commit api.CommitID, path string) (fs.FileInfo, error)
+	// ReadDir returns the list of files and directories in the given path at the given commit.
+	// Path can be used to read subdirectories.
+	// If the path does not exist, a os.PathError is returned.
+	// If the commit does not exist, a RevisionNotFoundError is returned.
+	// ReadDir supports submodules, symlinks, directories and files.
+	// If recursive is true, ReadDir will return the contents of all subdirectories.
+	// The caller must call Close on the returned ReadDirIterator when done.
+	ReadDir(ctx context.Context, commit api.CommitID, path string, recursive bool) (ReadDirIterator, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
 	// remove this method.
 	Exec(ctx context.Context, args ...string) (io.ReadCloser, error)
+
+	// FirstEverCommit returns the first commit ever made to the repository.
+	//
+	// If the repository is empty, a RevisionNotFoundError is returned (as the
+	// "HEAD" ref does not exist).
+	FirstEverCommit(ctx context.Context) (api.CommitID, error)
+
+	// BehindAhead returns the behind/ahead commit counts information for the symmetric difference left...right (both Git
+	// revspecs).
+	//
+	// Behind is the number of commits that are solely reachable in "left" but not "right".
+	// Ahead is the number of commits that are solely reachable in "right" but not "left".
+	//
+	//  For the example, given the graph below, BehindAhead("A", "B") would return {Behind: 3, Ahead: 2}.
+	//
+	//	     y---b---b  branch B
+	//	    / \ /
+	//	   /   .
+	//	  /   / \
+	//	 o---x---a---a---a  branch A
+	//
+	// If either left or right are the empty string (""), the HEAD commit is implicitly used.
+	//
+	// If one of the two given revspecs does not exist, a RevisionNotFoundError
+	// is returned.
+	BehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error)
+
+	// ChangedFiles returns the list of files that have been added, modified, or
+	// deleted in the entire repository between the two given <tree-ish> identifiers (e.g., commit, branch, tag).
+	//
+	// Renamed files are considered as a deletion and an addition.
+	//
+	// If base is omitted, the parent of head is used as the base.
+	//
+	// If either the base or head <tree-ish> id does not exist, a RevisionNotFoundError is returned.
+	ChangedFiles(ctx context.Context, base, head string) (ChangedFilesIterator, error)
+
+	// LatestCommitTimestamp returns the timestamp of the most recent commit, if any.
+	// If there are no commits or the latest commit is in the future, time.Now is returned.
+	LatestCommitTimestamp(ctx context.Context) (time.Time, error)
+
+	// RefHash computes a hash of all the refs. The hash only changes if the set
+	// of refs and the commits they point to change.
+	// This value can be used to determine if a repository changed since the last
+	// time the hash has been computed.
+	RefHash(ctx context.Context) ([]byte, error)
 }
 
 type GitDiffComparisonType int
@@ -172,6 +238,20 @@ type ListRefsOpts struct {
 	Contains []api.CommitID
 }
 
+// ChangedFilesIterator iterates over changed files. The iterator must be closed
+// via Close() when the caller is done with it.
+type ChangedFilesIterator interface {
+	// Next returns the next changed file, or an error. The iterator must be closed
+	// via Close() when the caller is done with it.
+	//
+	// If there are no more files, io.EOF is returned.
+	Next() (gitdomain.PathStatus, error)
+	// Close releases resources associated with the iterator.
+	//
+	// After Close() is called, Next() will always return io.EOF.
+	Close() error
+}
+
 // RefIterator iterates over refs.
 type RefIterator interface {
 	// Next returns the next ref.
@@ -192,4 +272,15 @@ type ContributorCountsOpts struct {
 	// If set, only count commits that are in the given path. Can be a pathspec
 	// (e.g., "foo/bar/").
 	Path string
+}
+
+// ReadDirIterator is an iterator for the contents of a directory.
+// The caller MUST Close() this iterator when done, regardless of whether an error
+// was returned from Next().
+type ReadDirIterator interface {
+	// Next returns the next file in the directory. io.EOF is returned at the end
+	// of the stream.
+	Next() (fs.FileInfo, error)
+	// Close closes the iterator.
+	Close() error
 }

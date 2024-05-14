@@ -142,11 +142,8 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 			if event.Id == "" {
 				return errors.New("event ID is required"), false
 			}
-			if event.Feature == "" {
-				return errors.New("event feature is required"), false
-			}
-			if event.Action == "" {
-				return errors.New("event action is required"), false
+			if err := telemetrygatewayv1.ValidateEventFeatureAction(event.Feature, event.Action); err != nil {
+				return errors.Wrap(err, "invalid event 'feature' or 'action'"), false
 			}
 			if event.Timestamp == nil {
 				return errors.New("event timestamp is required"), false

@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/buf"
@@ -22,7 +23,15 @@ var allGenerateTargets = generateTargets{
 		Help:   "Re-generate protocol buffer bindings using buf",
 		Runner: generateProtoRunner,
 		Completer: func() (options []string) {
-			options, _ = buf.CodegenFiles()
+			options, _ = buf.PluginConfigurationFiles()
+			// Try to convert the options into relative paths for brevity
+			if cwd, err := os.Getwd(); err == nil {
+				for i, o := range options {
+					if rel, err := filepath.Rel(cwd, o); err == nil {
+						options[i] = rel
+					}
+				}
+			}
 			return
 		},
 	},

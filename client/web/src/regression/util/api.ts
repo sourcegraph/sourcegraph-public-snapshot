@@ -20,6 +20,7 @@ import {
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
 import type { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import type { Config } from '@sourcegraph/shared/src/testing/config'
 
 import type {
@@ -594,10 +595,10 @@ export function createOrganization(
     }).pipe(
         mergeMap(({ data, errors }) => {
             if (!data?.createOrganization) {
-                eventLogger.log('NewOrgFailed')
+                EVENT_LOGGER.log('NewOrgFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('NewOrgCreated')
+            EVENT_LOGGER.log('NewOrgCreated')
             return concat([data.createOrganization])
         })
     )
@@ -711,10 +712,10 @@ export function addExternalService(
     }).pipe(
         map(({ data, errors }) => {
             if (!data?.addExternalService || (errors && errors.length > 0)) {
-                eventLogger.log('AddExternalServiceFailed')
+                EVENT_LOGGER.log('AddExternalServiceFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('AddExternalServiceSucceeded')
+            EVENT_LOGGER.log('AddExternalServiceSucceeded')
             return data.addExternalService
         })
     )

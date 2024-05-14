@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { Button, Container, H3, Text } from '@sourcegraph/wildcard'
 
@@ -17,6 +17,8 @@ export const DeleteOrg: React.FunctionComponent<React.PropsWithChildren<DeleteOr
         () => setShowDeleteModal(!showDeleteModal),
         [setShowDeleteModal, showDeleteModal]
     )
+
+    useEffect(() => props.telemetryRecorder.recordEvent('org.delete', 'view'), [props.telemetryRecorder])
 
     return (
         <Container className="mt-3 mb-5">

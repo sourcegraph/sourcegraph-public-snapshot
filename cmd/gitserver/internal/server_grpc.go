@@ -46,13 +46,13 @@ type GRPCServerConfig struct {
 
 func NewGRPCServer(server *Server, config *GRPCServerConfig) proto.GitserverServiceServer {
 	var srv proto.GitserverServiceServer = &grpcServer{
-		logger:         server.logger,
-		db:             server.db,
-		hostname:       server.hostname,
-		locker:         server.locker,
-		getBackendFunc: server.getBackendFunc,
-		svc:            server,
-		fs:             server.fs,
+		logger:           server.logger,
+		db:               server.db,
+		hostname:         server.hostname,
+		locker:           server.locker,
+		gitBackendSource: server.gitBackendSource,
+		svc:              server,
+		fs:               server.fs,
 	}
 
 	if config.ExhaustiveRequestLoggingEnabled {
@@ -68,13 +68,13 @@ func NewGRPCServer(server *Server, config *GRPCServerConfig) proto.GitserverServ
 }
 
 type grpcServer struct {
-	logger         log.Logger
-	db             database.DB
-	hostname       string
-	locker         RepositoryLocker
-	getBackendFunc Backender
-	fs             gitserverfs.FS
-	svc            service
+	logger           log.Logger
+	db               database.DB
+	hostname         string
+	locker           RepositoryLocker
+	gitBackendSource git.GitBackendSource
+	fs               gitserverfs.FS
+	svc              service
 
 	proto.UnimplementedGitserverServiceServer
 }
@@ -155,7 +155,7 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 
 	repoName := api.RepoName(req.GetRepo())
 	repoDir := gs.fs.RepoDir(repoName)
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
@@ -262,10 +262,6 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("unknown archive format %q", req.GetFormat()))
 	}
 
-	if err := git.CheckSpecArgSafety(req.GetTreeish()); err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
-	}
-
 	accesslog.Record(ctx, req.GetRepo(),
 		log.String("treeish", req.GetTreeish()),
 		log.String("format", string(format)),
@@ -287,7 +283,7 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 	ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel()
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	r, err := backend.ArchiveReader(ctx, format, req.GetTreeish(), byteSlicesToStrings(req.GetPaths()))
 	if err != nil {
@@ -320,18 +316,45 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 }
 
 func (gs *grpcServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
+	accesslog.Record(ctx,
+		req.GetRepo(),
+		log.String("objectname", req.GetObjectName()),
+	)
+
+	if req.GetRepo() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	if req.GetObjectName() == "" {
+		return nil, status.New(codes.InvalidArgument, "object name must be specified").Err()
+	}
+
 	repoName := api.RepoName(req.GetRepo())
 	repoDir := gs.fs.RepoDir(repoName)
 
-	// Log which actor is accessing the repo.
-	accesslog.Record(ctx, string(repoName), log.String("objectname", req.GetObjectName()))
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
+		return nil, err
+	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	obj, err := backend.GetObject(ctx, req.GetObjectName())
 	if err != nil {
-		gs.svc.LogIfCorrupt(ctx, repoName, err)
 		gs.logger.Error("getting object", log.Error(err))
+
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepo(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
 		return nil, err
 	}
 
@@ -741,7 +764,7 @@ func (gs *grpcServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 		return nil, err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	sha, err := backend.MergeBase(ctx, string(req.GetBase()), string(req.GetHead()))
 	if err != nil {
@@ -789,7 +812,7 @@ func (gs *grpcServer) GetCommit(ctx context.Context, req *proto.GetCommitRequest
 		return nil, err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	commit, err := backend.GetCommit(ctx, api.CommitID(req.GetCommit()), req.GetIncludeModifiedFiles())
 	if err != nil {
@@ -849,7 +872,7 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 		return err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	opts := git.BlameOptions{
 		IgnoreWhitespace: req.GetIgnoreWhitespace(),
@@ -928,7 +951,7 @@ func (gs *grpcServer) DefaultBranch(ctx context.Context, req *proto.DefaultBranc
 		return nil, err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	refName, err := backend.SymbolicRefHead(ctx, req.GetShortRef())
 	if err != nil {
@@ -989,7 +1012,7 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 		return err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	r, err := backend.ReadFile(ctx, api.CommitID(req.GetCommit()), req.GetPath())
 	if err != nil {
@@ -1049,7 +1072,7 @@ func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRev
 
 	revspec := string(req.GetRevSpec())
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	// First, try to resolve the revspec.
 	sha, err := backend.ResolveRevision(ctx, revspec)
@@ -1105,7 +1128,7 @@ func (gs *grpcServer) RevAtTime(ctx context.Context, req *proto.RevAtTimeRequest
 		return nil, err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	commitID, err := backend.RevAtTime(ctx, string(req.GetRevSpec()), req.GetTime().AsTime())
 	if err != nil {
@@ -1146,7 +1169,7 @@ func (gs *grpcServer) ListRefs(req *proto.ListRefsRequest, ss proto.GitserverSer
 		return err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	pointsAtCommit := []api.CommitID{}
 	for _, c := range req.GetPointsAtCommit() {
@@ -1179,7 +1202,7 @@ func (gs *grpcServer) ListRefs(req *proto.ListRefsRequest, ss proto.GitserverSer
 	// We use a chunker here to make sure we don't send too large gRPC messages.
 	// For repos with thousands or even millions of refs, sending them all in one
 	// message would be very slow, but sending them all in individual messages
-	// would be slow either, so we chunk them instead.
+	// would also be slow, so we chunk them instead.
 	chunker := chunk.New(sendFunc)
 
 	for {
@@ -1244,7 +1267,7 @@ func (gs *grpcServer) RawDiff(req *proto.RawDiffRequest, ss proto.GitserverServi
 		return err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	paths := make([]string, len(req.GetPaths()))
 	for i, p := range req.GetPaths() {
@@ -1305,7 +1328,7 @@ func (gs *grpcServer) ContributorCounts(ctx context.Context, req *proto.Contribu
 		return nil, err
 	}
 
-	backend := gs.getBackendFunc(repoDir, repoName)
+	backend := gs.gitBackendSource(repoDir, repoName)
 
 	counts, err := backend.ContributorCounts(ctx, git.ContributorCountsOpts{
 		Range: string(req.GetRange()),
@@ -1336,6 +1359,352 @@ func (gs *grpcServer) ContributorCounts(ctx context.Context, req *proto.Contribu
 	}
 
 	return res, nil
+}
+
+func (gs *grpcServer) FirstEverCommit(ctx context.Context, request *proto.FirstEverCommitRequest) (*proto.FirstEverCommitResponse, error) {
+	accesslog.Record(
+		ctx,
+		request.GetRepoName(),
+	)
+
+	if request.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(request.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
+		return nil, err
+	}
+
+	backend := gs.gitBackendSource(repoDir, repoName)
+
+	id, err := backend.FirstEverCommit(ctx)
+	if err != nil {
+		var revisionErr *gitdomain.RevisionNotFoundError
+		if errors.As(err, &revisionErr) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: request.GetRepoName(),
+				Spec: revisionErr.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		return nil, err
+	}
+
+	commit, err := backend.GetCommit(ctx, id, false)
+	if err != nil {
+		var revisionErr *gitdomain.RevisionNotFoundError
+		if errors.As(err, &revisionErr) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: request.GetRepoName(),
+				Spec: revisionErr.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		return nil, err
+	}
+
+	return &proto.FirstEverCommitResponse{
+		Commit: commit.ToProto(),
+	}, nil
+}
+
+func (gs *grpcServer) BehindAhead(ctx context.Context, req *proto.BehindAheadRequest) (*proto.BehindAheadResponse, error) {
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("left", string(req.GetLeft())),
+		log.String("right", string(req.GetRight())),
+	)
+
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
+		return nil, err
+	}
+
+	backend := gs.gitBackendSource(repoDir, repoName)
+
+	behindAhead, err := backend.BehindAhead(ctx, string(req.GetLeft()), string(req.GetRight()))
+	if err != nil {
+		if gitdomain.IsRevisionNotFoundError(err) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: err.Error(),
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		return nil, err
+	}
+
+	return behindAhead.ToProto(), nil
+}
+
+func (gs *grpcServer) ChangedFiles(req *proto.ChangedFilesRequest, ss proto.GitserverService_ChangedFilesServer) error {
+	ctx := ss.Context()
+
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("base", string(req.GetBase())),
+		log.String("head", string(req.GetHead())),
+	)
+
+	if req.GetRepoName() == "" {
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	if len(req.GetHead()) == 0 {
+		return status.New(codes.InvalidArgument, "head (<tree-ish>) must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
+		return err
+	}
+
+	backend := gs.gitBackendSource(repoDir, repoName)
+
+	iterator, err := backend.ChangedFiles(ctx, string(req.GetBase()), string(req.GetHead()))
+	if err != nil {
+		if gitdomain.IsRevisionNotFoundError(err) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: err.Error(),
+			})
+			if err != nil {
+				return err
+			}
+			return s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		return err
+	}
+	defer iterator.Close()
+
+	chunker := chunk.New(func(paths []*proto.ChangedFile) error {
+		out := &proto.ChangedFilesResponse{
+			Files: paths,
+		}
+
+		return ss.Send(out)
+	})
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		file, err := iterator.Next()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return errors.Wrap(err, "failed to get changed file")
+		}
+
+		if err := chunker.Send(file.ToProto()); err != nil {
+			return errors.Wrapf(err, "failed to send changed file %s", file)
+		}
+	}
+
+	if err := chunker.Flush(); err != nil {
+		return errors.Wrap(err, "failed to flush file chunks")
+	}
+
+	return nil
+}
+
+func (gs *grpcServer) Stat(ctx context.Context, req *proto.StatRequest) (*proto.StatResponse, error) {
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("commit", req.GetCommitSha()),
+		log.String("path", string(req.GetPath())),
+	)
+
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	if req.GetCommitSha() == "" {
+		return nil, status.New(codes.InvalidArgument, "commit_sha must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
+		return nil, err
+	}
+
+	backend := gs.gitBackendSource(repoDir, repoName)
+
+	fi, err := backend.Stat(ctx, api.CommitID(req.GetCommitSha()), string(req.GetPath()))
+	if err != nil {
+		if os.IsNotExist(err) {
+			var path string
+			var pathError *os.PathError
+			if errors.As(err, &pathError) {
+				path = pathError.Path
+			}
+			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
+				Repo:   string(repoName),
+				Commit: string(req.GetCommitSha()),
+				Path:   path,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		return nil, err
+	}
+
+	return &proto.StatResponse{
+		FileInfo: gitdomain.FSFileInfoToProto(fi),
+	}, nil
+}
+
+func (gs *grpcServer) ReadDir(req *proto.ReadDirRequest, ss proto.GitserverService_ReadDirServer) (err error) {
+	ctx := ss.Context()
+
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("commit", req.GetCommitSha()),
+		log.String("path", string(req.GetPath())),
+	)
+
+	if req.GetRepoName() == "" {
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	if len(req.GetCommitSha()) == 0 {
+		return status.New(codes.InvalidArgument, "commit_sha must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
+		return err
+	}
+
+	backend := gs.gitBackendSource(repoDir, repoName)
+
+	it, err := backend.ReadDir(ctx, api.CommitID(req.GetCommitSha()), string(req.GetPath()), req.GetRecursive())
+	if err != nil {
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		return err
+	}
+
+	defer func() {
+		closeErr := it.Close()
+		if closeErr == nil {
+			return
+		}
+
+		if err == nil {
+			err = closeErr
+			return
+		}
+	}()
+
+	sendFunc := func(fis []*proto.FileInfo) error {
+		return ss.Send(&proto.ReadDirResponse{FileInfo: fis})
+	}
+
+	// We use a chunker here to make sure we don't send too large gRPC messages.
+	// For repos with thousands or even millions of files, sending them all in one
+	// message would be very slow, but sending them all in individual messages
+	// would also be slow, so we chunk them instead.
+	chunker := chunk.New(sendFunc)
+
+	for {
+		fi, err := it.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			if os.IsNotExist(err) {
+				s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
+					Repo:   req.GetRepoName(),
+					Commit: string(req.GetCommitSha()),
+					Path:   string(req.GetPath()),
+				})
+				if err != nil {
+					return err
+				}
+				return s.Err()
+			}
+			var e *gitdomain.RevisionNotFoundError
+			if errors.As(err, &e) {
+				s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+					Repo: req.GetRepoName(),
+					Spec: e.Spec,
+				})
+				if err != nil {
+					return err
+				}
+				return s.Err()
+			}
+			return err
+		}
+		err = chunker.Send(gitdomain.FSFileInfoToProto(fi))
+		if err != nil {
+			return errors.Wrap(err, "failed to send file chunk")
+		}
+	}
+
+	err = chunker.Flush()
+	if err != nil {
+		return errors.Wrap(err, "failed to flush files")
+	}
+
+	return nil
 }
 
 // checkRepoExists checks if a given repository is cloned on disk, and returns an

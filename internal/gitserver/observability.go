@@ -18,9 +18,8 @@ type operations struct {
 	contributorCount         *observation.Operation
 	exec                     *observation.Operation
 	firstEverCommit          *observation.Operation
-	getBehindAhead           *observation.Operation
+	behindAhead              *observation.Operation
 	getCommit                *observation.Operation
-	hasCommitAfter           *observation.Operation
 	listRefs                 *observation.Operation
 	lstat                    *observation.Operation
 	mergeBase                *observation.Operation
@@ -28,7 +27,6 @@ type operations struct {
 	readDir                  *observation.Operation
 	resolveRevision          *observation.Operation
 	revAtTime                *observation.Operation
-	revList                  *observation.Operation
 	search                   *observation.Operation
 	stat                     *observation.Operation
 	streamBlameFile          *observation.Operation
@@ -46,15 +44,10 @@ type operations struct {
 	perforceGetChangelist    *observation.Operation
 	createCommitFromPatch    *observation.Operation
 	getObject                *observation.Operation
-	commitGraph              *observation.Operation
-	commitsUniqueToBranch    *observation.Operation
 	getDefaultBranch         *observation.Operation
-	listDirectoryChildren    *observation.Operation
-	lsFiles                  *observation.Operation
 	logReverseEach           *observation.Operation
-	diffSymbols              *observation.Operation
-	commitLog                *observation.Operation
 	diff                     *observation.Operation
+	changedFiles             *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -108,9 +101,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		contributorCount:         op("ContributorCount"),
 		exec:                     op("Exec"),
 		firstEverCommit:          op("FirstEverCommit"),
-		getBehindAhead:           op("GetBehindAhead"),
+		behindAhead:              op("BehindAhead"),
 		getCommit:                op("GetCommit"),
-		hasCommitAfter:           op("HasCommitAfter"),
 		listRefs:                 op("ListRefs"),
 		lstat:                    subOp("lStat"),
 		mergeBase:                op("MergeBase"),
@@ -118,7 +110,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		readDir:                  op("ReadDir"),
 		resolveRevision:          resolveRevisionOperation,
 		revAtTime:                op("RevAtTime"),
-		revList:                  op("RevList"),
 		search:                   op("Search"),
 		stat:                     op("Stat"),
 		streamBlameFile:          op("StreamBlameFile"),
@@ -136,15 +127,10 @@ func newOperations(observationCtx *observation.Context) *operations {
 		perforceGetChangelist:    op("PerforceGetChangelist"),
 		createCommitFromPatch:    op("CreateCommitFromPatch"),
 		getObject:                op("GetObject"),
-		commitGraph:              op("CommitGraph"),
-		commitsUniqueToBranch:    op("CommitsUniqueToBranch"),
 		getDefaultBranch:         op("GetDefaultBranch"),
-		listDirectoryChildren:    op("ListDirectoryChildren"),
-		lsFiles:                  op("LsFiles"),
 		logReverseEach:           op("LogReverseEach"),
-		diffSymbols:              op("DiffSymbols"),
-		commitLog:                op("CommitLog"),
 		diff:                     op("Diff"),
+		changedFiles:             op("ChangedFiles"),
 	}
 }
 

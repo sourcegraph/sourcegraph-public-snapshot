@@ -8,6 +8,10 @@ import (
 )
 
 func (g *gitCLIBackend) ArchiveReader(ctx context.Context, format git.ArchiveFormat, treeish string, paths []string) (io.ReadCloser, error) {
+	if err := checkSpecArgSafety(treeish); err != nil {
+		return nil, err
+	}
+
 	// Verify the tree-ish exists, if it doesn't this will return a RevisionNotFoundError:
 	_, err := g.getObjectType(ctx, treeish)
 	if err != nil {

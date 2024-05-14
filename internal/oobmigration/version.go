@@ -132,7 +132,9 @@ const (
 	VersionOrderAfter
 )
 
-// CompareVersions returns the relationship between `a (op) b`.
+// CompareVersions returns the relationship between `a (op) b` in the form of VersionOrder iota.
+//
+// Ex: CompareVersions(5.2.x, 5.3.x) returns VersionOrderBefore because 5.2.x is before 5.3.x.
 func CompareVersions(a, b Version) VersionOrder {
 	for _, pair := range [2][2]int{
 		{a.Major, b.Major},

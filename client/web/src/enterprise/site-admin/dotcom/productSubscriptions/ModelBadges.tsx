@@ -48,6 +48,7 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             // allow list the models on the Cody Gateway side.
             case 'openai/gpt-4':
             case 'openai/gpt-3.5-turbo':
+            case 'openai/gpt-4o':
             case 'openai/gpt-4-turbo':
             case 'openai/gpt-4-turbo-preview':
             // Virtual models that are translated by Cody Gateway and allow access to all StarCoder

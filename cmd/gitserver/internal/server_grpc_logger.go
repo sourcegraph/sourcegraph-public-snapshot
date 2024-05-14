@@ -6,15 +6,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	"google.golang.org/grpc/codes"
-
 	"github.com/sourcegraph/log"
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // loggingGRPCServer is a wrapper around the provided GitserverServiceServer
@@ -952,6 +952,143 @@ func contributorCountsToLogFields(req *proto.ContributorCountsRequest) []log.Fie
 	}
 }
 
+func (l *loggingGRPCServer) FirstEverCommit(ctx context.Context, request *proto.FirstEverCommitRequest) (resp *proto.FirstEverCommitResponse, err error) {
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+			proto.GitserverService_FirstEverCommit_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			firstEverCommitRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.FirstEverCommit(ctx, request)
+}
+
+func firstEverCommitRequestToLogFields(req *proto.FirstEverCommitRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+	}
+}
+
+func (l *loggingGRPCServer) BehindAhead(ctx context.Context, request *proto.BehindAheadRequest) (response *proto.BehindAheadResponse, err error) {
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+			proto.GitserverService_BehindAhead_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			BehindAheadRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.BehindAhead(ctx, request)
+}
+
+func BehindAheadRequestToLogFields(req *proto.BehindAheadRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.String("left", string(req.GetLeft())),
+		log.String("right", string(req.GetRight())),
+	}
+}
+
+func (l *loggingGRPCServer) ChangedFiles(req *proto.ChangedFilesRequest, ss proto.GitserverService_ChangedFilesServer) (err error) {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+			proto.GitserverService_ChangedFiles_FullMethodName,
+			status.Code(err),
+			trace.Context(ss.Context()).TraceID,
+			elapsed,
+
+			changedFilesRequestToLogFields(req)...,
+		)
+
+	}()
+
+	return l.base.ChangedFiles(req, ss)
+}
+
+func changedFilesRequestToLogFields(req *proto.ChangedFilesRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.String("base", string(req.GetBase())),
+		log.String("head", string(req.GetHead())),
+	}
+}
+
+func (l *loggingGRPCServer) Stat(ctx context.Context, request *proto.StatRequest) (resp *proto.StatResponse, err error) {
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+			proto.GitserverService_Stat_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			statRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.Stat(ctx, request)
+}
+
+func statRequestToLogFields(req *proto.StatRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.String("commit", string(req.GetCommitSha())),
+		log.String("path", string(req.GetPath())),
+	}
+}
+
+func (l *loggingGRPCServer) ReadDir(request *proto.ReadDirRequest, server proto.GitserverService_ReadDirServer) error {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+			proto.GitserverService_ReadDir_FullMethodName,
+			status.Code(server.Context().Err()),
+			trace.Context(server.Context()).TraceID,
+			elapsed,
+
+			readDirRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.ReadDir(request, server)
+}
+
+func readDirRequestToLogFields(req *proto.ReadDirRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.String("commit", string(req.GetCommitSha())),
+		log.String("path", string(req.GetPath())),
+		log.Bool("recursive", req.GetRecursive()),
+	}
+}
+
 type loggingRepositoryServiceServer struct {
 	base   proto.GitserverRepositoryServiceServer
 	logger log.Logger
@@ -1010,6 +1147,33 @@ func (l *loggingRepositoryServiceServer) FetchRepository(ctx context.Context, re
 func fetchRepositoryRequestToLogFields(req *proto.FetchRepositoryRequest) []log.Field {
 	return []log.Field{
 		log.String("repoName", req.GetRepoName()),
+	}
+}
+
+func (l *loggingRepositoryServiceServer) ListRepositories(ctx context.Context, request *proto.ListRepositoriesRequest) (resp *proto.ListRepositoriesResponse, err error) {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+
+			proto.GitserverRepositoryService_ListRepositories_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			listRepositoriesRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.ListRepositories(ctx, request)
+}
+
+func listRepositoriesRequestToLogFields(req *proto.ListRepositoriesRequest) []log.Field {
+	return []log.Field{
+		log.Int("page_size", int(req.GetPageSize())),
 	}
 }
 

@@ -10,7 +10,7 @@ import (
 // NOTE: This should be kept up-to-date with the upcoming version to be released, and bumped after.
 // fallback schemas everything we support migrating to. The release tool automates this upgrade, so don't touch this :)
 // This should be the last minor version since patch releases only happen in the release branch.
-const maxVersionString = "5.3.0"
+const maxVersionString = "5.4.0"
 
 // MaxVersion is the highest known released version at the time the migrator was built.
 var MaxVersion = func() oobmigration.Version {

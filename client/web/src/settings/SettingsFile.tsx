@@ -6,12 +6,12 @@ import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { SaveToolbar } from '../components/SaveToolbar'
 import type { SiteAdminSettingsCascadeFields } from '../graphql-operations'
-import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './SettingsFile.module.scss'
 
@@ -181,7 +181,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.getPropsSettingsContentsOrEmpty() === this.state.contents ||
             window.confirm('Discard settings edits?')
         ) {
-            eventLogger.log('SettingsFileDiscard')
+            EVENT_LOGGER.log('SettingsFileDiscard')
             this.props.telemetryRecorder.recordEvent('settings.file', 'discard')
             this.setState({
                 contents: undefined,
@@ -189,7 +189,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             })
             this.props.onDidDiscard()
         } else {
-            eventLogger.log('SettingsFileDiscardCanceled')
+            EVENT_LOGGER.log('SettingsFileDiscardCanceled')
             this.props.telemetryRecorder.recordEvent('settings.file', 'discardCancel')
         }
     }
@@ -202,7 +202,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     }
 
     private save = (): void => {
-        eventLogger.log('SettingsFileSaved')
+        EVENT_LOGGER.log('SettingsFileSaved')
         this.props.telemetryRecorder.recordEvent('settings.file', 'save')
         this.setState({ saving: true }, () => {
             this.props.onDidCommit(this.getPropsSettingsID(), this.state.contents!)

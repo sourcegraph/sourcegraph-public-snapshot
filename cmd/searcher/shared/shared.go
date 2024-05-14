@@ -158,10 +158,10 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 		Indexed: sharedsearch.Indexed(),
 
-		GitDiffSymbols: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
+		GitChangedFiles: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (gitserver.ChangedFilesIterator, error) {
 			// As this is an internal service call, we need an internal actor.
 			ctx = actor.WithInternalActor(ctx)
-			return git.DiffSymbols(ctx, repo, commitA, commitB)
+			return git.ChangedFiles(ctx, repo, string(commitA), string(commitB))
 		},
 		MaxTotalPathsLength: maxTotalPathsLength,
 

@@ -17,8 +17,8 @@ import {
     aggregateStreamingSearch,
     type AggregateStreamingSearchResults,
 } from '@sourcegraph/shared/src/search/stream'
-
-import { eventLogger } from '../../../tracking/eventLogger'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 
 export const searchResultsToFileContent = (
     searchResults: SearchMatch[],
@@ -239,7 +239,8 @@ export const downloadSearchResults = (
     query: string,
     options: StreamSearchOptions,
     results: AggregateStreamingSearchResults | undefined,
-    shouldRerunSearch: boolean
+    shouldRerunSearch: boolean,
+    telemetryRecorder: TelemetryRecorder
 ): Promise<void> => {
     const resultsObservable = shouldRerunSearch
         ? aggregateStreamingSearch(of(query), {
@@ -272,7 +273,9 @@ export const downloadSearchResults = (
         a.style.display = 'none'
         a.download = buildFileName(query)
         a.click()
-        eventLogger.log('SearchExportPerformed', { count: results.results.length }, { count: results.results.length })
+
+        EVENT_LOGGER.log('SearchExportPerformed', { count: results.results.length }, { count: results.results.length })
+        telemetryRecorder.recordEvent('search.results', 'export', { metadata: { count: results.results.length } })
 
         // cleanup
         a.remove()

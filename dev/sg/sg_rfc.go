@@ -28,6 +28,9 @@ sg rfc list
 # List all Private RFCs
 sg rfc --private list
 
+# List all Public RFCs that match one of some statuses
+sg rfc list -s approved -s implemented -s done
+
 # Search for a Public RFC
 sg rfc search "search terms"
 
@@ -60,18 +63,32 @@ sg rfc --private create --type <type> "title"
 			Name:      "list",
 			ArgsUsage: " ",
 			Usage:     "List Sourcegraph RFCs",
+			Flags: []cli.Flag{
+				&cli.StringSliceFlag{
+					Name:    "status",
+					Aliases: []string{"s"},
+					Usage:   "Only show RFCs with the given status(es)",
+				},
+			},
 			Action: func(c *cli.Context) error {
 				driveSpec := rfc.PublicDrive
 				if c.Bool("private") {
 					driveSpec = rfc.PrivateDrive
 				}
-				return rfc.List(c.Context, driveSpec, std.Out)
+				return rfc.List(c.Context, driveSpec, std.Out, c.StringSlice("status"))
 			},
 		},
 		{
 			Name:      "search",
 			ArgsUsage: "[query]",
 			Usage:     "Search Sourcegraph RFCs",
+			Flags: []cli.Flag{
+				&cli.StringSliceFlag{
+					Name:    "status",
+					Aliases: []string{"s"},
+					Usage:   "Only show RFCs with the given status(es)",
+				},
+			},
 			Action: func(c *cli.Context) error {
 				driveSpec := rfc.PublicDrive
 				if c.Bool("private") {
@@ -80,7 +97,7 @@ sg rfc --private create --type <type> "title"
 				if c.Args().Len() == 0 {
 					return errors.New("no search query given")
 				}
-				return rfc.Search(c.Context, strings.Join(c.Args().Slice(), " "), driveSpec, std.Out)
+				return rfc.Search(c.Context, strings.Join(c.Args().Slice(), " "), driveSpec, std.Out, c.StringSlice("status"))
 			},
 		},
 		{

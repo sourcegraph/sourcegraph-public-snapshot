@@ -23,47 +23,7 @@ These categories may be more or less important depending on the piece of UI.
 ### Visual regressions
 
 A visual regression is a bug where the component behaves correctly, but no longer looks as intended.
-We use Percy screenshot tests and Chromatic Storybook tests to catch these.
-Percy can take screenshots in end-to-end tests and client integration tests. Chromatic can take screenshots in Storybook tests.
-Storybook tests can be seen as a form of unit test for a component's UI.
-
-#### Chromatic visual testing
-
-Chromatic screenshots are **disabled** for Storybook stories by default. [This is done](https://github.com/sourcegraph/sourcegraph/pull/30331) to prevent [the exponential growth of the Chromatic cost](https://sourcegraph.slack.com/archives/C01C3NCGD40/p1643363940671909).
-
-Use story `parameters` to enable Chromatic snapshots for a specific story:
-
-```ts
-const config: Meta = {
-    parameters: {
-        chromatic: {
-            disableSnapshot: false,
-        },
-    },
-}
-```
-
-If it's valuable for the story [to be screenshotted in the dark mode](https://github.com/sourcegraph/sourcegraph/pull/30346), enable it by using `enableDarkMode` parameter:
-
-```ts
-const config: Meta = {
-    parameters: {
-        chromatic: {
-            enableDarkMode: true,
-            disableSnapshot: false,
-        },
-    },
-}
-```
-
-The other significant benefit of keeping the Chromatic visual diff small is the ease of review:
-
-1. Prefer showing multiple component variations in one snapshottable story instead of creating one story per variation.
-2. Enable snapshots only for stories where visual testing is valuable.
-
-Check out [the Chromatic documentation on disabling snapshots](https://www.chromatic.com/docs/ignoring-elements#ignore-stories).
-
-**Please note:** Chromatic visual testing [is **disabled** for draft pull requests](https://github.com/sourcegraph/sourcegraph/pull/30375). To trigger the Chromatic job move the PR to a ready-for-review state and convert it back to draft.
+Percy can take screenshots in end-to-end tests and client integration tests.
 
 ### Render output
 

@@ -12,6 +12,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import type { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { LoadingSpinner, PageHeader, ErrorMessage } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
@@ -19,7 +20,6 @@ import type { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
 import type { SettingsCascadeResult } from '../graphql-operations'
-import { eventLogger } from '../tracking/eventLogger'
 
 import { SettingsPage } from './SettingsPage'
 
@@ -78,7 +78,7 @@ export class SettingsArea extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent(`Settings${this.props.subject.__typename}`)
+        EVENT_LOGGER.logViewEvent(`Settings${this.props.subject.__typename}`)
         switch (this.props.subject.__typename) {
             case 'User': {
                 this.props.platformContext.telemetryRecorder.recordEvent('user.settings', 'view')

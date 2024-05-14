@@ -1,0 +1,8 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.switch-account-card {
+    max-width: 100%;
+    @media (--md-breakpoint-up) {
+        max-width: 33%;
+    }
+}

@@ -97,6 +97,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                     patternType,
                     selectedSearchContextSpec,
                     source: 'communitySearchContextPage',
+                    telemetryRecorder,
                 })
             },
         [telemetryRecorder, caseSensitive, location, navigate, selectedSearchContextSpec]

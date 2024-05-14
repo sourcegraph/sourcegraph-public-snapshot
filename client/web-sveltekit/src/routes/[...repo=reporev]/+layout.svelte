@@ -58,10 +58,6 @@
     $: ({ repoName, displayRepoName } = data)
 </script>
 
-<svelte:head>
-    <title>{data.displayRepoName} - Sourcegraph</title>
-</svelte:head>
-
 <GlobalHeaderPortal>
     <nav aria-label="repository">
         <h1><a href="/{repoName}">{displayRepoName}</a></h1>
@@ -74,7 +70,7 @@
                         {#if entry.icon}
                             <Icon svgPath={entry.icon} inline />
                         {/if}
-                        <span class="ml-1">{entry.title}</span>
+                        <span>{entry.title}</span>
                     </a>
                 </li>
             {/each}
@@ -95,7 +91,7 @@
                         {#if entry.icon}
                             <Icon svgPath={entry.icon} inline />
                         {/if}
-                        <span class="ml-1">{entry.title}</span>
+                        <span>{entry.title}</span>
                     </span>
                 </MenuLink>
             {/each}
@@ -116,7 +112,7 @@
         min-width: 0;
 
         a {
-            color: var(--body-color);
+            color: var(--text-body);
             text-decoration: none;
         }
 
@@ -132,6 +128,10 @@
         margin: 0 1rem 0 0;
         font-size: 1rem;
         white-space: nowrap;
+
+        a {
+            color: var(--text-title);
+        }
     }
 
     ul {
@@ -151,6 +151,7 @@
             padding: 0.25rem 0.5rem;
             border-radius: var(--border-radius);
             white-space: nowrap;
+            gap: 0.25rem;
 
             &:hover {
                 background-color: var(--color-bg-2);
@@ -158,6 +159,7 @@
 
             &[aria-current='page'] {
                 background-color: var(--color-bg-3);
+                color: var(--text-title);
             }
         }
 

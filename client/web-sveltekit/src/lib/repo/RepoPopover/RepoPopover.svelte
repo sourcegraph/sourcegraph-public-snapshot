@@ -53,7 +53,7 @@ For example:
                 </div>
             </div>
             <div class="code-host">
-                <Icon svgPath={codeHostIcon} --color="var(--text-body)" --size={24} />
+                <Icon svgPath={codeHostIcon} --color="var(--text-body)" --icon-size="24px" />
                 <div><small>{capitalize(codeHostKind)}</small></div>
             </div>
         </div>

@@ -12,6 +12,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
 import type { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
@@ -48,6 +49,7 @@ describe('StreamingSearchResults', () => {
             settings: NEVER,
             requestGraphQL: () => EMPTY,
             sourcegraphURL: 'https://sourcegraph.com',
+            telemetryRecorder: noOpTelemetryRecorder,
         } as any,
 
         streamSearch: () => of(MULTIPLE_SEARCH_RESULT),

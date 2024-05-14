@@ -43,6 +43,7 @@ import type { CodeIntelligenceProps } from '../codeintel'
 import { RepoContainerEditor } from '../cody/components/RepoContainerEditor'
 import { CodySidebar } from '../cody/sidebar'
 import { useCodySidebar, useSidebarSize, CODY_SIDEBAR_SIZES } from '../cody/sidebar/Provider'
+import { useCodyIgnore } from '../cody/useCodyIgnore'
 import type { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
@@ -344,6 +345,8 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
 
     const { sidebarSize, setSidebarSize: setCodySidebarSize } = useSidebarSize()
 
+    const { isRepoIgnored } = useCodyIgnore()
+
     /* eslint-disable react-hooks/exhaustive-deps */
     const codySidebarSize = useMemo(() => sidebarSize, [isCodySidebarOpen])
     /* eslint-enable react-hooks/exhaustive-deps */
@@ -395,6 +398,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                 repoName={repoName}
                 viewerCanAdminister={viewerCanAdminister}
                 repoFetchError={repoOrError as ErrorLike}
+                telemetryRecorder={props.platformContext.telemetryRecorder}
             />
         )
     }
@@ -433,7 +437,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
     // must exactly match how the revision was encoded in the URL
     const repoNameAndRevision = `${repoName}${typeof rawRevision === 'string' ? `@${rawRevision}` : ''}`
     const licenseFeatures = getLicenseFeatures()
-    const showAskCodyBtn = licenseFeatures.isCodyEnabled && !isCodySidebarOpen
+    const showAskCodyBtn = licenseFeatures.isCodyEnabled && !isRepoIgnored(repoName) && !isCodySidebarOpen
 
     return (
         <>
@@ -490,6 +494,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                         source="repoHeader"
                         key="go-to-code-host"
                         externalLinks={externalLinks}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
                     />
                 )}
             </RepoHeaderContributionPortal>
@@ -555,7 +560,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                 </Routes>
             </Suspense>
 
-            {isCodySidebarOpen && (
+            {!isRepoIgnored(repoName) && isCodySidebarOpen && (
                 <RepoContainerRootPortal>
                     <Panel
                         className="cody-sidebar-panel"

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computenetwork"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/redisinstance"
 
@@ -30,18 +31,30 @@ type Config struct {
 }
 
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
+	// Default to 'false'
+	useHA := pointers.DerefZero(config.Spec.HighAvailability)
+	instanceName := id.DisplayName()
+	if !useHA {
+		// Tier changes require recreation. We give basic-tier instance different
+		// naming so that basic-tier gets recreated, rather than HA-tier.
+		instanceName = fmt.Sprintf("%s-basic", instanceName)
+	}
+
 	redis := redisinstance.NewRedisInstance(scope,
 		id.TerraformID("instance"),
 		&redisinstance.RedisInstanceConfig{
 			Project: pointers.Ptr(config.ProjectID),
 			Region:  &config.Region,
-			Name:    pointers.Ptr(id.DisplayName()),
+			Name:    &instanceName,
+			DisplayName: pointers.Ptr(func() string {
+				if useHA {
+					return "Regional Redis (standard HA)"
+				}
+				return "Zonal Redis (basic)"
+			}()),
 
 			Tier: pointers.Ptr(func() string {
-				// Default to 'true' - TODO(@bobheadxi) migrate default to false
-				// after explicitly configuring production instances to use HA
-				// Redis for now.
-				if pointers.Deref(config.Spec.HighAvailability, true) {
+				if useHA {
 					return "STANDARD_HA" // multi-zone in a region
 				}
 				return "BASIC" // single-zone
@@ -56,13 +69,21 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			},
 
 			AuthorizedNetwork: config.Network.SelfLink(),
+
+			Lifecycle: &cdktf.TerraformResourceLifecycle{
+				// Make sure new instance is available before destroying old one.
+				// Also helps us prevent unintentional recreation.
+				CreateBeforeDestroy: pointers.Ptr(true),
+			},
 		})
 
 	// Share CA certificate for connecting to Redis over TLS as a GSM secret
 	redisCACert := gsmsecret.New(scope, id.Group("ca-cert"), gsmsecret.Config{
 		ProjectID: config.ProjectID,
-		ID:        strings.ToUpper(id.DisplayName()) + "_CA_CERT",
-		Value:     *redis.ServerCaCerts().Get(pointers.Float64(0)).Cert(),
+		// Redis recreation doesn't matter, we use the same secret, and Cloud
+		// Run revisions pin to a specific version of the secret.
+		ID:    strings.ToUpper(id.DisplayName()) + "_CA_CERT",
+		Value: *redis.ServerCaCerts().Get(pointers.Float64(0)).Cert(),
 	})
 
 	return &Output{

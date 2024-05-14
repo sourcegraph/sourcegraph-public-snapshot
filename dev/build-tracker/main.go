@@ -7,16 +7,19 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/gorilla/mux"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/build"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/config"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -38,17 +41,32 @@ type Server struct {
 	store        *build.Store
 	config       *config.Config
 	notifyClient notify.NotificationClient
+	bkClient     *buildkite.Client
+	bqWriter     BigQueryWriter
 	http         *http.Server
 }
 
 // NewServer creatse a new server to listen for Buildkite webhook events.
-func NewServer(addr string, logger log.Logger, c config.Config) *Server {
+func NewServer(addr string, logger log.Logger, c config.Config, bqWriter BigQueryWriter) *Server {
 	logger = logger.Scoped("server")
+
+	if testutil.IsTest && c.BuildkiteToken == "" {
+		// buildkite.NewTokenConfig will complain even though we don't care
+		c.BuildkiteToken = " "
+	}
+
+	bk, err := buildkite.NewTokenConfig(c.BuildkiteToken, false)
+	if err != nil {
+		panic(err)
+	}
+
 	server := &Server{
 		logger:       logger,
 		store:        build.NewBuildStore(logger),
 		config:       &c,
 		notifyClient: notify.NewClient(logger, c.SlackToken, c.SlackChannel),
+		bqWriter:     bqWriter,
+		bkClient:     buildkite.NewClient(bk.Client()),
 	}
 
 	// Register routes the the server will be responding too
@@ -172,7 +190,11 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	go s.processEvent(&event)
+	if testutil.IsTest {
+		s.processEvent(&event)
+	} else {
+		go s.processEvent(&event)
+	}
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -214,25 +236,22 @@ func (s *Server) triggerMetricsPipeline(b *build.Build) error {
 		return nil
 	}
 
-	bk, err := buildkite.NewTokenConfig(s.config.BuildkiteToken, false)
+	repo := strings.TrimSuffix(*b.Pipeline.Repository, ".git")
+	var prBase string
+	var prNumber int
+	if b.PullRequest != nil {
+		prNumber, _ = strconv.Atoi(*b.PullRequest.ID)
+		prBase = *b.PullRequest.Base
+	}
+
+	devxServiceCommit, err := getDevxServiceLatestCommit(s.config.GithubToken)
 	if err != nil {
 		return err
 	}
 
-	client := buildkite.NewClient(bk.Client())
-
-	var prNumber int
-	var prBase string
-	var repo string
-	if b.PullRequest != nil {
-		prNumber, _ = strconv.Atoi(*b.Pipeline.ID)
-		prBase = *b.PullRequest.Base
-		repo = *b.PullRequest.Repository
-	}
-
-	triggered, response, err := client.Builds.Create("sourcegraph", "devx-build-metrics", &buildkite.CreateBuild{
-		Commit:  b.GetCommit(),
-		Branch:  b.GetBranch(),
+	args := &buildkite.CreateBuild{
+		Commit:  devxServiceCommit,
+		Branch:  "main",
 		Message: b.GetMessage(),
 		Author:  b.GetCommitAuthor(),
 		// TODO: do we need to clone b.Env?
@@ -241,12 +260,23 @@ func (s *Server) triggerMetricsPipeline(b *build.Build) error {
 			"DEVX_TRIGGERED_FROM_BUILD_ID":      pointers.DerefZero(b.ID),
 			"DEVX_TRIGGERED_FROM_BUILD_NUMBER":  strconv.Itoa(pointers.DerefZero(b.Number)),
 			"DEVX_TRIGGERED_FROM_PIPELINE_SLUG": pointers.DerefZero(b.Pipeline.Slug),
+			"DEVX_TRIGGERED_FROM_COMMIT":        b.GetCommit(),
+			"DEVX_TRIGGERED_FROM_COMMIT_URL":    fmt.Sprintf("%s/commit/%s", repo, b.GetCommit()),
+			"DEVX_TRIGGERED_FROM_BRANCH":        b.GetBranch(),
+			"DEVX_TRIGGERED_FROM_BRANCH_URL":    fmt.Sprintf("%s/tree/%s", repo, b.GetBranch()),
 		},
-		MetaData:              map[string]string{},
-		PullRequestID:         int64(prNumber),
-		PullRequestBaseBranch: prBase,
-		PullRequestRepository: repo,
-	})
+		MetaData: map[string]string{},
+	}
+
+	if prNumber != 0 {
+		maps.Copy(args.Env, map[string]string{
+			"DEVX_TRIGGERED_FROM_PR_NUMBER":   strconv.Itoa(prNumber),
+			"DEVX_TRIGGERED_FROM_PR_URL":      fmt.Sprintf("%s/pull/%d", repo, prNumber),
+			"DEVX_TRIGGERED_FROM_BASE_BRANCH": prBase,
+		})
+	}
+
+	triggered, response, err := s.bkClient.Builds.Create("sourcegraph", "devx-build-metrics", args)
 	if err != nil {
 		return errors.Wrap(err, "error triggering job")
 	}
@@ -264,18 +294,27 @@ func (s *Server) triggerMetricsPipeline(b *build.Build) error {
 // full build which includes all recorded jobs for the build and send a notification.
 // processEvent delegates the decision to actually send a notifcation
 func (s *Server) processEvent(event *build.Event) {
-	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.GetBuildNumber()), log.String("jobName", event.GetJobName()))
-	s.store.Add(event)
-	b := s.store.GetByBuildNumber(event.GetBuildNumber())
-	if event.IsBuildFinished() {
-		if *event.Build.Branch == "main" {
-			if err := s.notifyIfFailed(b); err != nil {
-				s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
+	if event.Build.Number != nil {
+		s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.GetBuildNumber()), log.String("jobName", event.GetJobName()))
+		s.store.Add(event)
+		b := s.store.GetByBuildNumber(event.GetBuildNumber())
+		if event.IsBuildFinished() {
+			if *event.Build.Branch == "main" {
+				if err := s.notifyIfFailed(b); err != nil {
+					s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
+				}
+			}
+
+			if err := s.triggerMetricsPipeline(b); err != nil {
+				s.logger.Error("failed to trigger metrics pipeline for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
 			}
 		}
-
-		if err := s.triggerMetricsPipeline(b); err != nil {
-			s.logger.Error("failed to trigger metrics pipeline for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
+	} else if event.Agent.ID != nil {
+		if err := s.bqWriter.Write(context.Background(), &BuildkiteAgentEvent{
+			event: event.Name,
+			Agent: event.Agent,
+		}); err != nil {
+			s.logger.Error("failed to write agent event to BigQuery", log.String("event", event.Name), log.String("agentID", *event.Agent.ID))
 		}
 	}
 }
@@ -331,6 +370,39 @@ func determineBuildStatusNotification(logger log.Logger, b *build.Build) *notify
 	return &info
 }
 
+func getDevxServiceLatestCommit(token string) (string, error) {
+	req, err := http.NewRequest(http.MethodGet, "https://api.github.com/repos/sourcegraph/devx-service/branches/main", nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Authorization", "Bearer "+token)
+	req.Header.Add("Accept", "application/vnd.github+json")
+	// I do as the docs command https://docs.github.com/en/rest/branches/branches#get-a-branch
+	req.Header.Add("X-GitHub-Api-Version", "2022-11-28")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.Newf("unexpected response from GitHub: %d", resp.StatusCode)
+	}
+
+	var respData struct {
+		Commit struct {
+			SHA string `json:"sha"`
+		} `json:"commit"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
+		return "", err
+	}
+
+	return respData.Commit.SHA, nil
+}
+
 func main() {
 	runtime.Start[config.Config](Service{})
 }
@@ -341,7 +413,12 @@ type Service struct{}
 func (s Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.Contract, config config.Config) (background.Routine, error) {
 	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", config.SlackChannel), log.Bool("Production", config.Production)))
 
-	server := NewServer(fmt.Sprintf(":%d", contract.Port), logger, config)
+	bqWriter, err := contract.BigQuery.GetTableWriter(context.Background(), "agent_status")
+	if err != nil {
+		return nil, err
+	}
+
+	server := NewServer(fmt.Sprintf(":%d", contract.Port), logger, config, bqWriter)
 
 	return background.CombinedRoutine{
 		server,

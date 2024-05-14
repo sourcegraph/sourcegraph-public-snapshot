@@ -1,7 +1,6 @@
 <script lang="ts">
-    import type { Avatar_Person, Avatar_User } from '$lib/Avatar.gql'
-    import Avatar from '$lib/Avatar.svelte'
     import type { BlameHunk } from '$lib/web'
+    import { formatDate, TimestampFormat } from '$lib/Timestamp.svelte'
 
     export let hunk: BlameHunk
 
@@ -14,30 +13,12 @@
     // export let externalURLs: BlameHunkData['externalURLs']
 
     $: info = hunk.displayInfo
-
-    function getAvatar(author: BlameHunk['author']): Avatar_Person | Avatar_User {
-        // Avatar expects GraphQL types, but since these come from the
-        // blame view, our types don't quite match. Massage them a bit
-        // to get them in the right shape.
-        if (author.person.user) {
-            return { __typename: 'User', ...author.person.user }
-        } else {
-            return {
-                __typename: 'Person',
-                displayName: author.person.displayName,
-                name: author.person.displayName,
-                avatarURL: author.person.avatarURL,
-            }
-        }
-    }
 </script>
 
 <div class="root">
-    <span class="date">{info.dateString}</span>
-    <Avatar avatar={getAvatar(hunk.author)} />
+    <span class="date">{formatDate(info.commitDate, { format: TimestampFormat.FULL_DATE })}</span>
     <a href={info.linkURL} target="_blank" rel="noreferrer noopener">
-        {`${info.displayName}${info.username}`.split(' ')[0]}
-        {' • '}
+        <span class="name">{`${info.displayName}${info.username}`.split(' ')[0]}</span>
         <span class="message">{info.message}</span>
     </a>
 </div>
@@ -52,7 +33,9 @@
         gap: 0.5em;
 
         .date {
-            min-width: 80px;
+            flex-shrink: 0;
+            font-weight: bold;
+            margin-right: 0.25rem;
         }
 
         a {
@@ -60,6 +43,16 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             color: inherit;
+            width: 100%;
+        }
+
+        .date,
+        .name {
+            font-family: monospace;
+        }
+
+        .message {
+            margin-left: 0.5rem;
         }
     }
 </style>

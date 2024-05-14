@@ -113,10 +113,12 @@
 
 <script lang="ts">
     import { mdiClockOutline } from '@mdi/js'
+    import { registerHotkey } from '$lib/Hotkey'
 
     export let autoFocus = false
     export let size: 'normal' | 'compat' = 'normal'
     export let queryState: QueryStateStore
+    export let onSubmit: (state: QueryState) => void = () => {}
 
     export function focus() {
         input?.focus()
@@ -149,6 +151,16 @@
         submitQuery: (query, view) => {
             void submitQuery($queryState.setQuery(query))
             view.contentDOM.blur()
+        },
+    })
+
+    registerHotkey({
+        keys: { key: '/' },
+        handler: () => {
+            // If the search input doesn't have focus, focus it
+            // and disallow `/` symbol populate the input value
+            focus()
+            return false
         },
     })
 
@@ -185,12 +197,18 @@
         // this, SvelteKit will not re-run the loader because the URL hasn't changed.
         await invalidate(`search:${url}`)
         void goto(url)
+
+        // Reset interaction state since after success submit we should hide
+        // suggestions UI but still keep focus on input, after user interacts with
+        // search input again we show suggestion panel
+        userHasInteracted = false
     }
 
     async function handleSubmit(event: Event) {
         event.preventDefault()
         if (!mode) {
             // Only submit query if you are not in history mode
+            onSubmit($queryState)
             void submitQuery($queryState)
         }
     }
@@ -283,8 +301,6 @@
 </form>
 
 <style lang="scss">
-    @use '$lib/breakpoints';
-
     form {
         isolation: isolate;
         width: 100%;

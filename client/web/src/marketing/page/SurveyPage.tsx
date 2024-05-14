@@ -3,12 +3,12 @@ import React, { useEffect } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { FeedbackText } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
 import { TweetFeedback } from '../components/TweetFeedback'
 
 import { SurveyForm } from './SurveyForm'
@@ -32,7 +32,7 @@ export const SurveyPage: React.FunctionComponent<React.PropsWithChildren<SurveyP
     const score = props.forceScore || matchParameters.score
 
     useEffect(() => {
-        eventLogger.logViewEvent('Survey')
+        EVENT_LOGGER.logViewEvent('Survey')
         props.telemetryRecorder.recordEvent('surveyNPS.page', 'view')
     }, [props.telemetryRecorder])
 

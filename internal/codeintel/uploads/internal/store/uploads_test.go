@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"fmt"
-	"math"
 	"sort"
 	"strings"
 	"testing"
@@ -14,6 +13,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -207,7 +207,7 @@ func TestGetUploads(t *testing.T) {
 			runTest(testCase, 0, 0)
 		} else {
 			for lo := range n {
-				if numErrors := runTest(testCase, lo, int(math.Min(float64(lo)+3, float64(n)))); numErrors > 0 {
+				if numErrors := runTest(testCase, lo, min(lo+3, n)); numErrors > 0 {
 					break
 				}
 			}
@@ -497,29 +497,29 @@ func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 		shared.Upload{ID: 5, Commit: makeCommit(2), Root: "sub5/"},
 	)
 
-	insertNearestUploads(t, db, 50, map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {
+	insertNearestUploads(t, db, 50, map[api.CommitID][]commitgraph.UploadMeta{
+		api.CommitID(makeCommit(1)): {
 			{UploadID: 1, Distance: 1},
 			{UploadID: 2, Distance: 2},
 			{UploadID: 3, Distance: 3},
 			{UploadID: 4, Distance: 2},
 			{UploadID: 5, Distance: 1},
 		},
-		makeCommit(2): {
+		api.CommitID(makeCommit(2)): {
 			{UploadID: 1, Distance: 0},
 			{UploadID: 2, Distance: 1},
 			{UploadID: 3, Distance: 2},
 			{UploadID: 4, Distance: 1},
 			{UploadID: 5, Distance: 0},
 		},
-		makeCommit(3): {
+		api.CommitID(makeCommit(3)): {
 			{UploadID: 1, Distance: 1},
 			{UploadID: 2, Distance: 0},
 			{UploadID: 3, Distance: 1},
 			{UploadID: 4, Distance: 0},
 			{UploadID: 5, Distance: 1},
 		},
-		makeCommit(4): {
+		api.CommitID(makeCommit(4)): {
 			{UploadID: 1, Distance: 2},
 			{UploadID: 2, Distance: 1},
 			{UploadID: 3, Distance: 0},

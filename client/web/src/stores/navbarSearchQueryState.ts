@@ -61,6 +61,7 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
                 caseSensitive,
                 patternType,
                 searchMode,
+                telemetryRecorder: parameters.telemetryRecorder,
             })
         }
     },

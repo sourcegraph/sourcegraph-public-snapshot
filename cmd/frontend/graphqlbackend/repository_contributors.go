@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"math"
 	"strconv"
 	"sync"
 	"time"
@@ -85,7 +84,7 @@ func (s *repositoryContributorConnectionStore) ComputeNodes(ctx context.Context,
 	}
 
 	var start int
-	results, start, err = offsetBasedCursorSlice(results, args)
+	results, start, err = database.OffsetBasedCursorSlice(results, args)
 	if err != nil {
 		return nil, err
 	}
@@ -120,28 +119,4 @@ func (s *repositoryContributorConnectionStore) compute(ctx context.Context) ([]*
 		s.results, s.err = client.ContributorCount(ctx, s.repo.RepoName(), opt)
 	})
 	return s.results, s.err
-}
-
-func offsetBasedCursorSlice[T any](nodes []T, args *database.PaginationArgs) ([]T, int, error) {
-	start := 0
-	end := 0
-	totalFloat := float64(len(nodes))
-	if args.First != nil {
-		if len(args.After) > 0 {
-			start = int(math.Min(float64(args.After[0].(int))+1, totalFloat))
-		}
-		end = int(math.Min(float64(start+*args.First), totalFloat))
-	} else if args.Last != nil {
-		end = int(totalFloat)
-		if len(args.Before) > 0 {
-			end = int(math.Max(float64(args.Before[0].(int)), 0))
-		}
-		start = int(math.Max(float64(end-*args.Last), 0))
-	} else {
-		return nil, 0, errors.New(`args.First and args.Last are nil`)
-	}
-
-	nodes = nodes[start:end]
-
-	return nodes, start, nil
 }

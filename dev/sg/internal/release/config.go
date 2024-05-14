@@ -5,13 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/run"
+	"gopkg.in/yaml.v3"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
-	"gopkg.in/yaml.v3"
 )
 
 // TODO sg release scaffold ...
@@ -122,12 +124,13 @@ type input struct {
 }
 
 type releaseRunner struct {
-	vars    map[string]string
-	inputs  map[string]string
-	m       *ReleaseManifest
-	version string
-	pretend bool
-	typ     string
+	vars          map[string]string
+	inputs        map[string]string
+	m             *ReleaseManifest
+	version       string
+	pretend       bool
+	typ           string
+	isDevelopment bool
 }
 
 // releaseConfig is a serializable structure holding the configuration
@@ -146,7 +149,7 @@ func parseReleaseConfig(configRaw string) (*releaseConfig, error) {
 	return &rc, nil
 }
 
-func NewReleaseRunner(ctx context.Context, workdir string, version string, inputsArg string, typ string, gitBranch string, pretend bool) (*releaseRunner, error) {
+func NewReleaseRunner(ctx context.Context, workdir string, version string, inputsArg string, typ string, gitBranch string, pretend, isDevelopment bool) (*releaseRunner, error) {
 	announce2("setup", "Finding release manifest in %q", workdir)
 
 	inputs, err := parseInputs(inputsArg)
@@ -177,10 +180,11 @@ func NewReleaseRunner(ctx context.Context, workdir string, version string, input
 	}
 
 	vars := map[string]string{
-		"version":    version,
-		"tag":        strings.TrimPrefix(version, "v"),
-		"config":     string(configBytes),
-		"git.branch": gitBranch,
+		"version":        version,
+		"tag":            strings.TrimPrefix(version, "v"),
+		"config":         string(configBytes),
+		"git.branch":     gitBranch,
+		"is_development": strconv.FormatBool(isDevelopment),
 	}
 	for k, v := range inputs {
 		// TODO sanitize input format
@@ -229,12 +233,13 @@ func NewReleaseRunner(ctx context.Context, workdir string, version string, input
 	}
 
 	r := &releaseRunner{
-		version: version,
-		pretend: pretend,
-		inputs:  inputs,
-		typ:     typ,
-		m:       &m,
-		vars:    vars,
+		version:       version,
+		pretend:       pretend,
+		inputs:        inputs,
+		typ:           typ,
+		m:             &m,
+		vars:          vars,
+		isDevelopment: isDevelopment,
 	}
 
 	return r, nil
@@ -263,7 +268,7 @@ func (r *releaseRunner) checkRequirements(ctx context.Context, stage string) err
 	for _, req := range r.m.Requirements {
 		if shouldSkipReqCheck(req, stage) {
 			saySuccess("reqs", "🔕 %s (excluded for %s)", req.Name, stage)
-			return nil
+			continue
 		}
 
 		if req.Env != "" && req.Cmd != "" {
@@ -300,7 +305,7 @@ func (r *releaseRunner) checkRequirements(ctx context.Context, stage string) err
 
 func (r *releaseRunner) CreateRelease(ctx context.Context) error {
 	if err := r.checkRequirements(ctx, stageInternalCreate); err != nil {
-		return nil
+		return err
 	}
 
 	var steps []cmdManifest
@@ -324,8 +329,8 @@ func (r *releaseRunner) CreateRelease(ctx context.Context) error {
 }
 
 func (r *releaseRunner) InternalFinalize(ctx context.Context) error {
-	if err := r.checkRequirements(ctx, stageInternalCreate); err != nil {
-		return nil
+	if err := r.checkRequirements(ctx, stageInternalFinalize); err != nil {
+		return err
 	}
 
 	if len(r.m.Internal.Finalize.Steps) == 0 {
@@ -338,7 +343,7 @@ func (r *releaseRunner) InternalFinalize(ctx context.Context) error {
 
 func (r *releaseRunner) Test(ctx context.Context) error {
 	if err := r.checkRequirements(ctx, stageTest); err != nil {
-		return nil
+		return err
 	}
 
 	if len(r.m.Test.Steps) == 0 {
@@ -350,16 +355,24 @@ func (r *releaseRunner) Test(ctx context.Context) error {
 }
 
 func (r *releaseRunner) Promote(ctx context.Context) error {
+	if r.isDevelopment {
+		return errors.New("cannot promote a development release")
+	}
+
 	if err := r.checkRequirements(ctx, stagePromoteCreate); err != nil {
-		return nil
+		return err
 	}
 	announce2("promote", "Will promote %q to a public release", r.version)
 	return r.runSteps(ctx, r.m.PromoteToPublic.Create.Steps)
 }
 
 func (r *releaseRunner) PromoteFinalize(ctx context.Context) error {
+	if r.isDevelopment {
+		return errors.New("cannot promote a development release")
+	}
+
 	if err := r.checkRequirements(ctx, stagePromoteFinalize); err != nil {
-		return nil
+		return err
 	}
 
 	if len(r.m.PromoteToPublic.Finalize.Steps) == 0 {

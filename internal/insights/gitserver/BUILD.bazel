@@ -23,6 +23,7 @@ go_test(
     srcs = ["first_commit_test.go"],
     embed = [":gitserver"],
     deps = [
+        "//internal/gitserver/gitdomain",
         "//lib/errors",
         "@com_github_hexops_autogold_v2//:autogold",
     ],

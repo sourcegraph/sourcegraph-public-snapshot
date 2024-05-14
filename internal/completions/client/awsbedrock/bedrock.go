@@ -68,7 +68,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 		completion += content.Text
 	}
 
-	err = c.tokenManager.UpdateAnthropicModelUsage(response.Usage.InputTokens, response.Usage.OutputTokens, "anthropic/"+requestParams.Model, string(feature), tokenusage.AwsBedrock)
+	err = c.tokenManager.UpdateTokenCountsFromModelUsage(response.Usage.InputTokens, response.Usage.OutputTokens, "anthropic/"+requestParams.Model, string(feature), tokenusage.AwsBedrock)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 		case "message_delta":
 			if event.Delta != nil {
 				stopReason = event.Delta.StopReason
-				err = a.tokenManager.UpdateAnthropicModelUsage(inputPromptTokens, event.Usage.OutputTokens, "anthropic/"+requestParams.Model, string(feature), tokenusage.AwsBedrock)
+				err = a.tokenManager.UpdateTokenCountsFromModelUsage(inputPromptTokens, event.Usage.OutputTokens, "anthropic/"+requestParams.Model, string(feature), tokenusage.AwsBedrock)
 				if err != nil {
 					logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 				}
@@ -241,9 +241,9 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 	}
 
 	if stream {
-		apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", requestParams.Model)
+		apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", url.PathEscape(requestParams.Model))
 	} else {
-		apiURL.Path = fmt.Sprintf("/model/%s/invoke", requestParams.Model)
+		apiURL.Path = fmt.Sprintf("/model/%s/invoke", url.PathEscape(requestParams.Model))
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL.String(), bytes.NewReader(reqBody))

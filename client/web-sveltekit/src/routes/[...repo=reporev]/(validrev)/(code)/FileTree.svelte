@@ -2,17 +2,16 @@
 
 <script lang="ts">
     import { mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
-    import { onMount } from 'svelte'
 
-    import { afterNavigate, goto } from '$app/navigation'
-    import { Alert } from '$lib/wildcard'
+    import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
-    import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntryFields } from '$lib/repo/api/tree'
+    import { type FileTreeProvider, NODE_LIMIT, type TreeEntry } from '$lib/repo/api/tree'
+    import FileIcon from '$lib/repo/FileIcon.svelte'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
+    import { replaceRevisionInURL } from '$lib/shared'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import { createForwardStore } from '$lib/utils'
-    import { replaceRevisionInURL } from '$lib/web'
-    import FileIcon from '$lib/repo/FileIcon.svelte'
+    import { Alert } from '$lib/wildcard'
 
     export let repoName: string
     export let treeProvider: FileTreeProvider
@@ -22,7 +21,7 @@
     /**
      * Returns the corresponding icon for `entry`
      */
-    function getDirectoryIconPath(entry: TreeEntryFields, open: boolean) {
+    function getDirectoryIconPath(entry: TreeEntry, open: boolean) {
         if (entry === treeRoot) {
             return mdiFolderArrowUpOutline
         }
@@ -78,11 +77,6 @@
         $treeState = { focused: path, selected: path, expandedNodes: nodesCopy }
     }
 
-    function scrollSelectedItemIntoView() {
-        treeView.scrollSelectedItemIntoView()
-    }
-
-    let treeView: TreeView<FileTreeNodeValue>
     // Since context is only set once when the component is created
     // we need to dynamically sync any changes to the corresponding
     // file tree state store
@@ -95,18 +89,10 @@
     $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoName))
     // Update open and selected nodes when the path changes.
     $: markSelected(selectedPath)
-
-    // Always scroll the selected item into view when we navigate to a different one.
-    // NOTE: At the moment this won't always work because the file tree might not be
-    // fully loaded after navigation.
-    afterNavigate(scrollSelectedItemIntoView)
-    // The documentation says afterNavigate will also run on mount but
-    // that doesn't seem to be the case
-    onMount(scrollSelectedItemIntoView)
 </script>
 
 <div tabindex="-1">
-    <TreeView bind:this={treeView} {treeProvider} on:select={event => handleSelect(event.detail)}>
+    <TreeView {treeProvider} on:select={event => handleSelect(event.detail)}>
         <svelte:fragment let:entry let:expanded>
             {@const isRoot = entry === treeRoot}
             {#if entry === NODE_LIMIT}
@@ -142,28 +128,36 @@
     div {
         overflow: auto;
 
-        :global(.treeitem.selectable) > :global(.label) {
+        :global([data-treeitem][aria-selected]) > :global([data-treeitem-label]) {
             cursor: pointer;
             border-radius: var(--border-radius);
 
             &:hover {
-                background-color: var(--color-bg-2);
+                background-color: var(--color-bg-3);
             }
         }
 
-        :global(.treeitem.selected) > :global(.label) {
-            background-color: var(--color-bg-2);
+        :global([data-treeitem][aria-selected='true']) > :global([data-treeitem-label]) {
+            background-color: var(--color-bg-3);
         }
     }
 
     a {
-        color: var(--body-color);
+        color: var(--text-body);
         flex: 1;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
         text-decoration: none;
         padding: 0.1rem 0;
+
+        :global([data-treeitem][aria-selected='true']) & {
+            color: var(--text-title);
+        }
+
+        &:hover {
+            color: var(--text-title);
+        }
     }
 
     .note {

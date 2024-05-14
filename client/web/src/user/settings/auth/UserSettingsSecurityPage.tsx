@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 
 import type { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Container,
     PageHeader,
@@ -30,7 +32,6 @@ import type {
     UserExternalAccountsWithAccountDataVariables,
 } from '../../../graphql-operations'
 import type { AuthProvider, SourcegraphContext } from '../../../jscontext'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { getPasswordRequirements } from '../../../util/security'
 import { CREATE_PASSWORD, USER_EXTERNAL_ACCOUNTS, UPDATE_PASSWORD } from '../backend'
 
@@ -46,7 +47,7 @@ type ServiceType = AuthProvider['serviceType']
 export type ExternalAccountsByType = Partial<Record<ServiceType, UserExternalAccount>>
 export type AuthProvidersByBaseURL = Partial<Record<string, AuthProvider>>
 
-interface UserExternalAccountsResult {
+export interface UserExternalAccountsResult {
     user: {
         externalAccounts: {
             nodes: UserExternalAccount[]
@@ -54,7 +55,7 @@ interface UserExternalAccountsResult {
     }
 }
 
-interface Props {
+interface Props extends TelemetryV2Props {
     user: UserAreaUserFields
     authenticatedUser: AuthenticatedUser
     context: Pick<SourcegraphContext, 'authProviders'>
@@ -91,10 +92,11 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     }
 
     useEffect(() => {
-        eventLogger.logPageView('UserSettingsPassword')
+        EVENT_LOGGER.logPageView('UserSettingsPassword')
+        props.telemetryRecorder.recordEvent('settings.security', 'view')
 
         setAccounts({ fetched: data?.user?.externalAccounts.nodes, lastRemoved: '' })
-    }, [data])
+    }, [data, props.telemetryRecorder])
 
     const onAccountRemoval = (removeId: string, name: string): void => {
         // keep every account that doesn't match removeId
@@ -207,6 +209,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
                         onDidError={handleError}
                         onDidRemove={onAccountRemoval}
                         onDidAdd={onAccountAdd}
+                        telemetryRecorder={props.telemetryRecorder}
                     />
                 </Container>
             )}

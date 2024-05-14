@@ -53,7 +53,7 @@ func TestNewDotcomFilter(t *testing.T) {
 				Path:     "/file2.go",
 			},
 		}
-		_, filter, _ := f.GetMatcher(context.Background(), repos)
+		_, filter, _ := f.getMatcher(context.Background(), repos)
 		filtered := filterChunks(chunks, filter)
 		require.Equal(t, 2, len(filtered))
 	})
@@ -93,7 +93,7 @@ func TestNewDotcomFilter(t *testing.T) {
 			},
 		}
 
-		_, filter, _ := f.GetMatcher(context.Background(), repos)
+		_, filter, _ := f.getMatcher(context.Background(), repos)
 		filtered := filterChunks(chunks, filter)
 		require.Equal(t, 1, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
@@ -137,7 +137,7 @@ func TestNewDotcomFilter(t *testing.T) {
 			},
 		}
 
-		_, filter, _ := f.GetMatcher(context.Background(), repos)
+		_, filter, _ := f.getMatcher(context.Background(), repos)
 		filtered := filterChunks(chunks, filter)
 
 		require.Equal(t, 2, len(filtered))
@@ -156,7 +156,7 @@ func TestNewDotcomFilter(t *testing.T) {
 		})
 
 		f := newDotcomFilter(logger, client)
-		filterableRepos, _, _ := f.GetMatcher(context.Background(), repos)
+		filterableRepos, _, _ := f.getMatcher(context.Background(), repos)
 		require.Len(t, filterableRepos, 0)
 	})
 
@@ -169,7 +169,7 @@ func TestNewDotcomFilter(t *testing.T) {
 		})
 
 		f := newDotcomFilter(logger, client)
-		filterableRepos, _, _ := f.GetMatcher(context.Background(), repos)
+		filterableRepos, _, _ := f.getMatcher(context.Background(), repos)
 		require.Len(t, filterableRepos, 0)
 	})
 
@@ -181,7 +181,7 @@ func TestNewDotcomFilter(t *testing.T) {
 		})
 
 		f := newDotcomFilter(logger, client)
-		filterableRepos, _, _ := f.GetMatcher(context.Background(), repos)
+		filterableRepos, _, _ := f.getMatcher(context.Background(), repos)
 		require.Len(t, filterableRepos, 0)
 	})
 }
@@ -233,13 +233,13 @@ func TestDotcomFilterDisabled(t *testing.T) {
 			},
 		}
 
-		_, matcher, _ := f.GetMatcher(context.Background(), repos)
+		_, matcher, _ := f.getMatcher(context.Background(), repos)
 		filtered := filterChunks(chunks, matcher)
 		require.Equal(t, 4, len(filtered))
 	})
 }
 
-func filterChunks(chunks []FileChunkContext, matcher FileMatcher) []FileChunkContext {
+func filterChunks(chunks []FileChunkContext, matcher fileMatcher) []FileChunkContext {
 	filtered := make([]FileChunkContext, 0, len(chunks))
 	for _, chunk := range chunks {
 		if matcher(chunk.RepoID, chunk.Path) {

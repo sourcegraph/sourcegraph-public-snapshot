@@ -2,11 +2,6 @@
 # Generated via the `.buildkite/hooks/post-checkout` hook.
 try-import %workspace%/.aspect/bazelrc/ci.generated.bazelrc
 
-# Use repo caching for building and testing.
-# Article: https://buildkite.com/blog/how-bazel-built-its-ci-system-on-top-of-buildkite
-# Docs: https://bazel.build/reference/command-line-reference#flag--repository_cache
-common --repository_cache=/home/buildkite/repocache-sourcegraph
-
 # We need /usr/local/bin
 # TODO(DevX) we should be narrower here.
 common --test_env=PATH
@@ -63,10 +58,6 @@ test --build_event_binary_file=build_event_log.bin
 test --build_event_binary_file_path_conversion=false
 test --build_event_binary_file_upload_mode=wait_for_upload_complete
 test --build_event_publish_all_actions=true
-common --build_event_binary_file=build_event_log.bin
-common --build_event_binary_file_path_conversion=false
-common --build_event_binary_file_upload_mode=wait_for_upload_complete
-common --build_event_publish_all_actions=true
 
 # These likely perform faster locally than the overhead of pulling/pushing from/to the remote cache,
 # as well as being able to reduce how much we push to the cache

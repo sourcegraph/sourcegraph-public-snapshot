@@ -93,11 +93,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
 	locker := server.NewRepositoryLocker()
 	hostname := config.ExternalAddress
+	backendSource := func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+		return git.NewObservableBackend(gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName))
+	}
 	gitserver := server.NewServer(&server.ServerOpts{
-		Logger: logger,
-		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
-			return git.NewObservableBackend(gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName))
-		},
+		Logger:           logger,
+		GitBackendSource: backendSource,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
 			return getRemoteURLFunc(ctx, db, repo)
 		},
@@ -162,7 +163,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	handler = actor.HTTPMiddleware(logger, handler)
 	handler = requestclient.InternalHTTPMiddleware(handler)
 	handler = requestinteraction.HTTPMiddleware(handler)
-	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
+	handler = trace.HTTPMiddleware(logger, handler)
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, gitserver, config), handler)
 
@@ -194,6 +195,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			},
 			db,
 			fs,
+			backendSource,
 			recordingCommandFactory,
 			logger,
 		),
@@ -324,7 +326,7 @@ func recordCommandsOnRepos(repos []string, ignoredGitCommands []string) wrexec.S
 	// we won't record any git commands with these commands since they are considered to be not destructive
 	ignoredGitCommandsMap := collections.NewSet(ignoredGitCommands...)
 
-	return func(ctx context.Context, cmd *exec.Cmd) bool {
+	return func(_ context.Context, cmd *exec.Cmd) bool {
 		base := filepath.Base(cmd.Path)
 		if base != "git" {
 			return false

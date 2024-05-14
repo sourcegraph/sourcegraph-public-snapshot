@@ -2,7 +2,6 @@ package conversion
 
 import (
 	"context"
-	"math"
 	"sort"
 	"strings"
 
@@ -22,7 +21,7 @@ const resultsPerResultChunk = 512
 // groupBundleData converts a raw (but canonicalized) correlation State into a GroupedBundleData.
 func groupBundleData(ctx context.Context, state *State) *precise.GroupedBundleDataChans {
 	numResults := len(state.DefinitionData) + len(state.ReferenceData) + len(state.ImplementationData)
-	numResultChunks := int(math.Max(1, math.Floor(float64(numResults)/resultsPerResultChunk)))
+	numResultChunks := max(1, numResults/resultsPerResultChunk)
 
 	meta := precise.MetaData{NumResultChunks: numResultChunks}
 	documents := serializeBundleDocuments(ctx, state)

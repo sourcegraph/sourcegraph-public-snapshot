@@ -28,6 +28,7 @@
 - [Set up local development with Zoekt and Sourcegraph](zoekt_local_dev.md)
 - [How to debug live code](debug_live_code.md)
 - [Ignoring editor config files in Git](ignoring_editor_config_files.md)
+- [How to inspect the database from IntelliJ](inspect_postgres_from_intellij.md)
 
 ## Testing Sourcegraph & CI
 

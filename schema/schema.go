@@ -610,6 +610,14 @@ type CloudKMSEncryptionKey struct {
 	Type            string `json:"type"`
 }
 
+// CodeMonitors description: Configuration options for code monitors
+type CodeMonitors struct {
+	// Concurrency description: The number of code monitor jobs allowed to run concurrenctly. Decrease to reduce peak load.
+	Concurrency int `json:"concurrency,omitempty"`
+	// PollInterval description: The interval at which a monitor checks for new changes. Increase to reduce average load.
+	PollInterval string `json:"pollInterval,omitempty"`
+}
+
 // Codeintel description: The configuration for the codeintel queue.
 type Codeintel struct {
 	// Limit description: The maximum number of dequeues allowed within the expiration window.
@@ -638,6 +646,14 @@ type CodyGateway struct {
 	BigQueryGoogleProjectID string `json:"bigQueryGoogleProjectID,omitempty"`
 	// BigQueryTable description: The table in the dataset to pull BigQuery Cody Gateway related events from.
 	BigQueryTable string `json:"bigQueryTable,omitempty"`
+}
+type CodyProConfig struct {
+	// SamsBackendOrigin description: Origin of the SAMS backend. (Must match the SAMS OIDC registration in auth.providers.)
+	SamsBackendOrigin string `json:"samsBackendOrigin,omitempty"`
+	// SscBackendOrigin description: Origin of the Self-serve Cody backend.
+	SscBackendOrigin string `json:"sscBackendOrigin,omitempty"`
+	// StripePublishableKey description: Stripe Publishable Key for use in Stripe Checkout, Stripe Elements. This is not considered a secret.
+	StripePublishableKey string `json:"stripePublishableKey,omitempty"`
 }
 
 // Completions description: Configuration for the completions service.
@@ -724,7 +740,8 @@ type DequeueCacheConfig struct {
 // Dotcom description: Configuration options for Sourcegraph.com only.
 type Dotcom struct {
 	// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
-	CodyGateway *CodyGateway `json:"codyGateway,omitempty"`
+	CodyGateway   *CodyGateway   `json:"codyGateway,omitempty"`
+	CodyProConfig *CodyProConfig `json:"codyProConfig,omitempty"`
 	// MinimumExternalAccountAge description: The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.
 	MinimumExternalAccountAge int `json:"minimumExternalAccountAge,omitempty"`
 	// MinimumExternalAccountAgeExemptList description: A list of email addresses that are allowed to be exempted from the minimumExternalAccountAge requirement.
@@ -954,6 +971,8 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// BatchChangesEnablePerforce description: When enabled, batch changes will be executable on Perforce depots.
 	BatchChangesEnablePerforce bool `json:"batchChanges.enablePerforce,omitempty"`
+	// CodeintelSyntacticIndexingEnabled description: When enabled, syntactic indexing jobs will be scheduled for all enabled repos
+	CodeintelSyntacticIndexingEnabled bool `json:"codeintelSyntacticIndexing.enabled,omitempty"`
 	// CodyContextIgnore description: Enabled filtering of remote Cody context based on repositories ./cody/ignore file
 	CodyContextIgnore *bool `json:"codyContextIgnore,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
@@ -1051,6 +1070,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "batchChanges.enablePerforce")
+	delete(m, "codeintelSyntacticIndexing.enabled")
 	delete(m, "codyContextIgnore")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
@@ -1314,6 +1334,8 @@ type GitHubConnection struct {
 	// RepositoryQuery description: An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph. The valid values are:
 	//
 	// - `public` mirrors all public repositories for GitHub Enterprise and is the equivalent of `none` for GitHub
+	//
+	// - `internal` mirrors all internal repositories for GitHub Enterprise and is the equivalent of `none` for GitHub
 	//
 	// - `affiliated` mirrors all repositories affiliated with the configured token's user:
 	// 	- Private repositories with read access
@@ -2559,10 +2581,8 @@ type SettingsExperimentalFeatures struct {
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
 	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
 	// SymbolKindTags description: Show the initial letter of the symbol kind instead of icons.
-	SymbolKindTags bool `json:"symbolKindTags,omitempty"`
-	// SyntacticIndexing description: Whether syntactic indexing is enabled
-	SyntacticIndexing bool           `json:"syntacticIndexing,omitempty"`
-	Additional        map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
+	SymbolKindTags bool           `json:"symbolKindTags,omitempty"`
+	Additional     map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
 }
 
 func (v SettingsExperimentalFeatures) MarshalJSON() ([]byte, error) {
@@ -2623,7 +2643,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "showCodeMonitoringLogs")
 	delete(m, "showMultilineSearchConsole")
 	delete(m, "symbolKindTags")
-	delete(m, "syntacticIndexing")
 	if len(m) > 0 {
 		v.Additional = make(map[string]any, len(m))
 	}
@@ -2753,6 +2772,8 @@ type SiteConfiguration struct {
 	CodeIntelRankingDocumentReferenceCountsGraphKey string `json:"codeIntelRanking.documentReferenceCountsGraphKey,omitempty"`
 	// CodeIntelRankingStaleResultsAge description: The interval at which to run the reduce job that computes document reference counts. Default is 24hrs.
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
+	// CodeMonitors description: Configuration options for code monitors
+	CodeMonitors *CodeMonitors `json:"codeMonitors,omitempty"`
 	// CodyContextFilters description: Rules defining the repositories that will never be shared by Cody with third-party LLM providers.
 	CodyContextFilters *CodyContextFilters `json:"cody.contextFilters,omitempty"`
 	// CodyEnabled description: Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.
@@ -3025,6 +3046,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelRanking.documentReferenceCountsEnabled")
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")
 	delete(m, "codeIntelRanking.staleResultsAge")
+	delete(m, "codeMonitors")
 	delete(m, "cody.contextFilters")
 	delete(m, "cody.enabled")
 	delete(m, "cody.permissions")

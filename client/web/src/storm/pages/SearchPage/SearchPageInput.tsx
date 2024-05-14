@@ -94,6 +94,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                     // In the new query input, context is either omitted (-> global)
                     // or explicitly specified.
                     selectedSearchContextSpec: v2QueryInput ? undefined : selectedSearchContextSpec,
+                    telemetryRecorder,
                     ...parameters,
                 })
             }
@@ -107,6 +108,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             caseSensitive,
             searchMode,
             v2QueryInput,
+            telemetryRecorder,
         ]
     )
     const submitSearchOnChangeRef = useRef(submitSearchOnChange)
@@ -134,6 +136,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         <LazyV2SearchInput
             autoFocus={!isTouchOnlyDevice}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             patternType={patternType}
             interpretComments={false}
             queryState={queryState}
@@ -157,6 +160,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                     submitSearch={submitSearchOnChange}
                     structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             ) : (
                 <LegacyToggles
@@ -181,6 +185,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             selectedSearchContextSpec={selectedSearchContextSpec}
             setSelectedSearchContextSpec={setSelectedSearchContextSpec}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             authenticatedUser={authenticatedUser}
             isSourcegraphDotCom={isSourcegraphDotCom}
             searchContextsEnabled={searchContextsEnabled}

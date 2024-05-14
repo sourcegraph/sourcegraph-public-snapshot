@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -14,5 +15,40 @@ go_library(
         "//internal/types",
         "//lib/errors",
         "@com_github_sourcegraph_conc//iter",
+    ],
+)
+
+go_test(
+    name = "resolvers_test",
+    srcs = ["context_test.go"],
+    embed = [":resolvers"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/internal/codycontext",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/dotcom",
+        "//internal/embeddings",
+        "//internal/gitserver",
+        "//internal/licensing",
+        "//internal/observation",
+        "//internal/rbac/types",
+        "//internal/search/backend",
+        "//internal/search/client",
+        "//internal/search/job",
+        "//internal/types",
+        "//lib/errors",
+        "//lib/pointers",
+        "//schema",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_sourcegraph_zoekt//:zoekt",
+        "@com_github_stretchr_testify//require",
     ],
 )

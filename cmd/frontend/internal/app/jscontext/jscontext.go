@@ -6,6 +6,7 @@ import (
 	"context"
 	"net/http"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
@@ -17,11 +18,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -49,6 +51,7 @@ type authProviderInfo struct {
 	AuthenticationURL string  `json:"authenticationURL"`
 	ServiceID         string  `json:"serviceID"`
 	ClientID          string  `json:"clientID"`
+	RequiredForAuthz  bool    `json:"requiredForAuthz"`
 }
 
 // GenericPasswordPolicy a generic password policy that holds password requirements
@@ -143,6 +146,12 @@ type LicenseFeatures struct {
 type LicenseInfo struct {
 	BatchChanges *FeatureBatchChanges `json:"batchChanges"`
 	Features     LicenseFeatures      `json:"features"`
+}
+
+// FrontendCodyProConfig is the configuration data for Cody Pro that needs to be passed
+// to the frontend.
+type FrontendCodyProConfig struct {
+	StripePublishableKey string `json:"stripePublishableKey"`
 }
 
 // JSContext is made available to JavaScript code via the
@@ -258,6 +267,9 @@ type JSContext struct {
 	RunningOnMacOS bool `json:"runningOnMacOS"`
 
 	SvelteKit sveltekit.JSContext `json:"svelteKit"`
+
+	// Bundle the Cody Pro configuration data that needs to be available on the frontend.
+	FrontendCodyProConfig *FrontendCodyProConfig `json:"frontendCodyProConfig"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -285,24 +297,35 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	// Auth providers
 	var authProviders []authProviderInfo
+	_, authzProviders := authz.GetProviders()
 	for _, p := range providers.SortedProviders() {
 		commonConfig := providers.GetAuthProviderCommon(p)
 		if commonConfig.Hidden {
 			continue
 		}
+
 		info := p.CachedInfo()
-		if info != nil {
-			authProviders = append(authProviders, authProviderInfo{
-				IsBuiltin:         p.Config().Builtin != nil,
-				NoSignIn:          commonConfig.NoSignIn,
-				DisplayName:       commonConfig.DisplayName,
-				DisplayPrefix:     commonConfig.DisplayPrefix,
-				ServiceType:       p.ConfigID().Type,
-				AuthenticationURL: info.AuthenticationURL,
-				ServiceID:         info.ServiceID,
-				ClientID:          info.ClientID,
-			})
+		if info == nil {
+			continue
 		}
+
+		requiredForAuthz := slices.ContainsFunc(authzProviders, func(authzProvider authz.Provider) bool {
+			return authzProvider.ServiceID() == info.ServiceID && authzProvider.ServiceType() == p.ConfigID().Type
+		})
+
+		providerInfo := authProviderInfo{
+			IsBuiltin:         p.Config().Builtin != nil,
+			NoSignIn:          commonConfig.NoSignIn,
+			DisplayName:       commonConfig.DisplayName,
+			DisplayPrefix:     commonConfig.DisplayPrefix,
+			ServiceType:       p.ConfigID().Type,
+			AuthenticationURL: info.AuthenticationURL,
+			ServiceID:         info.ServiceID,
+			ClientID:          info.ClientID,
+			RequiredForAuthz:  requiredForAuthz,
+		}
+
+		authProviders = append(authProviders, providerInfo)
 	}
 
 	pp := conf.AuthPasswordPolicy()
@@ -451,6 +474,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		RunningOnMacOS: runningOnMacOS,
 
 		SvelteKit: sveltekit.GetJSContext(req.Context()),
+	}
+	if dotcomConfig := conf.Get().Dotcom; dotcomConfig != nil {
+		if codyProConfig := dotcomConfig.CodyProConfig; codyProConfig != nil {
+			context.FrontendCodyProConfig = makeFrontendCodyProConfig(dotcomConfig.CodyProConfig)
+		}
 	}
 
 	// If the license a Sourcegraph instance is running under does not support Code Search features
@@ -672,4 +700,13 @@ func licenseInfo() (info LicenseInfo) {
 	}
 
 	return info
+}
+
+func makeFrontendCodyProConfig(config *schema.CodyProConfig) *FrontendCodyProConfig {
+	if config == nil {
+		return nil
+	}
+	return &FrontendCodyProConfig{
+		StripePublishableKey: config.StripePublishableKey,
+	}
 }

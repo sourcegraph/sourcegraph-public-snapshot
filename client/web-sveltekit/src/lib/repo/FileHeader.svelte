@@ -14,17 +14,22 @@
     const BLOB_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/blob/[...path]'
 
     export let repoName: string
+    export let revision: string | undefined
     export let path: string
     export let hideSidebarToggle = false
     export let type: 'blob' | 'tree'
 
-    $: breadcrumbs = path.split('/')
-        .map((part, index, all): [string, string] => [
-            part,
-            resolveRoute(
-                type === 'tree' ? TREE_ROUTE_ID : BLOB_ROUTE_ID,
-                { repo: repoName, path: all.slice(0, index + 1).join('/') }),
-        ])
+    $: breadcrumbs = path.split('/').map((part, index, all): [string, string] => [
+        part,
+        resolveRoute(
+            // Only the last element in a path can be a blob
+            index < all.length - 1 || type === 'tree' ? TREE_ROUTE_ID : BLOB_ROUTE_ID,
+            {
+                repo: revision ? `${repoName}@${revision}` : repoName,
+                path: all.slice(0, index + 1).join('/'),
+            }
+        ),
+    ])
 </script>
 
 <div class="header">
@@ -88,11 +93,10 @@
 <style lang="scss">
     .header {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         padding: 0.25rem 0.5rem;
-        border-bottom: 1px solid var(--border-color);
         background-color: var(--color-bg-1);
-        box-shadow: var(--fileheader-shadow);
+        border-bottom: 1px solid var(--border-color);
         z-index: 1;
         gap: 0.5rem;
     }
@@ -118,6 +122,10 @@
 
         a {
             color: var(--text-body);
+
+            &:hover {
+                color: var(--text-title);
+            }
         }
 
         .slash {

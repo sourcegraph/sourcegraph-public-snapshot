@@ -25,7 +25,8 @@ fn main() {
         Reply::Error {
             message: err.to_string(),
             fatal: true,
-        }.write(&mut stdout);
+        }
+        .write(&mut stdout);
         stdout.flush().unwrap()
     }
 }

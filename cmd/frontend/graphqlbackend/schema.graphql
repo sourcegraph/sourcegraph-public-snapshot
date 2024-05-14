@@ -1910,8 +1910,9 @@ type Query {
 
     """
     Retrieve all registered out-of-band migrations.
+    Optionally filter deprecated before first version out-of-band-migrations.
     """
-    outOfBandMigrations: [OutOfBandMigration!]!
+    outOfBandMigrations(ExcludeDeprecatedBeforeFirstVersion: Boolean): [OutOfBandMigration!]!
 
     """
     Retrieve the list of defined feature flags

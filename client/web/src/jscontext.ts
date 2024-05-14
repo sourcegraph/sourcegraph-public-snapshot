@@ -30,6 +30,7 @@ export interface AuthProvider {
     serviceID: string
     clientID: string
     noSignIn: boolean
+    requiredForAuthz: boolean
 }
 
 /**
@@ -300,6 +301,11 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         enabledRoutes: number[]
         knownRoutes: string[]
         showToggle: boolean
+    }
+
+    /** Configuration for Cody Pro-tier functionality, if applicable. */
+    frontendCodyProConfig?: {
+        stripePublishableKey: string
     }
 }
 

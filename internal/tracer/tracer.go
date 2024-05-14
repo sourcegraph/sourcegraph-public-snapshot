@@ -1,7 +1,10 @@
 package tracer
 
 import (
+	"strings"
+	"sync"
 	"sync/atomic"
+	"text/template"
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/stdr"
@@ -13,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -119,9 +123,49 @@ func Init(logger log.Logger, c WatchableConfigurationSource) {
 	otel.SetTextMapPropagator(oteldefaults.Propagator())
 	otel.SetTracerProvider(otelTracerProvider)
 
+	// Configure the trace package to render trace URLs nicely with the settings
+	// from site config.
+	setupTraceURL(c)
+
 	// Initially everything is disabled since we haven't read conf yet - start a goroutine
 	// that watches for updates to configure the undelrying provider and debugMode.
 	go c.Watch(newConfWatcher(logger, c, provider, newOtelSpanProcessor, debugMode))
+}
+
+func setupTraceURL(c ConfigurationSource) {
+	var (
+		cachedURLTemplateStr string
+		cachedURLTemplate    *template.Template
+		cachedURLTemplateErr error
+		cachedURLTemplateMu  sync.Mutex
+	)
+
+	trace.RegisterURLRenderer(func(traceID string) string {
+		tracing := c.Config().ObservabilityTracing
+		if tracing == nil || tracing.UrlTemplate == "" {
+			return ""
+		}
+
+		cachedURLTemplateMu.Lock()
+		defer cachedURLTemplateMu.Unlock()
+
+		if cachedURLTemplateStr != tracing.UrlTemplate {
+			cachedURLTemplateStr = tracing.UrlTemplate
+			cachedURLTemplate, cachedURLTemplateErr = template.New("traceURL").Parse(tracing.UrlTemplate)
+		}
+
+		if cachedURLTemplateErr != nil {
+			// We contribute a validator on tracer package init, so safe to no-op here
+			return ""
+		}
+
+		var sb strings.Builder
+		_ = cachedURLTemplate.Execute(&sb, map[string]string{
+			"TraceID":     traceID,
+			"ExternalURL": c.Config().ExternalURL,
+		})
+		return sb.String()
+	})
 }
 
 type toggledLogrSink struct {

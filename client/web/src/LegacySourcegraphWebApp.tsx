@@ -35,6 +35,7 @@ import {
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { NoOpTelemetryRecorderProvider } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { WildcardThemeContext, type WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser as authenticatedUserSubject, type AuthenticatedUser, authenticatedUserValue } from './auth'
@@ -53,7 +54,6 @@ import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { StaticAppConfig } from './staticAppConfig'
 import { setQueryStateFromSettings, useDeveloperSettings, useNavbarQueryState } from './stores'
 import { TelemetryRecorderProvider } from './telemetry'
-import { eventLogger } from './tracking/eventLogger'
 import { UserSessionStores } from './UserSessionStores'
 import { getLicenseFeatures } from './util/license'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
@@ -224,7 +224,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(this.state.settingsCascade)}
                             batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
                             fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
-                            telemetryService={eventLogger}
+                            telemetryService={EVENT_LOGGER}
                             telemetryRecorder={window.context.telemetryRecorder}
                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             isSearchContextSpecAvailable={isSearchContextSpecAvailable}

@@ -5,11 +5,11 @@
     import LoadingSpinner from '../LoadingSpinner.svelte'
 
     export let value: string
-    export let placeholder: string | undefined
-    export let autofocus: boolean | undefined
+    export let placeholder: string | undefined = undefined
+    export let autofocus: boolean | undefined = undefined
     export let onInput: FormEventHandler<HTMLInputElement> | undefined = undefined
     export let input: HTMLInputElement | undefined = undefined
-    export let actions: Array<(node: HTMLInputElement) => ActionReturn>
+    export let actions: Array<(node: HTMLInputElement) => ActionReturn> = []
     export let loading: boolean = false
 
     $: bindAction = function bindAction(node: HTMLInputElement) {
@@ -45,6 +45,7 @@
         {placeholder}
         class:loading
         on:input={onInput}
+        on:keydown
         {...$$restProps}
     />
 

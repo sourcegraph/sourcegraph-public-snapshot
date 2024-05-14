@@ -149,13 +149,6 @@ def linter_dependencies():
     )
 
     go_repository(
-        name = "com_github_kyoh86_exportloopref",
-        importpath = "github.com/kyoh86/exportloopref",
-        version = "v0.1.11",
-        sum = "h1:1Z0bcmTypkL3Q4k+IDHMWTcnCliEZcaPiIe0/ymEyhQ=",
-    )
-
-    go_repository(
         name = "co_honnef_go_tools",
         importpath = "honnef.co/go/tools",
         version = "v0.4.3",

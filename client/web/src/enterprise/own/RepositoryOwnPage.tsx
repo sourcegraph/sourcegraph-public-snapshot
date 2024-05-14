@@ -104,7 +104,12 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                     </H1>
                 </PageHeader>
 
-                <TreeOwnershipPanel repoID={repo.id} filePath={filePath} telemetryService={telemetryService} />
+                <TreeOwnershipPanel
+                    repoID={repo.id}
+                    filePath={filePath}
+                    telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
+                />
             </Page>
             {openAddOwnerModal && <AddOwnerModal repoID={repo.id} path={filePath} onCancel={closeModal} />}
         </>

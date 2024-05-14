@@ -56,7 +56,7 @@
                 <tbody>
                     {#each plaintextLines as line, index}
                         <tr>
-                            <td class="line" data-line={startLine + index} />
+                            <td class="line" data-line={startLine + index + 1} />
                             <td class="code">{line}</td>
                         </tr>
                     {/each}
@@ -81,7 +81,7 @@
 
         font-family: var(--code-font-family);
         font-size: var(--code-font-size);
-        line-height: 1rem;
+        line-height: 1.1rem;
         white-space: pre;
 
         :global(td.line::before) {

@@ -1,6 +1,7 @@
 package gitdomain
 
 import (
+	"io/fs"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	protobuf "google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 )
 
@@ -354,6 +356,50 @@ func TestRoundTripContributorCount(t *testing.T) {
 
 		return true
 	}, nil)
+	if err != nil {
+		t.Fatalf("unexpected diff (-want +got):\n%s", diff)
+	}
+}
+
+func TestRoundTripBehindAhead(t *testing.T) {
+	diff := ""
+
+	err := quick.Check(func(behind, ahead uint32) bool {
+		original := BehindAhead{
+			Behind: behind,
+			Ahead:  ahead,
+		}
+		converted := BehindAheadFromProto(original.ToProto())
+		if diff = cmp.Diff(&original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}, nil)
+
+	if err != nil {
+		t.Fatalf("unexpected diff (-want +got):\n%s", diff)
+	}
+}
+
+func TestRoundTripFileInfo(t *testing.T) {
+	diff := ""
+
+	err := quick.Check(func(name string, mode fs.FileMode, size int64, oid OID) bool {
+		original := &fileutil.FileInfo{
+			Name_: name,
+			Mode_: mode,
+			Size_: size,
+			Sys_:  objectInfo(oid),
+		}
+		converted := ProtoFileInfoToFS(FSFileInfoToProto(original))
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}, nil)
+
 	if err != nil {
 		t.Fatalf("unexpected diff (-want +got):\n%s", diff)
 	}

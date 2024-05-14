@@ -10,29 +10,31 @@
 <script lang="ts">
     import type { SVGAttributes } from 'svelte/elements'
 
-    interface $$Props extends SVGAttributes<SVGElement> {
+    type $$Props = SVGAttributes<SVGElement> & {
         svgPath: string
         inline?: boolean
-        size?: number
     }
 
     export let svgPath: string
     export let inline: boolean = false
-    export let size: number = 24
 </script>
 
-<svg class:icon-inline={inline} height={size} width={size} viewBox="0 0 24 24" data-icon {...$$restProps}>
+<svg class:icon-inline={inline} viewBox="0 0 24 24" data-icon {...$$restProps}>
     <path d={svgPath} />
 </svg>
 
 <style lang="scss">
-    :root {
-        --icon-size: 1.5rem;
-    }
+    $iconSize: var(--icon-size, 1.5rem);
+    $iconInlineSize: var(--icon-inline-size, #{(16 / 14)}em);
 
     svg {
-        width: var(--icon-size);
-        height: var(--icon-size);
+        width: $iconSize;
+        height: $iconSize;
+        &.icon-inline {
+            width: $iconInlineSize;
+            height: $iconInlineSize;
+            vertical-align: text-bottom;
+        }
         color: var(--icon-fill-color, var(--color, inherit));
         fill: currentColor;
     }

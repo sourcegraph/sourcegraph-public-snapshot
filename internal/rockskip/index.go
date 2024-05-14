@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+	"unicode/utf8"
 
 	"github.com/amit7itz/goset"
 	pg "github.com/lib/pq"
@@ -136,12 +137,22 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 		deletedPaths := []string{}
 		addedPaths := []string{}
 		for _, pathStatus := range entry.PathStatuses {
-			if pathStatus.Status == gitdomain.DeletedAMD || pathStatus.Status == gitdomain.ModifiedAMD {
+			if !utf8.ValidString(pathStatus.Path) {
+				s.logger.Warn(
+					"Rockskip skipping file due to path not being utf-8 encoded",
+					log.String("repo", repo),
+					log.String("path", pathStatus.Path),
+				)
+				continue
+			}
+
+			if pathStatus.Status == gitdomain.StatusDeleted || pathStatus.Status == gitdomain.StatusModified {
 				deletedPaths = append(deletedPaths, pathStatus.Path)
 			}
-			if pathStatus.Status == gitdomain.AddedAMD || pathStatus.Status == gitdomain.ModifiedAMD {
+			if pathStatus.Status == gitdomain.StatusAdded || pathStatus.Status == gitdomain.StatusModified {
 				addedPaths = append(addedPaths, pathStatus.Path)
 			}
+			// Ignoring StatusTypeChanged because there are no changes to the contents of a file.
 		}
 
 		symbolsFromDeletedFiles := map[string]*goset.Set[string]{}
@@ -213,13 +224,16 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 				added = goset.NewSet[string]()
 			}
 			switch pathStatus.Status {
-			case gitdomain.DeletedAMD:
+			case gitdomain.StatusDeleted:
 				deletedSymbols[pathStatus.Path] = deleted
-			case gitdomain.AddedAMD:
+			case gitdomain.StatusAdded:
 				addedSymbols[pathStatus.Path] = added
-			case gitdomain.ModifiedAMD:
+			case gitdomain.StatusModified:
 				deletedSymbols[pathStatus.Path] = deleted.Difference(added)
 				addedSymbols[pathStatus.Path] = added.Difference(deleted)
+			case gitdomain.StatusTypeChanged:
+				// a type change does not change the contents of a file,
+				// so this is safe to ignore.
 			}
 		}
 

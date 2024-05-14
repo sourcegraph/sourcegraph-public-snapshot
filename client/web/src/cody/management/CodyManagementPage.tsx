@@ -21,8 +21,8 @@ import {
 import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
-import { useCodyPaymentsUrl } from '../subscription/CodySubscriptionPage'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
+import { manageSubscriptionRedirectURL } from '../util'
 
 import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
@@ -44,13 +44,24 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     authenticatedUser,
     telemetryRecorder,
 }) => {
+    const navigate = useNavigate()
     const parameters = useSearchParameters()
 
     const utm_source = parameters.get('utm_source')
-
     useEffect(() => {
         telemetryRecorder.recordEvent('cody.management', 'view')
     }, [utm_source, telemetryRecorder])
+
+    // The cody_client_user URL query param is added by the VS Code & Jetbrains
+    // extensions. We redirect them to a "switch account" screen if they are
+    // logged into their IDE as a different user account than their browser.
+    const codyClientUser = parameters.get('cody_client_user')
+    const accountSwitchRequired = !!codyClientUser && authenticatedUser && authenticatedUser.username !== codyClientUser
+    useEffect(() => {
+        if (accountSwitchRequired) {
+            navigate(`/cody/switch-account/${codyClientUser}`)
+        }
+    }, [accountSwitchRequired, codyClientUser, navigate])
 
     const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
@@ -64,11 +75,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const subscription = data?.currentUser?.codySubscription
 
-    const codyPaymentsUrl = useCodyPaymentsUrl()
-    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
-
-    const navigate = useNavigate()
-
     useEffect(() => {
         if (!!data && !data?.currentUser) {
             navigate('/sign-in?returnTo=/cody/manage')
@@ -78,6 +84,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     const onClickUpgradeToProCTA = useCallback(() => {
         telemetryRecorder.recordEvent('cody.management.upgradeToProCTA', 'click')
     }, [telemetryRecorder])
+
+    if (accountSwitchRequired) {
+        return null
+    }
 
     if (dataError || usageDateError) {
         throw dataError || usageDateError

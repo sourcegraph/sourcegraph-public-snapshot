@@ -25,7 +25,7 @@
 * Optimizes unnecessary search queries by using commit history to query only for time periods that have had at least one commit.
 * Supports filtering:
   * By repository regexp
-  * By repositories included/excluded by a search context 
+  * By repositories included/excluded by a search context
   * By filter options: name, result count, date added, and number of data series
 * Provides permissions restrictions by filtering of repositories that are not visible to the user at query time.
 
@@ -38,7 +38,7 @@ The following architecture diagram shows how the backend fits into the two Sourc
 [![Architecture diagram](diagrams/architecture.svg)](https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/doc/dev/background-information/insights/diagrams/architecture.svg)
 
 
-## Feature Flags 
+## Feature Flags
 Code Insights ships with an "escape hatch" feature flag that will completely disable the dependency on the Code Insights DB (named `codeinsights-db`). This feature flag is implemented as an environment variable that if set true `DISABLE_CODE_INSIGHTS=true` will disable the dependency and will not start the Code Insights background workers or GraphQL resolvers. This variable must be set on both the `worker` and `frontend` services to remove the dependency. If the flag is not set on both services, the `codeinsights-db` dependency will be required.
 
 Implementation of this environment variable can be found in the [`frontend`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:internal/insights/insights.go+DISABLE_CODE_INSIGHTS+&patternType=lucky) and [`worker`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:internal/insights/background+DISABLE_CODE_INSIGHTS+&patternType=lucky) services.
@@ -48,7 +48,7 @@ This flag should be used judiciously and should generally be considered a last r
 With version 3.31 this flag has moved from the `repo-updater` service to the `worker` service.
 
 ### Sourcegraph Setting
-Code Insights is currently enabled by default on customer instances 3.32 and later, but can be disabled from appearing in the UI by setting this flag to false, either per-user config (`/users/your_username/settings`) or on site admin global settings (`/site-admin/global-settings`). 
+Code Insights is currently enabled by default on customer instances 3.32 and later, but can be disabled from appearing in the UI by setting this flag to false, either per-user config (`/users/your_username/settings`) or on site admin global settings (`/site-admin/global-settings`).
 
 ```json
   "experimentalFeatures": {
@@ -101,22 +101,22 @@ one for each unique result.
 
 If we only record data starting when the series were created, it would take months or longer for users to get any value out of insights. This introduces the need for us to backfill data by running search queries that answer "how many results existed in the past?" so we can populate historical data.
 
-Backfilling relies on two background goroutines _[New Backfill](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/internal/insights/scheduler/backfill_state_new_handler.go?L88:96&popover=pinned#tab=references)_  and _[In Progress Backfill](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/internal/insights/scheduler/backfill_state_inprogress_handler.go?L123:29&popover=pinned#tab=references)_. 
+Backfilling relies on two background goroutines _[New Backfill](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/internal/insights/scheduler/backfill_state_new_handler.go?L88:96&popover=pinned#tab=references)_  and _[In Progress Backfill](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/internal/insights/scheduler/backfill_state_inprogress_handler.go?L123:29&popover=pinned#tab=references)_.
 
 When an insight is created a new Backfill record is created for each series in the `new` state.
 
 The _New Backfill_ processes backfills in the `new` state and determines which repositories are needed along with an estimated cost which determines the order in which it will be backfilled. It then moves the backfill record to the `in progress` state.
 
 The _In Progress Backfill_ processes backfills in the `in progress` state by iterating over the repositories and completing the following:
-  1. Determines the revisions to search for a specific date/time 
-  2. Execute the searches 
+  1. Determines the revisions to search for a specific date/time
+  2. Execute the searches
   3. Record the results in the database
- 
+
 This process will repeat until all repositories for the series have been searched, checking at a [configurable interval of time](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/schema/schema.go?L2393:2&popover=pinned) to ensure no higher priority work has arrived.
 
 Naively implemented, the backfiller would take a long time on any reasonably sized Sourcegraph installation. As an optimization,
 the backfiller will only query for time periods that have recorded changes in each repository. This is accomplished by looking
-at the repository's commits and determining if that time period is eligible for removal. 
+at the repository's commits and determining if that time period is eligible for removal.
 Read more [below](#Backfill-compression)
 
 There is a rate limit associated with analyzing historical data frames. This limit can be configured using the site setting
@@ -126,11 +126,11 @@ impact to `gitserver`. A likely safe starting point on most Sourcegraph installa
 #### Backfill compression
 Read more about the backfilling compression in the proposal [RFC 392](https://docs.google.com/document/d/1VDk5Buks48THxKPwB-b7F42q3tlKuJkmUmaCxv2oEzI/edit#heading=h.3babtpth82k2)
 
-We query gitserver for commits and use that to filter out repositories and/or time periods that do not need any search queries.  
+We query gitserver for commits and use that to filter out repositories and/or time periods that do not need any search queries.
 
 #### Detecting if an insight is _complete_
 Given the large possible cardinality of required queries to backfill an insight, it is clear this process can take some time. Through dogfooding we have found
-on a Sourcegraph installation with ~36,000 repositories, we can expect to backfill an average insight in 20-30 minutes. The actual benchmarks of how long 
+on a Sourcegraph installation with ~36,000 repositories, we can expect to backfill an average insight in 20-30 minutes. The actual benchmarks of how long
 this will take vary greatly depending on the commit patterns and size of the Installation.
 
 One important piece of information that needs to be surfaced to users is the answer to the question `is my insight still processing?`, this can be determined my examining the Backfill records for all of the series contained in an insight.  When all backfills have reached a terminal state the processing is complete.
@@ -139,22 +139,22 @@ One important piece of information that needs to be surfaced to users is the ans
 
 ### (2) The _insight enqueuer_ (indexed recorder) detects existing insights that need new data
 
-The _insight enqueuer_ is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/internal/insights/background/insight_enqueuer.go?L27:6)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the `worker` container/process.
+The _insight enqueuer_ is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@008d572e1e9c79b28d0feaf48b09b9dffb2f1152/-/blob/internal/insights/background/insight_enqueuer.go)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the `worker` container/process.
 
 Its job is to periodically schedule a recording of 'current' values for Insights by enqueuing a recording using a global query. This only requires a single global query per insight regardless of the number of repositories,
-and will return results for all the matched repositories. Each matched repository will still be recorded individually. 
+and will return results for all the matched repositories. Each matched repository will still be recorded individually.
 
 You can find these search queries for queued jobs on the (primary postgres) table `insights_query_runner_jobs.search_query`
 
 Insight recordings are scheduled using the database field (codeinsights-db) `insight_series.next_recording_after` or `insight_series.next_snapshot_after`, and will only be taken if the field time is less than the execution time of the job.
-Recordings are scheduled to occur one interval (per series definition) following the execution time. For example, if a recording was taken at `2021-08-27T15:29:00.000Z` 
+Recordings are scheduled to occur one interval (per series definition) following the execution time. For example, if a recording was taken at `2021-08-27T15:29:00.000Z`
 with an interval definition of 1 day, the next recording will be scheduled for `2021-08-28T15:29:00.000Z`. The first recording after insight creation will occur on the same interval.  Snapshots are scheduled to occur daily and are removed each time a new snapshot is captured.
 
 ### (3) The queryrunner worker gets work and runs the search query
 
 The queryrunner ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/internal/insights/background/queryrunner/worker.go)) is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/internal/insights/background/queryrunner/worker.go?L42:6)), it is responsible for:
 
-1. Dequeueing search queries that have been queued by the `insight_enqueuer`. Queries are stored with a `priority` field that 
+1. Dequeueing search queries that have been queued by the `insight_enqueuer`. Queries are stored with a `priority` field that
    [dequeues](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be905/-/blob/internal/insights/background/queryrunner/worker.go?L134) queries in ascending priority order (0 is higher priority than 100).
 2. Executing a search against Sourcegraph with the provided query. These queries are executed against the `internal` API, meaning they are *unauthorized* and can see all results. This allows us to build global results and filter based on user permissions at query time.
 3. Aggregating the search results, per repository and storing them in the `series_points` table.
@@ -189,7 +189,7 @@ behind this decision:
   In order to possibly support both (or either), we gain the most flexibility by performing query time limitations.
 2. We can reuse pre-calculated data series across multiple users if they provide the same query to generate an insight. This not only reduces the storage overhead, but makes
   the user experience substantially better if the data series is already calculated.
-   
+
 Given the large possible cardinality of the visible repository set, it is not practical to select all repos a user has access to at query time. Additionally, this data does not live
 in the same database as the timeseries data, requiring some network traversal.
 
@@ -198,7 +198,7 @@ of Sourcegraph have access to most repositories. This is a fairly highly validat
 This may not be suitable for Sourcegraph installations with highly controlled repository permissions, and may need revisiting.
 
 ### Storage Format
-The code insights time series are currently stored entirely within Postgres. 
+The code insights time series are currently stored entirely within Postgres.
 
 As a design, insight data is stored as a full vector of match results per unique time point. This means that for some time `T`, all of the unique timeseries that fall under
 one insight series can be aggregated to form the total result. Given that the processing system will execute every query at-least once, the possibility of duplicates
@@ -225,7 +225,7 @@ In this section, I'll cover useful tips I have for debugging the system when dev
 
 The `sg insights` tool is a developer-built tool to perform some common database queries used when debugging insight issues.
 
-You can check available commands using the `sg insights -h` command. 
+You can check available commands using the `sg insights -h` command.
 
 ### Finding logs
 

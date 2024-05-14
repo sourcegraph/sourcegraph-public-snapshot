@@ -4,13 +4,13 @@ import { useLocation } from 'react-router-dom'
 
 import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Link, LoadingSpinner, Alert, Text, Input, ErrorAlert, Form, Container } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import { LoaderButton } from '../components/LoaderButton'
 import { PageTitle } from '../components/PageTitle'
 import type { SourcegraphContext } from '../jscontext'
-import { eventLogger } from '../tracking/eventLogger'
 
 import { AuthPageWrapper } from './AuthPageWrapper'
 import { PasswordInput } from './SignInSignUpCommon'
@@ -239,7 +239,7 @@ export const ResetPasswordPage: React.FunctionComponent<ResetPasswordPageProps> 
     const location = useLocation()
 
     React.useEffect(() => {
-        eventLogger.logViewEvent('ResetPassword', false)
+        EVENT_LOGGER.logViewEvent('ResetPassword', false)
         props.telemetryRecorder.recordEvent('auth.resetPassword', 'view')
     }, [props.telemetryRecorder])
 

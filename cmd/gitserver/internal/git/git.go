@@ -1,21 +1,11 @@
 package git
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
-	"strconv"
-	"strings"
 	"sync"
-	"syscall"
-	"time"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
@@ -110,86 +100,6 @@ var badRefs = sync.OnceValue(func() []string {
 	}
 	return refs
 })
-
-// LatestCommitTimestamp returns the timestamp of the most recent commit if any.
-// If there are no commits or the latest commit is in the future, or there is any
-// error, time.Now is returned.
-func LatestCommitTimestamp(logger log.Logger, dir common.GitDir) time.Time {
-	logger = logger.Scoped("LatestCommitTimestamp").
-		With(log.String("repo", string(dir)))
-
-	now := time.Now() // return current time if we don't find a more accurate time
-	cmd := exec.Command("git", "rev-list", "--all", "--timestamp", "-n", "1")
-	dir.Set(cmd)
-	output, err := cmd.Output()
-	// If we don't have a more specific stamp, we'll return the current time,
-	// and possibly an error.
-	if err != nil {
-		logger.Warn("failed to execute, defaulting to time.Now", log.Error(err))
-		return now
-	}
-
-	words := bytes.Split(output, []byte(" "))
-	// An empty rev-list output, without an error, is okay.
-	if len(words) < 2 {
-		return now
-	}
-
-	// We should have a timestamp and a commit hash; format is
-	// 1521316105 ff03fac223b7f16627b301e03bf604e7808989be
-	epoch, err := strconv.ParseInt(string(words[0]), 10, 64)
-	if err != nil {
-		logger.Warn("ignoring corrupted timestamp, defaulting to time.Now", log.String("timestamp", string(words[0])))
-		return now
-	}
-	stamp := time.Unix(epoch, 0)
-	if stamp.After(now) {
-		return now
-	}
-	return stamp
-}
-
-// ComputeRefHash returns a hash of the refs for dir. The hash should only
-// change if the set of refs and the commits they point to change.
-func ComputeRefHash(dir common.GitDir) ([]byte, error) {
-	// Do not use CommandContext since this is a fast operation we do not want
-	// to interrupt.
-	cmd := exec.Command("git", "show-ref")
-	dir.Set(cmd)
-	output, err := cmd.Output()
-	if err != nil {
-		// Ignore the failure for an empty repository: show-ref fails with
-		// empty output and an exit code of 1
-		var e *exec.ExitError
-		if !errors.As(err, &e) || len(output) != 0 || len(e.Stderr) != 0 || e.Sys().(syscall.WaitStatus).ExitStatus() != 1 {
-			return nil, err
-		}
-	}
-
-	// TODO: This seems like it could require a lot of memory for very large repos.
-	lines := bytes.Split(output, []byte("\n"))
-	sort.Slice(lines, func(i, j int) bool {
-		return bytes.Compare(lines[i], lines[j]) < 0
-	})
-	hasher := sha256.New()
-	for _, b := range lines {
-		_, _ = hasher.Write(b)
-		_, _ = hasher.Write([]byte("\n"))
-	}
-	hash := make([]byte, hex.EncodedLen(hasher.Size()))
-	hex.Encode(hash, hasher.Sum(nil))
-	return hash, nil
-}
-
-// CheckSpecArgSafety returns a non-nil err if spec begins with a "-", which could
-// cause it to be interpreted as a git command line argument.
-// TODO: Should be removed once the exec endpoint is gone.
-func CheckSpecArgSafety(spec string) error {
-	if strings.HasPrefix(spec, "-") {
-		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)
-	}
-	return nil
-}
 
 // MakeBareRepo initializes a new bare repo at the given dir.
 func MakeBareRepo(ctx context.Context, dir string) error {

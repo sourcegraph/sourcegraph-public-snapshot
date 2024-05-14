@@ -1,6 +1,7 @@
+use std::collections::HashMap;
+
 use paste::paste;
 use scip::types::{Document, Occurrence, SyntaxKind};
-use std::collections::HashMap;
 use tree_sitter_all_languages::ParserId;
 use tree_sitter_highlight::{
     Highlight, HighlightConfiguration, HighlightEvent, Highlighter as TSHighlighter,
@@ -9,7 +10,7 @@ use tree_sitter_highlight::{
 use crate::range::Range;
 
 macro_rules! include_scip_query {
-    ($lang: expr, $query: literal) => {
+    ($lang:expr, $query:literal) => {
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/queries/",
@@ -20,8 +21,9 @@ macro_rules! include_scip_query {
         ))
     };
 }
-use crate::highlighting::TreeSitterLanguageName;
 pub(crate) use include_scip_query;
+
+use crate::highlighting::TreeSitterLanguageName;
 
 #[rustfmt::skip]
 // This table serves two purposes.
@@ -423,10 +425,13 @@ mod test {
         io::Read,
     };
 
-    use super::*;
-    use crate::highlighting::FileInfo;
-    use crate::snapshot::{self, dump_document_with_config};
     use if_chain::if_chain;
+
+    use super::*;
+    use crate::{
+        highlighting::FileInfo,
+        snapshot::{self, dump_document_with_config},
+    };
 
     fn snapshot_treesitter_syntax_kinds(doc: &Document, source: &str) -> String {
         dump_document_with_config(

@@ -21,37 +21,37 @@ var svelteKitRoutes = []svelteKitRoute{
 	{
 		Id:      "/[...repo=reporev]/(validrev)/(code)",
 		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/?$"),
-		Tag:     tags.EnableOptIn | tags.RepoRoot,
+		Tag:     tags.EnableOptIn | tags.RepoRoot | tags.EnableRollout,
 	},
 	{
 		Id:      "/[...repo=reporev]/(validrev)/(code)/-/blob/[...path]",
 		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/blob(?:/.*)?/?$"),
-		Tag:     tags.EnableOptIn,
+		Tag:     tags.EnableOptIn | tags.EnableRollout,
 	},
 	{
 		Id:      "/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]",
 		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/tree(?:/.*)?/?$"),
-		Tag:     tags.EnableOptIn,
+		Tag:     tags.EnableOptIn | tags.EnableRollout,
 	},
 	{
 		Id:      "/[...repo=reporev]/(validrev)/-/branches",
 		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/branches/?$"),
-		Tag:     tags.EnableOptIn,
+		Tag:     tags.EnableOptIn | tags.EnableRollout,
 	},
 	{
 		Id:      "/[...repo=reporev]/(validrev)/-/branches/all",
 		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/branches/all/?$"),
-		Tag:     tags.EnableOptIn,
+		Tag:     tags.EnableOptIn | tags.EnableRollout,
 	},
 	{
 		Id:      "/[...repo=reporev]/(validrev)/-/commit/[...revspec]",
 		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/commit(?:/.*)?/?$"),
-		Tag:     tags.EnableOptIn,
+		Tag:     tags.EnableOptIn | tags.EnableRollout,
 	},
 	{
-		Id:      "/[...repo=reporev]/(validrev)/-/commits",
-		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/commits/?$"),
-		Tag:     tags.EnableOptIn,
+		Id:      "/[...repo=reporev]/(validrev)/-/commits/[...path]",
+		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/commits(?:/.*)?/?$"),
+		Tag:     tags.EnableOptIn | tags.EnableRollout,
 	},
 	{
 		Id:      "/[...repo=reporev]/(validrev)/-/stats/contributors",
@@ -61,7 +61,7 @@ var svelteKitRoutes = []svelteKitRoute{
 	{
 		Id:      "/[...repo=reporev]/(validrev)/-/tags",
 		Pattern: regexp.MustCompile("^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/tags/?$"),
-		Tag:     tags.EnableOptIn,
+		Tag:     tags.EnableOptIn | tags.EnableRollout,
 	},
 	{
 		Id:      "/search",

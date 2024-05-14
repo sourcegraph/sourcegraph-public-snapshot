@@ -119,15 +119,19 @@ func (j *searchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
 
-	wg := pool.NewWithResults[response]()
-	wg.Go(func() response {
-		return j.doSearch(ctx, clients, j.textJob, j.textCount)
-	})
-	wg.Go(func() response {
+	codeGroup := pool.NewWithResults[response]()
+	codeGroup.Go(func() response {
 		return j.doSearch(ctx, clients, j.codeJob, j.codeCount)
 	})
-	responses := wg.Wait()
 
+	textGroup := pool.NewWithResults[response]()
+	textGroup.Go(func() response {
+		return j.doSearch(ctx, clients, j.textJob, j.textCount)
+	})
+
+	// For consistency, always return code results before text results. This is not critical for response
+	// quality, but just makes testing easier.
+	responses := append(codeGroup.Wait(), textGroup.Wait()...)
 	for _, r := range responses {
 		stream.Send(streaming.SearchEvent{
 			Results: r.matches,

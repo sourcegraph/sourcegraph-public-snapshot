@@ -9,7 +9,6 @@ import (
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -25,7 +24,7 @@ func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 				if tr := trace.FromContext(req.Context()); tr.IsRecording() {
 					tr.SetError(err)
 					traceID = trace.ID(req.Context())
-					traceURL = trace.URL(traceID, conf.DefaultClient())
+					traceURL = trace.URL(traceID)
 				}
 				log15.Error(
 					"App HTTP handler error response",

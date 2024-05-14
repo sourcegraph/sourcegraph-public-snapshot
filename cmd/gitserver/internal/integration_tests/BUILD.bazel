@@ -20,7 +20,6 @@ go_test(
         "clone_test.go",
         "main_test.go",
         "object_test.go",
-        "resolverevisions_test.go",
         "tree_test.go",
         "utils_test.go",
     ],

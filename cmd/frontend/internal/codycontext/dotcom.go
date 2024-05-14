@@ -41,7 +41,7 @@ func (f *dotcomRepoFilter) getEnabled() bool {
 	return f.enabled
 }
 
-func (f *dotcomRepoFilter) GetMatcher(ctx context.Context, repos []types.RepoIDName) ([]types.RepoIDName, FileMatcher, error) {
+func (f *dotcomRepoFilter) getMatcher(ctx context.Context, repos []types.RepoIDName) ([]types.RepoIDName, fileMatcher, error) {
 	if !f.getEnabled() {
 		return repos, func(repo api.RepoID, path string) bool {
 			return true
@@ -53,7 +53,7 @@ func (f *dotcomRepoFilter) GetMatcher(ctx context.Context, repos []types.RepoIDN
 // getFilter returns the list of repos that can be filtered
 // their .cody/ignore files (or don't have one). If an error
 // occurs that repo will be excluded.
-func (f *dotcomRepoFilter) getFilter(ctx context.Context, repos []types.RepoIDName) ([]types.RepoIDName, FileMatcher, error) {
+func (f *dotcomRepoFilter) getFilter(ctx context.Context, repos []types.RepoIDName) ([]types.RepoIDName, fileMatcher, error) {
 	filters := make(map[api.RepoID]filterFunc, len(repos))
 	filterableRepos := make([]types.RepoIDName, 0, len(repos))
 
@@ -85,10 +85,10 @@ func (f *dotcomRepoFilter) getFilter(ctx context.Context, repos []types.RepoIDNa
 	}, nil
 }
 
-// newDotcomFilter creates a new RepoContentFilter that filters out
+// newDotcomFilter creates a new repoContentFilter that filters out
 // content based on the .cody/ignore file at the head of the default branch
 // for the given repositories.
-func newDotcomFilter(logger log.Logger, client gitserver.Client) RepoContentFilter {
+func newDotcomFilter(logger log.Logger, client gitserver.Client) repoContentFilter {
 	enabled := isEnabled(conf.Get())
 	ignoreFilter := &dotcomRepoFilter{
 		logger:  logger.Scoped("filter"),

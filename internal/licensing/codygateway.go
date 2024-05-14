@@ -39,6 +39,7 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int) CodyGatewayRateLimit
 
 		"openai/gpt-3.5-turbo",
 		"openai/gpt-4",
+		"openai/gpt-4o",
 		"openai/gpt-4-turbo",
 		"openai/gpt-4-turbo-preview",
 	}

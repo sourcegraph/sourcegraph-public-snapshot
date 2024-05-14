@@ -17,6 +17,7 @@ import { getDocumentNode, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Button,
     H2,
@@ -37,7 +38,6 @@ import type { AuthenticatedUser } from '../auth'
 import { LoaderButton } from '../components/LoaderButton'
 import type { UserOnboardingRepoValidationResult, UserOnboardingRepoValidationVariables } from '../graphql-operations'
 import { useLanguageCompletionSource, useRepositoryCompletionSource } from '../search/autocompletion/hooks'
-import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './GettingStartedTourSetup.module.scss'
 
@@ -57,14 +57,14 @@ export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user
 
     const nextStep = (): void => setStep(step => step + 1)
     const done = useCallback(() => {
-        eventLogger.log('TourSetupCompleted')
+        EVENT_LOGGER.log('TourSetupCompleted')
         telemetryRecorder.recordEvent('tour.gettingStarted.setup', 'complete')
         setOpen(false)
     }, [telemetryRecorder, setOpen])
 
     useEffect(() => {
         if (open) {
-            eventLogger.log('TourSetupShown')
+            EVENT_LOGGER.log('TourSetupShown')
             telemetryRecorder.recordEvent('tour.gettingStarted.setup', 'view')
         }
     }, [open, telemetryRecorder])
@@ -150,7 +150,7 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
         onHandleNext?.()
     }
     const skip = useCallback(() => {
-        eventLogger.log('TourSetupSkipped')
+        EVENT_LOGGER.log('TourSetupSkipped')
         telemetryRecorder.recordEvent('tour.gettingStarted.setup', 'skip')
         setConfig({ skipped: true })
     }, [setConfig, telemetryRecorder])

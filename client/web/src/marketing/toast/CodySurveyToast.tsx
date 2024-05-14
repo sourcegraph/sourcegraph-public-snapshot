@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom'
 
 import { asError, type ErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Checkbox, Form, H3, Modal, Text, Button, Icon, AnchorLink } from '@sourcegraph/wildcard'
 
@@ -42,8 +43,8 @@ const SET_COMPLETED_POST_SIGNUP = gql`
 `
 
 const CodySurveyToastInner: React.FC<
-    { onSubmitEnd: () => void; userId: string; hasVerifiedEmail: boolean } & TelemetryProps
-> = ({ userId, onSubmitEnd, telemetryService, hasVerifiedEmail }) => {
+    { onSubmitEnd: () => void; userId: string; hasVerifiedEmail: boolean } & TelemetryProps & TelemetryV2Props
+> = ({ userId, onSubmitEnd, telemetryService, telemetryRecorder, hasVerifiedEmail }) => {
     const [isCodyForWork, setIsCodyForWork] = useState(false)
     const [isCodyForPersonalStuff, setIsCodyForPersonalStuff] = useState(false)
 
@@ -80,6 +81,9 @@ const CodySurveyToastInner: React.FC<
         async (event: React.FormEvent<HTMLFormElement>) => {
             const eventParams = { isCodyForPersonalStuff, isCodyForWork }
             telemetryService.log('CodyUsageToastSubmitted', eventParams, eventParams)
+            telemetryRecorder.recordEvent('codySurvey', 'submit', {
+                metadata: { forWork: isCodyForWork ? 1 : 0, forPersonal: isCodyForPersonalStuff ? 1 : 0 },
+            })
             event.preventDefault()
 
             try {
@@ -103,12 +107,14 @@ const CodySurveyToastInner: React.FC<
             submitCodySurvey,
             updatePostSignupCompletion,
             telemetryService,
+            telemetryRecorder,
         ]
     )
 
     useEffect(() => {
         telemetryService.log('CodySurveyToastViewed')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('codySurvey', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <Modal
@@ -162,8 +168,8 @@ const CodySurveyToastInner: React.FC<
 }
 
 const CodyQualificationSurveryToastInner: React.FC<
-    { onSubmitEnd: () => void; authenticatedUser: AuthenticatedUser } & TelemetryProps
-> = ({ onSubmitEnd, telemetryService, authenticatedUser }) => {
+    { onSubmitEnd: () => void; authenticatedUser: AuthenticatedUser } & TelemetryProps & TelemetryV2Props
+> = ({ onSubmitEnd, telemetryService, telemetryRecorder, authenticatedUser }) => {
     const [updatePostSignupCompletion, { error: setPostSignupError }] = useMutation<
         SetCompletedPostSignupResult,
         SetCompletedPostSignupVariables
@@ -184,6 +190,7 @@ const CodyQualificationSurveryToastInner: React.FC<
 
                 if (isChecked) {
                     telemetryService.log('ViewCodyWorkQuestionnarie')
+                    telemetryRecorder.recordEvent('codySurvey.forWorkQuestionnaire', 'view')
                 }
             }
 
@@ -193,7 +200,7 @@ const CodyQualificationSurveryToastInner: React.FC<
                 input?.removeEventListener('change', handleChange)
             }
         },
-        [telemetryService]
+        [telemetryService, telemetryRecorder]
     )
 
     const primaryEmail = authenticatedUser.emails.find(email => email.isPrimary)?.email
@@ -213,7 +220,8 @@ const CodyQualificationSurveryToastInner: React.FC<
 
     useEffect(() => {
         telemetryService.log('ViewCodyforWorkorPersonalForm')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('codySurvey.forWorkOrPersonal', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <Modal
@@ -246,11 +254,9 @@ const CodyQualificationSurveryToastInner: React.FC<
     )
 }
 
-const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: AuthenticatedUser } & TelemetryProps> = ({
-    onNext,
-    authenticatedUser,
-    telemetryService,
-}) => {
+const CodyVerifyEmailToast: React.FC<
+    { onNext: () => void; authenticatedUser: AuthenticatedUser } & TelemetryProps & TelemetryV2Props
+> = ({ onNext, authenticatedUser, telemetryService, telemetryRecorder }) => {
     const [sending, setSending] = useState(false)
     const [resentEmailTo, setResentEmailTo] = useState<string | null>(null)
     const [resendEmailError, setResendEmailError] = useState<ErrorLike | null>(null)
@@ -258,7 +264,7 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
         const email = (authenticatedUser.emails || []).find(({ verified }) => !verified)?.email
         if (email) {
             setSending(true)
-            await resendVerificationEmail(authenticatedUser.id, email, {
+            await resendVerificationEmail(authenticatedUser.id, email, telemetryRecorder, {
                 onSuccess: () => {
                     setResentEmailTo(email)
                     setResendEmailError(null)
@@ -271,11 +277,12 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
                 },
             })
         }
-    }, [authenticatedUser])
+    }, [authenticatedUser, telemetryRecorder])
 
     useEffect(() => {
         telemetryService.log('VerifyEmailToastViewed')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('codySurvey.veryEmailToast', 'view')
+    }, [telemetryService, telemetryRecorder])
 
     return (
         <Modal
@@ -325,8 +332,9 @@ export const CodySurveyToast: React.FC<
     {
         authenticatedUser: AuthenticatedUser
         showQualificationSurvey?: boolean
-    } & TelemetryProps
-> = ({ authenticatedUser, telemetryService, showQualificationSurvey }) => {
+    } & TelemetryProps &
+        TelemetryV2Props
+> = ({ authenticatedUser, telemetryService, telemetryRecorder, showQualificationSurvey }) => {
     const [showVerifyEmail, setShowVerifyEmail] = useState(!authenticatedUser.hasVerifiedEmail)
 
     const location = useLocation()
@@ -339,12 +347,14 @@ export const CodySurveyToast: React.FC<
 
     const dismissVerifyEmail = useCallback(() => {
         telemetryService.log('VerifyEmailToastDismissed')
+        telemetryRecorder.recordEvent('codySurvey.verifyEmailToast', 'dismissed')
         setShowVerifyEmail(false)
-    }, [telemetryService])
+    }, [telemetryService, telemetryRecorder])
 
     useEffect(() => {
         telemetryService.log('CustomerQualificationSurveyExperiment001Enrolled')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('experiment', 'enroll', { metadata: { experimentId: 1 } })
+    }, [telemetryService, telemetryRecorder])
 
     if (showVerifyEmail) {
         return (
@@ -352,6 +362,7 @@ export const CodySurveyToast: React.FC<
                 onNext={dismissVerifyEmail}
                 authenticatedUser={authenticatedUser}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
             />
         )
     }
@@ -360,6 +371,7 @@ export const CodySurveyToast: React.FC<
         return (
             <CodyQualificationSurveryToastInner
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 onSubmitEnd={handleSubmitEnd}
                 authenticatedUser={authenticatedUser}
             />
@@ -369,6 +381,7 @@ export const CodySurveyToast: React.FC<
     return (
         <CodySurveyToastInner
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             onSubmitEnd={handleSubmitEnd}
             userId={authenticatedUser.id}
             hasVerifiedEmail={authenticatedUser.hasVerifiedEmail}

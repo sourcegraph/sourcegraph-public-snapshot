@@ -5,13 +5,13 @@ import classNames from 'classnames'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { CallToActionBanner } from '../../../../../components/CallToActionBanner'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
-import { eventLogger } from '../../../../../tracking/eventLogger'
 import { CodeInsightsLandingPageContext, CodeInsightsLandingPageType } from '../CodeInsightsLandingPageContext'
 import { CodeInsightsDescription } from '../getting-started/components/code-insights-description/CodeInsightsDescription'
 
@@ -49,7 +49,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                                 to="https://sourcegraph.com"
                                 variant="primary"
                                 onClick={() => {
-                                    eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryInsights' })
+                                    EVENT_LOGGER.log('ClickedOnEnterpriseCTA', { location: 'TryInsights' })
                                     telemetryRecorder.recordEvent('insights.enterpriseCTA', 'click', {
                                         metadata: { location: 0 },
                                     })
@@ -93,7 +93,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         <Link
                             to="https://sourcegraph.com"
                             onClick={() => {
-                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Insights' })
+                                EVENT_LOGGER.log('ClickedOnEnterpriseCTA', { location: 'Insights' })
                                 telemetryRecorder.recordEvent('insights.enterpriseCTA', 'click', {
                                     metadata: { location: 0 },
                                 })

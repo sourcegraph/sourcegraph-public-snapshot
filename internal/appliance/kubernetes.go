@@ -12,8 +12,34 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// Create, update, or delete a Kubernetes object. If the service config doesn't
+// conform to the Disableable interface, users will have to orchestrate their
+// own deletion logic. They should be able to use the lower-level
+// createOrUpdateObject() directly.
+func reconcileObject[T client.Object](
+	ctx context.Context, r *Reconciler,
+	cfg config.Disableable,
+	obj, objKind T,
+	sg *Sourcegraph, owner client.Object,
+) error {
+	if cfg.IsDisabled() {
+		return r.ensureObjectDeleted(ctx, obj)
+	}
+
+	updateIfChanged := struct {
+		Cfg     config.Disableable
+		Version string
+	}{
+		Cfg:     cfg,
+		Version: sg.Spec.RequestedVersion,
+	}
+
+	return createOrUpdateObject(ctx, r, updateIfChanged, owner, obj, objKind)
+}
 
 // Upsert a Kubernetes object.
 //
@@ -49,6 +75,10 @@ func createOrUpdateObject[R client.Object](
 	annotations[annotationKeyConfigHash] = cfgHash
 	obj.SetAnnotations(annotations)
 
+	if err := ctrl.SetControllerReference(owner, obj, r.Scheme); err != nil {
+		return errors.Newf("setting controller reference: %w", err)
+	}
+
 	existingRes := objKind
 	if err := r.Client.Get(ctx, namespacedName, existingRes); err != nil {
 		if kerrors.IsNotFound(err) {
@@ -62,10 +92,6 @@ func createOrUpdateObject[R client.Object](
 
 		logger.Error(err, "unexpected error getting object")
 		return err
-	}
-
-	if err := ctrl.SetControllerReference(owner, obj, r.Scheme); err != nil {
-		return errors.Newf("setting controller reference: %w", err)
 	}
 
 	if cfgHash != existingRes.GetAnnotations()[annotationKeyConfigHash] {

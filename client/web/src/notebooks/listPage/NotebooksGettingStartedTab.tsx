@@ -6,12 +6,12 @@ import classNames from 'classnames'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Container, Icon, Link, H2, H3, Text, useReducedMotion } from '@sourcegraph/wildcard'
 
 import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { PageRoutes } from '../../routes.constants'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
 
@@ -131,7 +131,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     <Link
                         to="https://sourcegraph.com"
                         onClick={() =>
-                            eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NotebooksGettingStarted' })
+                            EVENT_LOGGER.log('ClickedOnEnterpriseCTA', { location: 'NotebooksGettingStarted' })
                         }
                     >
                         get Sourcegraph Enterprise

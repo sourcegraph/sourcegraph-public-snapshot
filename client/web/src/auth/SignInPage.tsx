@@ -6,12 +6,12 @@ import { partition } from 'lodash'
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink, Container } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
-import { eventLogger } from '../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { AuthPageWrapper } from './AuthPageWrapper'
@@ -40,7 +40,7 @@ export interface SignInPageProps extends TelemetryV2Props {
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
     const { context, authenticatedUser } = props
     useEffect(() => {
-        eventLogger.logViewEvent('SignIn', null, false)
+        EVENT_LOGGER.logViewEvent('SignIn', null, false)
         props.telemetryRecorder.recordEvent('auth.signIn', 'view')
     }, [props.telemetryRecorder])
 
@@ -86,8 +86,8 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     }
 
     const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))
-    // If there is only one auth provider that is going to be displayed, we want to redirect to it directly.
-    if (thirdPartyAuthProviders.length === 1 && !builtInAuthProvider) {
+    // If there is only one auth provider that is going to be displayed, and request access is disabled, we want to redirect to the auth provider directly.
+    if (context.sourcegraphDotComMode && thirdPartyAuthProviders.length === 1) {
         // Add '?returnTo=' + encodeURIComponent(returnTo) to thirdPartyAuthProviders[0].authenticationURL in a safe way.
         const redirectUrl = new URL(thirdPartyAuthProviders[0].authenticationURL, window.location.href)
         if (returnTo) {
@@ -246,7 +246,7 @@ const SignUpNotice: React.FunctionComponent<SignUpNoticeProps> = ({
             <Link
                 to="https://sourcegraph.com/get-started?t=enterprise"
                 onClick={() => {
-                    eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })
+                    EVENT_LOGGER.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })
                     telemetryRecorder.recordEvent('auth.enterpriseCTA', 'click')
                 }}
             >

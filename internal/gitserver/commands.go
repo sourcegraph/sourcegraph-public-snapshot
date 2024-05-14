@@ -4,32 +4,24 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
-	stdlibpath "path"
-	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/go-git/go-git/v5/plumbing/format/config"
-	"github.com/golang/groupcache/lru"
+	"github.com/sourcegraph/go-diff/diff"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/sourcegraph/go-diff/diff"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
@@ -229,146 +221,129 @@ func checkSpecArgSafety(spec string) error {
 	return nil
 }
 
-type CommitGraphOptions struct {
-	Commit  string
-	AllRefs bool
-	Limit   int
-	Since   *time.Time
-} // please update LogFields if you add a field here
-
-// CommitGraph returns the commit graph for the given repository as a mapping
-// from a commit to its parents. If a commit is supplied, the returned graph will
-// be rooted at the given commit. If a non-zero limit is supplied, at most that
-// many commits will be returned.
-func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
-	ctx, _, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	args := []string{"log", "--pretty=%H %P", "--topo-order"}
-	if opts.AllRefs {
-		args = append(args, "--all")
-	}
-	if opts.Commit != "" {
-		args = append(args, opts.Commit)
-	}
-	if opts.Since != nil {
-		args = append(args, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
-	}
-	if opts.Limit > 0 {
-		args = append(args, fmt.Sprintf("-%d", opts.Limit))
-	}
-
-	cmd := c.gitCommand(repo, args...)
-
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return gitdomain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
-}
-
-// CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
-// is to separate the first line (the metadata line) from the remaining lines (the files), and then parse the metadata line
-// into component parts separately.
-func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, after time.Time) (_ []CommitLog, err error) {
-	ctx, _, endObservation := c.operations.commitLog.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.Stringer("after", after),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	args := []string{"log", "--pretty=format:%H<!>%ae<!>%an<!>%ad", "--name-only", "--topo-order", "--no-merges"}
-	if !after.IsZero() {
-		args = append(args, fmt.Sprintf("--after=%s", after.Format(time.RFC3339)))
-	}
-
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "gitCommand %s", string(out))
-	}
-
-	var ls []CommitLog
-	lines := strings.Split(string(out), "\n\n")
-
-	for _, logOutput := range lines {
-		partitions := strings.Split(logOutput, "\n")
-		if len(partitions) < 2 {
-			continue
-		}
-		metaLine := partitions[0]
-		var changedFiles []string
-		for _, pt := range partitions[1:] {
-			if pt != "" {
-				changedFiles = append(changedFiles, pt)
-			}
-		}
-
-		parts := strings.Split(metaLine, "<!>")
-		if len(parts) != 4 {
-			continue
-		}
-		sha, authorEmail, authorName, timestamp := parts[0], parts[1], parts[2], parts[3]
-		t, err := parseTimestamp(timestamp)
-		if err != nil {
-			return nil, errors.Wrapf(err, "parseTimestamp %s", timestamp)
-		}
-		ls = append(ls, CommitLog{
-			SHA:          sha,
-			AuthorEmail:  authorEmail,
-			AuthorName:   authorName,
-			Timestamp:    t,
-			ChangedFiles: changedFiles,
-		})
-	}
-	return ls, nil
-}
-
-func parseTimestamp(timestamp string) (time.Time, error) {
-	layout := "Mon Jan 2 15:04:05 2006 -0700"
-	t, err := time.Parse(layout, timestamp)
-	if err != nil {
-		return time.Time{}, err
-	}
-	return t, nil
-}
-
 // DevNullSHA 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t
 // tree /dev/null`, which is used as the base when computing the `git diff` of
 // the root commit.
 const DevNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
-// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
-func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ []byte, err error) {
-	ctx, _, endObservation := c.operations.diffSymbols.With(ctx, &err, observation.Args{
+func (c *clientImplementor) ChangedFiles(ctx context.Context, repo api.RepoName, base, head string) (iterator ChangedFilesIterator, err error) {
+	ctx, _, endObservation := c.operations.changedFiles.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
-			attribute.String("commitA", string(commitA)),
-			attribute.String("commitB", string(commitB)),
+			attribute.String("base", base),
+			attribute.String("head", head),
 		},
 	})
-	defer endObservation(1, observation.Args{})
 
-	command := c.gitCommand(repo, "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
-	out, err := command.Output(ctx)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to run git diff on %s between %s and %s", repo, commitA, commitB)
+		endObservation(1, observation.Args{})
+		return nil, err
 	}
+
+	ctx, cancel := context.WithCancel(ctx)
+
+	stream, err := client.ChangedFiles(ctx, &proto.ChangedFilesRequest{
+		RepoName: string(repo),
+		Base:     []byte(base),
+		Head:     []byte(head),
+	})
+	if err != nil {
+		cancel()
+		endObservation(1, observation.Args{})
+		return nil, err
+	}
+
+	fetchFunc := func() ([]gitdomain.PathStatus, error) {
+		resp, err := stream.Recv()
+		if err != nil {
+			return nil, err
+		}
+
+		protoFiles := resp.GetFiles()
+
+		changes := make([]gitdomain.PathStatus, 0, len(protoFiles))
+		for _, p := range protoFiles {
+			changes = append(changes, gitdomain.PathStatusFromProto(p))
+		}
+
+		return changes, nil
+	}
+
+	closeFunc := func() {
+		cancel()
+		endObservation(1, observation.Args{})
+	}
+
+	return newChangedFilesIterator(fetchFunc, closeFunc), nil
+}
+
+func newChangedFilesIterator(fetchFunc func() ([]gitdomain.PathStatus, error), closeFunc func()) *changedFilesIterator {
+	return &changedFilesIterator{
+		fetchFunc: fetchFunc,
+		closeFunc: closeFunc,
+		closeChan: make(chan struct{}),
+	}
+}
+
+type changedFilesIterator struct {
+	// fetchFunc is the function that will be invoked when the buffer is empty.
+	//
+	// The function should return the next batch of data, or an error if the fetch
+	// failed.
+	//
+	// fetchFunc should return an io.EOF error when there is no more data to fetch.
+	fetchFunc func() ([]gitdomain.PathStatus, error)
+	fetchErr  error
+
+	closeOnce sync.Once
+	closeFunc func()
+	closeChan chan struct{}
+
+	buffer []gitdomain.PathStatus
+	index  int
+}
+
+func (i *changedFilesIterator) Next() (gitdomain.PathStatus, error) {
+	select {
+	case <-i.closeChan:
+		return gitdomain.PathStatus{}, io.EOF
+	default:
+	}
+
+	if i.fetchErr != nil {
+		return gitdomain.PathStatus{}, i.fetchErr
+	}
+
+	for len(i.buffer) == 0 { // If we've exhausted the buffer, fetch more data
+		// If we've exhausted the buffer, fetch more data
+		//
+		// We keep trying until we get a non-empty buffer since it's technically possible for the fetchFunc to return an empty slice
+		// even if there is more data to fetch.
+
+		i.buffer, i.fetchErr = i.fetchFunc()
+		if i.fetchErr != nil { // Check if there was an error fetching the data
+			return gitdomain.PathStatus{}, i.fetchErr
+		}
+	}
+
+	out := i.buffer[0]
+	i.buffer = i.buffer[1:]
+
 	return out, nil
 }
 
-// ReadDir reads the contents of the named directory at commit.
-func (c *clientImplementor) ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) (_ []fs.FileInfo, err error) {
+func (i *changedFilesIterator) Close() {
+	i.closeOnce.Do(func() {
+		if i.closeFunc != nil {
+			i.closeFunc()
+		}
+		close(i.closeChan)
+	})
+}
+
+func (c *clientImplementor) ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) (_ ReadDirIterator, err error) {
 	ctx, _, endObservation := c.operations.readDir.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
@@ -378,303 +353,124 @@ func (c *clientImplementor) ReadDir(ctx context.Context, repo api.RepoName, comm
 			attribute.Bool("recurse", recurse),
 		},
 	})
-	defer endObservation(1, observation.Args{})
 
-	if err := checkSpecArgSafety(string(commit)); err != nil {
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
-	if path != "" {
-		// Trailing slash is necessary to ls-tree under the dir (not just
-		// to list the dir's tree entry in its parent dir).
-		path = filepath.Clean(rel(path)) + "/"
-	}
-	files, err := c.lsTree(ctx, repo, commit, path, recurse)
-
-	if err != nil || !authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		return files, err
-	}
-
-	a := actor.FromContext(ctx)
-	filtered, filteringErr := authz.FilterActorFileInfos(ctx, c.subRepoPermsChecker, a, repo, files)
-	if filteringErr != nil {
-		return nil, errors.Wrap(err, "filtering paths")
-	} else {
-		return filtered, nil
-	}
-}
-
-// lsTreeRootCache caches the result of running `git ls-tree ...` on a repository's root path
-// (because non-root paths are likely to have a lower cache hit rate). It is intended to improve the
-// perceived performance of large monorepos, where the tree for a given repo+commit (usually the
-// repo's latest commit on default branch) will be requested frequently and would take multiple
-// seconds to compute if uncached.
-var (
-	lsTreeRootCacheMu sync.Mutex
-	lsTreeRootCache   = lru.New(5)
-)
-
-// lsTree returns ls of tree at path.
-func (c *clientImplementor) lsTree(
-	ctx context.Context,
-	repo api.RepoName,
-	commit api.CommitID,
-	path string,
-	recurse bool,
-) (files []fs.FileInfo, err error) {
-	if path != "" || !recurse {
-		// Only cache the root recursive ls-tree.
-		return c.lsTreeUncached(ctx, repo, commit, path, recurse)
-	}
-
-	key := string(repo) + ":" + string(commit) + ":" + path
-	lsTreeRootCacheMu.Lock()
-	v, ok := lsTreeRootCache.Get(key)
-	lsTreeRootCacheMu.Unlock()
-	var entries []fs.FileInfo
-	if ok {
-		// Cache hit.
-		entries = v.([]fs.FileInfo)
-	} else {
-		// Cache miss.
-		var err error
-		start := time.Now()
-		entries, err = c.lsTreeUncached(ctx, repo, commit, path, recurse)
-		if err != nil {
-			return nil, err
-		}
-
-		// It's only worthwhile to cache if the operation took a while and returned a lot of
-		// data. This is a heuristic.
-		if time.Since(start) > 500*time.Millisecond && len(entries) > 5000 {
-			lsTreeRootCacheMu.Lock()
-			lsTreeRootCache.Add(key, entries)
-			lsTreeRootCacheMu.Unlock()
-		}
-	}
-	return entries, nil
-}
-
-type objectInfo gitdomain.OID
-
-func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }
-
-// lStat returns a FileInfo describing the named file at commit. If the file is a
-// symbolic link, the returned FileInfo describes the symbolic link. lStat makes
-// no attempt to follow the link.
-func (c *clientImplementor) lStat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
-	ctx, _, endObservation := c.operations.lstat.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			commit.Attr(),
-			attribute.String("path", path),
-		},
+	// We create a context here to have a way to cancel the RPC if the caller
+	// doesn't read the entire result.
+	ctx, cancel := context.WithCancel(ctx)
+	cc, err := client.ReadDir(ctx, &proto.ReadDirRequest{
+		RepoName:  string(repo),
+		CommitSha: string(commit),
+		Path:      []byte(path),
+		Recursive: recurse,
 	})
-	defer endObservation(1, observation.Args{})
-
-	if err := checkSpecArgSafety(string(commit)); err != nil {
-		return nil, err
-	}
-
-	path = filepath.Clean(rel(path))
-
-	if path == "." {
-		// Special case root, which is not returned by `git ls-tree`.
-		obj, err := c.GetObject(ctx, repo, string(commit)+"^{tree}")
-		if err != nil {
-			return nil, err
-		}
-		return &fileutil.FileInfo{Mode_: os.ModeDir, Sys_: objectInfo(obj.ID)}, nil
-	}
-
-	fis, err := c.lsTree(ctx, repo, commit, path, false)
 	if err != nil {
-		return nil, err
-	}
-	if len(fis) == 0 {
-		return nil, &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
-	}
-
-	if !authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		return fis[0], nil
-	}
-	// Applying sub-repo permissions
-	a := actor.FromContext(ctx)
-	include, filteringErr := authz.FilterActorFileInfo(ctx, c.subRepoPermsChecker, a, repo, fis[0])
-	if include && filteringErr == nil {
-		return fis[0], nil
-	} else {
-		if filteringErr != nil {
-			err = errors.Wrap(filteringErr, "filtering paths")
-		} else {
-			err = &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
-		}
-		return nil, err
-	}
-}
-
-func errorMessageTruncatedOutput(cmd []string, out []byte) string {
-	const maxOutput = 5000
-
-	message := fmt.Sprintf("git command %v failed", cmd)
-	if len(out) > maxOutput {
-		message += fmt.Sprintf(" (truncated output: %q, %d more)", out[:maxOutput], len(out)-maxOutput)
-	} else {
-		message += fmt.Sprintf(" (output: %q)", out)
-	}
-
-	return message
-}
-
-func (c *clientImplementor) lsTreeUncached(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
-	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
+		cancel()
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
-	// Don't call filepath.Clean(path) because ReadDir needs to pass
-	// path with a trailing slash.
-
-	if err := checkSpecArgSafety(path); err != nil {
-		return nil, err
-	}
-
-	args := []string{
-		"ls-tree",
-		"--long", // show size
-		"--full-name",
-		"-z",
-		string(commit),
-	}
-	if recurse {
-		args = append(args, "-r", "-t")
-	}
-	if path != "" {
-		args = append(args, "--", filepath.ToSlash(path))
-	}
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.CombinedOutput(ctx)
+	// We receive the first chunk here so that we can return an error if the
+	// file/path is not found.
+	firstChunk, err := cc.Recv()
 	if err != nil {
-		if bytes.Contains(out, []byte("exists on disk, but not in")) {
-			return nil, &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(path), Err: os.ErrNotExist}
-		}
+		defer endObservation(1, observation.Args{})
+		defer cancel()
 
-		message := errorMessageTruncatedOutput(cmd.Args(), out)
-		return nil, errors.WithMessage(err, message)
-	}
-
-	if len(out) == 0 {
-		// If we are listing the empty root tree, we will have no output.
-		if stdlibpath.Clean(path) == "." {
-			return []fs.FileInfo{}, nil
-		}
-		return nil, &os.PathError{Op: "git ls-tree", Path: path, Err: os.ErrNotExist}
-	}
-
-	trimPath := strings.TrimPrefix(path, "./")
-	lines := strings.Split(string(out), "\x00")
-	fis := make([]fs.FileInfo, len(lines)-1)
-	for i, line := range lines {
-		if i == len(lines)-1 {
-			// last entry is empty
-			continue
-		}
-
-		tabPos := strings.IndexByte(line, '\t')
-		if tabPos == -1 {
-			return nil, errors.Errorf("invalid `git ls-tree` output: %q", out)
-		}
-		info := strings.SplitN(line[:tabPos], " ", 4)
-		name := line[tabPos+1:]
-		if len(name) < len(trimPath) {
-			// This is in a submodule; return the original path to avoid a slice out of bounds panic
-			// when setting the FileInfo._Name below.
-			name = trimPath
-		}
-
-		if len(info) != 4 {
-			return nil, errors.Errorf("invalid `git ls-tree` output: %q", out)
-		}
-		typ := info[1]
-		sha := info[2]
-		if !gitdomain.IsAbsoluteRevision(sha) {
-			return nil, errors.Errorf("invalid `git ls-tree` SHA output: %q", sha)
-		}
-		oid, err := decodeOID(sha)
-		if err != nil {
-			return nil, err
-		}
-
-		sizeStr := strings.TrimSpace(info[3])
-		var size int64
-		if sizeStr != "-" {
-			// Size of "-" indicates a dir or submodule.
-			size, err = strconv.ParseInt(sizeStr, 10, 64)
-			if err != nil || size < 0 {
-				return nil, errors.Errorf("invalid `git ls-tree` size output: %q (error: %s)", sizeStr, err)
-			}
-		}
-
-		var sys any
-		modeVal, err := strconv.ParseInt(info[0], 8, 32)
-		if err != nil {
-			return nil, err
-		}
-		mode := os.FileMode(modeVal)
-		switch typ {
-		case "blob":
-			const gitModeSymlink = 0o20000
-			if mode&gitModeSymlink != 0 {
-				mode = os.ModeSymlink
-			} else {
-				// Regular file.
-				mode = mode | 0o644
-			}
-		case "commit":
-			mode = mode | gitdomain.ModeSubmodule
-			cmd := c.gitCommand(repo, "show", fmt.Sprintf("%s:.gitmodules", commit))
-			var submodule gitdomain.Submodule
-			if out, err := cmd.Output(ctx); err == nil {
-
-				var cfg config.Config
-				err := config.NewDecoder(bytes.NewBuffer(out)).Decode(&cfg)
-				if err != nil {
-					return nil, errors.Errorf("error parsing .gitmodules: %s", err)
+		if s, ok := status.FromError(err); ok {
+			if s.Code() == codes.NotFound {
+				for _, d := range s.Details() {
+					fp, ok := d.(*proto.FileNotFoundPayload)
+					if ok {
+						return nil, &os.PathError{Op: "open", Path: fp.Path, Err: os.ErrNotExist}
+					}
 				}
-
-				submodule.Path = cfg.Section("submodule").Subsection(name).Option("path")
-				submodule.URL = cfg.Section("submodule").Subsection(name).Option("url")
 			}
-			submodule.CommitID = api.CommitID(oid.String())
-			sys = submodule
-		case "tree":
-			mode = mode | os.ModeDir
 		}
 
-		if sys == nil {
-			// Some callers might find it useful to know the object's OID.
-			sys = objectInfo(oid)
-		}
-
-		fis[i] = &fileutil.FileInfo{
-			Name_: name, // full path relative to root (not just basename)
-			Mode_: mode,
-			Size_: size,
-			Sys_:  sys,
-		}
+		return nil, err
 	}
-	fileutil.SortFileInfosByName(fis)
 
-	return fis, nil
+	return &readDirIterator{
+		ctx:        ctx,
+		firstChunk: firstChunk,
+		cc:         cc,
+		onClose: func() {
+			cancel()
+			endObservation(1, observation.Args{})
+		},
+		subRepoPermsChecker: c.subRepoPermsChecker,
+		repo:                repo,
+	}, nil
 }
 
-func decodeOID(sha string) (gitdomain.OID, error) {
-	oidBytes, err := hex.DecodeString(sha)
-	if err != nil {
-		return gitdomain.OID{}, err
+type readDirIterator struct {
+	ctx                 context.Context
+	firstChunk          *proto.ReadDirResponse
+	firstChunkConsumed  bool
+	cc                  proto.GitserverService_ReadDirClient
+	onClose             func()
+	subRepoPermsChecker authz.SubRepoPermissionChecker
+	repo                api.RepoName
+	buffer              []fs.FileInfo
+}
+
+func (i *readDirIterator) Next() (fs.FileInfo, error) {
+	if len(i.buffer) == 0 {
+		for {
+			if i.ctx.Err() != nil {
+				return nil, i.ctx.Err()
+			}
+
+			chunk, err := i.fetchChunk()
+			if err != nil {
+				return nil, err
+			}
+			fds := []fs.FileInfo{}
+			for _, f := range chunk.GetFileInfo() {
+				fds = append(fds, gitdomain.ProtoFileInfoToFS(f))
+			}
+			if authz.SubRepoEnabled(i.subRepoPermsChecker) {
+				a := actor.FromContext(i.ctx)
+				filtered, filteringErr := authz.FilterActorFileInfos(i.ctx, i.subRepoPermsChecker, a, i.repo, fds)
+				if filteringErr != nil {
+					return nil, errors.Wrap(err, "filtering paths")
+				}
+				i.buffer = filtered
+			} else {
+				i.buffer = fds
+			}
+			if len(i.buffer) > 0 {
+				break
+			}
+		}
 	}
-	var oid gitdomain.OID
-	copy(oid[:], oidBytes)
-	return oid, nil
+
+	if len(i.buffer) == 0 {
+		return nil, io.EOF
+	}
+
+	fd := i.buffer[0]
+	i.buffer = i.buffer[1:]
+
+	return fd, nil
+}
+
+func (i *readDirIterator) fetchChunk() (*proto.ReadDirResponse, error) {
+	if !i.firstChunkConsumed {
+		i.firstChunkConsumed = true
+		return i.firstChunk, nil
+	}
+	return i.cc.Recv()
+}
+
+func (i *readDirIterator) Close() {
+	i.onClose()
 }
 
 func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) (err error) {
@@ -756,12 +552,6 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 	if err != nil {
 		s, ok := status.FromError(err)
 		if ok {
-			if s.Code() == codes.PermissionDenied {
-				cancel()
-				endObservation(1, observation.Args{})
-				return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
-			}
-
 			if s.Code() == codes.NotFound {
 				for _, d := range s.Details() {
 					switch d.(type) {
@@ -898,157 +688,6 @@ func (c *clientImplementor) RevAtTime(ctx context.Context, repo api.RepoName, sp
 	return api.CommitID(res.GetCommitSha()), res.GetCommitSha() != "", nil
 }
 
-// LsFiles returns the output of `git ls-files`.
-func (c *clientImplementor) LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) (_ []string, err error) {
-	ctx, _, endObservation := c.operations.lsFiles.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("commit", string(commit)),
-			attribute.Bool("hasPathSpecs", len(pathspecs) > 0),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	args := []string{
-		"ls-files",
-		"-z",
-		"--with-tree",
-		string(commit),
-	}
-
-	if len(pathspecs) > 0 {
-		args = append(args, "--")
-		for _, pathspec := range pathspecs {
-			args = append(args, string(pathspec))
-		}
-	}
-
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
-	}
-
-	files := strings.Split(string(out), "\x00")
-	// Drop trailing empty string
-	if len(files) > 0 && files[len(files)-1] == "" {
-		files = files[:len(files)-1]
-	}
-	return filterPaths(ctx, c.subRepoPermsChecker, repo, files)
-}
-
-// 🚨 SECURITY: All git methods that deal with file or path access need to have
-// sub-repo permissions applied
-func filterPaths(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, paths []string) ([]string, error) {
-	if !authz.SubRepoEnabled(checker) {
-		return paths, nil
-	}
-	a := actor.FromContext(ctx)
-	filtered, err := authz.FilterActorPaths(ctx, checker, a, repo, paths)
-	if err != nil {
-		return nil, errors.Wrap(err, "filtering paths")
-	}
-	return filtered, nil
-}
-
-// ListDirectoryChildren fetches the list of children under the given directory
-// names. The result is a map keyed by the directory names with the list of files
-// under each.
-func (c *clientImplementor) ListDirectoryChildren(
-	ctx context.Context,
-	repo api.RepoName,
-	commit api.CommitID,
-	dirnames []string,
-) (_ map[string][]string, err error) {
-	ctx, _, endObservation := c.operations.listDirectoryChildren.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("commit", string(commit)),
-			attribute.Int("dirs", len(dirnames)),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	args := []string{"ls-tree", "--name-only", string(commit), "--"}
-	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
-	cmd := c.gitCommand(repo, args...)
-
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	paths := strings.Split(string(out), "\n")
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		paths, err = authz.FilterActorPaths(ctx, c.subRepoPermsChecker, actor.FromContext(ctx), repo, paths)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return parseDirectoryChildren(dirnames, paths), nil
-}
-
-// cleanDirectoriesForLsTree sanitizes the input dirnames to a git ls-tree command. There are a
-// few peculiarities handled here:
-//
-//  1. The root of the tree must be indicated with `.`, and
-//  2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
-func cleanDirectoriesForLsTree(dirnames []string) []string {
-	var args []string
-	for _, dir := range dirnames {
-		if dir == "" {
-			args = append(args, ".")
-		} else {
-			if !strings.HasSuffix(dir, "/") {
-				dir += "/"
-			}
-			args = append(args, dir)
-		}
-	}
-
-	return args
-}
-
-// parseDirectoryChildren converts the flat list of files from git ls-tree into a map. The keys of the
-// resulting map are the input (unsanitized) dirnames, and the value of that key are the files nested
-// under that directory. If dirnames contains a directory that encloses another, then the paths will
-// be placed into the key sharing the longest path prefix.
-func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
-	childrenMap := map[string][]string{}
-
-	// Ensure each directory has an entry, even if it has no children
-	// listed in the gitserver output.
-	for _, dirname := range dirnames {
-		childrenMap[dirname] = nil
-	}
-
-	// Order directory names by length (biggest first) so that we assign
-	// paths to the most specific enclosing directory in the following loop.
-	sort.Slice(dirnames, func(i, j int) bool {
-		return len(dirnames[i]) > len(dirnames[j])
-	})
-
-	for _, path := range paths {
-		if strings.Contains(path, "/") {
-			for _, dirname := range dirnames {
-				if strings.HasPrefix(path, dirname) {
-					childrenMap[dirname] = append(childrenMap[dirname], path)
-					break
-				}
-			}
-		} else if len(dirnames) > 0 && dirnames[len(dirnames)-1] == "" {
-			// No need to loop here. If we have a root input directory it
-			// will necessarily be the last element due to the previous
-			// sorting step.
-			childrenMap[""] = append(childrenMap[""], path)
-		}
-	}
-
-	return childrenMap
-}
-
 func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
 	ctx, _, endObservation := c.operations.getDefaultBranch.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
@@ -1107,36 +746,10 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, ba
 	return api.CommitID(res.GetMergeBaseCommitSha()), nil
 }
 
-// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
-func (c *clientImplementor) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) (err error) {
-	ctx, _, endObservation := c.operations.revList.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			attribute.String("repo", repo),
-			attribute.String("commit", commit),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	command := c.gitCommand(api.RepoName(repo), RevListArgs(commit)...)
-	command.DisableTimeout()
-	stdout, err := command.StdoutReader(ctx)
-	if err != nil {
-		return err
-	}
-	defer stdout.Close()
-
-	return gitdomain.RevListEach(stdout, onCommit)
-}
-
-func RevListArgs(givenCommit string) []string {
-	return []string{"rev-list", "--first-parent", givenCommit}
-}
-
-// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+// BehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
-func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (_ *gitdomain.BehindAhead, err error) {
-	ctx, _, endObservation := c.operations.getBehindAhead.With(ctx, &err, observation.Args{
+func (c *clientImplementor) BehindAhead(ctx context.Context, repo api.RepoName, left, right string) (_ *gitdomain.BehindAhead, err error) {
+	ctx, _, endObservation := c.operations.behindAhead.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
@@ -1146,28 +759,21 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 	})
 	defer endObservation(1, observation.Args{})
 
-	if err := checkSpecArgSafety(left); err != nil {
-		return nil, err
-	}
-	if err := checkSpecArgSafety(right); err != nil {
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
 		return nil, err
 	}
 
-	cmd := c.gitCommand(repo, "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
-	out, err := cmd.Output(ctx)
+	response, err := client.BehindAhead(ctx, &proto.BehindAheadRequest{
+		RepoName: string(repo),
+		Left:     []byte(left),
+		Right:    []byte(right),
+	})
 	if err != nil {
 		return nil, err
 	}
-	behindAhead := strings.Split(strings.TrimSuffix(string(out), "\n"), "\t")
-	b, err := strconv.ParseUint(behindAhead[0], 10, 0)
-	if err != nil {
-		return nil, err
-	}
-	a, err := strconv.ParseUint(behindAhead[1], 10, 0)
-	if err != nil {
-		return nil, err
-	}
-	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
+
+	return gitdomain.BehindAheadFromProto(response), nil
 }
 
 func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (_ io.ReadCloser, err error) {
@@ -1213,13 +819,6 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 	firstResp, firstRespErr := cli.Recv()
 	if firstRespErr != nil {
 		if s, ok := status.FromError(firstRespErr); ok {
-			// If sub repo permissions deny access to the file, we return os.ErrNotExist.
-			if s.Code() == codes.PermissionDenied {
-				cancel()
-				err = firstRespErr
-				endObservation(1, observation.Args{})
-				return nil, &os.PathError{Op: "open", Path: req.GetPath(), Err: os.ErrNotExist}
-			}
 			if s.Code() == codes.NotFound {
 				for _, d := range s.Details() {
 					switch d.(type) {
@@ -1287,23 +886,73 @@ func (c *clientImplementor) Stat(ctx context.Context, repo api.RepoName, commit 
 	})
 	defer endObservation(1, observation.Args{})
 
-	if err := checkSpecArgSafety(string(commit)); err != nil {
-		return nil, err
-	}
-
-	path = rel(path)
-
-	fi, err := c.lStat(ctx, repo, commit, path)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
 
-	return fi, nil
+	res, err := client.Stat(ctx, &proto.StatRequest{
+		RepoName:  string(repo),
+		CommitSha: string(commit),
+		Path:      []byte(path),
+	})
+	if err != nil {
+		if s, ok := status.FromError(err); ok {
+			// If sub repo permissions deny access to the file, we return os.ErrNotExist.
+			if s.Code() == codes.NotFound {
+				for _, d := range s.Details() {
+					fp, ok := d.(*proto.FileNotFoundPayload)
+					if ok {
+						return nil, &os.PathError{Op: "open", Path: fp.Path, Err: os.ErrNotExist}
+					}
+				}
+			}
+		}
+
+		return nil, err
+	}
+
+	fi := gitdomain.ProtoFileInfoToFS(res.GetFileInfo())
+
+	if !authz.SubRepoEnabled(c.subRepoPermsChecker) {
+		return fi, nil
+	}
+
+	// Applying sub-repo permissions
+	a := actor.FromContext(ctx)
+	include, filteringErr := authz.FilterActorFileInfo(ctx, c.subRepoPermsChecker, a, repo, fi)
+	if include && filteringErr == nil {
+		return fi, nil
+	} else {
+		if filteringErr != nil {
+			err = errors.Wrap(filteringErr, "filtering paths")
+		} else {
+			err = &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
+		}
+		return nil, err
+	}
 }
+
+type CommitsOrder int
+
+const (
+	// CommitsOrderDefault uses the default ordering of git log: in reverse chronological order.
+	// See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+	CommitsOrderDefault CommitsOrder = iota
+	// Show no parents before all of its children are shown, but otherwise show commits
+	// in the commit timestamp order.
+	// See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+	CommitsOrderCommitDate
+	// Show no parents before all of its children are shown, and avoid showing commits
+	// on multiple lines of history intermixed.
+	// See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+	CommitsOrderTopoDate
+)
 
 // CommitsOptions specifies options for Commits.
 type CommitsOptions struct {
-	Range string // commit range (revspec, "A..B", "A...B", etc.)
+	AllRefs bool   // if true, all refs are searched for commits, not just a given range. When set, Range should not be specified.
+	Range   string // commit range (revspec, "A..B", "A...B", etc.)
 
 	N    uint // limit the number of returned commits to this many (0 means no limit)
 	Skip uint // skip this many commits at the beginning
@@ -1314,11 +963,19 @@ type CommitsOptions struct {
 	After  string // include only commits after this date
 	Before string // include only commits before this date
 
-	DateOrder bool // Whether or not commits should be sorted by date (optional)
+	Order CommitsOrder
 
 	Path string // only commits modifying the given path are selected (optional)
 
 	Follow bool // follow the history of the path beyond renames (works only for a single path)
+
+	// When finding commits to include, follow only the first parent commit upon
+	// seeing a merge commit. This option can give a better overview when viewing
+	// the evolution of a particular topic branch, because merges into a topic
+	// branch tend to be only about adjusting to updated upstream from time to time,
+	// and this option allows you to ignore the individual commits brought in to
+	// your history by such a merge.
+	FirstParent bool
 
 	// When true return the names of the files changed in the commit
 	NameOnly bool
@@ -1438,135 +1095,6 @@ func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.
 			// if the user has access to one file modified in the commit, they have access to view the commit
 			return true, nil
 		}
-	}
-	return false, nil
-}
-
-// CommitsUniqueToBranch returns a map from commits that exist on a particular
-// branch in the given repository to their committer date. This set of commits is
-// determined by listing `{branchName} ^HEAD`, which is interpreted as: all
-// commits on {branchName} not also on the tip of the default branch. If the
-// supplied branch name is the default branch, then this method instead returns
-// all commits reachable from HEAD.
-func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
-	ctx, _, endObservation := c.operations.commitsUniqueToBranch.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("branch", branchName),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	args := []string{"log", "--pretty=format:%H:%cI"}
-	if maxAge != nil {
-		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
-	}
-	if isDefaultBranch {
-		args = append(args, "HEAD")
-	} else {
-		args = append(args, branchName, "^HEAD")
-	}
-
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	commits, err := parseCommitsUniqueToBranch(strings.Split(string(out), "\n"))
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) && err == nil {
-		return c.filterCommitsUniqueToBranch(ctx, repo, commits), nil
-	}
-	return commits, err
-}
-
-func (c *clientImplementor) filterCommitsUniqueToBranch(ctx context.Context, repo api.RepoName, commitsMap map[string]time.Time) map[string]time.Time {
-	filtered := make(map[string]time.Time, len(commitsMap))
-	for commitID, timeStamp := range commitsMap {
-		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID))
-		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			filtered[commitID] = timeStamp
-		}
-	}
-	return filtered
-}
-
-func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err error) {
-	commitDates := make(map[string]time.Time, len(lines))
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		parts := strings.SplitN(line, ":", 2)
-		if len(parts) != 2 {
-			return nil, errors.Errorf(`unexpected output from git log "%s"`, line)
-		}
-
-		duration, err := time.Parse(time.RFC3339, parts[1])
-		if err != nil {
-			return nil, errors.Errorf(`unexpected output from git log (bad date format) "%s"`, line)
-		}
-
-		commitDates[parts[0]] = duration
-	}
-
-	return commitDates, nil
-}
-
-// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
-// contains a commit past a specified date.
-func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string) (_ bool, err error) {
-	ctx, _, endObservation := c.operations.hasCommitAfter.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("date", date),
-			attribute.String("revSpec", revspec),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		return c.hasCommitAfterWithFiltering(ctx, repo, date, revspec)
-	}
-
-	if revspec == "" {
-		revspec = "HEAD"
-	}
-
-	commitid, err := c.ResolveRevision(ctx, repo, revspec, ResolveRevisionOptions{EnsureRevision: false})
-	if err != nil {
-		return false, err
-	}
-
-	args, err := commitLogArgs([]string{"rev-list", "--count"}, CommitsOptions{
-		N:     1,
-		After: date,
-		Range: string(commitid),
-	})
-	if err != nil {
-		return false, err
-	}
-
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.Output(ctx)
-	if err != nil {
-		return false, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
-	}
-
-	out = bytes.TrimSpace(out)
-	n, err := strconv.Atoi(string(out))
-	return n > 0, err
-}
-
-func (c *clientImplementor) hasCommitAfterWithFiltering(ctx context.Context, repo api.RepoName, date, revspec string) (bool, error) {
-	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec}); err != nil {
-		return false, err
-	} else if len(commits) > 0 {
-		return true, nil
 	}
 	return false, nil
 }
@@ -1745,16 +1273,33 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	if opt.Before != "" {
 		args = append(args, "--before="+opt.Before)
 	}
-	if opt.DateOrder {
+	switch opt.Order {
+	case CommitsOrderCommitDate:
 		args = append(args, "--date-order")
+	case CommitsOrderTopoDate:
+		args = append(args, "--topo-order")
+	case CommitsOrderDefault:
+		// nothing to do
+	default:
+		return nil, errors.Newf("invalid ordering %d", opt.Order)
 	}
 
 	if opt.MessageQuery != "" {
 		args = append(args, "--fixed-strings", "--regexp-ignore-case", "--grep="+opt.MessageQuery)
 	}
 
+	if opt.FirstParent {
+		args = append(args, "--first-parent")
+	}
+
 	if opt.Range != "" {
 		args = append(args, opt.Range)
+	}
+	if opt.AllRefs {
+		args = append(args, "--all")
+	}
+	if opt.Range != "" && opt.AllRefs {
+		return nil, errors.New("cannot specify both a Range and AllRefs")
 	}
 	if opt.NameOnly {
 		args = append(args, "--name-only")
@@ -1769,7 +1314,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 }
 
 // FirstEverCommit returns the first commit ever made to the repository.
-func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoName) (_ *gitdomain.Commit, err error) {
+func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoName) (commit *gitdomain.Commit, err error) {
 	ctx, _, endObservation := c.operations.firstEverCommit.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
@@ -1778,20 +1323,19 @@ func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoNa
 	})
 	defer endObservation(1, observation.Args{})
 
-	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.Output(ctx)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
+		return nil, err
 	}
-	lines := bytes.TrimSpace(out)
-	tokens := bytes.SplitN(lines, []byte("\n"), 2)
-	if len(tokens) == 0 {
-		return nil, errors.New("FirstEverCommit returned no revisions")
+
+	result, err := client.FirstEverCommit(ctx, &proto.FirstEverCommitRequest{
+		RepoName: string(repo),
+	})
+	if err != nil {
+		return nil, err
 	}
-	first := tokens[0]
-	id := api.CommitID(bytes.TrimSpace(first))
-	return c.GetCommit(ctx, repo, id)
+
+	return gitdomain.CommitFromProto(result.GetCommit()), nil
 }
 
 const (

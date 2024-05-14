@@ -4,12 +4,12 @@ import { mdiMagnify, mdiPlus } from '@mdi/js'
 
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { PageHeader, Link, Button, Icon, Alert } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { Page } from '../../components/Page'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { SearchContextsList } from './SearchContextsList'
 
@@ -65,7 +65,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                     <Link
                                         to="https://sourcegraph.com"
                                         onClick={() => {
-                                            eventLogger.log('ClickedOnEnterpriseCTA', { location: 'ContextsSettings' })
+                                            EVENT_LOGGER.log('ClickedOnEnterpriseCTA', { location: 'ContextsSettings' })
                                             platformContext.telemetryRecorder.recordEvent(
                                                 'searchContexts.enterpriseCTA',
                                                 'click'

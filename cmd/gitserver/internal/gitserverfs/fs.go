@@ -37,6 +37,7 @@ type FS interface {
 	RemoveRepo(api.RepoName) error
 	ForEachRepo(func(api.RepoName, common.GitDir) (done bool)) error
 	DiskUsage() (diskusage.DiskUsage, error)
+	CanonicalPath(common.GitDir) string
 }
 
 func New(observationCtx *observation.Context, reposDir string) FS {
@@ -177,6 +178,11 @@ func (r *realGitserverFS) ForEachRepo(visit func(api.RepoName, common.GitDir) bo
 
 func (r *realGitserverFS) DiskUsage() (diskusage.DiskUsage, error) {
 	return du.New(r.reposDir)
+}
+
+func (r *realGitserverFS) CanonicalPath(dir common.GitDir) string {
+	d := string(dir)
+	return strings.TrimPrefix(d, r.reposDir)
 }
 
 var realGitserverFSMetricsRegisterer sync.Once

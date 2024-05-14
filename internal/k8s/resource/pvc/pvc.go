@@ -7,7 +7,7 @@ import (
 )
 
 // NewPersistentVolumeClaim creates a new k8s PVC with some default values set.
-func NewPersistentVolumeClaim(name, namespace string) corev1.PersistentVolumeClaim {
+func NewPersistentVolumeClaim(name, namespace string, storage resource.Quantity, storageClassName string) corev1.PersistentVolumeClaim {
 	return corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -22,10 +22,10 @@ func NewPersistentVolumeClaim(name, namespace string) corev1.PersistentVolumeCla
 			},
 			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
-					corev1.ResourceStorage: resource.MustParse("10Gi"),
+					corev1.ResourceStorage: storage,
 				},
 			},
+			StorageClassName: &storageClassName,
 		},
 	}
-
 }

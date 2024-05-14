@@ -1,0 +1,616 @@
+/* stylelint-disable selector-class-pattern */
+
+// Rendered jupyter notebook styling
+.jupyter {
+    --jp-cell-prompt-width: 6rem;
+
+    /* Cell */
+
+    .jp-Cell {
+        padding: 0.25rem;
+        margin: 0;
+        border: none;
+        outline: none;
+        background: transparent;
+
+        pre {
+            border: 1px solid var(--color-bg-3);
+            padding: 0.5rem;
+            margin: 0;
+        }
+
+        code {
+            display: inline-block;
+            padding: 0;
+            background: transparent;
+        }
+    }
+
+    // Put a space between input and output when there IS output
+    .jp-Cell:not(.jp-mod-noOutputs) .jp-Cell-outputWrapper {
+        margin-top: 0.25rem;
+    }
+
+    /* Collapser */
+
+    .jp-Collapser {
+        flex: 0 0 0.5rem;
+        padding: 0;
+        margin: 0;
+        border: none;
+        outline: none;
+        background: transparent;
+        border-radius: 2px;
+        opacity: 1;
+    }
+
+    .jp-Collapser-child {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+
+        // height: 100% doesn't work because the height of its parent is computed from content
+        position: absolute;
+        top: 0;
+        bottom: 0;
+    }
+
+    // Make the output collapser disappear when there is not output, but do so
+    // in a manner that leaves it in the layout and preserves its width.
+    .jp-Cell.jp-mod-noOutputs .jp-Cell-outputCollapser {
+        border: none !important;
+        background: transparent !important;
+    }
+
+    .jp-Cell:not(.jp-mod-noOutputs) .jp-Cell-outputCollapser {
+        min-height: 20px;
+    }
+
+    /* Common input/output */
+
+    .jp-Cell-inputWrapper,
+    .jp-Cell-outputWrapper {
+        display: flex;
+        flex-direction: row;
+        padding: 0;
+        margin: 0;
+
+        // Added to reveal the box-shadow on the input and output collapsers.
+        overflow: visible;
+    }
+
+    // Only input/output areas inside cells
+    .jp-Cell-inputArea,
+    .jp-Cell-outputArea {
+        flex: 1 1 auto;
+    }
+
+    /* Input */
+
+    // All input areas
+    .jp-InputArea {
+        display: table;
+        table-layout: fixed;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .jp-InputArea-editor {
+        display: table-cell;
+        overflow: hidden;
+        vertical-align: top;
+    }
+
+    .jp-InputPrompt,
+    .jp-OutputPrompt {
+        display: table-cell;
+        vertical-align: top;
+        color: var(--text-disabled);
+        font-family: var(--code-font-family);
+        font-size: var(--font-size-small);
+        padding: 0.25rem;
+
+        &:not(:empty) {
+            width: var(--jp-cell-prompt-width);
+        }
+
+        // Right align prompt text, don't wrap to handle large prompt numbers
+        text-align: right;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        // Disable text selection
+        user-select: none;
+    }
+
+    /* Markdown Cell */
+
+    .jp-MarkdownOutput {
+        display: table-cell;
+        width: 100%;
+        margin-top: 0;
+        margin-bottom: 0;
+        padding-left: var(--jp-code-padding);
+    }
+
+    .jp-MarkdownOutput.jp-RenderedHTMLCommon {
+        overflow: auto;
+    }
+
+    .jp-RenderedMarkdown.jp-RenderedHTMLCommon td,
+    .jp-RenderedMarkdown.jp-RenderedHTMLCommon th {
+        max-width: none;
+    }
+
+    /* Code Cell */
+
+    .jp-CodeMirrorEditor {
+        cursor: text;
+    }
+
+    .cm-editor.cm-s-jupyter {
+        font-family: var(--code-font-family);
+        border: 0;
+        border-radius: 0;
+        height: auto;
+
+        pre {
+            padding: 0;
+
+            code {
+                min-width: 100%;
+            }
+        }
+
+        .highlight pre {
+            padding: 0.25rem 0.25rem;
+            margin: 0;
+
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+            color: inherit;
+        }
+    }
+
+    /* Main OutputArea */
+
+    .jp-OutputArea {
+        overflow-y: auto;
+    }
+
+    .jp-OutputArea-child {
+        display: table;
+        table-layout: fixed;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .jp-OutputArea-prompt {
+        display: table-cell;
+        vertical-align: top;
+        width: var(--jp-cell-prompt-width);
+    }
+
+    .jp-OutputArea-output {
+        display: table-cell;
+        height: auto;
+        overflow: auto;
+        user-select: text;
+    }
+
+    .jp-OutputArea-output pre {
+        border: none;
+        margin: 0;
+        overflow-x: auto;
+        overflow-y: auto;
+        word-break: break-all;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+    }
+
+    .jp-OutputArea-output.jp-RenderedHTMLCommon table {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    // Hide the gutter in case of
+    //  - nested output areas (e.g. in the case of output widgets)
+    //  - mirrored output areas
+    .jp-OutputArea .jp-OutputArea .jp-OutputArea-prompt {
+        display: none;
+    }
+
+    // executeResult is added to any Output-result for the display of the object returned by a cell.
+    .jp-OutputArea-output.jp-OutputArea-executeResult {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    // Text output with the Out[] prompt needs a top padding to match the alignment of the Out[] prompt itself.
+    .jp-OutputArea-executeResult .jp-RenderedText.jp-OutputArea-output {
+        &:has(> pre.chroma) {
+            padding-left: 0;
+        }
+    }
+
+    /* RenderedText */
+
+    .jp-RenderedText {
+        text-align: left;
+        padding-left: 0.25rem;
+        font-family: var(--code-font-family);
+    }
+
+    /* Mobile */
+
+    @media only screen and (max-width: 760px) {
+        .jp-InputArea-editor {
+            display: table-row;
+            margin-left: var(--jp-notebook-padding);
+        }
+
+        .jp-InputPrompt {
+            display: table-row;
+            text-align: left;
+        }
+
+        .jp-OutputPrompt {
+            display: table-row;
+            text-align: left;
+        }
+
+        .jp-OutputArea-child .jp-OutputArea-output {
+            display: table-row;
+            margin-left: var(--jp-notebook-padding);
+        }
+    }
+
+    // Copied from markdown CSS
+    // Steps to generate colors / variables:
+    //   1. Run `chroma --html --style="github[-dark]" --html-all-styles`
+    //   2. Use multicursor and kebab-case to match formatting below
+    //   3. Generate preliminary color variables: `[css code here]`.split("\n").filter(_ => _.includes("color")).map(_ => `--${_.slice(_.indexOf("/* ")+3, _.indexOf(" */"))}-fg: ${_.slice(_.indexOf("color: ")+7, _.indexOf(" ", _.indexOf("color: ") + 7))}`).join("\n")
+    //   4. Paste them in `colors.scss` and fix any background-foreground issues
+    //   5. Prepend "chroma-" prefix to the child classes
+    .chroma {
+        /* stylelint-disable */
+        /* chroma-error */
+        .chroma-err {
+            color: var(--chroma-error-fg);
+            background-color: var(--chroma-error-bg);
+        }
+        /* chroma-line-link */
+        .chroma-lnlinks {
+            outline: none;
+            text-decoration: none;
+            color: var(--chroma-line-link-fg);
+        }
+        /* chroma-line-table-td */
+        .chroma-lntd {
+            vertical-align: top;
+            padding: 0;
+            margin: 0;
+            border: 0;
+        }
+        /* chroma-line-table */
+        .chroma-lntable {
+            border-spacing: 0;
+            padding: 0;
+            margin: 0;
+            border: 0;
+        }
+        /* chroma-line-highlight */
+        .chroma-hl {
+            background-color: var(--chroma-line-highlight-bg);
+        }
+        /* chroma-line-numbers-table */
+        .chroma-lnt {
+            white-space: pre;
+            user-select: none;
+            margin-right: 0.4rem;
+            padding: 0 0.4rem 0 0.4rem;
+            color: var(--chroma-line-numbers-table-fg);
+        }
+        /* chroma-line-numbers */
+        .chroma-ln {
+            white-space: pre;
+            user-select: none;
+            margin-right: 0.4rem;
+            padding: 0 0.4rem 0 0.4rem;
+            color: var(--chroma-line-numbers-fg);
+        }
+        /* chroma-line */
+        .chroma-line {
+            display: flex;
+        }
+        /* chroma-keyword */
+        .chroma-k {
+            color: var(--chroma-keyword-fg);
+            font-weight: bold;
+        }
+        /* chroma-keyword-constant */
+        .chroma-kc {
+            color: var(--chroma-keyword-constant-fg);
+            font-weight: bold;
+        }
+        /* chroma-keyword-declaration */
+        .chroma-kd {
+            color: var(--chroma-keyword-declaration-fg);
+            font-weight: bold;
+        }
+        /* chroma-keyword-namespace */
+        .chroma-kn {
+            color: var(--chroma-keyword-namespace-fg);
+            font-weight: bold;
+        }
+        /* chroma-keyword-pseudo */
+        .chroma-kp {
+            color: var(--chroma-keyword-pseudo-fg);
+            font-weight: bold;
+        }
+        /* chroma-keyword-reserved */
+        .chroma-kr {
+            color: var(--chroma-keyword-reserved-fg);
+            font-weight: bold;
+        }
+        /* chroma-keyword-type */
+        .chroma-kt {
+            color: var(--chroma-keyword-type-fg);
+            font-weight: bold;
+        }
+        /* chroma-name-attribute */
+        .chroma-na {
+            color: var(--chroma-name-attribute-fg);
+        }
+        /* chroma-name-builtin */
+        .chroma-nb {
+            color: var(--chroma-name-builtin-fg);
+        }
+        /* chroma-name-builtin-pseudo */
+        .chroma-bp {
+            color: var(--chroma-name-builtin-pseudo-fg);
+        }
+        /* chroma-name-class */
+        .chroma-nc {
+            color: var(--chroma-name-class-fg);
+            font-weight: bold;
+        }
+        /* chroma-name-constant */
+        .chroma-no {
+            color: var(--chroma-name-constant-fg);
+        }
+        /* chroma-name-decorator */
+        .chroma-nd {
+            color: var(--chroma-name-decorator-fg);
+            font-weight: bold;
+        }
+        /* chroma-name-entity */
+        .chroma-ni {
+            color: var(--chroma-name-entity-fg);
+        }
+        /* chroma-name-exception */
+        .chroma-ne {
+            color: var(--chroma-name-exception-fg);
+            font-weight: bold;
+        }
+        /* chroma-name-function */
+        .chroma-nf {
+            color: var(--chroma-name-function-fg);
+            font-weight: bold;
+        }
+        /* chroma-name-label */
+        .chroma-nl {
+            color: var(--chroma-name-label-fg);
+            font-weight: bold;
+        }
+        /* chroma-name-namespace */
+        .chroma-nn {
+            color: var(--chroma-name-namespace-fg);
+        }
+        /* chroma-name-tag */
+        .chroma-nt {
+            color: var(--chroma-name-tag-fg);
+        }
+        /* chroma-name-variable */
+        .chroma-nv {
+            color: var(--chroma-name-variable-fg);
+        }
+        /* chroma-name-variable-class */
+        .chroma-vc {
+            color: var(--chroma-name-variable-class-fg);
+        }
+        /* chroma-name-variable-global */
+        .chroma-vg {
+            color: var(--chroma-name-variable-global-fg);
+        }
+        /* chroma-name-variable-instance */
+        .chroma-vi {
+            color: var(--chroma-name-variable-instance-fg);
+        }
+        /* chroma-literal-string */
+        .chroma-s {
+            color: var(--chroma-literal-string-fg);
+        }
+        /* chroma-literal-string-affix */
+        .chroma-sa {
+            color: var(--chroma-literal-string-affix-fg);
+        }
+        /* chroma-literal-string-backtick */
+        .chroma-sb {
+            color: var(--chroma-literal-string-backtick-fg);
+        }
+        /* chroma-literal-string-char */
+        .chroma-sc {
+            color: var(--chroma-literal-string-char-fg);
+        }
+        /* chroma-literal-string-delimiter */
+        .chroma-dl {
+            color: var(--chroma-literal-string-delimiter-fg);
+        }
+        /* chroma-literal-string-doc */
+        .chroma-sd {
+            color: var(--chroma-literal-string-doc-fg);
+        }
+        /* chroma-literal-string-double */
+        .chroma-s2 {
+            color: var(--chroma-literal-string-double-fg);
+        }
+        /* chroma-literal-string-escape */
+        .chroma-se {
+            color: var(--chroma-literal-string-escape-fg);
+        }
+        /* chroma-literal-string-heredoc */
+        .chroma-sh {
+            color: var(--chroma-literal-string-heredoc-fg);
+        }
+        /* chroma-literal-string-interpol */
+        .chroma-si {
+            color: var(--chroma-literal-string-interpol-fg);
+        }
+        /* chroma-literal-string-other */
+        .chroma-sx {
+            color: var(--chroma-literal-string-other-fg);
+        }
+        /* chroma-literal-string-regex */
+        .chroma-sr {
+            color: var(--chroma-literal-string-regex-fg);
+        }
+        /* chroma-literal-string-single */
+        .chroma-s1 {
+            color: var(--chroma-literal-string-single-fg);
+        }
+        /* chroma-literal-string-symbol */
+        .chroma-ss {
+            color: var(--chroma-literal-string-symbol-fg);
+        }
+        /* chroma-literal-number */
+        .chroma-m {
+            color: var(--chroma-literal-number-fg);
+        }
+        /* chroma-literal-number-bin */
+        .chroma-mb {
+            color: var(--chroma-literal-number-bin-fg);
+        }
+        /* chroma-literal-number-float */
+        .chroma-mf {
+            color: var(--chroma-literal-number-float-fg);
+        }
+        /* chroma-literal-number-hex */
+        .chroma-mh {
+            color: var(--chroma-literal-number-hex-fg);
+        }
+        /* chroma-literal-number-integer */
+        .chroma-mi {
+            color: var(--chroma-literal-number-integer-fg);
+        }
+        /* chroma-literal-number-integer-long */
+        .chroma-il {
+            color: var(--chroma-literal-number-integer-long-fg);
+        }
+        /* chroma-literal-number-oct */
+        .chroma-mo {
+            color: var(--chroma-literal-number-oct-fg);
+        }
+        /* chroma-operator */
+        .chroma-o {
+            color: var(--chroma-operator-fg);
+            font-weight: bold;
+        }
+        /* chroma-operator-word */
+        .chroma-ow {
+            color: var(--chroma-operator-word-fg);
+            font-weight: bold;
+        }
+        /* chroma-comment */
+        .chroma-c {
+            color: var(--chroma-comment-fg);
+            font-style: italic;
+        }
+        /* chroma-comment-hashbang */
+        .chroma-ch {
+            color: var(--chroma-comment-hashbang-fg);
+            font-style: italic;
+        }
+        /* chroma-comment-multiline */
+        .chroma-cm {
+            color: var(--chroma-comment-multiline-fg);
+            font-style: italic;
+        }
+        /* chroma-comment-single */
+        .chroma-c1 {
+            color: var(--chroma-comment-single-fg);
+            font-style: italic;
+        }
+        /* chroma-comment-special */
+        .chroma-cs {
+            color: var(--chroma-comment-special-fg);
+            font-weight: bold;
+            font-style: italic;
+        }
+        /* chroma-comment-preproc */
+        .chroma-cp {
+            color: var(--chroma-comment-preproc-fg);
+            font-weight: bold;
+            font-style: italic;
+        }
+        /* chroma-comment-preproc-file */
+        .chroma-cpf {
+            color: var(--chroma-comment-preproc-file-fg);
+            font-weight: bold;
+            font-style: italic;
+        }
+        /* chroma-generic-deleted */
+        .chroma-gd {
+            color: var(--chroma-generic-deleted-fg);
+            background-color: var(--chroma-generic-deleted-bg);
+        }
+        /* chroma-generic-emph */
+        .chroma-ge {
+            color: var(--chroma-generic-emph-fg);
+            font-style: italic;
+        }
+        /* chroma-generic-error */
+        .chroma-gr {
+            color: var(--chroma-generic-error-fg);
+        }
+        /* chroma-generic-heading */
+        .chroma-gh {
+            color: var(--chroma-generic-heading-fg);
+        }
+        /* chroma-generic-inserted */
+        .chroma-gi {
+            color: var(--chroma-generic-inserted-fg);
+            background-color: var(--chroma-generic-inserted-bg);
+        }
+        /* chroma-generic-output */
+        .chroma-go {
+            color: var(--chroma-generic-output-fg);
+        }
+        /* chroma-generic-prompt */
+        .chroma-gp {
+            color: var(--chroma-generic-prompt-fg);
+        }
+        /* chroma-generic-strong */
+        .chroma-gs {
+            font-weight: bold;
+        }
+        /* chroma-generic-subheading */
+        .chroma-gu {
+            color: var(--chroma-generic-subheading-fg);
+        }
+        /* chroma-generic-traceback */
+        .chroma-gt {
+            color: var(--chroma-generic-traceback-fg);
+        }
+        /* chroma-generic-underline */
+        .chroma-gl {
+            text-decoration: underline;
+        }
+        /* chroma-text-whitespace */
+        .chroma-w {
+            color: var(--chroma-text-whitespace-fg);
+        }
+    }
+}

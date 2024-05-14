@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -57,7 +58,7 @@ func TestClone(t *testing.T) {
 	s := server.NewServer(&server.ServerOpts{
 		Logger: logger,
 		FS:     fs,
-		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+		GitBackendSource: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
 		GetRemoteURLFunc: getRemoteURLFunc,
@@ -160,7 +161,7 @@ func TestClone_Fail(t *testing.T) {
 	s := server.NewServer(&server.ServerOpts{
 		Logger: logger,
 		FS:     fs,
-		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+		GitBackendSource: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
 		GetRemoteURLFunc: getRemoteURLFunc,
@@ -270,4 +271,23 @@ func TestClone_Fail(t *testing.T) {
 	_, err = os.Stat(fs.RepoDir(repo).Path())
 	require.Error(t, err)
 	require.True(t, os.IsNotExist(err))
+}
+
+func newMockDB() *dbmocks.MockDB {
+	db := dbmocks.NewMockDB()
+	db.GitserverReposFunc.SetDefaultReturn(dbmocks.NewMockGitserverRepoStore())
+	db.FeatureFlagsFunc.SetDefaultReturn(dbmocks.NewMockFeatureFlagStore())
+
+	r := dbmocks.NewMockRepoStore()
+	r.GetByNameFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName) (*types.Repo, error) {
+		return &types.Repo{
+			Name: repoName,
+			ExternalRepo: api.ExternalRepoSpec{
+				ServiceType: extsvc.TypeGitHub,
+			},
+		}, nil
+	})
+	db.ReposFunc.SetDefaultReturn(r)
+
+	return db
 }
