@@ -132,7 +132,7 @@ export interface ActionContribution {
      * Properties to enable event telemetry to be recorded when an action is executed.
      */
     telemetryProps: {
-        feature: KnownString
+        feature: KnownString<string>
 
         // No `action` prop is provided, because action items only log telemetry when executed (and thus use an
         // 'executed' action.
