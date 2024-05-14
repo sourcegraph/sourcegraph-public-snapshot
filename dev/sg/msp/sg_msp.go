@@ -847,6 +847,10 @@ This command supports completions on services and environments.
 							Value: false,
 						},
 						&cli.StringFlag{
+							Name:  "category",
+							Usage: "Filter generated environments by category (one of 'test', 'internal', 'external') - must be used with '-all'",
+						},
+						&cli.StringFlag{
 							Name:  "workspace-run-mode",
 							Usage: "One of 'vcs', 'cli', or 'ignore' (to respect existing configuration)",
 							Value: "vcs",
@@ -859,6 +863,20 @@ This command supports completions on services and environments.
 					},
 					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
+						var (
+							generateCategory = spec.EnvironmentCategory(c.String("category"))
+							generateAll      = c.Bool("all")
+						)
+
+						if generateCategory != "" {
+							if !generateAll {
+								return errors.New("'-category' must be used with '-all'")
+							}
+							if err := generateCategory.Validate(); err != nil {
+								return errors.Wrap(err, "invalid value for '-category'")
+							}
+						}
+
 						secretStore, err := secrets.FromContext(c.Context)
 						if err != nil {
 							return err
@@ -889,7 +907,7 @@ This command supports completions on services and environments.
 
 						// If we are not syncing all environments for a service,
 						// then we are syncing a specific service environment.
-						if !c.Bool("all") {
+						if !generateAll {
 							std.Out.WriteNoticef("Syncing a specific service environment...")
 							svc, env, err := useServiceAndEnvironmentArguments(c, true)
 							if err != nil {
@@ -908,6 +926,10 @@ This command supports completions on services and environments.
 							}
 
 							confirmAction := "Syncing all environments for all services"
+							if generateCategory != "" {
+								confirmAction = fmt.Sprintf("%s, including only environments with category %q",
+									confirmAction, generateCategory)
+							}
 							if runMode != terraformcloud.WorkspaceRunModeIgnore {
 								// This action may override custom run mode
 								// configurations, which may unexpectedly deploy
@@ -936,6 +958,11 @@ This command supports completions on services and environments.
 									return errors.Wrap(err, serviceID)
 								}
 								for _, env := range svc.Environments {
+									if generateCategory != "" && generateCategory != env.Category {
+										std.Out.WriteSkippedf("[%s] Skipping env %s (not in category %q)",
+											serviceID, env.ID, generateCategory)
+										continue
+									}
 									if err := syncEnvironmentWorkspaces(c, tfcClient, svc.Service, env); err != nil {
 										return errors.Wrapf(err, "%s: sync env %q", serviceID, env.ID)
 									}
