@@ -23,7 +23,6 @@
 
     export let data: LayoutData
 
-    // TODO(camdencheek): is there a better way to do this than to access the window context directly?
     const navigationEntries = window.context.sourcegraphDotComMode ? dotcomMainNavigation : mainNavigation
 
     const user = writable(data.user ?? null)
