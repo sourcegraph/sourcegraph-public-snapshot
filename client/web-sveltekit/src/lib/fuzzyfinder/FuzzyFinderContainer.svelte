@@ -1,5 +1,6 @@
 <script lang="ts" context="module">
     import { writable } from 'svelte/store'
+    import { type FuzzyFinderTabId } from './FuzzyFinder.svelte'
 
     interface FuzzyFinderState {
         open: boolean
@@ -20,9 +21,8 @@
     import { registerHotkey } from '$lib/Hotkey'
     import { parseRepoRevision } from '$lib/shared'
 
-    import FuzzyFinder, { type FuzzyFinderTabId, FuzzyFinderTabType } from './FuzzyFinder.svelte'
+    import FuzzyFinder from './FuzzyFinder.svelte'
     import { filesHotkey, reposHotkey, symbolsHotkey } from './keys'
-    import { onMount } from 'svelte'
 
     let finder: FuzzyFinder | undefined
     let scope = ''
@@ -65,7 +65,7 @@
         },
     })
 
-    $: if ($fuzzyFinderState.selectedTabId) {
+    $: if ($fuzzyFinderState.selectedTabId !== '') {
         finder?.selectTab($fuzzyFinderState.selectedTabId)
     }
 
@@ -80,4 +80,9 @@
     }
 </script>
 
-<FuzzyFinder bind:this={finder} open={$fuzzyFinderState} {scope} on:close={() => ($fuzzyFinderState = false)} />
+<FuzzyFinder
+    bind:this={finder}
+    {scope}
+    open={$fuzzyFinderState.open}
+    on:close={() => ($fuzzyFinderState.open = false)}
+/>
