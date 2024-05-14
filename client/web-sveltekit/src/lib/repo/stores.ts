@@ -3,8 +3,6 @@ import { writable, type Writable } from 'svelte/store'
 
 import { createEmptySingleSelectTreeState, type TreeState } from '$lib/TreeView'
 
-export const sidebarOpen = writable(true)
-
 /**
  * Persistent, global state for the file sidebar. By keeping the state in memory we can
  * properly restore the UI when the user closes/opens the sidebar or navigates up the repo.

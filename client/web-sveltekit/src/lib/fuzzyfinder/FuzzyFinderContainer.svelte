@@ -1,12 +1,15 @@
 <script lang="ts" context="module">
     import { writable } from 'svelte/store'
 
-    const fuzzyFinderState = writable(false)
-    const scopeState = writable<FuzzyFinderTabId | ''>('')
+    interface FuzzyFinderState {
+        open: boolean
+        selectedTabId: FuzzyFinderTabId | ''
+    }
+
+    const fuzzyFinderState = writable<FuzzyFinderState>({ open: false, selectedTabId: '' })
 
     export function openFuzzyFinder(tab?: FuzzyFinderTabId): void {
-        fuzzyFinderState.set(true)
-        scopeState.set(tab ?? FuzzyFinderTabType.Repos)
+        fuzzyFinderState.update(state => ({ selectedTabId: tab ?? state.selectedTabId, open: true }))
     }
 </script>
 
@@ -19,6 +22,7 @@
 
     import FuzzyFinder, { type FuzzyFinderTabId, FuzzyFinderTabType } from './FuzzyFinder.svelte'
     import { filesHotkey, reposHotkey, symbolsHotkey } from './keys'
+    import { onMount } from 'svelte'
 
     let finder: FuzzyFinder | undefined
     let scope = ''
@@ -28,8 +32,10 @@
         ignoreInputFields: false,
         handler: event => {
             event.stopPropagation()
-            $fuzzyFinderState = true
-            $scopeState = 'repos'
+            fuzzyFinderState.set({
+                open: true,
+                selectedTabId: 'repos',
+            })
             return false
         },
     })
@@ -38,8 +44,10 @@
         ignoreInputFields: false,
         handler: event => {
             event.stopPropagation()
-            $fuzzyFinderState = true
-            $scopeState = 'symbols'
+            fuzzyFinderState.set({
+                open: true,
+                selectedTabId: 'symbols',
+            })
             return false
         },
     })
@@ -49,17 +57,17 @@
         ignoreInputFields: false,
         handler: event => {
             event.stopPropagation()
-            $fuzzyFinderState = true
-            $scopeState = 'files'
+            fuzzyFinderState.set({
+                open: true,
+                selectedTabId: 'files',
+            })
             return false
         },
     })
 
-    scopeState.subscribe(tab => {
-        if (tab) {
-            finder?.selectTab(tab)
-        }
-    })
+    $: if ($fuzzyFinderState.selectedTabId) {
+        finder?.selectTab($fuzzyFinderState.selectedTabId)
+    }
 
     $: if ($page.params.repo) {
         const { repoName, revision } = parseRepoRevision($page.params.repo)

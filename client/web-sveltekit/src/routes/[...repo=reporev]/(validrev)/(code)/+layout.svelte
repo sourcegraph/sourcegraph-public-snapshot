@@ -349,7 +349,7 @@
         align-items: center;
 
         header {
-           flex-wrap: nowrap;
+            flex-wrap: nowrap;
         }
 
         header,

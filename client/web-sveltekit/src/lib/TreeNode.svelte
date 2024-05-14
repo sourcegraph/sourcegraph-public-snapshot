@@ -158,10 +158,10 @@
 
         // Change icon color based on selected item state
         --icon-fill-color: var(--tree-node-expand-icon-color);
-        color: var(--tree-node-lable-color, var(--text-body));
+        color: var(--tree-node-label-color, var(--text-body));
 
         li[data-treeitem][aria-selected='true'] > & {
-            color: var(--tree-node-lable-color, var(--body-bg));
+            color: var(--tree-node-label-color, var(--body-bg));
         }
 
         .scope-container {
