@@ -12,6 +12,7 @@ go_library(
     importpath = "github.com/sourcegraph/src-cli/internal/validate/kube",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/lazyregexp",
         "//lib/errors",
         "//src-cli/internal/validate",
         "@com_github_aws_aws_sdk_go_v2_config//:config",
@@ -19,6 +20,7 @@ go_library(
         "@com_github_aws_aws_sdk_go_v2_service_ec2//types",
         "@com_github_aws_aws_sdk_go_v2_service_eks//:eks",
         "@com_github_aws_aws_sdk_go_v2_service_iam//:iam",
+        "@com_github_sourcegraph_log//:log",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
         "@io_k8s_client_go//kubernetes",
