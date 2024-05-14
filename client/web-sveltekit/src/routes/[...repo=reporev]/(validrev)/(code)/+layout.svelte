@@ -202,6 +202,16 @@
                         getRepositoryCommits={data.getRepoCommits}
                         getRepositoryTags={data.getRepoTags}
                     />
+
+                    <Tooltip tooltip="Go to the repository root">
+                        <Button variant="secondary" outline size="sm">
+                            <svelte:fragment slot="custom" let:buttonClass>
+                                <a class={buttonClass} href="/{repoName}" on:click={handleGoToRoot}>
+                                    <Icon svgPath={mdiHome} inline />
+                                </a>
+                            </svelte:fragment>
+                        </Button>
+                    </Tooltip>
                 </div>
 
                 <div class="sidebar-action-row">
@@ -215,16 +225,6 @@
                             </button>
                         </svelte:fragment>
                     </Button>
-
-                    <Tooltip tooltip="Go to the repository root">
-                        <Button variant="secondary" outline size="sm">
-                            <svelte:fragment slot="custom" let:buttonClass>
-                                <a class={buttonClass} href="/{repoName}" on:click={handleGoToRoot}>
-                                    <Icon svgPath={mdiHome} inline />
-                                </a>
-                            </svelte:fragment>
-                        </Button>
-                    </Tooltip>
                 </div>
             </header>
 
@@ -348,6 +348,10 @@
         flex-direction: column;
         align-items: center;
 
+        header {
+           flex-wrap: nowrap;
+        }
+
         header,
         .sidebar-action-row {
             flex-direction: column;
@@ -372,8 +376,9 @@
 
         .sidebar-action-row {
             display: flex;
+            flex-basis: 100%;
             align-items: center;
-            gap: 0.25rem;
+            gap: 0.5rem;
             min-width: 0;
             flex-grow: 1;
         }
