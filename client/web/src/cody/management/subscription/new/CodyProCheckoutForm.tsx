@@ -11,9 +11,9 @@ import { H3, Text } from '@sourcegraph/wildcard'
  * render an iframe into, that will host a Stripe Checkout-hosted form.
  */
 export const CodyProCheckoutForm: React.FunctionComponent<{
-    stripeHandle: Promise<Stripe | null>
+    stripePromise: Promise<Stripe | null>
     customerEmail: string | undefined
-}> = ({ stripeHandle, customerEmail }) => {
+}> = ({ stripePromise, customerEmail }) => {
     const [clientSecret, setClientSecret] = useState('')
     const [errorDetails, setErrorDetails] = useState('')
     const [urlSearchParams] = useSearchParams()
@@ -44,7 +44,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
             )}
 
             {clientSecret && (
-                <EmbeddedCheckoutProvider stripe={stripeHandle} options={options}>
+                <EmbeddedCheckoutProvider stripe={stripePromise} options={options}>
                     <EmbeddedCheckout />
                 </EmbeddedCheckoutProvider>
             )}
