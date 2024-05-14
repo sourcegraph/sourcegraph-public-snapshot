@@ -11,18 +11,15 @@
     import EditorIcon from '$lib/repo/open-in-editor/EditorIcon.svelte'
     import { settings } from '$lib/stores'
     import { page } from '$app/stores'
-    import type { ExternalRepository } from '$lib/graphql-types'
+    import type { ExternalRepository, SettingsEdit, SettingsSubject } from '$lib/graphql-types'
     import DefaultEditorIcon from '$lib/repo/open-in-editor/DefaultEditorIcon.svelte'
     import Popover from '$lib/Popover.svelte';
     import { Button } from '$lib/wildcard';
     import { supportedEditors } from '$lib/web';
-    import type {
-        PageData
-    } from '$root/client/web-sveltekit/.svelte-kit/types/src/routes/[...repo=reporev]/(validrev)/(code)/-/blob/[...path]/$types';
-    import {writable} from 'svelte/store';
+    import { writable } from 'svelte/store';
 
     export let externalServiceType: ExternalRepository['serviceType'] = ''
-    export let data: Extract<PageData, { type: 'FileView' }>
+    export let data: { subjects: SettingsSubject[], updateEditor: (subject: string, lastID: number, edit: SettingsEdit) => Promise<number> }
 
     $: openInEditor = $settings?.openInEditor
 
