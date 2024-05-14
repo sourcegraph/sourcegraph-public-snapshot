@@ -16,7 +16,7 @@ import (
 )
 
 type IndexEnqueuer interface {
-	QueueIndexes(ctx context.Context, repositoryId int, rev, configuration string, options EnqueueOptions) (_ []jobstore.SyntacticIndexingJob, err error)
+	QueueIndexes(ctx context.Context, repositoryId int, rev string, options EnqueueOptions) (_ []jobstore.SyntacticIndexingJob, err error)
 }
 
 type EnqueueOptions struct {
@@ -91,7 +91,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.IsQueued
-func (s *indexEnqueuerImpl) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, options EnqueueOptions) (_ []jobstore.SyntacticIndexingJob, err error) {
+func (s *indexEnqueuerImpl) QueueIndexes(ctx context.Context, repositoryID int, rev string, options EnqueueOptions) (_ []jobstore.SyntacticIndexingJob, err error) {
 	ctx, trace, endObservation := s.operations.queueIndex.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 		attribute.String("rev", rev),
@@ -110,7 +110,7 @@ func (s *indexEnqueuerImpl) QueueIndexes(ctx context.Context, repositoryID int, 
 	commit := string(commitID)
 	trace.AddEvent("ResolveRevision", attribute.String("commit", commit))
 
-	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, options)
+	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, options)
 }
 
 // queueIndexForRepositoryAndCommit determines a set of index jobs to enqueue for the given repository and commit.
@@ -118,9 +118,10 @@ func (s *indexEnqueuerImpl) QueueIndexes(ctx context.Context, repositoryID int, 
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, options EnqueueOptions) ([]jobstore.SyntacticIndexingJob, error) {
+func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit string, options EnqueueOptions) ([]jobstore.SyntacticIndexingJob, error) {
 	if !options.force {
 		isQueued, err := s.jobStore.IsQueued(ctx, repositoryID, commit)
+		fmt.Println(isQueued)
 		if err != nil {
 			return nil, errors.Wrap(err, "dbstore.IsQueued")
 		}

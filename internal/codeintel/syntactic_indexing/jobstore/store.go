@@ -8,8 +8,11 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -24,6 +27,7 @@ type syntacticIndexingJobStoreImpl struct {
 	store      dbworkerstore.Store[*SyntacticIndexingJob]
 	db         *basestore.Store
 	operations *operations
+	logger     log.Logger
 }
 
 var _ SyntacticIndexingJobStore = &syntacticIndexingJobStoreImpl{}
@@ -67,6 +71,7 @@ func NewStoreWithDB(observationCtx *observation.Context, db *sql.DB) (SyntacticI
 		store:      dbworkerstore.New(observationCtx, handle, storeOptions),
 		db:         basestore.NewWithHandle(handle),
 		operations: newOperations(observationCtx),
+		logger:     observationCtx.Logger.Scoped("syntactic_indexing.store"),
 	}, nil
 }
 
@@ -95,32 +100,29 @@ func (s *syntacticIndexingJobStoreImpl) InsertIndexes(ctx context.Context, index
 	}
 
 	indexes = []SyntacticIndexingJob{}
+
 	err = s.db.WithTransact(ctx, func(tx *basestore.Store) error {
 		ids, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(insertIndexQuery, sqlf.Join(values, ","))))
 		if err != nil {
 			return err
 		}
-
+		// TODO: add operations and record this operation
 		fmt.Println("Inserting indices", ids)
-
-		return nil
-
-		// TODO: hydrate the list of indexes by retrieving them
 
 		// s.operations.indexesInserted.Add(float64(len(ids)))
 
-		// authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
-		// if err != nil {
-		// 	return err
-		// }
+		authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+		if err != nil {
+			return err
+		}
 
-		// queries := make([]*sqlf.Query, 0, len(ids))
-		// for _, id := range ids {
-		// 	queries = append(queries, sqlf.Sprintf("%d", id))
-		// }
+		queries := make([]*sqlf.Query, 0, len(ids))
+		for _, id := range ids {
+			queries = append(queries, sqlf.Sprintf("%d", id))
+		}
 
-		// indexes, err = scanIndexes(tx.db.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
-		// return err
+		indexes, err = scanIndexes(tx.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+		return err
 	})
 
 	return indexes, err
@@ -159,3 +161,49 @@ SELECT EXISTS(
 	LIMIT 1
 )
 `
+
+const getIndexesByIDsQuery = `
+SELECT
+	u.id,
+	u.commit,
+	u.queued_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.should_reindex,
+	u.enqueuer_user_id
+FROM syntactic_scip_indexing_jobs_with_repository_name u
+WHERE u.id IN (%s) and %s
+ORDER BY u.id
+`
+
+func scanIndex(s dbutil.Scanner) (index SyntacticIndexingJob, err error) {
+	if err := s.Scan(
+		&index.ID,
+		&index.Commit,
+		&index.QueuedAt,
+		&index.State,
+		&index.FailureMessage,
+		&index.StartedAt,
+		&index.FinishedAt,
+		&index.ProcessAfter,
+		&index.NumResets,
+		&index.NumFailures,
+		&index.RepositoryID,
+		&index.RepositoryName,
+		&index.ShouldReindex,
+		&index.EnqueuerUserID,
+	); err != nil {
+		return index, err
+	}
+
+	return index, nil
+}
+
+var scanIndexes = basestore.NewSliceScanner(scanIndex)

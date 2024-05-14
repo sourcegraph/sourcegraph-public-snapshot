@@ -12,6 +12,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
+        "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",
         "//internal/memo",
@@ -21,6 +22,7 @@ go_library(
         "//internal/workerutil/dbworker/store",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )
@@ -34,6 +36,7 @@ go_test(
     embed = [":jobstore"],
     tags = ["requires-network"],
     deps = [
+        "//internal/codeintel/syntactic_indexing/internal/testutils",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/observation",

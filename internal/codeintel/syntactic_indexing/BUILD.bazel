@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -22,6 +23,7 @@ go_library(
         "//internal/codeintel/reposcheduler",
         "//internal/codeintel/syntactic_indexing/internal",
         "//internal/codeintel/syntactic_indexing/jobstore",
+        "//internal/conf",
         "//internal/database",
         "//internal/env",
         "//internal/gitserver",
@@ -31,5 +33,22 @@ go_library(
         "//internal/observation",
         "//lib/errors",
         "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "syntactic_indexing_test",
+    srcs = ["enqueuer_test.go"],
+    embed = [":syntactic_indexing"],
+    deps = [
+        "//internal/api",
+        "//internal/codeintel/reposcheduler",
+        "//internal/codeintel/syntactic_indexing/internal/testutils",
+        "//internal/codeintel/syntactic_indexing/jobstore",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/gitserver",
+        "//internal/observation",
+        "@com_github_stretchr_testify//require",
     ],
 )

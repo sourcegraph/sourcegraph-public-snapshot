@@ -75,6 +75,7 @@ func newSchedulerJob(
 		actor.WithInternalActor(context.Background()),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			config := conf.Get().ExperimentalFeatures
+
 			if config != nil && config.CodeintelSyntacticIndexingEnabled {
 				return scheduler.Schedule(observationCtx, ctx, time.Now())
 			} else {

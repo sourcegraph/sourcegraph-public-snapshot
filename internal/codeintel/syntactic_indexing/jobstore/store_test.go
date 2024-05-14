@@ -6,6 +6,7 @@ import (
 	"time"
 
 	// "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/internal/testutils"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -119,13 +120,13 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 	require.NoError(t, err, "unexpected error creating dbworker stores")
 	store := jobStore.DBWorkerStore()
 
-	tacosRepoId, tacosRepoName, tacosCommit := 1, "tangy/tacos", makeCommit(1)
-	empanadasRepoId, empanadasRepoName, empanadasCommit := 2, "salty/empanadas", makeCommit(2)
-	mangosRepoId, mangosRepoName, mangosCommit := 2, "juicy/mangos", makeCommit(2)
+	tacosRepoId, tacosRepoName, tacosCommit := 1, "tangy/tacos", testutils.MakeCommit(1)
+	empanadasRepoId, empanadasRepoName, empanadasCommit := 2, "salty/empanadas", testutils.MakeCommit(2)
+	mangosRepoId, mangosRepoName, mangosCommit := 2, "juicy/mangos", testutils.MakeCommit(2)
 
-	insertRepo(t, db, tacosRepoId, tacosRepoName)
-	insertRepo(t, db, empanadasRepoId, empanadasRepoName)
-	insertRepo(t, db, mangosRepoId, mangosRepoName)
+	testutils.InsertRepo(t, db, tacosRepoId, tacosRepoName)
+	testutils.InsertRepo(t, db, empanadasRepoId, empanadasRepoName)
+	testutils.InsertRepo(t, db, mangosRepoId, mangosRepoName)
 
 	jobStore.InsertIndexes(ctx, []SyntacticIndexingJob{
 		{
