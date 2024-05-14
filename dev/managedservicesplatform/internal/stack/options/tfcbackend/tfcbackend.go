@@ -25,7 +25,10 @@ func With(config Config) stack.NewStackOption {
 		_ = cdktf.NewCloudBackend(s.Stack, &cdktf.CloudBackendConfig{
 			Hostname:     pointers.Ptr(terraformcloud.Hostname),
 			Organization: pointers.Ptr(terraformcloud.Organization),
-			Workspaces:   cdktf.NewNamedCloudWorkspace(&workspace),
+			Workspaces: cdktf.NewNamedCloudWorkspace(&workspace,
+				// Second param is nil in examples:
+				// https://developer.hashicorp.com/terraform/cdktf/concepts/remote-backends#define-remote-backends
+				nil),
 		})
 		s.Metadata[MetadataKeyWorkspace] = workspace
 		return nil
