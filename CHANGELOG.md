@@ -14,6 +14,76 @@ All notable changes to Sourcegraph are documented in this file.
 <!-- START CHANGELOG -->
 
 ## Unreleased (Monthly Release - April 5th, 2024)
+## Unreleased
+
+### Added
+
+### Changed
+
+### Fixed
+
+- Fix a bug that caused Bedrock Provisioned Throughput model names to fail [#62642](https://github.com/sourcegraph/sourcegraph/pull/62642)
+
+## 5.4.0
+
+### Added
+
+- Added rate and latency instrumentation for git / package repository syncing operations. These are visible in the gitserver dashboards (VCS "Clone/Fetch/IsCloneable" Metrics). [#61708](https://github.com/sourcegraph/sourcegraph/pull/61708)
+- Added syntax highlighting for the [Pkl](https://pkl-lang.org/) configuration language. [#61478](https://github.com/sourcegraph/sourcegraph/pull/61478)
+- New `rev:at.time()` search filter that allows you to search a branch at a point in time. [#61513](https://github.com/sourcegraph/sourcegraph/pull/61513)
+- "cody.contextFilters" field to the site config. Admins can set include and exclude rules to define which repositories Cody can use as context in its requests to third-party LLMs. [#61101](https://github.com/sourcegraph/sourcegraph/pull/61101), [#61641](https://github.com/sourcegraph/sourcegraph/pull/61641)
+- Added whether "cody.contextFilters" field is configured in the site config to pings. [#62080](https://github.com/sourcegraph/sourcegraph/pull/62080)
+- Added exhaustive logging for all gRPC requests sent to gitserver. This feature is off by default, and can be enabled by setting the `SRC_GITSERVER_EXHAUSTIVE_LOGGING_ENABLED` environment variable to `true`. [#61270](https://github.com/sourcegraph/sourcegraph/pull/61270)
+- Added an `internal` option for the `repositoryQuery` field for GitHub Enterprise code host connections. This will mirror all internal repositories on the code host. [#61924](https://github.com/sourcegraph/sourcegraph/pull/61924)
+
+### Changed
+
+- Improved syntax highlighting for Dart. [#58480](https://github.com/sourcegraph/sourcegraph/pull/58480)
+- The default noop Event type in the honey package has been replaced with a new type that aggregates fields in memory for testing and logging purposes. [#61854](https://github.com/sourcegraph/sourcegraph/pull/61854)
+- Improved the performance of Language Stats Insights by 50-70% by increasing the concurrent requests from the frontend to the gitserver from 1 to 4. You can override the concurrency with the `GET_INVENTORY_GIT_SERVER_CONCURRENCY` environment variable. [#62011](https://github.com/sourcegraph/sourcegraph/pull/62011)
+- Raised the backend timeout for Language Stats Insights from 3 minutes to 5 minutes. You can override this with the `GET_INVENTORY_TIMEOUT` environment variable. [#62011](https://github.com/sourcegraph/sourcegraph/pull/62011)
+- Code insights drilldown behavior has been changed from a diff search to a point-in-time search with the new `rev:at.time()`. [#61953](https://github.com/sourcegraph/sourcegraph/pull/61953)
+- The `FirstEverCommit` gitserver client method has been changed to use a new bespoke gRPC endpoint instead of the legacy `exec` endpoint. [#62173](https://github.com/sourcegraph/sourcegraph/pull/62173)
+- The `GetBehindAhead` gitserver client method has been changed to use a new bespoke gRPC endpoint instead of the legacy `exec` endpoint. [#62217](https://github.com/sourcegraph/sourcegraph/pull/62217)
+- All uses of the `DiffSymbols` gitserver client method have been replaced with the new `ChangedFiles` method. As such, the `DiffSymbos` method has been removed [#62355](https://github.com/sourcegraph/sourcegraph/pull/62355)
+
+### Fixed
+
+- Updated the Docker-in-Docker image to 26.0.0 to resolve several vulnerabilities. [#61735](https://github.com/sourcegraph/sourcegraph/pull/61735)
+- The GetCommit() RPC in the gitserver service now uses the correct protobuf type that allows for non-utf8 byte sequences in commit messages, author names, and author emails. [#61940](https://github.com/sourcegraph/sourcegraph/pull/61940)
+- The ArchiveReader() RPC in the gitserver service now uses the correct protobuf type that allows for non-utf8 byte sequences in file paths. [#61970](https://github.com/sourcegraph/sourcegraph/pull/61970)
+- Pinned code intel popovers and popovers opened via the keyboard are properly shown again. [#61966](https://github.com/sourcegraph/sourcegraph/pull/61966)
+- Syntax highlighting works correctly for JSX files. [#62027](https://github.com/sourcegraph/sourcegraph/pull/62027)
+- Changesets with a skipped CI check now have their CI status correctly displayed in the Batch Changes UI. [#62204](https://github.com/sourcegraph/sourcegraph/pull/62204)
+- Fixed the Sourcegraph login page auto-redirecting to the single auth provider when request access is enabled. [#62376](https://github.com/sourcegraph/sourcegraph/pull/62376)
+
+## 5.3.12303
+
+### Added
+
+- Indexed-search now supports draining a replica of indexes to support zero-downtime reduction in cluster size. [#62005](https://github.com/sourcegraph/sourcegraph/pull/62005)
+
+### Fixed
+
+- Rust binaries are now built in release mode to avoid unnecessary debug checks. [#61740](https://github.com/sourcegraph/sourcegraph/pull/61740)
+- Fixed how scip-ctags reports errors to avoid failing search indexing on non-fatal errors. [#61712](https://github.com/sourcegraph/sourcegraph/pull/61712)
+- Fixed a bug in Enterprise Cody context for queries containing only stopwords. [#61848](https://github.com/sourcegraph/sourcegraph/pull/61848), [#62026](https://github.com/sourcegraph/sourcegraph/pull/62026)
+- Fixed the instance dropdown on the zoekt grafana dashboard. [#61836](https://github.com/sourcegraph/sourcegraph/pull/61836)
+
+## 5.3.11625
+
+### Changed
+
+- Notices configured in the site config now allow for specifying a style or color. [#61338](https://github.com/sourcegraph/sourcegraph/pull/61338)
+- Reduce spamming error logs when canceling symbols indexing or canceling a syntax highlighting request. [#61880](https://github.com/sourcegraph/sourcegraph/pull/61880), [#61719](https://github.com/sourcegraph/sourcegraph/pull/61719), [#61732](https://github.com/sourcegraph/sourcegraph/pull/61732)
+
+### Fixed
+
+- Fixed a bug where the `src batch preview` command could fail due to an incorrect file-not-found error. [#61984](https://github.com/sourcegraph/sourcegraph/pull/61984)
+- Fixed a bug where the Roles page in the Site Admin view was inaccessible. [#61738](https://github.com/sourcegraph/sourcegraph/pull/61738)
+- Fixed a panic in Cody Attribution in sourcegraph-frontend when reporting an error. [#60439](https://github.com/sourcegraph/sourcegraph/issues/60439)
+
+## 5.3.9104
 
 ### Added
 
