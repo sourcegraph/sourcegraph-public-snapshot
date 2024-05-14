@@ -11,7 +11,7 @@
     import EditorIcon from '$lib/repo/open-in-editor/EditorIcon.svelte'
     import { settings } from '$lib/stores'
     import { page } from '$app/stores'
-    import type {ExternalRepository} from '$lib/graphql-types'
+    import type { ExternalRepository } from '$lib/graphql-types'
     import DefaultEditorIcon from '$lib/repo/open-in-editor/DefaultEditorIcon.svelte'
     import Popover from '$lib/Popover.svelte';
     import { Button } from '$lib/wildcard';
