@@ -142,7 +142,6 @@ export const load: PageLoad = ({ url, depends }) => {
             searchStream,
             queryFilters,
             queryFromURL: query,
-            // fetchRepoPopoverData,
             queryOptions: {
                 query: withoutGlobalContext(query),
                 caseSensitive,
