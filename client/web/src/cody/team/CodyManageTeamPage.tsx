@@ -74,9 +74,6 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
 
     const navigate = useNavigate()
 
-    // TODO: Make this dynamic
-    const isAdmin = true
-
     // Process query params
     const parameters = useSearchParameters()
     const newSeatsPurchasedParam = parameters.get('newSeatsPurchased')
@@ -90,7 +87,11 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
     const subscriptionSeatCount = subscriptionData?.subscriptionSeatCount
     const isProUser = subscriptionData?.isProUser
     const [subscriptionDataError, setSubscriptionDataError] = useState<null | Error>(null)
-    const [teamId, setTeamId] = useState<string | null>(null)
+    const [subscriptionSummaryData, setSubscriptionSummaryData] = useState<{
+        teamId: string | null
+        isAdmin: boolean | null
+    } | null>(null)
+    const [subscriptionSummaryDataError, setSubscriptionSummaryDataError] = useState<null | Error>(null)
     const [teamMembers, setTeamMembers] = useState<TeamMember[] | null>(null)
     const [membersDataError, setMembersDataError] = useState<null | Error>(null)
     const [teamInvites, setTeamInvites] = useState<TeamInvite[] | null>(null)
@@ -109,6 +110,21 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                 })
             } catch (error) {
                 setSubscriptionDataError(error)
+            }
+        }
+        async function loadSubscriptionSummaryData(): Promise<void> {
+            try {
+                const response = await fetchThroughSSCProxy('/team/current/subscription/summary', 'GET')
+                const responseJson = (await response.json()) as {
+                    teamId: string
+                    userRole: 'none' | 'member' | 'admin'
+                } | null
+                setSubscriptionSummaryData({
+                    teamId: responseJson?.teamId ?? null,
+                    isAdmin: responseJson && responseJson.userRole === 'admin',
+                })
+            } catch (error) {
+                setSubscriptionSummaryDataError(error)
             }
         }
         async function loadMemberData(): Promise<void> {
@@ -130,11 +146,8 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
             }
         }
 
-        // TODO: Make this live once we have the endpoint
-        // void loadTeamData()
-        setTeamId('1')
-
         void loadSubscriptionData()
+        void loadSubscriptionSummaryData()
         void loadMemberData()
         void loadInviteData()
     }, [authenticatedUser])
@@ -158,7 +171,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                 <PageHeader
                     className="mb-4 mt-4"
                     actions={
-                        isAdmin && (
+                        subscriptionSummaryData?.isAdmin && (
                             <div className="d-flex">
                                 <Link
                                     to="/cody/manage"
@@ -198,10 +211,15 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                     </PageHeader.Heading>
                 </PageHeader>
 
-                {subscriptionDataError || membersDataError || invitesDataError ? (
+                {subscriptionDataError || subscriptionSummaryDataError || membersDataError || invitesDataError ? (
                     <div className={classNames('mb-4', styles.alert, styles.errorAlert)}>
                         <H3>Failed to load team data.</H3>
                         {subscriptionDataError?.message && (
+                            <Text size="small" className="text-muted mb-0">
+                                {subscriptionDataError?.message}
+                            </Text>
+                        )}
+                        {subscriptionSummaryDataError?.message && (
                             <Text size="small" className="text-muted mb-0">
                                 {subscriptionDataError?.message}
                             </Text>
@@ -228,18 +246,18 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                     </div>
                 )}
 
-                {isAdmin && !!remainingInviteCount && (
+                {subscriptionSummaryData?.isAdmin && !!remainingInviteCount && (
                     <InviteUsers
-                        teamId={teamId}
+                        teamId={subscriptionSummaryData?.teamId}
                         remainingInviteCount={remainingInviteCount}
                         telemetryRecorder={telemetryRecorder}
                     />
                 )}
                 <TeamMemberList
-                    teamId={teamId}
+                    teamId={subscriptionSummaryData?.teamId ?? null}
                     teamMembers={teamMembers || []}
                     invites={teamInvites || []}
-                    isAdmin={isAdmin}
+                    isAdmin={subscriptionSummaryData?.isAdmin ?? false}
                     telemetryRecorder={telemetryRecorder}
                 />
             </Page>
