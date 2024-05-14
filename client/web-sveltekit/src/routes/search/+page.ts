@@ -116,6 +116,7 @@ export const load: PageLoad = ({ url, depends }) => {
             featureOverrides: [],
             chunkMatches: true,
             searchMode,
+            // TODO: populate this from user settings
             displayLimit: 1500,
             // 5kb is a conservative upper bound on a reasonable line to show
             // to a user. In practice we can likely go much lower.
