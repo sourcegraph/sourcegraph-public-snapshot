@@ -10,6 +10,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
@@ -44,6 +45,11 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		Metrics: metricsserver.Options{
 			BindAddress:   config.metrics.addr,
 			SecureServing: config.metrics.secure,
+		},
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				config.namespace: {},
+			},
 		},
 	})
 	if err != nil {
