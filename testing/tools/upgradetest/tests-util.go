@@ -800,17 +800,21 @@ func handleVersions(cCtx *cli.Context, overrideStd, overrideMVU, overrideAuto []
 			continue
 		}
 		validTags = append(validTags, v)
-	}
 
-	// Get latest Version and latestMinorVersion
-	for _, tag := range validTags {
 		// Track latest full version
-		if latestFullVer == nil || tag.GreaterThan(latestFullVer) {
-			latestFullVer = tag
+		if latestFullVer == nil || v.GreaterThan(latestFullVer) {
+			latestFullVer = v
 		}
 		latestMinorVer, err = semver.NewVersion(fmt.Sprintf("%d.%d.0", latestFullVer.Major(), latestFullVer.Minor()))
 		if err != nil {
 			return nil, nil, nil, nil, nil, nil, err
+		}
+	}
+
+	if postRelease != "" {
+		semverPostRelease := semver.MustParse(postRelease)
+		if semverPostRelease.LessThan(latestFullVer) {
+			return nil, nil, nil, nil, nil, nil, errors.Newf("post-release %q is older than latest full version.", postRelease)
 		}
 	}
 
