@@ -3,3 +3,8 @@
 build --@aspect_rules_ts//ts:skipLibCheck=honor_tsconfig
 fetch --@aspect_rules_ts//ts:skipLibCheck=honor_tsconfig
 query --@aspect_rules_ts//ts:skipLibCheck=honor_tsconfig
+
+# Disables declaration file generation from pnpm workspaces (i.e. all sub projects in client/)
+# which removes tsc from the loop of compilation.
+# Docs: https://docs.aspect.build/rulesets/aspect_rules_ts/docs/transpiler/#avoid-eager-type-checks-via-npm_package
+build --@aspect_rules_js//npm:exclude_declarations_from_npm_packages
