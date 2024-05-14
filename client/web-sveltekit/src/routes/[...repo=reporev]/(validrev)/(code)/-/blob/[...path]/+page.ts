@@ -4,6 +4,7 @@ import { fetchBlameHunksMemoized, type BlameHunkData } from '@sourcegraph/web/sr
 
 import { SourcegraphURL } from '$lib/common'
 import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
+import type { SettingsEdit } from '$lib/graphql-types'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 import { assertNonNullable } from '$lib/utils'
@@ -113,16 +114,13 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
                 return null
             }),
         blameData,
-        updateEditor: async (subject: string, lastID: number, editorPath: string, editorId: string) => {
+        updateEditor: async (subject: string, lastID: number, edit: SettingsEdit) => {
             const mutationResult1 = await client.mutation(
                 EditSettings,
                 {
                     lastID,
                     subject,
-                    edit: {
-                        value: editorPath,
-                        keyPath: [{ property: 'openInEditor' }, { property: 'projectPaths.default' }],
-                    },
+                    edit,
                 },
                 { requestPolicy: 'network-only', fetch }
             )
@@ -137,21 +135,7 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
             if (!newLastId) {
                 throw new Error('Failed to get new last ID from settings result')
             }
-            const mutationResult2 = await client.mutation(
-                EditSettings,
-                {
-                    lastID: newLastId,
-                    subject,
-                    edit: {
-                        value: [editorId],
-                        keyPath: [{ property: 'openInEditor' }, { property: 'editorIds' }],
-                    },
-                },
-                { requestPolicy: 'network-only', fetch }
-            )
-            if (!mutationResult2.data || mutationResult2.error) {
-                throw new Error(`Failed to update editor id: ${mutationResult2.error}`)
-            }
+            return newLastId
         },
     }
 }

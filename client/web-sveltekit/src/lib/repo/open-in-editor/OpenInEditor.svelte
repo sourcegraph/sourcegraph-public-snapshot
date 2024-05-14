@@ -4,7 +4,7 @@
         parseBrowserRepoURL,
         buildRepoBaseNameAndPath,
         buildEditorUrl,
-        isProjectPathValid
+        isProjectPathValid, type Editor
     } from '$lib/web'
     import {getEditorSettingsErrorMessage} from './build-url'
     import Tooltip from '$lib/Tooltip.svelte'
@@ -19,6 +19,7 @@
     import type {
         PageData
     } from '$root/client/web-sveltekit/.svelte-kit/types/src/routes/[...repo=reporev]/(validrev)/(code)/-/blob/[...path]/$types';
+    import {writable} from 'svelte/store';
 
     export let externalServiceType: ExternalRepository['serviceType'] = ''
     export let data: Extract<PageData, { type: 'FileView' }>
@@ -27,31 +28,48 @@
 
     $: editorSettingsErrorMessage = getEditorSettingsErrorMessage(openInEditor)
     $: editorIds = openInEditor?.editorIds ?? []
-    $: editors = !editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined
+    $: editors = writable<(Editor | undefined)[] | undefined>(!editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined);
 
     $: sourcegraphBaseURL = new URL($page.url).origin
 
     $: ({repoName, filePath, position, range} = parseBrowserRepoURL($page.url.toString()))
     $: start = position ?? range?.start
 
-    $: latestSettings = data.subjects.at(-1)
-    $: handleEditorUpdate = latestSettings?.latestSettings
-        ? async (): Promise<void> => {
-            if (latestSettings?.latestSettings) {
-                await data.updateEditor(latestSettings.id, latestSettings.latestSettings.id, defaultProjectPath, selectedEditorId)
-                window.location.reload()
-            }
-        }
-        : undefined
+    $: lastId = writable<number>(data.subjects.at(-1)?.latestSettings?.id);
+    $: subjectId = writable<string>(data.subjects.at(-1)?.id);
+    $: defaultProjectPath = writable<string>('');
+    $: selectedEditorId = writable<typeof editorIds[number] | undefined>();
 
-    let defaultProjectPath = ''; // Assume initial state or fetch from a store
-    let selectedEditorId = ''; // Assume initial state or fetch from a store
-    $: areSettingsValid = !!selectedEditorId && isProjectPathValid(defaultProjectPath);
+    $: areSettingsValid = !!$selectedEditorId && isProjectPathValid($defaultProjectPath);
+
+    let isSaving = false;
+    $: handleEditorUpdate = async (): Promise<void> => {
+        if (!$selectedEditorId || !$defaultProjectPath) {
+            return;
+        }
+        isSaving = true;
+        const newLastId1 = await data.updateEditor($subjectId, $lastId, {
+            value: $defaultProjectPath,
+            keyPath: [{property: 'openInEditor'}, {property: 'projectPaths.default'}],
+        });
+        lastId.set(newLastId1);
+        const newLastId2 = await data.updateEditor($subjectId, $lastId, {
+            value: [$selectedEditorId],
+            keyPath: [{property: 'openInEditor'}, {property: 'editorIds'}],
+        });
+        lastId.set(newLastId2);
+        isSaving = false;
+
+        openInEditor = {
+            editorIds: [$selectedEditorId],
+            'projectPaths.default': $defaultProjectPath,
+        }
+    }
 
 </script>
 
-{#if editors}
-    {#each editors as editor, editorIndex}
+{#if $editors}
+    {#each $editors as editor, editorIndex}
         {#if editor}
             <Tooltip tooltip={`Open in ${editor.name}`}>
                 <a
@@ -97,7 +115,7 @@
                     autocorrect="off"
                     autocapitalize="off"
                     spellcheck={false}
-                    bind:value={defaultProjectPath}
+                    bind:value={$defaultProjectPath}
                     class="form-input"
                 />
                 <p class="small form-info">
@@ -106,7 +124,7 @@
                     to <code>/Users/username/projects</code>.
                 </p>
                 <p class="form-label editor-label">Editor</p>
-                <select class="form-input" id="OpenInEditorForm-editor" bind:value={selectedEditorId}>
+                <select class="form-input" id="OpenInEditorForm-editor" bind:value={$selectedEditorId}>
                     <option value=""></option>
                     {#each supportedEditors.sort((a, b) => a.name.localeCompare(b.name)).filter(editor => editor.id !== 'custom') as editor}
                         <option value={editor.id}>{editor.name}</option>
@@ -116,7 +134,7 @@
                     <a href="/help/integration/open_in_editor" target="_blank" rel="noreferrer noopener">Set up a
                         different editor</a>
                 </p>
-                <Button variant="primary" type="submit" disabled={!areSettingsValid}>
+                <Button variant="primary" type="submit" disabled={!areSettingsValid || isSaving}>
                     Save
                 </Button>
             </form>
