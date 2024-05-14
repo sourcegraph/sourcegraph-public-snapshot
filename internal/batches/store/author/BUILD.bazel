@@ -22,7 +22,6 @@ go_test(
     embed = [":author"],
     tags = [
         TAG_SEARCHSUITE,
-        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],

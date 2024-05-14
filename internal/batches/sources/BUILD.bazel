@@ -77,7 +77,6 @@ go_test(
     embed = [":sources"],
     tags = [
         TAG_SEARCHSUITE,
-        TAG_SEARCHSUITE,
         "requires-network",
     ],
     deps = [

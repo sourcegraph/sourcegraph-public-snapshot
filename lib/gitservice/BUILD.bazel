@@ -14,9 +14,6 @@ go_test(
     name = "gitservice_test",
     timeout = "short",
     srcs = ["gitservice_test.go"],
-    tags = [
-        TAG_PLATFORM_SOURCE,
-        TAG_PLATFORM_SOURCE,
-    ],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [":gitservice"],
 )

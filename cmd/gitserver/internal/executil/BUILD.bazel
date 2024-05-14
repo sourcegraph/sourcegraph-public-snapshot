@@ -23,10 +23,7 @@ go_test(
     name = "executil_test",
     srcs = ["executil_test.go"],
     embed = [":executil"],
-    tags = [
-        TAG_PLATFORM_SOURCE,
-        TAG_PLATFORM_SOURCE,
-    ],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/conf",
         "//internal/vcs",

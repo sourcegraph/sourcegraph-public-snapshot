@@ -21,9 +21,6 @@ go_test(
     timeout = "short",
     srcs = ["config_test.go"],
     embed = [":config"],
-    tags = [
-        TAG_SEARCHSUITE,
-        TAG_SEARCHSUITE,
-    ],
+    tags = [TAG_SEARCHSUITE],
     deps = ["//schema"],
 )

@@ -32,7 +32,6 @@ go_test(
     embed = [":processor"],
     tags = [
         TAG_SEARCHSUITE,
-        TAG_SEARCHSUITE,
         # Test requires localhost database
         "requires-network",
     ],

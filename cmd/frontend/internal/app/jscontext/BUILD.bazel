@@ -5,6 +5,7 @@ go_library(
     name = "jscontext",
     srcs = ["jscontext.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
@@ -42,8 +43,5 @@ go_test(
     timeout = "short",
     srcs = ["jscontext_test.go"],
     embed = [":jscontext"],
-    tags = [
-        TAG_SEARCHSUITE,
-        TAG_SEARCHSUITE,
-    ],
+    tags = [TAG_SEARCHSUITE],
 )

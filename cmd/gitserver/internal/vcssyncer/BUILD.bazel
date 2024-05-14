@@ -85,7 +85,6 @@ go_test(
     env = {"COURSIER_CACHE_DIR": "/tmp"},
     tags = [
         TAG_PLATFORM_SOURCE,
-        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

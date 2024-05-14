@@ -60,7 +60,6 @@ go_test(
     embed = [":dependencies"],
     tags = [
         TAG_PLATFORM_GRAPH,
-        TAG_PLATFORM_GRAPH,
         "requires-network",
     ],
     deps = [

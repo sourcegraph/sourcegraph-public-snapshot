@@ -20,9 +20,6 @@ go_test(
     timeout = "short",
     srcs = ["validate_test.go"],
     embed = [":yaml"],
-    tags = [
-        TAG_SEARCHSUITE,
-        TAG_SEARCHSUITE,
-    ],
+    tags = [TAG_SEARCHSUITE],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

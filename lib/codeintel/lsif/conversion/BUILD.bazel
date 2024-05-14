@@ -40,10 +40,7 @@ go_test(
     # it manually below.
     data = ["//lib/codeintel/lsif/testdata:data"],
     embed = [":conversion"],
-    tags = [
-        TAG_PLATFORM_GRAPH,
-        TAG_PLATFORM_GRAPH,
-    ],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//lib/codeintel/lsif/conversion/datastructures",
         "//lib/codeintel/lsif/protocol",

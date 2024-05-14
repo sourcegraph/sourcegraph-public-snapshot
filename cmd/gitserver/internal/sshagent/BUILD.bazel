@@ -19,10 +19,7 @@ go_test(
     name = "sshagent_test",
     srcs = ["ssh_agent_test.go"],
     embed = [":sshagent"],
-    tags = [
-        TAG_PLATFORM_SOURCE,
-        TAG_PLATFORM_SOURCE,
-    ],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/encryption",
         "//lib/errors",

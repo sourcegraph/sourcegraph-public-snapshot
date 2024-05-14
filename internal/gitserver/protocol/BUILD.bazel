@@ -31,10 +31,7 @@ go_test(
         "util_test.go",
     ],
     embed = [":protocol"],
-    tags = [
-        TAG_PLATFORM_SOURCE,
-        TAG_PLATFORM_SOURCE,
-    ],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/api",
         "//internal/gitserver/gitdomain",

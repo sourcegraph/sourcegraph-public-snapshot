@@ -65,8 +65,5 @@ go_test(
     # This test loads coursier as a side effect, so we ensure the
     # path is sandboxed properly.
     env = {"COURSIER_CACHE_DIR": "/tmp"},
-    tags = [
-        TAG_PLATFORM_SOURCE,
-        TAG_PLATFORM_SOURCE,
-    ],
+    tags = [TAG_PLATFORM_SOURCE],
 )

@@ -29,7 +29,6 @@ go_test(
     embed = [":reposcheduler"],
     tags = [
         TAG_PLATFORM_GRAPH,
-        TAG_PLATFORM_GRAPH,
         "requires-network",
     ],
     deps = [

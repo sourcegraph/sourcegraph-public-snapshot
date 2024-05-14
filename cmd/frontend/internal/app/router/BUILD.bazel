@@ -9,6 +9,7 @@ go_library(
         "router.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/internal/routevar",
@@ -22,8 +23,5 @@ go_test(
     timeout = "short",
     srcs = ["old_tree_redirects_test.go"],
     embed = [":router"],
-    tags = [
-        TAG_SEARCHSUITE,
-        TAG_SEARCHSUITE,
-    ],
+    tags = [TAG_SEARCHSUITE],
 )

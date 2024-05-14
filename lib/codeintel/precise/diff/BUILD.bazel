@@ -21,10 +21,7 @@ go_test(
     srcs = ["diff_test.go"],
     data = ["//lib/codeintel/precise/diff/testdata:data"],
     embed = [":diff"],
-    tags = [
-        TAG_PLATFORM_GRAPH,
-        TAG_PLATFORM_GRAPH,
-    ],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//lib/codeintel/lsif/conversion",
         "//lib/codeintel/precise",

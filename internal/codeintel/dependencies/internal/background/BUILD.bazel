@@ -38,7 +38,6 @@ go_test(
     embed = [":background"],
     tags = [
         TAG_PLATFORM_GRAPH,
-        TAG_PLATFORM_GRAPH,
         # requires localhost database
         "requires-network",
     ],

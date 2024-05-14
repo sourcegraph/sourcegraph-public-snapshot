@@ -47,10 +47,7 @@ go_test(
         "service_test.go",
     ],
     embed = [":policies"],
-    tags = [
-        TAG_PLATFORM_GRAPH,
-        TAG_PLATFORM_GRAPH,
-    ],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
         "//internal/codeintel/policies/internal/store",

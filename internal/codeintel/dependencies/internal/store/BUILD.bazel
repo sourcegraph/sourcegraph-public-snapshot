@@ -35,7 +35,6 @@ go_test(
     embed = [":store"],
     tags = [
         TAG_PLATFORM_GRAPH,
-        TAG_PLATFORM_GRAPH,
         # Test requires localhost database
         "requires-network",
     ],

@@ -18,9 +18,6 @@ go_test(
     name = "cacert_test",
     timeout = "short",
     srcs = ["cacert_test.go"],
-    tags = [
-        TAG_PLATFORM_SOURCE,
-        TAG_PLATFORM_SOURCE,
-    ],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [":cacert"],
 )

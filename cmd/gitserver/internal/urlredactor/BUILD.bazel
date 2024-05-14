@@ -14,9 +14,6 @@ go_test(
     name = "urlredactor_test",
     srcs = ["urlredactor_test.go"],
     embed = [":urlredactor"],
-    tags = [
-        TAG_PLATFORM_SOURCE,
-        TAG_PLATFORM_SOURCE,
-    ],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = ["//internal/vcs"],
 )

@@ -18,10 +18,7 @@ go_test(
     timeout = "short",
     srcs = ["global_test.go"],
     embed = [":global"],
-    tags = [
-        TAG_SEARCHSUITE,
-        TAG_SEARCHSUITE,
-    ],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/batches/testing",
         "//internal/batches/types",

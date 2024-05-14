@@ -34,10 +34,7 @@ go_test(
         "window_test.go",
     ],
     embed = [":window"],
-    tags = [
-        TAG_SEARCHSUITE,
-        TAG_SEARCHSUITE,
-    ],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//lib/errors",
         "//lib/pointers",

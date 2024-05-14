@@ -21,10 +21,7 @@ go_test(
     timeout = "short",
     srcs = ["accesslog_test.go"],
     embed = [":accesslog"],
-    tags = [
-        TAG_PLATFORM_SOURCE,
-        TAG_PLATFORM_SOURCE,
-    ],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/actor",
         "//internal/conf/conftypes",

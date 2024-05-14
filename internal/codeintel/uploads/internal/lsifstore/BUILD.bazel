@@ -45,7 +45,6 @@ go_test(
     embed = [":lsifstore"],
     tags = [
         TAG_PLATFORM_GRAPH,
-        TAG_PLATFORM_GRAPH,
         # Test requires localhost database
         "requires-network",
     ],

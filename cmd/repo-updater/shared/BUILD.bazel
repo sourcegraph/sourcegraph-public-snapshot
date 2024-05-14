@@ -57,10 +57,7 @@ go_test(
     timeout = "short",
     srcs = ["main_test.go"],
     embed = [":shared"],
-    tags = [
-        TAG_PLATFORM_SOURCE,
-        TAG_PLATFORM_SOURCE,
-    ],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/database",
         "//internal/database/dbmocks",

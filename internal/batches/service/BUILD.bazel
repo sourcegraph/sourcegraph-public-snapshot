@@ -67,7 +67,6 @@ go_test(
     embed = [":service"],
     tags = [
         TAG_SEARCHSUITE,
-        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],

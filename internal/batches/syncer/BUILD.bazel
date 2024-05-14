@@ -45,10 +45,7 @@ go_test(
         "syncer_test.go",
     ],
     embed = [":syncer"],
-    tags = [
-        TAG_SEARCHSUITE,
-        TAG_SEARCHSUITE,
-    ],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/api",
         "//internal/batches/store",

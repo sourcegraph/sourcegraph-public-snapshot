@@ -49,7 +49,6 @@ go_test(
     embed = [":autoindexing"],
     tags = [
         TAG_PLATFORM_GRAPH,
-        TAG_PLATFORM_GRAPH,
         # requires localhost database
         "requires-network",
     ],

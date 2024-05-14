@@ -29,7 +29,6 @@ go_test(
     embed = [":recording_times"],
     tags = [
         TAG_INFRA_RELEASE,
-        TAG_INFRA_RELEASE,
         # Test requires localhost database
         "requires-network",
     ],

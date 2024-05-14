@@ -23,10 +23,7 @@ go_test(
         "queue_test.go",
     ],
     embed = [":common"],
-    tags = [
-        TAG_PLATFORM_SOURCE,
-        TAG_PLATFORM_SOURCE,
-    ],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/observation",
         "@com_github_google_go_cmp//cmp",

@@ -29,10 +29,7 @@ go_test(
         "templating_test.go",
     ],
     embed = [":template"],
-    tags = [
-        TAG_SEARCHSUITE,
-        TAG_SEARCHSUITE,
-    ],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//lib/batches/execution",
         "//lib/batches/git",

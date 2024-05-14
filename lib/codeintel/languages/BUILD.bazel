@@ -20,10 +20,7 @@ go_test(
         "languages_test.go",
     ],
     embed = [":languages"],
-    tags = [
-        TAG_PLATFORM_GRAPH,
-        TAG_PLATFORM_GRAPH,
-    ],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "@com_github_go_enry_go_enry_v2//:go-enry",
         "@com_github_stretchr_testify//require",

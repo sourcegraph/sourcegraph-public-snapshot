@@ -46,10 +46,7 @@ go_test(
         "state_test.go",
     ],
     embed = [":state"],
-    tags = [
-        TAG_SEARCHSUITE,
-        TAG_SEARCHSUITE,
-    ],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/batches/sources/azuredevops",
         "//internal/batches/types",

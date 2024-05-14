@@ -27,7 +27,6 @@ go_test(
     embed = [":backfillv2"],
     tags = [
         TAG_INFRA_RELEASE,
-        TAG_INFRA_RELEASE,
         # Test requires localhost database
         "requires-network",
     ],
