@@ -535,25 +535,3 @@ apko_translate_locks()
 load("@apko_lockfiles//:repositories.bzl", "apko_repositories")
 
 apko_repositories()
-
-# load("//:browser_archive_dev.bzl", "browser_archive")
-
-# Browser binaries for playwright
-http_archive(
-    name = "org_chromium_chromium_macos_arm64",
-    # exclude_patterns = [
-    #     # Exclude a log file that chromium writes to each run, causing remote cache misses.
-    #     "chrome-mac/Chromium.app/Contents/Frameworks/Chromium Framework.framework/Versions/*/chrome_debug.log",
-    # ],
-    # exports_files = ["chrome-mac"],
-    # licenses = ["notice"],  # BSD 3-clause (maybe more?)
-    # named_files = {
-    #     "CHROMIUM": "chrome-mac/Chromium.app/Contents/MacOS/Chromium",
-    # },
-    sha256 = "2debe4e82002cd898a7573a1e132fafd2cb21a5af70c811fda50ebe9abe37d08",
-    # 114.0.5673.0
-    urls = [
-        "https://storage.googleapis.com/chromium-browser-snapshots/Mac_Arm/1263141/chrome-mac.zip",
-        "https://storage.googleapis.com/dev-infra-mirror/chromium/1263141/mac_arm64/browser-bin.zip",
-    ],
-)

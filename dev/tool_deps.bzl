@@ -13,8 +13,10 @@ PGUTILS_VERSION = "ad082497"
 LINEAR_SDK_VERSION = "21.1.0"
 
 GH_BUILDFILE = """
-exports_files(
+filegroup(
+    name = "gh",
     srcs = ["bin/gh"],
+    visibility = ["//visibility:public"],
 )
 """
 
