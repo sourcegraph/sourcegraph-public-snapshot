@@ -4,26 +4,27 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 
-	"github.com/sourcegraph/src-cli/internal/api"
-	"github.com/sourcegraph/src-cli/internal/validate"
-
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/sourcegraph/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/sourcegraph/src-cli/internal/validate"
 )
 
 const GITHUB = "GITHUB"
 
 func validateGithub(ctx context.Context, client api.Client, config *ValidationSpec) (func(), error) {
 	// validate external service
-	log.Printf("%s validating external service", validate.EmojiFingerPointRight)
+	logger := log.Scoped("validate-github")
+	logger.Info(fmt.Sprintf("%s validating external service", validate.EmojiFingerPointRight))
 
 	srvId, err := addGithubExternalService(ctx, client, config.ExternalService)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Printf("%s external service %s is being added", validate.HourglassEmoji, config.ExternalService.DisplayName)
+	logger.Info(fmt.Sprintf("%s external service %s is being added", validate.HourglassEmoji, config.ExternalService.DisplayName))
 
 	cleanupFunc := func() {
 		if srvId != "" && config.ExternalService.DeleteWhenDone {

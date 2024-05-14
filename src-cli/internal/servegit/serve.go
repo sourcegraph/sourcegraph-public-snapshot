@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
-	"log"
 	"net"
 	"net/http"
 	"os/exec"
@@ -15,15 +14,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
 )
 
 type Serve struct {
-	Addr  string
-	Root  string
-	Info  *log.Logger
-	Debug *log.Logger
+	Addr   string
+	Root   string
+	logger log.Logger
 }
 
 func (s *Serve) Start() error {
@@ -35,8 +35,8 @@ func (s *Serve) Start() error {
 	// Update Addr to what listener actually used.
 	s.Addr = ln.Addr().String()
 
-	s.Info.Printf("listening on http://%s", s.Addr)
-	s.Info.Printf("serving git repositories from %s", s.Root)
+	s.logger.Info(fmt.Sprintf("listening on http://%s", s.Addr))
+	s.logger.Info(fmt.Sprintf("serving git repositories from %s", s.Root))
 
 	if err := (&http.Server{Handler: s.handler()}).Serve(ln); err != nil {
 		return errors.Wrap(err, "serving")
@@ -78,7 +78,7 @@ func (s *Serve) handler() http.Handler {
 			},
 		})
 		if err != nil {
-			log.Println(err)
+			s.logger.Error("error executing html template", log.Error(err))
 		}
 	})
 
@@ -101,20 +101,20 @@ func (s *Serve) handler() http.Handler {
 		_ = enc.Encode(&resp)
 	})
 
-	fs := http.FileServer(http.Dir(s.Root))
+	fileserver := http.FileServer(http.Dir(s.Root))
 	svc := &gitservice.Handler{
 		Dir: func(name string) string {
 			return filepath.Join(s.Root, filepath.FromSlash(name))
 		},
 		ErrorHook: func(err error, stderr string) {
-			s.Info.Printf("git-service error: %s\nstderr:\n%s", err.Error(), stderr)
+			s.logger.Info(fmt.Sprintf("git-service error: %s\nstderr:\n%s", err.Error(), stderr))
 		},
 		Trace: func(ctx context.Context, svc, repo, protocol string) func(error) {
 			start := time.Now()
 			return func(err error) {
-				s.Debug.Printf("git service svc=%s protocol=%s repo=%s duration=%v", svc, protocol, repo, time.Since(start))
+				s.logger.Debug(fmt.Sprintf("git service svc=%s protocol=%s repo=%s duration=%v", svc, protocol, repo, time.Since(start)))
 				if err != nil {
-					s.Debug.Println(err)
+					s.logger.Debug("running trace", log.Error(err))
 				}
 			}
 		},
@@ -127,7 +127,7 @@ func (s *Serve) handler() http.Handler {
 				return
 			}
 		}
-		fs.ServeHTTP(w, r)
+		fileserver.ServeHTTP(w, r)
 	})))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -169,13 +169,13 @@ func (s *Serve) Repos() ([]Repo, error) {
 
 	root, err := filepath.EvalSymlinks(s.Root)
 	if err != nil {
-		s.Info.Printf("WARN: ignoring error searching %s: %v", root, err)
+		s.logger.Info(fmt.Sprintf("WARN: ignoring error searching %s: %v", root, err))
 		return nil, nil
 	}
 
 	err = filepath.WalkDir(root, func(path string, fi fs.DirEntry, fileErr error) error {
 		if fileErr != nil {
-			s.Info.Printf("WARN: ignoring error searching %s: %v", path, fileErr)
+			s.logger.Info(fmt.Sprintf("WARN: ignoring error searching %s: %v", path, fileErr))
 			return nil
 		}
 		if !fi.IsDir() {
@@ -195,7 +195,7 @@ func (s *Serve) Repos() ([]Repo, error) {
 		isGit := isGitRepo(path)
 
 		if !isGit && !isBare {
-			s.Debug.Printf("not a repository root: %s", path)
+			s.logger.Debug(fmt.Sprintf("not a repository root: %s", path))
 			return nil
 		}
 
@@ -203,7 +203,7 @@ func (s *Serve) Repos() ([]Repo, error) {
 		if err != nil {
 			// According to WalkFunc docs, path is always filepath.Join(root,
 			// subpath). So Rel should always work.
-			s.Info.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, root, err)
+			s.logger.Fatal(fmt.Sprintf("filepath.Walk returned %s which is not relative to %s: %v", path, root, err))
 		}
 
 		name := filepath.ToSlash(subpath)
