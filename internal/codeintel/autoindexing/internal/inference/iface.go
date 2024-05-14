@@ -35,7 +35,7 @@ func (s *gitService) ReadDir(ctx context.Context, repo api.RepoName, commit api.
 	if err != nil {
 		return nil, err
 	}
-	it.Close()
+	defer it.Close()
 
 	files := make([]fs.FileInfo, 0)
 	for {
