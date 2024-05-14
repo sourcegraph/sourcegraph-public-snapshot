@@ -42,6 +42,9 @@ type ContactProperties struct {
 	HasAgreedToToS               bool   `json:"has_agreed_to_tos_and_pp"`
 	VSCodyInstalledEmailsEnabled bool   `json:"vs_cody_installed_emails_enabled"`
 
+	// The URL of the first page a user landed on their first session on a Sourcegraph site.
+	FirstSourceURL string `json:"first_source_url"`
+
 	// The URL of the first page a user landed on their latest session on a Sourcegraph site.
 	LastSourceURL string `json:"last_source_url"`
 
@@ -49,25 +52,56 @@ type ContactProperties struct {
 	SignupSessionSourceURL string `json:"signup_session_source_url"`
 
 	// The referrer for a user on their latest session on a Sourcegraph site.
-	LastReferrer string `json:"most_recent_referrer_url"`
+	MostRecentReferrerUrl string `json:"most_recent_referrer_url"`
+
+	// The referrer across multiple cookie duration sessions.
+	MostRecentReferrerUrlShort string `json:"most_recent_referrer_url_short"`
+	MostRecentReferrerUrlMedium string `json:"most_recent_referrer_url_medium"`
+	MostRecentReferrerUrlLong string `json:"most_recent_referrer_url_long"`
 
 	// The referrer for a user on the session when they signed up.
 	SignupSessionReferrer string `json:"signup_session_referrer"`
 
-	// The UTM campaign associated with the current session.
-	SessionUTMCampaign string `json:"recent_utm_campaign"`
+	// The UTM campaign across multiple cookie duration sessions.
+	SessionUTMCampaign string `json:"utm_campaign"`
+
+	// The UTM campaign across multiple cookie duration sessions.
+	UtmCampaignShort string `json:"utm_campaign_short"`
+	UtmCampaignMedium string `json:"utm_campaign_medium"`
+	UtmCampaignLong string `json:"utm_campaign_long"`
+
 
 	// The UTM source associated with the current session.
-	SessionUTMSource string `json:"recent_utm_source"`
+	SessionUTMSource string `json:"utm_source"`
+
+	// The UTM source across multiple cookie duration sessions.
+	UtmSourceShort string `json:"utm_source_short"`
+	UtmSourceMedium string `json:"utm_source_medium"`
+	UtmSourceLong string `json:"utm_source_long"`
 
 	// The UTM medium associated with the current session.
-	SessionUTMMedium string `json:"recent_utm_medium"`
+	SessionUTMMedium string `json:"utm_medium"`
+
+	// The UTM medium across various cookie sessions.
+	UtmMediumShort string `json:"utm_medium_short"`
+	UtmMediumMedium string `json:"utm_medium_medium"`
+	UtmMediumLong string `json:"utm_medium_long"`
 
 	// The UTM term associated with the current session.
-	SessionUTMTerm string `json:"recent_utm_term"`
+	SessionUTMTerm string `json:"utm_term"`
+
+	// The UTM term across multiple cookie duration sessions.
+	UtmTermShort string `json:"utm_term_short"`
+	UtmTermMedium string `json:"utm_term_medium"`
+	UtmTermLong string `json:"utm_term_long"`
 
 	// The UTM content associated with the current session.
-	SessionUTMContent string `json:"recent_utm_content"`
+	SessionUTMContent string `json:"utm_content"`
+
+	// The UTM content across multiple cookie duration sessions.
+	UtmContentShort string `json:"utm_content_short"`
+	UtmContentMedium string `json:"utm_content_medium"`
+	UtmContentLong string `json:"utm_content_long"`
 
 	// The Google Ads click ID
 	GoogleClickID string `json:"gclid"`
@@ -93,15 +127,37 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps.set("anonymous_user_id", h.AnonymousUserID)
 	apiProps.set("database_id", h.DatabaseID)
 	apiProps.set("has_agreed_to_tos_and_pp", h.HasAgreedToToS)
-	apiProps.set("last_source_url", h.LastSourceURL)
+	apiProps.set("first_source_url", h.FirstPageSeenUrl)
+	apiProps.set("last_source_url", h.LastPageSeenUrl)
+	apiProps.set("last_page_seen_short", h.LastPageSeenShort)
+	apiProps.set("last_page_seen_mid", h.LastPageSeenMid)
+	apiProps.set("last_page_seen_long", h.LastPageSeenLong)
 	apiProps.set("signup_session_source_url", h.SignupSessionSourceURL)
-	apiProps.set("most_recent_referrer_url", h.LastReferrer)
+	apiProps.set("most_recent_referrer_url", h.MostRecentReferrerUrl)
+	apiProps.set("most_recent_referrer_url_short", h.most_recent_referrer_url_short)
+	apiProps.set("most_recent_referrer_url_mid", h.most_recent_referrer_url_mid)
+	apiProps.set("most_recent_referrer_url_long", h.most_recent_referrer_url_long)
 	apiProps.set("signup_session_referrer", h.SignupSessionReferrer)
-	apiProps.set("recent_utm_campaign", h.SessionUTMCampaign)
-	apiProps.set("recent_utm_source", h.SessionUTMSource)
-	apiProps.set("recent_utm_medium", h.SessionUTMMedium)
-	apiProps.set("recent_utm_term", h.SessionUTMTerm)
-	apiProps.set("recent_utm_content", h.SessionUTMContent)
+	apiProps.set("utm_campaign", h.SessionUTMCampaign)
+	apiProps.set("utm_campaign_short", h.UtmCampaignShort)
+	apiProps.set("utm_campaign_mid", h.UtmCampaignMid)
+	apiProps.set("utm_campaign_long", h.UtmCampaignLong)
+	apiProps.set("utm_source", h.SessionUTMSource)
+	apiProps.set("utm_source_short", h.UtmSourceShort)
+	apiProps.set("utm_source_mid", h.UtmSourceMid)
+	apiProps.set("utm_source_long", h.UtmSourceLong)
+	apiProps.set("utm_medium", h.SessionUTMMedium)
+	apiProps.set("utm_medium_short", h.UtmMediumShort)
+	apiProps.set("utm_medium_mid", h.UtmMediumMid)
+	apiProps.set("utm_medium_long", h.UtmMediumLong)
+	apiProps.set("utm_term", h.SessionUTMTerm)
+	apiProps.set("utm_term_short", h.UtmTermShort)
+	apiProps.set("utm_term_mid", h.UtmTermMid)
+	apiProps.set("utm_term_long", h.UtmTermLong)
+	apiProps.set("utm_content", h.SessionUTMContent)
+	apiProps.set("utm_content_short", h.UtmContentShort)
+	apiProps.set("utm_content_mid", h.UtmContentMid)
+	apiProps.set("utm_content_long", h.UtmContentLong)
 	apiProps.set("gclid", h.GoogleClickID)
 	apiProps.set("msclkid", h.MicrosoftClickID)
 	return apiProps
