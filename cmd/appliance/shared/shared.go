@@ -52,8 +52,9 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	}
 
 	if err = (&appliance.Reconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("sourcegraph-appliance"),
 	}).SetupWithManager(mgr); err != nil {
 		logger.Error("unable to create the appliance controller", log.Error(err))
 		return err
