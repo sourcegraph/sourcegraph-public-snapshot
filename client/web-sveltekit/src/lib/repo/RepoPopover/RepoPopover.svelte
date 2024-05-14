@@ -118,8 +118,8 @@ For example:
         align-items: center;
         padding: 0.5rem 0.75rem;
         background-color: var(--subtle-bg);
-        border-top-left-radius: 3px;
-        border-top-right-radius: 3px;
+        border-top-left-radius: var(--border-radius);
+        border-top-right-radius: var(--border-radius);
 
         .left {
             display: flex;
