@@ -161,7 +161,7 @@ func createExternalHealthcheckAlert(
 
 		ID:          "external_health_check",
 		Name:        "External Uptime Check",
-		Description: fmt.Sprintf("Service is failing to repond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
+		Description: fmt.Sprintf("Service is failing to respond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
 
 		// If a service is not reachable, it's definitely a problem.
 		Severity: alertpolicy.SeverityLevelCritical,
