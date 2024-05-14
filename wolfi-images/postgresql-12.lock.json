@@ -109,25 +109,6 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1mVgCtcYDHEkUa+8x41i7w9cQ4Qg=",
-        "control": {
-          "checksum": "sha1-mVgCtcYDHEkUa+8x41i7w9cQ4Qg=",
-          "range": "bytes=704-1079"
-        },
-        "data": {
-          "checksum": "sha256-xE4spLqr7qIgImPfMC1kMY1a7Xu7xu1/eLkBMgOzSSc=",
-          "range": "bytes=1080-77936"
-        },
-        "name": "protobuf-c",
-        "signature": {
-          "checksum": "sha1-NGL0ELlBK8mhhAzuOkm17d2LbRo=",
-          "range": "bytes=0-703"
-        },
-        "url": "https://packages.wolfi.dev/os/x86_64/protobuf-c-1.5.0-r3.apk",
-        "version": "1.5.0-r3"
-      },
-      {
-        "architecture": "x86_64",
         "checksum": "Q1TAnNLCVTaCylmbN84TlliyM47qM=",
         "control": {
           "checksum": "sha1-TAnNLCVTaCylmbN84TlliyM47qM=",
@@ -258,6 +239,25 @@
         },
         "url": "https://packages.wolfi.dev/os/x86_64/krb5-libs-1.21.2-r1.apk",
         "version": "1.21.2-r1"
+      },
+      {
+        "architecture": "x86_64",
+        "checksum": "Q1Zjfs1uR/mYiortANP+EFcejW+vo=",
+        "control": {
+          "checksum": "sha1-Zjfs1uR/mYiortANP+EFcejW+vo=",
+          "range": "bytes=698-1085"
+        },
+        "data": {
+          "checksum": "sha256-BMd7TzffjbrFwdbopDPVYsX0X9XnusIMNbIf33/8kwc=",
+          "range": "bytes=1086-76881"
+        },
+        "name": "protobuf-c",
+        "signature": {
+          "checksum": "sha1-efGiXyYWsJ5P2uTkB6aXEZ3kl3o=",
+          "range": "bytes=0-697"
+        },
+        "url": "https://packages.wolfi.dev/os/x86_64/protobuf-c-1.5.0-r4.apk",
+        "version": "1.5.0-r4"
       },
       {
         "architecture": "x86_64",
@@ -470,22 +470,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q12eKoxDrTjnN67UapcxL36uSvK6Y=",
+        "checksum": "Q1TS707T+cPGL7TYVHQBCJoWwHZ0E=",
         "control": {
-          "checksum": "sha1-2eKoxDrTjnN67UapcxL36uSvK6Y=",
-          "range": "bytes=694-1086"
+          "checksum": "sha1-TS707T+cPGL7TYVHQBCJoWwHZ0E=",
+          "range": "bytes=706-1098"
         },
         "data": {
-          "checksum": "sha256-xlBSY4KJHzH59eU8L6EFYVJVksfsqUlpE7yt7WtlBos=",
-          "range": "bytes=1087-4546022"
+          "checksum": "sha256-x18L706Vug5qDzq13SXuN/vGdVgzrqB06dW2DdgHGR4=",
+          "range": "bytes=1099-4541967"
         },
         "name": "libxml2",
         "signature": {
-          "checksum": "sha1-sRrMqWd8n9UGVkkp5YwEQ4xr9iY=",
-          "range": "bytes=0-693"
+          "checksum": "sha1-BYhOxDos48sN8df8LMsSpROv2aw=",
+          "range": "bytes=0-705"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libxml2-2.12.6-r1.apk",
-        "version": "2.12.6-r1"
+        "url": "https://packages.wolfi.dev/os/x86_64/libxml2-2.12.7-r0.apk",
+        "version": "2.12.7-r0"
       },
       {
         "architecture": "x86_64",
@@ -527,22 +527,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1ZvgMPq5RCd5lQ3v2qeBBOLotsXM=",
+        "checksum": "Q1dLQQZAfXkamLwZ7kLZb2atjfZZQ=",
         "control": {
-          "checksum": "sha1-ZvgMPq5RCd5lQ3v2qeBBOLotsXM=",
-          "range": "bytes=698-1093"
+          "checksum": "sha1-dLQQZAfXkamLwZ7kLZb2atjfZZQ=",
+          "range": "bytes=701-1095"
         },
         "data": {
-          "checksum": "sha256-mQrZT/j9v5ff50OwlphGA2m2AApMWZfnnPaoEBil57Q=",
-          "range": "bytes=1094-233900"
+          "checksum": "sha256-9c2Qzrfedb7BJdu6THUm5TLxb0dvov8v4tvfqBWlUuw=",
+          "range": "bytes=1096-233941"
         },
         "name": "libxcrypt",
         "signature": {
-          "checksum": "sha1-THgEEMvz4LUMjzDPVU7db5XBJ+E=",
-          "range": "bytes=0-697"
+          "checksum": "sha1-DFbDoKQ6O4YqS6aru0hhYo/8TUk=",
+          "range": "bytes=0-700"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libxcrypt-4.4.36-r5.apk",
-        "version": "4.4.36-r5"
+        "url": "https://packages.wolfi.dev/os/x86_64/libxcrypt-4.4.36-r6.apk",
+        "version": "4.4.36-r6"
       },
       {
         "architecture": "x86_64",

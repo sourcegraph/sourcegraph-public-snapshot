@@ -1,19 +1,21 @@
 <script lang="ts">
     import type { Placement } from '@floating-ui/dom'
+    import type { Action } from 'svelte/action'
 
     import { popover, onClickOutside, portal } from './dom'
-    import type { Action } from 'svelte/action'
 
     export let placement: Placement = 'bottom'
     /**
      * Show the popover when hovering over the trigger.
      */
     export let showOnHover = false
+    export let delay: number | null = null
 
     let isOpen = false
     let trigger: HTMLElement | null
     let target: HTMLElement | undefined
     let popoverContainer: HTMLElement | null
+    let timeoutId: NodeJS.Timeout | undefined
 
     function toggle(open?: boolean): void {
         isOpen = open === undefined ? !isOpen : open
@@ -33,10 +35,21 @@
         trigger = node
 
         function handleMouseEnterTrigger(): void {
-            isOpen = true
+            if (delay) {
+                timeoutId = setTimeout(() => {
+                    isOpen = true
+                }, delay)
+            } else {
+                isOpen = true
+            }
         }
 
         function handleMouseLeaveTrigger(event: MouseEvent): void {
+            // We have to clear the timeout here, otherwise it would be triggered
+            // even if the mouse leaves the trigger before the delay is over.
+            if (delay) {
+                clearTimeout(timeoutId)
+            }
             // It should be possible to move the mouse from the trigger to the popover without closing it
             if (event.relatedTarget && !popoverContainer?.contains(event.relatedTarget as Node)) {
                 isOpen = false
@@ -80,6 +93,7 @@
 <slot {toggle} {registerTrigger} {registerTarget} />
 {#if trigger && isOpen}
     <div
+        use:registerPopoverContainer
         use:portal
         use:onClickOutside
         use:registerPopoverContainer
@@ -106,9 +120,9 @@
         font-size: 0.875rem;
         background-clip: padding-box;
         background-color: var(--dropdown-bg);
-        border: 1px solid var(--dropdown-border-color);
-        border-radius: var(--popover-border-radius);
         color: var(--body-color);
-        box-shadow: var(--popover-shadow);
+        box-shadow: var(--dropdown-shadow);
+        border: 0;
+        border-radius: var(--popover-border-radius);
     }
 </style>

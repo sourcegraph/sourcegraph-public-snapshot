@@ -189,22 +189,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1ZvgMPq5RCd5lQ3v2qeBBOLotsXM=",
+        "checksum": "Q1dLQQZAfXkamLwZ7kLZb2atjfZZQ=",
         "control": {
-          "checksum": "sha1-ZvgMPq5RCd5lQ3v2qeBBOLotsXM=",
-          "range": "bytes=698-1093"
+          "checksum": "sha1-dLQQZAfXkamLwZ7kLZb2atjfZZQ=",
+          "range": "bytes=701-1095"
         },
         "data": {
-          "checksum": "sha256-mQrZT/j9v5ff50OwlphGA2m2AApMWZfnnPaoEBil57Q=",
-          "range": "bytes=1094-233900"
+          "checksum": "sha256-9c2Qzrfedb7BJdu6THUm5TLxb0dvov8v4tvfqBWlUuw=",
+          "range": "bytes=1096-233941"
         },
         "name": "libxcrypt",
         "signature": {
-          "checksum": "sha1-THgEEMvz4LUMjzDPVU7db5XBJ+E=",
-          "range": "bytes=0-697"
+          "checksum": "sha1-DFbDoKQ6O4YqS6aru0hhYo/8TUk=",
+          "range": "bytes=0-700"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libxcrypt-4.4.36-r5.apk",
-        "version": "4.4.36-r5"
+        "url": "https://packages.wolfi.dev/os/x86_64/libxcrypt-4.4.36-r6.apk",
+        "version": "4.4.36-r6"
       },
       {
         "architecture": "x86_64",

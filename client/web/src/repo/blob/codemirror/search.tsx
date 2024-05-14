@@ -356,7 +356,7 @@ class SearchPanel implements Panel {
     private onkeydown = (event: KeyboardEvent): void => {
         if (runScopeHandlers(this.view, event, 'search-panel')) {
             event.preventDefault()
-        } else if (event.code === 'Enter' && event.target === this.input) {
+        } else if (event.key === 'Enter' && event.target === this.input) {
             event.preventDefault()
             if (event.shiftKey) {
                 this.findPrevious()
