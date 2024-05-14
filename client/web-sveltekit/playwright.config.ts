@@ -17,7 +17,7 @@ const config: PlaywrightTestConfig = {
             use: {
                 ...devices['Desktop Chrome'],
                 launchOptions: {
-                    executablePath: process.env.CHROME_BIN,
+                    executablePath: process.env.CHROMIUM_BIN,
                 },
             },
         },
