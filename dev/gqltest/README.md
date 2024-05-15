@@ -16,7 +16,7 @@ instead.
 
 Steps:
 1. Request "CI Secrets Read Access" in Entitle
-2. Run `sg bazel test //testing:backend_integration_test`
+2. Run `sg test bazel-backend-integration`
 
 ## How to add new tests
 
