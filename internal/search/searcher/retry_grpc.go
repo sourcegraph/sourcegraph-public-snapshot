@@ -24,4 +24,9 @@ func (a *automaticRetryClient) Search(ctx context.Context, in *proto.SearchReque
 	return a.base.Search(ctx, in, opts...)
 }
 
+func (a *automaticRetryClient) CommitSearch(ctx context.Context, in *proto.CommitSearchRequest, opts ...grpc.CallOption) (proto.SearcherService_CommitSearchClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return a.base.CommitSearch(ctx, in, opts...)
+}
+
 var _ proto.SearcherServiceClient = &automaticRetryClient{}

@@ -246,7 +246,7 @@ message CommitSearchRequest {
   // in the search results. This can be expensive, so is disabled by default.
   bool include_modified_files = 5;
   // query is a tree of filters to apply to commits being searched.
-  QueryNode query = 6;
+  CommitSearchQueryNode query = 6;
 }
 
 message RevisionSpecifier {
