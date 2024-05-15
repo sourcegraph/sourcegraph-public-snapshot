@@ -11,15 +11,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var StatusEphemeralCommand = cli.Command{
+var statusEphemeralCommand = cli.Command{
 	Name:        "status",
-	Usage:       "get status of ephemeral cloud instance",
-	Description: "get the status of the ephemeral cloud instance for this branch or instance with the provided name",
+	Usage:       "Get the status of a ephemeral instance",
+	Description: "Get the status of the ephemeral instance for this branch or instance with the provided name",
 	Action:      statusCloudEphemeral,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:  "name",
-			Usage: "name of the instance to get the status of",
+			Name:        "name",
+			Usage:       "name of the ephemeral instance",
+			DefaultText: "current branch name will be used",
 		},
 		&cli.BoolFlag{
 			Name:  "json",

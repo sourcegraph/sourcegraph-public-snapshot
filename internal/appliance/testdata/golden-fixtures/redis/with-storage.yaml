@@ -342,7 +342,6 @@ resources:
     resources:
       requests:
         storage: 123Gi
-    storageClassName: sourcegraph
     volumeMode: Filesystem
   status:
     phase: Pending
@@ -373,7 +372,6 @@ resources:
     resources:
       requests:
         storage: 123Gi
-    storageClassName: sourcegraph
     volumeMode: Filesystem
   status:
     phase: Pending

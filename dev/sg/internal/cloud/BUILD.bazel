@@ -10,6 +10,7 @@ go_library(
         "common.go",
         "delete_command.go",
         "deploy_command.go",
+        "ephemeral_command.go",
         "instance.go",
         "lease_command.go",
         "list_command.go",

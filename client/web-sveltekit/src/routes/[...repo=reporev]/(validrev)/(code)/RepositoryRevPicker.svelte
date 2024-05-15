@@ -61,7 +61,12 @@
 </script>
 
 <Popover let:registerTrigger let:registerTarget let:toggle placement="right-start">
-    <div use:registerTarget class="button-group" class:is-on-specific-rev={isOnSpecificRev}>
+    <div
+        use:registerTarget
+        class="button-group"
+        class:is-on-specific-rev={isOnSpecificRev}
+        data-repo-rev-picker-trigger
+    >
         <Button variant="secondary" size="sm">
             <svelte:fragment slot="custom" let:buttonClass>
                 <button use:registerTrigger class={`${buttonClass} revision-trigger`} on:click={() => toggle()}>
@@ -176,6 +181,8 @@
             white-space: nowrap;
             text-overflow: ellipsis;
             overflow: hidden;
+            flex-grow: 1;
+            text-align: left;
         }
 
         &.is-on-specific-rev .revision-trigger {

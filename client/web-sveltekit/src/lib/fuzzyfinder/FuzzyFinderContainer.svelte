@@ -1,3 +1,19 @@
+<script lang="ts" context="module">
+    import { writable } from 'svelte/store'
+    import type { FuzzyFinderTabId } from './FuzzyFinder.svelte'
+
+    interface FuzzyFinderState {
+        open: boolean
+        selectedTabId: FuzzyFinderTabId | ''
+    }
+
+    const fuzzyFinderState = writable<FuzzyFinderState>({ open: false, selectedTabId: '' })
+
+    export function openFuzzyFinder(tab?: FuzzyFinderTabId): void {
+        fuzzyFinderState.update(state => ({ selectedTabId: tab ?? state.selectedTabId, open: true }))
+    }
+</script>
+
 <script lang="ts">
     import { escapeRegExp } from 'lodash'
 
@@ -8,7 +24,6 @@
     import FuzzyFinder from './FuzzyFinder.svelte'
     import { filesHotkey, reposHotkey, symbolsHotkey } from './keys'
 
-    let open = false
     let finder: FuzzyFinder | undefined
     let scope = ''
 
@@ -17,8 +32,10 @@
         ignoreInputFields: false,
         handler: event => {
             event.stopPropagation()
-            open = true
-            finder?.selectTab('repos')
+            fuzzyFinderState.set({
+                open: true,
+                selectedTabId: 'repos',
+            })
             return false
         },
     })
@@ -27,8 +44,10 @@
         ignoreInputFields: false,
         handler: event => {
             event.stopPropagation()
-            open = true
-            finder?.selectTab('symbols')
+            fuzzyFinderState.set({
+                open: true,
+                selectedTabId: 'symbols',
+            })
             return false
         },
     })
@@ -38,11 +57,17 @@
         ignoreInputFields: false,
         handler: event => {
             event.stopPropagation()
-            open = true
-            finder?.selectTab('files')
+            fuzzyFinderState.set({
+                open: true,
+                selectedTabId: 'files',
+            })
             return false
         },
     })
+
+    $: if ($fuzzyFinderState.selectedTabId !== '') {
+        finder?.selectTab($fuzzyFinderState.selectedTabId)
+    }
 
     $: if ($page.params.repo) {
         const { repoName, revision } = parseRepoRevision($page.params.repo)
@@ -55,4 +80,9 @@
     }
 </script>
 
-<FuzzyFinder bind:this={finder} {open} {scope} on:close={() => (open = false)} />
+<FuzzyFinder
+    bind:this={finder}
+    {scope}
+    open={$fuzzyFinderState.open}
+    on:close={() => ($fuzzyFinderState.open = false)}
+/>

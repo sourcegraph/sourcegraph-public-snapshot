@@ -10,6 +10,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
@@ -45,6 +46,11 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 			BindAddress:   config.metrics.addr,
 			SecureServing: config.metrics.secure,
 		},
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				config.namespace: {},
+			},
+		},
 	})
 	if err != nil {
 		logger.Error("unable to start manager", log.Error(err))
@@ -52,8 +58,9 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	}
 
 	if err = (&appliance.Reconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("sourcegraph-appliance"),
 	}).SetupWithManager(mgr); err != nil {
 		logger.Error("unable to create the appliance controller", log.Error(err))
 		return err

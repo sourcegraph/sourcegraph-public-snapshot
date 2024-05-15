@@ -232,19 +232,8 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling request body")
 	}
-	apiURL, err := url.Parse(c.endpoint)
-	if err != nil || apiURL.Scheme == "" {
-		apiURL = &url.URL{
-			Scheme: "https",
-			Host:   fmt.Sprintf("bedrock-runtime.%s.amazonaws.com", defaultConfig.Region),
-		}
-	}
 
-	if stream {
-		apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", requestParams.Model)
-	} else {
-		apiURL.Path = fmt.Sprintf("/model/%s/invoke", requestParams.Model)
-	}
+	apiURL := buildApiUrl(c.endpoint, requestParams.Model, stream, defaultConfig.Region)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL.String(), bytes.NewReader(reqBody))
 	if err != nil {
@@ -280,6 +269,28 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 	}
 
 	return resp, nil
+}
+
+// Builds a bedrock api URL from the configured endpoint url.
+// If the endpoint isn't valid, falls back to the default endpoint for the specified fallbackRegion
+func buildApiUrl(endpoint string, model string, stream bool, fallbackRegion string) *url.URL {
+	apiURL, err := url.Parse(endpoint)
+	if err != nil || apiURL.Scheme == "" {
+		apiURL = &url.URL{
+			Scheme: "https",
+			Host:   fmt.Sprintf("bedrock-runtime.%s.amazonaws.com", fallbackRegion),
+		}
+	}
+
+	if stream {
+		apiURL.RawPath = fmt.Sprintf("/model/%s/invoke-with-response-stream", url.QueryEscape(model))
+		apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", model)
+	} else {
+		apiURL.RawPath = fmt.Sprintf("/model/%s/invoke", url.QueryEscape(model))
+		apiURL.Path = fmt.Sprintf("/model/%s/invoke", model)
+	}
+
+	return apiURL
 }
 
 func awsConfigOptsForKeyConfig(endpoint string, accessToken string) []func(*config.LoadOptions) error {

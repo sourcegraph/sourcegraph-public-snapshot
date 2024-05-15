@@ -384,7 +384,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// stageTargets enumerate stages in order. Cloud Deploy targets are
 		// created separately because the TF provider doesn't support Custom
 		// Targets yet - TODO document
-		var stageTargets []string
+		var stageTargets []deliverypipeline.Target
 		for _, stage := range vars.RolloutPipeline.Stages {
 			id := id.Group("stage").Group(stage.EnvironmentID)
 
@@ -405,23 +405,29 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 					Member:  &vars.IAM.CloudDeployExecutionServiceAccount.Member,
 				})
 
-			// Name targets with environment+location - this is expected by
-			// our Cloud Deploy Custom Target
-			stageTargets = append(stageTargets,
-				fmt.Sprintf("%s-%s", stage.EnvironmentID, rolloutLocation))
+			stageTargets = append(stageTargets, deliverypipeline.Target{
+				// Name targets with environment+location - this is expected by
+				// our Cloud Deploy Custom Target
+				ID:        fmt.Sprintf("%s-%s", stage.EnvironmentID, rolloutLocation),
+				ProjectID: stage.ProjectID,
+			})
 		}
 
 		// Now, apply each target in a rollout pipeline. The targets don't need
 		// to exist at this point yet, though attempting to use the pipeline
 		// before creating targets will fail.
 		deliveryPipeline, _ := deliverypipeline.New(stack, id.Group("pipeline"), deliverypipeline.Config{
-			Location: rolloutLocation,
-
 			Name: fmt.Sprintf("%s-%s-rollout", vars.Service.ID, rolloutLocation),
 			Description: fmt.Sprintf("Rollout delivery pipeline for %s",
 				vars.Service.GetName()),
+			Location: rolloutLocation,
 
-			Stages:    stageTargets,
+			ServiceID:    vars.Service.ID,
+			ServiceImage: vars.Image,
+			ExecutionSA:  vars.IAM.CloudDeployExecutionServiceAccount,
+
+			TargetStages: stageTargets,
+
 			Suspended: pointers.DerefZero(vars.RolloutPipeline.OriginalSpec.Suspended),
 
 			// Make it so that our Cloud Run service is up before we
