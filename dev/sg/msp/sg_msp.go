@@ -293,7 +293,7 @@ sg msp generate -all -category=test
 				},
 				&cli.StringFlag{
 					Name:  "category",
-					Usage: "Filter generated environments by category (one of 'test', 'internal', 'external') - must be used with '-all'",
+					Usage: "Filter generated environments by category (one of 'test', 'internal', 'external') - can only be used with '-all'",
 				},
 				&cli.BoolFlag{
 					Name:  "stable",
@@ -315,7 +315,7 @@ sg msp generate -all -category=test
 
 				if generateCategory != "" {
 					if !generateAll {
-						return errors.New("'-category' must be used with '-all'")
+						return errors.New("'-category' can only be used with '-all'")
 					}
 					if err := generateCategory.Validate(); err != nil {
 						return errors.Wrap(err, "invalid value for '-category'")
@@ -848,7 +848,7 @@ This command supports completions on services and environments.
 						},
 						&cli.StringFlag{
 							Name:  "category",
-							Usage: "Filter generated environments by category (one of 'test', 'internal', 'external') - must be used with '-all'",
+							Usage: "Filter generated environments by category (one of 'test', 'internal', 'external') - can only be used with '-all'",
 						},
 						&cli.StringFlag{
 							Name:  "workspace-run-mode",
@@ -870,7 +870,7 @@ This command supports completions on services and environments.
 
 						if generateCategory != "" {
 							if !generateAll {
-								return errors.New("'-category' must be used with '-all'")
+								return errors.New("'-category' can only be used with '-all'")
 							}
 							if err := generateCategory.Validate(); err != nil {
 								return errors.Wrap(err, "invalid value for '-category'")
