@@ -11,7 +11,7 @@ import (
 
 func TestNewContract(t *testing.T) {
 	t.Run("sanity check", func(t *testing.T) {
-		c, err := mock.NewMockContract(t, mock.MockServiceMetadata{}, "MSP=true")
+		c, err := mock.NewContract(t, mock.ServiceMetadata{}, "MSP=true")
 		if errors.Is(err, mock.MockError{}) {
 			t.Fatal(err)
 		}
