@@ -39,7 +39,7 @@
     $: withCustomContent = $navigationModeStore === NavigationMode.WithCustomContent
 </script>
 
-<header class="root">
+<header class="root" data-global-header>
     {#if isSidebarNavigationOpen}
         <GlobalSidebarNavigation onClose={() => (isSidebarNavigationOpen = false)} />
     {/if}
@@ -149,6 +149,11 @@
         display: flex;
         align-self: stretch;
         min-width: 0;
+
+        // Ensure that any content inside navigation portal block
+        // can't overlap any static content like sidebar navigation
+        // in the global header layout.
+        isolation: isolate;
 
         &-list {
             display: flex;
