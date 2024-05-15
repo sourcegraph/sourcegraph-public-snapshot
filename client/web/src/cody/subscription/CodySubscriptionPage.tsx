@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Badge,
     Button,
@@ -26,12 +25,12 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
-import { EventName } from '../../util/constants'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { manageSubscriptionRedirectURL, isEmbeddedCodyProUIEnabled } from '../util'
 
 import { USER_CODY_PLAN } from './queries'
+import { useCodySubscriptionData } from './subscriptions'
 
 import styles from './CodySubscriptionPage.module.scss'
 
@@ -49,7 +48,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     const utm_source = parameters.get('utm_source')
     useEffect(() => {
-        EVENT_LOGGER.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
         telemetryRecorder.recordEvent('cody.planSelection', 'view')
     }, [utm_source, telemetryRecorder])
 
@@ -57,6 +55,9 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     const navigate = useNavigate()
     const useEmbeddedCodyUI = useMemo(() => isEmbeddedCodyProUIEnabled(), [])
+
+    const [subscriptionData] = useCodySubscriptionData()
+    const seatCount = subscriptionData?.seatCount ?? -1
 
     useEffect(() => {
         if (!!data && !data?.currentUser) {
@@ -85,7 +86,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             <Button
                                 variant="primary"
                                 onClick={() => {
-                                    EVENT_LOGGER.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
                                     window.location.href = manageSubscriptionRedirectURL
                                 }}
                             >
@@ -209,9 +209,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         className="mb-0 text-muted d-inline cursor-pointer"
                                         size="small"
                                         onClick={() => {
-                                            EVENT_LOGGER.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
                                             telemetryRecorder.recordEvent('cody.planSelection', 'click', {
-                                                metadata: { tier: 0 },
+                                                metadata: { tier: 0, seatCount },
                                             })
                                             window.location.href = manageSubscriptionRedirectURL
                                         }}
@@ -225,7 +224,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                             variant="primary"
                                             onClick={() => {
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
-                                                    metadata: { tier: 1, team: 1 },
+                                                    metadata: { tier: 1, team: 1, seatCount },
                                                 })
                                                 window.location.href = manageSubscriptionRedirectURL // TODO: Use team link or argument
                                             }}
@@ -240,7 +239,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                             rel="noreferrer noopener"
                                             onClick={() => {
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
-                                                    metadata: { tier: 1, team: 0 },
+                                                    metadata: { tier: 1, team: 0, seatCount },
                                                 })
                                                 window.location.href = manageSubscriptionRedirectURL
                                             }}
@@ -254,7 +253,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         variant="primary"
                                         onClick={() => {
                                             telemetryRecorder.recordEvent('cody.planSelection', 'click', {
-                                                metadata: { tier: 1 },
+                                                metadata: { tier: 1, seatCount },
                                             })
                                             window.location.href = manageSubscriptionRedirectURL
                                         }}
@@ -364,11 +363,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 to="https://sourcegraph.com/contact/request-info?utm_source=cody_subscription_page"
                                 target="_blank"
                                 onClick={() => {
-                                    EVENT_LOGGER.log(
-                                        EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
-                                        { tier: 'enterprise' },
-                                        { tier: 'enterprise' }
-                                    )
                                     telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                         metadata: { tier: 2 },
                                     })

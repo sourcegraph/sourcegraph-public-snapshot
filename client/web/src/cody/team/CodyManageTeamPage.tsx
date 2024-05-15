@@ -74,7 +74,10 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                                     className="d-inline-flex align-items-center mr-3"
                                     onClick={() =>
                                         telemetryRecorder.recordEvent('cody.team.manage.subscription', 'click', {
-                                            metadata: { tier: subscriptionData?.isPro ? 1 : 0 },
+                                            metadata: {
+                                                tier: subscriptionData?.isPro ? 1 : 0,
+                                                seatCount: subscriptionData?.seatCount ?? -1,
+                                            },
                                         })
                                     }
                                 >

@@ -8,6 +8,7 @@ import { Modal, useSearchParameters } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { useCodySubscriptionData } from '../subscription/subscriptions'
 
 import { EditorStep } from './EditorStep'
 import { PurposeStep } from './PurposeStep'
@@ -48,6 +49,9 @@ export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnb
     const returnToURL = parameters.get('returnTo')
 
     const navigate = useNavigate()
+
+    const [subscriptionData] = useCodySubscriptionData()
+    const seatCount = subscriptionData?.seatCount ?? null
 
     useEffect(() => {
         if (completed && returnToURL) {
@@ -97,7 +101,12 @@ export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnb
             containerClassName={styles.root}
         >
             {step === 0 && (
-                <WelcomeStep onNext={handleWelcomeNext} pro={enrollPro} telemetryRecorder={telemetryRecorder} />
+                <WelcomeStep
+                    onNext={handleWelcomeNext}
+                    pro={enrollPro}
+                    seatCount={seatCount}
+                    telemetryRecorder={telemetryRecorder}
+                />
             )}
             {step === 1 && (
                 <PurposeStep
@@ -107,6 +116,7 @@ export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnb
                         handleShowLastStep()
                     }}
                     pro={enrollPro}
+                    seatCount={seatCount}
                     telemetryRecorder={telemetryRecorder}
                 />
             )}
@@ -116,6 +126,7 @@ export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnb
                         setShowEditorStep(false)
                     }}
                     pro={enrollPro}
+                    seatCount={seatCount}
                     telemetryRecorder={telemetryRecorder}
                 />
             )}

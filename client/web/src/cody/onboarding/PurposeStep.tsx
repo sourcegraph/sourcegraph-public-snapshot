@@ -9,16 +9,20 @@ import { HubSpotForm } from '../../marketing/components/HubSpotForm'
 export function PurposeStep({
     onNext,
     pro,
+    seatCount,
     authenticatedUser,
     telemetryRecorder,
 }: {
     onNext: () => void
     pro: boolean
+    seatCount: number | null
     authenticatedUser: AuthenticatedUser
     telemetryRecorder: TelemetryRecorder
 }): JSX.Element {
     useEffect(() => {
-        telemetryRecorder.recordEvent('cody.onboarding.purpose', 'view', { metadata: { tier: pro ? 1 : 0 } })
+        telemetryRecorder.recordEvent('cody.onboarding.purpose', 'view', {
+            metadata: { tier: pro ? 1 : 0, seatCount: seatCount ?? -1 },
+        })
     }, [pro, telemetryRecorder])
 
     const primaryEmail = authenticatedUser.emails.find(email => email.isPrimary)?.email

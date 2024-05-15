@@ -14,14 +14,18 @@ import styles from './CodyOnboarding.module.scss'
 export function EditorStep({
     onCompleted,
     pro,
+    seatCount,
     telemetryRecorder,
 }: {
     onCompleted: () => void
     pro: boolean
+    seatCount: number | null
     telemetryRecorder: TelemetryRecorder
 }): JSX.Element {
     useEffect(() => {
-        telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'view', { metadata: { tier: pro ? 1 : 0 } })
+        telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'view', {
+            metadata: { tier: pro ? 1 : 0, seatCount: seatCount ?? -1 },
+        })
     }, [pro, telemetryRecorder])
 
     const [editor, setEditor] = useState<null | IEditor>(null)
@@ -62,12 +66,12 @@ export function EditorStep({
                                     setEditor(editor)
 
                                     telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'select', {
-                                        metadata: { tier: pro ? 1 : 0, editor: editor.id },
+                                        metadata: { tier: pro ? 1 : 0, editor: editor.id, seatCount: seatCount ?? -1 },
                                     })
                                 }}
                                 onClick={() => {
                                     telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'select', {
-                                        metadata: { tier: pro ? 1 : 0, editor: editor.id },
+                                        metadata: { tier: pro ? 1 : 0, editor: editor.id, seatCount: seatCount ?? -1 },
                                     })
                                     setEditor(editor)
                                 }}
@@ -106,7 +110,7 @@ export function EditorStep({
                     onClick={() => {
                         onCompleted()
                         telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'skip', {
-                            metadata: { tier: pro ? 1 : 0 },
+                            metadata: { tier: pro ? 1 : 0, seatCount: seatCount ?? -1 },
                         })
                     }}
                 >
