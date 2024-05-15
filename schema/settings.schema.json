@@ -415,6 +415,15 @@
       "type": "boolean",
       "default": false
     },
+    "search.displayLimit": {
+      "description": "The number of results we send down during a search. Note: this is different to the count: in the query. The search will continue once we hit displayLimit and updated filters and statistics will continue to stream down. Defaults to 1500.",
+      "type": "integer",
+      "minimum": 1,
+      "default": 1500,
+      "!go": {
+        "pointer": true
+      }
+    },
     "search.includeForks": {
       "description": "Whether searches should include searching forked repositories.",
       "type": "boolean",

@@ -2440,6 +2440,8 @@ type Settings struct {
 	SearchDefaultMode string `json:"search.defaultMode,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
+	// SearchDisplayLimit description: The number of results we send down during a search. Note: this is different to the count: in the query. The search will continue once we hit displayLimit and updated filters and statistics will continue to stream down. Defaults to 1500.
+	SearchDisplayLimit *int `json:"search.displayLimit,omitempty"`
 	// SearchHideSuggestions description: Disable search suggestions below the search bar when constructing queries. Defaults to false.
 	SearchHideSuggestions *bool `json:"search.hideSuggestions,omitempty"`
 	// SearchIncludeArchived description: Whether searches should include searching archived repositories.
@@ -2510,6 +2512,7 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	delete(m, "search.defaultCaseSensitive")
 	delete(m, "search.defaultMode")
 	delete(m, "search.defaultPatternType")
+	delete(m, "search.displayLimit")
 	delete(m, "search.hideSuggestions")
 	delete(m, "search.includeArchived")
 	delete(m, "search.includeForks")

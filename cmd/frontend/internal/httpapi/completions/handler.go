@@ -551,7 +551,7 @@ func checkClientCodyIgnoreCompatibility(ctx context.Context, db database.DB, r *
 	ok := c.Check(v)
 	if !ok {
 		return &codyIgnoreCompatibilityError{
-			reason:     fmt.Sprintf("Cody for %s version %q doesn't match version constraint %q", cvc.client, clientVersion, cvc.constraint),
+			reason:     fmt.Sprintf("Cody for %s version %q doesn't match version constraint %q. Please upgrade your client.", cvc.client, clientVersion, cvc.constraint),
 			statusCode: http.StatusNotAcceptable,
 		}
 	}

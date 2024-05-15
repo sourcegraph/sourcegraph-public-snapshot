@@ -4,16 +4,10 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "clouddeploy",
     srcs = ["clouddeploy.go"],
-    embedsrcs = [
-        "skaffold.yaml",
-        "target.template.yaml",
-    ],
+    embedsrcs = ["skaffold.yaml"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/clouddeploy",
     visibility = ["//visibility:public"],
-    deps = [
-        "//dev/managedservicesplatform/spec",
-        "//lib/errors",
-    ],
+    deps = ["//lib/errors"],
 )
 
 go_test(
