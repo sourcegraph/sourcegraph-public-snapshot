@@ -66,6 +66,7 @@ type Variables struct {
 	IAM iam.CrossStackOutput
 
 	Service     spec.ServiceSpec
+	Repository  string
 	Image       string
 	Environment spec.EnvironmentSpec
 
@@ -427,6 +428,8 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			ExecutionSA:  vars.IAM.CloudDeployExecutionServiceAccount,
 
 			TargetStages: stageTargets,
+
+			Repository: vars.Repository,
 
 			Suspended: pointers.DerefZero(vars.RolloutPipeline.OriginalSpec.Suspended),
 
