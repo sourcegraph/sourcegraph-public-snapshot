@@ -268,8 +268,9 @@
 
         &,
         :global(ul[role='group']) {
-            list-style: none;
             margin: 0;
+            overflow: hidden;
+            list-style: none;
         }
 
         :global(ul[role='group']) {
