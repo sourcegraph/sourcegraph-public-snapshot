@@ -387,7 +387,6 @@ func AuthCallback(logger log.Logger, db database.DB, r *http.Request, usernamePr
 
 	newUserCreated, actor, safeErrMsg, err := getOrCreateUser(ctx, logger, db, p, oauth2Token, idToken, userInfo, &claims, usernamePrefix, userCreateEventProperties, &hubspot.ContactProperties{
 		AnonymousUserID:            anonymousId,
-		FirstSourceURL:             getCookie("first_page_seen_url"),
 		LastSourceURL:              getCookie("last_page_seen_url"),
 		LastPageSeenShort:          getCookie("last_page_seen_short"),
 		LastPageSeenMid:            getCookie("last_page_seen_mid"),

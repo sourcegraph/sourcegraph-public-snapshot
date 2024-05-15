@@ -98,7 +98,6 @@ func TestAllowSignup(t *testing.T) {
 					LastPageSeenShort:          "https://example.com/",
 					LastPageSeenMid:            "https://example.com/",
 					LastPageSeenLong:           "https://example.com/",
-					FirstSourceURL:             "https://example.com/",
 					MostRecentReferrerUrl:      "https://example.com/",
 					MostRecentReferrerUrlShort: "https://example.com/",
 					MostRecentReferrerUrlMid:   "https://example.com/",

@@ -147,7 +147,6 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 			DatabaseID:                 usr.ID,
 			AnonymousUserID:            creds.AnonymousUserID,
 			LastSourceURL:              creds.LastSourceURL,
-			FirstSourceURL:             creds.FirstSourceURL,
 			LastPageSeenShort:          getCookie("last_page_seen_short"),
 			LastPageSeenMid:            getCookie("last_page_seen_mid"),
 			LastPageSeenLong:           getCookie("last_page_seen_long"),

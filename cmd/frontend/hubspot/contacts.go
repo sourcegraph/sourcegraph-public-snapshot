@@ -43,9 +43,6 @@ type ContactProperties struct {
 	VSCodyInstalledEmailsEnabled bool   `json:"vs_cody_installed_emails_enabled"`
 
 	// The URL of the first page a user landed on their first session on a Sourcegraph site.
-	FirstSourceURL string `json:"first_source_url"`
-
-	// The URL of the first page a user landed on their first session on a Sourcegraph site.
 	FirstPageSeenUrl string `json:"first_page_seen_url"`
 
 	// The URL of the last page the user saw on a Sourcegraph site.
@@ -74,7 +71,7 @@ type ContactProperties struct {
 	SignupSessionReferrer string `json:"signup_session_referrer"`
 
 	// The UTM campaign across multiple cookie duration sessions.
-	SessionUTMCampaign string `json:"utm_campaign"`
+	SessionUTMCampaign string `json:"recent_utm_campaign"`
 
 	// The UTM campaign across multiple cookie duration sessions.
 	UtmCampaignShort string `json:"utm_campaign_short"`
@@ -82,7 +79,7 @@ type ContactProperties struct {
 	UtmCampaignLong  string `json:"utm_campaign_long"`
 
 	// The UTM source associated with the current session.
-	SessionUTMSource string `json:"utm_source"`
+	SessionUTMSource string `json:"recent_utm_source"`
 
 	// The UTM source across multiple cookie duration sessions.
 	UtmSourceShort string `json:"utm_source_short"`
@@ -90,7 +87,7 @@ type ContactProperties struct {
 	UtmSourceLong  string `json:"utm_source_long"`
 
 	// The UTM medium associated with the current session.
-	SessionUTMMedium string `json:"utm_medium"`
+	SessionUTMMedium string `json:"recent_utm_medium"`
 
 	// The UTM medium across various cookie sessions.
 	UtmMediumShort string `json:"utm_medium_short"`
@@ -98,7 +95,7 @@ type ContactProperties struct {
 	UtmMediumLong  string `json:"utm_medium_long"`
 
 	// The UTM term associated with the current session.
-	SessionUTMTerm string `json:"utm_term"`
+	SessionUTMTerm string `json:"recent_utm_term"`
 
 	// The UTM term across multiple cookie duration sessions.
 	UtmTermShort string `json:"utm_term_short"`
@@ -106,7 +103,7 @@ type ContactProperties struct {
 	UtmTermLong  string `json:"utm_term_long"`
 
 	// The UTM content associated with the current session.
-	SessionUTMContent string `json:"utm_content"`
+	SessionUTMContent string `json:"recent_utm_content"`
 
 	// The UTM content across multiple cookie duration sessions.
 	UtmContentShort string `json:"utm_content_short"`
@@ -137,7 +134,6 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps.set("anonymous_user_id", h.AnonymousUserID)
 	apiProps.set("database_id", h.DatabaseID)
 	apiProps.set("has_agreed_to_tos_and_pp", h.HasAgreedToToS)
-	apiProps.set("first_source_url", h.FirstPageSeenUrl)
 	apiProps.set("last_source_url", h.LastPageSeenUrl)
 	apiProps.set("last_page_seen_url_short", h.LastPageSeenShort)
 	apiProps.set("last_page_seen_url_mid", h.LastPageSeenMid)
@@ -148,23 +144,23 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps.set("most_recent_referrer_url_mid", h.MostRecentReferrerUrlMid)
 	apiProps.set("most_recent_referrer_url_long", h.MostRecentReferrerUrlLong)
 	apiProps.set("signup_session_referrer", h.SignupSessionReferrer)
-	apiProps.set("utm_campaign", h.SessionUTMCampaign)
+	apiProps.set("recent_utm_campaign", h.SessionUTMCampaign)
 	apiProps.set("utm_campaign_short", h.UtmCampaignShort)
 	apiProps.set("utm_campaign_mid", h.UtmCampaignMid)
 	apiProps.set("utm_campaign_long", h.UtmCampaignLong)
-	apiProps.set("utm_source", h.SessionUTMSource)
+	apiProps.set("recent_utm_source", h.SessionUTMSource)
 	apiProps.set("utm_source_short", h.UtmSourceShort)
 	apiProps.set("utm_source_mid", h.UtmSourceMid)
 	apiProps.set("utm_source_long", h.UtmSourceLong)
-	apiProps.set("utm_medium", h.SessionUTMMedium)
+	apiProps.set("recent_utm_medium", h.SessionUTMMedium)
 	apiProps.set("utm_medium_short", h.UtmMediumShort)
 	apiProps.set("utm_medium_mid", h.UtmMediumMid)
 	apiProps.set("utm_medium_long", h.UtmMediumLong)
-	apiProps.set("utm_term", h.SessionUTMTerm)
+	apiProps.set("recent_utm_term", h.SessionUTMTerm)
 	apiProps.set("utm_term_short", h.UtmTermShort)
 	apiProps.set("utm_term_mid", h.UtmTermMid)
 	apiProps.set("utm_term_long", h.UtmTermLong)
-	apiProps.set("utm_content", h.SessionUTMContent)
+	apiProps.set("recent_utm_content", h.SessionUTMContent)
 	apiProps.set("utm_content_short", h.UtmContentShort)
 	apiProps.set("utm_content_mid", h.UtmContentMid)
 	apiProps.set("utm_content_long", h.UtmContentLong)
