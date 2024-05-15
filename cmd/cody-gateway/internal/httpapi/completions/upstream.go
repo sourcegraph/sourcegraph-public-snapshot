@@ -273,6 +273,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		// Re-marshal the payload for upstream to unset metadata and remove any properties
 		// not known to us.
 		upstreamPayload, err := json.Marshal(body)
+		fmt.Println("upstreamPayload", string(upstreamPayload))
 		if err != nil {
 			response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to marshal request body"))
 			return
@@ -280,6 +281,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 		// Create a new request to send upstream, making sure we retain the same context.
 		upstreamURL := methods.getAPIURLByFeature(feature)
+		fmt.Println("upstreamURL", upstreamURL)
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(upstreamPayload))
 		if err != nil {
 			response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to create request"))

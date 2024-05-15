@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
@@ -122,9 +121,9 @@ func (*OpenAIHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) str
 }
 
 func (*OpenAIHandlerMethods) validateRequest(_ context.Context, _ log.Logger, feature codygateway.Feature, _ openaiRequest) error {
-	if feature == codygateway.FeatureCodeCompletions {
-		return errors.Newf("feature %q is currently not supported for OpenAI", feature)
-	}
+	// if feature == codygateway.FeatureCodeCompletions {
+	// 	return errors.Newf("feature %q is currently not supported for OpenAI", feature)
+	// }
 	return nil
 }
 
