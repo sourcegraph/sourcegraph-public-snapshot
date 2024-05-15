@@ -67,7 +67,7 @@ type ContactProperties struct {
 	// The referrer for a user on the session when they signed up.
 	SignupSessionReferrer string `json:"signup_session_referrer"`
 
-	// The UTM campaign across multiple cookie duration sessions.
+	// The UTM campaign associated with the current session.
 	SessionUTMCampaign string `json:"recent_utm_campaign"`
 
 	// The UTM campaign across multiple cookie duration sessions.
