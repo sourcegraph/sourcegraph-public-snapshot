@@ -172,7 +172,7 @@ func (g *subprocessGit) RevList(ctx context.Context, repo string, commit string,
 func (g *subprocessGit) paginatedRevList(ctx context.Context, repo api.RepoName, commit string, count int) (_ []api.CommitID, nextCursor string, _ error) {
 	commits, err := g.gs.Commits(ctx, repo, gitserver.CommitsOptions{
 		N:           uint(count + 1),
-		Range:       commit,
+		Ranges:      []string{commit},
 		FirstParent: true,
 	})
 	if err != nil {

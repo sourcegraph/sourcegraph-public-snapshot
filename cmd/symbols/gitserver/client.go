@@ -1,7 +1,7 @@
 package gitserver
 
 import (
-	"bytes"
+	"cmp"
 	"context"
 	"io"
 
@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GitserverClient interface {
@@ -123,7 +122,7 @@ func (c *gitserverClient) RevList(ctx context.Context, repo string, commit strin
 func (c *gitserverClient) paginatedRevList(ctx context.Context, repo api.RepoName, commit string, count int) ([]api.CommitID, string, error) {
 	commits, err := c.innerClient.Commits(ctx, repo, gitserver.CommitsOptions{
 		N:           uint(count + 1),
-		Range:       commit,
+		Ranges:      []string{cmp.Or(commit, "HEAD")},
 		FirstParent: true,
 	})
 	if err != nil {
@@ -146,29 +145,3 @@ func (c *gitserverClient) paginatedRevList(ctx context.Context, repo api.RepoNam
 }
 
 var NUL = []byte{0}
-
-// parseGitDiffOutput parses the output of a git diff command, which consists
-// of a repeated sequence of `<status> NUL <path> NUL` where NUL is the 0 byte.
-func parseGitDiffOutput(output []byte) (changes Changes, _ error) {
-	if len(output) == 0 {
-		return Changes{}, nil
-	}
-
-	slices := bytes.Split(bytes.TrimRight(output, string(NUL)), NUL)
-	if len(slices)%2 != 0 {
-		return changes, errors.Newf("uneven pairs")
-	}
-
-	for i := 0; i < len(slices); i += 2 {
-		switch slices[i][0] {
-		case 'A':
-			changes.Added = append(changes.Added, string(slices[i+1]))
-		case 'M':
-			changes.Modified = append(changes.Modified, string(slices[i+1]))
-		case 'D':
-			changes.Deleted = append(changes.Deleted, string(slices[i+1]))
-		}
-	}
-
-	return changes, nil
-}
