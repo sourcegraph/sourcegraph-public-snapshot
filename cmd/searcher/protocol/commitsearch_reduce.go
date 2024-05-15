@@ -13,13 +13,13 @@ var defaultReducers = []pass{
 }
 
 // Reduce simplifies and optimizes a query using the default reducers
-func Reduce(n Node) Node {
+func Reduce(n CommitSearchNode) CommitSearchNode {
 	return ReduceWith(n, defaultReducers...)
 }
 
 // ReduceWith simplifies and optimizes a query using the provided reducers.
 // It visits nodes in a depth-first manner.
-func ReduceWith(n Node, reducers ...pass) Node {
+func ReduceWith(n CommitSearchNode, reducers ...pass) CommitSearchNode {
 	switch v := n.(type) {
 	case *Operator:
 		for i, operand := range v.Operands {
@@ -33,10 +33,10 @@ func ReduceWith(n Node, reducers ...pass) Node {
 	return n
 }
 
-type pass func(Node) Node
+type pass func(CommitSearchNode) CommitSearchNode
 
 // propagateBoolean simplifies any nodes containing constant nodes
-func propagateBoolean(n Node) Node {
+func propagateBoolean(n CommitSearchNode) CommitSearchNode {
 	operator, ok := n.(*Operator)
 	if !ok {
 		return n
@@ -87,13 +87,13 @@ func propagateBoolean(n Node) Node {
 // to a conjunctive. For example, Or(And(x, y), z) => And(Or(x, z), Or(y, z)). This allows
 // us to short-circuit more quickly. This does not necessarily get us to conjunctive normal form
 // because we do not distribute Not operators due to super-exponential query size.
-func rewriteConjunctive(n Node) Node {
+func rewriteConjunctive(n CommitSearchNode) CommitSearchNode {
 	operator, ok := n.(*Operator)
 	if !ok || operator.Kind != Or {
 		return n
 	}
 
-	var andOperands [][]Node
+	var andOperands [][]CommitSearchNode
 	siblings := operator.Operands[:0]
 	for _, operand := range operator.Operands {
 		if o, ok := operand.(*Operator); ok && o.Kind == And {
@@ -109,7 +109,7 @@ func rewriteConjunctive(n Node) Node {
 	}
 
 	distributed := distribute(andOperands, siblings)
-	newAndOperands := make([]Node, 0, len(distributed))
+	newAndOperands := make([]CommitSearchNode, 0, len(distributed))
 	for _, d := range distributed {
 		newAndOperands = append(newAndOperands, newOperator(Or, d...))
 	}
@@ -118,16 +118,16 @@ func rewriteConjunctive(n Node) Node {
 
 // distribute will expand prefixes into every choice of one node
 // from each prefix, then append that set to each of the nodes.
-func distribute(prefixes [][]Node, nodes []Node) [][]Node {
+func distribute(prefixes [][]CommitSearchNode, nodes []CommitSearchNode) [][]CommitSearchNode {
 	if len(prefixes) == 0 {
-		return [][]Node{nodes}
+		return [][]CommitSearchNode{nodes}
 	}
 
 	distributed := distribute(prefixes[1:], nodes)
-	res := make([][]Node, 0, len(distributed)*len(prefixes[0]))
+	res := make([][]CommitSearchNode, 0, len(distributed)*len(prefixes[0]))
 	for _, p := range prefixes[0] {
 		for _, d := range distributed {
-			newRow := make([]Node, len(d), len(d)+1)
+			newRow := make([]CommitSearchNode, len(d), len(d)+1)
 			copy(newRow, d)
 			res = append(res, append(newRow, p))
 		}
@@ -136,13 +136,13 @@ func distribute(prefixes [][]Node, nodes []Node) [][]Node {
 }
 
 // flatten will flatten And children of And operators and Or children of Or operators
-func flatten(n Node) Node {
+func flatten(n CommitSearchNode) CommitSearchNode {
 	operator, ok := n.(*Operator)
 	if !ok || operator.Kind == Not {
 		return n
 	}
 
-	flattened := make([]Node, 0, len(operator.Operands))
+	flattened := make([]CommitSearchNode, 0, len(operator.Operands))
 	for _, operand := range operator.Operands {
 		if nestedOperator, ok := operand.(*Operator); ok && nestedOperator.Kind == operator.Kind {
 			flattened = append(flattened, nestedOperator.Operands...)
@@ -156,7 +156,7 @@ func flatten(n Node) Node {
 
 // mergeOrRegexp will merge regexp nodes of the same type in an Or operand,
 // allowing us to run only a single regex search over the field rather than multiple.
-func mergeOrRegexp(n Node) Node {
+func mergeOrRegexp(n CommitSearchNode) CommitSearchNode {
 	operator, ok := n.(*Operator)
 	if !ok || operator.Kind != Or {
 		return n
@@ -167,7 +167,7 @@ func mergeOrRegexp(n Node) Node {
 	}
 
 	unmergeable := operator.Operands[:0]
-	mergeable := map[any]Node{}
+	mergeable := map[any]CommitSearchNode{}
 	for _, operand := range operator.Operands {
 		switch v := operand.(type) {
 		case *AuthorMatches:
@@ -236,7 +236,7 @@ func mergeOrRegexp(n Node) Node {
 // estimatedNodeCost estimates node cost in a completely unscientific way.
 // The numbers are largely educated speculation, but it doesn't matter that much
 // since we mostly care about nodes that generate diffs being put last.
-func estimatedNodeCost(n Node) float64 {
+func estimatedNodeCost(n CommitSearchNode) float64 {
 	switch v := n.(type) {
 	case *Operator:
 		sum := 0.0
@@ -264,7 +264,7 @@ func estimatedNodeCost(n Node) float64 {
 // sortAndByCost sorts the operands of And nodes by their estimated cost
 // so more expensive nodes are excluded by short-circuiting when possible.
 // Or nodes are not short-circuited, so this does not sort Or nodes.
-func sortAndByCost(n Node) Node {
+func sortAndByCost(n CommitSearchNode) CommitSearchNode {
 	operator, ok := n.(*Operator)
 	if !ok || operator.Kind != And {
 		return n

@@ -14,16 +14,16 @@ import (
 )
 
 func (g *gitCLIBackend) RawDiff(ctx context.Context, base string, head string, typ git.GitDiffComparisonType, paths ...string) (io.ReadCloser, error) {
-	baseOID, err := g.revParse(ctx, base)
-	if err != nil {
-		return nil, err
-	}
-	headOID, err := g.revParse(ctx, head)
-	if err != nil {
-		return nil, err
-	}
+	// baseOID, err := g.revParse(ctx, base)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// headOID, err := g.revParse(ctx, head)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	return g.NewCommand(ctx, WithArguments(buildRawDiffArgs(baseOID, headOID, typ, paths)...))
+	return g.NewCommand(ctx, WithArguments(buildRawDiffArgs(api.CommitID(base), api.CommitID(head), typ, paths)...))
 }
 
 func buildRawDiffArgs(base, head api.CommitID, typ git.GitDiffComparisonType, paths []string) []string {

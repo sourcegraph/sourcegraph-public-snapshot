@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"os/exec"
 	"strings"
 
 	godiff "github.com/sourcegraph/go-diff/diff"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -71,14 +71,14 @@ var (
 )
 
 type job struct {
-	batch      []*RawCommit
+	batch      []*gitserver.WrappedCommit
 	resultChan chan *protocol.CommitMatch
 }
 
 const (
 	// The size of a batch of commits sent in each worker job
 	batchSize  = 512
-	numWorkers = 4
+	numWorkers = 16
 )
 
 type CommitSearcher struct {
@@ -155,27 +155,17 @@ func revsToGitArgs(revs []string) []string {
 }
 
 func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
-	cmd := exec.CommandContext(ctx, "git", cs.gitArgs()...)
-	cmd.Dir = cs.RepoDir
-	stdoutReader, err := cmd.StdoutPipe()
+	gs := gitserver.NewClient("search.commitsearcher")
+
+	commits, err := gs.Commits(ctx, cs.RepoName, gitserver.CommitsOptions{
+		Ranges:   revsToGitArgs(cs.Revisions),
+		NameOnly: cs.IncludeModifiedFiles,
+	})
 	if err != nil {
 		return err
 	}
-	var stderrBuf bytes.Buffer
-	cmd.Stderr = &stderrBuf
 
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-
-	defer func() {
-		// Always call cmd.Wait to avoid leaving zombie processes around.
-		if e := cmd.Wait(); e != nil {
-			err = errors.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String(), cs.Logger))
-		}
-	}()
-
-	batch := make([]*RawCommit, 0, batchSize)
+	batch := make([]*gitserver.WrappedCommit, 0, batchSize)
 	sendBatch := func() {
 		resultChan := make(chan *protocol.CommitMatch, 128)
 		resultChans <- resultChan
@@ -183,26 +173,36 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 			batch:      batch,
 			resultChan: resultChan,
 		}
-		batch = make([]*RawCommit, 0, batchSize)
+		batch = make([]*gitserver.WrappedCommit, 0, batchSize)
 	}
 
-	scanner := NewCommitScanner(stdoutReader)
-	for scanner.Scan() {
+	for _, c := range commits {
 		if ctx.Err() != nil {
 			return nil
 		}
-		cv := scanner.NextRawCommit()
-		batch = append(batch, cv)
+		batch = append(batch, c)
 		if len(batch) == batchSize {
 			sendBatch()
 		}
 	}
 
+	// scanner := NewCommitScanner(stdoutReader)
+	// for scanner.Scan() {
+	// 	if ctx.Err() != nil {
+	// 		return nil
+	// 	}
+	// 	cv := scanner.NextRawCommit()
+	// 	batch = append(batch, cv)
+	// 	if len(batch) == batchSize {
+	// 		sendBatch()
+	// 	}
+	// }
+
 	if len(batch) > 0 {
 		sendBatch()
 	}
 
-	return scanner.Err()
+	return nil
 }
 
 func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string, logger log.Logger) error {
@@ -230,7 +230,7 @@ func getSubRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionCh
 
 func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 	// Create a new diff fetcher subprocess for each worker
-	diffFetcher, err := NewDiffFetcher(cs.RepoDir)
+	diffFetcher, err := NewDiffFetcher(cs.RepoName)
 	if err != nil {
 		return err
 	}
@@ -248,9 +248,10 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 			}
 
 			lc := &LazyCommit{
-				RawCommit:   cv,
-				diffFetcher: diffFetcher,
-				LowerBuf:    startBuf,
+				ctx:           ctx,
+				WrappedCommit: cv,
+				diffFetcher:   diffFetcher,
+				LowerBuf:      startBuf,
 			}
 			mergedResult, highlights, err := cs.Query.Match(lc)
 			if err != nil {
@@ -408,33 +409,28 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool, filte
 		diff.Content, diff.MatchedRanges = FormatDiff(rawDiff, hc.Diff)
 	}
 
-	commitID, err := api.NewCommitID(string(lc.Hash))
-	if err != nil {
-		return nil, err
-	}
-
 	parentIDs, err := lc.ParentIDs()
 	if err != nil {
 		return nil, err
 	}
 
 	return &protocol.CommitMatch{
-		Oid: commitID,
+		Oid: lc.ID,
 		Author: protocol.Signature{
-			Name:  utf8String(lc.AuthorName),
-			Email: utf8String(lc.AuthorEmail),
+			Name:  lc.Author.Name,
+			Email: lc.Author.Email,
 			Date:  authorDate,
 		},
 		Committer: protocol.Signature{
-			Name:  utf8String(lc.CommitterName),
-			Email: utf8String(lc.CommitterEmail),
+			Name:  lc.Committer.Name,
+			Email: lc.Committer.Email,
 			Date:  committerDate,
 		},
-		Parents:    parentIDs,
-		SourceRefs: lc.SourceRefs(),
-		Refs:       lc.RefNames(),
+		Parents: parentIDs,
+		// SourceRefs: lc.SourceRefs(),
+		// Refs:       lc.RefNames(),
 		Message: result.MatchedString{
-			Content:       utf8String(lc.Message),
+			Content:       string(lc.Message),
 			MatchedRanges: hc.Message,
 		},
 		Diff:          diff,

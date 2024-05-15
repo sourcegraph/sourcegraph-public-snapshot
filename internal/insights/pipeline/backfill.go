@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	igitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
@@ -44,7 +45,7 @@ type Backfiller interface {
 
 type GitCommitClient interface {
 	FirstCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error)
-	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error)
+	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*igitserver.WrappedCommit, error)
 	GitserverClient() internalGitserver.Client
 }
 
@@ -249,7 +250,7 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 			}
 			var nearestCommit *gitdomain.Commit
 			if len(recentCommits) > 0 {
-				nearestCommit = recentCommits[0]
+				nearestCommit = recentCommits[0].Commit
 			}
 			if nearestCommit == nil {
 				// a.statistics[bctx.seriesID].Errored += 1

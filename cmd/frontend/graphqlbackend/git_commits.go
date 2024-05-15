@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -35,7 +34,7 @@ type gitCommitConnectionResolver struct {
 
 	// cache results because it is used by multiple fields
 	once    sync.Once
-	commits []*gitdomain.Commit
+	commits []*gitserver.WrappedCommit
 	err     error
 }
 
@@ -50,8 +49,8 @@ func (r *gitCommitConnectionResolver) afterCursorAsInt() (int, error) {
 	return strconv.Atoi(v)
 }
 
-func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain.Commit, error) {
-	do := func() ([]*gitdomain.Commit, error) {
+func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitserver.WrappedCommit, error) {
+	do := func() ([]*gitserver.WrappedCommit, error) {
 		n := pointers.Deref(r.first, 0)
 
 		// PERF: only request extra if we request more than one result. A
@@ -73,7 +72,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 		// same as not setting the flag.
 		afterCursor, err := r.afterCursorAsInt()
 		if err != nil {
-			return []*gitdomain.Commit{}, errors.Wrap(err, "failed to parse afterCursor")
+			return []*gitserver.WrappedCommit{}, errors.Wrap(err, "failed to parse afterCursor")
 		}
 
 		// Make sure the range revisions exist, in case the browser extension makes
@@ -89,7 +88,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 		}
 
 		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
-			Range:        r.revisionRange,
+			Ranges:       []string{r.revisionRange},
 			N:            uint(n),
 			MessageQuery: pointers.DerefZero(r.query),
 			Author:       pointers.DerefZero(r.author),
@@ -118,7 +117,7 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitRe
 
 	resolvers := make([]*GitCommitResolver, len(commits))
 	for i, commit := range commits {
-		resolvers[i] = NewGitCommitResolver(r.db, r.gitserverClient, r.repo, commit.ID, commit)
+		resolvers[i] = NewGitCommitResolver(r.db, r.gitserverClient, r.repo, commit.ID, commit.Commit)
 	}
 
 	return resolvers, nil

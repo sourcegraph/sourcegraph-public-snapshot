@@ -164,7 +164,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		CommitsFunc: &ClientCommitsFunc{
-			defaultHook: func(context.Context, api.RepoName, CommitsOptions) (r0 []*gitdomain.Commit, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, CommitsOptions) (r0 []*WrappedCommit, r1 error) {
 				return
 			},
 		},
@@ -351,7 +351,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		CommitsFunc: &ClientCommitsFunc{
-			defaultHook: func(context.Context, api.RepoName, CommitsOptions) ([]*gitdomain.Commit, error) {
+			defaultHook: func(context.Context, api.RepoName, CommitsOptions) ([]*WrappedCommit, error) {
 				panic("unexpected invocation of MockClient.Commits")
 			},
 		},
@@ -1173,15 +1173,15 @@ func (c ClientCheckPerforceCredentialsFuncCall) Results() []interface{} {
 // ClientCommitsFunc describes the behavior when the Commits method of the
 // parent MockClient instance is invoked.
 type ClientCommitsFunc struct {
-	defaultHook func(context.Context, api.RepoName, CommitsOptions) ([]*gitdomain.Commit, error)
-	hooks       []func(context.Context, api.RepoName, CommitsOptions) ([]*gitdomain.Commit, error)
+	defaultHook func(context.Context, api.RepoName, CommitsOptions) ([]*WrappedCommit, error)
+	hooks       []func(context.Context, api.RepoName, CommitsOptions) ([]*WrappedCommit, error)
 	history     []ClientCommitsFuncCall
 	mutex       sync.Mutex
 }
 
 // Commits delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) Commits(v0 context.Context, v1 api.RepoName, v2 CommitsOptions) ([]*gitdomain.Commit, error) {
+func (m *MockClient) Commits(v0 context.Context, v1 api.RepoName, v2 CommitsOptions) ([]*WrappedCommit, error) {
 	r0, r1 := m.CommitsFunc.nextHook()(v0, v1, v2)
 	m.CommitsFunc.appendCall(ClientCommitsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -1189,7 +1189,7 @@ func (m *MockClient) Commits(v0 context.Context, v1 api.RepoName, v2 CommitsOpti
 
 // SetDefaultHook sets function that is called when the Commits method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientCommitsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, CommitsOptions) ([]*gitdomain.Commit, error)) {
+func (f *ClientCommitsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, CommitsOptions) ([]*WrappedCommit, error)) {
 	f.defaultHook = hook
 }
 
@@ -1197,7 +1197,7 @@ func (f *ClientCommitsFunc) SetDefaultHook(hook func(context.Context, api.RepoNa
 // Commits method of the parent MockClient instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *ClientCommitsFunc) PushHook(hook func(context.Context, api.RepoName, CommitsOptions) ([]*gitdomain.Commit, error)) {
+func (f *ClientCommitsFunc) PushHook(hook func(context.Context, api.RepoName, CommitsOptions) ([]*WrappedCommit, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1205,20 +1205,20 @@ func (f *ClientCommitsFunc) PushHook(hook func(context.Context, api.RepoName, Co
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientCommitsFunc) SetDefaultReturn(r0 []*gitdomain.Commit, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, CommitsOptions) ([]*gitdomain.Commit, error) {
+func (f *ClientCommitsFunc) SetDefaultReturn(r0 []*WrappedCommit, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, CommitsOptions) ([]*WrappedCommit, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientCommitsFunc) PushReturn(r0 []*gitdomain.Commit, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, CommitsOptions) ([]*gitdomain.Commit, error) {
+func (f *ClientCommitsFunc) PushReturn(r0 []*WrappedCommit, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, CommitsOptions) ([]*WrappedCommit, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientCommitsFunc) nextHook() func(context.Context, api.RepoName, CommitsOptions) ([]*gitdomain.Commit, error) {
+func (f *ClientCommitsFunc) nextHook() func(context.Context, api.RepoName, CommitsOptions) ([]*WrappedCommit, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1262,7 +1262,7 @@ type ClientCommitsFuncCall struct {
 	Arg2 CommitsOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*gitdomain.Commit
+	Result0 []*WrappedCommit
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

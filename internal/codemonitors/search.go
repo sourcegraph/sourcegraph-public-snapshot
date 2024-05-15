@@ -7,12 +7,12 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -47,7 +47,7 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 		return nil, errcode.MakeNonRetryable(err)
 	}
 
-	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
+	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *protocol.CommitSearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
 		return hookWithID(ctx, logger, db, gs, monitorID, triggerID, repoID, args, doSearch)
 	}
 	planJob, err = addCodeMonitorHook(planJob, hook)
@@ -107,7 +107,7 @@ func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query stri
 		resolvedRevisions = make(map[api.RepoID][]string)
 	)
 
-	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, _ commit.DoSearchFunc) error {
+	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *protocol.CommitSearchRequest, repoID api.RepoID, _ commit.DoSearchFunc) error {
 		for _, rev := range args.Revisions {
 			// Fail early for context cancellation.
 			if err := ctx.Err(); err != nil {
@@ -183,7 +183,7 @@ func hookWithID(
 	monitorID int64,
 	triggerID int32,
 	repoID api.RepoID,
-	args *gitprotocol.SearchRequest,
+	args *protocol.CommitSearchRequest,
 	doSearch commit.DoSearchFunc,
 ) error {
 	cm := db.CodeMonitors()

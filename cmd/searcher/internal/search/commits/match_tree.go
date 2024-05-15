@@ -79,7 +79,7 @@ type AuthorMatches struct {
 }
 
 func (a *AuthorMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	if a.Regexp.Match(lc.AuthorName, &lc.LowerBuf) || a.Regexp.Match(lc.AuthorEmail, &lc.LowerBuf) {
+	if a.Regexp.Match([]byte(lc.Author.Name), &lc.LowerBuf) || a.Regexp.Match([]byte(lc.Author.Email), &lc.LowerBuf) {
 		return filterResult(true), MatchedCommit{}, nil
 	}
 	return filterResult(false), MatchedCommit{}, nil
@@ -92,7 +92,7 @@ type CommitterMatches struct {
 }
 
 func (c *CommitterMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	if c.Regexp.Match(lc.CommitterName, &lc.LowerBuf) || c.Regexp.Match(lc.CommitterEmail, &lc.LowerBuf) {
+	if c.Regexp.Match([]byte(lc.Committer.Name), &lc.LowerBuf) || c.Regexp.Match([]byte(lc.Committer.Email), &lc.LowerBuf) {
 		return filterResult(true), MatchedCommit{}, nil
 	}
 	return filterResult(false), MatchedCommit{}, nil
@@ -131,13 +131,13 @@ type MessageMatches struct {
 }
 
 func (m *MessageMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	results := m.FindAllIndex(lc.Message, -1, &lc.LowerBuf)
+	results := m.FindAllIndex([]byte(lc.Message), -1, &lc.LowerBuf)
 	if results == nil {
 		return filterResult(false), MatchedCommit{}, nil
 	}
 
 	return filterResult(true), MatchedCommit{
-		Message: matchesToRanges(lc.Message, results),
+		Message: matchesToRanges([]byte(lc.Message), results),
 	}, nil
 }
 

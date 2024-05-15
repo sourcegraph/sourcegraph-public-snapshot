@@ -43,7 +43,7 @@ type DataFrameFilter interface {
 }
 
 type commitFetcher interface {
-	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error)
+	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*internalGitserver.WrappedCommit, error)
 }
 
 func NewGitserverFilter(logger log.Logger, gitserverClient internalGitserver.Client) DataFrameFilter {
@@ -77,7 +77,7 @@ func (g *gitserverFilter) Filter(ctx context.Context, sampleTimes []time.Time, n
 			log.String("sampleTime", to.String()),
 			log.String("prev", prev))
 
-		return commits[0], true, nil
+		return commits[0].Commit, true, nil
 	}
 
 	sort.Slice(sampleTimes, func(i, j int) bool {

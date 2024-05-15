@@ -2,7 +2,7 @@ package commitgraph
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 type CommitGraph struct {
@@ -19,7 +19,7 @@ func (c *CommitGraph) Order() []api.CommitID                  { return c.order }
 // slice is empty, but is still present in the map and the ordering. If the
 // ordering is to be correct, the given commits must be ordered with
 // gitserver.CommitsOrderTopoDate.
-func ParseCommitGraph(commits []*gitdomain.Commit) *CommitGraph {
+func ParseCommitGraph(commits []*gitserver.WrappedCommit) *CommitGraph {
 	// Process lines backwards so that we see all parents before children. We get a
 	// topological ordering by simply scraping the keys off in this order.
 

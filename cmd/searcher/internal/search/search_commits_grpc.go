@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search/commits"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -32,8 +33,6 @@ func (s *Server) CommitSearch(req *proto.CommitSearchRequest, stream proto.Searc
 	if req.GetRepo() == "" {
 		return status.New(codes.InvalidArgument, "repo must be specified").Err()
 	}
-
-	repoName := api.RepoName(req.GetRepo())
 
 	onMatch := func(cm *protocol.CommitMatch) error {
 		parents := make([]string, 0, len(cm.Parents))

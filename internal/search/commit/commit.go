@@ -9,23 +9,23 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type SearchJob struct {
-	Query                gitprotocol.Node
+	Query                protocol.CommitSearchNode
 	Repos                []*search.RepositoryRevisions
 	Diff                 bool
 	Limit                int
@@ -36,11 +36,11 @@ type SearchJob struct {
 	CodeMonitorSearchWrapper CodeMonitorHook `json:"-"`
 }
 
-type DoSearchFunc func(*gitprotocol.SearchRequest) error
-type CodeMonitorHook func(context.Context, database.DB, GitserverClient, *gitprotocol.SearchRequest, api.RepoID, DoSearchFunc) error
+type DoSearchFunc func(*protocol.CommitSearchRequest) error
+type CodeMonitorHook func(context.Context, database.DB, GitserverClient, *protocol.CommitSearchRequest, api.RepoID, DoSearchFunc) error
 
 type GitserverClient interface {
-	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
+	// Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
 	ResolveRevision(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error)
 }
 
@@ -58,7 +58,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 			return nil
 		}
 
-		args := &protocol.SearchRequest{
+		args := &protocol.CommitSearchRequest{
 			Repo:                 repoRev.Repo.Name,
 			Revisions:            repoRev.Revs,
 			Query:                j.Query,
@@ -77,8 +77,8 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 			})
 		}
 
-		doSearch := func(args *gitprotocol.SearchRequest) error {
-			limitHit, err := clients.Gitserver.Search(ctx, args, onMatches)
+		doSearch := func(args *protocol.CommitSearchRequest) error {
+			limitHit, err := searcher.SearchCommits(ctx, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, repoRev.Repo.Name, repoRev.Repo.ID, args, onMatches)
 			statusMap, err := search.HandleRepoSearchResult(repoRev.Repo.ID, repoRev.Revs, limitHit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
@@ -135,7 +135,7 @@ func (j *SearchJob) Children() []job.Describer       { return nil }
 func (j *SearchJob) MapChildren(job.MapFunc) job.Job { return j }
 
 func (j *SearchJob) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
-	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {
+	protocol.ReduceWith(j.Query, func(n protocol.CommitSearchNode) protocol.CommitSearchNode {
 		if err != nil {
 			return n
 		}
@@ -210,10 +210,10 @@ func expandUsernamesToEmails(ctx context.Context, db database.DB, values []strin
 	return expandedValues, nil
 }
 
-func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
+func QueryToGitQuery(b query.Basic, diff bool) protocol.CommitSearchNode {
 	caseSensitive := b.IsCaseSensitive()
 
-	res := make([]gitprotocol.Node, 0, len(b.Parameters)+2)
+	res := make([]protocol.CommitSearchNode, 0, len(b.Parameters)+2)
 
 	// Convert parameters to nodes
 	for _, parameter := range b.Parameters {
@@ -232,10 +232,10 @@ func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
 		res = append(res, newPred)
 	}
 
-	return gitprotocol.Reduce(gitprotocol.NewAnd(res...))
+	return protocol.Reduce(protocol.NewAnd(res...))
 }
 
-func queryPatternToPredicate(node query.Node, caseSensitive, diff bool) gitprotocol.Node {
+func queryPatternToPredicate(node query.Node, caseSensitive, diff bool) protocol.CommitSearchNode {
 	switch v := node.(type) {
 	case query.Operator:
 		return patternOperatorToPredicate(v, caseSensitive, diff)
@@ -247,19 +247,19 @@ func queryPatternToPredicate(node query.Node, caseSensitive, diff bool) gitproto
 	}
 }
 
-func patternOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitprotocol.Node {
+func patternOperatorToPredicate(op query.Operator, caseSensitive, diff bool) protocol.CommitSearchNode {
 	switch op.Kind {
 	case query.And:
-		return gitprotocol.NewAnd(patternNodesToPredicates(op.Operands, caseSensitive, diff)...)
+		return protocol.NewAnd(patternNodesToPredicates(op.Operands, caseSensitive, diff)...)
 	case query.Or:
-		return gitprotocol.NewOr(patternNodesToPredicates(op.Operands, caseSensitive, diff)...)
+		return protocol.NewOr(patternNodesToPredicates(op.Operands, caseSensitive, diff)...)
 	default:
 		return nil
 	}
 }
 
-func patternNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitprotocol.Node {
-	res := make([]gitprotocol.Node, 0, len(nodes))
+func patternNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []protocol.CommitSearchNode {
+	res := make([]protocol.CommitSearchNode, 0, len(nodes))
 	for _, node := range nodes {
 		newPred := queryPatternToPredicate(node, caseSensitive, diff)
 		if newPred != nil {
@@ -269,52 +269,52 @@ func patternNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gi
 	return res
 }
 
-func patternAtomToPredicate(pattern query.Pattern, caseSensitive, diff bool) gitprotocol.Node {
+func patternAtomToPredicate(pattern query.Pattern, caseSensitive, diff bool) protocol.CommitSearchNode {
 	patString := pattern.RegExpPattern()
 
-	var newPred gitprotocol.Node
+	var newPred protocol.CommitSearchNode
 	if diff {
-		newPred = &gitprotocol.DiffMatches{Expr: patString, IgnoreCase: !caseSensitive}
+		newPred = &protocol.DiffMatches{Expr: patString, IgnoreCase: !caseSensitive}
 	} else {
-		newPred = &gitprotocol.MessageMatches{Expr: patString, IgnoreCase: !caseSensitive}
+		newPred = &protocol.MessageMatches{Expr: patString, IgnoreCase: !caseSensitive}
 	}
 
 	if pattern.Negated {
-		return gitprotocol.NewNot(newPred)
+		return protocol.NewNot(newPred)
 	}
 	return newPred
 }
 
-func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bool) gitprotocol.Node {
-	var newPred gitprotocol.Node
+func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bool) protocol.CommitSearchNode {
+	var newPred protocol.CommitSearchNode
 	switch parameter.Field {
 	case query.FieldAuthor:
 		// TODO(@camdencheek) look up emails (issue #25180)
-		newPred = &gitprotocol.AuthorMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
+		newPred = &protocol.AuthorMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldCommitter:
-		newPred = &gitprotocol.CommitterMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
+		newPred = &protocol.CommitterMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldBefore:
 		t, _ := query.ParseGitDate(parameter.Value, time.Now) // field already validated
-		newPred = &gitprotocol.CommitBefore{Time: t}
+		newPred = &protocol.CommitBefore{Time: t}
 	case query.FieldAfter:
 		t, _ := query.ParseGitDate(parameter.Value, time.Now) // field already validated
-		newPred = &gitprotocol.CommitAfter{Time: t}
+		newPred = &protocol.CommitAfter{Time: t}
 	case query.FieldMessage:
-		newPred = &gitprotocol.MessageMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
+		newPred = &protocol.MessageMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldContent:
 		if diff {
-			newPred = &gitprotocol.DiffMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
+			newPred = &protocol.DiffMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 		} else {
-			newPred = &gitprotocol.MessageMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
+			newPred = &protocol.MessageMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 		}
 	case query.FieldFile:
-		newPred = &gitprotocol.DiffModifiesFile{Expr: parameter.Value, IgnoreCase: !caseSensitive}
+		newPred = &protocol.DiffModifiesFile{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldLang:
-		newPred = &gitprotocol.DiffModifiesFile{Expr: query.LangToFileRegexp(parameter.Value), IgnoreCase: true}
+		newPred = &protocol.DiffModifiesFile{Expr: query.LangToFileRegexp(parameter.Value), IgnoreCase: true}
 	}
 
 	if parameter.Negated && newPred != nil {
-		return gitprotocol.NewNot(newPred)
+		return protocol.NewNot(newPred)
 	}
 	return newPred
 }

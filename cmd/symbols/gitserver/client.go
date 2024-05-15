@@ -123,7 +123,7 @@ func (c *gitserverClient) RevList(ctx context.Context, repo string, commit strin
 func (c *gitserverClient) paginatedRevList(ctx context.Context, repo api.RepoName, commit string, count int) ([]api.CommitID, string, error) {
 	commits, err := c.innerClient.Commits(ctx, repo, gitserver.CommitsOptions{
 		N:           uint(count + 1),
-		Range:       commit,
+		Ranges:      []string{commit},
 		FirstParent: true,
 	})
 	if err != nil {

@@ -437,7 +437,7 @@ type Client interface {
 	ChangedFiles(ctx context.Context, repo api.RepoName, base, head string) (ChangedFilesIterator, error)
 
 	// Commits returns all commits matching the options.
-	Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error)
+	Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*WrappedCommit, error)
 
 	// FirstEverCommit returns the first commit ever made to the repository.
 	FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit, error)

@@ -4,21 +4,22 @@ import (
 	"encoding/json"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type CommitMatch struct {
-	Oid        api.CommitID
-	Author     Signature      `json:",omitempty"`
-	Committer  Signature      `json:",omitempty"`
-	Parents    []api.CommitID `json:",omitempty"`
-	Refs       []string       `json:",omitempty"`
-	SourceRefs []string       `json:",omitempty"`
+	Oid       api.CommitID
+	Author    Signature      `json:",omitempty"`
+	Committer Signature      `json:",omitempty"`
+	Parents   []api.CommitID `json:",omitempty"`
+	// Refs       []string       `json:",omitempty"`
+	// SourceRefs []string       `json:",omitempty"`
 
 	Message       result.MatchedString `json:",omitempty"`
 	Diff          result.MatchedString `json:",omitempty"`
@@ -31,12 +32,12 @@ func (cm *CommitMatch) ToProto() *proto.CommitMatch {
 		parents = append(parents, string(parent))
 	}
 	return &proto.CommitMatch{
-		Oid:           string(cm.Oid),
-		Author:        SignatureToProto(&cm.Author),
-		Committer:     SignatureToProto(&cm.Committer),
-		Parents:       parents,
-		Refs:          cm.Refs,
-		SourceRefs:    cm.SourceRefs,
+		Oid:       string(cm.Oid),
+		Author:    SignatureToProto(&cm.Author),
+		Committer: SignatureToProto(&cm.Committer),
+		Parents:   parents,
+		// Refs:          cm.Refs,
+		// SourceRefs:    cm.SourceRefs,
 		Message:       matchedStringToProto(cm.Message),
 		Diff:          matchedStringToProto(cm.Diff),
 		ModifiedFiles: cm.ModifiedFiles,
@@ -49,12 +50,12 @@ func CommitMatchFromProto(p *proto.CommitMatch) CommitMatch {
 		parents = append(parents, api.CommitID(parent))
 	}
 	return CommitMatch{
-		Oid:           api.CommitID(p.GetOid()),
-		Author:        SignatureFromProto(p.GetAuthor()),
-		Committer:     SignatureFromProto(p.GetCommitter()),
-		Parents:       parents,
-		Refs:          p.GetRefs(),
-		SourceRefs:    p.GetSourceRefs(),
+		Oid:       api.CommitID(p.GetOid()),
+		Author:    SignatureFromProto(p.GetAuthor()),
+		Committer: SignatureFromProto(p.GetCommitter()),
+		Parents:   parents,
+		// Refs:          p.GetRefs(),
+		// SourceRefs:    p.GetSourceRefs(),
 		Message:       matchedStringFromProto(p.GetMessage()),
 		Diff:          matchedStringFromProto(p.GetDiff()),
 		ModifiedFiles: p.GetModifiedFiles(),

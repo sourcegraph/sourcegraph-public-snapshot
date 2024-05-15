@@ -24,10 +24,10 @@ type GitCommitClient struct {
 func (g *GitCommitClient) FirstCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
 	return g.cachedFirstCommit.GitFirstEverCommit(ctx, g.gitserverClient, repoName)
 }
-func (g *GitCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
+func (g *GitCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitserver.WrappedCommit, error) {
 	options := gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), Order: gitserver.CommitsOrderCommitDate}
 	if len(revision) > 0 {
-		options.Range = revision
+		options.Ranges = []string{revision}
 	}
 	return g.gitserverClient.Commits(ctx, repoName, options)
 }

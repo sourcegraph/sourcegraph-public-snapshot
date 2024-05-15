@@ -951,8 +951,8 @@ const (
 
 // CommitsOptions specifies options for Commits.
 type CommitsOptions struct {
-	AllRefs bool   // if true, all refs are searched for commits, not just a given range. When set, Range should not be specified.
-	Range   string // commit range (revspec, "A..B", "A...B", etc.)
+	AllRefs bool     // if true, all refs are searched for commits, not just a given range. When set, Range should not be specified.
+	Ranges  []string // commit range (revspec, "A..B", "A...B", etc.)
 
 	N    uint // limit the number of returned commits to this many (0 means no limit)
 	Skip uint // skip this many commits at the beginning
@@ -1016,7 +1016,7 @@ func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id
 	commit := gitdomain.CommitFromProto(res.GetCommit())
 
 	if subRepoEnabled {
-		ok, err := hasAccessToCommit(ctx, &wrappedCommit{Commit: commit, files: byteSlicesToStrings(res.GetModifiedFiles())}, repo, c.subRepoPermsChecker)
+		ok, err := hasAccessToCommit(ctx, &WrappedCommit{Commit: commit, ChangedFiles: byteSlicesToStrings(res.GetModifiedFiles())}, repo, c.subRepoPermsChecker)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to check sub repo permissions")
 		}
@@ -1029,7 +1029,7 @@ func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id
 }
 
 // Commits returns all commits matching the options.
-func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) (_ []*gitdomain.Commit, err error) {
+func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) (_ []*WrappedCommit, err error) {
 	opt = addNameOnly(opt, c.subRepoPermsChecker)
 	ctx, _, endObservation := c.operations.commits.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
@@ -1040,8 +1040,10 @@ func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt 
 	})
 	defer endObservation(1, observation.Args{})
 
-	if err := checkSpecArgSafety(opt.Range); err != nil {
-		return nil, err
+	for _, r := range opt.Ranges {
+		if err := checkSpecArgSafety(r); err != nil {
+			return nil, err
+		}
 	}
 
 	wrappedCommits, err := c.getWrappedCommits(ctx, repo, opt)
@@ -1060,14 +1062,14 @@ func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt 
 	return filtered, err
 }
 
-func filterCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, commits []*wrappedCommit, repoName api.RepoName) ([]*gitdomain.Commit, error) {
+func filterCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, commits []*WrappedCommit, repoName api.RepoName) ([]*WrappedCommit, error) {
 	if !authz.SubRepoEnabled(checker) {
-		return unWrapCommits(commits), nil
+		return commits, nil
 	}
-	filtered := make([]*gitdomain.Commit, 0, len(commits))
+	filtered := make([]*WrappedCommit, 0, len(commits))
 	for _, commit := range commits {
 		if hasAccess, err := hasAccessToCommit(ctx, commit, repoName, checker); hasAccess {
-			filtered = append(filtered, commit.Commit)
+			filtered = append(filtered, commit)
 		} else if err != nil {
 			return nil, err
 		}
@@ -1075,20 +1077,12 @@ func filterCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, 
 	return filtered, nil
 }
 
-func unWrapCommits(wrappedCommits []*wrappedCommit) []*gitdomain.Commit {
-	commits := make([]*gitdomain.Commit, 0, len(wrappedCommits))
-	for _, wc := range wrappedCommits {
-		commits = append(commits, wc.Commit)
-	}
-	return commits
-}
-
-func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.RepoName, checker authz.SubRepoPermissionChecker) (bool, error) {
+func hasAccessToCommit(ctx context.Context, commit *WrappedCommit, repoName api.RepoName, checker authz.SubRepoPermissionChecker) (bool, error) {
 	a := actor.FromContext(ctx)
-	if commit.files == nil || len(commit.files) == 0 {
+	if commit.ChangedFiles == nil || len(commit.ChangedFiles) == 0 {
 		return true, nil // If commit has no files, assume user has access to view the commit.
 	}
-	for _, fileName := range commit.files {
+	for _, fileName := range commit.ChangedFiles {
 		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repoName, fileName); err != nil {
 			return false, err
 		} else if hasAccess {
@@ -1103,7 +1097,7 @@ func isBadObjectErr(output, obj string) bool {
 	return output == "fatal: bad object "+obj
 }
 
-func (c *clientImplementor) getWrappedCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*wrappedCommit, error) {
+func (c *clientImplementor) getWrappedCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*WrappedCommit, error) {
 	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
 		return nil, err
@@ -1117,7 +1111,7 @@ func (c *clientImplementor) getWrappedCommits(ctx context.Context, repo api.Repo
 	return wrappedCommits, nil
 }
 
-func needMoreCommits(filtered []*gitdomain.Commit, commits []*wrappedCommit, opt CommitsOptions, checker authz.SubRepoPermissionChecker) bool {
+func needMoreCommits(filtered []*WrappedCommit, commits []*WrappedCommit, opt CommitsOptions, checker authz.SubRepoPermissionChecker) bool {
 	if !authz.SubRepoEnabled(checker) {
 		return false
 	}
@@ -1131,19 +1125,19 @@ func needMoreCommits(filtered []*gitdomain.Commit, commits []*wrappedCommit, opt
 }
 
 func isRequestForSingleCommit(opt CommitsOptions) bool {
-	return opt.Range != "" && opt.N == 1
+	return len(opt.Ranges) > 0 && opt.Ranges[0] != "" && opt.N == 1
 }
 
 // getMoreCommits handles the case where a specific number of commits was requested via CommitsOptions, but after sub-repo
 // filtering, fewer than that requested number was left. This function requests the next N commits (where N was the number
 // originally requested), filters the commits, and determines if this is at least N commits total after filtering. If not,
 // the loop continues until N total filtered commits are collected _or_ there are no commits left to request.
-func (c *clientImplementor) getMoreCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions, baselineCommits []*gitdomain.Commit) ([]*gitdomain.Commit, error) {
+func (c *clientImplementor) getMoreCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions, baselineCommits []*WrappedCommit) ([]*WrappedCommit, error) {
 	// We want to place an upper bound on the number of times we loop here so that we
 	// don't hit pathological conditions where a lot of filtering has been applied.
 	const maxIterations = 5
 
-	totalCommits := make([]*gitdomain.Commit, 0, opt.N)
+	totalCommits := make([]*WrappedCommit, 0, opt.N)
 	for range maxIterations {
 		if uint(len(totalCommits)) == opt.N {
 			break
@@ -1169,7 +1163,7 @@ func (c *clientImplementor) getMoreCommits(ctx context.Context, repo api.RepoNam
 	return totalCommits, nil
 }
 
-func joinCommits(previous, next []*gitdomain.Commit, desiredTotal uint) []*gitdomain.Commit {
+func joinCommits(previous, next []*WrappedCommit, desiredTotal uint) []*WrappedCommit {
 	allCommits := append(previous, next...)
 	// ensure that we don't return more than what was requested
 	if uint(len(allCommits)) > desiredTotal {
@@ -1181,12 +1175,14 @@ func joinCommits(previous, next []*gitdomain.Commit, desiredTotal uint) []*gitdo
 // runCommitLog sends the git command to gitserver. It interprets missing
 // revision responses and converts them into RevisionNotFoundError.
 // It is declared as a variable so that we can swap it out in tests
-var runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions) ([]*wrappedCommit, error) {
+var runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions) ([]*WrappedCommit, error) {
 	data, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		data = bytes.TrimSpace(data)
-		if isBadObjectErr(string(stderr), opt.Range) {
-			return nil, &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: opt.Range}
+		for _, r := range opt.Ranges {
+			if isBadObjectErr(string(stderr), r) {
+				return nil, &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: r}
+			}
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), data))
 	}
@@ -1194,14 +1190,14 @@ var runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions)
 	return parseCommitLogOutput(bytes.NewReader(data))
 }
 
-func parseCommitLogOutput(r io.Reader) ([]*wrappedCommit, error) {
+func parseCommitLogOutput(r io.Reader) ([]*WrappedCommit, error) {
 	commitScanner := bufio.NewScanner(r)
 	// We use an increased buffer size since sub-repo permissions
 	// can result in very lengthy output.
 	commitScanner.Buffer(make([]byte, 0, 65536), 4294967296)
 	commitScanner.Split(commitSplitFunc)
 
-	var commits []*wrappedCommit
+	var commits []*WrappedCommit
 	for commitScanner.Scan() {
 		rawCommit := commitScanner.Bytes()
 		parts := bytes.Split(rawCommit, []byte{'\x00'})
@@ -1245,14 +1241,16 @@ func commitSplitFunc(data []byte, atEOF bool) (advance int, token []byte, err er
 	return nextStart, data[1:nextStart], nil
 }
 
-type wrappedCommit struct {
+type WrappedCommit struct {
 	*gitdomain.Commit
-	files []string
+	ChangedFiles []string
 }
 
 func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err error) {
-	if err := checkSpecArgSafety(opt.Range); err != nil {
-		return nil, err
+	for _, r := range opt.Ranges {
+		if err := checkSpecArgSafety(r); err != nil {
+			return nil, err
+		}
 	}
 
 	args = initialArgs
@@ -1292,13 +1290,17 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 		args = append(args, "--first-parent")
 	}
 
-	if opt.Range != "" {
-		args = append(args, opt.Range)
+	for _, r := range opt.Ranges {
+		if r == "" {
+			args = append(args, "HEAD")
+			continue
+		}
+		args = append(args, r)
 	}
 	if opt.AllRefs {
 		args = append(args, "--all")
 	}
-	if opt.Range != "" && opt.AllRefs {
+	if len(opt.Ranges) > 0 && opt.AllRefs {
 		return nil, errors.New("cannot specify both a Range and AllRefs")
 	}
 	if opt.NameOnly {
@@ -1363,7 +1365,7 @@ const (
 // parseCommitFromLog parses the next commit from data and returns the commit and the remaining
 // data. The data arg is a byte array that contains NUL-separated log fields as formatted by
 // logFormatFlag.
-func parseCommitFromLog(parts [][]byte) (*wrappedCommit, error) {
+func parseCommitFromLog(parts [][]byte) (*WrappedCommit, error) {
 	// log outputs are newline separated, so all but the 1st commit ID part
 	// has an erroneous leading newline.
 	parts[0] = bytes.TrimPrefix(parts[0], []byte{'\n'})
@@ -1389,14 +1391,14 @@ func parseCommitFromLog(parts [][]byte) (*wrappedCommit, error) {
 
 	fileNames := strings.Split(string(bytes.TrimSpace(parts[9])), "\n")
 
-	return &wrappedCommit{
+	return &WrappedCommit{
 		Commit: &gitdomain.Commit{
 			ID:        commitID,
 			Author:    gitdomain.Signature{Name: string(parts[1]), Email: string(parts[2]), Date: time.Unix(authorTime, 0).UTC()},
 			Committer: &gitdomain.Signature{Name: string(parts[4]), Email: string(parts[5]), Date: time.Unix(committerTime, 0).UTC()},
 			Message:   gitdomain.Message(strings.TrimSuffix(string(parts[7]), "\n")),
 			Parents:   parents,
-		}, files: fileNames,
+		}, ChangedFiles: fileNames,
 	}, nil
 }
 
