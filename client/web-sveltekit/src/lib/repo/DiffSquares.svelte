@@ -33,11 +33,7 @@
 
 <span class="root">
     {#each squares as type}
-        <span
-            class="square"
-            class:added={type === SquareType.Added}
-            class:deleted={type === SquareType.Deleted}
-        />
+        <span class="square" class:added={type === SquareType.Added} class:deleted={type === SquareType.Deleted} />
     {/each}
 </span>
 
