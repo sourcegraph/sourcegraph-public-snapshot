@@ -37,7 +37,7 @@ func (l *LazyCommit) CommitterDate() (time.Time, error) {
 
 // RawDiff returns the diff exactly as returned by git diff-tree
 func (l *LazyCommit) RawDiff() (*gitserver.DiffFileIterator, error) {
-	return l.diffFetcher.Fetch(l.ctx, []byte(l.ID))
+	return l.diffFetcher.Fetch([]byte(l.ID))
 }
 
 // Diff fetches the diff, then parses it with go-diff, caching the result

@@ -112,6 +112,93 @@ func (c *clientImplementor) Diff(ctx context.Context, repo api.RepoName, opts Di
 	}, nil
 }
 
+type RawDiffIterator interface {
+	Next(api.CommitID) (io.Reader, error)
+	Close() error
+}
+
+func (c *clientImplementor) BatchRawDiff(ctx context.Context, repo api.RepoName) (_ RawDiffIterator, err error) {
+	ctx, _, endObservation := c.operations.batchRawDiff.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
+
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
+		endObservation(1, observation.Args{})
+		return nil, err
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+
+	cc, err := client.BatchRawDiff(ctx)
+	if err != nil {
+		cancel()
+		endObservation(1, observation.Args{})
+		return nil, err
+	}
+
+	return &batchRawDiffIterator{
+		ctx:        ctx,
+		operations: c.operations,
+		scope:      c.scope,
+		onClose: func() {
+			cancel()
+			endObservation(1, observation.Args{})
+		},
+		cc:   cc,
+		repo: repo,
+	}, nil
+}
+
+type batchRawDiffIterator struct {
+	operations *operations
+	scope      string
+	ctx        context.Context
+	onClose    func()
+	repo       api.RepoName
+	cc         proto.GitserverService_BatchRawDiffClient
+}
+
+func (i *batchRawDiffIterator) Next(sha api.CommitID) (_ io.Reader, err error) {
+	_, _, endObservation := i.operations.batchRawDiffSingle.With(i.ctx, &err, observation.Args{
+		MetricLabelValues: []string{i.scope},
+		Attrs: []attribute.KeyValue{
+			attribute.String("sha", string(sha)),
+		},
+	})
+
+	if err := i.cc.Send(&proto.RawDiffRequest{
+		RepoName:    string(i.repo),
+		HeadRevSpec: []byte(sha),
+	}); err != nil {
+		endObservation(1, observation.Args{})
+		return nil, err
+	}
+
+	return streamio.NewReader(func() ([]byte, error) {
+		m, err := i.cc.Recv()
+		if err != nil {
+			return nil, err
+		}
+		if m.GetEof() {
+			endObservation(1, observation.Args{})
+			return nil, io.EOF
+		}
+		return m.GetChunk(), nil
+	}), nil
+}
+
+func (i *batchRawDiffIterator) Close() error {
+	if err := i.cc.CloseSend(); err != nil {
+		return err
+	}
+	i.onClose()
+	return nil
+}
+
 type DiffFileIterator struct {
 	onClose        func()
 	mfdr           *diff.MultiFileDiffReader

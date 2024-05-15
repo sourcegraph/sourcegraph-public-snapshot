@@ -190,4 +190,8 @@ func (r *automaticRetryClient) ReadDir(ctx context.Context, in *proto.ReadDirReq
 	return r.base.ReadDir(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) BatchRawDiff(ctx context.Context, opts ...grpc.CallOption) (proto.GitserverService_BatchRawDiffClient, error) {
+	return r.base.BatchRawDiff(ctx, opts...)
+}
+
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

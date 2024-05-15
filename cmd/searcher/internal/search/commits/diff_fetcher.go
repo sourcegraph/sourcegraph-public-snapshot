@@ -2,6 +2,7 @@ package commits
 
 import (
 	"context"
+	"io"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -10,7 +11,8 @@ import (
 // DiffFetcher is a handle to the stdin and stdout of a git diff-tree subprocess
 // started with StartDiffFetcher
 type DiffFetcher struct {
-	repo api.RepoName
+	df gitserver.RawDiffIterator
+	// repo api.RepoName
 	// dir string
 
 	// startOnce sync.Once
@@ -23,12 +25,18 @@ type DiffFetcher struct {
 
 // NewDiffFetcher starts a git diff-tree subprocess that waits, listening on stdin
 // for comimt hashes to generate patches for.
-func NewDiffFetcher(repo api.RepoName) (*DiffFetcher, error) {
+func NewDiffFetcher(ctx context.Context, repo api.RepoName) (*DiffFetcher, error) {
+	gs := gitserver.NewClient("search.commitdsearch.diff-fetcher")
+	df, err := gs.BatchRawDiff(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
 
-	return &DiffFetcher{repo: repo}, nil
+	return &DiffFetcher{df: df}, nil
 }
 
 func (d *DiffFetcher) Stop() {
+	d.df.Close()
 	// if d.cancel != nil {
 	// 	d.cancel()
 	// 	d.cmd.Wait()
@@ -90,13 +98,13 @@ func (d *DiffFetcher) start() (err error) {
 
 // Fetch fetches a diff from the git diff-tree subprocess, writing to its stdin
 // and waiting for its response on stdout. Note that this is not safe to call concurrently.
-func (d *DiffFetcher) Fetch(ctx context.Context, hash []byte) (*gitserver.DiffFileIterator, error) {
-	gs := gitserver.NewClient("search.commitdsearch.diff-fetcher")
-	return gs.Diff(ctx, d.repo, gitserver.DiffOptions{
-		// TODO: Maybe a better way to mention a commit vs a range in this API.
-		Base: string(hash) + "^",
-		Head: string(hash),
-	})
+func (d *DiffFetcher) Fetch(hash []byte) (*gitserver.DiffFileIterator, error) {
+	r, err := d.df.Next(api.CommitID(hash))
+	if err != nil {
+		return nil, err
+	}
+
+	return gitserver.NewDiffFileIterator(io.NopCloser(r)), nil
 	// if err := d.start(); err != nil {
 	// 	return nil, err
 	// }

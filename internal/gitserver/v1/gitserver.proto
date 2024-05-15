@@ -253,6 +253,9 @@ service GitserverService {
   rpc RawDiff(RawDiffRequest) returns (stream RawDiffResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  rpc BatchRawDiff(stream RawDiffRequest) returns (stream BatchRawDiffResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ContributorCounts returns the number of commits grouped by commit author.
   //
   // If the given repo is not cloned, it will be enqueued for cloning and a
@@ -398,6 +401,12 @@ message RawDiffRequest {
 message RawDiffResponse {
   // chunk is the raw diff chunk.
   bytes chunk = 1;
+}
+
+message BatchRawDiffResponse {
+  // chunk is the raw diff chunk.
+  bytes chunk = 1;
+  bool eof = 2;
 }
 
 message ListRefsRequest {

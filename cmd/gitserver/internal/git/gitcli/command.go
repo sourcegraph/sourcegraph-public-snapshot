@@ -48,7 +48,8 @@ var (
 type commandOpts struct {
 	arguments []string
 
-	stdin io.Reader
+	stderr io.Writer
+	stdin  io.Reader
 }
 
 func optsFromFuncs(optFns ...CommandOptionFunc) commandOpts {
@@ -72,6 +73,13 @@ func WithArguments(args ...string) CommandOptionFunc {
 func WithStdin(stdin io.Reader) CommandOptionFunc {
 	return func(o *commandOpts) {
 		o.stdin = stdin
+	}
+}
+
+// WithStderr specifies a writer to use for the command's stderr output.
+func WithStderr(stderr io.Writer) CommandOptionFunc {
+	return func(o *commandOpts) {
+		o.stderr = stderr
 	}
 }
 
@@ -138,6 +146,9 @@ func (g *gitCLIBackend) NewCommand(ctx context.Context, optFns ...CommandOptionF
 	cmd.SysProcAttr.Setpgid = true
 
 	stderr, stderrBuf := stderrBuffer()
+	if opts.stderr != nil {
+		stderr = io.MultiWriter(stderr, opts.stderr)
+	}
 	cmd.Stderr = stderr
 
 	wrappedCmd := g.rcf.WrapWithRepoName(ctx, logger, g.repoName, cmd)

@@ -27,7 +27,7 @@ var (
 		"show":      append([]string{}, gitCommonAllowlist...),
 		"remote":    {"-v"},
 		"diff":      append([]string{}, gitCommonAllowlist...),
-		"diff-tree": append([]string{"--root"}, gitCommonAllowlist...),
+		"diff-tree": append([]string{"--root", "--stdin", "--no-prefix", "-p", "--format"}, gitCommonAllowlist...),
 		"blame":     {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
 		"branch":    {"-r", "-a", "--contains", "--merged", "--format"},
 

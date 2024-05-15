@@ -743,3 +743,20 @@ func cmpPathStatus(x, y gitdomain.PathStatus) bool {
 
 	return x.Path < y.Path
 }
+
+func TestSplitReader(t *testing.T) {
+	data := "Hello, World! This is a test."
+	sep := []byte("World")
+
+	r := bytes.NewReader([]byte(data))
+
+	reader := splitReader(r, sep)
+	out, err := io.ReadAll(reader)
+	require.NoError(t, err)
+	require.Equal(t, "Hello, ", string(out))
+
+	reader = splitReader(r, sep)
+	out, err = io.ReadAll(reader)
+	require.NoError(t, err)
+	require.Equal(t, "! This is a test.", string(out))
+}

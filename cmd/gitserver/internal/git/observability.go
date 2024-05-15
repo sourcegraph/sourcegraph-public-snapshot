@@ -480,6 +480,47 @@ func (b *observableBackend) RefHash(ctx context.Context) (_ []byte, err error) {
 	return b.backend.RefHash(ctx)
 }
 
+func (b *observableBackend) DiffFetcher(ctx context.Context) (_ DiffFetcher, err error) {
+	ctx, errCollector, endObservation := b.operations.diffFetcher.WithErrors(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{},
+	})
+	ctx, cancel := context.WithCancel(ctx)
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	concurrentOps.WithLabelValues("DiffFetcher").Inc()
+
+	it, err := b.backend.DiffFetcher(ctx)
+	if err != nil {
+		concurrentOps.WithLabelValues("DiffFetcher").Dec()
+		cancel()
+		return nil, err
+	}
+
+	return &observableDiffFetcher{
+		inner: it,
+		onClose: func(err error) {
+			concurrentOps.WithLabelValues("DiffFetcher").Dec()
+			errCollector.Collect(&err)
+			cancel()
+		},
+	}, nil
+}
+
+type observableDiffFetcher struct {
+	inner   DiffFetcher
+	onClose func(err error)
+}
+
+func (hr *observableDiffFetcher) Fetch(sha api.CommitID) (io.Reader, error) {
+	return hr.inner.Fetch(sha)
+}
+
+func (hr *observableDiffFetcher) Close() error {
+	err := hr.inner.Close()
+	hr.onClose(err)
+	return err
+}
+
 type operations struct {
 	configGet             *observation.Operation
 	configSet             *observation.Operation
@@ -505,6 +546,7 @@ type operations struct {
 	readDir               *observation.Operation
 	latestCommitTimestamp *observation.Operation
 	refHash               *observation.Operation
+	diffFetcher           *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -557,6 +599,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		readDir:               op("read-dir"),
 		latestCommitTimestamp: op("latest-commit-timestamp"),
 		refHash:               op("ref-hash"),
+		diffFetcher:           op("diff-fetcher"),
 	}
 }
 

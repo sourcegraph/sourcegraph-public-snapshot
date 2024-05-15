@@ -447,6 +447,8 @@ type Client interface {
 	// longer required.
 	Diff(ctx context.Context, repo api.RepoName, opts DiffOptions) (*DiffFileIterator, error)
 
+	BatchRawDiff(ctx context.Context, repo api.RepoName) (RawDiffIterator, error)
+
 	// GetCommit returns the commit with the given commit ID, or RevisionNotFoundError if no such commit
 	// exists.
 	GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (*gitdomain.Commit, error)

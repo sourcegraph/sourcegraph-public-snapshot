@@ -221,7 +221,7 @@ func (x GitRef_RefType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GitRef_RefType.Descriptor instead.
 func (GitRef_RefType) EnumDescriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{13, 0}
+	return file_gitserver_proto_rawDescGZIP(), []int{14, 0}
 }
 
 type GitObject_ObjectType int32
@@ -276,7 +276,7 @@ func (x GitObject_ObjectType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GitObject_ObjectType.Descriptor instead.
 func (GitObject_ObjectType) EnumDescriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{76, 0}
+	return file_gitserver_proto_rawDescGZIP(), []int{77, 0}
 }
 
 // PerforceChangelistState is the valid state values of a Perforce changelist.
@@ -334,7 +334,7 @@ func (x PerforceChangelist_PerforceChangelistState) Number() protoreflect.EnumNu
 
 // Deprecated: Use PerforceChangelist_PerforceChangelistState.Descriptor instead.
 func (PerforceChangelist_PerforceChangelistState) EnumDescriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{84, 0}
+	return file_gitserver_proto_rawDescGZIP(), []int{85, 0}
 }
 
 // status is the status of the path.
@@ -390,7 +390,7 @@ func (x ChangedFile_Status) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ChangedFile_Status.Descriptor instead.
 func (ChangedFile_Status) EnumDescriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{105, 0}
+	return file_gitserver_proto_rawDescGZIP(), []int{106, 0}
 }
 
 type ListRepositoriesRequest struct {
@@ -1024,6 +1024,62 @@ func (x *RawDiffResponse) GetChunk() []byte {
 	return nil
 }
 
+type BatchRawDiffResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// chunk is the raw diff chunk.
+	Chunk []byte `protobuf:"bytes,1,opt,name=chunk,proto3" json:"chunk,omitempty"`
+	Eof   bool   `protobuf:"varint,2,opt,name=eof,proto3" json:"eof,omitempty"`
+}
+
+func (x *BatchRawDiffResponse) Reset() {
+	*x = BatchRawDiffResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gitserver_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BatchRawDiffResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchRawDiffResponse) ProtoMessage() {}
+
+func (x *BatchRawDiffResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_gitserver_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchRawDiffResponse.ProtoReflect.Descriptor instead.
+func (*BatchRawDiffResponse) Descriptor() ([]byte, []int) {
+	return file_gitserver_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *BatchRawDiffResponse) GetChunk() []byte {
+	if x != nil {
+		return x.Chunk
+	}
+	return nil
+}
+
+func (x *BatchRawDiffResponse) GetEof() bool {
+	if x != nil {
+		return x.Eof
+	}
+	return false
+}
+
 type ListRefsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1046,7 +1102,7 @@ type ListRefsRequest struct {
 func (x *ListRefsRequest) Reset() {
 	*x = ListRefsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[11]
+		mi := &file_gitserver_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1059,7 +1115,7 @@ func (x *ListRefsRequest) String() string {
 func (*ListRefsRequest) ProtoMessage() {}
 
 func (x *ListRefsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[11]
+	mi := &file_gitserver_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1072,7 +1128,7 @@ func (x *ListRefsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRefsRequest.ProtoReflect.Descriptor instead.
 func (*ListRefsRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{11}
+	return file_gitserver_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ListRefsRequest) GetRepoName() string {
@@ -1121,7 +1177,7 @@ type ListRefsResponse struct {
 func (x *ListRefsResponse) Reset() {
 	*x = ListRefsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[12]
+		mi := &file_gitserver_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1134,7 +1190,7 @@ func (x *ListRefsResponse) String() string {
 func (*ListRefsResponse) ProtoMessage() {}
 
 func (x *ListRefsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[12]
+	mi := &file_gitserver_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1147,7 +1203,7 @@ func (x *ListRefsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRefsResponse.ProtoReflect.Descriptor instead.
 func (*ListRefsResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{12}
+	return file_gitserver_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ListRefsResponse) GetRefs() []*GitRef {
@@ -1188,7 +1244,7 @@ type GitRef struct {
 func (x *GitRef) Reset() {
 	*x = GitRef{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[13]
+		mi := &file_gitserver_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1201,7 +1257,7 @@ func (x *GitRef) String() string {
 func (*GitRef) ProtoMessage() {}
 
 func (x *GitRef) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[13]
+	mi := &file_gitserver_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1214,7 +1270,7 @@ func (x *GitRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GitRef.ProtoReflect.Descriptor instead.
 func (*GitRef) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{13}
+	return file_gitserver_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GitRef) GetRefName() []byte {
@@ -1283,7 +1339,7 @@ type StatRequest struct {
 func (x *StatRequest) Reset() {
 	*x = StatRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[14]
+		mi := &file_gitserver_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1296,7 +1352,7 @@ func (x *StatRequest) String() string {
 func (*StatRequest) ProtoMessage() {}
 
 func (x *StatRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[14]
+	mi := &file_gitserver_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1309,7 +1365,7 @@ func (x *StatRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StatRequest.ProtoReflect.Descriptor instead.
 func (*StatRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{14}
+	return file_gitserver_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *StatRequest) GetRepoName() string {
@@ -1344,7 +1400,7 @@ type StatResponse struct {
 func (x *StatResponse) Reset() {
 	*x = StatResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[15]
+		mi := &file_gitserver_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1357,7 +1413,7 @@ func (x *StatResponse) String() string {
 func (*StatResponse) ProtoMessage() {}
 
 func (x *StatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[15]
+	mi := &file_gitserver_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1370,7 +1426,7 @@ func (x *StatResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StatResponse.ProtoReflect.Descriptor instead.
 func (*StatResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{15}
+	return file_gitserver_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *StatResponse) GetFileInfo() *FileInfo {
@@ -1399,7 +1455,7 @@ type ReadDirRequest struct {
 func (x *ReadDirRequest) Reset() {
 	*x = ReadDirRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[16]
+		mi := &file_gitserver_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1412,7 +1468,7 @@ func (x *ReadDirRequest) String() string {
 func (*ReadDirRequest) ProtoMessage() {}
 
 func (x *ReadDirRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[16]
+	mi := &file_gitserver_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1425,7 +1481,7 @@ func (x *ReadDirRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadDirRequest.ProtoReflect.Descriptor instead.
 func (*ReadDirRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{16}
+	return file_gitserver_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ReadDirRequest) GetRepoName() string {
@@ -1467,7 +1523,7 @@ type ReadDirResponse struct {
 func (x *ReadDirResponse) Reset() {
 	*x = ReadDirResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[17]
+		mi := &file_gitserver_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1480,7 +1536,7 @@ func (x *ReadDirResponse) String() string {
 func (*ReadDirResponse) ProtoMessage() {}
 
 func (x *ReadDirResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[17]
+	mi := &file_gitserver_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1493,7 +1549,7 @@ func (x *ReadDirResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadDirResponse.ProtoReflect.Descriptor instead.
 func (*ReadDirResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{17}
+	return file_gitserver_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ReadDirResponse) GetFileInfo() []*FileInfo {
@@ -1520,7 +1576,7 @@ type GitSubmodule struct {
 func (x *GitSubmodule) Reset() {
 	*x = GitSubmodule{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[18]
+		mi := &file_gitserver_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1533,7 +1589,7 @@ func (x *GitSubmodule) String() string {
 func (*GitSubmodule) ProtoMessage() {}
 
 func (x *GitSubmodule) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[18]
+	mi := &file_gitserver_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1546,7 +1602,7 @@ func (x *GitSubmodule) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GitSubmodule.ProtoReflect.Descriptor instead.
 func (*GitSubmodule) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{18}
+	return file_gitserver_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GitSubmodule) GetUrl() string {
@@ -1590,7 +1646,7 @@ type FileInfo struct {
 func (x *FileInfo) Reset() {
 	*x = FileInfo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[19]
+		mi := &file_gitserver_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1603,7 +1659,7 @@ func (x *FileInfo) String() string {
 func (*FileInfo) ProtoMessage() {}
 
 func (x *FileInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[19]
+	mi := &file_gitserver_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1616,7 +1672,7 @@ func (x *FileInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileInfo.ProtoReflect.Descriptor instead.
 func (*FileInfo) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{19}
+	return file_gitserver_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *FileInfo) GetName() []byte {
@@ -1676,7 +1732,7 @@ type ResolveRevisionRequest struct {
 func (x *ResolveRevisionRequest) Reset() {
 	*x = ResolveRevisionRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[20]
+		mi := &file_gitserver_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1689,7 +1745,7 @@ func (x *ResolveRevisionRequest) String() string {
 func (*ResolveRevisionRequest) ProtoMessage() {}
 
 func (x *ResolveRevisionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[20]
+	mi := &file_gitserver_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1702,7 +1758,7 @@ func (x *ResolveRevisionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResolveRevisionRequest.ProtoReflect.Descriptor instead.
 func (*ResolveRevisionRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{20}
+	return file_gitserver_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ResolveRevisionRequest) GetRepoName() string {
@@ -1738,7 +1794,7 @@ type ResolveRevisionResponse struct {
 func (x *ResolveRevisionResponse) Reset() {
 	*x = ResolveRevisionResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[21]
+		mi := &file_gitserver_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1751,7 +1807,7 @@ func (x *ResolveRevisionResponse) String() string {
 func (*ResolveRevisionResponse) ProtoMessage() {}
 
 func (x *ResolveRevisionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[21]
+	mi := &file_gitserver_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1764,7 +1820,7 @@ func (x *ResolveRevisionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResolveRevisionResponse.ProtoReflect.Descriptor instead.
 func (*ResolveRevisionResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{21}
+	return file_gitserver_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ResolveRevisionResponse) GetCommitSha() string {
@@ -1795,7 +1851,7 @@ type RevAtTimeRequest struct {
 func (x *RevAtTimeRequest) Reset() {
 	*x = RevAtTimeRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[22]
+		mi := &file_gitserver_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1808,7 +1864,7 @@ func (x *RevAtTimeRequest) String() string {
 func (*RevAtTimeRequest) ProtoMessage() {}
 
 func (x *RevAtTimeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[22]
+	mi := &file_gitserver_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1821,7 +1877,7 @@ func (x *RevAtTimeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevAtTimeRequest.ProtoReflect.Descriptor instead.
 func (*RevAtTimeRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{22}
+	return file_gitserver_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *RevAtTimeRequest) GetRepoName() string {
@@ -1857,7 +1913,7 @@ type RevAtTimeResponse struct {
 func (x *RevAtTimeResponse) Reset() {
 	*x = RevAtTimeResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[23]
+		mi := &file_gitserver_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1870,7 +1926,7 @@ func (x *RevAtTimeResponse) String() string {
 func (*RevAtTimeResponse) ProtoMessage() {}
 
 func (x *RevAtTimeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[23]
+	mi := &file_gitserver_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1883,7 +1939,7 @@ func (x *RevAtTimeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevAtTimeResponse.ProtoReflect.Descriptor instead.
 func (*RevAtTimeResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{23}
+	return file_gitserver_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *RevAtTimeResponse) GetCommitSha() string {
@@ -1910,7 +1966,7 @@ type GetCommitRequest struct {
 func (x *GetCommitRequest) Reset() {
 	*x = GetCommitRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[24]
+		mi := &file_gitserver_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1923,7 +1979,7 @@ func (x *GetCommitRequest) String() string {
 func (*GetCommitRequest) ProtoMessage() {}
 
 func (x *GetCommitRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[24]
+	mi := &file_gitserver_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1936,7 +1992,7 @@ func (x *GetCommitRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCommitRequest.ProtoReflect.Descriptor instead.
 func (*GetCommitRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{24}
+	return file_gitserver_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetCommitRequest) GetRepoName() string {
@@ -1975,7 +2031,7 @@ type GetCommitResponse struct {
 func (x *GetCommitResponse) Reset() {
 	*x = GetCommitResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[25]
+		mi := &file_gitserver_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1988,7 +2044,7 @@ func (x *GetCommitResponse) String() string {
 func (*GetCommitResponse) ProtoMessage() {}
 
 func (x *GetCommitResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[25]
+	mi := &file_gitserver_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2001,7 +2057,7 @@ func (x *GetCommitResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCommitResponse.ProtoReflect.Descriptor instead.
 func (*GetCommitResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{25}
+	return file_gitserver_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetCommitResponse) GetCommit() *GitCommit {
@@ -2033,7 +2089,7 @@ type GitCommit struct {
 func (x *GitCommit) Reset() {
 	*x = GitCommit{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[26]
+		mi := &file_gitserver_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2046,7 +2102,7 @@ func (x *GitCommit) String() string {
 func (*GitCommit) ProtoMessage() {}
 
 func (x *GitCommit) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[26]
+	mi := &file_gitserver_proto_msgTypes[27]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2059,7 +2115,7 @@ func (x *GitCommit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GitCommit.ProtoReflect.Descriptor instead.
 func (*GitCommit) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{26}
+	return file_gitserver_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *GitCommit) GetOid() string {
@@ -2110,7 +2166,7 @@ type GitSignature struct {
 func (x *GitSignature) Reset() {
 	*x = GitSignature{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[27]
+		mi := &file_gitserver_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2123,7 +2179,7 @@ func (x *GitSignature) String() string {
 func (*GitSignature) ProtoMessage() {}
 
 func (x *GitSignature) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[27]
+	mi := &file_gitserver_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2136,7 +2192,7 @@ func (x *GitSignature) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GitSignature.ProtoReflect.Descriptor instead.
 func (*GitSignature) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{27}
+	return file_gitserver_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GitSignature) GetName() []byte {
@@ -2178,7 +2234,7 @@ type BlameRequest struct {
 func (x *BlameRequest) Reset() {
 	*x = BlameRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[28]
+		mi := &file_gitserver_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2191,7 +2247,7 @@ func (x *BlameRequest) String() string {
 func (*BlameRequest) ProtoMessage() {}
 
 func (x *BlameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[28]
+	mi := &file_gitserver_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2204,7 +2260,7 @@ func (x *BlameRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlameRequest.ProtoReflect.Descriptor instead.
 func (*BlameRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{28}
+	return file_gitserver_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *BlameRequest) GetRepoName() string {
@@ -2254,7 +2310,7 @@ type BlameRange struct {
 func (x *BlameRange) Reset() {
 	*x = BlameRange{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[29]
+		mi := &file_gitserver_proto_msgTypes[30]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2267,7 +2323,7 @@ func (x *BlameRange) String() string {
 func (*BlameRange) ProtoMessage() {}
 
 func (x *BlameRange) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[29]
+	mi := &file_gitserver_proto_msgTypes[30]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2280,7 +2336,7 @@ func (x *BlameRange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlameRange.ProtoReflect.Descriptor instead.
 func (*BlameRange) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{29}
+	return file_gitserver_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *BlameRange) GetStartLine() uint32 {
@@ -2308,7 +2364,7 @@ type BlameResponse struct {
 func (x *BlameResponse) Reset() {
 	*x = BlameResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[30]
+		mi := &file_gitserver_proto_msgTypes[31]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2321,7 +2377,7 @@ func (x *BlameResponse) String() string {
 func (*BlameResponse) ProtoMessage() {}
 
 func (x *BlameResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[30]
+	mi := &file_gitserver_proto_msgTypes[31]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2334,7 +2390,7 @@ func (x *BlameResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlameResponse.ProtoReflect.Descriptor instead.
 func (*BlameResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{30}
+	return file_gitserver_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *BlameResponse) GetHunk() *BlameHunk {
@@ -2363,7 +2419,7 @@ type BlameHunk struct {
 func (x *BlameHunk) Reset() {
 	*x = BlameHunk{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[31]
+		mi := &file_gitserver_proto_msgTypes[32]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2376,7 +2432,7 @@ func (x *BlameHunk) String() string {
 func (*BlameHunk) ProtoMessage() {}
 
 func (x *BlameHunk) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[31]
+	mi := &file_gitserver_proto_msgTypes[32]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2389,7 +2445,7 @@ func (x *BlameHunk) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlameHunk.ProtoReflect.Descriptor instead.
 func (*BlameHunk) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{31}
+	return file_gitserver_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *BlameHunk) GetStartLine() uint32 {
@@ -2468,7 +2524,7 @@ type BlameAuthor struct {
 func (x *BlameAuthor) Reset() {
 	*x = BlameAuthor{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[32]
+		mi := &file_gitserver_proto_msgTypes[33]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2481,7 +2537,7 @@ func (x *BlameAuthor) String() string {
 func (*BlameAuthor) ProtoMessage() {}
 
 func (x *BlameAuthor) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[32]
+	mi := &file_gitserver_proto_msgTypes[33]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2494,7 +2550,7 @@ func (x *BlameAuthor) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlameAuthor.ProtoReflect.Descriptor instead.
 func (*BlameAuthor) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{32}
+	return file_gitserver_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *BlameAuthor) GetName() string {
@@ -2530,7 +2586,7 @@ type PreviousCommit struct {
 func (x *PreviousCommit) Reset() {
 	*x = PreviousCommit{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[33]
+		mi := &file_gitserver_proto_msgTypes[34]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2543,7 +2599,7 @@ func (x *PreviousCommit) String() string {
 func (*PreviousCommit) ProtoMessage() {}
 
 func (x *PreviousCommit) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[33]
+	mi := &file_gitserver_proto_msgTypes[34]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2556,7 +2612,7 @@ func (x *PreviousCommit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreviousCommit.ProtoReflect.Descriptor instead.
 func (*PreviousCommit) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{33}
+	return file_gitserver_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *PreviousCommit) GetCommit() string {
@@ -2587,7 +2643,7 @@ type DefaultBranchRequest struct {
 func (x *DefaultBranchRequest) Reset() {
 	*x = DefaultBranchRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[34]
+		mi := &file_gitserver_proto_msgTypes[35]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2600,7 +2656,7 @@ func (x *DefaultBranchRequest) String() string {
 func (*DefaultBranchRequest) ProtoMessage() {}
 
 func (x *DefaultBranchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[34]
+	mi := &file_gitserver_proto_msgTypes[35]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2613,7 +2669,7 @@ func (x *DefaultBranchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DefaultBranchRequest.ProtoReflect.Descriptor instead.
 func (*DefaultBranchRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{34}
+	return file_gitserver_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *DefaultBranchRequest) GetRepoName() string {
@@ -2642,7 +2698,7 @@ type DefaultBranchResponse struct {
 func (x *DefaultBranchResponse) Reset() {
 	*x = DefaultBranchResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[35]
+		mi := &file_gitserver_proto_msgTypes[36]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2655,7 +2711,7 @@ func (x *DefaultBranchResponse) String() string {
 func (*DefaultBranchResponse) ProtoMessage() {}
 
 func (x *DefaultBranchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[35]
+	mi := &file_gitserver_proto_msgTypes[36]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2668,7 +2724,7 @@ func (x *DefaultBranchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DefaultBranchResponse.ProtoReflect.Descriptor instead.
 func (*DefaultBranchResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{35}
+	return file_gitserver_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *DefaultBranchResponse) GetRefName() string {
@@ -2700,7 +2756,7 @@ type ReadFileRequest struct {
 func (x *ReadFileRequest) Reset() {
 	*x = ReadFileRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[36]
+		mi := &file_gitserver_proto_msgTypes[37]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2713,7 +2769,7 @@ func (x *ReadFileRequest) String() string {
 func (*ReadFileRequest) ProtoMessage() {}
 
 func (x *ReadFileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[36]
+	mi := &file_gitserver_proto_msgTypes[37]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2726,7 +2782,7 @@ func (x *ReadFileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadFileRequest.ProtoReflect.Descriptor instead.
 func (*ReadFileRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{36}
+	return file_gitserver_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *ReadFileRequest) GetRepoName() string {
@@ -2761,7 +2817,7 @@ type ReadFileResponse struct {
 func (x *ReadFileResponse) Reset() {
 	*x = ReadFileResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[37]
+		mi := &file_gitserver_proto_msgTypes[38]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2774,7 +2830,7 @@ func (x *ReadFileResponse) String() string {
 func (*ReadFileResponse) ProtoMessage() {}
 
 func (x *ReadFileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[37]
+	mi := &file_gitserver_proto_msgTypes[38]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2787,7 +2843,7 @@ func (x *ReadFileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadFileResponse.ProtoReflect.Descriptor instead.
 func (*ReadFileResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{37}
+	return file_gitserver_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *ReadFileResponse) GetData() []byte {
@@ -2807,7 +2863,7 @@ type DiskInfoRequest struct {
 func (x *DiskInfoRequest) Reset() {
 	*x = DiskInfoRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[38]
+		mi := &file_gitserver_proto_msgTypes[39]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2820,7 +2876,7 @@ func (x *DiskInfoRequest) String() string {
 func (*DiskInfoRequest) ProtoMessage() {}
 
 func (x *DiskInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[38]
+	mi := &file_gitserver_proto_msgTypes[39]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2833,7 +2889,7 @@ func (x *DiskInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiskInfoRequest.ProtoReflect.Descriptor instead.
 func (*DiskInfoRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{38}
+	return file_gitserver_proto_rawDescGZIP(), []int{39}
 }
 
 // DiskInfoResponse contains the results of the DiskInfo RPC request.
@@ -2853,7 +2909,7 @@ type DiskInfoResponse struct {
 func (x *DiskInfoResponse) Reset() {
 	*x = DiskInfoResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[39]
+		mi := &file_gitserver_proto_msgTypes[40]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2866,7 +2922,7 @@ func (x *DiskInfoResponse) String() string {
 func (*DiskInfoResponse) ProtoMessage() {}
 
 func (x *DiskInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[39]
+	mi := &file_gitserver_proto_msgTypes[40]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2879,7 +2935,7 @@ func (x *DiskInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiskInfoResponse.ProtoReflect.Descriptor instead.
 func (*DiskInfoResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{39}
+	return file_gitserver_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *DiskInfoResponse) GetFreeSpace() uint64 {
@@ -2925,7 +2981,7 @@ type PatchCommitInfo struct {
 func (x *PatchCommitInfo) Reset() {
 	*x = PatchCommitInfo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[40]
+		mi := &file_gitserver_proto_msgTypes[41]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2938,7 +2994,7 @@ func (x *PatchCommitInfo) String() string {
 func (*PatchCommitInfo) ProtoMessage() {}
 
 func (x *PatchCommitInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[40]
+	mi := &file_gitserver_proto_msgTypes[41]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2951,7 +3007,7 @@ func (x *PatchCommitInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PatchCommitInfo.ProtoReflect.Descriptor instead.
 func (*PatchCommitInfo) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{40}
+	return file_gitserver_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *PatchCommitInfo) GetMessages() []string {
@@ -3017,7 +3073,7 @@ type PushConfig struct {
 func (x *PushConfig) Reset() {
 	*x = PushConfig{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[41]
+		mi := &file_gitserver_proto_msgTypes[42]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3030,7 +3086,7 @@ func (x *PushConfig) String() string {
 func (*PushConfig) ProtoMessage() {}
 
 func (x *PushConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[41]
+	mi := &file_gitserver_proto_msgTypes[42]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3043,7 +3099,7 @@ func (x *PushConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PushConfig.ProtoReflect.Descriptor instead.
 func (*PushConfig) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{41}
+	return file_gitserver_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *PushConfig) GetRemoteUrl() string {
@@ -3084,7 +3140,7 @@ type CreateCommitFromPatchBinaryRequest struct {
 func (x *CreateCommitFromPatchBinaryRequest) Reset() {
 	*x = CreateCommitFromPatchBinaryRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[42]
+		mi := &file_gitserver_proto_msgTypes[43]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3097,7 +3153,7 @@ func (x *CreateCommitFromPatchBinaryRequest) String() string {
 func (*CreateCommitFromPatchBinaryRequest) ProtoMessage() {}
 
 func (x *CreateCommitFromPatchBinaryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[42]
+	mi := &file_gitserver_proto_msgTypes[43]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3110,7 +3166,7 @@ func (x *CreateCommitFromPatchBinaryRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use CreateCommitFromPatchBinaryRequest.ProtoReflect.Descriptor instead.
 func (*CreateCommitFromPatchBinaryRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{42}
+	return file_gitserver_proto_rawDescGZIP(), []int{43}
 }
 
 func (m *CreateCommitFromPatchBinaryRequest) GetPayload() isCreateCommitFromPatchBinaryRequest_Payload {
@@ -3168,7 +3224,7 @@ type CreateCommitFromPatchError struct {
 func (x *CreateCommitFromPatchError) Reset() {
 	*x = CreateCommitFromPatchError{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[43]
+		mi := &file_gitserver_proto_msgTypes[44]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3181,7 +3237,7 @@ func (x *CreateCommitFromPatchError) String() string {
 func (*CreateCommitFromPatchError) ProtoMessage() {}
 
 func (x *CreateCommitFromPatchError) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[43]
+	mi := &file_gitserver_proto_msgTypes[44]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3194,7 +3250,7 @@ func (x *CreateCommitFromPatchError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCommitFromPatchError.ProtoReflect.Descriptor instead.
 func (*CreateCommitFromPatchError) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{43}
+	return file_gitserver_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *CreateCommitFromPatchError) GetRepositoryName() string {
@@ -3241,7 +3297,7 @@ type CreateCommitFromPatchBinaryResponse struct {
 func (x *CreateCommitFromPatchBinaryResponse) Reset() {
 	*x = CreateCommitFromPatchBinaryResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[44]
+		mi := &file_gitserver_proto_msgTypes[45]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3254,7 +3310,7 @@ func (x *CreateCommitFromPatchBinaryResponse) String() string {
 func (*CreateCommitFromPatchBinaryResponse) ProtoMessage() {}
 
 func (x *CreateCommitFromPatchBinaryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[44]
+	mi := &file_gitserver_proto_msgTypes[45]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3267,7 +3323,7 @@ func (x *CreateCommitFromPatchBinaryResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use CreateCommitFromPatchBinaryResponse.ProtoReflect.Descriptor instead.
 func (*CreateCommitFromPatchBinaryResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{44}
+	return file_gitserver_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *CreateCommitFromPatchBinaryResponse) GetRev() string {
@@ -3301,7 +3357,7 @@ type ExecRequest struct {
 func (x *ExecRequest) Reset() {
 	*x = ExecRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[45]
+		mi := &file_gitserver_proto_msgTypes[46]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3314,7 +3370,7 @@ func (x *ExecRequest) String() string {
 func (*ExecRequest) ProtoMessage() {}
 
 func (x *ExecRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[45]
+	mi := &file_gitserver_proto_msgTypes[46]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3327,7 +3383,7 @@ func (x *ExecRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecRequest.ProtoReflect.Descriptor instead.
 func (*ExecRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{45}
+	return file_gitserver_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *ExecRequest) GetRepo() string {
@@ -3378,7 +3434,7 @@ type ExecResponse struct {
 func (x *ExecResponse) Reset() {
 	*x = ExecResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[46]
+		mi := &file_gitserver_proto_msgTypes[47]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3391,7 +3447,7 @@ func (x *ExecResponse) String() string {
 func (*ExecResponse) ProtoMessage() {}
 
 func (x *ExecResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[46]
+	mi := &file_gitserver_proto_msgTypes[47]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3404,7 +3460,7 @@ func (x *ExecResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecResponse.ProtoReflect.Descriptor instead.
 func (*ExecResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{46}
+	return file_gitserver_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *ExecResponse) GetData() []byte {
@@ -3427,7 +3483,7 @@ type RepoNotFoundPayload struct {
 func (x *RepoNotFoundPayload) Reset() {
 	*x = RepoNotFoundPayload{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[47]
+		mi := &file_gitserver_proto_msgTypes[48]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3440,7 +3496,7 @@ func (x *RepoNotFoundPayload) String() string {
 func (*RepoNotFoundPayload) ProtoMessage() {}
 
 func (x *RepoNotFoundPayload) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[47]
+	mi := &file_gitserver_proto_msgTypes[48]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3453,7 +3509,7 @@ func (x *RepoNotFoundPayload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RepoNotFoundPayload.ProtoReflect.Descriptor instead.
 func (*RepoNotFoundPayload) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{47}
+	return file_gitserver_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *RepoNotFoundPayload) GetRepo() string {
@@ -3489,7 +3545,7 @@ type RevisionNotFoundPayload struct {
 func (x *RevisionNotFoundPayload) Reset() {
 	*x = RevisionNotFoundPayload{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[48]
+		mi := &file_gitserver_proto_msgTypes[49]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3502,7 +3558,7 @@ func (x *RevisionNotFoundPayload) String() string {
 func (*RevisionNotFoundPayload) ProtoMessage() {}
 
 func (x *RevisionNotFoundPayload) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[48]
+	mi := &file_gitserver_proto_msgTypes[49]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3515,7 +3571,7 @@ func (x *RevisionNotFoundPayload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevisionNotFoundPayload.ProtoReflect.Descriptor instead.
 func (*RevisionNotFoundPayload) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{48}
+	return file_gitserver_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *RevisionNotFoundPayload) GetRepo() string {
@@ -3545,7 +3601,7 @@ type FileNotFoundPayload struct {
 func (x *FileNotFoundPayload) Reset() {
 	*x = FileNotFoundPayload{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[49]
+		mi := &file_gitserver_proto_msgTypes[50]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3558,7 +3614,7 @@ func (x *FileNotFoundPayload) String() string {
 func (*FileNotFoundPayload) ProtoMessage() {}
 
 func (x *FileNotFoundPayload) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[49]
+	mi := &file_gitserver_proto_msgTypes[50]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3571,7 +3627,7 @@ func (x *FileNotFoundPayload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileNotFoundPayload.ProtoReflect.Descriptor instead.
 func (*FileNotFoundPayload) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{49}
+	return file_gitserver_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *FileNotFoundPayload) GetRepo() string {
@@ -3607,7 +3663,7 @@ type ExecStatusPayload struct {
 func (x *ExecStatusPayload) Reset() {
 	*x = ExecStatusPayload{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[50]
+		mi := &file_gitserver_proto_msgTypes[51]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3620,7 +3676,7 @@ func (x *ExecStatusPayload) String() string {
 func (*ExecStatusPayload) ProtoMessage() {}
 
 func (x *ExecStatusPayload) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[50]
+	mi := &file_gitserver_proto_msgTypes[51]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3633,7 +3689,7 @@ func (x *ExecStatusPayload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecStatusPayload.ProtoReflect.Descriptor instead.
 func (*ExecStatusPayload) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{50}
+	return file_gitserver_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *ExecStatusPayload) GetStatusCode() int32 {
@@ -3677,7 +3733,7 @@ type SearchRequest struct {
 func (x *SearchRequest) Reset() {
 	*x = SearchRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[51]
+		mi := &file_gitserver_proto_msgTypes[52]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3690,7 +3746,7 @@ func (x *SearchRequest) String() string {
 func (*SearchRequest) ProtoMessage() {}
 
 func (x *SearchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[51]
+	mi := &file_gitserver_proto_msgTypes[52]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3703,7 +3759,7 @@ func (x *SearchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchRequest.ProtoReflect.Descriptor instead.
 func (*SearchRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{51}
+	return file_gitserver_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *SearchRequest) GetRepo() string {
@@ -3761,7 +3817,7 @@ type RevisionSpecifier struct {
 func (x *RevisionSpecifier) Reset() {
 	*x = RevisionSpecifier{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[52]
+		mi := &file_gitserver_proto_msgTypes[53]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3774,7 +3830,7 @@ func (x *RevisionSpecifier) String() string {
 func (*RevisionSpecifier) ProtoMessage() {}
 
 func (x *RevisionSpecifier) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[52]
+	mi := &file_gitserver_proto_msgTypes[53]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3787,7 +3843,7 @@ func (x *RevisionSpecifier) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevisionSpecifier.ProtoReflect.Descriptor instead.
 func (*RevisionSpecifier) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{52}
+	return file_gitserver_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *RevisionSpecifier) GetRevSpec() string {
@@ -3811,7 +3867,7 @@ type AuthorMatchesNode struct {
 func (x *AuthorMatchesNode) Reset() {
 	*x = AuthorMatchesNode{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[53]
+		mi := &file_gitserver_proto_msgTypes[54]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3824,7 +3880,7 @@ func (x *AuthorMatchesNode) String() string {
 func (*AuthorMatchesNode) ProtoMessage() {}
 
 func (x *AuthorMatchesNode) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[53]
+	mi := &file_gitserver_proto_msgTypes[54]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3837,7 +3893,7 @@ func (x *AuthorMatchesNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuthorMatchesNode.ProtoReflect.Descriptor instead.
 func (*AuthorMatchesNode) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{53}
+	return file_gitserver_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *AuthorMatchesNode) GetExpr() string {
@@ -3868,7 +3924,7 @@ type CommitterMatchesNode struct {
 func (x *CommitterMatchesNode) Reset() {
 	*x = CommitterMatchesNode{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[54]
+		mi := &file_gitserver_proto_msgTypes[55]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3881,7 +3937,7 @@ func (x *CommitterMatchesNode) String() string {
 func (*CommitterMatchesNode) ProtoMessage() {}
 
 func (x *CommitterMatchesNode) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[54]
+	mi := &file_gitserver_proto_msgTypes[55]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3894,7 +3950,7 @@ func (x *CommitterMatchesNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitterMatchesNode.ProtoReflect.Descriptor instead.
 func (*CommitterMatchesNode) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{54}
+	return file_gitserver_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *CommitterMatchesNode) GetExpr() string {
@@ -3924,7 +3980,7 @@ type CommitBeforeNode struct {
 func (x *CommitBeforeNode) Reset() {
 	*x = CommitBeforeNode{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[55]
+		mi := &file_gitserver_proto_msgTypes[56]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3937,7 +3993,7 @@ func (x *CommitBeforeNode) String() string {
 func (*CommitBeforeNode) ProtoMessage() {}
 
 func (x *CommitBeforeNode) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[55]
+	mi := &file_gitserver_proto_msgTypes[56]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3950,7 +4006,7 @@ func (x *CommitBeforeNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitBeforeNode.ProtoReflect.Descriptor instead.
 func (*CommitBeforeNode) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{55}
+	return file_gitserver_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *CommitBeforeNode) GetTimestamp() *timestamppb.Timestamp {
@@ -3973,7 +4029,7 @@ type CommitAfterNode struct {
 func (x *CommitAfterNode) Reset() {
 	*x = CommitAfterNode{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[56]
+		mi := &file_gitserver_proto_msgTypes[57]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3986,7 +4042,7 @@ func (x *CommitAfterNode) String() string {
 func (*CommitAfterNode) ProtoMessage() {}
 
 func (x *CommitAfterNode) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[56]
+	mi := &file_gitserver_proto_msgTypes[57]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3999,7 +4055,7 @@ func (x *CommitAfterNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitAfterNode.ProtoReflect.Descriptor instead.
 func (*CommitAfterNode) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{56}
+	return file_gitserver_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *CommitAfterNode) GetTimestamp() *timestamppb.Timestamp {
@@ -4023,7 +4079,7 @@ type MessageMatchesNode struct {
 func (x *MessageMatchesNode) Reset() {
 	*x = MessageMatchesNode{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[57]
+		mi := &file_gitserver_proto_msgTypes[58]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4036,7 +4092,7 @@ func (x *MessageMatchesNode) String() string {
 func (*MessageMatchesNode) ProtoMessage() {}
 
 func (x *MessageMatchesNode) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[57]
+	mi := &file_gitserver_proto_msgTypes[58]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4049,7 +4105,7 @@ func (x *MessageMatchesNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageMatchesNode.ProtoReflect.Descriptor instead.
 func (*MessageMatchesNode) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{57}
+	return file_gitserver_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *MessageMatchesNode) GetExpr() string {
@@ -4080,7 +4136,7 @@ type DiffMatchesNode struct {
 func (x *DiffMatchesNode) Reset() {
 	*x = DiffMatchesNode{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[58]
+		mi := &file_gitserver_proto_msgTypes[59]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4093,7 +4149,7 @@ func (x *DiffMatchesNode) String() string {
 func (*DiffMatchesNode) ProtoMessage() {}
 
 func (x *DiffMatchesNode) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[58]
+	mi := &file_gitserver_proto_msgTypes[59]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4106,7 +4162,7 @@ func (x *DiffMatchesNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiffMatchesNode.ProtoReflect.Descriptor instead.
 func (*DiffMatchesNode) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{58}
+	return file_gitserver_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *DiffMatchesNode) GetExpr() string {
@@ -4137,7 +4193,7 @@ type DiffModifiesFileNode struct {
 func (x *DiffModifiesFileNode) Reset() {
 	*x = DiffModifiesFileNode{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[59]
+		mi := &file_gitserver_proto_msgTypes[60]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4150,7 +4206,7 @@ func (x *DiffModifiesFileNode) String() string {
 func (*DiffModifiesFileNode) ProtoMessage() {}
 
 func (x *DiffModifiesFileNode) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[59]
+	mi := &file_gitserver_proto_msgTypes[60]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4163,7 +4219,7 @@ func (x *DiffModifiesFileNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiffModifiesFileNode.ProtoReflect.Descriptor instead.
 func (*DiffModifiesFileNode) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{59}
+	return file_gitserver_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *DiffModifiesFileNode) GetExpr() string {
@@ -4192,7 +4248,7 @@ type BooleanNode struct {
 func (x *BooleanNode) Reset() {
 	*x = BooleanNode{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[60]
+		mi := &file_gitserver_proto_msgTypes[61]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4205,7 +4261,7 @@ func (x *BooleanNode) String() string {
 func (*BooleanNode) ProtoMessage() {}
 
 func (x *BooleanNode) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[60]
+	mi := &file_gitserver_proto_msgTypes[61]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4218,7 +4274,7 @@ func (x *BooleanNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BooleanNode.ProtoReflect.Descriptor instead.
 func (*BooleanNode) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{60}
+	return file_gitserver_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *BooleanNode) GetValue() bool {
@@ -4240,7 +4296,7 @@ type OperatorNode struct {
 func (x *OperatorNode) Reset() {
 	*x = OperatorNode{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[61]
+		mi := &file_gitserver_proto_msgTypes[62]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4253,7 +4309,7 @@ func (x *OperatorNode) String() string {
 func (*OperatorNode) ProtoMessage() {}
 
 func (x *OperatorNode) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[61]
+	mi := &file_gitserver_proto_msgTypes[62]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4266,7 +4322,7 @@ func (x *OperatorNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OperatorNode.ProtoReflect.Descriptor instead.
 func (*OperatorNode) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{61}
+	return file_gitserver_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *OperatorNode) GetKind() OperatorKind {
@@ -4305,7 +4361,7 @@ type QueryNode struct {
 func (x *QueryNode) Reset() {
 	*x = QueryNode{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[62]
+		mi := &file_gitserver_proto_msgTypes[63]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4318,7 +4374,7 @@ func (x *QueryNode) String() string {
 func (*QueryNode) ProtoMessage() {}
 
 func (x *QueryNode) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[62]
+	mi := &file_gitserver_proto_msgTypes[63]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4331,7 +4387,7 @@ func (x *QueryNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryNode.ProtoReflect.Descriptor instead.
 func (*QueryNode) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{62}
+	return file_gitserver_proto_rawDescGZIP(), []int{63}
 }
 
 func (m *QueryNode) GetValue() isQueryNode_Value {
@@ -4477,7 +4533,7 @@ type SearchResponse struct {
 func (x *SearchResponse) Reset() {
 	*x = SearchResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[63]
+		mi := &file_gitserver_proto_msgTypes[64]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4490,7 +4546,7 @@ func (x *SearchResponse) String() string {
 func (*SearchResponse) ProtoMessage() {}
 
 func (x *SearchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[63]
+	mi := &file_gitserver_proto_msgTypes[64]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4503,7 +4559,7 @@ func (x *SearchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchResponse.ProtoReflect.Descriptor instead.
 func (*SearchResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{63}
+	return file_gitserver_proto_rawDescGZIP(), []int{64}
 }
 
 func (m *SearchResponse) GetMessage() isSearchResponse_Message {
@@ -4571,7 +4627,7 @@ type CommitMatch struct {
 func (x *CommitMatch) Reset() {
 	*x = CommitMatch{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[64]
+		mi := &file_gitserver_proto_msgTypes[65]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4584,7 +4640,7 @@ func (x *CommitMatch) String() string {
 func (*CommitMatch) ProtoMessage() {}
 
 func (x *CommitMatch) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[64]
+	mi := &file_gitserver_proto_msgTypes[65]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4597,7 +4653,7 @@ func (x *CommitMatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitMatch.ProtoReflect.Descriptor instead.
 func (*CommitMatch) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{64}
+	return file_gitserver_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *CommitMatch) GetOid() string {
@@ -4683,7 +4739,7 @@ type ArchiveRequest struct {
 func (x *ArchiveRequest) Reset() {
 	*x = ArchiveRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[65]
+		mi := &file_gitserver_proto_msgTypes[66]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4696,7 +4752,7 @@ func (x *ArchiveRequest) String() string {
 func (*ArchiveRequest) ProtoMessage() {}
 
 func (x *ArchiveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[65]
+	mi := &file_gitserver_proto_msgTypes[66]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4709,7 +4765,7 @@ func (x *ArchiveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ArchiveRequest.ProtoReflect.Descriptor instead.
 func (*ArchiveRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{65}
+	return file_gitserver_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *ArchiveRequest) GetRepo() string {
@@ -4753,7 +4809,7 @@ type ArchiveResponse struct {
 func (x *ArchiveResponse) Reset() {
 	*x = ArchiveResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[66]
+		mi := &file_gitserver_proto_msgTypes[67]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4766,7 +4822,7 @@ func (x *ArchiveResponse) String() string {
 func (*ArchiveResponse) ProtoMessage() {}
 
 func (x *ArchiveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[66]
+	mi := &file_gitserver_proto_msgTypes[67]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4779,7 +4835,7 @@ func (x *ArchiveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ArchiveResponse.ProtoReflect.Descriptor instead.
 func (*ArchiveResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{66}
+	return file_gitserver_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *ArchiveResponse) GetData() []byte {
@@ -4802,7 +4858,7 @@ type IsRepoCloneableRequest struct {
 func (x *IsRepoCloneableRequest) Reset() {
 	*x = IsRepoCloneableRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[67]
+		mi := &file_gitserver_proto_msgTypes[68]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4815,7 +4871,7 @@ func (x *IsRepoCloneableRequest) String() string {
 func (*IsRepoCloneableRequest) ProtoMessage() {}
 
 func (x *IsRepoCloneableRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[67]
+	mi := &file_gitserver_proto_msgTypes[68]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4828,7 +4884,7 @@ func (x *IsRepoCloneableRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsRepoCloneableRequest.ProtoReflect.Descriptor instead.
 func (*IsRepoCloneableRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{67}
+	return file_gitserver_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *IsRepoCloneableRequest) GetRepo() string {
@@ -4855,7 +4911,7 @@ type IsRepoCloneableResponse struct {
 func (x *IsRepoCloneableResponse) Reset() {
 	*x = IsRepoCloneableResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[68]
+		mi := &file_gitserver_proto_msgTypes[69]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4868,7 +4924,7 @@ func (x *IsRepoCloneableResponse) String() string {
 func (*IsRepoCloneableResponse) ProtoMessage() {}
 
 func (x *IsRepoCloneableResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[68]
+	mi := &file_gitserver_proto_msgTypes[69]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4881,7 +4937,7 @@ func (x *IsRepoCloneableResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsRepoCloneableResponse.ProtoReflect.Descriptor instead.
 func (*IsRepoCloneableResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{68}
+	return file_gitserver_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *IsRepoCloneableResponse) GetCloneable() bool {
@@ -4919,7 +4975,7 @@ type RepoCloneProgressRequest struct {
 func (x *RepoCloneProgressRequest) Reset() {
 	*x = RepoCloneProgressRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[69]
+		mi := &file_gitserver_proto_msgTypes[70]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4932,7 +4988,7 @@ func (x *RepoCloneProgressRequest) String() string {
 func (*RepoCloneProgressRequest) ProtoMessage() {}
 
 func (x *RepoCloneProgressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[69]
+	mi := &file_gitserver_proto_msgTypes[70]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4945,7 +5001,7 @@ func (x *RepoCloneProgressRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RepoCloneProgressRequest.ProtoReflect.Descriptor instead.
 func (*RepoCloneProgressRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{69}
+	return file_gitserver_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *RepoCloneProgressRequest) GetRepoName() string {
@@ -4973,7 +5029,7 @@ type RepoCloneProgressResponse struct {
 func (x *RepoCloneProgressResponse) Reset() {
 	*x = RepoCloneProgressResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[70]
+		mi := &file_gitserver_proto_msgTypes[71]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4986,7 +5042,7 @@ func (x *RepoCloneProgressResponse) String() string {
 func (*RepoCloneProgressResponse) ProtoMessage() {}
 
 func (x *RepoCloneProgressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[70]
+	mi := &file_gitserver_proto_msgTypes[71]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4999,7 +5055,7 @@ func (x *RepoCloneProgressResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RepoCloneProgressResponse.ProtoReflect.Descriptor instead.
 func (*RepoCloneProgressResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{70}
+	return file_gitserver_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *RepoCloneProgressResponse) GetCloneInProgress() bool {
@@ -5036,7 +5092,7 @@ type ListGitoliteRequest struct {
 func (x *ListGitoliteRequest) Reset() {
 	*x = ListGitoliteRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[71]
+		mi := &file_gitserver_proto_msgTypes[72]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5049,7 +5105,7 @@ func (x *ListGitoliteRequest) String() string {
 func (*ListGitoliteRequest) ProtoMessage() {}
 
 func (x *ListGitoliteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[71]
+	mi := &file_gitserver_proto_msgTypes[72]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5062,7 +5118,7 @@ func (x *ListGitoliteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListGitoliteRequest.ProtoReflect.Descriptor instead.
 func (*ListGitoliteRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{71}
+	return file_gitserver_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *ListGitoliteRequest) GetGitoliteHost() string {
@@ -5087,7 +5143,7 @@ type GitoliteRepo struct {
 func (x *GitoliteRepo) Reset() {
 	*x = GitoliteRepo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[72]
+		mi := &file_gitserver_proto_msgTypes[73]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5100,7 +5156,7 @@ func (x *GitoliteRepo) String() string {
 func (*GitoliteRepo) ProtoMessage() {}
 
 func (x *GitoliteRepo) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[72]
+	mi := &file_gitserver_proto_msgTypes[73]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5113,7 +5169,7 @@ func (x *GitoliteRepo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GitoliteRepo.ProtoReflect.Descriptor instead.
 func (*GitoliteRepo) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{72}
+	return file_gitserver_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *GitoliteRepo) GetName() string {
@@ -5143,7 +5199,7 @@ type ListGitoliteResponse struct {
 func (x *ListGitoliteResponse) Reset() {
 	*x = ListGitoliteResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[73]
+		mi := &file_gitserver_proto_msgTypes[74]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5156,7 +5212,7 @@ func (x *ListGitoliteResponse) String() string {
 func (*ListGitoliteResponse) ProtoMessage() {}
 
 func (x *ListGitoliteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[73]
+	mi := &file_gitserver_proto_msgTypes[74]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5169,7 +5225,7 @@ func (x *ListGitoliteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListGitoliteResponse.ProtoReflect.Descriptor instead.
 func (*ListGitoliteResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{73}
+	return file_gitserver_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *ListGitoliteResponse) GetRepos() []*GitoliteRepo {
@@ -5194,7 +5250,7 @@ type GetObjectRequest struct {
 func (x *GetObjectRequest) Reset() {
 	*x = GetObjectRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[74]
+		mi := &file_gitserver_proto_msgTypes[75]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5207,7 +5263,7 @@ func (x *GetObjectRequest) String() string {
 func (*GetObjectRequest) ProtoMessage() {}
 
 func (x *GetObjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[74]
+	mi := &file_gitserver_proto_msgTypes[75]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5220,7 +5276,7 @@ func (x *GetObjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetObjectRequest.ProtoReflect.Descriptor instead.
 func (*GetObjectRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{74}
+	return file_gitserver_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *GetObjectRequest) GetRepo() string {
@@ -5250,7 +5306,7 @@ type GetObjectResponse struct {
 func (x *GetObjectResponse) Reset() {
 	*x = GetObjectResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[75]
+		mi := &file_gitserver_proto_msgTypes[76]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5263,7 +5319,7 @@ func (x *GetObjectResponse) String() string {
 func (*GetObjectResponse) ProtoMessage() {}
 
 func (x *GetObjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[75]
+	mi := &file_gitserver_proto_msgTypes[76]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5276,7 +5332,7 @@ func (x *GetObjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetObjectResponse.ProtoReflect.Descriptor instead.
 func (*GetObjectResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{75}
+	return file_gitserver_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *GetObjectResponse) GetObject() *GitObject {
@@ -5301,7 +5357,7 @@ type GitObject struct {
 func (x *GitObject) Reset() {
 	*x = GitObject{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[76]
+		mi := &file_gitserver_proto_msgTypes[77]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5314,7 +5370,7 @@ func (x *GitObject) String() string {
 func (*GitObject) ProtoMessage() {}
 
 func (x *GitObject) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[76]
+	mi := &file_gitserver_proto_msgTypes[77]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5327,7 +5383,7 @@ func (x *GitObject) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GitObject.ProtoReflect.Descriptor instead.
 func (*GitObject) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{76}
+	return file_gitserver_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *GitObject) GetId() []byte {
@@ -5358,7 +5414,7 @@ type IsPerforcePathCloneableRequest struct {
 func (x *IsPerforcePathCloneableRequest) Reset() {
 	*x = IsPerforcePathCloneableRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[77]
+		mi := &file_gitserver_proto_msgTypes[78]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5371,7 +5427,7 @@ func (x *IsPerforcePathCloneableRequest) String() string {
 func (*IsPerforcePathCloneableRequest) ProtoMessage() {}
 
 func (x *IsPerforcePathCloneableRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[77]
+	mi := &file_gitserver_proto_msgTypes[78]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5384,7 +5440,7 @@ func (x *IsPerforcePathCloneableRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsPerforcePathCloneableRequest.ProtoReflect.Descriptor instead.
 func (*IsPerforcePathCloneableRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{77}
+	return file_gitserver_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *IsPerforcePathCloneableRequest) GetConnectionDetails() *PerforceConnectionDetails {
@@ -5412,7 +5468,7 @@ type IsPerforcePathCloneableResponse struct {
 func (x *IsPerforcePathCloneableResponse) Reset() {
 	*x = IsPerforcePathCloneableResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[78]
+		mi := &file_gitserver_proto_msgTypes[79]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5425,7 +5481,7 @@ func (x *IsPerforcePathCloneableResponse) String() string {
 func (*IsPerforcePathCloneableResponse) ProtoMessage() {}
 
 func (x *IsPerforcePathCloneableResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[78]
+	mi := &file_gitserver_proto_msgTypes[79]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5438,7 +5494,7 @@ func (x *IsPerforcePathCloneableResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsPerforcePathCloneableResponse.ProtoReflect.Descriptor instead.
 func (*IsPerforcePathCloneableResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{78}
+	return file_gitserver_proto_rawDescGZIP(), []int{79}
 }
 
 // CheckPerforceCredentialsRequest is the request to check if given Perforce
@@ -5454,7 +5510,7 @@ type CheckPerforceCredentialsRequest struct {
 func (x *CheckPerforceCredentialsRequest) Reset() {
 	*x = CheckPerforceCredentialsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[79]
+		mi := &file_gitserver_proto_msgTypes[80]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5467,7 +5523,7 @@ func (x *CheckPerforceCredentialsRequest) String() string {
 func (*CheckPerforceCredentialsRequest) ProtoMessage() {}
 
 func (x *CheckPerforceCredentialsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[79]
+	mi := &file_gitserver_proto_msgTypes[80]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5480,7 +5536,7 @@ func (x *CheckPerforceCredentialsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckPerforceCredentialsRequest.ProtoReflect.Descriptor instead.
 func (*CheckPerforceCredentialsRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{79}
+	return file_gitserver_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *CheckPerforceCredentialsRequest) GetConnectionDetails() *PerforceConnectionDetails {
@@ -5501,7 +5557,7 @@ type CheckPerforceCredentialsResponse struct {
 func (x *CheckPerforceCredentialsResponse) Reset() {
 	*x = CheckPerforceCredentialsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[80]
+		mi := &file_gitserver_proto_msgTypes[81]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5514,7 +5570,7 @@ func (x *CheckPerforceCredentialsResponse) String() string {
 func (*CheckPerforceCredentialsResponse) ProtoMessage() {}
 
 func (x *CheckPerforceCredentialsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[80]
+	mi := &file_gitserver_proto_msgTypes[81]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5527,7 +5583,7 @@ func (x *CheckPerforceCredentialsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckPerforceCredentialsResponse.ProtoReflect.Descriptor instead.
 func (*CheckPerforceCredentialsResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{80}
+	return file_gitserver_proto_rawDescGZIP(), []int{81}
 }
 
 // PerforceConnectionDetails holds all the details required to talk to a
@@ -5545,7 +5601,7 @@ type PerforceConnectionDetails struct {
 func (x *PerforceConnectionDetails) Reset() {
 	*x = PerforceConnectionDetails{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[81]
+		mi := &file_gitserver_proto_msgTypes[82]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5558,7 +5614,7 @@ func (x *PerforceConnectionDetails) String() string {
 func (*PerforceConnectionDetails) ProtoMessage() {}
 
 func (x *PerforceConnectionDetails) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[81]
+	mi := &file_gitserver_proto_msgTypes[82]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5571,7 +5627,7 @@ func (x *PerforceConnectionDetails) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerforceConnectionDetails.ProtoReflect.Descriptor instead.
 func (*PerforceConnectionDetails) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{81}
+	return file_gitserver_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *PerforceConnectionDetails) GetP4Port() string {
@@ -5609,7 +5665,7 @@ type PerforceGetChangelistRequest struct {
 func (x *PerforceGetChangelistRequest) Reset() {
 	*x = PerforceGetChangelistRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[82]
+		mi := &file_gitserver_proto_msgTypes[83]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5622,7 +5678,7 @@ func (x *PerforceGetChangelistRequest) String() string {
 func (*PerforceGetChangelistRequest) ProtoMessage() {}
 
 func (x *PerforceGetChangelistRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[82]
+	mi := &file_gitserver_proto_msgTypes[83]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5635,7 +5691,7 @@ func (x *PerforceGetChangelistRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerforceGetChangelistRequest.ProtoReflect.Descriptor instead.
 func (*PerforceGetChangelistRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{82}
+	return file_gitserver_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *PerforceGetChangelistRequest) GetConnectionDetails() *PerforceConnectionDetails {
@@ -5665,7 +5721,7 @@ type PerforceGetChangelistResponse struct {
 func (x *PerforceGetChangelistResponse) Reset() {
 	*x = PerforceGetChangelistResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[83]
+		mi := &file_gitserver_proto_msgTypes[84]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5678,7 +5734,7 @@ func (x *PerforceGetChangelistResponse) String() string {
 func (*PerforceGetChangelistResponse) ProtoMessage() {}
 
 func (x *PerforceGetChangelistResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[83]
+	mi := &file_gitserver_proto_msgTypes[84]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5691,7 +5747,7 @@ func (x *PerforceGetChangelistResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerforceGetChangelistResponse.ProtoReflect.Descriptor instead.
 func (*PerforceGetChangelistResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{83}
+	return file_gitserver_proto_rawDescGZIP(), []int{84}
 }
 
 func (x *PerforceGetChangelistResponse) GetChangelist() *PerforceChangelist {
@@ -5718,7 +5774,7 @@ type PerforceChangelist struct {
 func (x *PerforceChangelist) Reset() {
 	*x = PerforceChangelist{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[84]
+		mi := &file_gitserver_proto_msgTypes[85]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5731,7 +5787,7 @@ func (x *PerforceChangelist) String() string {
 func (*PerforceChangelist) ProtoMessage() {}
 
 func (x *PerforceChangelist) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[84]
+	mi := &file_gitserver_proto_msgTypes[85]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5744,7 +5800,7 @@ func (x *PerforceChangelist) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerforceChangelist.ProtoReflect.Descriptor instead.
 func (*PerforceChangelist) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{84}
+	return file_gitserver_proto_rawDescGZIP(), []int{85}
 }
 
 func (x *PerforceChangelist) GetId() string {
@@ -5802,7 +5858,7 @@ type IsPerforceSuperUserRequest struct {
 func (x *IsPerforceSuperUserRequest) Reset() {
 	*x = IsPerforceSuperUserRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[85]
+		mi := &file_gitserver_proto_msgTypes[86]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5815,7 +5871,7 @@ func (x *IsPerforceSuperUserRequest) String() string {
 func (*IsPerforceSuperUserRequest) ProtoMessage() {}
 
 func (x *IsPerforceSuperUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[85]
+	mi := &file_gitserver_proto_msgTypes[86]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5828,7 +5884,7 @@ func (x *IsPerforceSuperUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsPerforceSuperUserRequest.ProtoReflect.Descriptor instead.
 func (*IsPerforceSuperUserRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{85}
+	return file_gitserver_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *IsPerforceSuperUserRequest) GetConnectionDetails() *PerforceConnectionDetails {
@@ -5850,7 +5906,7 @@ type IsPerforceSuperUserResponse struct {
 func (x *IsPerforceSuperUserResponse) Reset() {
 	*x = IsPerforceSuperUserResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[86]
+		mi := &file_gitserver_proto_msgTypes[87]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5863,7 +5919,7 @@ func (x *IsPerforceSuperUserResponse) String() string {
 func (*IsPerforceSuperUserResponse) ProtoMessage() {}
 
 func (x *IsPerforceSuperUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[86]
+	mi := &file_gitserver_proto_msgTypes[87]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5876,7 +5932,7 @@ func (x *IsPerforceSuperUserResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsPerforceSuperUserResponse.ProtoReflect.Descriptor instead.
 func (*IsPerforceSuperUserResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{86}
+	return file_gitserver_proto_rawDescGZIP(), []int{87}
 }
 
 // PerforceProtectsForDepotRequest requests all the protections that apply to
@@ -5893,7 +5949,7 @@ type PerforceProtectsForDepotRequest struct {
 func (x *PerforceProtectsForDepotRequest) Reset() {
 	*x = PerforceProtectsForDepotRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[87]
+		mi := &file_gitserver_proto_msgTypes[88]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5906,7 +5962,7 @@ func (x *PerforceProtectsForDepotRequest) String() string {
 func (*PerforceProtectsForDepotRequest) ProtoMessage() {}
 
 func (x *PerforceProtectsForDepotRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[87]
+	mi := &file_gitserver_proto_msgTypes[88]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5919,7 +5975,7 @@ func (x *PerforceProtectsForDepotRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerforceProtectsForDepotRequest.ProtoReflect.Descriptor instead.
 func (*PerforceProtectsForDepotRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{87}
+	return file_gitserver_proto_rawDescGZIP(), []int{88}
 }
 
 func (x *PerforceProtectsForDepotRequest) GetConnectionDetails() *PerforceConnectionDetails {
@@ -5949,7 +6005,7 @@ type PerforceProtectsForDepotResponse struct {
 func (x *PerforceProtectsForDepotResponse) Reset() {
 	*x = PerforceProtectsForDepotResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[88]
+		mi := &file_gitserver_proto_msgTypes[89]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5962,7 +6018,7 @@ func (x *PerforceProtectsForDepotResponse) String() string {
 func (*PerforceProtectsForDepotResponse) ProtoMessage() {}
 
 func (x *PerforceProtectsForDepotResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[88]
+	mi := &file_gitserver_proto_msgTypes[89]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5975,7 +6031,7 @@ func (x *PerforceProtectsForDepotResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerforceProtectsForDepotResponse.ProtoReflect.Descriptor instead.
 func (*PerforceProtectsForDepotResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{88}
+	return file_gitserver_proto_rawDescGZIP(), []int{89}
 }
 
 func (x *PerforceProtectsForDepotResponse) GetProtects() []*PerforceProtect {
@@ -5999,7 +6055,7 @@ type PerforceProtectsForUserRequest struct {
 func (x *PerforceProtectsForUserRequest) Reset() {
 	*x = PerforceProtectsForUserRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[89]
+		mi := &file_gitserver_proto_msgTypes[90]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6012,7 +6068,7 @@ func (x *PerforceProtectsForUserRequest) String() string {
 func (*PerforceProtectsForUserRequest) ProtoMessage() {}
 
 func (x *PerforceProtectsForUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[89]
+	mi := &file_gitserver_proto_msgTypes[90]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6025,7 +6081,7 @@ func (x *PerforceProtectsForUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerforceProtectsForUserRequest.ProtoReflect.Descriptor instead.
 func (*PerforceProtectsForUserRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{89}
+	return file_gitserver_proto_rawDescGZIP(), []int{90}
 }
 
 func (x *PerforceProtectsForUserRequest) GetConnectionDetails() *PerforceConnectionDetails {
@@ -6055,7 +6111,7 @@ type PerforceProtectsForUserResponse struct {
 func (x *PerforceProtectsForUserResponse) Reset() {
 	*x = PerforceProtectsForUserResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[90]
+		mi := &file_gitserver_proto_msgTypes[91]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6068,7 +6124,7 @@ func (x *PerforceProtectsForUserResponse) String() string {
 func (*PerforceProtectsForUserResponse) ProtoMessage() {}
 
 func (x *PerforceProtectsForUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[90]
+	mi := &file_gitserver_proto_msgTypes[91]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6081,7 +6137,7 @@ func (x *PerforceProtectsForUserResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerforceProtectsForUserResponse.ProtoReflect.Descriptor instead.
 func (*PerforceProtectsForUserResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{90}
+	return file_gitserver_proto_rawDescGZIP(), []int{91}
 }
 
 func (x *PerforceProtectsForUserResponse) GetProtects() []*PerforceProtect {
@@ -6108,7 +6164,7 @@ type PerforceProtect struct {
 func (x *PerforceProtect) Reset() {
 	*x = PerforceProtect{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[91]
+		mi := &file_gitserver_proto_msgTypes[92]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6121,7 +6177,7 @@ func (x *PerforceProtect) String() string {
 func (*PerforceProtect) ProtoMessage() {}
 
 func (x *PerforceProtect) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[91]
+	mi := &file_gitserver_proto_msgTypes[92]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6134,7 +6190,7 @@ func (x *PerforceProtect) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerforceProtect.ProtoReflect.Descriptor instead.
 func (*PerforceProtect) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{91}
+	return file_gitserver_proto_rawDescGZIP(), []int{92}
 }
 
 func (x *PerforceProtect) GetLevel() string {
@@ -6192,7 +6248,7 @@ type PerforceGroupMembersRequest struct {
 func (x *PerforceGroupMembersRequest) Reset() {
 	*x = PerforceGroupMembersRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[92]
+		mi := &file_gitserver_proto_msgTypes[93]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6205,7 +6261,7 @@ func (x *PerforceGroupMembersRequest) String() string {
 func (*PerforceGroupMembersRequest) ProtoMessage() {}
 
 func (x *PerforceGroupMembersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[92]
+	mi := &file_gitserver_proto_msgTypes[93]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6218,7 +6274,7 @@ func (x *PerforceGroupMembersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerforceGroupMembersRequest.ProtoReflect.Descriptor instead.
 func (*PerforceGroupMembersRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{92}
+	return file_gitserver_proto_rawDescGZIP(), []int{93}
 }
 
 func (x *PerforceGroupMembersRequest) GetConnectionDetails() *PerforceConnectionDetails {
@@ -6248,7 +6304,7 @@ type PerforceGroupMembersResponse struct {
 func (x *PerforceGroupMembersResponse) Reset() {
 	*x = PerforceGroupMembersResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[93]
+		mi := &file_gitserver_proto_msgTypes[94]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6261,7 +6317,7 @@ func (x *PerforceGroupMembersResponse) String() string {
 func (*PerforceGroupMembersResponse) ProtoMessage() {}
 
 func (x *PerforceGroupMembersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[93]
+	mi := &file_gitserver_proto_msgTypes[94]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6274,7 +6330,7 @@ func (x *PerforceGroupMembersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerforceGroupMembersResponse.ProtoReflect.Descriptor instead.
 func (*PerforceGroupMembersResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{93}
+	return file_gitserver_proto_rawDescGZIP(), []int{94}
 }
 
 func (x *PerforceGroupMembersResponse) GetUsernames() []string {
@@ -6296,7 +6352,7 @@ type PerforceUsersRequest struct {
 func (x *PerforceUsersRequest) Reset() {
 	*x = PerforceUsersRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[94]
+		mi := &file_gitserver_proto_msgTypes[95]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6309,7 +6365,7 @@ func (x *PerforceUsersRequest) String() string {
 func (*PerforceUsersRequest) ProtoMessage() {}
 
 func (x *PerforceUsersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[94]
+	mi := &file_gitserver_proto_msgTypes[95]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6322,7 +6378,7 @@ func (x *PerforceUsersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerforceUsersRequest.ProtoReflect.Descriptor instead.
 func (*PerforceUsersRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{94}
+	return file_gitserver_proto_rawDescGZIP(), []int{95}
 }
 
 func (x *PerforceUsersRequest) GetConnectionDetails() *PerforceConnectionDetails {
@@ -6344,7 +6400,7 @@ type PerforceUsersResponse struct {
 func (x *PerforceUsersResponse) Reset() {
 	*x = PerforceUsersResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[95]
+		mi := &file_gitserver_proto_msgTypes[96]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6357,7 +6413,7 @@ func (x *PerforceUsersResponse) String() string {
 func (*PerforceUsersResponse) ProtoMessage() {}
 
 func (x *PerforceUsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[95]
+	mi := &file_gitserver_proto_msgTypes[96]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6370,7 +6426,7 @@ func (x *PerforceUsersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerforceUsersResponse.ProtoReflect.Descriptor instead.
 func (*PerforceUsersResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{95}
+	return file_gitserver_proto_rawDescGZIP(), []int{96}
 }
 
 func (x *PerforceUsersResponse) GetUsers() []*PerforceUser {
@@ -6393,7 +6449,7 @@ type PerforceUser struct {
 func (x *PerforceUser) Reset() {
 	*x = PerforceUser{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[96]
+		mi := &file_gitserver_proto_msgTypes[97]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6406,7 +6462,7 @@ func (x *PerforceUser) String() string {
 func (*PerforceUser) ProtoMessage() {}
 
 func (x *PerforceUser) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[96]
+	mi := &file_gitserver_proto_msgTypes[97]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6419,7 +6475,7 @@ func (x *PerforceUser) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerforceUser.ProtoReflect.Descriptor instead.
 func (*PerforceUser) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{96}
+	return file_gitserver_proto_rawDescGZIP(), []int{97}
 }
 
 func (x *PerforceUser) GetUsername() string {
@@ -6454,7 +6510,7 @@ type MergeBaseRequest struct {
 func (x *MergeBaseRequest) Reset() {
 	*x = MergeBaseRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[97]
+		mi := &file_gitserver_proto_msgTypes[98]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6467,7 +6523,7 @@ func (x *MergeBaseRequest) String() string {
 func (*MergeBaseRequest) ProtoMessage() {}
 
 func (x *MergeBaseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[97]
+	mi := &file_gitserver_proto_msgTypes[98]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6480,7 +6536,7 @@ func (x *MergeBaseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MergeBaseRequest.ProtoReflect.Descriptor instead.
 func (*MergeBaseRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{97}
+	return file_gitserver_proto_rawDescGZIP(), []int{98}
 }
 
 func (x *MergeBaseRequest) GetRepoName() string {
@@ -6517,7 +6573,7 @@ type MergeBaseResponse struct {
 func (x *MergeBaseResponse) Reset() {
 	*x = MergeBaseResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[98]
+		mi := &file_gitserver_proto_msgTypes[99]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6530,7 +6586,7 @@ func (x *MergeBaseResponse) String() string {
 func (*MergeBaseResponse) ProtoMessage() {}
 
 func (x *MergeBaseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[98]
+	mi := &file_gitserver_proto_msgTypes[99]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6543,7 +6599,7 @@ func (x *MergeBaseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MergeBaseResponse.ProtoReflect.Descriptor instead.
 func (*MergeBaseResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{98}
+	return file_gitserver_proto_rawDescGZIP(), []int{99}
 }
 
 func (x *MergeBaseResponse) GetMergeBaseCommitSha() string {
@@ -6567,7 +6623,7 @@ type FirstEverCommitRequest struct {
 func (x *FirstEverCommitRequest) Reset() {
 	*x = FirstEverCommitRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[99]
+		mi := &file_gitserver_proto_msgTypes[100]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6580,7 +6636,7 @@ func (x *FirstEverCommitRequest) String() string {
 func (*FirstEverCommitRequest) ProtoMessage() {}
 
 func (x *FirstEverCommitRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[99]
+	mi := &file_gitserver_proto_msgTypes[100]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6593,7 +6649,7 @@ func (x *FirstEverCommitRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FirstEverCommitRequest.ProtoReflect.Descriptor instead.
 func (*FirstEverCommitRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{99}
+	return file_gitserver_proto_rawDescGZIP(), []int{100}
 }
 
 func (x *FirstEverCommitRequest) GetRepoName() string {
@@ -6616,7 +6672,7 @@ type FirstEverCommitResponse struct {
 func (x *FirstEverCommitResponse) Reset() {
 	*x = FirstEverCommitResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[100]
+		mi := &file_gitserver_proto_msgTypes[101]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6629,7 +6685,7 @@ func (x *FirstEverCommitResponse) String() string {
 func (*FirstEverCommitResponse) ProtoMessage() {}
 
 func (x *FirstEverCommitResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[100]
+	mi := &file_gitserver_proto_msgTypes[101]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6642,7 +6698,7 @@ func (x *FirstEverCommitResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FirstEverCommitResponse.ProtoReflect.Descriptor instead.
 func (*FirstEverCommitResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{100}
+	return file_gitserver_proto_rawDescGZIP(), []int{101}
 }
 
 func (x *FirstEverCommitResponse) GetCommit() *GitCommit {
@@ -6671,7 +6727,7 @@ type BehindAheadRequest struct {
 func (x *BehindAheadRequest) Reset() {
 	*x = BehindAheadRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[101]
+		mi := &file_gitserver_proto_msgTypes[102]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6684,7 +6740,7 @@ func (x *BehindAheadRequest) String() string {
 func (*BehindAheadRequest) ProtoMessage() {}
 
 func (x *BehindAheadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[101]
+	mi := &file_gitserver_proto_msgTypes[102]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6697,7 +6753,7 @@ func (x *BehindAheadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BehindAheadRequest.ProtoReflect.Descriptor instead.
 func (*BehindAheadRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{101}
+	return file_gitserver_proto_rawDescGZIP(), []int{102}
 }
 
 func (x *BehindAheadRequest) GetRepoName() string {
@@ -6737,7 +6793,7 @@ type BehindAheadResponse struct {
 func (x *BehindAheadResponse) Reset() {
 	*x = BehindAheadResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[102]
+		mi := &file_gitserver_proto_msgTypes[103]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6750,7 +6806,7 @@ func (x *BehindAheadResponse) String() string {
 func (*BehindAheadResponse) ProtoMessage() {}
 
 func (x *BehindAheadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[102]
+	mi := &file_gitserver_proto_msgTypes[103]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6763,7 +6819,7 @@ func (x *BehindAheadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BehindAheadResponse.ProtoReflect.Descriptor instead.
 func (*BehindAheadResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{102}
+	return file_gitserver_proto_rawDescGZIP(), []int{103}
 }
 
 func (x *BehindAheadResponse) GetBehind() uint32 {
@@ -6799,7 +6855,7 @@ type ChangedFilesRequest struct {
 func (x *ChangedFilesRequest) Reset() {
 	*x = ChangedFilesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[103]
+		mi := &file_gitserver_proto_msgTypes[104]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6812,7 +6868,7 @@ func (x *ChangedFilesRequest) String() string {
 func (*ChangedFilesRequest) ProtoMessage() {}
 
 func (x *ChangedFilesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[103]
+	mi := &file_gitserver_proto_msgTypes[104]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6825,7 +6881,7 @@ func (x *ChangedFilesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangedFilesRequest.ProtoReflect.Descriptor instead.
 func (*ChangedFilesRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{103}
+	return file_gitserver_proto_rawDescGZIP(), []int{104}
 }
 
 func (x *ChangedFilesRequest) GetRepoName() string {
@@ -6860,7 +6916,7 @@ type ChangedFilesResponse struct {
 func (x *ChangedFilesResponse) Reset() {
 	*x = ChangedFilesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[104]
+		mi := &file_gitserver_proto_msgTypes[105]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6873,7 +6929,7 @@ func (x *ChangedFilesResponse) String() string {
 func (*ChangedFilesResponse) ProtoMessage() {}
 
 func (x *ChangedFilesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[104]
+	mi := &file_gitserver_proto_msgTypes[105]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6886,7 +6942,7 @@ func (x *ChangedFilesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangedFilesResponse.ProtoReflect.Descriptor instead.
 func (*ChangedFilesResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{104}
+	return file_gitserver_proto_rawDescGZIP(), []int{105}
 }
 
 func (x *ChangedFilesResponse) GetFiles() []*ChangedFile {
@@ -6909,7 +6965,7 @@ type ChangedFile struct {
 func (x *ChangedFile) Reset() {
 	*x = ChangedFile{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[105]
+		mi := &file_gitserver_proto_msgTypes[106]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6922,7 +6978,7 @@ func (x *ChangedFile) String() string {
 func (*ChangedFile) ProtoMessage() {}
 
 func (x *ChangedFile) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[105]
+	mi := &file_gitserver_proto_msgTypes[106]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6935,7 +6991,7 @@ func (x *ChangedFile) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangedFile.ProtoReflect.Descriptor instead.
 func (*ChangedFile) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{105}
+	return file_gitserver_proto_rawDescGZIP(), []int{106}
 }
 
 func (x *ChangedFile) GetPath() []byte {
@@ -6970,7 +7026,7 @@ type ListRepositoriesResponse_GitRepository struct {
 func (x *ListRepositoriesResponse_GitRepository) Reset() {
 	*x = ListRepositoriesResponse_GitRepository{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[106]
+		mi := &file_gitserver_proto_msgTypes[107]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6983,7 +7039,7 @@ func (x *ListRepositoriesResponse_GitRepository) String() string {
 func (*ListRepositoriesResponse_GitRepository) ProtoMessage() {}
 
 func (x *ListRepositoriesResponse_GitRepository) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[106]
+	mi := &file_gitserver_proto_msgTypes[107]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7041,7 +7097,7 @@ type CreateCommitFromPatchBinaryRequest_Metadata struct {
 func (x *CreateCommitFromPatchBinaryRequest_Metadata) Reset() {
 	*x = CreateCommitFromPatchBinaryRequest_Metadata{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[107]
+		mi := &file_gitserver_proto_msgTypes[108]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7054,7 +7110,7 @@ func (x *CreateCommitFromPatchBinaryRequest_Metadata) String() string {
 func (*CreateCommitFromPatchBinaryRequest_Metadata) ProtoMessage() {}
 
 func (x *CreateCommitFromPatchBinaryRequest_Metadata) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[107]
+	mi := &file_gitserver_proto_msgTypes[108]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7067,7 +7123,7 @@ func (x *CreateCommitFromPatchBinaryRequest_Metadata) ProtoReflect() protoreflec
 
 // Deprecated: Use CreateCommitFromPatchBinaryRequest_Metadata.ProtoReflect.Descriptor instead.
 func (*CreateCommitFromPatchBinaryRequest_Metadata) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{42, 0}
+	return file_gitserver_proto_rawDescGZIP(), []int{43, 0}
 }
 
 func (x *CreateCommitFromPatchBinaryRequest_Metadata) GetRepo() string {
@@ -7138,7 +7194,7 @@ type CreateCommitFromPatchBinaryRequest_Patch struct {
 func (x *CreateCommitFromPatchBinaryRequest_Patch) Reset() {
 	*x = CreateCommitFromPatchBinaryRequest_Patch{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[108]
+		mi := &file_gitserver_proto_msgTypes[109]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7151,7 +7207,7 @@ func (x *CreateCommitFromPatchBinaryRequest_Patch) String() string {
 func (*CreateCommitFromPatchBinaryRequest_Patch) ProtoMessage() {}
 
 func (x *CreateCommitFromPatchBinaryRequest_Patch) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[108]
+	mi := &file_gitserver_proto_msgTypes[109]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7164,7 +7220,7 @@ func (x *CreateCommitFromPatchBinaryRequest_Patch) ProtoReflect() protoreflect.M
 
 // Deprecated: Use CreateCommitFromPatchBinaryRequest_Patch.ProtoReflect.Descriptor instead.
 func (*CreateCommitFromPatchBinaryRequest_Patch) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{42, 1}
+	return file_gitserver_proto_rawDescGZIP(), []int{43, 1}
 }
 
 func (x *CreateCommitFromPatchBinaryRequest_Patch) GetData() []byte {
@@ -7187,7 +7243,7 @@ type CommitMatch_Signature struct {
 func (x *CommitMatch_Signature) Reset() {
 	*x = CommitMatch_Signature{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[109]
+		mi := &file_gitserver_proto_msgTypes[110]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7200,7 +7256,7 @@ func (x *CommitMatch_Signature) String() string {
 func (*CommitMatch_Signature) ProtoMessage() {}
 
 func (x *CommitMatch_Signature) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[109]
+	mi := &file_gitserver_proto_msgTypes[110]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7213,7 +7269,7 @@ func (x *CommitMatch_Signature) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitMatch_Signature.ProtoReflect.Descriptor instead.
 func (*CommitMatch_Signature) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{64, 0}
+	return file_gitserver_proto_rawDescGZIP(), []int{65, 0}
 }
 
 func (x *CommitMatch_Signature) GetName() string {
@@ -7249,7 +7305,7 @@ type CommitMatch_MatchedString struct {
 func (x *CommitMatch_MatchedString) Reset() {
 	*x = CommitMatch_MatchedString{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[110]
+		mi := &file_gitserver_proto_msgTypes[111]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7262,7 +7318,7 @@ func (x *CommitMatch_MatchedString) String() string {
 func (*CommitMatch_MatchedString) ProtoMessage() {}
 
 func (x *CommitMatch_MatchedString) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[110]
+	mi := &file_gitserver_proto_msgTypes[111]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7275,7 +7331,7 @@ func (x *CommitMatch_MatchedString) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitMatch_MatchedString.ProtoReflect.Descriptor instead.
 func (*CommitMatch_MatchedString) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{64, 1}
+	return file_gitserver_proto_rawDescGZIP(), []int{65, 1}
 }
 
 func (x *CommitMatch_MatchedString) GetContent() string {
@@ -7305,7 +7361,7 @@ type CommitMatch_Range struct {
 func (x *CommitMatch_Range) Reset() {
 	*x = CommitMatch_Range{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[111]
+		mi := &file_gitserver_proto_msgTypes[112]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7318,7 +7374,7 @@ func (x *CommitMatch_Range) String() string {
 func (*CommitMatch_Range) ProtoMessage() {}
 
 func (x *CommitMatch_Range) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[111]
+	mi := &file_gitserver_proto_msgTypes[112]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7331,7 +7387,7 @@ func (x *CommitMatch_Range) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitMatch_Range.ProtoReflect.Descriptor instead.
 func (*CommitMatch_Range) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{64, 2}
+	return file_gitserver_proto_rawDescGZIP(), []int{65, 2}
 }
 
 func (x *CommitMatch_Range) GetStart() *CommitMatch_Location {
@@ -7361,7 +7417,7 @@ type CommitMatch_Location struct {
 func (x *CommitMatch_Location) Reset() {
 	*x = CommitMatch_Location{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[112]
+		mi := &file_gitserver_proto_msgTypes[113]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7374,7 +7430,7 @@ func (x *CommitMatch_Location) String() string {
 func (*CommitMatch_Location) ProtoMessage() {}
 
 func (x *CommitMatch_Location) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[112]
+	mi := &file_gitserver_proto_msgTypes[113]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7387,7 +7443,7 @@ func (x *CommitMatch_Location) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitMatch_Location.ProtoReflect.Descriptor instead.
 func (*CommitMatch_Location) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{64, 3}
+	return file_gitserver_proto_rawDescGZIP(), []int{65, 3}
 }
 
 func (x *CommitMatch_Location) GetOffset() uint32 {
@@ -7500,7 +7556,11 @@ var file_gitserver_proto_rawDesc = []byte{
 	0x45, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x10, 0x02, 0x22, 0x27, 0x0a, 0x0f, 0x52, 0x61, 0x77, 0x44,
 	0x69, 0x66, 0x66, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x63,
 	0x68, 0x75, 0x6e, 0x6b, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x63, 0x68, 0x75, 0x6e,
-	0x6b, 0x22, 0xcd, 0x01, 0x0a, 0x0f, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x66, 0x73, 0x52, 0x65,
+	0x6b, 0x22, 0x3e, 0x0a, 0x14, 0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x61, 0x77, 0x44, 0x69, 0x66,
+	0x66, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x63, 0x68, 0x75,
+	0x6e, 0x6b, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x63, 0x68, 0x75, 0x6e, 0x6b, 0x12,
+	0x10, 0x0a, 0x03, 0x65, 0x6f, 0x66, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x03, 0x65, 0x6f,
+	0x66, 0x22, 0xcd, 0x01, 0x0a, 0x0f, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x66, 0x73, 0x52, 0x65,
 	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x72, 0x65, 0x70, 0x6f, 0x5f, 0x6e, 0x61,
 	0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x72, 0x65, 0x70, 0x6f, 0x4e, 0x61,
 	0x6d, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x68, 0x65, 0x61, 0x64, 0x73, 0x5f, 0x6f, 0x6e, 0x6c, 0x79,
@@ -8300,7 +8360,7 @@ var file_gitserver_proto_rawDesc = []byte{
 	0x6f, 0x72, 0x69, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x67,
 	0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74,
 	0x52, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f, 0x72, 0x69, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x03, 0x90, 0x02, 0x01, 0x32, 0x90, 0x18, 0x0a, 0x10, 0x47, 0x69,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x03, 0x90, 0x02, 0x01, 0x32, 0xeb, 0x18, 0x0a, 0x10, 0x47, 0x69,
 	0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x86,
 	0x01, 0x0a, 0x1b, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x46,
 	0x72, 0x6f, 0x6d, 0x50, 0x61, 0x74, 0x63, 0x68, 0x42, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x12, 0x30,
@@ -8460,44 +8520,50 @@ var file_gitserver_proto_rawDesc = []byte{
 	0x77, 0x44, 0x69, 0x66, 0x66, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x67,
 	0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x61, 0x77, 0x44,
 	0x69, 0x66, 0x66, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x03, 0x90, 0x02, 0x01,
-	0x30, 0x01, 0x12, 0x69, 0x0a, 0x11, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x6f,
-	0x72, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x12, 0x26, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72,
-	0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74,
-	0x6f, 0x72, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x27, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x43,
-	0x6f, 0x6e, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x6f, 0x72, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x73,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x03, 0x90, 0x02, 0x01, 0x12, 0x63, 0x0a,
-	0x0f, 0x46, 0x69, 0x72, 0x73, 0x74, 0x45, 0x76, 0x65, 0x72, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
-	0x12, 0x24, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e,
-	0x46, 0x69, 0x72, 0x73, 0x74, 0x45, 0x76, 0x65, 0x72, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76,
-	0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x46, 0x69, 0x72, 0x73, 0x74, 0x45, 0x76, 0x65, 0x72, 0x43,
-	0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x03, 0x90,
-	0x02, 0x01, 0x12, 0x57, 0x0a, 0x0b, 0x42, 0x65, 0x68, 0x69, 0x6e, 0x64, 0x41, 0x68, 0x65, 0x61,
-	0x64, 0x12, 0x20, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31,
-	0x2e, 0x42, 0x65, 0x68, 0x69, 0x6e, 0x64, 0x41, 0x68, 0x65, 0x61, 0x64, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e,
-	0x76, 0x31, 0x2e, 0x42, 0x65, 0x68, 0x69, 0x6e, 0x64, 0x41, 0x68, 0x65, 0x61, 0x64, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x03, 0x90, 0x02, 0x01, 0x12, 0x5c, 0x0a, 0x0c, 0x43,
-	0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x12, 0x21, 0x2e, 0x67, 0x69,
-	0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67,
-	0x65, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22,
-	0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x68,
-	0x61, 0x6e, 0x67, 0x65, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0x03, 0x90, 0x02, 0x01, 0x30, 0x01, 0x12, 0x42, 0x0a, 0x04, 0x53, 0x74, 0x61,
-	0x74, 0x12, 0x19, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31,
-	0x2e, 0x53, 0x74, 0x61, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x67,
+	0x30, 0x01, 0x12, 0x59, 0x0a, 0x0c, 0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x61, 0x77, 0x44, 0x69,
+	0x66, 0x66, 0x12, 0x1c, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76,
+	0x31, 0x2e, 0x52, 0x61, 0x77, 0x44, 0x69, 0x66, 0x66, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x22, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e,
+	0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x61, 0x77, 0x44, 0x69, 0x66, 0x66, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x03, 0x90, 0x02, 0x01, 0x28, 0x01, 0x30, 0x01, 0x12, 0x69, 0x0a,
+	0x11, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x6f, 0x72, 0x43, 0x6f, 0x75, 0x6e,
+	0x74, 0x73, 0x12, 0x26, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76,
+	0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x6f, 0x72, 0x43, 0x6f, 0x75,
+	0x6e, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x27, 0x2e, 0x67, 0x69, 0x74,
+	0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x69,
+	0x62, 0x75, 0x74, 0x6f, 0x72, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x03, 0x90, 0x02, 0x01, 0x12, 0x63, 0x0a, 0x0f, 0x46, 0x69, 0x72, 0x73,
+	0x74, 0x45, 0x76, 0x65, 0x72, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x12, 0x24, 0x2e, 0x67, 0x69,
+	0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x46, 0x69, 0x72, 0x73, 0x74,
+	0x45, 0x76, 0x65, 0x72, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x25, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31,
+	0x2e, 0x46, 0x69, 0x72, 0x73, 0x74, 0x45, 0x76, 0x65, 0x72, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x03, 0x90, 0x02, 0x01, 0x12, 0x57, 0x0a,
+	0x0b, 0x42, 0x65, 0x68, 0x69, 0x6e, 0x64, 0x41, 0x68, 0x65, 0x61, 0x64, 0x12, 0x20, 0x2e, 0x67,
+	0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x65, 0x68, 0x69,
+	0x6e, 0x64, 0x41, 0x68, 0x65, 0x61, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x21,
+	0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x65,
+	0x68, 0x69, 0x6e, 0x64, 0x41, 0x68, 0x65, 0x61, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0x03, 0x90, 0x02, 0x01, 0x12, 0x5c, 0x0a, 0x0c, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65,
+	0x64, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x12, 0x21, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76,
+	0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x46, 0x69, 0x6c,
+	0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x67, 0x69, 0x74, 0x73,
+	0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64,
+	0x46, 0x69, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x03, 0x90,
+	0x02, 0x01, 0x30, 0x01, 0x12, 0x42, 0x0a, 0x04, 0x53, 0x74, 0x61, 0x74, 0x12, 0x19, 0x2e, 0x67,
 	0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x61, 0x74,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x03, 0x90, 0x02, 0x01, 0x12, 0x4d, 0x0a,
-	0x07, 0x52, 0x65, 0x61, 0x64, 0x44, 0x69, 0x72, 0x12, 0x1c, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65,
-	0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x61, 0x64, 0x44, 0x69, 0x72, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76,
-	0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x61, 0x64, 0x44, 0x69, 0x72, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x03, 0x90, 0x02, 0x01, 0x30, 0x01, 0x42, 0x3a, 0x5a, 0x38,
-	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63,
-	0x65, 0x67, 0x72, 0x61, 0x70, 0x68, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61,
-	0x70, 0x68, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x67, 0x69, 0x74, 0x73,
-	0x65, 0x72, 0x76, 0x65, 0x72, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72,
+	0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x03, 0x90, 0x02, 0x01, 0x12, 0x4d, 0x0a, 0x07, 0x52, 0x65, 0x61, 0x64,
+	0x44, 0x69, 0x72, 0x12, 0x1c, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e,
+	0x76, 0x31, 0x2e, 0x52, 0x65, 0x61, 0x64, 0x44, 0x69, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x1d, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31,
+	0x2e, 0x52, 0x65, 0x61, 0x64, 0x44, 0x69, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x03, 0x90, 0x02, 0x01, 0x30, 0x01, 0x42, 0x3a, 0x5a, 0x38, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61, 0x70,
+	0x68, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61, 0x70, 0x68, 0x2f, 0x69, 0x6e,
+	0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72,
+	0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -8513,7 +8579,7 @@ func file_gitserver_proto_rawDescGZIP() []byte {
 }
 
 var file_gitserver_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_gitserver_proto_msgTypes = make([]protoimpl.MessageInfo, 113)
+var file_gitserver_proto_msgTypes = make([]protoimpl.MessageInfo, 114)
 var file_gitserver_proto_goTypes = []interface{}{
 	(OperatorKind)(0),                                   // 0: gitserver.v1.OperatorKind
 	(ArchiveFormat)(0),                                  // 1: gitserver.v1.ArchiveFormat
@@ -8533,256 +8599,259 @@ var file_gitserver_proto_goTypes = []interface{}{
 	(*ContributorCountsResponse)(nil),                   // 15: gitserver.v1.ContributorCountsResponse
 	(*RawDiffRequest)(nil),                              // 16: gitserver.v1.RawDiffRequest
 	(*RawDiffResponse)(nil),                             // 17: gitserver.v1.RawDiffResponse
-	(*ListRefsRequest)(nil),                             // 18: gitserver.v1.ListRefsRequest
-	(*ListRefsResponse)(nil),                            // 19: gitserver.v1.ListRefsResponse
-	(*GitRef)(nil),                                      // 20: gitserver.v1.GitRef
-	(*StatRequest)(nil),                                 // 21: gitserver.v1.StatRequest
-	(*StatResponse)(nil),                                // 22: gitserver.v1.StatResponse
-	(*ReadDirRequest)(nil),                              // 23: gitserver.v1.ReadDirRequest
-	(*ReadDirResponse)(nil),                             // 24: gitserver.v1.ReadDirResponse
-	(*GitSubmodule)(nil),                                // 25: gitserver.v1.GitSubmodule
-	(*FileInfo)(nil),                                    // 26: gitserver.v1.FileInfo
-	(*ResolveRevisionRequest)(nil),                      // 27: gitserver.v1.ResolveRevisionRequest
-	(*ResolveRevisionResponse)(nil),                     // 28: gitserver.v1.ResolveRevisionResponse
-	(*RevAtTimeRequest)(nil),                            // 29: gitserver.v1.RevAtTimeRequest
-	(*RevAtTimeResponse)(nil),                           // 30: gitserver.v1.RevAtTimeResponse
-	(*GetCommitRequest)(nil),                            // 31: gitserver.v1.GetCommitRequest
-	(*GetCommitResponse)(nil),                           // 32: gitserver.v1.GetCommitResponse
-	(*GitCommit)(nil),                                   // 33: gitserver.v1.GitCommit
-	(*GitSignature)(nil),                                // 34: gitserver.v1.GitSignature
-	(*BlameRequest)(nil),                                // 35: gitserver.v1.BlameRequest
-	(*BlameRange)(nil),                                  // 36: gitserver.v1.BlameRange
-	(*BlameResponse)(nil),                               // 37: gitserver.v1.BlameResponse
-	(*BlameHunk)(nil),                                   // 38: gitserver.v1.BlameHunk
-	(*BlameAuthor)(nil),                                 // 39: gitserver.v1.BlameAuthor
-	(*PreviousCommit)(nil),                              // 40: gitserver.v1.PreviousCommit
-	(*DefaultBranchRequest)(nil),                        // 41: gitserver.v1.DefaultBranchRequest
-	(*DefaultBranchResponse)(nil),                       // 42: gitserver.v1.DefaultBranchResponse
-	(*ReadFileRequest)(nil),                             // 43: gitserver.v1.ReadFileRequest
-	(*ReadFileResponse)(nil),                            // 44: gitserver.v1.ReadFileResponse
-	(*DiskInfoRequest)(nil),                             // 45: gitserver.v1.DiskInfoRequest
-	(*DiskInfoResponse)(nil),                            // 46: gitserver.v1.DiskInfoResponse
-	(*PatchCommitInfo)(nil),                             // 47: gitserver.v1.PatchCommitInfo
-	(*PushConfig)(nil),                                  // 48: gitserver.v1.PushConfig
-	(*CreateCommitFromPatchBinaryRequest)(nil),          // 49: gitserver.v1.CreateCommitFromPatchBinaryRequest
-	(*CreateCommitFromPatchError)(nil),                  // 50: gitserver.v1.CreateCommitFromPatchError
-	(*CreateCommitFromPatchBinaryResponse)(nil),         // 51: gitserver.v1.CreateCommitFromPatchBinaryResponse
-	(*ExecRequest)(nil),                                 // 52: gitserver.v1.ExecRequest
-	(*ExecResponse)(nil),                                // 53: gitserver.v1.ExecResponse
-	(*RepoNotFoundPayload)(nil),                         // 54: gitserver.v1.RepoNotFoundPayload
-	(*RevisionNotFoundPayload)(nil),                     // 55: gitserver.v1.RevisionNotFoundPayload
-	(*FileNotFoundPayload)(nil),                         // 56: gitserver.v1.FileNotFoundPayload
-	(*ExecStatusPayload)(nil),                           // 57: gitserver.v1.ExecStatusPayload
-	(*SearchRequest)(nil),                               // 58: gitserver.v1.SearchRequest
-	(*RevisionSpecifier)(nil),                           // 59: gitserver.v1.RevisionSpecifier
-	(*AuthorMatchesNode)(nil),                           // 60: gitserver.v1.AuthorMatchesNode
-	(*CommitterMatchesNode)(nil),                        // 61: gitserver.v1.CommitterMatchesNode
-	(*CommitBeforeNode)(nil),                            // 62: gitserver.v1.CommitBeforeNode
-	(*CommitAfterNode)(nil),                             // 63: gitserver.v1.CommitAfterNode
-	(*MessageMatchesNode)(nil),                          // 64: gitserver.v1.MessageMatchesNode
-	(*DiffMatchesNode)(nil),                             // 65: gitserver.v1.DiffMatchesNode
-	(*DiffModifiesFileNode)(nil),                        // 66: gitserver.v1.DiffModifiesFileNode
-	(*BooleanNode)(nil),                                 // 67: gitserver.v1.BooleanNode
-	(*OperatorNode)(nil),                                // 68: gitserver.v1.OperatorNode
-	(*QueryNode)(nil),                                   // 69: gitserver.v1.QueryNode
-	(*SearchResponse)(nil),                              // 70: gitserver.v1.SearchResponse
-	(*CommitMatch)(nil),                                 // 71: gitserver.v1.CommitMatch
-	(*ArchiveRequest)(nil),                              // 72: gitserver.v1.ArchiveRequest
-	(*ArchiveResponse)(nil),                             // 73: gitserver.v1.ArchiveResponse
-	(*IsRepoCloneableRequest)(nil),                      // 74: gitserver.v1.IsRepoCloneableRequest
-	(*IsRepoCloneableResponse)(nil),                     // 75: gitserver.v1.IsRepoCloneableResponse
-	(*RepoCloneProgressRequest)(nil),                    // 76: gitserver.v1.RepoCloneProgressRequest
-	(*RepoCloneProgressResponse)(nil),                   // 77: gitserver.v1.RepoCloneProgressResponse
-	(*ListGitoliteRequest)(nil),                         // 78: gitserver.v1.ListGitoliteRequest
-	(*GitoliteRepo)(nil),                                // 79: gitserver.v1.GitoliteRepo
-	(*ListGitoliteResponse)(nil),                        // 80: gitserver.v1.ListGitoliteResponse
-	(*GetObjectRequest)(nil),                            // 81: gitserver.v1.GetObjectRequest
-	(*GetObjectResponse)(nil),                           // 82: gitserver.v1.GetObjectResponse
-	(*GitObject)(nil),                                   // 83: gitserver.v1.GitObject
-	(*IsPerforcePathCloneableRequest)(nil),              // 84: gitserver.v1.IsPerforcePathCloneableRequest
-	(*IsPerforcePathCloneableResponse)(nil),             // 85: gitserver.v1.IsPerforcePathCloneableResponse
-	(*CheckPerforceCredentialsRequest)(nil),             // 86: gitserver.v1.CheckPerforceCredentialsRequest
-	(*CheckPerforceCredentialsResponse)(nil),            // 87: gitserver.v1.CheckPerforceCredentialsResponse
-	(*PerforceConnectionDetails)(nil),                   // 88: gitserver.v1.PerforceConnectionDetails
-	(*PerforceGetChangelistRequest)(nil),                // 89: gitserver.v1.PerforceGetChangelistRequest
-	(*PerforceGetChangelistResponse)(nil),               // 90: gitserver.v1.PerforceGetChangelistResponse
-	(*PerforceChangelist)(nil),                          // 91: gitserver.v1.PerforceChangelist
-	(*IsPerforceSuperUserRequest)(nil),                  // 92: gitserver.v1.IsPerforceSuperUserRequest
-	(*IsPerforceSuperUserResponse)(nil),                 // 93: gitserver.v1.IsPerforceSuperUserResponse
-	(*PerforceProtectsForDepotRequest)(nil),             // 94: gitserver.v1.PerforceProtectsForDepotRequest
-	(*PerforceProtectsForDepotResponse)(nil),            // 95: gitserver.v1.PerforceProtectsForDepotResponse
-	(*PerforceProtectsForUserRequest)(nil),              // 96: gitserver.v1.PerforceProtectsForUserRequest
-	(*PerforceProtectsForUserResponse)(nil),             // 97: gitserver.v1.PerforceProtectsForUserResponse
-	(*PerforceProtect)(nil),                             // 98: gitserver.v1.PerforceProtect
-	(*PerforceGroupMembersRequest)(nil),                 // 99: gitserver.v1.PerforceGroupMembersRequest
-	(*PerforceGroupMembersResponse)(nil),                // 100: gitserver.v1.PerforceGroupMembersResponse
-	(*PerforceUsersRequest)(nil),                        // 101: gitserver.v1.PerforceUsersRequest
-	(*PerforceUsersResponse)(nil),                       // 102: gitserver.v1.PerforceUsersResponse
-	(*PerforceUser)(nil),                                // 103: gitserver.v1.PerforceUser
-	(*MergeBaseRequest)(nil),                            // 104: gitserver.v1.MergeBaseRequest
-	(*MergeBaseResponse)(nil),                           // 105: gitserver.v1.MergeBaseResponse
-	(*FirstEverCommitRequest)(nil),                      // 106: gitserver.v1.FirstEverCommitRequest
-	(*FirstEverCommitResponse)(nil),                     // 107: gitserver.v1.FirstEverCommitResponse
-	(*BehindAheadRequest)(nil),                          // 108: gitserver.v1.BehindAheadRequest
-	(*BehindAheadResponse)(nil),                         // 109: gitserver.v1.BehindAheadResponse
-	(*ChangedFilesRequest)(nil),                         // 110: gitserver.v1.ChangedFilesRequest
-	(*ChangedFilesResponse)(nil),                        // 111: gitserver.v1.ChangedFilesResponse
-	(*ChangedFile)(nil),                                 // 112: gitserver.v1.ChangedFile
-	(*ListRepositoriesResponse_GitRepository)(nil),      // 113: gitserver.v1.ListRepositoriesResponse.GitRepository
-	(*CreateCommitFromPatchBinaryRequest_Metadata)(nil), // 114: gitserver.v1.CreateCommitFromPatchBinaryRequest.Metadata
-	(*CreateCommitFromPatchBinaryRequest_Patch)(nil),    // 115: gitserver.v1.CreateCommitFromPatchBinaryRequest.Patch
-	(*CommitMatch_Signature)(nil),                       // 116: gitserver.v1.CommitMatch.Signature
-	(*CommitMatch_MatchedString)(nil),                   // 117: gitserver.v1.CommitMatch.MatchedString
-	(*CommitMatch_Range)(nil),                           // 118: gitserver.v1.CommitMatch.Range
-	(*CommitMatch_Location)(nil),                        // 119: gitserver.v1.CommitMatch.Location
-	(*timestamppb.Timestamp)(nil),                       // 120: google.protobuf.Timestamp
+	(*BatchRawDiffResponse)(nil),                        // 18: gitserver.v1.BatchRawDiffResponse
+	(*ListRefsRequest)(nil),                             // 19: gitserver.v1.ListRefsRequest
+	(*ListRefsResponse)(nil),                            // 20: gitserver.v1.ListRefsResponse
+	(*GitRef)(nil),                                      // 21: gitserver.v1.GitRef
+	(*StatRequest)(nil),                                 // 22: gitserver.v1.StatRequest
+	(*StatResponse)(nil),                                // 23: gitserver.v1.StatResponse
+	(*ReadDirRequest)(nil),                              // 24: gitserver.v1.ReadDirRequest
+	(*ReadDirResponse)(nil),                             // 25: gitserver.v1.ReadDirResponse
+	(*GitSubmodule)(nil),                                // 26: gitserver.v1.GitSubmodule
+	(*FileInfo)(nil),                                    // 27: gitserver.v1.FileInfo
+	(*ResolveRevisionRequest)(nil),                      // 28: gitserver.v1.ResolveRevisionRequest
+	(*ResolveRevisionResponse)(nil),                     // 29: gitserver.v1.ResolveRevisionResponse
+	(*RevAtTimeRequest)(nil),                            // 30: gitserver.v1.RevAtTimeRequest
+	(*RevAtTimeResponse)(nil),                           // 31: gitserver.v1.RevAtTimeResponse
+	(*GetCommitRequest)(nil),                            // 32: gitserver.v1.GetCommitRequest
+	(*GetCommitResponse)(nil),                           // 33: gitserver.v1.GetCommitResponse
+	(*GitCommit)(nil),                                   // 34: gitserver.v1.GitCommit
+	(*GitSignature)(nil),                                // 35: gitserver.v1.GitSignature
+	(*BlameRequest)(nil),                                // 36: gitserver.v1.BlameRequest
+	(*BlameRange)(nil),                                  // 37: gitserver.v1.BlameRange
+	(*BlameResponse)(nil),                               // 38: gitserver.v1.BlameResponse
+	(*BlameHunk)(nil),                                   // 39: gitserver.v1.BlameHunk
+	(*BlameAuthor)(nil),                                 // 40: gitserver.v1.BlameAuthor
+	(*PreviousCommit)(nil),                              // 41: gitserver.v1.PreviousCommit
+	(*DefaultBranchRequest)(nil),                        // 42: gitserver.v1.DefaultBranchRequest
+	(*DefaultBranchResponse)(nil),                       // 43: gitserver.v1.DefaultBranchResponse
+	(*ReadFileRequest)(nil),                             // 44: gitserver.v1.ReadFileRequest
+	(*ReadFileResponse)(nil),                            // 45: gitserver.v1.ReadFileResponse
+	(*DiskInfoRequest)(nil),                             // 46: gitserver.v1.DiskInfoRequest
+	(*DiskInfoResponse)(nil),                            // 47: gitserver.v1.DiskInfoResponse
+	(*PatchCommitInfo)(nil),                             // 48: gitserver.v1.PatchCommitInfo
+	(*PushConfig)(nil),                                  // 49: gitserver.v1.PushConfig
+	(*CreateCommitFromPatchBinaryRequest)(nil),          // 50: gitserver.v1.CreateCommitFromPatchBinaryRequest
+	(*CreateCommitFromPatchError)(nil),                  // 51: gitserver.v1.CreateCommitFromPatchError
+	(*CreateCommitFromPatchBinaryResponse)(nil),         // 52: gitserver.v1.CreateCommitFromPatchBinaryResponse
+	(*ExecRequest)(nil),                                 // 53: gitserver.v1.ExecRequest
+	(*ExecResponse)(nil),                                // 54: gitserver.v1.ExecResponse
+	(*RepoNotFoundPayload)(nil),                         // 55: gitserver.v1.RepoNotFoundPayload
+	(*RevisionNotFoundPayload)(nil),                     // 56: gitserver.v1.RevisionNotFoundPayload
+	(*FileNotFoundPayload)(nil),                         // 57: gitserver.v1.FileNotFoundPayload
+	(*ExecStatusPayload)(nil),                           // 58: gitserver.v1.ExecStatusPayload
+	(*SearchRequest)(nil),                               // 59: gitserver.v1.SearchRequest
+	(*RevisionSpecifier)(nil),                           // 60: gitserver.v1.RevisionSpecifier
+	(*AuthorMatchesNode)(nil),                           // 61: gitserver.v1.AuthorMatchesNode
+	(*CommitterMatchesNode)(nil),                        // 62: gitserver.v1.CommitterMatchesNode
+	(*CommitBeforeNode)(nil),                            // 63: gitserver.v1.CommitBeforeNode
+	(*CommitAfterNode)(nil),                             // 64: gitserver.v1.CommitAfterNode
+	(*MessageMatchesNode)(nil),                          // 65: gitserver.v1.MessageMatchesNode
+	(*DiffMatchesNode)(nil),                             // 66: gitserver.v1.DiffMatchesNode
+	(*DiffModifiesFileNode)(nil),                        // 67: gitserver.v1.DiffModifiesFileNode
+	(*BooleanNode)(nil),                                 // 68: gitserver.v1.BooleanNode
+	(*OperatorNode)(nil),                                // 69: gitserver.v1.OperatorNode
+	(*QueryNode)(nil),                                   // 70: gitserver.v1.QueryNode
+	(*SearchResponse)(nil),                              // 71: gitserver.v1.SearchResponse
+	(*CommitMatch)(nil),                                 // 72: gitserver.v1.CommitMatch
+	(*ArchiveRequest)(nil),                              // 73: gitserver.v1.ArchiveRequest
+	(*ArchiveResponse)(nil),                             // 74: gitserver.v1.ArchiveResponse
+	(*IsRepoCloneableRequest)(nil),                      // 75: gitserver.v1.IsRepoCloneableRequest
+	(*IsRepoCloneableResponse)(nil),                     // 76: gitserver.v1.IsRepoCloneableResponse
+	(*RepoCloneProgressRequest)(nil),                    // 77: gitserver.v1.RepoCloneProgressRequest
+	(*RepoCloneProgressResponse)(nil),                   // 78: gitserver.v1.RepoCloneProgressResponse
+	(*ListGitoliteRequest)(nil),                         // 79: gitserver.v1.ListGitoliteRequest
+	(*GitoliteRepo)(nil),                                // 80: gitserver.v1.GitoliteRepo
+	(*ListGitoliteResponse)(nil),                        // 81: gitserver.v1.ListGitoliteResponse
+	(*GetObjectRequest)(nil),                            // 82: gitserver.v1.GetObjectRequest
+	(*GetObjectResponse)(nil),                           // 83: gitserver.v1.GetObjectResponse
+	(*GitObject)(nil),                                   // 84: gitserver.v1.GitObject
+	(*IsPerforcePathCloneableRequest)(nil),              // 85: gitserver.v1.IsPerforcePathCloneableRequest
+	(*IsPerforcePathCloneableResponse)(nil),             // 86: gitserver.v1.IsPerforcePathCloneableResponse
+	(*CheckPerforceCredentialsRequest)(nil),             // 87: gitserver.v1.CheckPerforceCredentialsRequest
+	(*CheckPerforceCredentialsResponse)(nil),            // 88: gitserver.v1.CheckPerforceCredentialsResponse
+	(*PerforceConnectionDetails)(nil),                   // 89: gitserver.v1.PerforceConnectionDetails
+	(*PerforceGetChangelistRequest)(nil),                // 90: gitserver.v1.PerforceGetChangelistRequest
+	(*PerforceGetChangelistResponse)(nil),               // 91: gitserver.v1.PerforceGetChangelistResponse
+	(*PerforceChangelist)(nil),                          // 92: gitserver.v1.PerforceChangelist
+	(*IsPerforceSuperUserRequest)(nil),                  // 93: gitserver.v1.IsPerforceSuperUserRequest
+	(*IsPerforceSuperUserResponse)(nil),                 // 94: gitserver.v1.IsPerforceSuperUserResponse
+	(*PerforceProtectsForDepotRequest)(nil),             // 95: gitserver.v1.PerforceProtectsForDepotRequest
+	(*PerforceProtectsForDepotResponse)(nil),            // 96: gitserver.v1.PerforceProtectsForDepotResponse
+	(*PerforceProtectsForUserRequest)(nil),              // 97: gitserver.v1.PerforceProtectsForUserRequest
+	(*PerforceProtectsForUserResponse)(nil),             // 98: gitserver.v1.PerforceProtectsForUserResponse
+	(*PerforceProtect)(nil),                             // 99: gitserver.v1.PerforceProtect
+	(*PerforceGroupMembersRequest)(nil),                 // 100: gitserver.v1.PerforceGroupMembersRequest
+	(*PerforceGroupMembersResponse)(nil),                // 101: gitserver.v1.PerforceGroupMembersResponse
+	(*PerforceUsersRequest)(nil),                        // 102: gitserver.v1.PerforceUsersRequest
+	(*PerforceUsersResponse)(nil),                       // 103: gitserver.v1.PerforceUsersResponse
+	(*PerforceUser)(nil),                                // 104: gitserver.v1.PerforceUser
+	(*MergeBaseRequest)(nil),                            // 105: gitserver.v1.MergeBaseRequest
+	(*MergeBaseResponse)(nil),                           // 106: gitserver.v1.MergeBaseResponse
+	(*FirstEverCommitRequest)(nil),                      // 107: gitserver.v1.FirstEverCommitRequest
+	(*FirstEverCommitResponse)(nil),                     // 108: gitserver.v1.FirstEverCommitResponse
+	(*BehindAheadRequest)(nil),                          // 109: gitserver.v1.BehindAheadRequest
+	(*BehindAheadResponse)(nil),                         // 110: gitserver.v1.BehindAheadResponse
+	(*ChangedFilesRequest)(nil),                         // 111: gitserver.v1.ChangedFilesRequest
+	(*ChangedFilesResponse)(nil),                        // 112: gitserver.v1.ChangedFilesResponse
+	(*ChangedFile)(nil),                                 // 113: gitserver.v1.ChangedFile
+	(*ListRepositoriesResponse_GitRepository)(nil),      // 114: gitserver.v1.ListRepositoriesResponse.GitRepository
+	(*CreateCommitFromPatchBinaryRequest_Metadata)(nil), // 115: gitserver.v1.CreateCommitFromPatchBinaryRequest.Metadata
+	(*CreateCommitFromPatchBinaryRequest_Patch)(nil),    // 116: gitserver.v1.CreateCommitFromPatchBinaryRequest.Patch
+	(*CommitMatch_Signature)(nil),                       // 117: gitserver.v1.CommitMatch.Signature
+	(*CommitMatch_MatchedString)(nil),                   // 118: gitserver.v1.CommitMatch.MatchedString
+	(*CommitMatch_Range)(nil),                           // 119: gitserver.v1.CommitMatch.Range
+	(*CommitMatch_Location)(nil),                        // 120: gitserver.v1.CommitMatch.Location
+	(*timestamppb.Timestamp)(nil),                       // 121: google.protobuf.Timestamp
 }
 var file_gitserver_proto_depIdxs = []int32{
-	113, // 0: gitserver.v1.ListRepositoriesResponse.repositories:type_name -> gitserver.v1.ListRepositoriesResponse.GitRepository
-	120, // 1: gitserver.v1.FetchRepositoryResponse.last_fetched:type_name -> google.protobuf.Timestamp
-	120, // 2: gitserver.v1.FetchRepositoryResponse.last_changed:type_name -> google.protobuf.Timestamp
-	120, // 3: gitserver.v1.ContributorCountsRequest.after:type_name -> google.protobuf.Timestamp
-	34,  // 4: gitserver.v1.ContributorCount.author:type_name -> gitserver.v1.GitSignature
+	114, // 0: gitserver.v1.ListRepositoriesResponse.repositories:type_name -> gitserver.v1.ListRepositoriesResponse.GitRepository
+	121, // 1: gitserver.v1.FetchRepositoryResponse.last_fetched:type_name -> google.protobuf.Timestamp
+	121, // 2: gitserver.v1.FetchRepositoryResponse.last_changed:type_name -> google.protobuf.Timestamp
+	121, // 3: gitserver.v1.ContributorCountsRequest.after:type_name -> google.protobuf.Timestamp
+	35,  // 4: gitserver.v1.ContributorCount.author:type_name -> gitserver.v1.GitSignature
 	14,  // 5: gitserver.v1.ContributorCountsResponse.counts:type_name -> gitserver.v1.ContributorCount
 	2,   // 6: gitserver.v1.RawDiffRequest.comparison_type:type_name -> gitserver.v1.RawDiffRequest.ComparisonType
-	20,  // 7: gitserver.v1.ListRefsResponse.refs:type_name -> gitserver.v1.GitRef
-	120, // 8: gitserver.v1.GitRef.created_at:type_name -> google.protobuf.Timestamp
+	21,  // 7: gitserver.v1.ListRefsResponse.refs:type_name -> gitserver.v1.GitRef
+	121, // 8: gitserver.v1.GitRef.created_at:type_name -> google.protobuf.Timestamp
 	3,   // 9: gitserver.v1.GitRef.ref_type:type_name -> gitserver.v1.GitRef.RefType
-	26,  // 10: gitserver.v1.StatResponse.file_info:type_name -> gitserver.v1.FileInfo
-	26,  // 11: gitserver.v1.ReadDirResponse.file_info:type_name -> gitserver.v1.FileInfo
-	25,  // 12: gitserver.v1.FileInfo.submodule:type_name -> gitserver.v1.GitSubmodule
-	120, // 13: gitserver.v1.RevAtTimeRequest.time:type_name -> google.protobuf.Timestamp
-	33,  // 14: gitserver.v1.GetCommitResponse.commit:type_name -> gitserver.v1.GitCommit
-	34,  // 15: gitserver.v1.GitCommit.author:type_name -> gitserver.v1.GitSignature
-	34,  // 16: gitserver.v1.GitCommit.committer:type_name -> gitserver.v1.GitSignature
-	120, // 17: gitserver.v1.GitSignature.date:type_name -> google.protobuf.Timestamp
-	36,  // 18: gitserver.v1.BlameRequest.range:type_name -> gitserver.v1.BlameRange
-	38,  // 19: gitserver.v1.BlameResponse.hunk:type_name -> gitserver.v1.BlameHunk
-	39,  // 20: gitserver.v1.BlameHunk.author:type_name -> gitserver.v1.BlameAuthor
-	40,  // 21: gitserver.v1.BlameHunk.previous_commit:type_name -> gitserver.v1.PreviousCommit
-	120, // 22: gitserver.v1.BlameAuthor.date:type_name -> google.protobuf.Timestamp
-	120, // 23: gitserver.v1.PatchCommitInfo.date:type_name -> google.protobuf.Timestamp
-	114, // 24: gitserver.v1.CreateCommitFromPatchBinaryRequest.metadata:type_name -> gitserver.v1.CreateCommitFromPatchBinaryRequest.Metadata
-	115, // 25: gitserver.v1.CreateCommitFromPatchBinaryRequest.patch:type_name -> gitserver.v1.CreateCommitFromPatchBinaryRequest.Patch
-	59,  // 26: gitserver.v1.SearchRequest.revisions:type_name -> gitserver.v1.RevisionSpecifier
-	69,  // 27: gitserver.v1.SearchRequest.query:type_name -> gitserver.v1.QueryNode
-	120, // 28: gitserver.v1.CommitBeforeNode.timestamp:type_name -> google.protobuf.Timestamp
-	120, // 29: gitserver.v1.CommitAfterNode.timestamp:type_name -> google.protobuf.Timestamp
+	27,  // 10: gitserver.v1.StatResponse.file_info:type_name -> gitserver.v1.FileInfo
+	27,  // 11: gitserver.v1.ReadDirResponse.file_info:type_name -> gitserver.v1.FileInfo
+	26,  // 12: gitserver.v1.FileInfo.submodule:type_name -> gitserver.v1.GitSubmodule
+	121, // 13: gitserver.v1.RevAtTimeRequest.time:type_name -> google.protobuf.Timestamp
+	34,  // 14: gitserver.v1.GetCommitResponse.commit:type_name -> gitserver.v1.GitCommit
+	35,  // 15: gitserver.v1.GitCommit.author:type_name -> gitserver.v1.GitSignature
+	35,  // 16: gitserver.v1.GitCommit.committer:type_name -> gitserver.v1.GitSignature
+	121, // 17: gitserver.v1.GitSignature.date:type_name -> google.protobuf.Timestamp
+	37,  // 18: gitserver.v1.BlameRequest.range:type_name -> gitserver.v1.BlameRange
+	39,  // 19: gitserver.v1.BlameResponse.hunk:type_name -> gitserver.v1.BlameHunk
+	40,  // 20: gitserver.v1.BlameHunk.author:type_name -> gitserver.v1.BlameAuthor
+	41,  // 21: gitserver.v1.BlameHunk.previous_commit:type_name -> gitserver.v1.PreviousCommit
+	121, // 22: gitserver.v1.BlameAuthor.date:type_name -> google.protobuf.Timestamp
+	121, // 23: gitserver.v1.PatchCommitInfo.date:type_name -> google.protobuf.Timestamp
+	115, // 24: gitserver.v1.CreateCommitFromPatchBinaryRequest.metadata:type_name -> gitserver.v1.CreateCommitFromPatchBinaryRequest.Metadata
+	116, // 25: gitserver.v1.CreateCommitFromPatchBinaryRequest.patch:type_name -> gitserver.v1.CreateCommitFromPatchBinaryRequest.Patch
+	60,  // 26: gitserver.v1.SearchRequest.revisions:type_name -> gitserver.v1.RevisionSpecifier
+	70,  // 27: gitserver.v1.SearchRequest.query:type_name -> gitserver.v1.QueryNode
+	121, // 28: gitserver.v1.CommitBeforeNode.timestamp:type_name -> google.protobuf.Timestamp
+	121, // 29: gitserver.v1.CommitAfterNode.timestamp:type_name -> google.protobuf.Timestamp
 	0,   // 30: gitserver.v1.OperatorNode.kind:type_name -> gitserver.v1.OperatorKind
-	69,  // 31: gitserver.v1.OperatorNode.operands:type_name -> gitserver.v1.QueryNode
-	60,  // 32: gitserver.v1.QueryNode.author_matches:type_name -> gitserver.v1.AuthorMatchesNode
-	61,  // 33: gitserver.v1.QueryNode.committer_matches:type_name -> gitserver.v1.CommitterMatchesNode
-	62,  // 34: gitserver.v1.QueryNode.commit_before:type_name -> gitserver.v1.CommitBeforeNode
-	63,  // 35: gitserver.v1.QueryNode.commit_after:type_name -> gitserver.v1.CommitAfterNode
-	64,  // 36: gitserver.v1.QueryNode.message_matches:type_name -> gitserver.v1.MessageMatchesNode
-	65,  // 37: gitserver.v1.QueryNode.diff_matches:type_name -> gitserver.v1.DiffMatchesNode
-	66,  // 38: gitserver.v1.QueryNode.diff_modifies_file:type_name -> gitserver.v1.DiffModifiesFileNode
-	67,  // 39: gitserver.v1.QueryNode.boolean:type_name -> gitserver.v1.BooleanNode
-	68,  // 40: gitserver.v1.QueryNode.operator:type_name -> gitserver.v1.OperatorNode
-	71,  // 41: gitserver.v1.SearchResponse.match:type_name -> gitserver.v1.CommitMatch
-	116, // 42: gitserver.v1.CommitMatch.author:type_name -> gitserver.v1.CommitMatch.Signature
-	116, // 43: gitserver.v1.CommitMatch.committer:type_name -> gitserver.v1.CommitMatch.Signature
-	117, // 44: gitserver.v1.CommitMatch.message:type_name -> gitserver.v1.CommitMatch.MatchedString
-	117, // 45: gitserver.v1.CommitMatch.diff:type_name -> gitserver.v1.CommitMatch.MatchedString
+	70,  // 31: gitserver.v1.OperatorNode.operands:type_name -> gitserver.v1.QueryNode
+	61,  // 32: gitserver.v1.QueryNode.author_matches:type_name -> gitserver.v1.AuthorMatchesNode
+	62,  // 33: gitserver.v1.QueryNode.committer_matches:type_name -> gitserver.v1.CommitterMatchesNode
+	63,  // 34: gitserver.v1.QueryNode.commit_before:type_name -> gitserver.v1.CommitBeforeNode
+	64,  // 35: gitserver.v1.QueryNode.commit_after:type_name -> gitserver.v1.CommitAfterNode
+	65,  // 36: gitserver.v1.QueryNode.message_matches:type_name -> gitserver.v1.MessageMatchesNode
+	66,  // 37: gitserver.v1.QueryNode.diff_matches:type_name -> gitserver.v1.DiffMatchesNode
+	67,  // 38: gitserver.v1.QueryNode.diff_modifies_file:type_name -> gitserver.v1.DiffModifiesFileNode
+	68,  // 39: gitserver.v1.QueryNode.boolean:type_name -> gitserver.v1.BooleanNode
+	69,  // 40: gitserver.v1.QueryNode.operator:type_name -> gitserver.v1.OperatorNode
+	72,  // 41: gitserver.v1.SearchResponse.match:type_name -> gitserver.v1.CommitMatch
+	117, // 42: gitserver.v1.CommitMatch.author:type_name -> gitserver.v1.CommitMatch.Signature
+	117, // 43: gitserver.v1.CommitMatch.committer:type_name -> gitserver.v1.CommitMatch.Signature
+	118, // 44: gitserver.v1.CommitMatch.message:type_name -> gitserver.v1.CommitMatch.MatchedString
+	118, // 45: gitserver.v1.CommitMatch.diff:type_name -> gitserver.v1.CommitMatch.MatchedString
 	1,   // 46: gitserver.v1.ArchiveRequest.format:type_name -> gitserver.v1.ArchiveFormat
-	79,  // 47: gitserver.v1.ListGitoliteResponse.repos:type_name -> gitserver.v1.GitoliteRepo
-	83,  // 48: gitserver.v1.GetObjectResponse.object:type_name -> gitserver.v1.GitObject
+	80,  // 47: gitserver.v1.ListGitoliteResponse.repos:type_name -> gitserver.v1.GitoliteRepo
+	84,  // 48: gitserver.v1.GetObjectResponse.object:type_name -> gitserver.v1.GitObject
 	4,   // 49: gitserver.v1.GitObject.type:type_name -> gitserver.v1.GitObject.ObjectType
-	88,  // 50: gitserver.v1.IsPerforcePathCloneableRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
-	88,  // 51: gitserver.v1.CheckPerforceCredentialsRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
-	88,  // 52: gitserver.v1.PerforceGetChangelistRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
-	91,  // 53: gitserver.v1.PerforceGetChangelistResponse.changelist:type_name -> gitserver.v1.PerforceChangelist
-	120, // 54: gitserver.v1.PerforceChangelist.creation_date:type_name -> google.protobuf.Timestamp
+	89,  // 50: gitserver.v1.IsPerforcePathCloneableRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
+	89,  // 51: gitserver.v1.CheckPerforceCredentialsRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
+	89,  // 52: gitserver.v1.PerforceGetChangelistRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
+	92,  // 53: gitserver.v1.PerforceGetChangelistResponse.changelist:type_name -> gitserver.v1.PerforceChangelist
+	121, // 54: gitserver.v1.PerforceChangelist.creation_date:type_name -> google.protobuf.Timestamp
 	5,   // 55: gitserver.v1.PerforceChangelist.state:type_name -> gitserver.v1.PerforceChangelist.PerforceChangelistState
-	88,  // 56: gitserver.v1.IsPerforceSuperUserRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
-	88,  // 57: gitserver.v1.PerforceProtectsForDepotRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
-	98,  // 58: gitserver.v1.PerforceProtectsForDepotResponse.protects:type_name -> gitserver.v1.PerforceProtect
-	88,  // 59: gitserver.v1.PerforceProtectsForUserRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
-	98,  // 60: gitserver.v1.PerforceProtectsForUserResponse.protects:type_name -> gitserver.v1.PerforceProtect
-	88,  // 61: gitserver.v1.PerforceGroupMembersRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
-	88,  // 62: gitserver.v1.PerforceUsersRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
-	103, // 63: gitserver.v1.PerforceUsersResponse.users:type_name -> gitserver.v1.PerforceUser
-	33,  // 64: gitserver.v1.FirstEverCommitResponse.commit:type_name -> gitserver.v1.GitCommit
-	112, // 65: gitserver.v1.ChangedFilesResponse.files:type_name -> gitserver.v1.ChangedFile
+	89,  // 56: gitserver.v1.IsPerforceSuperUserRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
+	89,  // 57: gitserver.v1.PerforceProtectsForDepotRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
+	99,  // 58: gitserver.v1.PerforceProtectsForDepotResponse.protects:type_name -> gitserver.v1.PerforceProtect
+	89,  // 59: gitserver.v1.PerforceProtectsForUserRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
+	99,  // 60: gitserver.v1.PerforceProtectsForUserResponse.protects:type_name -> gitserver.v1.PerforceProtect
+	89,  // 61: gitserver.v1.PerforceGroupMembersRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
+	89,  // 62: gitserver.v1.PerforceUsersRequest.connection_details:type_name -> gitserver.v1.PerforceConnectionDetails
+	104, // 63: gitserver.v1.PerforceUsersResponse.users:type_name -> gitserver.v1.PerforceUser
+	34,  // 64: gitserver.v1.FirstEverCommitResponse.commit:type_name -> gitserver.v1.GitCommit
+	113, // 65: gitserver.v1.ChangedFilesResponse.files:type_name -> gitserver.v1.ChangedFile
 	6,   // 66: gitserver.v1.ChangedFile.status:type_name -> gitserver.v1.ChangedFile.Status
-	47,  // 67: gitserver.v1.CreateCommitFromPatchBinaryRequest.Metadata.commit_info:type_name -> gitserver.v1.PatchCommitInfo
-	48,  // 68: gitserver.v1.CreateCommitFromPatchBinaryRequest.Metadata.push:type_name -> gitserver.v1.PushConfig
-	120, // 69: gitserver.v1.CommitMatch.Signature.date:type_name -> google.protobuf.Timestamp
-	118, // 70: gitserver.v1.CommitMatch.MatchedString.ranges:type_name -> gitserver.v1.CommitMatch.Range
-	119, // 71: gitserver.v1.CommitMatch.Range.start:type_name -> gitserver.v1.CommitMatch.Location
-	119, // 72: gitserver.v1.CommitMatch.Range.end:type_name -> gitserver.v1.CommitMatch.Location
+	48,  // 67: gitserver.v1.CreateCommitFromPatchBinaryRequest.Metadata.commit_info:type_name -> gitserver.v1.PatchCommitInfo
+	49,  // 68: gitserver.v1.CreateCommitFromPatchBinaryRequest.Metadata.push:type_name -> gitserver.v1.PushConfig
+	121, // 69: gitserver.v1.CommitMatch.Signature.date:type_name -> google.protobuf.Timestamp
+	119, // 70: gitserver.v1.CommitMatch.MatchedString.ranges:type_name -> gitserver.v1.CommitMatch.Range
+	120, // 71: gitserver.v1.CommitMatch.Range.start:type_name -> gitserver.v1.CommitMatch.Location
+	120, // 72: gitserver.v1.CommitMatch.Range.end:type_name -> gitserver.v1.CommitMatch.Location
 	9,   // 73: gitserver.v1.GitserverRepositoryService.DeleteRepository:input_type -> gitserver.v1.DeleteRepositoryRequest
 	11,  // 74: gitserver.v1.GitserverRepositoryService.FetchRepository:input_type -> gitserver.v1.FetchRepositoryRequest
 	7,   // 75: gitserver.v1.GitserverRepositoryService.ListRepositories:input_type -> gitserver.v1.ListRepositoriesRequest
-	49,  // 76: gitserver.v1.GitserverService.CreateCommitFromPatchBinary:input_type -> gitserver.v1.CreateCommitFromPatchBinaryRequest
-	45,  // 77: gitserver.v1.GitserverService.DiskInfo:input_type -> gitserver.v1.DiskInfoRequest
-	52,  // 78: gitserver.v1.GitserverService.Exec:input_type -> gitserver.v1.ExecRequest
-	81,  // 79: gitserver.v1.GitserverService.GetObject:input_type -> gitserver.v1.GetObjectRequest
-	74,  // 80: gitserver.v1.GitserverService.IsRepoCloneable:input_type -> gitserver.v1.IsRepoCloneableRequest
-	78,  // 81: gitserver.v1.GitserverService.ListGitolite:input_type -> gitserver.v1.ListGitoliteRequest
-	58,  // 82: gitserver.v1.GitserverService.Search:input_type -> gitserver.v1.SearchRequest
-	72,  // 83: gitserver.v1.GitserverService.Archive:input_type -> gitserver.v1.ArchiveRequest
-	76,  // 84: gitserver.v1.GitserverService.RepoCloneProgress:input_type -> gitserver.v1.RepoCloneProgressRequest
-	84,  // 85: gitserver.v1.GitserverService.IsPerforcePathCloneable:input_type -> gitserver.v1.IsPerforcePathCloneableRequest
-	86,  // 86: gitserver.v1.GitserverService.CheckPerforceCredentials:input_type -> gitserver.v1.CheckPerforceCredentialsRequest
-	101, // 87: gitserver.v1.GitserverService.PerforceUsers:input_type -> gitserver.v1.PerforceUsersRequest
-	96,  // 88: gitserver.v1.GitserverService.PerforceProtectsForUser:input_type -> gitserver.v1.PerforceProtectsForUserRequest
-	94,  // 89: gitserver.v1.GitserverService.PerforceProtectsForDepot:input_type -> gitserver.v1.PerforceProtectsForDepotRequest
-	99,  // 90: gitserver.v1.GitserverService.PerforceGroupMembers:input_type -> gitserver.v1.PerforceGroupMembersRequest
-	92,  // 91: gitserver.v1.GitserverService.IsPerforceSuperUser:input_type -> gitserver.v1.IsPerforceSuperUserRequest
-	89,  // 92: gitserver.v1.GitserverService.PerforceGetChangelist:input_type -> gitserver.v1.PerforceGetChangelistRequest
-	104, // 93: gitserver.v1.GitserverService.MergeBase:input_type -> gitserver.v1.MergeBaseRequest
-	35,  // 94: gitserver.v1.GitserverService.Blame:input_type -> gitserver.v1.BlameRequest
-	41,  // 95: gitserver.v1.GitserverService.DefaultBranch:input_type -> gitserver.v1.DefaultBranchRequest
-	43,  // 96: gitserver.v1.GitserverService.ReadFile:input_type -> gitserver.v1.ReadFileRequest
-	31,  // 97: gitserver.v1.GitserverService.GetCommit:input_type -> gitserver.v1.GetCommitRequest
-	27,  // 98: gitserver.v1.GitserverService.ResolveRevision:input_type -> gitserver.v1.ResolveRevisionRequest
-	18,  // 99: gitserver.v1.GitserverService.ListRefs:input_type -> gitserver.v1.ListRefsRequest
-	29,  // 100: gitserver.v1.GitserverService.RevAtTime:input_type -> gitserver.v1.RevAtTimeRequest
+	50,  // 76: gitserver.v1.GitserverService.CreateCommitFromPatchBinary:input_type -> gitserver.v1.CreateCommitFromPatchBinaryRequest
+	46,  // 77: gitserver.v1.GitserverService.DiskInfo:input_type -> gitserver.v1.DiskInfoRequest
+	53,  // 78: gitserver.v1.GitserverService.Exec:input_type -> gitserver.v1.ExecRequest
+	82,  // 79: gitserver.v1.GitserverService.GetObject:input_type -> gitserver.v1.GetObjectRequest
+	75,  // 80: gitserver.v1.GitserverService.IsRepoCloneable:input_type -> gitserver.v1.IsRepoCloneableRequest
+	79,  // 81: gitserver.v1.GitserverService.ListGitolite:input_type -> gitserver.v1.ListGitoliteRequest
+	59,  // 82: gitserver.v1.GitserverService.Search:input_type -> gitserver.v1.SearchRequest
+	73,  // 83: gitserver.v1.GitserverService.Archive:input_type -> gitserver.v1.ArchiveRequest
+	77,  // 84: gitserver.v1.GitserverService.RepoCloneProgress:input_type -> gitserver.v1.RepoCloneProgressRequest
+	85,  // 85: gitserver.v1.GitserverService.IsPerforcePathCloneable:input_type -> gitserver.v1.IsPerforcePathCloneableRequest
+	87,  // 86: gitserver.v1.GitserverService.CheckPerforceCredentials:input_type -> gitserver.v1.CheckPerforceCredentialsRequest
+	102, // 87: gitserver.v1.GitserverService.PerforceUsers:input_type -> gitserver.v1.PerforceUsersRequest
+	97,  // 88: gitserver.v1.GitserverService.PerforceProtectsForUser:input_type -> gitserver.v1.PerforceProtectsForUserRequest
+	95,  // 89: gitserver.v1.GitserverService.PerforceProtectsForDepot:input_type -> gitserver.v1.PerforceProtectsForDepotRequest
+	100, // 90: gitserver.v1.GitserverService.PerforceGroupMembers:input_type -> gitserver.v1.PerforceGroupMembersRequest
+	93,  // 91: gitserver.v1.GitserverService.IsPerforceSuperUser:input_type -> gitserver.v1.IsPerforceSuperUserRequest
+	90,  // 92: gitserver.v1.GitserverService.PerforceGetChangelist:input_type -> gitserver.v1.PerforceGetChangelistRequest
+	105, // 93: gitserver.v1.GitserverService.MergeBase:input_type -> gitserver.v1.MergeBaseRequest
+	36,  // 94: gitserver.v1.GitserverService.Blame:input_type -> gitserver.v1.BlameRequest
+	42,  // 95: gitserver.v1.GitserverService.DefaultBranch:input_type -> gitserver.v1.DefaultBranchRequest
+	44,  // 96: gitserver.v1.GitserverService.ReadFile:input_type -> gitserver.v1.ReadFileRequest
+	32,  // 97: gitserver.v1.GitserverService.GetCommit:input_type -> gitserver.v1.GetCommitRequest
+	28,  // 98: gitserver.v1.GitserverService.ResolveRevision:input_type -> gitserver.v1.ResolveRevisionRequest
+	19,  // 99: gitserver.v1.GitserverService.ListRefs:input_type -> gitserver.v1.ListRefsRequest
+	30,  // 100: gitserver.v1.GitserverService.RevAtTime:input_type -> gitserver.v1.RevAtTimeRequest
 	16,  // 101: gitserver.v1.GitserverService.RawDiff:input_type -> gitserver.v1.RawDiffRequest
-	13,  // 102: gitserver.v1.GitserverService.ContributorCounts:input_type -> gitserver.v1.ContributorCountsRequest
-	106, // 103: gitserver.v1.GitserverService.FirstEverCommit:input_type -> gitserver.v1.FirstEverCommitRequest
-	108, // 104: gitserver.v1.GitserverService.BehindAhead:input_type -> gitserver.v1.BehindAheadRequest
-	110, // 105: gitserver.v1.GitserverService.ChangedFiles:input_type -> gitserver.v1.ChangedFilesRequest
-	21,  // 106: gitserver.v1.GitserverService.Stat:input_type -> gitserver.v1.StatRequest
-	23,  // 107: gitserver.v1.GitserverService.ReadDir:input_type -> gitserver.v1.ReadDirRequest
-	10,  // 108: gitserver.v1.GitserverRepositoryService.DeleteRepository:output_type -> gitserver.v1.DeleteRepositoryResponse
-	12,  // 109: gitserver.v1.GitserverRepositoryService.FetchRepository:output_type -> gitserver.v1.FetchRepositoryResponse
-	8,   // 110: gitserver.v1.GitserverRepositoryService.ListRepositories:output_type -> gitserver.v1.ListRepositoriesResponse
-	51,  // 111: gitserver.v1.GitserverService.CreateCommitFromPatchBinary:output_type -> gitserver.v1.CreateCommitFromPatchBinaryResponse
-	46,  // 112: gitserver.v1.GitserverService.DiskInfo:output_type -> gitserver.v1.DiskInfoResponse
-	53,  // 113: gitserver.v1.GitserverService.Exec:output_type -> gitserver.v1.ExecResponse
-	82,  // 114: gitserver.v1.GitserverService.GetObject:output_type -> gitserver.v1.GetObjectResponse
-	75,  // 115: gitserver.v1.GitserverService.IsRepoCloneable:output_type -> gitserver.v1.IsRepoCloneableResponse
-	80,  // 116: gitserver.v1.GitserverService.ListGitolite:output_type -> gitserver.v1.ListGitoliteResponse
-	70,  // 117: gitserver.v1.GitserverService.Search:output_type -> gitserver.v1.SearchResponse
-	73,  // 118: gitserver.v1.GitserverService.Archive:output_type -> gitserver.v1.ArchiveResponse
-	77,  // 119: gitserver.v1.GitserverService.RepoCloneProgress:output_type -> gitserver.v1.RepoCloneProgressResponse
-	85,  // 120: gitserver.v1.GitserverService.IsPerforcePathCloneable:output_type -> gitserver.v1.IsPerforcePathCloneableResponse
-	87,  // 121: gitserver.v1.GitserverService.CheckPerforceCredentials:output_type -> gitserver.v1.CheckPerforceCredentialsResponse
-	102, // 122: gitserver.v1.GitserverService.PerforceUsers:output_type -> gitserver.v1.PerforceUsersResponse
-	97,  // 123: gitserver.v1.GitserverService.PerforceProtectsForUser:output_type -> gitserver.v1.PerforceProtectsForUserResponse
-	95,  // 124: gitserver.v1.GitserverService.PerforceProtectsForDepot:output_type -> gitserver.v1.PerforceProtectsForDepotResponse
-	100, // 125: gitserver.v1.GitserverService.PerforceGroupMembers:output_type -> gitserver.v1.PerforceGroupMembersResponse
-	93,  // 126: gitserver.v1.GitserverService.IsPerforceSuperUser:output_type -> gitserver.v1.IsPerforceSuperUserResponse
-	90,  // 127: gitserver.v1.GitserverService.PerforceGetChangelist:output_type -> gitserver.v1.PerforceGetChangelistResponse
-	105, // 128: gitserver.v1.GitserverService.MergeBase:output_type -> gitserver.v1.MergeBaseResponse
-	37,  // 129: gitserver.v1.GitserverService.Blame:output_type -> gitserver.v1.BlameResponse
-	42,  // 130: gitserver.v1.GitserverService.DefaultBranch:output_type -> gitserver.v1.DefaultBranchResponse
-	44,  // 131: gitserver.v1.GitserverService.ReadFile:output_type -> gitserver.v1.ReadFileResponse
-	32,  // 132: gitserver.v1.GitserverService.GetCommit:output_type -> gitserver.v1.GetCommitResponse
-	28,  // 133: gitserver.v1.GitserverService.ResolveRevision:output_type -> gitserver.v1.ResolveRevisionResponse
-	19,  // 134: gitserver.v1.GitserverService.ListRefs:output_type -> gitserver.v1.ListRefsResponse
-	30,  // 135: gitserver.v1.GitserverService.RevAtTime:output_type -> gitserver.v1.RevAtTimeResponse
-	17,  // 136: gitserver.v1.GitserverService.RawDiff:output_type -> gitserver.v1.RawDiffResponse
-	15,  // 137: gitserver.v1.GitserverService.ContributorCounts:output_type -> gitserver.v1.ContributorCountsResponse
-	107, // 138: gitserver.v1.GitserverService.FirstEverCommit:output_type -> gitserver.v1.FirstEverCommitResponse
-	109, // 139: gitserver.v1.GitserverService.BehindAhead:output_type -> gitserver.v1.BehindAheadResponse
-	111, // 140: gitserver.v1.GitserverService.ChangedFiles:output_type -> gitserver.v1.ChangedFilesResponse
-	22,  // 141: gitserver.v1.GitserverService.Stat:output_type -> gitserver.v1.StatResponse
-	24,  // 142: gitserver.v1.GitserverService.ReadDir:output_type -> gitserver.v1.ReadDirResponse
-	108, // [108:143] is the sub-list for method output_type
-	73,  // [73:108] is the sub-list for method input_type
+	16,  // 102: gitserver.v1.GitserverService.BatchRawDiff:input_type -> gitserver.v1.RawDiffRequest
+	13,  // 103: gitserver.v1.GitserverService.ContributorCounts:input_type -> gitserver.v1.ContributorCountsRequest
+	107, // 104: gitserver.v1.GitserverService.FirstEverCommit:input_type -> gitserver.v1.FirstEverCommitRequest
+	109, // 105: gitserver.v1.GitserverService.BehindAhead:input_type -> gitserver.v1.BehindAheadRequest
+	111, // 106: gitserver.v1.GitserverService.ChangedFiles:input_type -> gitserver.v1.ChangedFilesRequest
+	22,  // 107: gitserver.v1.GitserverService.Stat:input_type -> gitserver.v1.StatRequest
+	24,  // 108: gitserver.v1.GitserverService.ReadDir:input_type -> gitserver.v1.ReadDirRequest
+	10,  // 109: gitserver.v1.GitserverRepositoryService.DeleteRepository:output_type -> gitserver.v1.DeleteRepositoryResponse
+	12,  // 110: gitserver.v1.GitserverRepositoryService.FetchRepository:output_type -> gitserver.v1.FetchRepositoryResponse
+	8,   // 111: gitserver.v1.GitserverRepositoryService.ListRepositories:output_type -> gitserver.v1.ListRepositoriesResponse
+	52,  // 112: gitserver.v1.GitserverService.CreateCommitFromPatchBinary:output_type -> gitserver.v1.CreateCommitFromPatchBinaryResponse
+	47,  // 113: gitserver.v1.GitserverService.DiskInfo:output_type -> gitserver.v1.DiskInfoResponse
+	54,  // 114: gitserver.v1.GitserverService.Exec:output_type -> gitserver.v1.ExecResponse
+	83,  // 115: gitserver.v1.GitserverService.GetObject:output_type -> gitserver.v1.GetObjectResponse
+	76,  // 116: gitserver.v1.GitserverService.IsRepoCloneable:output_type -> gitserver.v1.IsRepoCloneableResponse
+	81,  // 117: gitserver.v1.GitserverService.ListGitolite:output_type -> gitserver.v1.ListGitoliteResponse
+	71,  // 118: gitserver.v1.GitserverService.Search:output_type -> gitserver.v1.SearchResponse
+	74,  // 119: gitserver.v1.GitserverService.Archive:output_type -> gitserver.v1.ArchiveResponse
+	78,  // 120: gitserver.v1.GitserverService.RepoCloneProgress:output_type -> gitserver.v1.RepoCloneProgressResponse
+	86,  // 121: gitserver.v1.GitserverService.IsPerforcePathCloneable:output_type -> gitserver.v1.IsPerforcePathCloneableResponse
+	88,  // 122: gitserver.v1.GitserverService.CheckPerforceCredentials:output_type -> gitserver.v1.CheckPerforceCredentialsResponse
+	103, // 123: gitserver.v1.GitserverService.PerforceUsers:output_type -> gitserver.v1.PerforceUsersResponse
+	98,  // 124: gitserver.v1.GitserverService.PerforceProtectsForUser:output_type -> gitserver.v1.PerforceProtectsForUserResponse
+	96,  // 125: gitserver.v1.GitserverService.PerforceProtectsForDepot:output_type -> gitserver.v1.PerforceProtectsForDepotResponse
+	101, // 126: gitserver.v1.GitserverService.PerforceGroupMembers:output_type -> gitserver.v1.PerforceGroupMembersResponse
+	94,  // 127: gitserver.v1.GitserverService.IsPerforceSuperUser:output_type -> gitserver.v1.IsPerforceSuperUserResponse
+	91,  // 128: gitserver.v1.GitserverService.PerforceGetChangelist:output_type -> gitserver.v1.PerforceGetChangelistResponse
+	106, // 129: gitserver.v1.GitserverService.MergeBase:output_type -> gitserver.v1.MergeBaseResponse
+	38,  // 130: gitserver.v1.GitserverService.Blame:output_type -> gitserver.v1.BlameResponse
+	43,  // 131: gitserver.v1.GitserverService.DefaultBranch:output_type -> gitserver.v1.DefaultBranchResponse
+	45,  // 132: gitserver.v1.GitserverService.ReadFile:output_type -> gitserver.v1.ReadFileResponse
+	33,  // 133: gitserver.v1.GitserverService.GetCommit:output_type -> gitserver.v1.GetCommitResponse
+	29,  // 134: gitserver.v1.GitserverService.ResolveRevision:output_type -> gitserver.v1.ResolveRevisionResponse
+	20,  // 135: gitserver.v1.GitserverService.ListRefs:output_type -> gitserver.v1.ListRefsResponse
+	31,  // 136: gitserver.v1.GitserverService.RevAtTime:output_type -> gitserver.v1.RevAtTimeResponse
+	17,  // 137: gitserver.v1.GitserverService.RawDiff:output_type -> gitserver.v1.RawDiffResponse
+	18,  // 138: gitserver.v1.GitserverService.BatchRawDiff:output_type -> gitserver.v1.BatchRawDiffResponse
+	15,  // 139: gitserver.v1.GitserverService.ContributorCounts:output_type -> gitserver.v1.ContributorCountsResponse
+	108, // 140: gitserver.v1.GitserverService.FirstEverCommit:output_type -> gitserver.v1.FirstEverCommitResponse
+	110, // 141: gitserver.v1.GitserverService.BehindAhead:output_type -> gitserver.v1.BehindAheadResponse
+	112, // 142: gitserver.v1.GitserverService.ChangedFiles:output_type -> gitserver.v1.ChangedFilesResponse
+	23,  // 143: gitserver.v1.GitserverService.Stat:output_type -> gitserver.v1.StatResponse
+	25,  // 144: gitserver.v1.GitserverService.ReadDir:output_type -> gitserver.v1.ReadDirResponse
+	109, // [109:145] is the sub-list for method output_type
+	73,  // [73:109] is the sub-list for method input_type
 	73,  // [73:73] is the sub-list for extension type_name
 	73,  // [73:73] is the sub-list for extension extendee
 	0,   // [0:73] is the sub-list for field type_name
@@ -8927,7 +8996,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListRefsRequest); i {
+			switch v := v.(*BatchRawDiffResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -8939,7 +9008,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListRefsResponse); i {
+			switch v := v.(*ListRefsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -8951,7 +9020,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GitRef); i {
+			switch v := v.(*ListRefsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -8963,7 +9032,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StatRequest); i {
+			switch v := v.(*GitRef); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -8975,7 +9044,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StatResponse); i {
+			switch v := v.(*StatRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -8987,7 +9056,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReadDirRequest); i {
+			switch v := v.(*StatResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -8999,7 +9068,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReadDirResponse); i {
+			switch v := v.(*ReadDirRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9011,7 +9080,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GitSubmodule); i {
+			switch v := v.(*ReadDirResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9023,7 +9092,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FileInfo); i {
+			switch v := v.(*GitSubmodule); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9035,7 +9104,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ResolveRevisionRequest); i {
+			switch v := v.(*FileInfo); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9047,7 +9116,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ResolveRevisionResponse); i {
+			switch v := v.(*ResolveRevisionRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9059,7 +9128,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RevAtTimeRequest); i {
+			switch v := v.(*ResolveRevisionResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9071,7 +9140,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RevAtTimeResponse); i {
+			switch v := v.(*RevAtTimeRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9083,7 +9152,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetCommitRequest); i {
+			switch v := v.(*RevAtTimeResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9095,7 +9164,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetCommitResponse); i {
+			switch v := v.(*GetCommitRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9107,7 +9176,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GitCommit); i {
+			switch v := v.(*GetCommitResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9119,7 +9188,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GitSignature); i {
+			switch v := v.(*GitCommit); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9131,7 +9200,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BlameRequest); i {
+			switch v := v.(*GitSignature); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9143,7 +9212,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BlameRange); i {
+			switch v := v.(*BlameRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9155,7 +9224,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BlameResponse); i {
+			switch v := v.(*BlameRange); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9167,7 +9236,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BlameHunk); i {
+			switch v := v.(*BlameResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9179,7 +9248,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BlameAuthor); i {
+			switch v := v.(*BlameHunk); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9191,7 +9260,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PreviousCommit); i {
+			switch v := v.(*BlameAuthor); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9203,7 +9272,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DefaultBranchRequest); i {
+			switch v := v.(*PreviousCommit); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9215,7 +9284,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[35].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DefaultBranchResponse); i {
+			switch v := v.(*DefaultBranchRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9227,7 +9296,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[36].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReadFileRequest); i {
+			switch v := v.(*DefaultBranchResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9239,7 +9308,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[37].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReadFileResponse); i {
+			switch v := v.(*ReadFileRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9251,7 +9320,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[38].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DiskInfoRequest); i {
+			switch v := v.(*ReadFileResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9263,7 +9332,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[39].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DiskInfoResponse); i {
+			switch v := v.(*DiskInfoRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9275,7 +9344,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[40].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PatchCommitInfo); i {
+			switch v := v.(*DiskInfoResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9287,7 +9356,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[41].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PushConfig); i {
+			switch v := v.(*PatchCommitInfo); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9299,7 +9368,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[42].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateCommitFromPatchBinaryRequest); i {
+			switch v := v.(*PushConfig); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9311,7 +9380,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[43].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateCommitFromPatchError); i {
+			switch v := v.(*CreateCommitFromPatchBinaryRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9323,7 +9392,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[44].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateCommitFromPatchBinaryResponse); i {
+			switch v := v.(*CreateCommitFromPatchError); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9335,7 +9404,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[45].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExecRequest); i {
+			switch v := v.(*CreateCommitFromPatchBinaryResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9347,7 +9416,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[46].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExecResponse); i {
+			switch v := v.(*ExecRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9359,7 +9428,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[47].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RepoNotFoundPayload); i {
+			switch v := v.(*ExecResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9371,7 +9440,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[48].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RevisionNotFoundPayload); i {
+			switch v := v.(*RepoNotFoundPayload); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9383,7 +9452,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[49].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FileNotFoundPayload); i {
+			switch v := v.(*RevisionNotFoundPayload); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9395,7 +9464,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[50].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExecStatusPayload); i {
+			switch v := v.(*FileNotFoundPayload); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9407,7 +9476,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[51].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SearchRequest); i {
+			switch v := v.(*ExecStatusPayload); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9419,7 +9488,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[52].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RevisionSpecifier); i {
+			switch v := v.(*SearchRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9431,7 +9500,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[53].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AuthorMatchesNode); i {
+			switch v := v.(*RevisionSpecifier); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9443,7 +9512,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[54].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CommitterMatchesNode); i {
+			switch v := v.(*AuthorMatchesNode); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9455,7 +9524,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[55].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CommitBeforeNode); i {
+			switch v := v.(*CommitterMatchesNode); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9467,7 +9536,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[56].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CommitAfterNode); i {
+			switch v := v.(*CommitBeforeNode); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9479,7 +9548,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[57].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MessageMatchesNode); i {
+			switch v := v.(*CommitAfterNode); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9491,7 +9560,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[58].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DiffMatchesNode); i {
+			switch v := v.(*MessageMatchesNode); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9503,7 +9572,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[59].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DiffModifiesFileNode); i {
+			switch v := v.(*DiffMatchesNode); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9515,7 +9584,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[60].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BooleanNode); i {
+			switch v := v.(*DiffModifiesFileNode); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9527,7 +9596,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[61].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*OperatorNode); i {
+			switch v := v.(*BooleanNode); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9539,7 +9608,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[62].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryNode); i {
+			switch v := v.(*OperatorNode); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9551,7 +9620,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[63].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SearchResponse); i {
+			switch v := v.(*QueryNode); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9563,7 +9632,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[64].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CommitMatch); i {
+			switch v := v.(*SearchResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9575,7 +9644,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[65].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ArchiveRequest); i {
+			switch v := v.(*CommitMatch); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9587,7 +9656,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[66].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ArchiveResponse); i {
+			switch v := v.(*ArchiveRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9599,7 +9668,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[67].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IsRepoCloneableRequest); i {
+			switch v := v.(*ArchiveResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9611,7 +9680,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[68].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IsRepoCloneableResponse); i {
+			switch v := v.(*IsRepoCloneableRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9623,7 +9692,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[69].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RepoCloneProgressRequest); i {
+			switch v := v.(*IsRepoCloneableResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9635,7 +9704,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[70].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RepoCloneProgressResponse); i {
+			switch v := v.(*RepoCloneProgressRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9647,7 +9716,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[71].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListGitoliteRequest); i {
+			switch v := v.(*RepoCloneProgressResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9659,7 +9728,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[72].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GitoliteRepo); i {
+			switch v := v.(*ListGitoliteRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9671,7 +9740,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[73].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListGitoliteResponse); i {
+			switch v := v.(*GitoliteRepo); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9683,7 +9752,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[74].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetObjectRequest); i {
+			switch v := v.(*ListGitoliteResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9695,7 +9764,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[75].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetObjectResponse); i {
+			switch v := v.(*GetObjectRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9707,7 +9776,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[76].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GitObject); i {
+			switch v := v.(*GetObjectResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9719,7 +9788,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[77].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IsPerforcePathCloneableRequest); i {
+			switch v := v.(*GitObject); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9731,7 +9800,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[78].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IsPerforcePathCloneableResponse); i {
+			switch v := v.(*IsPerforcePathCloneableRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9743,7 +9812,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[79].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CheckPerforceCredentialsRequest); i {
+			switch v := v.(*IsPerforcePathCloneableResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9755,7 +9824,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[80].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CheckPerforceCredentialsResponse); i {
+			switch v := v.(*CheckPerforceCredentialsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9767,7 +9836,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[81].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerforceConnectionDetails); i {
+			switch v := v.(*CheckPerforceCredentialsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9779,7 +9848,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[82].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerforceGetChangelistRequest); i {
+			switch v := v.(*PerforceConnectionDetails); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9791,7 +9860,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[83].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerforceGetChangelistResponse); i {
+			switch v := v.(*PerforceGetChangelistRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9803,7 +9872,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[84].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerforceChangelist); i {
+			switch v := v.(*PerforceGetChangelistResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9815,7 +9884,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[85].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IsPerforceSuperUserRequest); i {
+			switch v := v.(*PerforceChangelist); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9827,7 +9896,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[86].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IsPerforceSuperUserResponse); i {
+			switch v := v.(*IsPerforceSuperUserRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9839,7 +9908,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[87].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerforceProtectsForDepotRequest); i {
+			switch v := v.(*IsPerforceSuperUserResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9851,7 +9920,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[88].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerforceProtectsForDepotResponse); i {
+			switch v := v.(*PerforceProtectsForDepotRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9863,7 +9932,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[89].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerforceProtectsForUserRequest); i {
+			switch v := v.(*PerforceProtectsForDepotResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9875,7 +9944,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[90].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerforceProtectsForUserResponse); i {
+			switch v := v.(*PerforceProtectsForUserRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9887,7 +9956,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[91].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerforceProtect); i {
+			switch v := v.(*PerforceProtectsForUserResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9899,7 +9968,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[92].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerforceGroupMembersRequest); i {
+			switch v := v.(*PerforceProtect); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9911,7 +9980,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[93].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerforceGroupMembersResponse); i {
+			switch v := v.(*PerforceGroupMembersRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9923,7 +9992,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[94].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerforceUsersRequest); i {
+			switch v := v.(*PerforceGroupMembersResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9935,7 +10004,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[95].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerforceUsersResponse); i {
+			switch v := v.(*PerforceUsersRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9947,7 +10016,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[96].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerforceUser); i {
+			switch v := v.(*PerforceUsersResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9959,7 +10028,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[97].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MergeBaseRequest); i {
+			switch v := v.(*PerforceUser); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9971,7 +10040,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[98].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MergeBaseResponse); i {
+			switch v := v.(*MergeBaseRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9983,7 +10052,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[99].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FirstEverCommitRequest); i {
+			switch v := v.(*MergeBaseResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9995,7 +10064,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[100].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FirstEverCommitResponse); i {
+			switch v := v.(*FirstEverCommitRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10007,7 +10076,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[101].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BehindAheadRequest); i {
+			switch v := v.(*FirstEverCommitResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10019,7 +10088,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[102].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BehindAheadResponse); i {
+			switch v := v.(*BehindAheadRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10031,7 +10100,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[103].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ChangedFilesRequest); i {
+			switch v := v.(*BehindAheadResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10043,7 +10112,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[104].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ChangedFilesResponse); i {
+			switch v := v.(*ChangedFilesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10055,7 +10124,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[105].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ChangedFile); i {
+			switch v := v.(*ChangedFilesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10067,7 +10136,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[106].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListRepositoriesResponse_GitRepository); i {
+			switch v := v.(*ChangedFile); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10079,7 +10148,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[107].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateCommitFromPatchBinaryRequest_Metadata); i {
+			switch v := v.(*ListRepositoriesResponse_GitRepository); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10091,7 +10160,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[108].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateCommitFromPatchBinaryRequest_Patch); i {
+			switch v := v.(*CreateCommitFromPatchBinaryRequest_Metadata); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10103,7 +10172,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[109].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CommitMatch_Signature); i {
+			switch v := v.(*CreateCommitFromPatchBinaryRequest_Patch); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10115,7 +10184,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[110].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CommitMatch_MatchedString); i {
+			switch v := v.(*CommitMatch_Signature); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10127,7 +10196,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[111].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CommitMatch_Range); i {
+			switch v := v.(*CommitMatch_MatchedString); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10139,6 +10208,18 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[112].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CommitMatch_Range); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_gitserver_proto_msgTypes[113].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CommitMatch_Location); i {
 			case 0:
 				return &v.state
@@ -10151,17 +10232,17 @@ func file_gitserver_proto_init() {
 			}
 		}
 	}
-	file_gitserver_proto_msgTypes[11].OneofWrappers = []interface{}{}
-	file_gitserver_proto_msgTypes[16].OneofWrappers = []interface{}{}
-	file_gitserver_proto_msgTypes[19].OneofWrappers = []interface{}{}
+	file_gitserver_proto_msgTypes[12].OneofWrappers = []interface{}{}
+	file_gitserver_proto_msgTypes[17].OneofWrappers = []interface{}{}
 	file_gitserver_proto_msgTypes[20].OneofWrappers = []interface{}{}
-	file_gitserver_proto_msgTypes[28].OneofWrappers = []interface{}{}
-	file_gitserver_proto_msgTypes[31].OneofWrappers = []interface{}{}
-	file_gitserver_proto_msgTypes[42].OneofWrappers = []interface{}{
+	file_gitserver_proto_msgTypes[21].OneofWrappers = []interface{}{}
+	file_gitserver_proto_msgTypes[29].OneofWrappers = []interface{}{}
+	file_gitserver_proto_msgTypes[32].OneofWrappers = []interface{}{}
+	file_gitserver_proto_msgTypes[43].OneofWrappers = []interface{}{
 		(*CreateCommitFromPatchBinaryRequest_Metadata_)(nil),
 		(*CreateCommitFromPatchBinaryRequest_Patch_)(nil),
 	}
-	file_gitserver_proto_msgTypes[62].OneofWrappers = []interface{}{
+	file_gitserver_proto_msgTypes[63].OneofWrappers = []interface{}{
 		(*QueryNode_AuthorMatches)(nil),
 		(*QueryNode_CommitterMatches)(nil),
 		(*QueryNode_CommitBefore)(nil),
@@ -10172,19 +10253,19 @@ func file_gitserver_proto_init() {
 		(*QueryNode_Boolean)(nil),
 		(*QueryNode_Operator)(nil),
 	}
-	file_gitserver_proto_msgTypes[63].OneofWrappers = []interface{}{
+	file_gitserver_proto_msgTypes[64].OneofWrappers = []interface{}{
 		(*SearchResponse_Match)(nil),
 		(*SearchResponse_LimitHit)(nil),
 	}
-	file_gitserver_proto_msgTypes[103].OneofWrappers = []interface{}{}
-	file_gitserver_proto_msgTypes[107].OneofWrappers = []interface{}{}
+	file_gitserver_proto_msgTypes[104].OneofWrappers = []interface{}{}
+	file_gitserver_proto_msgTypes[108].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_gitserver_proto_rawDesc,
 			NumEnums:      7,
-			NumMessages:   113,
+			NumMessages:   114,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

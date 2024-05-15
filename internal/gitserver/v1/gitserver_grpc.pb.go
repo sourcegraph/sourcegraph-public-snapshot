@@ -220,6 +220,7 @@ const (
 	GitserverService_ListRefs_FullMethodName                    = "/gitserver.v1.GitserverService/ListRefs"
 	GitserverService_RevAtTime_FullMethodName                   = "/gitserver.v1.GitserverService/RevAtTime"
 	GitserverService_RawDiff_FullMethodName                     = "/gitserver.v1.GitserverService/RawDiff"
+	GitserverService_BatchRawDiff_FullMethodName                = "/gitserver.v1.GitserverService/BatchRawDiff"
 	GitserverService_ContributorCounts_FullMethodName           = "/gitserver.v1.GitserverService/ContributorCounts"
 	GitserverService_FirstEverCommit_FullMethodName             = "/gitserver.v1.GitserverService/FirstEverCommit"
 	GitserverService_BehindAhead_FullMethodName                 = "/gitserver.v1.GitserverService/BehindAhead"
@@ -363,6 +364,7 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	RawDiff(ctx context.Context, in *RawDiffRequest, opts ...grpc.CallOption) (GitserverService_RawDiffClient, error)
+	BatchRawDiff(ctx context.Context, opts ...grpc.CallOption) (GitserverService_BatchRawDiffClient, error)
 	// ContributorCounts returns the number of commits grouped by commit author.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
@@ -865,6 +867,37 @@ func (x *gitserverServiceRawDiffClient) Recv() (*RawDiffResponse, error) {
 	return m, nil
 }
 
+func (c *gitserverServiceClient) BatchRawDiff(ctx context.Context, opts ...grpc.CallOption) (GitserverService_BatchRawDiffClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[8], GitserverService_BatchRawDiff_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gitserverServiceBatchRawDiffClient{stream}
+	return x, nil
+}
+
+type GitserverService_BatchRawDiffClient interface {
+	Send(*RawDiffRequest) error
+	Recv() (*BatchRawDiffResponse, error)
+	grpc.ClientStream
+}
+
+type gitserverServiceBatchRawDiffClient struct {
+	grpc.ClientStream
+}
+
+func (x *gitserverServiceBatchRawDiffClient) Send(m *RawDiffRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *gitserverServiceBatchRawDiffClient) Recv() (*BatchRawDiffResponse, error) {
+	m := new(BatchRawDiffResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *gitserverServiceClient) ContributorCounts(ctx context.Context, in *ContributorCountsRequest, opts ...grpc.CallOption) (*ContributorCountsResponse, error) {
 	out := new(ContributorCountsResponse)
 	err := c.cc.Invoke(ctx, GitserverService_ContributorCounts_FullMethodName, in, out, opts...)
@@ -893,7 +926,7 @@ func (c *gitserverServiceClient) BehindAhead(ctx context.Context, in *BehindAhea
 }
 
 func (c *gitserverServiceClient) ChangedFiles(ctx context.Context, in *ChangedFilesRequest, opts ...grpc.CallOption) (GitserverService_ChangedFilesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[8], GitserverService_ChangedFiles_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[9], GitserverService_ChangedFiles_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -934,7 +967,7 @@ func (c *gitserverServiceClient) Stat(ctx context.Context, in *StatRequest, opts
 }
 
 func (c *gitserverServiceClient) ReadDir(ctx context.Context, in *ReadDirRequest, opts ...grpc.CallOption) (GitserverService_ReadDirClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[9], GitserverService_ReadDir_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[10], GitserverService_ReadDir_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1100,6 +1133,7 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a
 	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
 	RawDiff(*RawDiffRequest, GitserverService_RawDiffServer) error
+	BatchRawDiff(GitserverService_BatchRawDiffServer) error
 	// ContributorCounts returns the number of commits grouped by commit author.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a
@@ -1256,6 +1290,9 @@ func (UnimplementedGitserverServiceServer) RevAtTime(context.Context, *RevAtTime
 }
 func (UnimplementedGitserverServiceServer) RawDiff(*RawDiffRequest, GitserverService_RawDiffServer) error {
 	return status.Errorf(codes.Unimplemented, "method RawDiff not implemented")
+}
+func (UnimplementedGitserverServiceServer) BatchRawDiff(GitserverService_BatchRawDiffServer) error {
+	return status.Errorf(codes.Unimplemented, "method BatchRawDiff not implemented")
 }
 func (UnimplementedGitserverServiceServer) ContributorCounts(context.Context, *ContributorCountsRequest) (*ContributorCountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContributorCounts not implemented")
@@ -1785,6 +1822,32 @@ func (x *gitserverServiceRawDiffServer) Send(m *RawDiffResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GitserverService_BatchRawDiff_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GitserverServiceServer).BatchRawDiff(&gitserverServiceBatchRawDiffServer{stream})
+}
+
+type GitserverService_BatchRawDiffServer interface {
+	Send(*BatchRawDiffResponse) error
+	Recv() (*RawDiffRequest, error)
+	grpc.ServerStream
+}
+
+type gitserverServiceBatchRawDiffServer struct {
+	grpc.ServerStream
+}
+
+func (x *gitserverServiceBatchRawDiffServer) Send(m *BatchRawDiffResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *gitserverServiceBatchRawDiffServer) Recv() (*RawDiffRequest, error) {
+	m := new(RawDiffRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func _GitserverService_ContributorCounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ContributorCountsRequest)
 	if err := dec(in); err != nil {
@@ -2035,6 +2098,12 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "RawDiff",
 			Handler:       _GitserverService_RawDiff_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "BatchRawDiff",
+			Handler:       _GitserverService_BatchRawDiff_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
 		},
 		{
 			StreamName:    "ChangedFiles",

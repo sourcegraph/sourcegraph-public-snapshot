@@ -369,4 +369,21 @@ func (r *errorTranslatingReadDirClient) Recv() (*proto.ReadDirResponse, error) {
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
+func (r *errorTranslatingClient) BatchRawDiff(ctx context.Context, opts ...grpc.CallOption) (proto.GitserverService_BatchRawDiffClient, error) {
+	cc, err := r.base.BatchRawDiff(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &errorTranslatingBatchRawDiffClient{cc}, nil
+}
+
+type errorTranslatingBatchRawDiffClient struct {
+	proto.GitserverService_BatchRawDiffClient
+}
+
+func (r *errorTranslatingBatchRawDiffClient) Recv() (*proto.BatchRawDiffResponse, error) {
+	res, err := r.GitserverService_BatchRawDiffClient.Recv()
+	return res, convertGRPCErrorToGitDomainError(err)
+}
+
 var _ proto.GitserverServiceClient = &errorTranslatingClient{}

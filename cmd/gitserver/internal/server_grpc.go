@@ -1309,6 +1309,109 @@ func (gs *grpcServer) RawDiff(req *proto.RawDiffRequest, ss proto.GitserverServi
 	return err
 }
 
+func (gs *grpcServer) BatchRawDiff(ss proto.GitserverService_BatchRawDiffServer) error {
+	ctx := ss.Context()
+
+	var df git.DiffFetcher
+	var seenRepoName api.RepoName
+	for {
+		req, err := ss.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+
+		accesslog.Record(
+			ctx,
+			req.GetRepoName(),
+			log.String("base", string(req.GetBaseRevSpec())),
+			log.String("head", string(req.GetHeadRevSpec())),
+		)
+
+		if req.GetRepoName() == "" {
+			return status.New(codes.InvalidArgument, "repo must be specified").Err()
+		}
+
+		// if len(req.GetBaseRevSpec()) == 0 {
+		// 	return status.New(codes.InvalidArgument, "base_rev_spec must be specified").Err()
+		// }
+
+		if len(req.GetHeadRevSpec()) == 0 {
+			return status.New(codes.InvalidArgument, "head_rev_spec must be specified").Err()
+		}
+
+		// if req.GetComparisonType() == proto.RawDiffRequest_COMPARISON_TYPE_UNSPECIFIED {
+		// 	return status.New(codes.InvalidArgument, "comparison_type must be specified").Err()
+		// }
+
+		if len(req.GetPaths()) > 0 {
+			return status.New(codes.InvalidArgument, "paths cannot be specified when using BatchRawDiff").Err()
+		}
+
+		repoName := api.RepoName(req.GetRepoName())
+		if seenRepoName == "" {
+			seenRepoName = repoName
+		} else if seenRepoName != repoName {
+			return status.New(codes.InvalidArgument, "all requests in a batch must be for the same repo").Err()
+		}
+
+		if df == nil {
+			repoDir := gs.fs.RepoDir(repoName)
+
+			if err := gs.checkRepoExists(ctx, repoName); err != nil {
+				return err
+			}
+
+			backend := gs.gitBackendSource(repoDir, repoName)
+			df, err = backend.DiffFetcher(ctx)
+			if err != nil {
+				return err
+			}
+		}
+
+		// var typ git.GitDiffComparisonType
+		// switch req.GetComparisonType() {
+		// case proto.RawDiffRequest_COMPARISON_TYPE_INTERSECTION:
+		// 	typ = git.GitDiffComparisonTypeIntersection
+		// case proto.RawDiffRequest_COMPARISON_TYPE_ONLY_IN_HEAD:
+		// 	typ = git.GitDiffComparisonTypeOnlyInHead
+		// }
+
+		r, err := df.Fetch(api.CommitID(req.GetHeadRevSpec()))
+		if err != nil {
+			var e *gitdomain.RevisionNotFoundError
+			if errors.As(err, &e) {
+				s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+					Repo: req.GetRepoName(),
+					Spec: e.Spec,
+				})
+				if err != nil {
+					return err
+				}
+				return s.Err()
+			}
+			gs.svc.LogIfCorrupt(ctx, repoName, err)
+			// TODO: Better error checking.
+			return err
+		}
+
+		w := streamio.NewWriter(func(p []byte) error {
+			return ss.Send(&proto.BatchRawDiffResponse{Chunk: p})
+		})
+
+		_, err = io.Copy(w, r)
+		if err != nil {
+			return err
+		}
+
+		if err := ss.Send(&proto.BatchRawDiffResponse{Eof: true}); err != nil {
+			return err
+		}
+	}
+}
+
 func (gs *grpcServer) ContributorCounts(ctx context.Context, req *proto.ContributorCountsRequest) (*proto.ContributorCountsResponse, error) {
 	accesslog.Record(
 		ctx,

@@ -161,6 +161,16 @@ type GitBackend interface {
 	// This value can be used to determine if a repository changed since the last
 	// time the hash has been computed.
 	RefHash(ctx context.Context) ([]byte, error)
+	DiffFetcher(ctx context.Context) (DiffFetcher, error)
+}
+
+type DiffFetcher interface {
+	// Fetch fetches a diff from the git diff-tree subprocess, writing to its stdin
+	// and waiting for its response on stdout. Note that this is not safe to call concurrently.
+	// The returned reader must be fully consumed before calling Fetch again. I.e.,
+	// you must read until io.EOF.
+	Fetch(sha api.CommitID) (io.Reader, error)
+	Close() error
 }
 
 type GitDiffComparisonType int

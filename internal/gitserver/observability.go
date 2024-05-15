@@ -48,6 +48,8 @@ type operations struct {
 	logReverseEach           *observation.Operation
 	diff                     *observation.Operation
 	changedFiles             *observation.Operation
+	batchRawDiff             *observation.Operation
+	batchRawDiffSingle       *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -131,6 +133,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		logReverseEach:           op("LogReverseEach"),
 		diff:                     op("Diff"),
 		changedFiles:             op("ChangedFiles"),
+		batchRawDiff:             op("BatchRawDiff"),
+		batchRawDiffSingle:       op("BatchRawDiffSingle"),
 	}
 }
 

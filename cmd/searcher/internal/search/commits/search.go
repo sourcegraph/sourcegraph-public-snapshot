@@ -230,7 +230,7 @@ func getSubRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionCh
 
 func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 	// Create a new diff fetcher subprocess for each worker
-	diffFetcher, err := NewDiffFetcher(cs.RepoName)
+	diffFetcher, err := NewDiffFetcher(ctx, cs.RepoName)
 	if err != nil {
 		return err
 	}

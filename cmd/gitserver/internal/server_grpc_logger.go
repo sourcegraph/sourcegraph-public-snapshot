@@ -115,6 +115,10 @@ func patchCommitInfoToLogFields(req *proto.PatchCommitInfo) []log.Field {
 	}
 }
 
+func (l *loggingGRPCServer) BatchRawDiff(server proto.GitserverService_BatchRawDiffServer) (err error) {
+	return l.base.BatchRawDiff(server)
+}
+
 func pushConfigToLogFields(req *proto.PushConfig) []log.Field {
 	u, err := vcs.ParseURL(req.GetRemoteUrl())
 	if err != nil {
