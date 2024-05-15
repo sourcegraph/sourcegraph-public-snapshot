@@ -13,16 +13,16 @@ import (
 // MaxDuration is the maximum lease duration by which a deployment can be extended by, which is 4 days
 const MaxDuration = time.Hour * 24 * 4
 
-var LeaseEphemeralCommand = cli.Command{
+var leaseEphemeralCommand = cli.Command{
 	Name:        "lease",
-	Usage:       "extend or reduce the lease of an ephemeral instance",
+	Usage:       "Extend or reduce the lease expiry time of an ephemeral instance",
 	UsageText:   "sg cloud lease [command options]",
-	Description: "update the lease time of an ephemeral instance",
+	Description: "Extend or reduce the lease expiry time of an ephemeral instance. Once the expiry time of an ephemeral instance is reached it gets deleted and inaccessible",
 	Action:      leaseCloudEphemeral,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "name",
-			Usage:       "name of the instance to update the lease expiry time for",
+			Usage:       "name of the ephemeral instance",
 			DefaultText: "current branch name will be used",
 		},
 		&cli.DurationFlag{

@@ -11,10 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var ListEphemeralCommand = cli.Command{
+var listEphemeralCommand = cli.Command{
 	Name:        "list",
-	Usage:       "list ephemeral cloud instances",
-	Description: "list ephemeral cloud instances attached to your GCP account",
+	Usage:       "List ephemeral instances assigned to you, or all instances",
+	Description: "List ephemeral instances assigned to your GCP email, or all instances that are deployed",
 	Action:      listCloudEphemeral,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
@@ -27,7 +27,7 @@ var ListEphemeralCommand = cli.Command{
 		},
 		&cli.BoolFlag{
 			Name:  "all",
-			Usage: "list all instances, not just those that attached to your GCP account",
+			Usage: "list all ephemeral instances, not just those that attached to your GCP account",
 		},
 	},
 }
