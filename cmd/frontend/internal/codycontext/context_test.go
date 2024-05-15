@@ -33,7 +33,6 @@ func TestFileMatchToContextMatches(t *testing.T) {
 				CommitID:  "abc123",
 				Path:      "main.go",
 				StartLine: 0,
-				EndLine:   20,
 			}},
 		},
 		{
@@ -61,7 +60,6 @@ func TestFileMatchToContextMatches(t *testing.T) {
 				CommitID:  "abc123",
 				Path:      "main.go",
 				StartLine: 85,
-				EndLine:   105,
 			}},
 		},
 	}
