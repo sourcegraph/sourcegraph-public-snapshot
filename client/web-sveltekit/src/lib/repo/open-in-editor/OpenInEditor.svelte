@@ -11,7 +11,7 @@
     import EditorIcon from '$lib/repo/open-in-editor/EditorIcon.svelte'
     import { settings } from '$lib/stores'
     import { page } from '$app/stores'
-    import type { ExternalRepository, SettingsEdit, SettingsSubject } from '$lib/graphql-types'
+    import type { ExternalRepository, SettingsEdit } from '$lib/graphql-types'
     import DefaultEditorIcon from '$lib/repo/open-in-editor/DefaultEditorIcon.svelte'
     import Popover from '$lib/Popover.svelte';
     import { Button } from '$lib/wildcard';
@@ -19,7 +19,14 @@
     import { writable } from 'svelte/store';
 
     export let externalServiceType: ExternalRepository['serviceType'] = ''
-    export let data: { subjects: SettingsSubject[], updateEditor: (subject: string, lastID: number, edit: SettingsEdit) => Promise<number> }
+    export let updateEditor: (subject: string, lastID: number, edit: SettingsEdit) => Promise<number>;
+    interface SettingsSubject {
+        id: string;
+        latestSettings: {
+            id: number;
+        } | null;
+    }
+    export let subjects: SettingsSubject[];
 
     $: openInEditor = $settings?.openInEditor
 
@@ -32,8 +39,8 @@
     $: ({repoName, filePath, position, range} = parseBrowserRepoURL($page.url.toString()))
     $: start = position ?? range?.start
 
-    $: lastId = writable<number>(data.subjects.at(-1)?.latestSettings?.id);
-    $: subjectId = writable<string>(data.subjects.at(-1)?.id);
+    $: lastId = writable<number>(subjects.at(-1)?.latestSettings?.id);
+    $: subjectId = writable<string>(subjects.at(-1)?.id);
     $: defaultProjectPath = writable<string>('');
     $: selectedEditorId = writable<typeof editorIds[number] | undefined>();
 
@@ -45,12 +52,12 @@
             return;
         }
         isSaving = true;
-        const newLastId1 = await data.updateEditor($subjectId, $lastId, {
+        const newLastId1 = await updateEditor($subjectId, $lastId, {
             value: $defaultProjectPath,
             keyPath: [{property: 'openInEditor'}, {property: 'projectPaths.default'}],
         });
         lastId.set(newLastId1);
-        const newLastId2 = await data.updateEditor($subjectId, $lastId, {
+        const newLastId2 = await updateEditor($subjectId, $lastId, {
             value: [$selectedEditorId],
             keyPath: [{property: 'openInEditor'}, {property: 'editorIds'}],
         });
