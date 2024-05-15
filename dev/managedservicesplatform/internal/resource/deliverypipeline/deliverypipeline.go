@@ -94,7 +94,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 
 	for _, target := range config.TargetStages {
 		id := id.Group("target_stage")
-		cdt := clouddeploytarget.NewClouddeployTarget(scope, id.TerraformID(target.ID), &clouddeploytarget.ClouddeployTargetConfig{
+		_ = clouddeploytarget.NewClouddeployTarget(scope, id.TerraformID(target.ID), &clouddeploytarget.ClouddeployTargetConfig{
 			Name:     &target.ID,
 			Location: &config.Location,
 			CustomTarget: &clouddeploytarget.ClouddeployTargetCustomTarget{
@@ -115,11 +115,6 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 
 			DependsOn: pointers.Ptr(append(config.DependsOn, targetType)),
 		})
-		// Import previously hand-provisioned resources:
-		// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/clouddeploy_target#import
-		//
-		// TODO(@bobheadxi): Remove after rollout
-		cdt.ImportFrom(pointers.Stringf("%s/%s", config.Location, target.ID), cdt.Provider())
 	}
 
 	return &Output{
