@@ -65,7 +65,8 @@ type Variables struct {
 
 	IAM iam.CrossStackOutput
 
-	Service     spec.ServiceSpec
+	Service spec.ServiceSpec
+	// Repository is the source code repository for the image to deploy
 	Repository  string
 	Image       string
 	Environment spec.EnvironmentSpec
