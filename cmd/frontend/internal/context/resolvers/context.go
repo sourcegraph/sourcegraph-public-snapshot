@@ -104,17 +104,19 @@ func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk *codycontext.F
 	return graphqlbackend.NewFileChunkContextResolver(gitTreeEntryResolver, chunk.StartLine, endLine), nil
 }
 
-// countLines finds the number of lines corresponding to the number of runes. We 'round up' to include a line even if
-// it pushes the chunk over the desired number of runes. This is okay since the chunk size limit is very conservative.
+// countLines finds the number of lines corresponding to the number of runes. We 'round down'
+// to ensure that we don't return more characters than our budget.
 func countLines(content string, numRunes int) int {
+	if len(content) == 0 {
+		return 0
+	}
+
+	if content[len(content)-1] != '\n' {
+		content += "\n"
+	}
+
 	runes := []rune(content)
 	truncated := runes[:min(len(runes), numRunes)]
 	in := []byte(string(truncated))
-	c := bytes.Count(in, []byte("\n"))
-
-	// Final newline doesn't mark a new line.
-	if len(in) > 0 && in[len(in)-1] != '\n' {
-		return c + 1
-	}
-	return c
+	return bytes.Count(in, []byte("\n"))
 }
