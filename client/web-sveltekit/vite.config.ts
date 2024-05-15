@@ -1,7 +1,6 @@
 import { join } from 'path'
 
 import { sveltekit } from '@sveltejs/kit/vite'
-import { visualizer } from 'rollup-plugin-visualizer'
 import { defineConfig, mergeConfig, type UserConfig } from 'vite'
 import inspect from 'vite-plugin-inspect'
 import type { UserConfig as VitestUserConfig } from 'vitest'
@@ -18,10 +17,6 @@ export default defineConfig(({ mode }) => {
             // Generates typescript types for gql-tags and .gql files
             graphqlCodegen(),
             inspect(),
-            visualizer({
-                emitFile: true,
-                filename: 'stats.html',
-            }),
         ],
         define:
             mode === 'test'
