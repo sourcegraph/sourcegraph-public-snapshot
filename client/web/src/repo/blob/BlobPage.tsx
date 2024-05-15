@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { createElement, useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { createPortal } from 'react-dom'
+import mermaid from 'mermaid'
+import ReactDOM, { createPortal } from 'react-dom'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import type { Observable } from 'rxjs'
 import { catchError, map, startWith, switchMap } from 'rxjs/operators'
@@ -87,25 +88,27 @@ import { RenderedFile } from './RenderedFile'
 
 import styles from './BlobPage.module.scss'
 
+mermaid.initialize({ startOnLoad: false })
+
 const SEARCH_NOTEBOOK_FILE_EXTENSION = '.snb.md'
 const RenderedNotebookMarkdown = lazyComponent(() => import('./RenderedNotebookMarkdown'), 'RenderedNotebookMarkdown')
 
 interface BlobPageProps
     extends RepoFile,
-        ModeSpec,
-        RepoHeaderContributionsLifecycleProps,
-        SettingsCascadeProps,
-        PlatformContextProps,
-        TelemetryProps,
-        TelemetryV2Props,
-        HoverThresholdProps,
-        BreadcrumbSetters,
-        SearchStreamingProps,
-        Pick<SearchContextProps, 'searchContextsEnabled'>,
-        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
-        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
-        NotebookProps,
-        OwnConfigProps {
+    ModeSpec,
+    RepoHeaderContributionsLifecycleProps,
+    SettingsCascadeProps,
+    PlatformContextProps,
+    TelemetryProps,
+    TelemetryV2Props,
+    HoverThresholdProps,
+    BreadcrumbSetters,
+    SearchStreamingProps,
+    Pick<SearchContextProps, 'searchContextsEnabled'>,
+    Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+    Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
+    NotebookProps,
+    OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
@@ -281,7 +284,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
 
     const blobInfoOrError = enableLazyBlobSyntaxHighlighting
         ? // Fallback to formatted blob whilst we do not have the highlighted blob
-          highlightedBlobInfoOrError || formattedBlobInfoOrError
+        highlightedBlobInfoOrError || formattedBlobInfoOrError
         : highlightedBlobInfoOrError
 
     const onExtendTimeoutClick = useCallback(
@@ -311,9 +314,9 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
 
     const isSearchNotebook = Boolean(
         blobInfoOrError &&
-            !isErrorLike(blobInfoOrError) &&
-            blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
-            props.notebooksEnabled
+        !isErrorLike(blobInfoOrError) &&
+        blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
+        props.notebooksEnabled
     )
 
     const onCopyNotebook = useCallback(
@@ -347,6 +350,19 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
             }
         }
     }, [isSearchNotebook, formattedBlobInfoOrError, renderMode, setEditorScope])
+
+    // Replace mermaid code blocks with rendered diagrams
+    const renderMermaid = (target: HTMLDivElement | null) => {
+        if (!target) {
+            return
+        }
+        const mermaidBlocks = target.querySelectorAll('pre:has(code.language-mermaid)')
+        for (const [i, mermaidBlock] of mermaidBlocks.entries()) {
+            mermaid.render(`mermaid-diagram-${i}`, mermaidBlock.textContent || '').then(({ svg }) => {
+                ReactDOM.render(createElement('div', { dangerouslySetInnerHTML: { __html: svg } }), mermaidBlock)
+            })
+        }
+    }
 
     // Always render these to avoid UI jitter during loading when switching to a new file.
     const alwaysRender = (
@@ -579,7 +595,11 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                 </React.Suspense>
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
-                <RenderedFile dangerousInnerHTML={blobInfoOrError.richHTML} className={styles.border} />
+                <RenderedFile
+                    ref={renderMermaid}
+                    dangerousInnerHTML={blobInfoOrError.richHTML}
+                    className={styles.border}
+                />
             )}
             {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
                 <div>
