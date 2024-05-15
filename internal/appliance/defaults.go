@@ -29,9 +29,6 @@ func newDefaultConfig() Sourcegraph {
 					PrometheusPort: pointers.Ptr(6060),
 				},
 			},
-			StorageClass: StorageClassSpec{
-				Name: "sourcegraph",
-			},
 			Symbols: SymbolsSpec{
 				StandardConfig: config.StandardConfig{
 					PrometheusPort: pointers.Ptr(6060),
