@@ -317,7 +317,7 @@ func (s *Server) processEvent(event *build.Event) {
 			// But we don't currently use that method, so we just use the current time.
 			timestamp: time.Now(),
 		}); err != nil {
-			s.logger.Error("failed to write agent event to BigQuery", log.String("event", event.Name), log.String("agentID", *event.Agent.ID))
+			s.logger.Error("failed to write agent event to BigQuery", log.String("event", event.Name), log.String("agentID", *event.Agent.ID), log.Error(err))
 		}
 	}
 }
