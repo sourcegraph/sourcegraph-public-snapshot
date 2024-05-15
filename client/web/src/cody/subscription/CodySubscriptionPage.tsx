@@ -218,8 +218,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     >
                                         Manage subscription
                                     </Text>
-                                ) : (useEmbeddedCodyUI ?
-                                    (<>
+                                ) : useEmbeddedCodyUI ? (
+                                    <>
                                         <Button
                                             className="mb-3 d-flex align-items-center justify-content-center"
                                             variant="primary"
@@ -247,10 +247,11 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         >
                                             Upgrade yourself to Pro
                                         </Link>
-                                    </>) : (
-                                        <Button
-                                            className="flex-1"
-                                            variant="primary"
+                                    </>
+                                ) : (
+                                    <Button
+                                        className="flex-1"
+                                        variant="primary"
                                         onClick={() => {
                                             telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                 metadata: { tier: 1 },
@@ -261,7 +262,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
                                         <span>Purchase Cody Pro</span>
                                     </Button>
-                                ))}
+                                )}
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="d-inline">

@@ -17,7 +17,11 @@ import type { AuthenticatedUser } from '../../../../auth'
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
 import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
-import { type UserCodyPlanResult, type UserCodyPlanVariables, CodySubscriptionPlan } from '../../../../graphql-operations'
+import {
+    type UserCodyPlanResult,
+    type UserCodyPlanVariables,
+    CodySubscriptionPlan,
+} from '../../../../graphql-operations'
 import { CodyProIcon } from '../../../components/CodyIcon'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
 
