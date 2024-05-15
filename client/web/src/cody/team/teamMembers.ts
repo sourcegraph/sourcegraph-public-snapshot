@@ -1,5 +1,3 @@
-import { useCallback } from 'react'
-
 import { useSSCQuery } from '../util'
 
 export interface TeamMember {
@@ -14,8 +12,7 @@ interface MemberResponse {
     members: TeamMember[]
 }
 
+const transformResponse = (response: MemberResponse): TeamMember[] => response.members
+
 export const useCodyTeamMembers = (): [TeamMember[] | null, Error | null] =>
-    useSSCQuery<MemberResponse, TeamMember[]>(
-        '/team/current/members',
-        useCallback(response => response.members, [])
-    )
+    useSSCQuery<MemberResponse, TeamMember[]>('/team/current/members', transformResponse)

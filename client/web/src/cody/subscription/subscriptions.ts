@@ -1,5 +1,3 @@
-import { useCallback } from 'react'
-
 import { useSSCQuery } from '../util'
 
 interface SubscriptionResponse {
@@ -22,17 +20,19 @@ interface SubscriptionSummaryData {
     isAdmin: boolean | null
 }
 
+const transformSubscriptionResponse = (response: SubscriptionResponse): SubscriptionData => ({
+    seatCount: response.maxSeats,
+    isPro: response.subscriptionStatus !== 'canceled',
+})
 export const useCodySubscriptionData = (): [SubscriptionData | null, Error | null] =>
-    useSSCQuery<SubscriptionResponse, SubscriptionData>(
-        '/team/current/subscription',
-        useCallback(
-            response => ({ seatCount: response.maxSeats, isPro: response.subscriptionStatus !== 'canceled' }),
-            []
-        )
-    )
+    useSSCQuery<SubscriptionResponse, SubscriptionData>('/team/current/subscription', transformSubscriptionResponse)
 
+const transformSummaryResponse = (response: SubscriptionSummaryResponse): SubscriptionSummaryData => ({
+    teamId: response.teamId,
+    isAdmin: response.userRole === 'admin',
+})
 export const useCodySubscriptionSummaryData = (): [SubscriptionSummaryData | null, Error | null] =>
     useSSCQuery<SubscriptionSummaryResponse, SubscriptionSummaryData>(
         '/team/current/subscription/summary',
-        useCallback(response => ({ teamId: response.teamId, isAdmin: response.userRole === 'admin' }), [])
+        transformSummaryResponse
     )
