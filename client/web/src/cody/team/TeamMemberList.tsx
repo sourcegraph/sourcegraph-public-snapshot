@@ -37,16 +37,24 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                     privateMetadata: { teamId, accountId },
                 })
 
-                const response = await callSSCProxy(`/team/current/members/${accountId}?newRole=${newRole}`, 'PATCH')
-                if (!response.ok) {
+                try {
+                    const response = await callSSCProxy(`/team/current/members/${accountId}?newRole=${newRole}`, 'PATCH')
+                    if (!response.ok) {
+                        setLoading(false)
+                        setActionResult({
+                            message: `We couldn't modify the user's role (${response.status}). Please try again later.`,
+                            isError: true,
+                        })
+                    } else {
+                        setLoading(false)
+                        setActionResult({ message: 'Team role updated.', isError: false })
+                    }
+                } catch (error) {
                     setLoading(false)
                     setActionResult({
-                        message: `We couldn't modify the user's role (${response.status}). Please try again later.`,
+                        message: `We couldn't modify the user's role. The error was: "${error}". Please try again later.`,
                         isError: true,
                     })
-                } else {
-                    setLoading(false)
-                    setActionResult({ message: 'Team role updated.', isError: false })
                 }
             }
         },
