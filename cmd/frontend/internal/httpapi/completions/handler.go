@@ -484,6 +484,17 @@ func checkClientCodyIgnoreCompatibility(ctx context.Context, db database.DB, r *
 		}
 	}
 
+	// Intended for development use only.
+	// TODO: remove after `CodyContextFilters` support is added to the IDE clients.
+	flag, err := db.FeatureFlags().GetFeatureFlag(ctx, "cody-context-filters-clients-test-mode")
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return &codyIgnoreCompatibilityError{
+			reason:     "Failed to get feature flag value.",
+			statusCode: http.StatusInternalServerError,
+		}
+	}
+	isClientsTestMode := flag != nil && flag.Bool.Value
+
 	// clientVersionConstraint defines the minimum client version required to support Cody Ignore.
 	type clientVersionConstraint struct {
 		client     types.CodyClientName
@@ -496,22 +507,16 @@ func checkClientCodyIgnoreCompatibility(ctx context.Context, db database.DB, r *
 		return nil
 	case types.CodyClientVscode:
 		cvc = clientVersionConstraint{client: clientName, constraint: ">= 1.20.0"}
+		if isClientsTestMode {
+			// set the constraint to a lower pre-release version to enable testing
+			cvc.constraint = ">= 1.17.0-0"
+		}
 	case types.CodyClientJetbrains:
-		c := ">= 6.0.0"
-		// Intended for development use only.
-		flag, err := db.FeatureFlags().GetFeatureFlag(ctx, "cody-context-filters-allow-pre-release-client-versions")
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return &codyIgnoreCompatibilityError{
-				reason:     "Failed to get feature flag value.",
-				statusCode: http.StatusInternalServerError,
-			}
+		cvc = clientVersionConstraint{client: clientName, constraint: ">= 6.0.0"}
+		if isClientsTestMode {
+			// set the constraint to a lower pre-release version to enable testing
+			cvc.constraint = ">= 5.5.10-0"
 		}
-		if flag != nil && flag.Bool.Value {
-			// Add a pre-release version comparator to a constraint to ensure matching pre-release versions pass the constraint check.
-			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
-			c += "-0"
-		}
-		cvc = clientVersionConstraint{client: clientName, constraint: c}
 	default:
 		return &codyIgnoreCompatibilityError{
 			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
