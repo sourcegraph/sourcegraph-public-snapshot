@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 
-import { useSSCData } from '../util'
+import { useSSCQuery } from '../util'
 
 export interface TeamMember {
     accountId: string
@@ -15,7 +15,7 @@ interface MemberResponse {
 }
 
 export const useCodyTeamMembers = (): [TeamMember[] | null, Error | null] =>
-    useSSCData<MemberResponse, TeamMember[]>(
+    useSSCQuery<MemberResponse, TeamMember[]>(
         '/team/current/members',
         useCallback(response => response.members, [])
     )

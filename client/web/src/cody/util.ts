@@ -61,7 +61,7 @@ export function callSSCProxy(sscUrl: string, method: string, params?: object): P
 
 // React hook to fetch data through the SSC proxy and convert the response to a more usable format.
 // This is a low-level hook that is meant to be used by other hooks that need to fetch data from the SSC API.
-export const useSSCData = <T extends object, U extends object | null>(
+export const useSSCQuery = <T extends object, U extends object | null>(
     endpoint: string,
     transformResponse: (response: T) => U
 ): [U | null, Error | null] => {
