@@ -38,7 +38,10 @@ go_library(
 
 go_test(
     name = "syntactic_indexing_test",
-    srcs = ["enqueuer_test.go"],
+    srcs = [
+        "enqueuer_test.go",
+        "scheduler_test.go",
+    ],
     embed = [":syntactic_indexing"],
     deps = [
         "//internal/api",

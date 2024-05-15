@@ -3,6 +3,7 @@ package syntactic_indexing
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
@@ -22,6 +23,7 @@ import (
 type SyntacticJobScheduler interface {
 	// TODO: make it return job that were queued successfully?
 	Schedule(observationCtx *observation.Context, ctx context.Context, currentTime time.Time) error
+	GetConfig() *SchedulerConfig
 }
 
 type syntacticJobScheduler struct {
@@ -35,12 +37,15 @@ type syntacticJobScheduler struct {
 
 var _ SyntacticJobScheduler = &syntacticJobScheduler{}
 
-func NewSyntacticJobScheduler(observationCtx *observation.Context, db *sql.DB) (SyntacticJobScheduler, error) {
+
+func NewSyntacticJobScheduler(observationCtx *observation.Context, db *sql.DB, config *SchedulerConfig) (SyntacticJobScheduler, error) {
 
 	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
+
+	schedulerConfig.Load()
 
 	database := database.NewDB(observationCtx.Logger, db)
 	matcher := policies.NewMatcher(
@@ -68,13 +73,17 @@ func NewSyntacticJobScheduler(observationCtx *observation.Context, db *sql.DB) (
 		PoliciesService:             *services.PoliciesService,
 		RepoStore:                   repoStore,
 		Enqueuer:                    enqueuer,
-		Config:                      config,
+		Config:                      schedulerConfig,
 	}, nil
 }
 
+// GetConfig implements SyntacticJobScheduler.
+func (s *syntacticJobScheduler) GetConfig() *SchedulerConfig {
+	return s.Config
+}
+
 func (s *syntacticJobScheduler) Schedule(observationCtx *observation.Context, ctx context.Context, currentTime time.Time) error {
-	observationCtx.Logger.Info("Launching syntactic indexer...")
-	batchOptions := reposcheduler.NewBatchOptions(config.RepositoryProcessDelay, true, &config.PolicyBatchSize, config.RepositoryBatchSize)
+	batchOptions := reposcheduler.NewBatchOptions(schedulerConfig.RepositoryProcessDelay, true, &schedulerConfig.PolicyBatchSize, schedulerConfig.RepositoryBatchSize)
 
 	repos, err := s.RepositorySchedulingService.GetRepositoriesForIndexScan(ctx,
 		batchOptions, currentTime)
@@ -83,13 +92,16 @@ func (s *syntacticJobScheduler) Schedule(observationCtx *observation.Context, ct
 		return err
 	}
 
+	fmt.Printf("Num scheduled repos: %d", len(repos))
+
 	for _, repoToIndex := range repos {
 		repo, _ := s.RepoStore.Get(ctx, api.RepoID(repoToIndex.ID))
-		policyIterator := internal.NewPolicyIterator(s.PoliciesService, repoToIndex.ID, internal.SyntacticIndexing, config.PolicyBatchSize)
+		policyIterator := internal.NewPolicyIterator(s.PoliciesService, repoToIndex.ID, internal.SyntacticIndexing, schedulerConfig.PolicyBatchSize)
 
 		err := policyIterator.ForEachPoliciesBatch(ctx, func(policies []policiesshared.ConfigurationPolicy) error {
 
 			commitMap, err := s.PolicyMatcher.CommitsDescribedByPolicy(ctx, int(repoToIndex.ID), repo.Name, policies, currentTime)
+			fmt.Println(commitMap)
 
 			if err != nil {
 				return err

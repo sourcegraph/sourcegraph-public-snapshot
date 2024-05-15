@@ -141,6 +141,8 @@ func (store *store) GetRepositoriesForIndexScan(
 		now,
 		now,
 	)
+	fmt.Println("It's bbbbb-batching time")
+	fmt.Println(batchOptions.Limit)
 
 	repositoryIds, err := basestore.ScanInts(store.db.Query(ctx, finalQuery))
 
