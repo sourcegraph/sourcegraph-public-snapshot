@@ -28,7 +28,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
 }) => {
     const [loading, setLoading] = useState(false)
     const [actionResult, setActionResult] = useState<{ message: string; isError: boolean } | null>(null)
-    const setRole = useCallback(
+    const updateRole = useCallback(
         async (accountId: string, newRole: 'member' | 'admin'): Promise<void> => {
             if (!loading) {
                 // Avoids sending multiple requests at once
@@ -178,7 +178,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                         <div className="d-flex flex-column justify-content-center ml-2">
                                             <Link
                                                 to="#"
-                                                onClick={() => setRole(member.accountId, 'member')}
+                                                onClick={() => updateRole(member.accountId, 'member')}
                                                 className="ml-2"
                                                 aria-disabled={adminCount < 2}
                                             >
@@ -190,7 +190,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                             <div className="d-flex flex-column justify-content-center ml-2">
                                                 <Link
                                                     to="#"
-                                                    onClick={() => setRole(member.accountId, 'admin')}
+                                                    onClick={() => updateRole(member.accountId, 'admin')}
                                                     className="ml-2"
                                                 >
                                                     Make admin
