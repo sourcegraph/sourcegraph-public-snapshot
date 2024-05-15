@@ -1,28 +1,12 @@
 <script lang="ts">
     import { highlightRanges } from '$lib/dom'
-    import { getGraphQLClient } from '$lib/graphql'
-    import Popover from '$lib/Popover.svelte'
-    import RepoPopover from '$lib/repo/RepoPopover/RepoPopover.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { displayRepoName } from '$lib/shared'
-
-    import { RepoPopoverQuery } from '../layout.gql'
 
     export let repoName: string
     export let rev: string | undefined
     export let highlights: [number, number][] = []
 
-    const fetchPopoverInfo = async () => {
-        const client = getGraphQLClient()
-        const popoverInfo = await client.query(RepoPopoverQuery, { repoName })
-        if (popoverInfo.data) {
-            return popoverInfo.data.repository
-        }
-        console.error('Failed to fetch popover info for', popoverInfo.error)
-        throw new Error('Failed to fetch popover info', popoverInfo.error)
-    }
-
-    $: popoverInfo = fetchPopoverInfo()
     $: href = `/${repoName}${rev ? `@${rev}` : ''}`
     $: displayName = displayRepoName(repoName)
     $: if (displayName !== repoName) {
@@ -37,21 +21,12 @@
     <CodeHostIcon repository={repoName} />
     <!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
     {#key highlights}
-        <Popover showOnHover let:registerTrigger placement="bottom-start" delay={300}>
-            <a class="repo-link" {href} use:highlightRanges={{ ranges: highlights }} use:registerTrigger>
-                {displayRepoName(repoName)}
-                {#if rev}
-                    <small class="rev"> @ {rev}</small>
-                {/if}
-            </a>
-            <svelte:fragment slot="content">
-                {#await popoverInfo then popoverInfo}
-                    {#if popoverInfo !== null}
-                        <RepoPopover repo={popoverInfo} withHeader={true} />
-                    {/if}
-                {/await}
-            </svelte:fragment>
-        </Popover>
+        <a class="repo-link" {href} use:highlightRanges={{ ranges: highlights }}>
+            {displayRepoName(repoName)}
+            {#if rev}
+                <small class="rev"> @ {rev}</small>
+            {/if}
+        </a>
     {/key}
 </span>
 
@@ -62,8 +37,9 @@
         gap: 0.375rem;
 
         .repo-link {
-            align-self: flex-start;
-            color: var(--text-body);
+            align-self: baseline;
+            color: var(--body-color);
+            font-weight: 500;
             .rev {
                 color: var(--text-muted);
             }

@@ -4,97 +4,110 @@ This Component should be instantiated inside of a Popover component.
 For example:
 
 <Popover ...>
-    [triggering element ...]
-    <svelte:fragment slot="content">
+    [trigger button ...]
+    <div slot="content">
         <RepoPopover ... />
-    </svelte:fragment>
+    </div>
 </Popover>
 -->
 <script lang="ts">
-    import { mdiSourceMerge } from '@mdi/js'
     import { capitalize } from 'lodash'
 
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
-    import { displayRepoName } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
-    import Badge from '$lib/wildcard/Badge.svelte'
 
     import RepoStars from '../RepoStars.svelte'
     import { getIconPathForCodeHost } from '../shared/codehost'
 
-    import type { RepoPopoverFragment } from './RepoPopover.gql'
+    import { RepoPopoverFields } from './RepoPopover.gql'
 
-    export let repo: RepoPopoverFragment
+    export let repo: RepoPopoverFields
     export let withHeader = false
-    export let orgSVGPath: string = mdiSourceMerge
 
     const CENTER_DOT = '\u00B7' // interpunct
 
-    $: commit = repo.commit
-    $: author = commit?.author
-    $: avatar = author?.person
+    function truncateCommitNumber(numStr: string, length: number) {
+        return numStr.substring(numStr.length - length)
+    }
+
+    $: subject = repo.commit?.subject
+    $: url = repo.commit?.canonicalURL
+    $: commitSHA = repo.commit?.oid
+    $: author = repo.commit?.author.person.name
+    $: commitDate = repo.commit?.author.date
+    $: avatar = repo.commit?.author.person
     $: codeHostKind = repo.externalServices.nodes[0].kind
+    $: codeHostIcon = getIconPathForCodeHost(codeHostKind)
 </script>
 
 <div class="root">
     {#if withHeader}
         <div class="header">
-            <div class="left">
-                <Icon svgPath={orgSVGPath} --icon-fill-color="var(--primary)" />
-                <h4>{displayRepoName(repo.name)}</h4>
-                <Badge variant="outlineSecondary" small pill>
-                    {repo.isPrivate ? 'Private' : 'Public'}
-                </Badge>
+            <div class="icon-name-access">
+                <!-- @TODO: We need to use our customer's logo here, not the code host's -->
+                <!--Icon svgPath={mdiGitlab} /-->
+                <h4 class="repo-name">{repo.name}</h4>
+                <div class="access">
+                    <small>{repo.isPrivate ? 'Private' : 'Public'}</small>
+                </div>
             </div>
-            <div class="right">
-                <Icon svgPath={getIconPathForCodeHost(codeHostKind)} --icon-fill-color="var(--text-body)" --size={24} />
-                <small>{capitalize(codeHostKind)}</small>
+            <div class="code-host">
+                <Icon svgPath={codeHostIcon} --color="var(--text-body)" --icon-size="24px" />
+                <div><small>{capitalize(codeHostKind)}</small></div>
             </div>
         </div>
-
         <div class="divider" />
     {/if}
 
     <div class="description-and-tags">
-        <div class="description">
-            {repo.description}
-        </div>
-        {#if repo.topics.length}
-            <div class="tags">
-                {#each repo.topics as topic}
-                    <Badge variant="link" small pill>{topic}</Badge>
+        <div class="description">{repo.description}</div>
+        <div class="tags">
+            {#if repo.tags.nodes.length > 0}
+                {#each repo.tags.nodes as tag}
+                    <div class="tag"><small>{tag.name}</small></div>
                 {/each}
-            </div>
-        {/if}
+            {/if}
+        </div>
     </div>
 
     <div class="divider" />
 
-    {#if commit}
-        <div class="last-commit">
+    <div class="last-commit">
+        <div class="heading">
             <small>Last Commit</small>
+        </div>
 
-            <div class="commit-info">
-                <div class="commit">
-                    <small class="subject">{commit.subject}</small>
-                    <small class="commit-number"
-                        ><a href={commit.canonicalURL} target="_blank">
-                            {commit.abbreviatedOID}
-                        </a></small
-                    >
+        <div class="commit-info">
+            <div class="commit">
+                <!--
+                A <div> element is needed for subject and commit message
+                because the <small> element alone doesn't work with
+                text-overflow: ellipsis.
+                -->
+                <div class="subject">
+                    <small>{subject}</small>
                 </div>
-                {#if author && avatar}
-                    <div class="author">
-                        <Avatar {avatar} --avatar-size="1.0rem" />
-                        <small>{avatar.name}</small>
-                        <small>{CENTER_DOT}</small>
-                        <small><Timestamp date={author?.date} /></small>
+                {#if commitSHA}
+                    <div class="commit-number">
+                        <small class="commit-number"
+                            ><a href={url} target="_blank">#{truncateCommitNumber(commitSHA, 6)}</a></small
+                        >
                     </div>
                 {/if}
             </div>
+            <div class="author">
+                {#if avatar}
+                    <Avatar {avatar} --avatar-size="1.0rem" />
+                {/if}
+                <small>{author}</small>
+                <small>{CENTER_DOT}</small>
+                {#if commitDate}
+                    <small><Timestamp date={commitDate} /></small>
+                {/if}
+            </div>
         </div>
-    {/if}
+    </div>
 
     <div class="divider" />
 
@@ -106,9 +119,9 @@ For example:
 
 <style lang="scss">
     .root {
-        border: 1px solid var(--dropdown-border-color);
+        border: 1px solid var(--border-color);
         border-radius: var(--popover-border-radius);
-        width: 480px;
+        width: 400px;
     }
 
     .header {
@@ -118,22 +131,19 @@ For example:
         align-items: center;
         padding: 0.5rem 0.75rem;
         background-color: var(--subtle-bg);
-        border-top-left-radius: var(--border-radius);
-        border-top-right-radius: var(--border-radius);
 
-        .left {
+        .icon-name-access {
             display: flex;
             flex-flow: row nowrap;
-            justify-content: flex-start;
+            justify-content: space-between;
             align-items: center;
-            gap: 0.25rem 0.5rem;
 
-            h4 {
+            .repo-name {
                 color: var(--text-body);
-                margin-top: 0.5rem;
+                margin: 0rem 0.5rem 0rem 0rem;
             }
 
-            small {
+            .access {
                 border: 1px solid var(--text-muted);
                 color: var(--text-muted);
                 padding: 0rem 0.5rem;
@@ -141,15 +151,15 @@ For example:
             }
         }
 
-        .right {
+        .code-host {
             display: flex;
             flex-flow: row nowrap;
             justify-content: flex-end;
             align-items: center;
-            gap: 0rem 0.25rem;
 
-            small {
+            div {
                 color: var(--text-muted);
+                margin-left: 0.25rem;
             }
         }
     }
@@ -160,17 +170,14 @@ For example:
     }
 
     .description-and-tags {
-        display: flex;
-        flex-flow: column nowrap;
-        justify-content: center;
-        align-items: flex-start;
-        gap: 0.5rem 0.5rem;
         padding: 0.75rem;
         width: 100%;
 
         .description {
             padding: 0rem;
-            color: var(--text-body);
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
         }
 
         .tags {
@@ -180,6 +187,15 @@ For example:
             flex-flow: row wrap;
             gap: 0.5rem 0.5rem;
             justify-content: flex-start;
+            margin-top: 0.5rem;
+
+            .tag {
+                background-color: var(--subtle-bg);
+                border-radius: 1rem;
+                color: var(--primary);
+                font-family: var(--monospace-font-family);
+                padding: 0rem 0.5rem;
+            }
         }
     }
 
@@ -190,7 +206,7 @@ For example:
         align-items: flex-start;
         padding: 0.75rem;
 
-        small {
+        .heading {
             color: var(--text-muted);
         }
 
@@ -206,7 +222,7 @@ For example:
                 flex-flow: row nowrap;
                 justify-content: flex-end;
                 align-items: center;
-                gap: 0.25rem 0.25rem;
+                gap: 0.25rem 0rem;
                 width: 250px;
 
                 .subject {
@@ -218,15 +234,13 @@ For example:
 
                 .commit-number {
                     color: var(--text-muted);
-                    font-family: var(--monospace-font-family);
+                    align-self: center;
                 }
             }
 
             .author {
                 display: flex;
                 flex-flow: row nowrap;
-                justify-content: center;
-                align-items: center;
                 color: var(--text-muted);
                 gap: 0.5rem 0.25rem;
             }
