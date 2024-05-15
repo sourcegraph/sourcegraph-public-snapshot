@@ -84,6 +84,10 @@ interface FileTreeProviderArgs {
 export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
     constructor(private args: FileTreeProviderArgs) {}
 
+    public copy(args?: Partial<FileTreeProviderArgs>): FileTreeProvider {
+        return new FileTreeProvider({ ...this.args, ...args })
+    }
+
     public getRoot(): FileTreeNodeValue {
         return this.args.root
     }

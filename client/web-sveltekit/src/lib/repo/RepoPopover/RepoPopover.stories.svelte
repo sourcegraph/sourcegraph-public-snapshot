@@ -2,7 +2,7 @@
     import { faker } from '@faker-js/faker'
     import { Story } from '@storybook/addon-svelte-csf'
 
-    import { type RepoPopoverFragment, ExternalServiceKind } from '$testing/graphql-type-mocks'
+    import { type RepoPopoverFields, ExternalServiceKind } from '$testing/graphql-type-mocks'
 
     import RepoPopover from './RepoPopover.svelte'
 
@@ -13,18 +13,18 @@
 
 <script lang="ts">
     faker.seed(1)
-    let repo: RepoPopoverFragment = {
+    let repo: RepoPopoverFields = {
         name: `${faker.lorem.word()} / ${faker.lorem.word()}`,
         description: faker.lorem.sentence(),
         stars: faker.datatype.number(),
-        topics: [
-            faker.lorem.word(),
-            faker.lorem.word(),
-            faker.lorem.word(),
-            faker.lorem.word(),
-            faker.lorem.word(),
-            faker.lorem.word(),
-        ],
+        tags: {
+            nodes: [
+                { name: faker.lorem.word() },
+                { name: faker.lorem.word() },
+                { name: faker.lorem.word() },
+                { name: faker.lorem.word() },
+            ],
+        },
         isPrivate: false,
         language: 'Go',
         externalServices: {
@@ -43,7 +43,6 @@
             author: {
                 date: new Date().toISOString(),
                 person: {
-                    __typename: 'Person',
                     displayName: `${faker.person.firstName()} ${faker.person.lastName()}`,
                     avatarURL: faker.internet.avatar(),
                     name: faker.internet.userName(),

@@ -139,7 +139,7 @@
 </script>
 
 {#if embedded}
-    <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision} hideSidebarToggle>
+    <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
             <slot name="actions" />

@@ -230,7 +230,7 @@ type WorkerSpec struct {
 type StorageClassSpec struct {
 	// Name is the name of the storageClass.
 	// Default: sourcegraph
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 
 	// Create will enable/disable the creation of storageClass.
 	// Enable if you have your own existing storage class.

@@ -21,7 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fix a bug that caused Bedrock Provisioned Throughput model names to fail [#62642](https://github.com/sourcegraph/sourcegraph/pull/62642)
+- Fix a bug that caused Bedrock Provisioned Throughput model names to fail [#62695](https://github.com/sourcegraph/sourcegraph/pull/62695) ~~[#62642](https://github.com/sourcegraph/sourcegraph/pull/62642)~~
 - Pressing the numpad `Enter` key will now cycle through in-file search results [#62665](https://github.com/sourcegraph/sourcegraph/pull/62665)
 - Fixed an issue where code graph configuration policies would miscategorize lightweight tags as branches. [#62671](https://github.com/sourcegraph/sourcegraph/pull/62671)
 

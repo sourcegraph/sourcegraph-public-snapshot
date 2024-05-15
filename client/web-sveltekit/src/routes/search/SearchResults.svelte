@@ -174,13 +174,6 @@
                             <SearchAlert alert={$stream.alert} />
                         </div>
                     {/if}
-                    <!--
-                        TODO: Address accessibility issues
-                        1. A11y: visible, non-interactive elements with an on:click event
-                           must be accompanied by an on:keydown, on:keyup, or on:keypress event.
-                        2. A11y: Non-interactive element <ol> should not be assigned mouse
-                           or keyboard event listeners.
-                    -->
                     <ol on:click={handleSearchResultClick} on:copy={handleResultCopy}>
                         {#each resultsToShow as result, i}
                             {@const component = getSearchResultComponent(result)}

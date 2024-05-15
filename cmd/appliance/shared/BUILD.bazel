@@ -24,6 +24,7 @@ go_library(
         "@io_k8s_client_go//tools/clientcmd",
         "@io_k8s_client_go//util/homedir",
         "@io_k8s_sigs_controller_runtime//:controller-runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/cache",
         "@io_k8s_sigs_controller_runtime//pkg/client",
         "@io_k8s_sigs_controller_runtime//pkg/metrics/server",
         "@org_golang_google_grpc//:go_default_library",

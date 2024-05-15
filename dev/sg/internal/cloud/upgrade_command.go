@@ -11,19 +11,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var UpgradeEphemeralCommand = cli.Command{
+var upgradeEphemeralCommand = cli.Command{
 	Name:        "upgrade",
-	Usage:       "upgrade a cloud ephemeral",
-	Description: "Upgrade the given Ephemeral deployment with the specified version",
+	Usage:       "upgrade an ephemeral instance",
+	Description: "upgrade the given ephemeral instance  with the specified version",
 	Action:      upgradeCloudEphemeral,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "name",
-			DefaultText: "the name of the ephemeral deployment. If not specified, the name will be derived from the branch name",
+			Usage:       "name of the ephemeral instance",
+			DefaultText: "current branch name will be used",
 		},
 		&cli.StringFlag{
 			Name:        "version",
-			DefaultText: "upgrades an ephemeral cloud Sourcegraph environment with the specified version. The version MUST exist and implies that no build will be created",
+			DefaultText: "upgrades an ephemeral instance with the specified version. The version MUST exist in the cloud ephemeral registry  and implies that no build will be created",
 			Required:    true,
 		},
 	},
