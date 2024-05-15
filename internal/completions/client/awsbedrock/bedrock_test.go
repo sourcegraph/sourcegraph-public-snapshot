@@ -2,11 +2,47 @@ package awsbedrock
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/stretchr/testify/require"
 )
+
+func TestBedrockProvisionedThroughputModel(t *testing.T) {
+	tests := []struct {
+		want           string
+		endpoint       string
+		model          string
+		fallbackRegion string
+		stream         bool
+	}{
+		{
+			want:           "https://bedrock-runtime.us-west-2.amazonaws.com/model/amazon.titan-text-express-v1/invoke",
+			endpoint:       "",
+			model:          "amazon.titan-text-express-v1",
+			fallbackRegion: "us-west-2",
+			stream:         false,
+		},
+		{
+			want:           "https://vpce-12345678910.bedrock-runtime.us-west-2.vpce.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aus-west-2%3A637423580134%3Aprovisioned-model%2Fphvyvm2hlzws/invoke-with-response-stream",
+			endpoint:       "https://vpce-12345678910.bedrock-runtime.us-west-2.vpce.amazonaws.com",
+			model:          "arn:aws:bedrock:us-west-2:637423580134:provisioned-model/phvyvm2hlzws",
+			fallbackRegion: "us-east-1",
+			stream:         true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%q", tt.want), func(t *testing.T) {
+			got := buildApiUrl(tt.endpoint, tt.model, tt.stream, tt.fallbackRegion)
+			if got.String() != tt.want {
+				t.Logf("got %q but wanted %q", got, tt.want)
+				t.Fail()
+			}
+		})
+	}
+}
 
 func TestAwsConfigOptsForKeyConfig(t *testing.T) {
 
