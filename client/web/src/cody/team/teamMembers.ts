@@ -14,9 +14,8 @@ interface MemberResponse {
     members: TeamMember[]
 }
 
-export const useCodyTeamMembers = (): [TeamMember[] | null, Error | null] => {
-    return useSSCData<MemberResponse, TeamMember[]>(
+export const useCodyTeamMembers = (): [TeamMember[] | null, Error | null] =>
+    useSSCData<MemberResponse, TeamMember[]>(
         '/team/current/members',
         useCallback(response => response.members, [])
     )
-}

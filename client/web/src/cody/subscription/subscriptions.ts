@@ -22,19 +22,17 @@ interface SubscriptionSummaryData {
     isAdmin: boolean | null
 }
 
-export const useCodySubscriptionData = (): [SubscriptionData | null, Error | null] => {
-    return useSSCData<SubscriptionResponse, SubscriptionData>(
+export const useCodySubscriptionData = (): [SubscriptionData | null, Error | null] =>
+    useSSCData<SubscriptionResponse, SubscriptionData>(
         '/team/current/subscription',
         useCallback(
             response => ({ seatCount: response.maxSeats, isPro: response.subscriptionStatus !== 'canceled' }),
             []
         )
     )
-}
 
-export const useCodySubscriptionSummaryData = (): [SubscriptionSummaryData | null, Error | null] => {
-    return useSSCData<SubscriptionSummaryResponse, SubscriptionSummaryData>(
+export const useCodySubscriptionSummaryData = (): [SubscriptionSummaryData | null, Error | null] =>
+    useSSCData<SubscriptionSummaryResponse, SubscriptionSummaryData>(
         '/team/current/subscription/summary',
         useCallback(response => ({ teamId: response.teamId, isAdmin: response.userRole === 'admin' }), [])
     )
-}

@@ -16,9 +16,8 @@ interface InviteResponse {
     invites: TeamInvite[]
 }
 
-export const useCodyTeamInvites = (): [TeamInvite[] | null, Error | null] => {
-    return useSSCData<InviteResponse, TeamInvite[]>(
+export const useCodyTeamInvites = (): [TeamInvite[] | null, Error | null] =>
+    useSSCData<InviteResponse, TeamInvite[]>(
         '/team/current/invites',
         useCallback(response => response.invites, [])
     )
-}

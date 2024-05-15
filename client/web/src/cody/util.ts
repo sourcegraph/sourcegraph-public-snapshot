@@ -39,7 +39,6 @@ const emailRegex = /^[^@]+@[^@]+\.[^@]+$/
  * So the request is kinda made to two backends. Dotcom's `.api/ssc/proxy` endpoint
  * exchanges the Sourcegraph session credentials for a SAMS access token
  * and then proxy the request to the SSC backend.
- *
  * @param sscUrl The SSC API URL to call. Example: "/checkout/session".
  * @param method E.g. "POST".
  * @param params The body to send to the SSC API. Will be JSON-encoded.
