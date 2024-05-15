@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	SearcherService_Search_FullMethodName = "/searcher.v1.SearcherService/Search"
+	SearcherService_Search_FullMethodName       = "/searcher.v1.SearcherService/Search"
+	SearcherService_CommitSearch_FullMethodName = "/searcher.v1.SearcherService/CommitSearch"
 )
 
 // SearcherServiceClient is the client API for SearcherService service.
@@ -28,6 +29,7 @@ const (
 type SearcherServiceClient interface {
 	// Search executes a search, streaming back its results
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (SearcherService_SearchClient, error)
+	CommitSearch(ctx context.Context, in *CommitSearchRequest, opts ...grpc.CallOption) (SearcherService_CommitSearchClient, error)
 }
 
 type searcherServiceClient struct {
@@ -70,12 +72,45 @@ func (x *searcherServiceSearchClient) Recv() (*SearchResponse, error) {
 	return m, nil
 }
 
+func (c *searcherServiceClient) CommitSearch(ctx context.Context, in *CommitSearchRequest, opts ...grpc.CallOption) (SearcherService_CommitSearchClient, error) {
+	stream, err := c.cc.NewStream(ctx, &SearcherService_ServiceDesc.Streams[1], SearcherService_CommitSearch_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &searcherServiceCommitSearchClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type SearcherService_CommitSearchClient interface {
+	Recv() (*CommitSearchResponse, error)
+	grpc.ClientStream
+}
+
+type searcherServiceCommitSearchClient struct {
+	grpc.ClientStream
+}
+
+func (x *searcherServiceCommitSearchClient) Recv() (*CommitSearchResponse, error) {
+	m := new(CommitSearchResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // SearcherServiceServer is the server API for SearcherService service.
 // All implementations must embed UnimplementedSearcherServiceServer
 // for forward compatibility
 type SearcherServiceServer interface {
 	// Search executes a search, streaming back its results
 	Search(*SearchRequest, SearcherService_SearchServer) error
+	CommitSearch(*CommitSearchRequest, SearcherService_CommitSearchServer) error
 	mustEmbedUnimplementedSearcherServiceServer()
 }
 
@@ -85,6 +120,9 @@ type UnimplementedSearcherServiceServer struct {
 
 func (UnimplementedSearcherServiceServer) Search(*SearchRequest, SearcherService_SearchServer) error {
 	return status.Errorf(codes.Unimplemented, "method Search not implemented")
+}
+func (UnimplementedSearcherServiceServer) CommitSearch(*CommitSearchRequest, SearcherService_CommitSearchServer) error {
+	return status.Errorf(codes.Unimplemented, "method CommitSearch not implemented")
 }
 func (UnimplementedSearcherServiceServer) mustEmbedUnimplementedSearcherServiceServer() {}
 
@@ -120,6 +158,27 @@ func (x *searcherServiceSearchServer) Send(m *SearchResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _SearcherService_CommitSearch_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(CommitSearchRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(SearcherServiceServer).CommitSearch(m, &searcherServiceCommitSearchServer{stream})
+}
+
+type SearcherService_CommitSearchServer interface {
+	Send(*CommitSearchResponse) error
+	grpc.ServerStream
+}
+
+type searcherServiceCommitSearchServer struct {
+	grpc.ServerStream
+}
+
+func (x *searcherServiceCommitSearchServer) Send(m *CommitSearchResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // SearcherService_ServiceDesc is the grpc.ServiceDesc for SearcherService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -131,6 +190,11 @@ var SearcherService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Search",
 			Handler:       _SearcherService_Search_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "CommitSearch",
+			Handler:       _SearcherService_CommitSearch_Handler,
 			ServerStreams: true,
 		},
 	},
