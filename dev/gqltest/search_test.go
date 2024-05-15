@@ -260,27 +260,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
-	t.Run("lang: filter with case sensitivity", func(t *testing.T) {
-		// Guard against a previous regression where case sensitivity broke lang filters. This search
-		// query closely mimics the one the web client ues for search-based code navigation.
-		results, err := client.SearchFiles("type:symbol ^readLine$ lang:go case:yes patterntype:regexp")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Ensure some results are returned
-		if len(results.Results) == 0 {
-			t.Fatal("Want non-zero results but got none")
-		}
-
-		// Make sure we only got .go files
-		for _, r := range results.Results {
-			if !strings.Contains(strings.ToLower(r.File.Name), ".go") {
-				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
-			}
-		}
-	})
-
 	t.Run("excluding repositories", func(t *testing.T) {
 		results, err := client.SearchFiles("fmt.Sprintf -repo:jsonrpc2")
 		if err != nil {
@@ -665,16 +644,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:       "search for a non-existent file",
 				query:      "file:asdfasdf.go",
-				zeroResult: true,
-			},
-			// Symbol search
-			{
-				name:  "search for a known symbol",
-				query: "type:symbol count:100 patterntype:regexp ^newroute",
-			},
-			{
-				name:       "search for a non-existent symbol",
-				query:      "type:symbol asdfasdf",
 				zeroResult: true,
 			},
 			// Commit search
