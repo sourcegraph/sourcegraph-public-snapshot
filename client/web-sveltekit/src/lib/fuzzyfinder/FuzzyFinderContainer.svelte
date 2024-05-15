@@ -1,6 +1,6 @@
 <script lang="ts" context="module">
     import { writable } from 'svelte/store'
-    import { type FuzzyFinderTabId } from './FuzzyFinder.svelte'
+    import type { FuzzyFinderTabId } from './FuzzyFinder.svelte'
 
     interface FuzzyFinderState {
         open: boolean
