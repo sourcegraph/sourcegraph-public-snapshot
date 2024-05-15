@@ -167,21 +167,6 @@ copy_to_directory(
     ],
 )
 
-sh_binary(
-    name = "dummy",
-    srcs = ["dummy.sh"],
-    data = [
-        "@chromium-darwin-arm64//:chromium",
-        "@chromium-darwin-x86_64//:chromium",
-        "@chromium-linux-x86_64//:chromium",
-    ],
-    env = select({
-        "@bazel_tools//src/conditions:darwin_x86_64": {"CHROMIUM_BIN": "$(rootpaths @chromium-darwin-x86_64//:chromium)"},
-        "@bazel_tools//src/conditions:darwin_arm64": {"CHROMIUM_BIN": "$(rootpaths @chromium-darwin-arm64//:chromium)"},
-        "@bazel_tools//src/conditions:linux_x86_64": {"CHROMIUM_BIN": "$(rootpaths @chromium-linux-x86_64//:chromium)"},
-    }),
-)
-
 playwright_test_bin.playwright_test(
     name = "e2e_test",
     args = [
@@ -198,27 +183,14 @@ playwright_test_bin.playwright_test(
         ":generate-graphql-types",
         ":test_app_assets",
         "//cmd/frontend/graphqlbackend:graphql_schema",
-        "@chromium-darwin-arm64//:chromium",
-        "@chromium-darwin-x86_64//:chromium",
         "@chromium-linux-x86_64//:chromium",
     ] + PLAYWRIGHT_DEPS,
-    env = select({
-        "@bazel_tools//src/conditions:darwin_x86_64": {
-            "CHROMIUM_BIN": "$(rootpaths @chromium-darwin-x86_64//:chromium)",
-            "BAZEL": "1",
-            "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/build/_sk",
-        },
-        "@bazel_tools//src/conditions:darwin_arm64": {
-            "CHROMIUM_BIN": "$(rootpaths @chromium-darwin-arm64//:chromium)",
-            "BAZEL": "1",
-            "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/build/_sk",
-        },
-        "@bazel_tools//src/conditions:linux_x86_64": {
-            "CHROMIUM_BIN": "$(rootpaths @chromium-linux-x86_64//:chromium)",
-            "BAZEL": "1",
-            "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/build/_sk",
-        },
-    }),
+    env = {
+        # We pass in the linux chromium bin but only use it in CI
+        "CHROMIUM_BIN": "$(rootpaths @chromium-linux-x86_64//:chromium)",
+        "BAZEL": "1",
+        "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/build/_sk",
+    },
 )
 
 TESTS = glob([
