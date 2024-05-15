@@ -161,7 +161,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
     const remainingInviteCount = useMemo(() => {
         const memberCount = teamMembers?.length ?? 0
         const invitesUsed = (teamInvites ?? []).filter(invite => invite.status === 'sent').length
-        return Math.max((subscriptionSeatCount ?? 0) - (memberCount + invitesUsed), 0) + 100
+        return Math.max((subscriptionSeatCount ?? 0) - (memberCount + invitesUsed), 0)
     }, [subscriptionSeatCount, teamMembers, teamInvites])
 
     return (
