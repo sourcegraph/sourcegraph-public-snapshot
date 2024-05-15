@@ -42,9 +42,6 @@ type ContactProperties struct {
 	HasAgreedToToS               bool   `json:"has_agreed_to_tos_and_pp"`
 	VSCodyInstalledEmailsEnabled bool   `json:"vs_cody_installed_emails_enabled"`
 
-	// The URL of the first page a user landed on their first session on a Sourcegraph site.
-	FirstPageSeenUrl string `json:"first_page_seen_url"`
-
 	// The URL of the last page the user saw on a Sourcegraph site.
 	LastPageSeenUrl string `json:"last_page_seen_url"`
 
