@@ -6,7 +6,7 @@ import { pluralize } from '@sourcegraph/common'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { ButtonLink, H2, Link, Text, H3, TextArea } from '@sourcegraph/wildcard'
 
-import { isValidEmailAddress, fetchThroughSSCProxy } from '../util'
+import { isValidEmailAddress, callSSCProxy } from '../util'
 
 import styles from './CodyManageTeamPage.module.scss'
 
@@ -43,7 +43,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
         try {
             const responses = await Promise.all(
                 emailAddresses.map(emailAddress =>
-                    fetchThroughSSCProxy('/team/current/invites', 'POST', { email: emailAddress, role: 'member' })
+                    callSSCProxy('/team/current/invites', 'POST', { email: emailAddress, role: 'member' })
                 )
             )
             if (responses.some(response => response.status !== 200)) {
