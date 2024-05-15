@@ -1,4 +1,4 @@
-import React, { type ReactElement, useEffect } from 'react'
+import React, { type ReactElement, useEffect, useMemo } from 'react'
 
 import { mdiArrowLeft, mdiInformationOutline, mdiTrendingUp, mdiCreditCardOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -29,7 +29,7 @@ import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-op
 import { EventName } from '../../util/constants'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
-import { manageSubscriptionRedirectURL } from '../util'
+import { manageSubscriptionRedirectURL, isEmbeddedCodyProUIEnabled } from '../util'
 
 import { USER_CODY_PLAN } from './queries'
 
@@ -56,6 +56,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
     const navigate = useNavigate()
+    const useEmbeddedCodyUI = useMemo(() => isEmbeddedCodyProUIEnabled(), [])
 
     useEffect(() => {
         if (!!data && !data?.currentUser) {
@@ -71,7 +72,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         return null
     }
 
-    const isProUser = data.currentUser.codySubscription?.plan === CodySubscriptionPlan.PRO
+    const isProUser = data.currentUser.codySubscription?.plan !== CodySubscriptionPlan.PRO
 
     return (
         <>
@@ -217,16 +218,41 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     >
                                         Manage subscription
                                     </Text>
+                                ) : useEmbeddedCodyUI ? (
+                                    <>
+                                        <Button
+                                            className="mb-3 d-flex align-items-center justify-content-center"
+                                            variant="primary"
+                                            onClick={() => {
+                                                telemetryRecorder.recordEvent('cody.planSelection', 'click', {
+                                                    metadata: { tier: 1, team: 1 },
+                                                })
+                                                window.location.href = manageSubscriptionRedirectURL // TODO: Use team link or argument
+                                            }}
+                                        >
+                                            <span className={classNames(styles.proBadge, 'mr-1')} />
+                                            <span>Create a Cody Pro team</span>
+                                        </Button>
+                                        <Link
+                                            className="text-center"
+                                            to="https://sourcegraph.com/contact/request-info?utm_source=cody_subscription_page"
+                                            target="_blank"
+                                            rel="noreferrer noopener"
+                                            onClick={() => {
+                                                telemetryRecorder.recordEvent('cody.planSelection', 'click', {
+                                                    metadata: { tier: 1, team: 0 },
+                                                })
+                                                window.location.href = manageSubscriptionRedirectURL
+                                            }}
+                                        >
+                                            Upgrade yourself to Pro
+                                        </Link>
+                                    </>
                                 ) : (
                                     <Button
                                         className="flex-1"
                                         variant="primary"
                                         onClick={() => {
-                                            EVENT_LOGGER.log(
-                                                EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
-                                                { tier: 'pro' },
-                                                { tier: 'pro' }
-                                            )
                                             telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                 metadata: { tier: 1 },
                                             })

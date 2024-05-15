@@ -281,7 +281,7 @@ See [language definition](https://sourcegraph.com/docs/code_search/reference/lan
         ...createQueryExampleFromString('{golang-duration-value}'),
         field: FilterType.timeout,
         description:
-            'Customizes the timeout for searches. The value of the parameter is a string that can be parsed by the [Go time package’s `ParseDuration`](https://golang.org/pkg/time/#ParseDuration) (e.g. 10s, 100ms). By default, the timeout is set to 10 seconds, and the search will optimize for returning results as soon as possible. The timeout value cannot be set longer than 1 minute. When provided, the search is given the full timeout to complete.',
+            'Customizes the timeout for searches. The value of the parameter is a string that can be parsed by the [Go time package’s `ParseDuration`](https://golang.org/pkg/time/#ParseDuration) (e.g. 10s, 100ms). By default, the timeout is set to 1 minute, and the search will optimize for returning results as soon as possible. The value of [`search.limits.maxTimeoutSeconds`](https://sourcegraph.com/docs/code-search/types/exhaustive#timeouts) can be configured by site admins. When provided, the search is given the full timeout to complete.',
         examples: ['repo:^github.com/sourcegraph timeout:15s func count:10000'],
     },
     {

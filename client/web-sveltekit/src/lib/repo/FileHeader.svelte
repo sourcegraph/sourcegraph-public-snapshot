@@ -7,16 +7,12 @@
     import { DropdownMenu } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
 
-    import SidebarToggleButton from './SidebarToggleButton.svelte'
-    import { sidebarOpen } from './stores'
-
     const TREE_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]'
     const BLOB_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/blob/[...path]'
 
     export let repoName: string
     export let revision: string | undefined
     export let path: string
-    export let hideSidebarToggle = false
     export let type: 'blob' | 'tree'
 
     $: breadcrumbs = path.split('/').map((part, index, all): [string, string] => [
@@ -33,9 +29,6 @@
 </script>
 
 <div class="header">
-    <div class="toggle-wrapper" class:hidden={hideSidebarToggle || $sidebarOpen}>
-        <SidebarToggleButton />
-    </div>
     <h2>
         {#each breadcrumbs as [name, path], index}
             {@const last = index === breadcrumbs.length - 1}
@@ -99,19 +92,6 @@
         border-bottom: 1px solid var(--border-color);
         z-index: 1;
         gap: 0.5rem;
-    }
-
-    .toggle-wrapper {
-        margin-right: 0.5rem;
-
-        // We still want the height of the button to be considered
-        // when rendering the header, so that toggling the sidebar
-        // won't change the height of the header.
-        &.hidden {
-            visibility: hidden;
-            margin-right: 0;
-            width: 0;
-        }
     }
 
     h2 {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
-import * as stripeJs from '@stripe/stripe-js'
+import type { Stripe } from '@stripe/stripe-js'
 import { useSearchParams } from 'react-router-dom'
 
 import { H3, Text } from '@sourcegraph/wildcard'
@@ -11,14 +11,14 @@ import { H3, Text } from '@sourcegraph/wildcard'
  * render an iframe into, that will host a Stripe Checkout-hosted form.
  */
 export const CodyProCheckoutForm: React.FunctionComponent<{
-    stripeHandle: Promise<stripeJs.Stripe | null>
+    stripePromise: Promise<Stripe | null>
     customerEmail: string | undefined
-}> = ({ stripeHandle, customerEmail }) => {
+}> = ({ stripePromise, customerEmail }) => {
     const [clientSecret, setClientSecret] = useState('')
     const [errorDetails, setErrorDetails] = useState('')
     const [urlSearchParams] = useSearchParams()
 
-    // Optionally support the "showCouponCodeAtCheckout" URL query parameter, which if present
+    // Optionally support the "showCouponCodeAtCheckout" URL query parameter, which is present
     // will display a "promotional code" element in the Stripe Checkout UI.
     const showPromoCodeField = urlSearchParams.get('showCouponCodeAtCheckout') !== null
 
@@ -44,7 +44,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
             )}
 
             {clientSecret && (
-                <EmbeddedCheckoutProvider stripe={stripeHandle} options={options}>
+                <EmbeddedCheckoutProvider stripe={stripePromise} options={options}>
                     <EmbeddedCheckout />
                 </EmbeddedCheckoutProvider>
             )}
@@ -75,6 +75,7 @@ async function createCheckoutSession(
         // take care of exchanging the Sourcegraph session credentials for a SAMS access token.
         // And then proxy the request onto the SSC backend, which will actually create the
         // checkout session.
+        // TODO: Use fetchThroughSSCProxy instead of fetch.
         const response = await fetch(`${origin}/.api/ssc/proxy/checkout/session`, {
             // Pass along the "sgs" session cookie to identify the caller.
             credentials: 'same-origin',
@@ -91,7 +92,7 @@ async function createCheckoutSession(
                 // BUG: Due to the race conditions between Stripe, the SSC backend,
                 // and Sourcegraph.com, immediately loading the Dashboard page isn't
                 // going to show the right data reliably. We will need to instead show
-                // some intersitular or welcome prompt, to give various things to sync.
+                // some interstitial or welcome prompt, to give various things to sync.
                 returnUrl: `${origin}/cody/manage?session_id={CHECKOUT_SESSION_ID}`,
             }),
         })
@@ -102,7 +103,7 @@ async function createCheckoutSession(
             setClientSecret(typedResp.clientSecret)
         } else {
             // Pass any 4xx or 5xx directly to the user. We expect the
-            // server to have properly redcated any sensive information.
+            // server to have properly redacted any sensitive information.
             setErrorDetails(responseBody)
         }
     } catch (error) {

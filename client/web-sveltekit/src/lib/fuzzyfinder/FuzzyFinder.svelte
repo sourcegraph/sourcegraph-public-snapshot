@@ -1,3 +1,13 @@
+<script lang="ts" context="module">
+    export enum FuzzyFinderTabType {
+        Repos = 'repos',
+        Symbols = 'symbols',
+        Files = 'files',
+    }
+
+    export type FuzzyFinderTabId = FuzzyFinderTabType | `${FuzzyFinderTabType}`
+</script>
+
 <script lang="ts">
     import { mdiClose } from '@mdi/js'
     import { tick } from 'svelte'
@@ -28,7 +38,7 @@
     export let open = false
     export let scope = ''
 
-    export function selectTab(tabID: 'repos' | 'symbols' | 'files') {
+    export function selectTab(tabID: FuzzyFinderTabId) {
         if (selectedTab.id !== tabID) {
             selectedOption = 0
             selectedTab = tabs.find(t => t.id === tabID) ?? tabs[0]

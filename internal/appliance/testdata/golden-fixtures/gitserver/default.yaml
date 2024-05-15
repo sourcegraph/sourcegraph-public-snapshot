@@ -132,7 +132,6 @@ resources:
         resources:
           requests:
             storage: 200Gi
-        storageClassName: sourcegraph
         volumeMode: Filesystem
       status:
         phase: Pending

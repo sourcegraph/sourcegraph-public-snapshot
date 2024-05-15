@@ -29,6 +29,13 @@ interface FileTreeStore extends Readable<FileTreeProvider | Error | null> {
      * Sets the current repo, revision, and path for the file tree.
      */
     set(args: { repoName: string; revision: string; path: string }): void
+
+    /**
+     * Resets file tree top level path, in some cases like jump to scope
+     * we have to invalidate cache since top level path has been changed
+     * to a lower level.
+     */
+    resetTopPathCache(repoName: string, revision: string): void
 }
 
 interface FileTreeStoreOptions {
@@ -98,6 +105,10 @@ export function createFileTreeStore(options: FileTreeStoreOptions): FileTreeStor
         subscribe,
         set(args) {
             repoRevPath.next(args)
+        },
+        resetTopPathCache(repoName: string, revision: string): void {
+            const topPaths = topTreePathByRepoAndRevision.get(repoName) || new Map()
+            topPaths.set(revision, undefined)
         },
     }
 }

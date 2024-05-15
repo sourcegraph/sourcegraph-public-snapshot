@@ -16,6 +16,7 @@ func (suite *ApplianceTestSuite) TestStandardFeatures() {
 		{name: "standard/symbols-with-custom-image"},
 		{name: "standard/redis-with-multiple-custom-images"},
 		{name: "standard/precise-code-intel-with-env-vars"},
+		{name: "standard/blobstore-with-named-storage-class"},
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMap(tc.name)
