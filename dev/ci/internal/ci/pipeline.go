@@ -290,6 +290,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		if c.RunType.Is(
 			runtype.MainDryRun,
+			runtype.DockerImages,
 			runtype.MainBranch,
 			runtype.ReleaseBranch,
 			runtype.TaggedRelease,
@@ -307,7 +308,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
-			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun, runtype.CloudEphemeral),
+			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun, runtype.DockerImages, runtype.CloudEphemeral),
 			IsMainBranch:              true,
 		}))
 
