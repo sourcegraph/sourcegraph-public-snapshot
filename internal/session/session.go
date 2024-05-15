@@ -219,8 +219,10 @@ func GetData(r *http.Request, key string, value any) error {
 	return nil
 }
 
-// SetActorFromUser creates an actor from a user and sets it in the session and
+// SetActorFromUser creates an actor from a user, sets it in the session, and
 // returns a context with the user attached.
+//
+// 🚨 SECURITY: Should only be called after user is successfully authenticated.
 func SetActorFromUser(ctx context.Context, w http.ResponseWriter, r *http.Request, user *types.User, expiryPeriod time.Duration) (context.Context, error) {
 	info, err := licensing.GetConfiguredProductLicenseInfo()
 	if err != nil {
@@ -231,14 +233,15 @@ func SetActorFromUser(ctx context.Context, w http.ResponseWriter, r *http.Reques
 		return ctx, errors.New("Sourcegraph license is expired. Only admins are allowed to sign in.")
 	}
 
-	// Write the session cookie
+	// Authentication passed at this point, this is our actor
 	act := sgactor.Actor{
 		UID: user.ID,
 	}
 
-	// Add user to the context, because we return it
+	// Add actor to the context, because we return it
 	ctx = actor.WithActor(ctx, &act)
 
+	// Write the session cookie with SetActor
 	return ctx, SetActor(w, r, &act, expiryPeriod, user.CreatedAt)
 }
 

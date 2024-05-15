@@ -126,6 +126,7 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 		return
 	}
 
+	// Write the session cookie and get an authenticated context
 	ctx, err = session.SetActorFromUser(ctx, w, r, usr, 0)
 	if err != nil {
 		httpLogError(logger.Error, w, fmt.Sprintf("Could not create new user session: %s", err.Error()), http.StatusInternalServerError, log.Error(err))
@@ -158,8 +159,8 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 		})
 	}
 
-	// New event - we record legacy event manually for now, hence teestore.WithoutV1
-	// TODO: Remove in 5.3
+	// New event - we record legacy event manually for now below, hence
+	// teestore.WithoutV1
 	events := telemetry.NewBestEffortEventRecorder(logger, eventRecorder)
 	events.Record(teestore.WithoutV1(ctx), "signUp", telemetry.ActionSucceeded, &telemetry.EventParameters{
 		Version: 2,
@@ -389,7 +390,7 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, recorde
 			return
 		}
 
-		// Write the session cookie
+		// Write the session cookie and get an authenticated context
 		ctx, err = session.SetActorFromUser(ctx, w, r, &user, 0)
 		if err != nil {
 			httpLogError(logger.Error, w, fmt.Sprintf("Could not create new user session: %s", err.Error()), http.StatusInternalServerError, log.Error(err))
