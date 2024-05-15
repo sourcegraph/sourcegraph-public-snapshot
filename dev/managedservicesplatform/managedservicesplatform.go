@@ -121,6 +121,7 @@ func (r *Renderer) RenderEnvironment(
 		IAM:       *iamOutput,
 
 		Service:     svc.Service,
+		Repository:  svc.Build.Source.Repo,
 		Image:       svc.Build.Image,
 		Environment: env,
 
