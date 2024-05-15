@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router-dom'
 
 import { H3, Text } from '@sourcegraph/wildcard'
 
-import { callSSCProxy } from '../../../util'
+import { requestSSC } from '../../../util'
 
 /**
  * CodyProCheckoutForm is essentially an iframe that the Stripe Elements library will
@@ -73,7 +73,7 @@ async function createCheckoutSession(
     const origin = window.location.origin
 
     try {
-        const response = await callSSCProxy('/checkout/session', 'POST', {
+        const response = await requestSSC('/checkout/session', 'POST', {
             interval: billingInterval,
             seats: 1,
             customerEmail,

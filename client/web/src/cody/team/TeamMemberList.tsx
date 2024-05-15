@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { H2, Text, Badge, Link, ButtonLink } from '@sourcegraph/wildcard'
 
-import { callSSCProxy } from '../util'
+import { requestSSC } from '../util'
 
 import type { TeamInvite } from './teamInvites'
 import type { TeamMember } from './teamMembers'
@@ -38,7 +38,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 })
 
                 try {
-                    const response = await callSSCProxy(`/team/current/members/${accountId}?newRole=${newRole}`, 'PATCH')
+                    const response = await requestSSC(`/team/current/members/${accountId}?newRole=${newRole}`, 'PATCH')
                     if (!response.ok) {
                         setLoading(false)
                         setActionResult({
@@ -68,7 +68,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
 
-                const response = await callSSCProxy(`/team/current/invites/${inviteId}/cancel`, 'POST')
+                const response = await requestSSC(`/team/current/invites/${inviteId}/cancel`, 'POST')
                 if (!response.ok) {
                     setLoading(false)
                     setActionResult({
@@ -91,7 +91,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
 
-                const response = await callSSCProxy(`/team/current/invites/${inviteId}/resend`, 'POST')
+                const response = await requestSSC(`/team/current/invites/${inviteId}/resend`, 'POST')
                 if (!response.ok) {
                     setLoading(false)
                     setActionResult({
@@ -117,7 +117,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
 
-                const response = await callSSCProxy(`/team/current/members/${accountId}`, 'DELETE')
+                const response = await requestSSC(`/team/current/members/${accountId}`, 'DELETE')
                 if (!response.ok) {
                     setLoading(false)
                     setActionResult({

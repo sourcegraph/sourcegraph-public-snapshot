@@ -43,7 +43,7 @@ const emailRegex = /^[^@]+@[^@]+\.[^@]+$/
  * @param method E.g. "POST".
  * @param params The body to send to the SSC API. Will be JSON-encoded.
  */
-export function callSSCProxy(sscUrl: string, method: string, params?: object): Promise<Response> {
+export function requestSSC(sscUrl: string, method: string, params?: object): Promise<Response> {
     // /.api/ssc/proxy endpoint exchanges the Sourcegraph session credentials for a SAMS access token.
     // And then proxy the request onto the SSC backend, which will actually create the
     // checkout session.
@@ -70,7 +70,7 @@ export const useSSCQuery = <T extends object, U extends object | null>(
     useEffect(() => {
         async function loadData(): Promise<void> {
             try {
-                const response = await callSSCProxy(endpoint, 'GET')
+                const response = await requestSSC(endpoint, 'GET')
                 const responseJson = await response.json()
                 setData(transformResponse(responseJson))
             } catch (error) {
