@@ -219,6 +219,8 @@ func GetData(r *http.Request, key string, value any) error {
 	return nil
 }
 
+// SetActorFromUser creates an actor from a user and sets it in the session and
+// returns a context with the user attached.
 func SetActorFromUser(ctx context.Context, w http.ResponseWriter, r *http.Request, user *types.User, expiryPeriod time.Duration) (context.Context, error) {
 	info, err := licensing.GetConfiguredProductLicenseInfo()
 	if err != nil {
@@ -230,11 +232,14 @@ func SetActorFromUser(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	}
 
 	// Write the session cookie
-	actor := sgactor.Actor{
+	act := sgactor.Actor{
 		UID: user.ID,
 	}
 
-	return ctx, SetActor(w, r, &actor, expiryPeriod, user.CreatedAt)
+	// Add user to the context, because we return it
+	ctx = actor.WithActor(ctx, &act)
+
+	return ctx, SetActor(w, r, &act, expiryPeriod, user.CreatedAt)
 }
 
 // SetActor sets the actor in the session, or removes it if actor == nil. If no session exists, a
