@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -19,6 +20,7 @@ func unwrap[T any](v T, err error) func(*testing.T) T {
 
 func TestCodeGraphAPIs(t *testing.T) {
 	if len(*githubToken) == 0 {
+		t.Fatal("Testing code graph APIs missing token")
 		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}
 
@@ -47,7 +49,9 @@ func TestCodeGraphAPIs(t *testing.T) {
 	jobs := unwrap(client.TriggerAutoIndexing("github.com/sourcegraph/conc"))(t)
 
 	timeout := 5 * time.Minute
-	_ = unwrap(client.WaitForAutoIndexingJobsToComplete(jobs, timeout))(t)
+	jobStates := unwrap(client.WaitForAutoIndexingJobsToComplete(jobs, timeout))(t)
 
+	fmt.Printf("%v\n", jobStates)
+	t.Fatal("Testing if this test is actually running")
 	// Now run precise code nav queries against this code! :)
 }
