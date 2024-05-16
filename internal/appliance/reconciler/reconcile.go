@@ -1,4 +1,4 @@
-package appliance
+package reconciler
 
 import (
 	"context"
@@ -16,13 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/yaml"
 
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-)
-
-const (
-	annotationKeyManaged        = "appliance.sourcegraph.com/managed"
-	annotationKeyCurrentVersion = "appliance.sourcegraph.com/currentVersion"
-	annotationKeyConfigHash     = "appliance.sourcegraph.com/configHash"
 )
 
 var _ reconcile.Reconciler = &Reconciler{}
@@ -74,7 +69,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Similarly, we simulate a CRD status using an annotation. ConfigMaps don't
 	// have Statuses, so we must use annotations to drive this.
 	// This can be empty string.
-	sourcegraph.Status.CurrentVersion = applianceSpec.GetAnnotations()[annotationKeyCurrentVersion]
+	sourcegraph.Status.CurrentVersion = applianceSpec.GetAnnotations()[config.AnnotationKeyCurrentVersion]
 
 	// Reconcile services here
 	if err := r.reconcileBlobstore(ctx, &sourcegraph, &applianceSpec); err != nil {
@@ -103,7 +98,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// Set the current version annotation in case migration logic depends on it.
-	applianceSpec.Annotations[annotationKeyCurrentVersion] = sourcegraph.Spec.RequestedVersion
+	applianceSpec.Annotations[config.AnnotationKeyCurrentVersion] = sourcegraph.Spec.RequestedVersion
 	if err := r.Client.Update(ctx, &applianceSpec); err != nil {
 		return ctrl.Result{}, errors.Newf("failed to update current version annotation: %w", err)
 	}
@@ -113,7 +108,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	applianceAnnotationPredicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
-		return object.GetAnnotations()[annotationKeyManaged] == "true"
+		return object.GetAnnotations()[config.AnnotationKeyManaged] == "true"
 	})
 
 	// When updating this list of owned resources, please update the
