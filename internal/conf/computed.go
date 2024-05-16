@@ -795,6 +795,30 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 			return nil
 		}
 
+		// If the completions model is using Provisioned Throughput the model ID
+		// isn't usable by the client Since it's a ARN like
+		// arn:aws:bedrock:us-west-2:012345678901:provisioned-model/abcdefghijkl
+
+		// For now we simply use the default model settings instead of these ARNs
+
+		// IMPORTANT: This won't work when using the cody-gateway (which we
+		// don't support anyways) and might also set wrong default context sizes
+		// as we don't know what upstream model has been configured behind the
+		// provisioned throughput.
+
+		// TODO: We should either allow a config override to set a usable model
+		// identifier or fetch model information from the bedrock API and use the
+		// model name instead of id.
+		if strings.HasPrefix(completionsConfig.ChatModel, "arn:aws") {
+			completionsConfig.ChatModel = ""
+		}
+		if strings.HasPrefix(completionsConfig.FastChatModel, "arn:aws") {
+			completionsConfig.FastChatModel = ""
+		}
+		if strings.HasPrefix(completionsConfig.CompletionModel, "arn:aws") {
+			completionsConfig.CompletionModel = ""
+		}
+
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
 			completionsConfig.ChatModel = "anthropic.claude-v2" //this modelID in Bedrock refers to claude-2.0
