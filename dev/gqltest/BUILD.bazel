@@ -7,6 +7,7 @@ go_test(
         "access_token_test.go",
         "bitbucket_projects_perms_sync_test.go",
         "code_insights_test.go",
+        "code_intel_test.go",
         "compute_test.go",
         "external_service_test.go",
         "feature_flag_test.go",

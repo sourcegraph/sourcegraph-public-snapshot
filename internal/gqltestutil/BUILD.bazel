@@ -7,6 +7,7 @@ go_library(
         "batch_specs.go",
         "client.go",
         "code_insights.go",
+        "code_intel.go",
         "compute.go",
         "external_service.go",
         "git.go",
@@ -35,5 +36,6 @@ go_library(
         "//schema",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_json_iterator_go//:go",
+        "@com_github_sourcegraph_conc//pool",
     ],
 )
