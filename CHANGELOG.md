@@ -17,6 +17,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Basic support for rendering Jupyter notebooks in the Sourcegraph web app. ([#59685](https://github.com/sourcegraph/sourcegraph/pull/59685))
+- Mermaid diagrams in Markdown are now rendered in the Sourcegraph web app ([#62678](https://github.com/sourcegraph/sourcegraph/pull/62678))
+
 ### Changed
 
 ### Fixed
