@@ -19,11 +19,8 @@
     import { isRouteEnabled } from '$lib/navigation'
 
     import type { LayoutData } from './$types'
-    import { mainNavigation, dotcomMainNavigation } from './navigation'
 
     export let data: LayoutData
-
-    const navigationEntries = data.sourcegraphDotComMode ? dotcomMainNavigation : mainNavigation
 
     const user = writable(data.user ?? null)
     const settings = writable(isErrorLike(data.settings) ? null : data.settings)
@@ -99,7 +96,7 @@
     {/if}
 {/await}
 
-<GlobalHeader authenticatedUser={$user} {handleOptOut} entries={navigationEntries} />
+<GlobalHeader authenticatedUser={$user} {handleOptOut} entries={data.navigationEntries} />
 
 <main>
     <slot />
