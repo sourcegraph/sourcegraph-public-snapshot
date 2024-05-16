@@ -27,7 +27,7 @@ func (g *GitCommitClient) FirstCommit(ctx context.Context, repoName api.RepoName
 func (g *GitCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
 	options := gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), Order: gitserver.CommitsOrderCommitDate}
 	if len(revision) > 0 {
-		options.Range = revision
+		options.Ranges = []string{revision}
 	}
 	return g.gitserverClient.Commits(ctx, repoName, options)
 }

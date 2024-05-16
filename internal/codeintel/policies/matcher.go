@@ -275,8 +275,8 @@ func commitsUniqueToBranch(ctx context.Context, gitserverClient gitserver.Client
 	}
 
 	commits, err := gitserverClient.Commits(ctx, repo, gitserver.CommitsOptions{
-		Range: rng,
-		After: after,
+		Ranges: []string{rng},
+		After:  after,
 	})
 	if err != nil {
 		return nil, err
