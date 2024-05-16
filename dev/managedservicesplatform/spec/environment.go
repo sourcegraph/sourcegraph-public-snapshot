@@ -105,6 +105,10 @@ type EnvironmentSpec struct {
 	// causes deletion on guarded resources, set this to true and apply the
 	// generated Terraform first.
 	AllowDestroys *bool `yaml:"allowDestroys,omitempty"`
+
+	// PrivateNetworking configures private networking options for the
+	// environment.
+	PrivateNetworkingSpec *EnvironmentPrivateNetworkingSpec `yaml:"privateNetworking,omitempty"`
 }
 
 func (s EnvironmentSpec) Validate() []error {
@@ -139,6 +143,7 @@ func (s EnvironmentSpec) Validate() []error {
 		}
 		errs = append(errs, v.Validate()...)
 	}
+	errs = append(errs, s.PrivateNetworkingSpec.Validate()...)
 
 	// Validate service-specific specs
 	errs = append(errs, s.EnvironmentServiceSpec.Validate()...)

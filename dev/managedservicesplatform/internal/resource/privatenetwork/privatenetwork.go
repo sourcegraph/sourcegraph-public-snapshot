@@ -34,7 +34,7 @@ type Output struct {
 // New sets up a network for the Cloud Run service to interface with other GCP
 // services. This should only be created once, hence why it does not have accept
 // a resourceid.ID
-func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
+func New(scope constructs.Construct, config Config) *Output {
 	network := computenetwork.NewComputeNetwork(
 		scope,
 		pointers.Ptr("cloudrun-network"),
@@ -50,16 +50,19 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	// We choose one with a generous IP range to avoid limitations documented
 	// here: https://cloud.google.com/run/docs/configuring/vpc-direct-vpc#limitations
 	subnetworkIPCIDRRange := "172.16.0.0/12"
-	subnetworkName := random.New(scope, id.Group("subnetwork-name"), random.Config{
-		Prefix:     config.ServiceID,
-		ByteLength: 4,
-		Keepers: map[string]*string{
-			// Range change requires recreation of the subnetwork, so we need
-			// to change the randomized suffix to avoid a conflict and respect
-			// CreateBeforeDestroy
-			"ipcidrrange": pointers.Ptr(subnetworkIPCIDRRange),
-		},
-	})
+	subnetworkName := random.New(
+		scope,
+		resourceid.New("privatenetwork").Group("subnetwork-name"),
+		random.Config{
+			Prefix:     config.ServiceID,
+			ByteLength: 4,
+			Keepers: map[string]*string{
+				// Range change requires recreation of the subnetwork, so we need
+				// to change the randomized suffix to avoid a conflict and respect
+				// CreateBeforeDestroy
+				"ipcidrrange": pointers.Ptr(subnetworkIPCIDRRange),
+			},
+		})
 	subnetwork := computesubnetwork.NewComputeSubnetwork(
 		scope,
 		pointers.Ptr("cloudrun-subnetwork"),

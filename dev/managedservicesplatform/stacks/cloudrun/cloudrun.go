@@ -14,6 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/datagoogleproject"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiamcustomrole"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/pubsubsubscription"
@@ -33,6 +34,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/deliverypipeline"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/postgresqlroles"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privateaccessperimeter"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privategoogleaccess"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privatenetwork"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/redis"
@@ -178,12 +181,39 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	// once. If called, it always returns a non-nil value.
 	privateNetwork := sync.OnceValue(func() *privatenetwork.Output {
 		privateNetworkEnabled = true
-		return privatenetwork.New(stack, resourceid.New("privatenetwork"), privatenetwork.Config{
+		return privatenetwork.New(stack, privatenetwork.Config{
 			ProjectID: vars.ProjectID,
 			ServiceID: vars.Service.ID,
 			Region:    locationSpec.GCPRegion,
 		})
 	})
+
+	// Apply private networking options
+	if pns := vars.Environment.PrivateNetworkingSpec; pns != nil {
+		if pns.PrivateGoogleAccess != nil {
+			_, err := privategoogleaccess.New(stack, privategoogleaccess.Config{
+				ProjectID: vars.ProjectID,
+				Network:   privateNetwork().Network,
+				Spec:      *pns.PrivateGoogleAccess,
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "privategoogleaccess.New")
+			}
+		}
+		if pns.PrivateAccessPerimeter != nil {
+			_, err := privateaccessperimeter.New(stack, privateaccessperimeter.Config{
+				Project: datagoogleproject.NewDataGoogleProject(stack, id.TerraformID("service_env_project"), &datagoogleproject.DataGoogleProjectConfig{
+					ProjectId: pointers.Stringf(vars.ProjectID),
+				}),
+				Service:       vars.Service,
+				EnvironmentID: vars.Environment.ID,
+				Spec:          *pns.PrivateAccessPerimeter,
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "privateaccessperimeter.New")
+			}
+		}
+	}
 
 	// Add MSP env var indicating that the service is running in a Managed
 	// Services Platform environment.
@@ -511,8 +541,10 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		"Cloud Run resource name")
 	locals.Add("cloud_run_location", *cloudRunResource.Location(),
 		"Cloud Run resource location")
-	locals.Add("image_tag", *imageTag.StringValue,
-		"Resolved tag of service image to deploy")
+	if uriProvider, ok := cloudRunResource.(interface{ Uri() *string }); ok {
+		locals.Add("cloud_run_internal_url", *uriProvider.Uri(),
+			"Cloud Run app internal URL")
+	}
 	return &CrossStackOutput{
 		DiagnosticsSecret:  diagnosticsSecret,
 		RedisInstanceID:    redisInstanceID,

@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "privateaccessserver",
+    srcs = ["privateaccesserver.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privateaccessserver",
+    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    deps = [
+        "//dev/managedservicesplatform/internal/resourceid",
+        "//dev/managedservicesplatform/spec",
+        "//lib/pointers",
+        "@com_github_aws_constructs_go_constructs_v10//:constructs",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//accesscontextmanagerserviceperimeter",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//datagoogleproject",
+    ],
+)
+
+go_library(
+    name = "privateaccessperimeter",
+    srcs = ["privateaccessperimeter.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privateaccessperimeter",
+    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    deps = [
+        "//dev/managedservicesplatform/internal/resourceid",
+        "//dev/managedservicesplatform/spec",
+        "//lib/pointers",
+        "@com_github_aws_constructs_go_constructs_v10//:constructs",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//accesscontextmanagerserviceperimeter",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//datagoogleproject",
+    ],
+)

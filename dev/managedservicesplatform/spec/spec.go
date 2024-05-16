@@ -142,6 +142,8 @@ func parse(data []byte) (*Spec, error) {
 func (s Spec) Validate() []error {
 	var errs []error
 
+	// Validate that Job spec is as expected (required fields are provided,
+	// unsupported mechanisms must not be configured)
 	if s.Service.Kind.Is(ServiceKindJob) {
 		for _, e := range s.Environments {
 			if e.EnvironmentServiceSpec != nil {
@@ -153,8 +155,14 @@ func (s Spec) Validate() []error {
 			if e.Instances.Scaling != nil {
 				errs = append(errs, errors.New("'environments.instances.scaling' not supported for 'kind: job'"))
 			}
+			if pointers.DerefZero(e.PrivateNetworkingSpec).PrivateAccessPerimeter != nil {
+				errs = append(errs, errors.New("'environments.privateNetworking.privateAccessServer' not supported for 'kind: job'"))
+			}
 		}
 	}
+
+	// Validate that Service spec is as expected (required fields are provided,
+	// unsupported mechanisms must not be configured)
 	if s.Service.Kind.Is(ServiceKindService) {
 		for _, e := range s.Environments {
 			if e.EnvironmentJobSpec != nil {
