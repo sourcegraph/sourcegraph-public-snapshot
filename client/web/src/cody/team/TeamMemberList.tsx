@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { H2, Text, Badge, Link, ButtonLink } from '@sourcegraph/wildcard'
 
-import { fetchThroughSSCProxy } from '../util'
+import { requestSSC } from '../util'
 
 import styles from './CodyManageTeamPage.module.scss'
 
@@ -15,6 +15,13 @@ export interface TeamMember {
     email: string
     avatarUrl: string | null
     role: 'admin' | 'member'
+}
+
+interface TeamMemberListProps extends TelemetryV2Props {
+    teamId: string | null
+    teamMembers: TeamMember[]
+    invites: TeamInvite[]
+    isAdmin: boolean
 }
 
 export interface TeamInvite {
@@ -27,13 +34,6 @@ export interface TeamInvite {
     acceptedAt: string | null
 }
 
-interface TeamMemberListProps extends TelemetryV2Props {
-    teamId: string | null
-    teamMembers: TeamMember[]
-    invites: TeamInvite[]
-    isAdmin: boolean
-}
-
 export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
     teamId,
     teamMembers,
@@ -43,7 +43,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
 }) => {
     const [loading, setLoading] = useState(false)
     const [actionResult, setActionResult] = useState<{ message: string; isError: boolean } | null>(null)
-    const setRole = useCallback(
+    const updateRole = useCallback(
         async (accountId: string, newRole: 'member' | 'admin'): Promise<void> => {
             if (!loading) {
                 // Avoids sending multiple requests at once
@@ -52,19 +52,24 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                     privateMetadata: { teamId, accountId },
                 })
 
-                const response = await fetchThroughSSCProxy(
-                    `/team/current/members/${accountId}?newRole=${newRole}`,
-                    'PATCH'
-                )
-                if (!response.ok) {
+                try {
+                    const response = await requestSSC(`/team/current/members/${accountId}?newRole=${newRole}`, 'PATCH')
+                    if (!response.ok) {
+                        setLoading(false)
+                        setActionResult({
+                            message: `We couldn't modify the user's role (${response.status}). Please try again later.`,
+                            isError: true,
+                        })
+                    } else {
+                        setLoading(false)
+                        setActionResult({ message: 'Team role updated.', isError: false })
+                    }
+                } catch (error) {
                     setLoading(false)
                     setActionResult({
-                        message: `We couldn't modify the user's role (${response.status}). Please try again later.`,
+                        message: `We couldn't modify the user's role. The error was: "${error}". Please try again later.`,
                         isError: true,
                     })
-                } else {
-                    setLoading(false)
-                    setActionResult({ message: 'Team role updated.', isError: false })
                 }
             }
         },
@@ -78,7 +83,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
 
-                const response = await fetchThroughSSCProxy(`/team/current/invites/${inviteId}/cancel`, 'POST')
+                const response = await requestSSC(`/team/current/invites/${inviteId}/cancel`, 'POST')
                 if (!response.ok) {
                     setLoading(false)
                     setActionResult({
@@ -101,7 +106,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
 
-                const response = await fetchThroughSSCProxy(`/team/current/invites/${inviteId}/resend`, 'POST')
+                const response = await requestSSC(`/team/current/invites/${inviteId}/resend`, 'POST')
                 if (!response.ok) {
                     setLoading(false)
                     setActionResult({
@@ -127,7 +132,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
 
-                const response = await fetchThroughSSCProxy(`/team/current/members/${accountId}`, 'DELETE')
+                const response = await requestSSC(`/team/current/members/${accountId}`, 'DELETE')
                 if (!response.ok) {
                     setLoading(false)
                     setActionResult({
@@ -196,7 +201,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                         <div className="d-flex flex-column justify-content-center ml-2">
                                             <Link
                                                 to="#"
-                                                onClick={() => setRole(member.accountId, 'member')}
+                                                onClick={() => updateRole(member.accountId, 'member')}
                                                 className="ml-2"
                                                 aria-disabled={adminCount < 2}
                                             >
@@ -208,7 +213,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                             <div className="d-flex flex-column justify-content-center ml-2">
                                                 <Link
                                                     to="#"
-                                                    onClick={() => setRole(member.accountId, 'admin')}
+                                                    onClick={() => updateRole(member.accountId, 'admin')}
                                                     className="ml-2"
                                                 >
                                                     Make admin
