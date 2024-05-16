@@ -59,7 +59,6 @@ go_test(
     embed = [":scim"],
     tags = [TAG_PLATFORM_SOURCE],
     deps = [
-        "//internal/auth/userpasswd",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",
