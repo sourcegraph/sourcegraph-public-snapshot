@@ -1,13 +1,18 @@
-<!-- Learn how to write good pull request description: https://www.notion.so/sourcegraph/Write-a-good-pull-request-description-610a7fd3e613496eb76f450db5a49b6e?pvs=4
+<!--
 
-A pull request description is essential for others to understand the context that led to submitting changes.
-Filling the TODOs below will guide you to cover the basics and make sure your description provides helpful
-context for a long time.
+💡 To write a useful PR description, make sure that your description covers:
+
+- WHAT this PR is changing:
+    - How was it PREVIOUSLY.
+    - How it will be from NOW on.
+- WHY this PR is needed.
+- CONTEXT, i.e. to which initiative, project or RFC it belongs.
+
+The structure of the description doesn't matter as much as covering these points, so use
+your best judgement based on your context.
+
+Learn how to write good pull request description: https://www.notion.so/sourcegraph/Write-a-good-pull-request-description-610a7fd3e613496eb76f450db5a49b6e?pvs=4
 -->
-
-Fixes TODO
-Before TODO
-After TODO
 
 ## Test plan
 
