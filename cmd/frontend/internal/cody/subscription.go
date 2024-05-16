@@ -41,9 +41,24 @@ type UserSubscription struct {
 	CancelAtPeriodEnd bool
 }
 
+// shouldHaveCodyPro returns whether or not the user should have access to Cody Pro functionality
+// based on their subscription status.
+func shouldHaveCodyPro(status ssc.SubscriptionStatus) bool {
+	switch status {
+	case ssc.SubscriptionStatusActive, ssc.SubscriptionStatusPastDue, ssc.SubscriptionStatusTrialing:
+		// Active is the regular state for a valid subscription.
+		// PastDue is when there is some form of payment problem, but is within the grace period before
+		//     the subscription gets canceled.
+		// Trialing is when the user is on a free trial of Cody Pro.
+		return true
+	default:
+		return false
+	}
+}
+
 // consolidateSubscriptionDetails handles the raw subscription data from SSC.
 func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscription *ssc.Subscription) (*UserSubscription, error) {
-	if subscription != nil && (subscription.Status == ssc.SubscriptionStatusActive || subscription.Status == ssc.SubscriptionStatusPastDue) {
+	if subscription != nil && shouldHaveCodyPro(subscription.Status) {
 		currentPeriodStart, err := time.Parse(time.RFC3339, subscription.CurrentPeriodStart)
 		if err != nil {
 			return nil, err
@@ -142,10 +157,7 @@ func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (
 			subscriptions = append(subscriptions, subscription)
 
 			// Pick the first one we find in a good state, enabling the user to access Cody Pro features.
-			// - Active and in good standing.
-			// - PastDue, meaning there is some payment problem but in a grace period before cancellation.
-			// - Trialing, on a free trial.
-			if subscription.Status == ssc.SubscriptionStatusActive || subscription.Status == ssc.SubscriptionStatusPastDue || subscription.Status == ssc.SubscriptionStatusTrialing {
+			if shouldHaveCodyPro(subscription.Status) {
 				return consolidateSubscriptionDetails(ctx, user, subscription)
 			}
 		}
