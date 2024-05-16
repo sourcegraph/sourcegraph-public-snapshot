@@ -61,25 +61,22 @@ export function requestSSC(sscUrl: string, method: string, params?: object): Pro
 
 // React hook to fetch data through the SSC proxy and convert the response to a more usable format.
 // This is a low-level hook that is meant to be used by other hooks that need to fetch data from the SSC API.
-export const useSSCQuery = <T extends object, U extends object | null>(
-    endpoint: string,
-    transformResponse: (response: T) => U
-): [U | null, Error | null] => {
-    const [data, setData] = useState<U | null>(null)
+export const useSSCQuery = <T extends object>(endpoint: string): [T | null, Error | null] => {
+    const [data, setData] = useState<T | null>(null)
     const [error, setError] = useState<Error | null>(null)
     useEffect(() => {
         async function loadData(): Promise<void> {
             try {
                 const response = await requestSSC(endpoint, 'GET')
                 const responseJson = await response.json()
-                setData(transformResponse(responseJson))
+                setData(responseJson)
             } catch (error) {
                 setError(error)
             }
         }
 
         void loadData()
-    }, [endpoint, transformResponse])
+    }, [endpoint])
 
     return [data, error]
 }

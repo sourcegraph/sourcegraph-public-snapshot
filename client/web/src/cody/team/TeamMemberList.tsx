@@ -7,16 +7,31 @@ import { H2, Text, Badge, Link, ButtonLink } from '@sourcegraph/wildcard'
 
 import { requestSSC } from '../util'
 
-import type { TeamInvite } from './teamInvites'
-import type { TeamMember } from './teamMembers'
-
 import styles from './CodyManageTeamPage.module.scss'
+
+export interface TeamMember {
+    accountId: string
+    displayName: string | null
+    email: string
+    avatarUrl: string | null
+    role: 'admin' | 'member'
+}
 
 interface TeamMemberListProps extends TelemetryV2Props {
     teamId: string | null
     teamMembers: TeamMember[]
     invites: TeamInvite[]
     isAdmin: boolean
+}
+
+export interface TeamInvite {
+    id: string
+    email: string
+    role: 'admin' | 'member' | 'none'
+    status: 'sent' | 'errored' | 'accepted' | 'canceled'
+    error: string | null
+    sentAt: string | null
+    acceptedAt: string | null
 }
 
 export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
