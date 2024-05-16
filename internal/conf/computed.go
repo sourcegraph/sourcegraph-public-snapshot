@@ -812,9 +812,9 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	}
 
 	// Make sure models are always treated case-insensitive.
-	completionsConfig.ChatModel = strings.ToLower(completionsConfig.ChatModel)
-	completionsConfig.FastChatModel = strings.ToLower(completionsConfig.FastChatModel)
-	completionsConfig.CompletionModel = strings.ToLower(completionsConfig.CompletionModel)
+	completionsConfig.ChatModel = conftypes.CasefoldBedrockModelId(completionsConfig.ChatModel)
+	completionsConfig.FastChatModel = conftypes.CasefoldBedrockModelId(completionsConfig.FastChatModel)
+	completionsConfig.CompletionModel = conftypes.CasefoldBedrockModelId(completionsConfig.CompletionModel)
 
 	// If after trying to set default we still have not all models configured, completions are
 	// not available.
@@ -1198,8 +1198,9 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 		// this is a sane default for GPT in general.
 		return 7_000
 	case conftypes.CompletionsProviderNameAWSBedrock:
-		if strings.HasPrefix(model, "anthropic.") {
-			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(model, "anthropic."))
+		parsed := conftypes.ParseBedrockModelId(model)
+		if strings.HasPrefix(parsed.Model, "anthropic.") {
+			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(parsed.Model, "anthropic."))
 		}
 		// Fallback for weird values.
 		return 9_000
@@ -1210,6 +1211,8 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 }
 
 func anthropicDefaultMaxPromptTokens(model string) int {
+	//TODO: this doesn't nearly cover all the ways that token size can be specified. https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
+	//Almost better to not infer these and instead require explicit configuration to avoid confusion
 	if strings.HasSuffix(model, "-100k") {
 		return 100_000
 

@@ -548,6 +548,30 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "AWS Bedrock completions with Provisioned Throughput for some of the models",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider:      "aws-bedrock",
+					Endpoint:      "us-west-2",
+					ChatModel:     "anthropic.claude-3-haiku-20240307-v1:0-100k/arn:aws:bedrock:us-west-2:012345678901:provisioned-model/abcdefghijkl",
+					FastChatModel: "anthropic.claude-v2",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "anthropic.claude-3-haiku-20240307-v1:0-100k/arn:aws:bedrock:us-west-2:012345678901:provisioned-model/abcdefghijkl",
+				ChatModelMaxTokens:       100_000,
+				FastChatModel:            "anthropic.claude-v2",
+				FastChatModelMaxTokens:   12000,
+				CompletionModel:          "anthropic.claude-instant-v1",
+				CompletionModelMaxTokens: 9000,
+				AccessToken:              "",
+				Provider:                 "aws-bedrock",
+				Endpoint:                 "us-west-2",
+			},
+		},
+		{
 			name: "zero-config cody gateway completions without license key",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),

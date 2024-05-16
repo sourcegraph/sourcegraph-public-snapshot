@@ -2,6 +2,7 @@ package conftypes
 
 import (
 	"reflect"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -104,4 +105,34 @@ func (r *RawUnified) FromProto(in *proto.RawUnified) {
 // Equal tells if the two configurations are equal or not.
 func (r RawUnified) Equal(other RawUnified) bool {
 	return r.Site == other.Site && reflect.DeepEqual(r.ServiceConnections, other.ServiceConnections)
+}
+
+// Bedrock ModelIDs can either be just a <model_id> string as specified in https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html. Or when using provisioned capacity a string like `<model_id>/<provisioned_capacity>` where the <provisioned_capacity> refers to the arn in https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreateProvisionedModelThroughput.html#API_CreateProvisionedModelThroughput_RequestSyntax
+type BedrockModelIdParts struct {
+	Model               string
+	ProvisionedCapacity string
+}
+
+func ParseBedrockModelId(modelId string) BedrockModelIdParts {
+	parts := strings.SplitN(modelId, "/", 2)
+
+	parsed := BedrockModelIdParts{
+		Model: parts[0],
+	}
+	if len(parts) == 2 {
+		parsed.ProvisionedCapacity = parts[1]
+	}
+	return parsed
+}
+
+func CasefoldBedrockModelId(modelId string) string {
+	// Bedrock models are case sensitive if they contain a ARN
+	// make sure to only lowercase the non ARN part
+	parsed := ParseBedrockModelId(modelId)
+	parsed.Model = strings.ToLower(parsed.Model)
+
+	if parsed.ProvisionedCapacity != "" {
+		return strings.Join([]string{parsed.Model, parsed.ProvisionedCapacity}, "/")
+	}
+	return parsed.Model
 }
