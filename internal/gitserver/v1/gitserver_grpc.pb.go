@@ -381,14 +381,14 @@ type GitserverServiceClient interface {
 	// "right". Ahead is the number of commits that are solely reachable in
 	// "right" but not "left".
 	//
-	//	 For the example, given the graph below, BehindAhead("A", "B") would return
-	//	 {Behind: 3, Ahead: 2}.
+	//	For the example, given the graph below, BehindAhead("A", "B") would return
+	//	{Behind: 3, Ahead: 2}.
 	//
-	//		     y---b---b  branch B
-	//		    / \ /
-	//		   /   .
-	//		  /   / \
-	//		 o---x---a---a---a  branch A
+	//	     y---b---b  branch B
+	//	    / \ /
+	//	   /   .
+	//	  /   / \
+	//	 o---x---a---a---a  branch A
 	//
 	// If either left or right are the empty string (""), the HEAD commit is
 	// implicitly used.
@@ -1155,14 +1155,14 @@ type GitserverServiceServer interface {
 	// "right". Ahead is the number of commits that are solely reachable in
 	// "right" but not "left".
 	//
-	//	 For the example, given the graph below, BehindAhead("A", "B") would return
-	//	 {Behind: 3, Ahead: 2}.
+	//	For the example, given the graph below, BehindAhead("A", "B") would return
+	//	{Behind: 3, Ahead: 2}.
 	//
-	//		     y---b---b  branch B
-	//		    / \ /
-	//		   /   .
-	//		  /   / \
-	//		 o---x---a---a---a  branch A
+	//	     y---b---b  branch B
+	//	    / \ /
+	//	   /   .
+	//	  /   / \
+	//	 o---x---a---a---a  branch A
 	//
 	// If either left or right are the empty string (""), the HEAD commit is
 	// implicitly used.

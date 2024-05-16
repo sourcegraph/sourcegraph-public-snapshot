@@ -30,9 +30,6 @@ type GitCommand interface {
 	// CombinedOutput runs the command and returns its combined standard output and standard error.
 	CombinedOutput(ctx context.Context) ([]byte, error)
 
-	// DisableTimeout turns command timeout off
-	DisableTimeout()
-
 	// Repo returns repo against which the command is run
 	Repo() api.RepoName
 
@@ -119,10 +116,6 @@ func (l *LocalGitCommand) CombinedOutput(ctx context.Context) ([]byte, error) {
 	return append(stdout, stderr...), err
 }
 
-func (l *LocalGitCommand) DisableTimeout() {
-	// No-op because there is no network request
-}
-
 func (l *LocalGitCommand) Repo() api.RepoName { return l.repo }
 
 func (l *LocalGitCommand) Args() []string { return l.args }
@@ -140,7 +133,6 @@ func (l *LocalGitCommand) String() string { return fmt.Sprintf("%q", l.Args()) }
 type RemoteGitCommand struct {
 	repo       api.RepoName // the repository to execute the command in
 	args       []string
-	noTimeout  bool
 	exitStatus int
 	execer     execer
 	execOp     *observation.Operation
@@ -195,10 +187,6 @@ func (c *RemoteGitCommand) Output(ctx context.Context) ([]byte, error) {
 func (c *RemoteGitCommand) CombinedOutput(ctx context.Context) ([]byte, error) {
 	stdout, stderr, err := c.DividedOutput(ctx)
 	return append(stdout, stderr...), err
-}
-
-func (c *RemoteGitCommand) DisableTimeout() {
-	c.noTimeout = true
 }
 
 func (c *RemoteGitCommand) Repo() api.RepoName { return c.repo }

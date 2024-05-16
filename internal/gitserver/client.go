@@ -605,9 +605,8 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 	}
 
 	req := &proto.ExecRequest{
-		Repo:      string(c.repo),
-		Args:      stringsToByteSlices(c.args[1:]),
-		NoTimeout: c.noTimeout,
+		Repo: string(c.repo),
+		Args: stringsToByteSlices(c.args[1:]),
 	}
 
 	stream, err := client.Exec(ctx, req)
