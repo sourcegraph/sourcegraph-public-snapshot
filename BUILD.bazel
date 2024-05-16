@@ -268,6 +268,17 @@ go_proto_compiler(
     ],
 )
 
+# Settings for automatic building of frontend/single-server without client bundle included
+bool_flag(
+    name = "integration_testing",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "integration_testing_enabled",
+    flag_values = {":integration_testing": "true"},
+)
+
 # nogo config
 #
 # For nogo to be able to run a linter, it needs to have `var Analyzer analysis.Analyzer` defined in the main package.
