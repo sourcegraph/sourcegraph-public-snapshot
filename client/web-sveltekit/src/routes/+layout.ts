@@ -39,6 +39,7 @@ export const load: LayoutLoad = async ({ fetch }) => {
 
     return {
         user: result.data.currentUser,
+        sourcegraphDotComMode: window.context.sourcegraphDotComMode,
         // Initial user settings
         settings,
         featureFlags: result.data.evaluatedFeatureFlags,

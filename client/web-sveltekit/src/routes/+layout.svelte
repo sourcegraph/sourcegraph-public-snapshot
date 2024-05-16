@@ -23,7 +23,7 @@
 
     export let data: LayoutData
 
-    const navigationEntries = window.context.sourcegraphDotComMode ? dotcomMainNavigation : mainNavigation
+    const navigationEntries = data.sourcegraphDotComMode ? dotcomMainNavigation : mainNavigation
 
     const user = writable(data.user ?? null)
     const settings = writable(isErrorLike(data.settings) ? null : data.settings)
