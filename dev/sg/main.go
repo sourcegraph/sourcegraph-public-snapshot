@@ -299,6 +299,7 @@ var sg = &cli.App{
 		pageCommand,
 		cloudCommand,
 		msp.Command,
+		securityCommand,
 
 		// Util
 		analyticsCommand,
