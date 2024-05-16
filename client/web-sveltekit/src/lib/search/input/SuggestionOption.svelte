@@ -7,10 +7,11 @@
 </script>
 
 <script lang="ts">
-    import Icon from '$lib/Icon.svelte'
     import { type Option, type Action, RenderAs } from '$lib/branded'
-    import SyntaxHighlightedQuery from '../SyntaxHighlightedQuery.svelte'
+    import Icon from '$lib/Icon.svelte'
+
     import EmphasizedLabel from '../EmphasizedLabel.svelte'
+    import SyntaxHighlightedQuery from '../SyntaxHighlightedQuery.svelte'
 
     export let option: Option
     export let groupIndex: number
@@ -96,7 +97,7 @@
         padding: 0.25rem 0.5rem;
         border-radius: var(--border-radius);
         font-family: var(--code-font-family);
-        font-size: 0.75rem;
+        font-size: var(--code-font-size);
         min-height: 1.5rem;
         gap: 0.25rem;
 
@@ -174,7 +175,7 @@
 
     .filter-option {
         font-family: var(--code-font-family);
-        font-size: 0.75rem;
+        font-size: var(--code-font-size);
         display: flex; // to remove whitespace around the filter parts
 
         .separator {
