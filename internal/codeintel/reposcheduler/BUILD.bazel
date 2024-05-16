@@ -10,6 +10,7 @@ go_library(
         "store_observability.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/reposcheduler",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",
@@ -26,7 +27,10 @@ go_test(
     name = "reposcheduler_test",
     srcs = ["store_test.go"],
     embed = [":reposcheduler"],
-    tags = ["requires-network"],
+    tags = [
+        TAG_PLATFORM_GRAPH,
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",

@@ -11,6 +11,7 @@ go_library(
         "syntect_language_map.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/highlight",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/binary",
@@ -46,6 +47,7 @@ go_test(
         "testdata/telemetry-raw.txt",
         "testdata/telemetry.scip",
     ],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/gosyntect",
         "//lib/errors",

@@ -302,7 +302,6 @@ type changedFilesIterator struct {
 	closeChan chan struct{}
 
 	buffer []gitdomain.PathStatus
-	index  int
 }
 
 func (i *changedFilesIterator) Next() (gitdomain.PathStatus, error) {
@@ -951,8 +950,9 @@ const (
 
 // CommitsOptions specifies options for Commits.
 type CommitsOptions struct {
-	AllRefs bool   // if true, all refs are searched for commits, not just a given range. When set, Range should not be specified.
-	Range   string // commit range (revspec, "A..B", "A...B", etc.)
+	AllRefs bool // if true, all refs are searched for commits, not just a given range. When set, Range should not be specified.
+	// commit ranges to inspect (revspec, "A..B", "A...B", etc.).
+	Ranges []string
 
 	N    uint // limit the number of returned commits to this many (0 means no limit)
 	Skip uint // skip this many commits at the beginning
@@ -1040,8 +1040,10 @@ func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt 
 	})
 	defer endObservation(1, observation.Args{})
 
-	if err := checkSpecArgSafety(opt.Range); err != nil {
-		return nil, err
+	for _, r := range opt.Ranges {
+		if err := checkSpecArgSafety(r); err != nil {
+			return nil, err
+		}
 	}
 
 	wrappedCommits, err := c.getWrappedCommits(ctx, repo, opt)
@@ -1131,7 +1133,7 @@ func needMoreCommits(filtered []*gitdomain.Commit, commits []*wrappedCommit, opt
 }
 
 func isRequestForSingleCommit(opt CommitsOptions) bool {
-	return opt.Range != "" && opt.N == 1
+	return len(opt.Ranges) == 1 && opt.N == 1
 }
 
 // getMoreCommits handles the case where a specific number of commits was requested via CommitsOptions, but after sub-repo
@@ -1185,8 +1187,10 @@ var runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions)
 	data, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		data = bytes.TrimSpace(data)
-		if isBadObjectErr(string(stderr), opt.Range) {
-			return nil, &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: opt.Range}
+		for _, r := range opt.Ranges {
+			if isBadObjectErr(string(stderr), r) {
+				return nil, &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: r}
+			}
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), data))
 	}
@@ -1251,10 +1255,11 @@ type wrappedCommit struct {
 }
 
 func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err error) {
-	if err := checkSpecArgSafety(opt.Range); err != nil {
-		return nil, err
+	for _, r := range opt.Ranges {
+		if err := checkSpecArgSafety(r); err != nil {
+			return nil, err
+		}
 	}
-
 	args = initialArgs
 	if opt.N != 0 {
 		args = append(args, "-n", strconv.FormatUint(uint64(opt.N), 10))
@@ -1292,13 +1297,11 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 		args = append(args, "--first-parent")
 	}
 
-	if opt.Range != "" {
-		args = append(args, opt.Range)
-	}
+	args = append(args, opt.Ranges...)
 	if opt.AllRefs {
 		args = append(args, "--all")
 	}
-	if opt.Range != "" && opt.AllRefs {
+	if len(opt.Ranges) > 0 && opt.AllRefs {
 		return nil, errors.New("cannot specify both a Range and AllRefs")
 	}
 	if opt.NameOnly {

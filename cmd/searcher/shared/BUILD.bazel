@@ -8,6 +8,7 @@ go_library(
         "shared.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/searcher/shared",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/searcher/internal/search",

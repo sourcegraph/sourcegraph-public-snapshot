@@ -15,5 +15,6 @@ write_generated_to_source_files(
 ts_project(
     name = "constants",
     srcs = ["constants.ts"],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = "//client/web:tsconfig",
 )

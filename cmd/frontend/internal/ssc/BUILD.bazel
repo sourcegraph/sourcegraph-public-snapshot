@@ -9,6 +9,7 @@ go_library(
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -30,6 +31,7 @@ go_test(
     timeout = "short",
     srcs = ["ssc_proxy_test.go"],
     embed = [":ssc"],
+    tags = [TAG_CODY_PRIME],
     deps = [
         "//internal/actor",
         "//internal/database",

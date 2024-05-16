@@ -8,6 +8,7 @@ go_library(
         "retry.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/api/internalapi",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api/internalapi/v1:internalapi",
@@ -23,5 +24,6 @@ go_test(
     name = "internalapi_test",
     srcs = ["client_test.go"],
     embed = [":internalapi"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

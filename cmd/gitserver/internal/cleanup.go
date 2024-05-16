@@ -203,8 +203,9 @@ var (
 		Help: "set to 1 when the gitserver janitor background job is running",
 	})
 	jobTimer = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "src_gitserver_janitor_job_duration_seconds",
-		Help: "Duration of the individual jobs within the gitserver janitor background job",
+		Name:    "src_gitserver_janitor_job_duration_seconds",
+		Help:    "Duration of the individual jobs within the gitserver janitor background job",
+		Buckets: prometheus.ExponentialBucketsRange(0.001, 240, 16),
 	}, []string{"success", "job_name"})
 	maintenanceStatus = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_maintenance_status",

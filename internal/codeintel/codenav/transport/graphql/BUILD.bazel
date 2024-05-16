@@ -20,6 +20,7 @@ go_library(
         "util_locations.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -53,6 +54,7 @@ go_test(
         "root_resolver_test.go",
     ],
     embed = [":graphql"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
         "//internal/codeintel/codenav",

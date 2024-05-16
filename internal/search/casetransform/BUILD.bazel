@@ -12,6 +12,7 @@ go_library(
         "regexp.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/casetransform",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "@com_github_grafana_regexp//:regexp",
@@ -27,4 +28,5 @@ go_test(
         "lower_test.go",
     ],
     embed = [":casetransform"],
+    tags = [TAG_PLATFORM_SEARCH],
 )

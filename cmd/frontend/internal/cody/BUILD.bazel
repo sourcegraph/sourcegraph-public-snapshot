@@ -10,6 +10,7 @@ go_library(
         "utils.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/backend",
@@ -41,6 +42,7 @@ go_test(
         "utils_test.go",
     ],
     embed = [":cody"],
+    tags = [TAG_CODY_PRIME],
     deps = [
         "//cmd/frontend/internal/ssc",
         "//internal/actor",

@@ -10,6 +10,7 @@ go_library(
         "worker.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/embeddings/repo",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",
@@ -45,6 +46,7 @@ go_test(
     name = "repo_test",
     srcs = ["handler_test.go"],
     embed = [":repo"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/api",
         "//internal/conf/conftypes",

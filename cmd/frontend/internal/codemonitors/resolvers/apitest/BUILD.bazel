@@ -4,6 +4,7 @@ go_library(
     name = "apitest",
     srcs = ["types.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codemonitors/resolvers/apitest",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = ["//lib/errors"],
 )

@@ -124,6 +124,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":resolvers"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost database
         "requires-network",
     ],

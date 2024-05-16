@@ -5,6 +5,7 @@ go_library(
     name = "repoupdater",
     srcs = ["server.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/repo-updater/internal/gitserver",
@@ -34,6 +35,7 @@ go_test(
     ],
     embed = [":repoupdater"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

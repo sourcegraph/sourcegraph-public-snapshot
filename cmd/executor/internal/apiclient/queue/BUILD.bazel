@@ -9,6 +9,7 @@ go_library(
         "options.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient/queue",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/executor:__subpackages__"],
     deps = [
         "//cmd/executor/internal/apiclient",
@@ -31,6 +32,7 @@ go_test(
     name = "queue_test",
     timeout = "short",
     srcs = ["client_test.go"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         ":queue",
         "//cmd/executor/internal/apiclient",

@@ -9,6 +9,7 @@ go_library(
         "priority.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/priority",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/insights/query/querybuilder",
@@ -24,6 +25,7 @@ go_test(
         "priority_test.go",
     ],
     embed = [":priority"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/insights/query/querybuilder",
         "@com_github_stretchr_testify//assert",

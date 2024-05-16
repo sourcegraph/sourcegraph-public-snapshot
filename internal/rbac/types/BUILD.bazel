@@ -8,6 +8,7 @@ go_library(
         "namespace.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/rbac/types",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
 )
 

@@ -5,6 +5,7 @@ go_library(
     name = "dotcomuser",
     srcs = ["dotcomuser.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/dotcomuser",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/actor",
@@ -27,6 +28,7 @@ go_test(
     name = "dotcomuser_test",
     srcs = ["dotcomuser_test.go"],
     embed = [":dotcomuser"],
+    tags = [TAG_CODY_PRIME],
     deps = [
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/dotcom",

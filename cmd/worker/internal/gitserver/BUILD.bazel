@@ -4,6 +4,7 @@ go_library(
     name = "gitserver",
     srcs = ["servermetrics.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",

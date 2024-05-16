@@ -279,12 +279,19 @@ func (s *Service) resolvePaths(
 		return nil, err
 	}
 
+	// We resolve the commit string to a commit SHA here, the name of the field
+	// is a misnomer and it can also contain non-commit SHAs.
+	commitID, err := invocationContext.gitService.ResolveRevision(ctx, invocationContext.repo, invocationContext.commit)
+	if err != nil {
+		return nil, err
+	}
+
 	// Ideally we can pass the pathspecs from flattenPatterns here and avoid returning
 	// all files in the tree, so we don't need to filter as much further down.
 	// This requires implementing either globbing support in the ReadDir call,
 	// or that the pathpatterns are supported by ReadDir (and thus, in git ls-tree)
 	// which is not the case today.
-	fds, err := invocationContext.gitService.ReadDir(ctx, invocationContext.repo, api.CommitID(invocationContext.commit), "", true)
+	fds, err := invocationContext.gitService.ReadDir(ctx, invocationContext.repo, commitID, "", true)
 	if err != nil {
 		return nil, err
 	}

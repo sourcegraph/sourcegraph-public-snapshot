@@ -4,5 +4,6 @@ go_library(
     name = "types",
     srcs = ["types.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/types",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
 )
