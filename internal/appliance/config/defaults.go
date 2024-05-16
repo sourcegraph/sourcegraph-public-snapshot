@@ -1,20 +1,19 @@
-package reconciler
+package config
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-// Default config.
+// Default
 //
 // Warning: never extract `ptr.To(thing)` into a package-level variable! If you
 // do this, reconciling a config that overrides a default value for that
 // pointer, will affect the subsequent _default_ for all future resources
 // reconciled.
-func newDefaultConfig() Sourcegraph {
+func NewDefaultConfig() Sourcegraph {
 	return Sourcegraph{
 		Spec: SourcegraphSpec{
 			// Global config
@@ -25,26 +24,26 @@ func newDefaultConfig() Sourcegraph {
 				StorageSize: "100Gi",
 			},
 			RepoUpdater: RepoUpdaterSpec{
-				StandardConfig: config.StandardConfig{
+				StandardConfig: StandardConfig{
 					PrometheusPort: pointers.Ptr(6060),
 				},
 			},
 			Symbols: SymbolsSpec{
-				StandardConfig: config.StandardConfig{
+				StandardConfig: StandardConfig{
 					PrometheusPort: pointers.Ptr(6060),
 				},
 				Replicas:    1,
 				StorageSize: "12Gi",
 			},
 			GitServer: GitServerSpec{
-				StandardConfig: config.StandardConfig{
+				StandardConfig: StandardConfig{
 					PrometheusPort: pointers.Ptr(6060),
 				},
 				Replicas:    1,
 				StorageSize: "200Gi",
 			},
 			PGSQL: PGSQLSpec{
-				StandardConfig: config.StandardConfig{
+				StandardConfig: StandardConfig{
 					PrometheusPort: pointers.Ptr(9187),
 				},
 				StorageSize: "200Gi",
@@ -57,25 +56,25 @@ func newDefaultConfig() Sourcegraph {
 				},
 			},
 			RedisCache: RedisSpec{
-				StandardConfig: config.StandardConfig{
+				StandardConfig: StandardConfig{
 					PrometheusPort: pointers.Ptr(9121),
 				},
 				StorageSize: "100Gi",
 			},
 			RedisStore: RedisSpec{
-				StandardConfig: config.StandardConfig{
+				StandardConfig: StandardConfig{
 					PrometheusPort: pointers.Ptr(9121),
 				},
 				StorageSize: "100Gi",
 			},
 			SyntectServer: SyntectServerSpec{
-				StandardConfig: config.StandardConfig{
+				StandardConfig: StandardConfig{
 					PrometheusPort: pointers.Ptr(6060),
 				},
 				Replicas: 1,
 			},
 			PreciseCodeIntel: PreciseCodeIntelSpec{
-				StandardConfig: config.StandardConfig{
+				StandardConfig: StandardConfig{
 					PrometheusPort: pointers.Ptr(6060),
 				},
 				NumWorkers: 4,
@@ -107,7 +106,7 @@ var defaultImagesForVersion_5_3_9104 = map[string]string{
 	"syntect-server":            "syntax-highlighter:5.3.2@sha256:3d16ab2a0203fea85063dcfe2e9d476540ef3274c28881dc4bbd5ca77933d8e8",
 }
 
-func getDefaultImage(sg *Sourcegraph, component string) (string, error) {
+func GetDefaultImage(sg *Sourcegraph, component string) (string, error) {
 	images, ok := defaultImages[sg.Spec.RequestedVersion]
 	if !ok {
 		return "", errors.Newf("no default images found for version %s", sg.Spec.RequestedVersion)

@@ -10,7 +10,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
-	"github.com/sourcegraph/sourcegraph/internal/appliance/reconciler"
 	pb "github.com/sourcegraph/sourcegraph/internal/appliance/v1"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -20,7 +19,7 @@ type Appliance struct {
 
 	version     semver.Version
 	status      Status
-	sourcegraph reconciler.Sourcegraph
+	sourcegraph config.Sourcegraph
 
 	// Embed the UnimplementedApplianceServiceServer structs to ensure forwards compatibility (if the service is
 	// compiled against a newer version of the proto file, the server will still have default implementations of any new
@@ -55,7 +54,7 @@ func NewAppliance(client client.Client) *Appliance {
 		status: Status{
 			stage: StageUnknown,
 		},
-		sourcegraph: reconciler.Sourcegraph{},
+		sourcegraph: config.Sourcegraph{},
 	}
 }
 

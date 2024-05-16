@@ -55,12 +55,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, errors.New("failed to get sourcegraph spec from configmap")
 	}
 
-	sourcegraph := newDefaultConfig()
+	sourcegraph := config.NewDefaultConfig()
 	if err := yaml.Unmarshal([]byte(data), &sourcegraph); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// Sourcegraph is a kubebuilder-scaffolded custom type, but we do not
+	// config.Sourcegraph is a kubebuilder-scaffolded custom type, but we do not
 	// actually ask operators to install CRDs. Therefore, we set its namespace
 	// based on the actual object being reconciled, so that more deeply-nested
 	// code can treat it like a CRD.

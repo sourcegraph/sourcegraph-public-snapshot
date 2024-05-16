@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/statefulset"
 )
 
-func (r *Reconciler) reconcileGitServer(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileGitServer(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	if err := r.reconcileGitServerStatefulSet(ctx, sg, owner); err != nil {
 		return err
 	}
@@ -34,11 +34,11 @@ func (r *Reconciler) reconcileGitServer(ctx context.Context, sg *Sourcegraph, ow
 	return nil
 }
 
-func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.GitServer
 	name := "gitserver"
 
-	defaultImage, err := getDefaultImage(sg, name)
+	defaultImage, err := config.GetDefaultImage(sg, name)
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *Sour
 	return reconcileObject(ctx, r, sg.Spec.GitServer, &sset, &appsv1.StatefulSet{}, sg, owner)
 }
 
-func (r *Reconciler) reconcileGitServerService(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileGitServerService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	svc := service.NewService("gitserver", sg.Namespace, sg.Spec.GitServer)
 	svc.Spec.Ports = []corev1.ServicePort{
 		{Name: "unused", TargetPort: intstr.FromInt32(10811), Port: 10811},
@@ -129,7 +129,7 @@ func (r *Reconciler) reconcileGitServerService(ctx context.Context, sg *Sourcegr
 	return reconcileObject(ctx, r, sg.Spec.GitServer, &svc, &corev1.Service{}, sg, owner)
 }
 
-func (r *Reconciler) reconcileGitServerServiceAccount(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileGitServerServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.GitServer
 	sa := serviceaccount.NewServiceAccount("gitserver", sg.Namespace, cfg)
 	return reconcileObject(ctx, r, sg.Spec.GitServer, &sa, &corev1.ServiceAccount{}, sg, owner)

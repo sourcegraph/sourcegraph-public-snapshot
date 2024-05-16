@@ -1,10 +1,8 @@
-package reconciler
+package config
 
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 )
 
 type ManagementStateType string
@@ -29,7 +27,7 @@ type DatabaseConnectionSpec struct {
 
 // BlobstoreSpec defines the desired state of Blobstore.
 type BlobstoreSpec struct {
-	config.StandardConfig
+	StandardConfig
 
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 200Gi
@@ -102,7 +100,7 @@ type FrontendSpec struct {
 
 // GitServerSpec defines the desired state of GitServer.
 type GitServerSpec struct {
-	config.StandardConfig
+	StandardConfig
 
 	// Replicas defines the number of Symbols pod replicas.
 	// Default: 1
@@ -139,7 +137,7 @@ type IndexedSearchIndexerSpec struct {
 
 // PGSQLSpec defines the desired state of the Postgres server.
 type PGSQLSpec struct {
-	config.StandardConfig
+	StandardConfig
 
 	// DatabaseConnection allows for custom database connection details.
 	DatabaseConnection *DatabaseConnectionSpec `json:"database,omitempty"`
@@ -155,7 +153,7 @@ type PostgresExporterSpec struct {
 }
 
 type PreciseCodeIntelSpec struct {
-	config.StandardConfig
+	StandardConfig
 
 	NumWorkers int `json:"numWorkers"`
 
@@ -166,7 +164,7 @@ type PreciseCodeIntelSpec struct {
 
 // RedisSpec defines the desired state of a Redis-based service.
 type RedisSpec struct {
-	config.StandardConfig
+	StandardConfig
 
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 100Gi
@@ -175,7 +173,7 @@ type RedisSpec struct {
 
 // RepoUpdaterSpec defines the desired state of the Repo Updater service.
 type RepoUpdaterSpec struct {
-	config.StandardConfig
+	StandardConfig
 }
 
 // SearcherSpec defines the desired state of the Searcher service.
@@ -198,7 +196,7 @@ type SearcherSpec struct {
 
 // SymbolsSpec defines the desired state of the Symbols service.
 type SymbolsSpec struct {
-	config.StandardConfig
+	StandardConfig
 
 	// Replicas defines the number of Symbols pod replicas.
 	// Default: 1
@@ -211,7 +209,7 @@ type SymbolsSpec struct {
 
 // SyntectServerSpec defines the desired state of the Syntect server service.
 type SyntectServerSpec struct {
-	config.StandardConfig
+	StandardConfig
 
 	// Replicas defines the number of Syntect Server pod replicas.
 	// Default: 1

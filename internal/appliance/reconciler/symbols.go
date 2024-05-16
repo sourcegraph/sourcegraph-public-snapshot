@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (r *Reconciler) reconcileSymbols(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileSymbols(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	if err := r.reconcileSymbolsStatefulSet(ctx, sg, owner); err != nil {
 		return err
 	}
@@ -34,11 +34,11 @@ func (r *Reconciler) reconcileSymbols(ctx context.Context, sg *Sourcegraph, owne
 	return nil
 }
 
-func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	name := "symbols"
 	cfg := sg.Spec.Symbols
 
-	defaultImage, err := getDefaultImage(sg, name)
+	defaultImage, err := config.GetDefaultImage(sg, name)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *Source
 	return reconcileObject(ctx, r, sg.Spec.Symbols, &sset, &appsv1.StatefulSet{}, sg, owner)
 }
 
-func (r *Reconciler) reconcileSymbolsService(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileSymbolsService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	svc := service.NewService("symbols", sg.Namespace, sg.Spec.RepoUpdater)
 	svc.Spec.Ports = []corev1.ServicePort{
 		{Name: "http", TargetPort: intstr.FromString("http"), Port: 3184},
@@ -137,7 +137,7 @@ func (r *Reconciler) reconcileSymbolsService(ctx context.Context, sg *Sourcegrap
 	return reconcileObject(ctx, r, sg.Spec.Symbols, &svc, &corev1.Service{}, sg, owner)
 }
 
-func (r *Reconciler) reconcileSymbolsServiceAccount(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileSymbolsServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.Symbols
 	sa := serviceaccount.NewServiceAccount("symbols", sg.Namespace, cfg)
 	return reconcileObject(ctx, r, sg.Spec.Symbols, &sa, &corev1.ServiceAccount{}, sg, owner)

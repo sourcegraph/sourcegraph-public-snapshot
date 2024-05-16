@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/serviceaccount"
 )
 
-func (r *Reconciler) reconcileRepoUpdater(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileRepoUpdater(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	if err := r.reconcileRepoUpdaterDeployment(ctx, sg, owner); err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func (r *Reconciler) reconcileRepoUpdater(ctx context.Context, sg *Sourcegraph, 
 	return nil
 }
 
-func (r *Reconciler) reconcileRepoUpdaterService(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileRepoUpdaterService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	svc := service.NewService("repo-updater", sg.Namespace, sg.Spec.RepoUpdater)
 	svc.Spec.Ports = []corev1.ServicePort{
 		{Name: "http", TargetPort: intstr.FromString("http"), Port: 3182},
@@ -42,11 +42,11 @@ func (r *Reconciler) reconcileRepoUpdaterService(ctx context.Context, sg *Source
 	return reconcileObject(ctx, r, sg.Spec.RepoUpdater, &svc, &corev1.Service{}, sg, owner)
 }
 
-func (r *Reconciler) reconcileRepoUpdaterDeployment(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileRepoUpdaterDeployment(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.RepoUpdater
 	name := "repo-updater"
 
-	defaultImage, err := getDefaultImage(sg, name)
+	defaultImage, err := config.GetDefaultImage(sg, name)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func (r *Reconciler) reconcileRepoUpdaterDeployment(ctx context.Context, sg *Sou
 	return reconcileObject(ctx, r, sg.Spec.RepoUpdater, &dep, &appsv1.Deployment{}, sg, owner)
 }
 
-func (r *Reconciler) reconcileRepoUpdaterServiceAccount(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileRepoUpdaterServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.RepoUpdater
 	sa := serviceaccount.NewServiceAccount("repo-updater", sg.Namespace, cfg)
 	return reconcileObject(ctx, r, sg.Spec.RepoUpdater, &sa, &corev1.ServiceAccount{}, sg, owner)

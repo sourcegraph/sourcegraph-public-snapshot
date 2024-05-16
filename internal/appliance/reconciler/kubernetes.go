@@ -24,7 +24,7 @@ func reconcileObject[T client.Object](
 	ctx context.Context, r *Reconciler,
 	cfg config.Disableable,
 	obj, objKind T,
-	sg *Sourcegraph, owner client.Object,
+	sg *config.Sourcegraph, owner client.Object,
 ) error {
 	if cfg.IsDisabled() {
 		return r.ensureObjectDeleted(ctx, obj)

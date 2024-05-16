@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-func (r *Reconciler) reconcileSyntect(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileSyntect(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	if err := r.reconcileSyntectDeployment(ctx, sg, owner); err != nil {
 		return errors.Wrap(err, "reconciling Deployment")
 	}
@@ -32,11 +32,11 @@ func (r *Reconciler) reconcileSyntect(ctx context.Context, sg *Sourcegraph, owne
 	return nil
 }
 
-func (r *Reconciler) reconcileSyntectDeployment(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileSyntectDeployment(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	name := "syntect-server"
 	cfg := sg.Spec.SyntectServer
 
-	defaultImage, err := getDefaultImage(sg, name)
+	defaultImage, err := config.GetDefaultImage(sg, name)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func (r *Reconciler) reconcileSyntectDeployment(ctx context.Context, sg *Sourceg
 	return reconcileObject(ctx, r, cfg, &dep, &appsv1.Deployment{}, sg, owner)
 }
 
-func (r *Reconciler) reconcileSyntectService(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileSyntectService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	name := "syntect-server"
 	cfg := sg.Spec.SyntectServer
 
@@ -103,7 +103,7 @@ func (r *Reconciler) reconcileSyntectService(ctx context.Context, sg *Sourcegrap
 	return reconcileObject(ctx, r, cfg, &svc, &corev1.Service{}, sg, owner)
 }
 
-func (r *Reconciler) reconcileSyntectServiceAccount(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileSyntectServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.SyntectServer
 	sa := serviceaccount.NewServiceAccount("syntect-server", sg.Namespace, cfg)
 	return reconcileObject(ctx, r, cfg, &sa, &corev1.ServiceAccount{}, sg, owner)

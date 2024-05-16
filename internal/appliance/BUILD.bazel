@@ -10,7 +10,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/appliance/config",
-        "//internal/appliance/reconciler",
         "//internal/appliance/v1:appliance",
         "//lib/pointers",
         "@com_github_masterminds_semver//:semver",
