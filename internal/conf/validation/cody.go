@@ -2,6 +2,7 @@ package validation
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -19,6 +20,13 @@ func init() {
 	conf.ContributeValidator(embeddingsConfigValidator)
 }
 
+const bedrockArnMessageTemplate = "completions.%s is invalid. Provisioned Capacity IDs must be formatted like \"model_id/provisioned_capacity_arn\".\nFor example \"anthropic.claude-instant-v1/%s\""
+
+type modelId struct {
+	value string
+	field string
+}
+
 func completionsConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
 	problems := []string{}
 	completionsConf := q.SiteConfig().Completions
@@ -28,6 +36,27 @@ func completionsConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
 
 	if completionsConf.Enabled != nil && q.SiteConfig().CodyEnabled == nil {
 		problems = append(problems, "'completions.enabled' has been superceded by 'cody.enabled', please migrate to the new configuration.")
+	}
+
+	allModelIds := []modelId{
+		{value: completionsConf.ChatModel, field: "chatModel"},
+		{value: completionsConf.FastChatModel, field: "fastChatModel"},
+		{value: completionsConf.CompletionModel, field: "completionModel"},
+	}
+	var modelIdsToCheck []modelId
+	for _, modelId := range allModelIds {
+		if modelId.value != "" {
+			modelIdsToCheck = append(modelIdsToCheck, modelId)
+		}
+	}
+
+	//check for bedrock ARNs
+	if completionsConf.Provider == string(conftypes.CompletionsProviderNameAWSBedrock) {
+		for _, modelId := range modelIdsToCheck {
+			if strings.HasPrefix(modelId.value, "arn:aws:") {
+				problems = append(problems, fmt.Sprintf(bedrockArnMessageTemplate, modelId.field, modelId.value))
+			}
+		}
 	}
 
 	if len(problems) > 0 {

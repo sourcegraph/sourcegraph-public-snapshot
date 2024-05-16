@@ -22,6 +22,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -68,7 +69,8 @@ func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 		completion += content.Text
 	}
 
-	err = c.tokenManager.UpdateTokenCountsFromModelUsage(response.Usage.InputTokens, response.Usage.OutputTokens, "anthropic/"+requestParams.Model, string(feature), tokenusage.AwsBedrock)
+	parsedModelId := conftypes.ParseBedrockModelId(requestParams.Model)
+	err = c.tokenManager.UpdateTokenCountsFromModelUsage(response.Usage.InputTokens, response.Usage.OutputTokens, "anthropic/"+parsedModelId.Model, string(feature), tokenusage.AwsBedrock)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +155,8 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 		case "message_delta":
 			if event.Delta != nil {
 				stopReason = event.Delta.StopReason
-				err = a.tokenManager.UpdateTokenCountsFromModelUsage(inputPromptTokens, event.Usage.OutputTokens, "anthropic/"+requestParams.Model, string(feature), tokenusage.AwsBedrock)
+				parsedModelId := conftypes.ParseBedrockModelId(requestParams.Model)
+				err = a.tokenManager.UpdateTokenCountsFromModelUsage(inputPromptTokens, event.Usage.OutputTokens, "anthropic/"+parsedModelId.Model, string(feature), tokenusage.AwsBedrock)
 				if err != nil {
 					logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 				}
@@ -282,12 +285,22 @@ func buildApiUrl(endpoint string, model string, stream bool, fallbackRegion stri
 		}
 	}
 
-	if stream {
-		apiURL.RawPath = fmt.Sprintf("/model/%s/invoke-with-response-stream", url.QueryEscape(model))
-		apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", model)
+	parsedModelId := conftypes.ParseBedrockModelId(model)
+
+	if parsedModelId.ProvisionedCapacity != "" {
+		if stream {
+			apiURL.RawPath = fmt.Sprintf("/model/%s/invoke-with-response-stream", url.QueryEscape(parsedModelId.ProvisionedCapacity))
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", parsedModelId.ProvisionedCapacity)
+		} else {
+			apiURL.RawPath = fmt.Sprintf("/model/%s/invoke", url.QueryEscape(parsedModelId.ProvisionedCapacity))
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke", parsedModelId.ProvisionedCapacity)
+		}
 	} else {
-		apiURL.RawPath = fmt.Sprintf("/model/%s/invoke", url.QueryEscape(model))
-		apiURL.Path = fmt.Sprintf("/model/%s/invoke", model)
+		if stream {
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", parsedModelId.Model)
+		} else {
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke", parsedModelId.Model)
+		}
 	}
 
 	return apiURL
