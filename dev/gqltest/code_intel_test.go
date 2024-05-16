@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -47,7 +48,9 @@ func TestCodeGraphAPIs(t *testing.T) {
 	jobs := unwrap(client.TriggerAutoIndexing("github.com/sourcegraph/conc"))(t)
 
 	timeout := 5 * time.Minute
-	_ = unwrap(client.WaitForAutoIndexingJobsToComplete(jobs, timeout))(t)
+	jobStates := unwrap(client.WaitForAutoIndexingJobsToComplete(jobs, timeout))(t)
 
+	fmt.Printf("%v\n", jobStates)
+	t.Fatal("Testing if this test is actually running")
 	// Now run precise code nav queries against this code! :)
 }
