@@ -9,6 +9,8 @@ import * as stripeJs from '@stripe/stripe-js'
 import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
 
+// DO NOT SUBMIT
+
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
