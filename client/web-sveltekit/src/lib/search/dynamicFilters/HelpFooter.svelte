@@ -54,6 +54,7 @@
         a {
             display: flex;
             align-items: center;
+            text-decoration: none;
             gap: 1rem;
             :last-child {
                 margin-left: auto;
@@ -63,11 +64,7 @@
             }
 
             padding: 1rem;
-            &:hover {
-                text-decoration: none;
-            }
             &:not(:hover) {
-                text-decoration: none;
                 color: var(--text-muted);
             }
         }
