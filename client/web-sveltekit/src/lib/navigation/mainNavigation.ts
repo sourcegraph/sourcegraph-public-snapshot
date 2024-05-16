@@ -1,10 +1,5 @@
-import { mdiChartBar, mdiMagnify } from '@mdi/js'
 import type { Page } from '@sveltejs/kit'
 import type { ComponentType } from 'svelte'
-
-import BatchChangesIcon from '$lib/icons/BatchChanges.svelte'
-import CodyIcon from '$lib/icons/Cody.svelte'
-import { isRepoRoute } from '$lib/navigation'
 
 /**
  * Indicates to the UI to show a status badge next to the navigation entry.
@@ -72,76 +67,5 @@ export interface NavigationMenu {
  * by means of comparing the entry's href with the current page's URL.
  */
 export function isCurrent(entry: NavigationEntry, page: Page): boolean {
-    return page.url.pathname.startsWith(entry.href)
+    return page.url.pathname === entry.href
 }
-
-/**
- * The main navigation of the application.
- */
-export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
-    {
-        label: 'Code Search',
-        icon: mdiMagnify,
-        href: '/search',
-        children: [
-            {
-                label: 'Search Home',
-                href: '/search',
-            },
-            {
-                label: 'Contexts',
-                href: '/contexts',
-            },
-            {
-                label: 'Notebooks',
-                href: '/notebooks',
-            },
-            {
-                label: 'Monitoring',
-                href: '/code-monitoring',
-            },
-            {
-                label: 'Code Ownership',
-                href: '/own',
-            },
-            {
-                label: 'Search Jobs',
-                href: '/search-jobs',
-                status: Status.BETA,
-            },
-        ],
-        isCurrent(this: NavigationMenu, page) {
-            // This is a special case of the code search menu: It is marked as "current" if the
-            // current page is a repository route.
-            return isRepoRoute(page.route?.id) || this.children.some(entry => isCurrent(entry, page))
-        },
-    },
-    {
-        label: 'Cody AI',
-        icon: CodyIcon,
-        href: '/cody',
-        isCurrent(this: NavigationMenu, page) {
-            return this.children.some(entry => isCurrent(entry, page))
-        },
-        children: [
-            {
-                label: 'Dashboard',
-                href: '/cody',
-            },
-            {
-                label: 'Web Chat',
-                href: '/cody/chat',
-            },
-        ],
-    },
-    {
-        label: 'Batch Changes',
-        icon: BatchChangesIcon,
-        href: '/batch-changes',
-    },
-    {
-        label: 'Insights',
-        icon: mdiChartBar,
-        href: '/insights',
-    },
-]
