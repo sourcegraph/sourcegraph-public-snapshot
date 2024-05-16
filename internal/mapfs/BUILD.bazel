@@ -9,6 +9,7 @@ go_library(
         "mapfs.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/mapfs",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = ["//lib/errors"],
 )
@@ -18,5 +19,6 @@ go_test(
     timeout = "short",
     srcs = ["mapfs_test.go"],
     embed = [":mapfs"],
+    tags = [TAG_INFRA_RELEASE],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

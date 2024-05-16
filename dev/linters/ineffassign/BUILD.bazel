@@ -4,6 +4,7 @@ go_library(
     name = "ineffassign",
     srcs = ["ineffassign.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/ineffassign",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/linters/nolint",

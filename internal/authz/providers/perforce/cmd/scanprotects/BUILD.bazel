@@ -5,6 +5,7 @@ go_library(
     name = "scanprotects_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers/perforce/cmd/scanprotects",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:private"],
     deps = [
         "//internal/authz/providers/perforce",
@@ -19,6 +20,7 @@ go_library(
 go_binary(
     name = "scanprotects",
     embed = [":scanprotects_lib"],
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//enterprise:__subpackages__"],
 )
 
@@ -28,6 +30,7 @@ go_test(
     srcs = ["main_test.go"],
     data = ["//internal/authz/providers/perforce/testdata:data"],
     embed = [":scanprotects_lib"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",

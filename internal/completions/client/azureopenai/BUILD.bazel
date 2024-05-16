@@ -5,6 +5,7 @@ go_library(
     name = "azureopenai",
     srcs = ["openai.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/azureopenai",
+    tags = [TAG_CODY_CORE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/completions/tokenizer",
@@ -23,6 +24,7 @@ go_test(
     name = "azureopenai_test",
     srcs = ["openai_test.go"],
     embed = [":azureopenai"],
+    tags = [TAG_CODY_CORE],
     deps = [
         "//internal/completions/tokenusage",
         "//internal/completions/types",

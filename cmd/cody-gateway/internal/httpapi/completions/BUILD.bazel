@@ -12,6 +12,7 @@ go_library(
         "upstream.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/actor",
@@ -49,6 +50,7 @@ go_test(
         "openai_test.go",
     ],
     embed = [":completions"],
+    tags = [TAG_CODY_PRIME],
     deps = [
         "//cmd/cody-gateway/shared/config",
         "//internal/completions/client/fireworks",

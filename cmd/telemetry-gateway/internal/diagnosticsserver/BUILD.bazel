@@ -4,6 +4,7 @@ go_library(
     name = "diagnosticsserver",
     srcs = ["diagnosticsserver.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/diagnosticsserver",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/telemetry-gateway:__subpackages__"],
     deps = [
         "//internal/authbearer",

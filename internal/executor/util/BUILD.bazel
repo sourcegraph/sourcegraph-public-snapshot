@@ -8,6 +8,7 @@ go_library(
         "multiqueue.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/executor/util",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
 )
 
@@ -18,5 +19,6 @@ go_test(
         "multiqueue_test.go",
     ],
     embed = [":util"],
+    tags = [TAG_SEARCHSUITE],
     deps = ["@com_github_stretchr_testify//assert"],
 )

@@ -12,6 +12,7 @@ go_library(
         "warning.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/errors",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "@com_github_cockroachdb_errors//:errors",
@@ -29,6 +30,7 @@ go_test(
         "warning_test.go",
     ],
     embed = [":errors"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

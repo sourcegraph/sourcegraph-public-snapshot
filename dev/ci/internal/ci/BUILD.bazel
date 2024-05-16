@@ -22,6 +22,7 @@ go_library(
         "wolfi_operations.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/ci/internal/ci",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/ci:__subpackages__"],
     deps = [
         "//dev/ci/gitops",
@@ -51,4 +52,5 @@ go_test(
         "//dev/ci/internal/ci/test:test-image-configs",
     ],
     embed = [":ci"],
+    tags = [TAG_INFRA_DEVINFRA],
 )

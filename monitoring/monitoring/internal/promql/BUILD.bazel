@@ -8,6 +8,7 @@ go_library(
         "variables.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/promql",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//monitoring/monitoring:__subpackages__"],
     deps = [
         "//lib/errors",
@@ -22,6 +23,7 @@ go_test(
     timeout = "short",
     srcs = ["promql_test.go"],
     embed = [":promql"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "@com_github_prometheus_prometheus//model/labels",
         "@com_github_stretchr_testify//assert",

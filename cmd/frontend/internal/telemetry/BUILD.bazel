@@ -4,6 +4,9 @@ go_library(
     name = "telemetry",
     srcs = ["init.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry",
+    tags = [
+        TAG_INFRA_CORESERVICES,
+    ],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",

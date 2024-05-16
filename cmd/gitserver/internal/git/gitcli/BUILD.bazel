@@ -24,6 +24,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//cmd/gitserver/internal/common",
@@ -70,6 +71,7 @@ go_test(
     ],
     embed = [":gitcli"],
     embedsrcs = ["fixtures/git-diff-java-langserver/output.hex"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//cmd/gitserver/internal/common",
         "//cmd/gitserver/internal/git",

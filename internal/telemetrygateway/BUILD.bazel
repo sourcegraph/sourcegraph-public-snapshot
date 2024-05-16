@@ -8,6 +8,7 @@ go_library(
         "identifier.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf/conftypes",
@@ -34,6 +35,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":telemetrygateway"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = [
         "//internal/conf",
         "//internal/conf/conftypes",

@@ -12,6 +12,7 @@ go_library(
         "series_repo_iterator.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/discovery",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -38,6 +39,7 @@ go_test(
     ],
     embed = [":discovery"],
     tags = [
+        TAG_SEARCHSUITE,
         "requires-network",
     ],
     deps = [

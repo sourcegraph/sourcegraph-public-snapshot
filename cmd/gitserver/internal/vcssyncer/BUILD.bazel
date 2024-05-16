@@ -22,6 +22,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//cmd/gitserver/internal/common",
@@ -83,6 +84,7 @@ go_test(
     # path is sandboxed properly.
     env = {"COURSIER_CACHE_DIR": "/tmp"},
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

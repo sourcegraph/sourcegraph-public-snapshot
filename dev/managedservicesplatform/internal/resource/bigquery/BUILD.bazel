@@ -4,6 +4,7 @@ go_library(
     name = "bigquery",
     srcs = ["bigquery.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/internal/resource/serviceaccount",

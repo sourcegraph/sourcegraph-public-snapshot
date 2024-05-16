@@ -7,6 +7,7 @@ go_library(
     name = "loadtest_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/loadtest",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:private"],
     deps = [
         "//internal/env",
@@ -19,6 +20,7 @@ go_library(
 go_binary(
     name = "loadtest",
     embed = [":loadtest_lib"],
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:public"],
 )
 

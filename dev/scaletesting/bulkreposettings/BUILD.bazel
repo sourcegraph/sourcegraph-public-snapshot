@@ -4,6 +4,7 @@ go_library(
     name = "bulkreposettings_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/scaletesting/bulkreposettings",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/scaletesting/internal/store",
@@ -20,5 +21,6 @@ go_library(
 go_binary(
     name = "bulkreposettings",
     embed = [":bulkreposettings_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )

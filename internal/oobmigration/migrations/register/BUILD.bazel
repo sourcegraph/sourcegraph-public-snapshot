@@ -4,6 +4,7 @@ go_library(
     name = "register",
     srcs = ["register.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/worker/shared/init/codeinsights",

@@ -4,6 +4,7 @@ go_library(
     name = "db",
     srcs = ["db.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/db",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/root",

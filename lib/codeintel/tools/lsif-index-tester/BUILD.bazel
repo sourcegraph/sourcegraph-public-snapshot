@@ -10,6 +10,7 @@ go_library(
         "spec.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-index-tester",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:private"],
     deps = [
         "//lib/codeintel/lsif/conversion",
@@ -24,6 +25,7 @@ go_library(
 go_binary(
     name = "lsif-index-tester",
     embed = [":lsif-index-tester_lib"],
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
 )
 
@@ -32,5 +34,6 @@ go_test(
     timeout = "short",
     srcs = ["range_differ_test.go"],
     embed = [":lsif-index-tester_lib"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

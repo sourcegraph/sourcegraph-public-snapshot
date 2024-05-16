@@ -5,6 +5,7 @@ go_library(
     name = "urlredactor",
     srcs = ["urlredactor.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = ["//internal/vcs"],
 )
@@ -13,5 +14,6 @@ go_test(
     name = "urlredactor_test",
     srcs = ["urlredactor_test.go"],
     embed = [":urlredactor"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = ["//internal/vcs"],
 )

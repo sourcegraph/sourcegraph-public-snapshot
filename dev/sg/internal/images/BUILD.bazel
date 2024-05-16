@@ -14,6 +14,7 @@ go_library(
         "registry.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/images",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/ci/images",
@@ -41,6 +42,7 @@ go_test(
         "pure_docker_test.go",
     ],
     embed = [":images"],
+    tags = [TAG_INFRA_RELEASE],
     deps = [
         "//dev/ci/images",
         "@com_github_opencontainers_go_digest//:go-digest",

@@ -5,6 +5,7 @@ go_library(
     name = "accesslog",
     srcs = ["accesslog.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//internal/audit",
@@ -20,6 +21,7 @@ go_test(
     timeout = "short",
     srcs = ["accesslog_test.go"],
     embed = [":accesslog"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/actor",
         "//internal/conf/conftypes",

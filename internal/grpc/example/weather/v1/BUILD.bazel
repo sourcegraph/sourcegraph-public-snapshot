@@ -6,6 +6,7 @@ go_library(
     name = "weather",
     embed = [":grpc_example_weather_v1_go_proto"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/example/weather/v1",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
 )
 

@@ -4,6 +4,7 @@ go_library(
     name = "job",
     srcs = ["job.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun/internal/builder/job",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/internal/resource/serviceaccount",
