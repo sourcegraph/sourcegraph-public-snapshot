@@ -63,6 +63,9 @@
             }
 
             padding: 1rem;
+            &:hover {
+                text-decoration: none;
+            }
             &:not(:hover) {
                 text-decoration: none;
                 color: var(--text-muted);
