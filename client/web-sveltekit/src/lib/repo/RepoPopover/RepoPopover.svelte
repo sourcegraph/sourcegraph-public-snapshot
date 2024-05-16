@@ -77,7 +77,7 @@
                 {#if author && avatar}
                     <div class="author">
                         <Avatar {avatar} --avatar-size="1.0rem" />
-                        <small>{avatar.name} · <Timestamp date={author?.date} /></small>
+                        <small>{avatar.displayName} · <Timestamp date={author?.date} /></small>
                     </div>
                 {/if}
             </div>
