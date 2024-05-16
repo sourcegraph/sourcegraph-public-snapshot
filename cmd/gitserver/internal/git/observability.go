@@ -522,10 +522,10 @@ func newOperations(observationCtx *observation.Context) *operations {
 			Metrics:           redMetrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-					return observation.EmitForNone
+					return observation.EmitForHoney | observation.EmitForTraces
 				}
-				if os.IsNotExist(err) {
-					return observation.EmitForNone
+				if errors.Is(err, os.ErrNotExist) {
+					return observation.EmitForHoney | observation.EmitForTraces
 				}
 				return observation.EmitForDefault
 			},

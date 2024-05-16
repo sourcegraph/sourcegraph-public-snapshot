@@ -190,6 +190,13 @@ func (e *ErrCollector) Error() string {
 	return e.errs.Error()
 }
 
+func (e *ErrCollector) Unwrap() error {
+	// ErrCollector wraps collected errors, for compatibility with errors.HasType,
+	// errors.Is etc it has to implement Unwrap to return the inner errors the
+	// collector stores.
+	return e.errs
+}
+
 // Args configures the observation behavior of an invocation of an operation.
 type Args struct {
 	// MetricLabelValues that apply only to this invocation of the operation.
