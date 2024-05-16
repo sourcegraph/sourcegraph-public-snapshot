@@ -20,7 +20,6 @@ body {
     // Fixes font antialising problem. Figma and browser match closer.
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-smooth: never;
 
     input::placeholder {
         color: var(--text-muted);
