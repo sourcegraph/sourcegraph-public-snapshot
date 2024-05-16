@@ -96,6 +96,7 @@ container_structure_test(
     tags = [
         "exclusive",
         "requires-network",
+        TAG_SEARCHSUITE,
     ],
 )
 

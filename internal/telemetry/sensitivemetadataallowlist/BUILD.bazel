@@ -8,6 +8,7 @@ go_library(
         "sensitivemetadataallowlist.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/telemetry/sensitivemetadataallowlist",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/dotcom",
@@ -25,6 +26,7 @@ go_test(
         "sensitivemetadataallowlist_test.go",
     ],
     embed = [":sensitivemetadataallowlist"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = [
         "//internal/telemetry",
         "//lib/pointers",

@@ -4,5 +4,6 @@ go_library(
     name = "managedservicesplatform",
     srcs = ["managedservicesplatform.go"],
     importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
 )

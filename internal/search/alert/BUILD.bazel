@@ -5,6 +5,7 @@ go_library(
     name = "alert",
     srcs = ["observer.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/alert",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/auth",
@@ -31,6 +32,7 @@ go_test(
     timeout = "short",
     srcs = ["observer_test.go"],
     embed = [":alert"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/database",
         "//internal/search",

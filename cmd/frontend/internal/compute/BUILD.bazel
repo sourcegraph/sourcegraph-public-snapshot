@@ -4,6 +4,7 @@ go_library(
     name = "compute",
     srcs = ["init.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/compute",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",

@@ -12,6 +12,7 @@ go_library(
         "resolvers.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/own/resolvers",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
@@ -50,6 +51,7 @@ go_test(
     embed = [":resolvers"],
     flaky = True,
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost database
         "requires-network",
     ],

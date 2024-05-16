@@ -14,6 +14,7 @@ go_library(
         "runner.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/check",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/analytics",
@@ -47,6 +48,7 @@ go_test(
         "runner_test.go",
     ],
     embed = [":check"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "//dev/sg/internal/std",
         "//lib/errors",

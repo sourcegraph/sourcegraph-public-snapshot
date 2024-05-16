@@ -8,6 +8,7 @@ go_library(
     name = "gitserver_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/gitserver/shared",
@@ -19,6 +20,7 @@ go_library(
 go_binary(
     name = "gitserver",
     embed = [":gitserver_lib"],
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
 )
 
@@ -57,6 +59,7 @@ container_structure_test(
     tags = [
         "exclusive",
         "requires-network",
+        TAG_PLATFORM_SOURCE,
     ],
 )
 

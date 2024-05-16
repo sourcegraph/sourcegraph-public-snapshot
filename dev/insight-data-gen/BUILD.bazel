@@ -4,6 +4,7 @@ go_library(
     name = "insight-data-gen_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/insight-data-gen",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:private"],
     deps = ["@com_github_cockroachdb_errors//:errors"],
 )
@@ -11,5 +12,6 @@ go_library(
 go_binary(
     name = "insight-data-gen",
     embed = [":insight-data-gen_lib"],
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:public"],
 )

@@ -105,7 +105,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			Name:     &target.ID,
 			Location: &config.Location,
 			CustomTarget: &clouddeploytarget.ClouddeployTargetCustomTarget{
-				CustomTargetType: targetType.Name(),
+				CustomTargetType: targetType.Id(),
 			},
 			DeployParameters: &map[string]*string{
 				"customTarget/serviceID": &config.ServiceID,

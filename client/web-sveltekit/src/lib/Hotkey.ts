@@ -19,8 +19,22 @@ const MAC_KEYNAME_MAP: Record<string, string> = {
 /**
  * Formats a key combination for display, properly replacing the key names with their platform-specific
  * counterparts.
+ *
+ * @param keys The key combination to format.
+ * @returns A platform-specific string representing the key combination.
  */
 export function formatShortcut(keys: Keys): string {
+    return formatShortcutParts(keys).join(isMacPlatform() ? '' : '+')
+}
+
+/**
+ * Formats a key combination for display, properly replacing the key names with their platform-specific
+ * counterparts. Returns an array of strings, each representing a part of the key combination.
+ *
+ * @param keys The key combination to format.
+ * @returns An array of strings, each representing a part of the key combination.
+ */
+export function formatShortcutParts(keys: Keys): string[] {
     const key = evaluateKey(keys)
 
     const parts = key.split('+')
@@ -37,7 +51,7 @@ export function formatShortcut(keys: Keys): string {
         }
     }
 
-    return out.join(isMacPlatform() ? '' : '+')
+    return out
 }
 
 export function evaluateKey(keys: { mac?: string; linux?: string; windows?: string; key: string }): string {

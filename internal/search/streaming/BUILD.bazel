@@ -10,6 +10,7 @@ go_library(
         "stream.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/streaming",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -33,6 +34,7 @@ go_test(
         "stream_test.go",
     ],
     embed = [":streaming"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/gitserver/gitdomain",
         "//internal/search/result",

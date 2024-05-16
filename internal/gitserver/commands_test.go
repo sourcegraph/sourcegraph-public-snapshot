@@ -231,9 +231,9 @@ func TestCommits_After(t *testing.T) {
 				}
 				repo := MakeGitRepository(t, gitCommands...)
 				got, err := client.Commits(ctx, repo, CommitsOptions{
-					N:     2,
-					Range: tc.revspec,
-					After: tc.after,
+					N:      2,
+					Ranges: []string{tc.revspec},
+					After:  tc.after,
 				})
 				require.NoError(t, err)
 
@@ -258,9 +258,9 @@ func TestCommits_After(t *testing.T) {
 				client := NewTestClient(t).WithChecker(checker)
 				repo := MakeGitRepository(t, gitCommands...)
 				got, err := client.Commits(ctx, repo, CommitsOptions{
-					N:     2,
-					After: tc.after,
-					Range: tc.revspec,
+					N:      2,
+					After:  tc.after,
+					Ranges: []string{tc.revspec},
 				})
 				if err != nil {
 					t.Errorf("got error: %s", err)
@@ -273,9 +273,9 @@ func TestCommits_After(t *testing.T) {
 				checker = getTestSubRepoPermsChecker("file1", "file2")
 				client = NewTestClient(t).WithChecker(checker)
 				got, err = client.Commits(ctx, repo, CommitsOptions{
-					N:     2,
-					After: tc.after,
-					Range: tc.revspec,
+					N:      2,
+					After:  tc.after,
+					Ranges: []string{tc.revspec},
 				})
 				if err != nil {
 					t.Errorf("got error: %s", err)
@@ -336,10 +336,10 @@ func TestRepository_Commits(t *testing.T) {
 	runCommitsTests := func(checker authz.SubRepoPermissionChecker) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
-				testCommits(ctx, label, test.repo, CommitsOptions{Range: string(test.id)}, checker, test.wantCommits, t)
+				testCommits(ctx, label, test.repo, CommitsOptions{Ranges: []string{string(test.id)}}, checker, test.wantCommits, t)
 
 				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := client.Commits(ctx, test.repo, CommitsOptions{Range: string(nonExistentCommitID)}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				if _, err := client.Commits(ctx, test.repo, CommitsOptions{Ranges: []string{string(nonExistentCommitID)}}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 				}
 			})
@@ -569,13 +569,13 @@ func TestRepository_Commits_options(t *testing.T) {
 		wantTotal   uint
 	}{
 		"git cmd": {
-			opt:         CommitsOptions{Range: "ade564eba4cf904492fb56dcd287ac633e6e082c", N: 1, Skip: 1},
+			opt:         CommitsOptions{Ranges: []string{"ade564eba4cf904492fb56dcd287ac633e6e082c"}, N: 1, Skip: 1},
 			wantCommits: wantGitCommits,
 			wantTotal:   1,
 		},
 		"git cmd Head": {
 			opt: CommitsOptions{
-				Range: "b266c7e3ca00b1a17ad0b1449825d0854225c007...ade564eba4cf904492fb56dcd287ac633e6e082c",
+				Ranges: []string{"b266c7e3ca00b1a17ad0b1449825d0854225c007...ade564eba4cf904492fb56dcd287ac633e6e082c"},
 			},
 			wantCommits: wantGitCommits2,
 			wantTotal:   1,
@@ -583,7 +583,7 @@ func TestRepository_Commits_options(t *testing.T) {
 		"before": {
 			opt: CommitsOptions{
 				Before: "2006-01-02T15:04:07Z",
-				Range:  "HEAD",
+				Ranges: []string{"HEAD"},
 				N:      1,
 			},
 			wantCommits: []*gitdomain.Commit{
@@ -665,21 +665,21 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	}{
 		"git cmd Path 0": {
 			opt: CommitsOptions{
-				Range: "master",
-				Path:  "doesnt-exist",
+				Ranges: []string{"master"},
+				Path:   "doesnt-exist",
 			},
 			wantCommits: nil,
 		},
 		"git cmd Path 1": {
 			opt: CommitsOptions{
-				Range: "master",
-				Path:  "file1",
+				Ranges: []string{"master"},
+				Path:   "file1",
 			},
 			wantCommits: wantGitCommits,
 		},
 		"git cmd non utf8": {
 			opt: CommitsOptions{
-				Range:  "master",
+				Ranges: []string{"master"},
 				Author: "a\xc0rn",
 			},
 			wantCommits: nil,

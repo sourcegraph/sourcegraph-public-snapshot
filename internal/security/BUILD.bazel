@@ -5,6 +5,7 @@ go_library(
     name = "security",
     srcs = ["security.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/security",
+    tags = [TAG_SECURITY],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf",
@@ -45,7 +46,10 @@ go_test(
     # TODO(bazel): fix test; failing on CI only
     # TODO(JH): those are making external network calls.
     #           -> ask Vincent about the relevance of those tests.
-    tags = ["manual"],
+    tags = [
+        TAG_SECURITY,
+        "manual",
+    ],
     deps = [
         "//internal/conf",
         "//schema",

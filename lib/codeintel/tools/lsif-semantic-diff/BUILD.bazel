@@ -4,6 +4,7 @@ go_library(
     name = "lsif-semantic-diff_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-semantic-diff",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:private"],
     deps = [
         "//lib/codeintel/lsif/conversion",
@@ -15,5 +16,6 @@ go_library(
 go_binary(
     name = "lsif-semantic-diff",
     embed = [":lsif-semantic-diff_lib"],
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
 )

@@ -8,6 +8,7 @@ go_library(
         "token.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/oauthutil",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/extsvc/auth",
@@ -23,6 +24,7 @@ go_test(
     timeout = "short",
     srcs = ["oauth2_test.go"],
     embed = [":oauthutil"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/extsvc/auth",
         "//internal/httpcli",

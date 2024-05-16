@@ -10,6 +10,7 @@ go_library(
         "repr.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/own/codeowners",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -28,6 +29,7 @@ go_test(
         "find_owners_test.go",
         "parse_test.go",
     ],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         ":codeowners",
         "//internal/own/codeowners/v1:codeowners",

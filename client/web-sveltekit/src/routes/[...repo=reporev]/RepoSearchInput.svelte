@@ -14,7 +14,7 @@
     export let repoName: string
 
     const {
-        elements: { trigger, overlay, content },
+        elements: { trigger, overlay, content, portalled },
         states: { open },
     } = createDialog()
 
@@ -43,29 +43,25 @@
 </script>
 
 {#if $open}
-    <div class="wrapper">
+    <div class="wrapper" {...$portalled} use:portalled>
         <div {...$overlay} use:overlay class="overlay" />
         <div {...$content} use:content>
             <SearchInput bind:this={searchInput} {queryState} onSubmit={handleSearchSubmit} />
         </div>
     </div>
-{:else}
-    <button {...$trigger} use:trigger>
-        <Icon svgPath={mdiMagnify} inline aria-hidden="true" />
-        Type <kbd>/</kbd> to search
-    </button>
 {/if}
+<button {...$trigger} use:trigger class:hidden={$open}>
+    <Icon svgPath={mdiMagnify} inline aria-hidden="true" />
+    Type <kbd>/</kbd> to search
+</button>
 
 <style lang="scss">
     .wrapper {
         flex: 1;
         position: absolute;
+        top: 1rem;
         left: 1rem;
         right: 1rem;
-        // This seems needed to prevent the file headers (which are position: sticky) from overlaying
-        // the search input. Alternatively we could portal the search input with melt, but then
-        // it would be more difficult to position it over the repo header.
-        z-index: 2;
 
         .overlay {
             position: fixed;
@@ -75,6 +71,10 @@
             bottom: 0;
             background-color: rgba(0, 0, 0, 0.3);
         }
+    }
+
+    .hidden {
+        visibility: hidden;
     }
 
     button {

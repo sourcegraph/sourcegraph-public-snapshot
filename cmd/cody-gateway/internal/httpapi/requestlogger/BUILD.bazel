@@ -4,6 +4,7 @@ go_library(
     name = "requestlogger",
     srcs = ["requestlogger.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/requestlogger",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/actor",

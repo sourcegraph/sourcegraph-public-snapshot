@@ -8,6 +8,7 @@ go_library(
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/perforce",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -22,5 +23,6 @@ go_test(
     name = "perforce_test",
     srcs = ["changelist_test.go"],
     embed = [":perforce"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = ["@com_github_stretchr_testify//require"],
 )

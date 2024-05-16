@@ -23,10 +23,17 @@ func (g *gitCLIBackend) RawDiff(ctx context.Context, base string, head string, t
 		return nil, err
 	}
 
-	return g.NewCommand(ctx, WithArguments(buildRawDiffArgs(baseOID, headOID, typ, paths)...))
+	// Since we pass down baseOID which is guaranteed to be an api.CommitID, this
+	// should not fail but lets guard against any changes in the future.
+	args, err := buildRawDiffArgs(baseOID, headOID, typ, paths)
+	if err != nil {
+		return nil, err
+	}
+
+	return g.NewCommand(ctx, WithArguments(args...))
 }
 
-func buildRawDiffArgs(base, head api.CommitID, typ git.GitDiffComparisonType, paths []string) []string {
+func buildRawDiffArgs(base, head api.CommitID, typ git.GitDiffComparisonType, paths []string) ([]string, error) {
 	var rangeType string
 	switch typ {
 	case git.GitDiffComparisonTypeIntersection:
@@ -36,15 +43,23 @@ func buildRawDiffArgs(base, head api.CommitID, typ git.GitDiffComparisonType, pa
 	}
 	rangeSpec := string(base) + rangeType + string(head)
 
+	if err := checkSpecArgSafety(rangeSpec); err != nil {
+		return nil, err
+	}
+
 	return append([]string{
-		"diff",
+		// Note: We use git diff-tree instead of git diff because git diff lets
+		// you diff any arbitrary files on disk, which is a security risk, diffing
+		// /etc/passwd to /dev/null is crazy.
+		"diff-tree",
+		"--patch",
 		"--find-renames",
 		"--full-index",
 		"--inter-hunk-context=3",
 		"--no-prefix",
 		rangeSpec,
 		"--",
-	}, paths...)
+	}, paths...), nil
 }
 
 func (g *gitCLIBackend) ChangedFiles(ctx context.Context, base, head string) (git.ChangedFilesIterator, error) {

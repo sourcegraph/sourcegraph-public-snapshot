@@ -92,6 +92,16 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 	})
+	t.Run("files outside repository", func(t *testing.T) {
+		// We use git-diff-tree, but with git-diff you can diff any files on disk
+		// which is dangerous. So we have this safeguard test here in place to
+		// make sure we don't regress on that.
+		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead, "/dev/null", "/etc/hosts")
+		require.NoError(t, err)
+		_, err = io.ReadAll(r)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "is outside repository at")
+	})
 	// Verify that if the context is canceled, the reader returns an error.
 	t.Run("context cancelation", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)

@@ -8,6 +8,7 @@ go_library(
         "mutable.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/limiter",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
 )
 
@@ -19,4 +20,5 @@ go_test(
         "mutable_test.go",
     ],
     embed = [":limiter"],
+    tags = [TAG_PLATFORM_SOURCE],
 )

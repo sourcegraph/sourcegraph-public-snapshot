@@ -32,6 +32,7 @@ go_library(
     srcs = ["v1.go"],
     embed = [":v1_go_proto"],
     importpath = "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = [
         "//cmd/frontend/internal/telemetry/resolvers:__pkg__",
         "//cmd/telemetry-gateway/internal/events:__pkg__",
@@ -86,6 +87,7 @@ go_test(
     name = "telemetrygateway_test",
     srcs = ["v1_test.go"],
     embed = [":telemetrygateway"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = [
         "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_stretchr_testify//assert",

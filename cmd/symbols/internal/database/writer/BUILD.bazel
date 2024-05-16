@@ -8,6 +8,7 @@ go_library(
         "writer.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/symbols:__subpackages__"],
     deps = [
         "//cmd/symbols/gitserver",

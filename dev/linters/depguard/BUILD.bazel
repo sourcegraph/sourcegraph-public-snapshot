@@ -4,6 +4,7 @@ go_library(
     name = "depguard",
     srcs = ["depguard.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/depguard",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/linters/nolint",

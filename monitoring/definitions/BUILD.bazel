@@ -28,6 +28,7 @@ go_library(
         "zoekt.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/definitions",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/pointers",

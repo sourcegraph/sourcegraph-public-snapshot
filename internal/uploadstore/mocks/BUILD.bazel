@@ -5,6 +5,7 @@ go_library(
     name = "mocks",
     srcs = ["mocks_temp.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/uploadstore",

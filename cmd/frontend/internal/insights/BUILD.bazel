@@ -4,6 +4,7 @@ go_library(
     name = "insights",
     srcs = ["init.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/insights",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",

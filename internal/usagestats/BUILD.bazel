@@ -35,6 +35,7 @@ go_library(
     ],
     embedsrcs = ["code_monitoring_usage_stats.sql"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/usagestats",
+    tags = [TAG_DATA_ANALYTICS],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf",
@@ -89,6 +90,7 @@ go_test(
     ],
     embed = [":usagestats"],
     tags = [
+        TAG_DATA_ANALYTICS,
         # Test requires localhost database
         "requires-network",
     ],

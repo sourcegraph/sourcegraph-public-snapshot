@@ -9,9 +9,9 @@ go_library(
         "repos.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/repos",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/searcher/protocol",
         "//internal/api",
         "//internal/conf",
         "//internal/database",
@@ -28,6 +28,7 @@ go_library(
         "//internal/search/searcher",
         "//internal/search/streaming",
         "//internal/search/zoekt",
+        "//internal/searcher/protocol",
         "//internal/trace",
         "//internal/types",
         "//lib/errors",
@@ -53,11 +54,11 @@ go_test(
     ],
     embed = [":repos"],
     tags = [
+        TAG_PLATFORM_SEARCH,
         # Test requires localhost database
         "requires-network",
     ],
     deps = [
-        "//cmd/searcher/protocol",
         "//internal/api",
         "//internal/database",
         "//internal/database/dbmocks",
@@ -71,6 +72,7 @@ go_test(
         "//internal/search/query",
         "//internal/search/searcher",
         "//internal/search/streaming",
+        "//internal/searcher/protocol",
         "//internal/types",
         "//lib/errors",
         "//lib/iterator",

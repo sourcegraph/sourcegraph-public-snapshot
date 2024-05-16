@@ -5,6 +5,7 @@ go_library(
     name = "auth",
     srcs = ["sourcegraph_operator_cleaner.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/auth",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/worker/job",
@@ -29,6 +30,7 @@ go_test(
     srcs = ["sourcegraph_operator_cleaner_test.go"],
     embed = [":auth"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost for database
         "requires-network",
     ],

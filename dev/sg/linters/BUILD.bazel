@@ -19,6 +19,7 @@ go_library(
         "usage_linter.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/linters",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/sg/buf",
@@ -46,6 +47,7 @@ go_test(
         "gomod_test.go",
     ],
     embed = [":linters"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "//dev/sg/internal/repo",
         "//dev/sg/internal/std",

@@ -8,6 +8,7 @@ go_library(
         "visualize.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-visualize",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:private"],
     deps = ["//lib/codeintel/tools/lsif-visualize/internal/visualization"],
 )
@@ -15,5 +16,6 @@ go_library(
 go_binary(
     name = "lsif-visualize",
     embed = [":lsif-visualize_lib"],
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
 )

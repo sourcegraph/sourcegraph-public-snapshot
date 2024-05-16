@@ -8,6 +8,7 @@ go_library(
         "search_client.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/query/streaming",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",

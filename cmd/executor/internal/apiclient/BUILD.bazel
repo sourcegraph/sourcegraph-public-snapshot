@@ -4,6 +4,7 @@ go_library(
     name = "apiclient",
     srcs = ["baseclient.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/executor:__subpackages__"],
     deps = [
         "//internal/httpcli",

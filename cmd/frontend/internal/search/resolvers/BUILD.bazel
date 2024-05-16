@@ -8,6 +8,7 @@ go_library(
         "search_job_stats.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/resolvers",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",

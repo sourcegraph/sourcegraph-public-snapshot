@@ -15,6 +15,13 @@ type RolloutSpec struct {
 	// releases for. Can be used to give access to the Service Account used in your CI pipeline,
 	// instead of using the default releaser SA that MSP provisions.
 	ServiceAccount *string `yaml:"serviceAccount,omitempty"`
+	// InitialImageTag is the image tag to use by default. This is mostly used to
+	// provision the first revision of a Cloud Run service/job for an environment,
+	// after which Cloud Deploy manages the image used for Cloud Run revisions.
+	//
+	// This only needs to be set if the default image tag 'insiders' does not
+	// correspond to an image tag that is available for this service's images.
+	InitialImageTag *string `yaml:"initialImageTag,omitempty"`
 }
 
 func (r *RolloutSpec) GetStageByEnvironment(id string) *RolloutStageSpec {
@@ -29,6 +36,13 @@ func (r *RolloutSpec) GetStageByEnvironment(id string) *RolloutStageSpec {
 	return nil
 }
 
+func (r *RolloutSpec) GetInitialImageTag() string {
+	if r.InitialImageTag != nil {
+		return *r.InitialImageTag
+	}
+	return "insiders"
+}
+
 type RolloutStageSpec struct {
 	// EnvironmentID is the ID of the environment to use in this stage.
 	// The specified environment MUST have 'deploy: { type: "rollout" }' configured.
@@ -38,11 +52,21 @@ type RolloutStageSpec struct {
 // RolloutPipelineConfiguration is rendered from BuildPipelineConfiguration for use in
 // stacks.
 type RolloutPipelineConfiguration struct {
+	isFinalStage bool
 	// Stages is evaluated from OriginalSpec.Stages to include attributes
 	// required to actually configure the stages.
 	Stages []rolloutPipelineTargetConfiguration
 
 	OriginalSpec RolloutSpec
+}
+
+// IsFinalStage indicates if the env used for this RolloutPipelineConfiguration
+// is the final stage in the rollout pipeline. If nil, this returns false.
+func (s *RolloutPipelineConfiguration) IsFinalStage() bool {
+	if s == nil {
+		return false
+	}
+	return s.isFinalStage
 }
 
 // rolloutPipelineTargetConfiguration is an internal type that extends
@@ -61,11 +85,6 @@ func (s Spec) BuildRolloutPipelineConfiguration(env EnvironmentSpec) *RolloutPip
 		return nil
 	}
 
-	// We only need the configuration
-	if s.Rollout.Stages[len(s.Rollout.Stages)-1].EnvironmentID != env.ID {
-		return nil
-	}
-
 	var targets []rolloutPipelineTargetConfiguration
 	for _, stage := range s.Rollout.Stages {
 		env := s.GetEnvironment(stage.EnvironmentID)
@@ -74,7 +93,9 @@ func (s Spec) BuildRolloutPipelineConfiguration(env EnvironmentSpec) *RolloutPip
 			RolloutStageSpec: stage,
 		})
 	}
+	finalStageEnv := s.Rollout.Stages[len(s.Rollout.Stages)-1].EnvironmentID
 	return &RolloutPipelineConfiguration{
+		isFinalStage: finalStageEnv == env.ID,
 		Stages:       targets,
 		OriginalSpec: *s.Rollout,
 	}
