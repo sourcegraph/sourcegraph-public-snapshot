@@ -15,13 +15,13 @@
     import { isErrorLike, pluralize, SourcegraphURL, type LineOrPositionOrRange } from '$lib/common'
     import { getGraphQLClient, toGraphQLResult } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
-    import { renderMermaid } from '$lib/mermaid'
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
+    import { renderMermaid } from '$lib/repo/mermaid'
     import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI } from '$lib/shared'
-    import { settings } from '$lib/stores'
+    import { isLightTheme, settings } from '$lib/stores'
     import { codeCopiedEvent, SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import { createPromiseStore, formatBytes } from '$lib/utils'
     import { Alert, Badge, MenuButton, MenuLink } from '$lib/wildcard'
@@ -237,7 +237,10 @@
         <!-- key on the HTML content so renderMermaid gets re-run -->
         {#key blob.richHTML}
             <!-- jupyter is a global style -->
-            <div use:renderMermaid={'pre:has(code.language-mermaid)'} class={`rich jupyter ${markdownStyles.markdown}`}>
+            <div
+                use:renderMermaid={{ selector: 'pre:has(code.language-mermaid)', isLightTheme: $isLightTheme }}
+                class={`rich jupyter ${markdownStyles.markdown}`}
+            >
                 {@html blob.richHTML}
             </div>
         {/key}

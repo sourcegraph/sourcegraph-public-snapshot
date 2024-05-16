@@ -28,6 +28,7 @@ import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { type ModeSpec, type RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
@@ -88,7 +89,7 @@ import { RenderedFile } from './RenderedFile'
 
 import styles from './BlobPage.module.scss'
 
-mermaid.initialize({ startOnLoad: false })
+mermaid.mermaidAPI.initialize({ startOnLoad: false })
 
 const SEARCH_NOTEBOOK_FILE_EXTENSION = '.snb.md'
 const RenderedNotebookMarkdown = lazyComponent(() => import('./RenderedNotebookMarkdown'), 'RenderedNotebookMarkdown')
@@ -352,13 +353,15 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     }, [isSearchNotebook, formattedBlobInfoOrError, renderMode, setEditorScope])
 
     // Replace mermaid code blocks with rendered diagrams
+    const isLightTheme = useIsLightTheme()
     const renderMermaid = (target: HTMLDivElement | null): void => {
         if (!target) {
             return
         }
+        mermaid.mermaidAPI.initialize({ theme: isLightTheme ? 'default' : 'dark' })
         const mermaidBlocks = target.querySelectorAll('pre:has(code.language-mermaid)')
         for (const [i, mermaidBlock] of mermaidBlocks.entries()) {
-            mermaid.render(`mermaid-diagram-${i}`, mermaidBlock.textContent || '').then(({ svg }) => {
+            mermaid.mermaidAPI.render(`mermaid-diagram-${i}`, mermaidBlock.textContent || '').then(({ svg }) => {
                 ReactDOM.render(createElement('div', { dangerouslySetInnerHTML: { __html: svg } }), mermaidBlock)
             })
         }
