@@ -1,4 +1,4 @@
-import * as types from './types'
+import type * as types from './types'
 
 // Call is the bundle of data necessary for making an API request.
 // This is a sort of "meta request" in the same veign as the `gql`
@@ -20,23 +20,23 @@ export interface Call<Resp> {
 export class Client {
     // Subscriptions
 
-    getCurrentSubscription(): Call<types.Subscription> {
+    static getCurrentSubscription(): Call<types.Subscription> {
         return { method: 'GET', urlSuffix: '/team/current/subscription' }
     }
 
-    getCurrentSubscriptionSummary(): Call<types.SubscriptionSummary> {
+    static getCurrentSubscriptionSummary(): Call<types.SubscriptionSummary> {
         return { method: 'GET', urlSuffix: '/team/current/subscription/summary' }
     }
 
-    updateCurretSubscription(requestBody: types.UpdateSubscriptionRequest): Call<types.Subscription> {
+    static updateCurrentSubscription(requestBody: types.UpdateSubscriptionRequest): Call<types.Subscription> {
         return { method: 'PATCH', urlSuffix: '/team/current/subscription', requestBody }
     }
 
-    getCurrentSubscriptionInvoices(): Call<types.GetSubscriptionInvoicesResponse> {
+    static getCurrentSubscriptionInvoices(): Call<types.GetSubscriptionInvoicesResponse> {
         return { method: 'GET', urlSuffix: '/team/current/subscription/invoices' }
     }
 
-    reactivateCurrentSubscription(
+    static reactivateCurrentSubscription(
         requestBody: types.ReactivateSubscriptionRequest
     ): Call<types.GetSubscriptionInvoicesResponse> {
         return { method: 'POST', urlSuffix: '/team/current/subscription/reactivate', requestBody }
@@ -44,7 +44,7 @@ export class Client {
 
     // Stripe Checkout
 
-    createStripeCheckoutSession(
+    static createStripeCheckoutSession(
         requestBody: types.CreateCheckoutSessionRequest
     ): Call<types.CreateCheckoutSessionResponse> {
         return { method: 'POST', urlSuffix: '/checkout/session', requestBody }
@@ -54,7 +54,9 @@ export class Client {
 // Caller is a wrapper around an HTTP client. An implementation of this interface
 // will be responsible for making API calls to the backend.
 export interface Caller {
-    call<Resp>(call: Call<Resp>): Promise<{ data?: Resp; response: Response }>
+    // call performs the described HTTP request, returning the response body deserialized from
+    // JSON as `data`, and the full HTTP response object as `response`.
+    call<Data>(call: Call<Data>): Promise<{ data?: Data; response: Response }>
 }
 
 // CodyProApiCaller is an implementation of the Caller interface which issues API calls to
@@ -67,7 +69,7 @@ export class CodyProApiCaller implements Caller {
         this.origin = window.location.origin
     }
 
-    async call<Resp>(call: Call<Resp>): Promise<{ data?: Resp; response: Response }> {
+    async call<Data>(call: Call<Data>): Promise<{ data?: Data; response: Response }> {
         let bodyJson: string | undefined = undefined
         if (call.requestBody) {
             bodyJson = JSON.stringify(call.requestBody)
@@ -80,9 +82,9 @@ export class CodyProApiCaller implements Caller {
             body: bodyJson,
         })
 
-        const rawBody = await fetchResponse.text()
         if (fetchResponse.status >= 200 && fetchResponse.status <= 299) {
-            const typedResp = JSON.parse(rawBody) as Resp
+            const rawBody = await fetchResponse.text()
+            const typedResp = JSON.parse(rawBody) as Data
             return {
                 data: typedResp,
                 response: fetchResponse,

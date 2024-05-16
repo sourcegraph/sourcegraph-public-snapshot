@@ -21,8 +21,12 @@ The `Client` provides a strongly-typed definition of the REST API exposed as a s
 However, they just return `Call<Resp>` objects which merely _describe_ the API call to be made.
 A separate `Caller` is what actually performs the operation.
 
+⚠️ It's super important to wrap the `Call<Resp>` object's creation in `useMemo`. Otherwise, any time
+the calling React comment gets repainted, the object reference passed to `useApiCaller` will change,
+leading to additional HTTP requests being made unintentionally!
+
 ```ts
 // Make the API call to create the Stripe Checkout session.
-const client = useApiClient()
-const { loading, error, data } = useApiCaller(client.createStripeCheckoutSession(req))
+const call = useMemo(() => client.createStripeCheckoutSession(req), [])
+const { loading, error, data } = useApiCaller(call)
 ```

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
 import type { Stripe } from '@stripe/stripe-js'
@@ -6,7 +6,8 @@ import { useSearchParams } from 'react-router-dom'
 
 import { H3, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
-import { useApiClient, useApiCaller } from '../../api/hooks/useApiClient'
+import { Client } from '../../api/client'
+import { useApiCaller } from '../../api/hooks/useApiClient'
 import { CreateCheckoutSessionRequest } from '../../api/types'
 
 import { requestSSC } from '../../../util'
@@ -40,9 +41,8 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
     }
 
     // Make the API call to create the Stripe Checkout session.
-    const client = useApiClient()
-    const { loading, error, data } = useApiCaller(client.createStripeCheckoutSession(req))
-
+    const call = useMemo(() => Client.createStripeCheckoutSession(req), [])
+    const { loading, error, data } = useApiCaller(call)
     if (loading) {
         return <LoadingSpinner />
     }

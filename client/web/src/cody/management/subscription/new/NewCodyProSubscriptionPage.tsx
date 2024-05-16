@@ -9,8 +9,6 @@ import * as stripeJs from '@stripe/stripe-js'
 import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
 
-// DO NOT SUBMIT
-
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
@@ -26,6 +24,7 @@ import {
 } from '../../../../graphql-operations'
 import { CodyProIcon } from '../../../components/CodyIcon'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
+import { defaultCodyProApiClientContext, CodyProApiClientContext } from '../../api/components/CodyProApiClient'
 
 import { CodyProCheckoutForm } from './CodyProCheckoutForm'
 
@@ -74,12 +73,14 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
             </PageHeader>
 
             <Container>
-                <Elements stripe={stripePromise} options={{ appearance: stripeElementsAppearance }}>
-                    <CodyProCheckoutForm
-                        stripePromise={stripePromise}
-                        customerEmail={authenticatedUser?.emails[0].email || ''}
-                    />
-                </Elements>
+                <CodyProApiClientContext.Provider value={defaultCodyProApiClientContext()}>
+                    <Elements stripe={stripePromise} options={{ appearance: stripeElementsAppearance }}>
+                        <CodyProCheckoutForm
+                            stripePromise={stripePromise}
+                            customerEmail={authenticatedUser?.emails[0].email || ''}
+                        />
+                    </Elements>
+                </CodyProApiClientContext.Provider>
             </Container>
         </Page>
     )
