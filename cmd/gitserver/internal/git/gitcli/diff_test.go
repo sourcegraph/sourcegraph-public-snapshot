@@ -55,6 +55,14 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 		require.NoError(t, r.Close())
 		require.Equal(t, string(f1Diff), string(diff))
 	})
+	t.Run("streams diff intersection", func(t *testing.T) {
+		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeIntersection)
+		require.NoError(t, err)
+		diff, err := io.ReadAll(r)
+		require.NoError(t, err)
+		require.NoError(t, r.Close())
+		require.Equal(t, string(f1Diff), string(diff))
+	})
 	t.Run("streams diff for path", func(t *testing.T) {
 		// Prepare repo state:
 		backend := BackendWithRepoCommands(t,
