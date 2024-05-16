@@ -141,7 +141,11 @@ func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (
 		if subscription != nil {
 			subscriptions = append(subscriptions, subscription)
 
-			if subscription.Status == ssc.SubscriptionStatusActive || subscription.Status == ssc.SubscriptionStatusPastDue {
+			// Pick the first one we find in a good state, enabling the user to access Cody Pro features.
+			// - Active and in good standing.
+			// - PastDue, meaning there is some payment problem but in a grace period before cancellation.
+			// - Trialing, on a free trial.
+			if subscription.Status == ssc.SubscriptionStatusActive || subscription.Status == ssc.SubscriptionStatusPastDue || subscription.Status == ssc.SubscriptionStatusTrialing {
 				return consolidateSubscriptionDetails(ctx, user, subscription)
 			}
 		}
@@ -150,7 +154,9 @@ func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (
 	if len(subscriptions) == 0 {
 		return consolidateSubscriptionDetails(ctx, user, nil)
 	}
-
+	// If we didn't find an "working" subscription, then we just return the details
+	// of the first one we found. (For this to be stable, we require the list of external
+	// accounts to be returned from the database in a sorted order, which it is.)
 	return consolidateSubscriptionDetails(ctx, user, subscriptions[0])
 }
 
