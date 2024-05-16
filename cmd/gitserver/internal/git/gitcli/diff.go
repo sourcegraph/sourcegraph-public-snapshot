@@ -23,30 +23,47 @@ func (g *gitCLIBackend) RawDiff(ctx context.Context, base string, head string, t
 		return nil, err
 	}
 
-	// Since we pass down baseOID which is guaranteed to be an api.CommitID, this
-	// should not fail but lets guard against any changes in the future.
-	args, err := buildRawDiffArgs(baseOID, headOID, typ, paths)
-	if err != nil {
+	// We should trust baseOID and headOID, but let's be paranoid for now. If we
+	// ever encode hashes as [20]byte, we can skip this.
+	if err := checkSpecArgSafety(string(baseOID)); err != nil {
 		return nil, err
 	}
+	if err := checkSpecArgSafety(string(headOID)); err != nil {
+		return nil, err
+	}
+
+	switch typ {
+	case git.GitDiffComparisonTypeIntersection:
+		// From the git docs on diff:
+		// git diff [<options>] <commit>...<commit> [--] [<path>...]
+		// This form is to view the changes on the branch containing and up to the second <commit>, starting at a common
+		// ancestor of both <commit>.  git diff A...B is equivalent to git diff $(git merge-base A B) B. You can omit
+		// any one of <commit>, which has the same effect as using HEAD instead.
+		baseOID, err = g.MergeBase(ctx, string(baseOID), string(headOID))
+		if err != nil {
+			return nil, err
+		}
+	case git.GitDiffComparisonTypeOnlyInHead:
+		// From the git docs on diff:
+		// 	git diff [<options>] <commit> <commit>... <commit> [--] [<path>...]
+		// 	This form is to view the results of a merge commit. The first listed <commit> must be the merge itself; the
+		// 	remaining two or more commits should be its parents. Convenient ways to produce the desired set of revisions
+		// 	are to use the suffixes ^@ and ^!. If A is a merge commit, then git diff A A^@, git diff A^! and git show A
+		// 	all give the same combined diff.
+
+		// git diff [<options>] <commit>..<commit> [--] [<path>...]
+		// 	This is synonymous to the earlier form (without the ..) for viewing the changes between two arbitrary
+		// 	<commit>. If <commit> on one side is omitted, it will have the same effect as using HEAD instead.
+		// So: Nothing to do, passing `base head` as two arguments like this is what
+		// we want.
+	}
+
+	args := buildRawDiffArgs(baseOID, headOID, paths)
 
 	return g.NewCommand(ctx, WithArguments(args...))
 }
 
-func buildRawDiffArgs(base, head api.CommitID, typ git.GitDiffComparisonType, paths []string) ([]string, error) {
-	var rangeType string
-	switch typ {
-	case git.GitDiffComparisonTypeIntersection:
-		rangeType = "..."
-	case git.GitDiffComparisonTypeOnlyInHead:
-		rangeType = ".."
-	}
-	rangeSpec := string(base) + rangeType + string(head)
-
-	if err := checkSpecArgSafety(rangeSpec); err != nil {
-		return nil, err
-	}
-
+func buildRawDiffArgs(base, head api.CommitID, paths []string) []string {
 	return append([]string{
 		// Note: We use git diff-tree instead of git diff because git diff lets
 		// you diff any arbitrary files on disk, which is a security risk, diffing
@@ -57,9 +74,10 @@ func buildRawDiffArgs(base, head api.CommitID, typ git.GitDiffComparisonType, pa
 		"--full-index",
 		"--inter-hunk-context=3",
 		"--no-prefix",
-		rangeSpec,
+		string(base),
+		string(head),
 		"--",
-	}, paths...), nil
+	}, paths...)
 }
 
 func (g *gitCLIBackend) ChangedFiles(ctx context.Context, base, head string) (git.ChangedFilesIterator, error) {
