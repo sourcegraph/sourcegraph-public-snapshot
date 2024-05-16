@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -262,12 +263,22 @@ func buildApiUrl(endpoint string, model string, stream bool, fallbackRegion stri
 		}
 	}
 
-	if stream {
-		apiURL.RawPath = fmt.Sprintf("/model/%s/invoke-with-response-stream", url.QueryEscape(model))
-		apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", model)
+	parsedModelId := conftypes.ParseBedrockModelId(model)
+
+	if parsedModelId.ProvisionedCapacity != "" {
+		if stream {
+			apiURL.RawPath = fmt.Sprintf("/model/%s/invoke-with-response-stream", url.QueryEscape(parsedModelId.ProvisionedCapacity))
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", parsedModelId.ProvisionedCapacity)
+		} else {
+			apiURL.RawPath = fmt.Sprintf("/model/%s/invoke", url.QueryEscape(parsedModelId.ProvisionedCapacity))
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke", parsedModelId.ProvisionedCapacity)
+		}
 	} else {
-		apiURL.RawPath = fmt.Sprintf("/model/%s/invoke", url.QueryEscape(model))
-		apiURL.Path = fmt.Sprintf("/model/%s/invoke", model)
+		if stream {
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", parsedModelId.Model)
+		} else {
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke", parsedModelId.Model)
+		}
 	}
 
 	return apiURL

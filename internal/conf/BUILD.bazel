@@ -59,6 +59,7 @@ go_test(
     srcs = [
         "auth_test.go",
         "client_test.go",
+        "cody_validators_test.go",
         "computed_test.go",
         "diff_test.go",
         "mocks_test.go",

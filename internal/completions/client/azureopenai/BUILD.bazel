@@ -19,6 +19,7 @@ go_library(
 go_test(
     name = "azureopenai_test",
     srcs = ["openai_test.go"],
+    data = glob(["testdata/**"]),
     embed = [":azureopenai"],
     deps = [
         "//internal/completions/types",
