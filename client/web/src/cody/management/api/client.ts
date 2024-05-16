@@ -18,6 +18,30 @@ export interface Call<Resp> {
 // This doesn't _do_ anything, it just returns the metadata for what needs to be done.
 // It is used in conjunction with a Caller implementation for actually fetching data.
 export class Client {
+    // Subscriptions
+
+    getCurrentSubscription(): Call<types.Subscription> {
+        return { method: 'GET', urlSuffix: '/team/current/subscription' }
+    }
+
+    getCurrentSubscriptionSummary(): Call<types.SubscriptionSummary> {
+        return { method: 'GET', urlSuffix: '/team/current/subscription/summary' }
+    }
+
+    updateCurretSubscription(requestBody: types.UpdateSubscriptionRequest): Call<types.Subscription> {
+        return { method: 'PATCH', urlSuffix: '/team/current/subscription', requestBody }
+    }
+
+    getCurrentSubscriptionInvoices(): Call<types.GetSubscriptionInvoicesResponse> {
+        return { method: 'GET', urlSuffix: '/team/current/subscription/invoices' }
+    }
+
+    reactivateCurrentSubscription(
+        requestBody: types.ReactivateSubscriptionRequest
+    ): Call<types.GetSubscriptionInvoicesResponse> {
+        return { method: 'POST', urlSuffix: '/team/current/subscription/reactivate', requestBody }
+    }
+
     // Stripe Checkout
 
     createStripeCheckoutSession(
