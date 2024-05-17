@@ -29,14 +29,14 @@ export type BillingProduct = 'exampleBillingProduct'
 
 /**
  * Props interface that can be extended by React components depending on the
- * new telemetry framework: https://sourcegraph.com/docs/dev/background-information/telemetry
+ * new telemetry framework: https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
  * These properties are part of {@link PlatformContext}.
  */
 export interface TelemetryV2Props {
     /**
      * Telemetry recorder for the new telemetry framework, superseding
      * 'telemetryService' and 'logEvent' variants. Learn more here:
-     * https://sourcegraph.com/docs/dev/background-information/telemetry
+     * https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
      *
      * It is backed by a '@sourcegraph/telemetry' implementation.
      */

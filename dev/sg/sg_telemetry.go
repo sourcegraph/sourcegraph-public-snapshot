@@ -23,7 +23,7 @@ It will be replaced with Telemetry V2 - code that is instrumented with the new
 Telemetry SDKs will automatically export safe telemetry in accordance with the
 Sourcegraph instance's allowed policies.
 
-For more details, see https://sourcegraph.com/docs/dev/background-information/telemetry
+For more details, see https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
 or reach out in #discuss-analytics.`
 
 func renderTelemetryV1DeprecationWarning() {
@@ -50,7 +50,7 @@ var allowlistCommand = &cli.Command{
 	Flags: []cli.Flag{},
 	Description: `
 Utility that will generate SQL to add and remove events from the usage data allow list.
-https://sourcegraph.com/docs/dev/background-information/data-usage-pipeline#allow-list
+https://docs-legacy.sourcegraph.com/dev/background-information/data-usage-pipeline#allow-list
 
 Events are keyed by event name and passed in as additional arguments to the add and remove subcommands.
 `,

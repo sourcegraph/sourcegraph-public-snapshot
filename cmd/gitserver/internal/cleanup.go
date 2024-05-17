@@ -134,7 +134,7 @@ const (
 )
 
 // gitGCMode describes which mode we should be running git gc.
-// See for a detailed description of the modes: https://sourcegraph.com/docs/dev/background-information/git_gc
+// See for a detailed description of the modes: https://docs-legacy.sourcegraph.com/dev/background-information/git_gc
 var gitGCMode = func() int {
 	// EnableGCAuto is a temporary flag that allows us to control whether or not
 	// `git gc --auto` is invoked during janitorial activities. This flag will
