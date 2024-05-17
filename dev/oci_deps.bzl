@@ -212,9 +212,11 @@ def oci_deps():
         image = "index.docker.io/sourcegraph/alpine-3.14",
     )
 
+    # https://hub.docker.com/_/docker/tags?name=dind
+    # Tag: docker:26.1.3-dind
     oci_pull(
         name = "upstream_dind_base",
-        digest = "sha256:b52760bc3766143ca050ab3f36f01108c30bbd6bc16094400855adfb9bd66f12",
+        digest = "sha256:ca2dd9db425230285567123ce06dbd3c2aed0eae23d58a1dd5787523a4329eea",
         image = "index.docker.io/library/docker",
     )
 
