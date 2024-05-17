@@ -22,6 +22,7 @@ go_library(
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/actor",
+        "//internal/api",
         "//internal/auth",
         "//internal/conf",
         "//internal/database",
