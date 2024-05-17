@@ -19,14 +19,7 @@
     import { writable } from 'svelte/store';
 
     export let externalServiceType: ExternalRepository['serviceType'] = ''
-    export let updateEditor: (subject: string, lastID: number, edit: SettingsEdit) => Promise<number>;
-    interface SettingsSubject {
-        id: string;
-        latestSettings: {
-            id: number;
-        } | null;
-    }
-    export let subjects: SettingsSubject[];
+    export let updateUserSetting: (edit: SettingsEdit) => Promise<void>;
 
     $: openInEditor = $settings?.openInEditor
 
@@ -39,34 +32,33 @@
     $: ({repoName, filePath, position, range} = parseBrowserRepoURL($page.url.toString()))
     $: start = position ?? range?.start
 
-    $: lastId = subjects.at(-1)?.latestSettings?.id
-    $: subjectId = subjects.at(-1)?.id
     $: defaultProjectPath = ''
-    $: selectedEditorId: typeof editorIds[number] | undefined
+    $: selectedEditorId = undefined
 
-    $: areSettingsValid = !!$selectedEditorId && isProjectPathValid($defaultProjectPath);
+    $: areSettingsValid = !!selectedEditorId && isProjectPathValid(defaultProjectPath);
 
     let isSaving = false;
     $: handleEditorUpdate = async (): Promise<void> => {
-        if (!$selectedEditorId || !$defaultProjectPath) {
+        if (!selectedEditorId || !defaultProjectPath) {
             return;
         }
         isSaving = true;
-        const newLastId1 = await updateEditor($subjectId, $lastId, {
-            value: $defaultProjectPath,
-            keyPath: [{property: 'openInEditor'}, {property: 'projectPaths.default'}],
-        });
-        lastId.set(newLastId1);
-        const newLastId2 = await updateEditor($subjectId, $lastId, {
-            value: [$selectedEditorId],
-            keyPath: [{property: 'openInEditor'}, {property: 'editorIds'}],
-        });
-        lastId.set(newLastId2);
-        isSaving = false;
+        try {
+            await updateUserSetting({
+                value: defaultProjectPath,
+                keyPath: [{property: 'openInEditor'}, {property: 'projectPaths.default'}],
+            });
+            await updateUserSetting({
+                value: [selectedEditorId],
+                keyPath: [{property: 'openInEditor'}, {property: 'editorIds'}],
+            });
 
-        openInEditor = {
-            editorIds: [$selectedEditorId],
-            'projectPaths.default': $defaultProjectPath,
+            openInEditor = {
+                editorIds: [selectedEditorId],
+                'projectPaths.default': defaultProjectPath,
+            }
+        } finally {
+            isSaving = false;
         }
     }
 
@@ -119,7 +111,7 @@
                     autocorrect="off"
                     autocapitalize="off"
                     spellcheck={false}
-                    bind:value={$defaultProjectPath}
+                    bind:value={defaultProjectPath}
                     class="form-input"
                 />
                 <p class="small form-info">
@@ -128,7 +120,7 @@
                     to <code>/Users/username/projects</code>.
                 </p>
                 <p class="form-label editor-label">Editor</p>
-                <select class="form-input" id="OpenInEditorForm-editor" bind:value={$selectedEditorId}>
+                <select class="form-input" id="OpenInEditorForm-editor" bind:value={selectedEditorId}>
                     <option value=""></option>
                     {#each supportedEditors.sort((a, b) => a.name.localeCompare(b.name)).filter(editor => editor.id !== 'custom') as editor}
                         <option value={editor.id}>{editor.name}</option>

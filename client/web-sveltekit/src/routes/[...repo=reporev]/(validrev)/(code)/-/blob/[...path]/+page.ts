@@ -1,10 +1,9 @@
 import { BehaviorSubject, concatMap, from, map } from 'rxjs'
 
-import { fetchBlameHunksMemoized, type BlameHunkData } from '@sourcegraph/web/src/repo/blame/shared'
+import { type BlameHunkData, fetchBlameHunksMemoized } from '@sourcegraph/web/src/repo/blame/shared'
 
 import { SourcegraphURL } from '$lib/common'
 import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
-import type { SettingsEdit } from '$lib/graphql-types'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 import { assertNonNullable } from '$lib/utils'
@@ -12,11 +11,9 @@ import { assertNonNullable } from '$lib/utils'
 import type { PageLoad, PageLoadEvent } from './$types'
 import {
     BlobDiffViewCommitQuery,
-    BlobFileViewHighlightedFileQuery,
-    BlobFileViewCommitQuery_revisionOverride,
     BlobFileViewBlobQuery,
-    EditSettings,
-    LatestSettingsQuery,
+    BlobFileViewCommitQuery_revisionOverride,
+    BlobFileViewHighlightedFileQuery,
 } from './page.gql'
 
 function loadDiffView({ params, url }: PageLoadEvent) {
@@ -114,29 +111,6 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
                 return null
             }),
         blameData,
-        updateEditor: async (subject: string, lastID: number, edit: SettingsEdit) => {
-            const mutationResult1 = await client.mutation(
-                EditSettings,
-                {
-                    lastID,
-                    subject,
-                    edit,
-                },
-                { requestPolicy: 'network-only', fetch }
-            )
-            if (!mutationResult1.data || mutationResult1.error) {
-                throw new Error(`Failed to update editor path: ${mutationResult1.error}`)
-            }
-            const settingsResult = await client.query(LatestSettingsQuery, {})
-            if (!settingsResult.data || settingsResult.error) {
-                throw new Error(`Failed to fetch latest settings during editor update: ${settingsResult.error}`)
-            }
-            const newLastId = settingsResult.data.viewerSettings.subjects.at(-1)?.latestSettings?.id
-            if (!newLastId) {
-                throw new Error('Failed to get new last ID from settings result')
-            }
-            return newLastId
-        },
     }
 }
 

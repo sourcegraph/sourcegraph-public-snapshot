@@ -2,10 +2,18 @@ import { error, redirect } from '@sveltejs/kit'
 
 import { isErrorLike, parseJSONCOrError } from '$lib/common'
 import { getGraphQLClient } from '$lib/graphql'
+import type { SettingsEdit } from '$lib/graphql-types'
 import type { Settings } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
-import { Init, EvaluatedFeatureFlagsQuery, GlobalAlertsSiteFlags, DisableSveltePrototype } from './layout.gql'
+import {
+    Init,
+    EvaluatedFeatureFlagsQuery,
+    GlobalAlertsSiteFlags,
+    DisableSveltePrototype,
+    EditSettings,
+    LatestSettingsQuery,
+} from './layout.gql'
 
 // Disable server side rendering for the whole app
 export const ssr = false
@@ -37,13 +45,10 @@ export const load: LayoutLoad = async ({ fetch }) => {
         error(500, `Failed to parse user settings: ${settings.message}`)
     }
 
-    const subjects = result.data.viewerSettings.subjects
-
     return {
         user: result.data.currentUser,
         // Initial user settings
         settings,
-        subjects,
         featureFlags: result.data.evaluatedFeatureFlags,
         globalSiteAlerts: globalSiteAlerts.then(result => result.data?.site),
         fetchEvaluatedFeatureFlags: async () => {
@@ -61,6 +66,33 @@ export const load: LayoutLoad = async ({ fetch }) => {
             )
             if (!mutationResult.data || mutationResult.error) {
                 throw new Error(`Failed to disable svelte feature flags: ${result.error}`)
+            }
+        },
+        updateUserSetting: async (edit: SettingsEdit): Promise<void> => {
+            // We have to set network-only here, because otherwise the client will reuse a previously cached value
+            const latestSettings = await client.query(LatestSettingsQuery, {}, { requestPolicy: 'network-only', fetch })
+            if (!latestSettings.data || latestSettings.error) {
+                throw new Error(`Failed to fetch latest settings during editor update: ${latestSettings.error}`)
+            }
+            const userSetting = latestSettings.data.viewerSettings.subjects.find(s => s.__typename === 'User')
+            if (!userSetting) {
+                throw new Error('Failed to find user settings subject')
+            }
+            const lastID = userSetting.latestSettings?.id
+            if (!lastID) {
+                throw new Error('Failed to get new last ID from settings result')
+            }
+            const mutationResult = await client.mutation(
+                EditSettings,
+                {
+                    lastID,
+                    subject: userSetting.id,
+                    edit,
+                },
+                { requestPolicy: 'network-only', fetch }
+            )
+            if (!mutationResult.data || mutationResult.error) {
+                throw new Error(`Failed to update editor path: ${mutationResult.error}`)
             }
         },
     }
