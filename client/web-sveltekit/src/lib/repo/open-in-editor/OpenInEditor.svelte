@@ -24,7 +24,7 @@
 
     $: editorSettingsErrorMessage = getEditorSettingsErrorMessage(openInEditor)
     $: editorIds = openInEditor?.editorIds ?? []
-    $: editors = !editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined;
+    $: editors = !editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined
 
     $: sourcegraphBaseURL = new URL($page.url).origin
 
