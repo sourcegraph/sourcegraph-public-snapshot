@@ -5,6 +5,7 @@ go_library(
     name = "version",
     srcs = ["version.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/version",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     x_defs = {
         "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
@@ -18,4 +19,5 @@ go_test(
     timeout = "short",
     srcs = ["version_test.go"],
     embed = [":version"],
+    tags = [TAG_INFRA_RELEASE],
 )

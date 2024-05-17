@@ -9,6 +9,7 @@ go_library(
         "telemetrygateway.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry/resolvers",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
@@ -40,6 +41,7 @@ go_test(
     ],
     embed = [":resolvers"],
     tags = [
+        TAG_INFRA_CORESERVICES,
         # Test requires localhost database
         "requires-network",
     ],

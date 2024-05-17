@@ -1,3 +1,13 @@
+<script lang="ts" context="module">
+    export enum FuzzyFinderTabType {
+        Repos = 'repos',
+        Symbols = 'symbols',
+        Files = 'files',
+    }
+
+    export type FuzzyFinderTabId = FuzzyFinderTabType | `${FuzzyFinderTabType}`
+</script>
+
 <script lang="ts">
     import { mdiClose } from '@mdi/js'
     import { tick } from 'svelte'
@@ -6,8 +16,8 @@
 
     import { nextSibling, onClickOutside, previousSibling } from '$lib/dom'
     import { getGraphQLClient } from '$lib/graphql'
-    import { formatShortcut } from '$lib/Hotkey'
     import Icon from '$lib/Icon.svelte'
+    import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import EmphasizedLabel from '$lib/search/EmphasizedLabel.svelte'
@@ -28,7 +38,7 @@
     export let open = false
     export let scope = ''
 
-    export function selectTab(tabID: 'repos' | 'symbols' | 'files') {
+    export function selectTab(tabID: FuzzyFinderTabId) {
         if (selectedTab.id !== tabID) {
             selectedOption = 0
             selectedTab = tabs.find(t => t.id === tabID) ?? tabs[0]
@@ -187,11 +197,11 @@
             >
                 <span slot="after-title" let:tab>
                     {#if tab.id === 'repos'}
-                        <kbd>{formatShortcut(reposHotkey)}</kbd>
+                        <KeyboardShortcut shorcut={reposHotkey} />
                     {:else if tab.id === 'symbols'}
-                        <kbd>{formatShortcut(symbolsHotkey)}</kbd>
+                        <KeyboardShortcut shorcut={symbolsHotkey} />
                     {:else if tab.id === 'files'}
-                        <kbd>{formatShortcut(filesHotkey)}</kbd>
+                        <KeyboardShortcut shorcut={filesHotkey} />
                     {/if}
                 </span>
             </TabsHeader>

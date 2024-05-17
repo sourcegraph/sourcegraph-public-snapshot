@@ -9,6 +9,7 @@ go_library(
         "tracing.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/internal/opentelemetry",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//lib/managedservicesplatform/runtime:__subpackages__"],
     deps = [
         "//lib/errors",

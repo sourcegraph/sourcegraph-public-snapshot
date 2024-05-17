@@ -192,7 +192,7 @@ func SourcegraphDatabase(getConfig func() (*sgconf.Config, error)) CheckFunc {
 		dsn := postgresdsn.New("", "", getEnv)
 
 		if err := pingPG(ctx, dsn); err != nil {
-			return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://sourcegraph.com/docs/dev/background-information/sg#changing-database-configuration)", dsn)
+			return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs-legacy.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
 		}
 		return nil
 	}
@@ -378,7 +378,7 @@ func DevPrivate(ctx context.Context) error {
 	if !exists {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: dev-private repository not found!"))
 		std.Out.WriteLine(output.Styledf(output.StyleWarning, "It's expected to exist at: %s", devPrivatePath))
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "See the documentation for how to get set up: https://sourcegraph.com/docs/dev/setup/quickstart#run-sg-setup"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "See the documentation for how to get set up: https://docs-legacy.sourcegraph.com/dev/setup/quickstart#run-sg-setup"))
 
 		std.Out.Write("")
 		return exit.NewEmptyExitErr(1)

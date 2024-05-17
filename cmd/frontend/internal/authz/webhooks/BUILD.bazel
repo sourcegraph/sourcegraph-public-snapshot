@@ -24,6 +24,7 @@ go_test(
     srcs = ["github_test.go"],
     embed = [":webhooks"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

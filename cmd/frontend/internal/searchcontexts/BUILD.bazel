@@ -4,6 +4,7 @@ go_library(
     name = "searchcontexts",
     srcs = ["init.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/searchcontexts",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",

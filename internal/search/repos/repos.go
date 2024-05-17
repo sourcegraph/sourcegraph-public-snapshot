@@ -19,7 +19,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -35,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	searchzoekt "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -661,7 +661,7 @@ func hasCommitAfter(ctx context.Context, gitserverClient gitserver.Client, repoN
 	// we ask for two commits here, but the second one we never actually need.
 	// One we figure out why `isRequestForSingleCommit` exists in the first place,
 	// we should update this.
-	commits, err := gitserverClient.Commits(ctx, repoName, gitserver.CommitsOptions{N: 2, After: timeRef, Range: revspec})
+	commits, err := gitserverClient.Commits(ctx, repoName, gitserver.CommitsOptions{N: 2, After: timeRef, Ranges: []string{revspec}})
 	if err != nil {
 		return false, err
 	}

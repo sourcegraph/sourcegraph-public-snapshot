@@ -10,6 +10,7 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies",
     tags = [
+        TAG_PLATFORM_GRAPH,
         # requires localhost database
         "requires-network",
     ],

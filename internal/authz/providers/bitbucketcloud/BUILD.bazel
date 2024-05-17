@@ -8,6 +8,7 @@ go_library(
         "provider.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers/bitbucketcloud",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/authz",
@@ -34,6 +35,7 @@ go_test(
     ],
     embed = [":bitbucketcloud"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         "requires-network",
     ],
     deps = [

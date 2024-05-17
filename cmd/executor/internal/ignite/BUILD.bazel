@@ -5,6 +5,7 @@ go_library(
     name = "ignite",
     srcs = ["list.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/ignite",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/executor:__subpackages__"],
     deps = ["//cmd/executor/internal/util"],
 )
@@ -14,5 +15,6 @@ go_test(
     timeout = "short",
     srcs = ["list_test.go"],
     embed = [":ignite"],
+    tags = [TAG_SEARCHSUITE],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

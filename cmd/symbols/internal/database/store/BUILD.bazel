@@ -10,6 +10,7 @@ go_library(
         "symbols.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/symbols:__subpackages__"],
     deps = [
         "//cmd/symbols/parser",
@@ -34,5 +35,6 @@ go_test(
         "symbols_test.go",
     ],
     embed = [":store"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

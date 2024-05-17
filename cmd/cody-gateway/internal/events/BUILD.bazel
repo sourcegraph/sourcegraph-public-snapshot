@@ -10,6 +10,7 @@ go_library(
         "instrumented.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -34,6 +35,7 @@ go_test(
         "buffered_test.go",
     ],
     embed = [":events"],
+    tags = [TAG_CODY_PRIME],
     deps = [
         "//lib/errors",
         "@com_github_hexops_autogold_v2//:autogold",

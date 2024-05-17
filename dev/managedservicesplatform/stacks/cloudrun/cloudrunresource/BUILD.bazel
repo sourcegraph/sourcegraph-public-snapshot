@@ -4,5 +4,6 @@ go_library(
     name = "cloudrunresource",
     srcs = ["cloudrunresource.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun/cloudrunresource",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
 )

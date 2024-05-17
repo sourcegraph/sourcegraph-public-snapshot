@@ -5,6 +5,7 @@ go_library(
     name = "sshagent",
     srcs = ["ssh_agent.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/sshagent",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//lib/errors",
@@ -18,6 +19,7 @@ go_test(
     name = "sshagent_test",
     srcs = ["ssh_agent_test.go"],
     embed = [":sshagent"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/encryption",
         "//lib/errors",

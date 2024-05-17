@@ -9,6 +9,7 @@ go_library(
         "validate.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/notebooks",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -32,6 +33,7 @@ go_test(
     ],
     embed = [":notebooks"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],

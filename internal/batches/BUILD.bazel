@@ -7,6 +7,7 @@ go_library(
         "doc.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",

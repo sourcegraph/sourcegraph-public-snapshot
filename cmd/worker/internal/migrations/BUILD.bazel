@@ -8,6 +8,7 @@ go_library(
         "version.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",
@@ -28,5 +29,6 @@ go_test(
     timeout = "short",
     srcs = ["init_test.go"],
     embed = [":migrations"],
+    tags = [TAG_INFRA_RELEASE],
     deps = ["//internal/oobmigration"],
 )

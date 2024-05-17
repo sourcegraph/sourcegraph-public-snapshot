@@ -68,7 +68,7 @@ type Event struct {
 // LogBackendEvent is a convenience function for logging backend events.
 //
 // Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
-// Learn more: https://sourcegraph.com/docs/dev/background-information/telemetry
+// Learn more: https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
 func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, evaluatedFlagSet featureflag.EvaluatedFlagSet, cohortID *string) error {
 	insertID, _ := uuid.NewRandom()
 	insertIDFinal := insertID.String()
@@ -106,7 +106,7 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 // LogEvent logs an event.
 //
 // Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
-// Learn more: https://sourcegraph.com/docs/dev/background-information/telemetry
+// Learn more: https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
 func LogEvent(ctx context.Context, db database.DB, args Event) error {
 	//lint:ignore SA1019 existing usage of deprecated functionality.
 	return LogEvents(ctx, db, []Event{args})
@@ -115,7 +115,7 @@ func LogEvent(ctx context.Context, db database.DB, args Event) error {
 // LogEvents logs a batch of events.
 //
 // Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
-// Learn more: https://sourcegraph.com/docs/dev/background-information/telemetry
+// Learn more: https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
 func LogEvents(ctx context.Context, db database.DB, events []Event) error {
 	if !conf.EventLoggingEnabled() {
 		return nil

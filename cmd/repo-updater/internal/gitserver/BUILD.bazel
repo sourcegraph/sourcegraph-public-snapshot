@@ -8,6 +8,7 @@ go_library(
         "repositoryservice.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/repo-updater:__subpackages__"],
     deps = [
         "//internal/api",

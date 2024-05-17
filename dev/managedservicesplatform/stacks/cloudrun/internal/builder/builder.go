@@ -17,8 +17,8 @@ type Variables struct {
 
 	// Image and ResolvedImageTag are used to declare the full image reference
 	// to deploy.
-	Image            string
-	ResolvedImageTag string
+	Image    string
+	ImageTag string
 	// GCPProjectID for all resources.
 	GCPProjectID string
 	// GCPRegion for all resources.

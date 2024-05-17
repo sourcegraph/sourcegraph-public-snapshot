@@ -16,6 +16,7 @@ go_library(
     ],
     embedsrcs = ["language-file-extensions.json"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/squirrel",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/symbols/types",
@@ -58,6 +59,7 @@ go_test(
         "test_repos/starlark/sample.bzl",
     ],
     embed = [":squirrel"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/search",
         "//internal/search/result",

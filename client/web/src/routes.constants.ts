@@ -47,6 +47,8 @@ export enum PageRoutes {
     // The CodySubscriptions page is a comparison of different Cody product tiers.
     CodySubscription = '/cody/subscription',
 
+    CodyManageTeam = '/cody/team/manage',
+
     CodySwitchAccount = '/cody/switch-account/:username',
     Own = '/own',
 }

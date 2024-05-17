@@ -101,7 +101,6 @@
     div {
         position: absolute;
         isolation: isolate;
-        z-index: 1;
         min-width: 10rem;
         font-size: 0.875rem;
         background-clip: padding-box;

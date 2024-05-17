@@ -13,6 +13,7 @@ go_library(
         "validators_vertex.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/validation",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/codeintel/lsif/protocol/reader",

@@ -22,6 +22,7 @@ go_library(
         "visitor.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/query",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/lazyregexp",
@@ -55,6 +56,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":query"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//lib/errors",
         "//lib/pointers",

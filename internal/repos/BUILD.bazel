@@ -146,6 +146,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":repos"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

@@ -14,6 +14,7 @@ import {
     EditSettings,
     LatestSettingsQuery,
 } from './layout.gql'
+import { mainNavigation, dotcomMainNavigation } from './navigation'
 
 // Disable server side rendering for the whole app
 export const ssr = false
@@ -47,6 +48,7 @@ export const load: LayoutLoad = async ({ fetch }) => {
 
     return {
         user: result.data.currentUser,
+        navigationEntries: window.context.sourcegraphDotComMode ? dotcomMainNavigation : mainNavigation,
         // Initial user settings
         settings,
         featureFlags: result.data.evaluatedFeatureFlags,

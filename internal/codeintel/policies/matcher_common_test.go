@@ -102,7 +102,7 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 
 	commits := func(ctx context.Context, repo api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
 		commits := []*gitdomain.Commit{}
-		for _, commit := range branchMembers[opts.Range[strings.Index(opts.Range, "..")+2:]] {
+		for _, commit := range branchMembers[opts.Ranges[0][strings.Index(opts.Ranges[0], "..")+2:]] {
 			c := &gitdomain.Commit{
 				ID: api.CommitID(commit),
 				Committer: &gitdomain.Signature{

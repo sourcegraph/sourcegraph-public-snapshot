@@ -8,6 +8,7 @@ go_library(
         "prometheus.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/messagesize",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/env",
@@ -27,6 +28,7 @@ go_test(
         "prometheus_test.go",
     ],
     embed = [":messagesize"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/grpc/testprotos/news/v1:news",
         "@com_github_google_go_cmp//cmp",
@@ -43,6 +45,7 @@ go_library(
     name = "env",
     srcs = ["messagesize.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/messagesize/env",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/env",
@@ -55,5 +58,6 @@ go_test(
     name = "env_test",
     srcs = ["messagesize_test.go"],
     embed = [":env"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

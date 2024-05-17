@@ -9,6 +9,7 @@ rust_binary(
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = all_crate_deps(
         normal = True,
@@ -40,6 +41,7 @@ rust_library(
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = [":__subpackages__"],
     deps = all_crate_deps(normal = True) + WORKSPACE_DEPS,
 )
@@ -51,6 +53,7 @@ rust_test(
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
+    tags = [TAG_PLATFORM_GRAPH],
     deps = all_crate_deps(normal = True) + WORKSPACE_DEPS,
 )
 
@@ -88,6 +91,7 @@ rust_test(
         "JAVA_SCIP_INDEX": "$(rootpath :java_groundtruth_scip)",
         "SCIP_SYNTAX_PATH": "$(rootpath :scip-syntax)",
     },
+    tags = [TAG_PLATFORM_GRAPH],
     deps = all_crate_deps(
         normal = True,
     ) + [

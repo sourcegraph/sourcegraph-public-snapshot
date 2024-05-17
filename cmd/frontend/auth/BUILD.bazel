@@ -50,6 +50,7 @@ go_test(
         "user_test.go",
     ],
     embed = [":auth"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//cmd/frontend/internal/app/ui",
         "//internal/actor",
@@ -58,6 +59,7 @@ go_test(
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",
+        "//internal/dotcom",
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/telemetry/telemetrytest",

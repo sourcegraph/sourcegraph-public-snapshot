@@ -8,6 +8,7 @@ go_library(
         "security_events.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/audit",
+    tags = [TAG_SECURITY],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -28,6 +29,7 @@ go_test(
         "security_events_test.go",
     ],
     embed = [":audit"],
+    tags = [TAG_SECURITY],
     deps = [
         "//internal/actor",
         "//internal/conf",

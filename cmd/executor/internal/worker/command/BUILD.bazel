@@ -14,6 +14,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/executor:__subpackages__"],
     deps = [
         "//cmd/executor/internal/util",
@@ -50,6 +51,7 @@ go_test(
         "util_test.go",
     ],
     embed = [":command"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//cmd/executor/internal/util",
         "//cmd/executor/internal/worker/cmdlogger",

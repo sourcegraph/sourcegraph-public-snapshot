@@ -19,16 +19,17 @@
     import Icon from '$lib/Icon.svelte'
     import { mark } from '$lib/images'
     import GlobalSidebarNavigation from '$lib/navigation/GlobalSidebarNavigation.svelte'
-    import { mainNavigation } from '$lib/navigation/mainNavigation'
     import MainNavigationEntry from '$lib/navigation/MainNavigationEntry.svelte'
     import Popover from '$lib/Popover.svelte'
     import { Badge, Button } from '$lib/wildcard'
 
     import { GlobalNavigation_User } from './GlobalNavigation.gql'
+    import type { NavigationEntry, NavigationMenu } from './mainNavigation'
     import UserMenu from './UserMenu.svelte'
 
     export let authenticatedUser: GlobalNavigation_User | null | undefined
     export let handleOptOut: (() => Promise<void>) | undefined
+    export let entries: (NavigationEntry | NavigationMenu)[]
 
     let isSidebarNavigationOpen: boolean = false
 
@@ -39,9 +40,9 @@
     $: withCustomContent = $navigationModeStore === NavigationMode.WithCustomContent
 </script>
 
-<header class="root">
+<header class="root" data-global-header>
     {#if isSidebarNavigationOpen}
-        <GlobalSidebarNavigation onClose={() => (isSidebarNavigationOpen = false)} />
+        <GlobalSidebarNavigation onClose={() => (isSidebarNavigationOpen = false)} {entries} />
     {/if}
 
     <div class="logo" class:with-custom-content={withCustomContent}>
@@ -59,7 +60,7 @@
     <nav class="plain-navigation" bind:this={$extensionElement}>
         {#if !withCustomContent}
             <ul class="plain-navigation-list">
-                {#each mainNavigation as entry (entry.label)}
+                {#each entries as entry (entry.label)}
                     <MainNavigationEntry {entry} />
                 {/each}
             </ul>

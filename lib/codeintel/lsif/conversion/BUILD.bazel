@@ -15,6 +15,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/codeintel/lsif/conversion/datastructures",
@@ -39,6 +40,7 @@ go_test(
     # it manually below.
     data = ["//lib/codeintel/lsif/testdata:data"],
     embed = [":conversion"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//lib/codeintel/lsif/conversion/datastructures",
         "//lib/codeintel/lsif/protocol",

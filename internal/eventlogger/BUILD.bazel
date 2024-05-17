@@ -4,5 +4,6 @@ go_library(
     name = "eventlogger",
     srcs = ["event_logger.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/eventlogger",
+    tags = [TAG_DATA_ANALYTICS],
     visibility = ["//:__subpackages__"],
 )

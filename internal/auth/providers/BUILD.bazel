@@ -8,6 +8,7 @@ go_library(
         "providers.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/auth/providers",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
     deps = [
         "//internal/extsvc",
@@ -20,6 +21,7 @@ go_test(
     name = "providers_test",
     srcs = ["providers_test.go"],
     embed = [":providers"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//schema",
         "@com_github_stretchr_testify//require",

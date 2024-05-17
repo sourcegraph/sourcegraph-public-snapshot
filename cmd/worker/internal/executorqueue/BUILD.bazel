@@ -13,6 +13,7 @@ go_library(
         "reporter.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/executorqueue",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//internal/codeintel/uploads/shared",
@@ -47,4 +48,5 @@ go_test(
     timeout = "short",
     srcs = ["queue_allocation_test.go"],
     embed = [":executorqueue"],
+    tags = [TAG_SEARCHSUITE],
 )

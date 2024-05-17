@@ -8,6 +8,7 @@ go_library(
         "first_commit.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/gitserver",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -22,6 +23,7 @@ go_test(
     timeout = "short",
     srcs = ["first_commit_test.go"],
     embed = [":gitserver"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/gitserver/gitdomain",
         "//lib/errors",

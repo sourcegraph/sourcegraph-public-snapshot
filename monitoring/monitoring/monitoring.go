@@ -185,7 +185,7 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 	description.TextPanel.Content = fmt.Sprintf(`
 	<div style="text-align: left;">
 	  <img src="https://sourcegraphstatic.com/sourcegraph-logo-light.png" style="height:30px; margin:0.5rem"></img>
-	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><b>%s:</b> %s <a style="font-size: 15px" target="_blank" href="https://sourcegraph.com/docs/dev/background-information/architecture">(⧉ architecture diagram)</a></span>
+	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><b>%s:</b> %s <a style="font-size: 15px" target="_blank" href="https://docs-legacy.sourcegraph.com/dev/background-information/architecture">(⧉ architecture diagram)</a></span>
 	</div>
 	`, c.Name, c.Description)
 	board.Panels = append(board.Panels, description)

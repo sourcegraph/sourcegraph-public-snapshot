@@ -5,6 +5,7 @@ go_library(
     name = "processor",
     srcs = ["bulk_processor.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/processor",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -30,6 +31,7 @@ go_test(
     srcs = ["bulk_processor_test.go"],
     embed = [":processor"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost database
         "requires-network",
     ],

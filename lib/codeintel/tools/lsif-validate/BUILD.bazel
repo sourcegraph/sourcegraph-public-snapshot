@@ -8,6 +8,7 @@ go_library(
         "validate.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-validate",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:private"],
     deps = [
         "//lib/codeintel/lsif/validation",
@@ -19,5 +20,6 @@ go_library(
 go_binary(
     name = "lsif-validate",
     embed = [":lsif-validate_lib"],
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
 )

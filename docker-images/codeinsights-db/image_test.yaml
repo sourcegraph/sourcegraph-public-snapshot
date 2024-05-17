@@ -25,6 +25,12 @@ commandTests:
     expectedOutput: ["^70\n"]
     exitCode: 0
 
+  - name: "upstream image is x86_64"
+    command: "uname"
+    args:
+      - -m
+    expectedOutput: ["^x86_64\n"]
+
 fileExistenceTests:
 - name: '/data/pgdata-12'
   path: '/data/pgdata-12'

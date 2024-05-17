@@ -5,6 +5,7 @@ go 1.22
 toolchain go1.22.1
 
 require (
+	connectrpc.com/connect v1.16.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/charmbracelet/glamour v0.5.0
 	github.com/cockroachdb/errors v1.11.1
@@ -37,7 +38,7 @@ require (
 	golang.org/x/sys v0.17.0
 	golang.org/x/term v0.17.0
 	google.golang.org/grpc v1.59.0
-	google.golang.org/protobuf v1.31.0
+	google.golang.org/protobuf v1.33.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )

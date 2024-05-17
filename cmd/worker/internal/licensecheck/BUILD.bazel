@@ -8,6 +8,7 @@ go_library(
         "worker.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/licensecheck",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",
@@ -34,6 +35,7 @@ go_test(
     srcs = ["check_test.go"],
     embed = [":licensecheck"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         "requires-network",
     ],
     deps = [

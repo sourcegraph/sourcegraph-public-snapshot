@@ -4,6 +4,7 @@ go_library(
     name = "cmd_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/audit/integration/cmd",
+    tags = [TAG_SECURITY],
     visibility = ["//visibility:private"],
     deps = [
         "//internal/audit",
@@ -16,5 +17,6 @@ go_library(
 go_binary(
     name = "cmd",
     embed = [":cmd_lib"],
+    tags = [TAG_SECURITY],
     visibility = ["//:__subpackages__"],
 )

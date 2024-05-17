@@ -4,6 +4,7 @@ go_library(
     name = "statefulset",
     srcs = ["statefulset.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/k8s/resource/statefulset",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/pointers",

@@ -5,6 +5,7 @@ go_library(
     name = "storage",
     srcs = ["storageclass.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/k8s/resource/storage",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/maps",
@@ -22,6 +23,7 @@ go_test(
         "storageclass_test.go",
     ],
     embed = [":storage"],
+    tags = [TAG_INFRA_RELEASE],
     deps = [
         "//lib/pointers",
         "@com_github_google_go_cmp//cmp",

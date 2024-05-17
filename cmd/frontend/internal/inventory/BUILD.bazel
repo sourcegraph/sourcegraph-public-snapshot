@@ -9,6 +9,7 @@ go_library(
         "inventory.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/trace",
@@ -28,6 +29,7 @@ go_test(
         "inventory_test.go",
     ],
     embed = [":inventory"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/fileutil",
         "//lib/errors",
