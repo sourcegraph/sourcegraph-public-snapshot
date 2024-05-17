@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
 	"time"
@@ -20,34 +21,21 @@ func TestSiteConfig(t *testing.T) {
 		removeTestUserAfterTest(t, testClient1.AuthenticatedUserID())
 
 		// Update site configuration to not allow sign up for builtin auth provider.
-		siteConfig, lastID, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
-		}
-		oldSiteConfig := new(schema.SiteConfiguration)
-		*oldSiteConfig = *siteConfig
-		defer func() {
-			_, lastID, err := client.SiteConfiguration()
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		siteConfig.AuthProviders = []schema.AuthProviders{
-			{
-				Builtin: &schema.BuiltinAuthProvider{
-					AllowSignup: false,
-					Type:        "builtin",
+		reset, err := client.ModifySiteConfiguration(func(siteConfig *schema.SiteConfiguration) {
+			siteConfig.AuthProviders = []schema.AuthProviders{
+				{
+					Builtin: &schema.BuiltinAuthProvider{
+						AllowSignup: false,
+						Type:        "builtin",
+					},
 				},
-			},
-		}
-		err = client.UpdateSiteConfiguration(siteConfig, lastID)
-		if err != nil {
-			t.Fatal(err)
+			}
+		})
+		require.NoError(t, err)
+		if reset != nil {
+			t.Cleanup(func() {
+				require.NoError(t, reset())
+			})
 		}
 
 		// Retry because the configuration update endpoint is eventually consistent
