@@ -1,7 +1,8 @@
 import React from 'react'
 
-import styles from './WhiteIcon.module.scss'
 import classNames from 'classnames'
+
+import styles from './WhiteIcon.module.scss'
 
 export const ICON_NAMES = ['mdi-account-multiple-plus-gradient'] as const
 
