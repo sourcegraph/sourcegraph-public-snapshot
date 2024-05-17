@@ -39,10 +39,10 @@
     $: ({repoName, filePath, position, range} = parseBrowserRepoURL($page.url.toString()))
     $: start = position ?? range?.start
 
-    $: lastId = writable<number>(subjects.at(-1)?.latestSettings?.id);
-    $: subjectId = writable<string>(subjects.at(-1)?.id);
-    $: defaultProjectPath = writable<string>('');
-    $: selectedEditorId = writable<typeof editorIds[number] | undefined>();
+    $: lastId = subjects.at(-1)?.latestSettings?.id
+    $: subjectId = subjects.at(-1)?.id
+    $: defaultProjectPath = ''
+    $: selectedEditorId: typeof editorIds[number] | undefined
 
     $: areSettingsValid = !!$selectedEditorId && isProjectPathValid($defaultProjectPath);
 
