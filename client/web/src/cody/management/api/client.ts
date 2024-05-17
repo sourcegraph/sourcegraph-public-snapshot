@@ -1,22 +1,10 @@
 import type * as types from './types'
 
-// Call is the bundle of data necessary for making an API request.
-// This is a sort of "meta request" in the same veign as the `gql`
-// template tag, see: https://github.com/apollographql/graphql-tag
-export interface Call<Resp> {
-    method: 'GET' | 'POST' | 'PATCH' | 'DELETE'
-    urlSuffix: string
-    requestBody?: any
-
-    // Unused. This will never be set, it is only to
-    // pass along the expected response type.
-    responseBody?: Resp
-}
-
 // Client provides the metadata for the methods exposed from the Cody Pro API client.
 //
 // This doesn't _do_ anything, it just returns the metadata for what needs to be done.
 // It is used in conjunction with a Caller implementation for actually fetching data.
+// eslint-disable-next-line @typescript-eslint/prefer-namespace-keyword, @typescript-eslint/no-namespace
 export module Client {
     // Subscriptions
 
@@ -51,6 +39,19 @@ export module Client {
     }
 }
 
+// Call is the bundle of data necessary for making an API request.
+// This is a sort of "meta request" in the same veign as the `gql`
+// template tag, see: https://github.com/apollographql/graphql-tag
+export interface Call<Resp> {
+    method: 'GET' | 'POST' | 'PATCH' | 'DELETE'
+    urlSuffix: string
+    requestBody?: any
+
+    // Unused. This will never be set, it is only to
+    // pass along the expected response type.
+    responseBody?: Resp
+}
+
 // Caller is a wrapper around an HTTP client. An implementation of this interface
 // will be responsible for making API calls to the backend.
 export interface Caller {
@@ -69,8 +70,8 @@ export class CodyProApiCaller implements Caller {
         this.origin = window.location.origin
     }
 
-    async call<Data>(call: Call<Data>): Promise<{ data?: Data; response: Response }> {
-        let bodyJson: string | undefined = undefined
+    public async call<Data>(call: Call<Data>): Promise<{ data?: Data; response: Response }> {
+        let bodyJson: string | undefined
         if (call.requestBody) {
             bodyJson = JSON.stringify(call.requestBody)
         }

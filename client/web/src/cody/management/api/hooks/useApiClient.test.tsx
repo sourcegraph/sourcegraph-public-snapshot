@@ -15,13 +15,13 @@ import { useApiCaller } from './useApiClient'
 // It's hard to do async hook testing correctly. This might be helpful:
 // https://react-hooks-testing-library.com/usage/advanced-hooks#async
 class FakeCaller implements Caller {
-    private callInFlight: boolean = false
+    private callInFlight = false
     private resolveLastCallFn: any | undefined = undefined
     private rejectLastCallFn: any | undefined = undefined
 
-    call<Data>(_: Call<Data>): Promise<{ data?: Data; response: Response }> {
+    public call<Data>(_: Call<Data>): Promise<{ data?: Data; response: Response }> {
         if (this.callInFlight) {
-            throw Error('There is already a call in-flight. You must call `reset()`')
+            throw new Error('There is already a call in-flight. You must call `reset()`')
         }
 
         return new Promise<{ data?: Data; response: Response }>((resolve, reject) => {
@@ -34,29 +34,29 @@ class FakeCaller implements Caller {
         })
     }
 
-    isCallInFlight(): boolean {
+    public isCallInFlight(): boolean {
         return this.callInFlight
     }
 
-    resolveLastCallWith<Data>(result: { data?: Data; response: Response }) {
+    public resolveLastCallWith<Data>(result: { data?: Data; response: Response }) {
         if (!this.resolveLastCallFn) {
-            throw Error('Cannot resolve. There is no call in-flight.')
+            throw new Error('Cannot resolve. There is no call in-flight.')
         }
         this.resolveLastCallFn(result)
         this.reset()
     }
 
-    rejectLastCallWith(reason: any) {
+    public rejectLastCallWith(reason: any) {
         if (!this.rejectLastCallFn) {
-            throw Error('Cannot reject. There is no call in-flight.')
+            throw new Error('Cannot reject. There is no call in-flight.')
         }
         this.rejectLastCallFn(reason)
         this.reset()
     }
 
-    reset() {
+    public reset() {
         if (!this.callInFlight) {
-            throw Error('Cannot reset. There is no call in-flight')
+            throw new Error('Cannot reset. There is no call in-flight')
         }
         this.callInFlight = false
         this.resolveLastCallFn = undefined
@@ -84,7 +84,7 @@ describe('useApiCaller()', () => {
         // Verify the initial state is loading.
         const { result, waitForNextUpdate } = renderHook(() => useApiCaller(call), { wrapper })
         {
-            let { loading, error, data } = result.current
+            const { loading, error, data } = result.current
             expect(loading).toBe(true)
             expect(data).toBeUndefined()
             expect(error).toBeUndefined()
@@ -101,7 +101,7 @@ describe('useApiCaller()', () => {
 
         // Verify the updated state has the result from the caller.
         {
-            let { loading, error, data } = result.current
+            const { loading, error, data } = result.current
             expect(loading).toBe(false)
             expect(data).toBe('some value')
             expect(error).toBeUndefined()
@@ -117,18 +117,18 @@ describe('useApiCaller()', () => {
         // Verify the initial state is loading.
         const { result, waitForNextUpdate } = renderHook(() => useApiCaller(call), { wrapper })
         {
-            let { loading, error, data } = result.current
+            const { loading, error, data } = result.current
             expect(loading).toBe(true)
             expect(data).toBeUndefined()
             expect(error).toBeUndefined()
         }
 
-        mockCaller.rejectLastCallWith(Error('Random Network Error'))
+        mockCaller.rejectLastCallWith(new Error('Random Network Error'))
         await waitForNextUpdate()
 
         // Verify the error field is set
         {
-            let { loading, error, data } = result.current
+            const { loading, error, data } = result.current
             expect(loading).toBe(false)
             expect(data).toBeUndefined()
             expect(error).toBeTruthy()

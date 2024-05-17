@@ -36,7 +36,6 @@ export function useApiCaller<Resp>(call: Call<Resp>): ReactFriendlyApiResponse<R
 
         ;(async () => {
             try {
-                console.debug(`calling API '${call.method} ${call.urlSuffix}'`)
                 const callerResponse = await caller.call(call)
 
                 if (ignore) {
@@ -59,21 +58,21 @@ export function useApiCaller<Resp>(call: Call<Resp>): ReactFriendlyApiResponse<R
                     // - On a 500 response, perhaps replace the current UI with a full-page error. e.g.
                     //   http://github.com/500 or http://github.com/501
                     setData(undefined)
-                    setError(Error(`unexpected status code: ${callerResponse.response.status}`))
+                    setError(new Error(`unexpected status code: ${callerResponse.response.status}`))
                     setResponse(callerResponse.response)
 
                     // Provide a clearer message. A 401 typically comes from the user's SAMS credentials
                     // having expired on the backend.
                     if (callerResponse.response.status === 401) {
-                        setError(Error('Please log out and log back in.'))
+                        setError(new Error('Please log out and log back in.'))
                     }
                 }
-            } catch (err) {
+            } catch (error) {
                 if (ignore) {
                     return
                 }
                 setData(undefined)
-                setError(err)
+                setError(error)
                 setResponse(undefined)
                 setLoading(false)
             }
