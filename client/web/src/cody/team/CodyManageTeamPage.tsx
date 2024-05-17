@@ -106,7 +106,8 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                 >
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <div className="d-inline-flex align-items-center">
-                            <WhiteIcon name="mdi-account-multiple-plus-gradient" />
+                            <WhiteIcon name="mdi-account-multiple-plus-gradient" className="mr-3" />
+                            Manage team
                         </div>
                     </PageHeader.Heading>
                 </PageHeader>
