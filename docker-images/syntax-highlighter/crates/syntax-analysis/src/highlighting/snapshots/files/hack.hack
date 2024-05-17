@@ -38,6 +38,10 @@ function main(): void {
   $a1 = "foo"."bar";
   echo "\$v1 = ".$v1.", \$v2 = ".$v2."\n";
 
+  // NOTE: Tree-sitter grammar does not support
+  //       string interpolation
+  $y = "hello $x[0]";
+  $y = "hello $x->foo";
   // Control Flow
   $i = 1;
   do {
@@ -60,8 +64,10 @@ function main(): void {
   // Expressions
   $d = dict[];
   $xhp = <tt>Hello <strong>{$user_name}</strong>
+    Text in the markup
     <!-- this is a comment -->
 </tt>;
+
   $d[nameof C] = 4;
   $v = vec[1, 2, 3];
   $v[0] = 42;
@@ -69,9 +75,13 @@ function main(): void {
   $x = tuple(1, 2.0, null);
   $x is (~int, @float, ?bool);
   $s = shape('name' => 'db-01', 'age' => 365);
+  $x = true;
+  $y = false;
+  $x = True;
+  $y = FALSE;
 
 // heredoc
-<<<EOT
+$s = <<<EOT
 	$('a') abc $(function{return;})
 EOT;
 

@@ -221,6 +221,20 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                     ^^^^ StringLiteral
 //                                         ^ PunctuationDelimiter
   
+    // NOTE: Tree-sitter grammar does not support
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    //       string interpolation
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    $y = "hello $x[0]";
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^^^^^^^^ StringLiteral
+//                    ^ PunctuationDelimiter
+    $y = "hello $x->foo";
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^^^^^^^^^^ StringLiteral
+//                      ^ PunctuationDelimiter
     // Control Flow
 //  ^^^^^^^^^^^^^^^ Comment
     $i = 1;
@@ -313,15 +327,17 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                       ^^ Tag
 //                                         ^^^^^^ Tag
 //                                               ^ IdentifierOperator
-//                                                 StringLiteral 61:48..62:4
+//                                                 StringLiteral 65:48..67:4
+      Text in the markup
       <!-- this is a comment -->
 //    ^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
-//                               StringLiteral 62:30..63:0
+//                               StringLiteral 67:30..68:0
   </tt>;
 //^^ Tag
 //  ^^ Tag
 //    ^ IdentifierOperator
 //     ^ PunctuationDelimiter
+  
     $d[nameof C] = 4;
 //  ^^ Identifier
 //     ^^^^^^ Identifier
@@ -385,11 +401,33 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                      ^^ IdentifierOperator
 //                                         ^^^ NumericLiteral
 //                                             ^ PunctuationDelimiter
+    $x = true;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^ BooleanLiteral
+//           ^ PunctuationDelimiter
+    $y = false;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^ BooleanLiteral
+//            ^ PunctuationDelimiter
+    $x = True;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^ BooleanLiteral
+//           ^ PunctuationDelimiter
+    $y = FALSE;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^ BooleanLiteral
+//            ^ PunctuationDelimiter
   
   // heredoc
 //^^^^^^^^^^ Comment
-  <<<EOT
-//^^^^^^ Comment 73:0..75:3
+  $s = <<<EOT
+//^^ Identifier
+//   ^ IdentifierOperator
+//     ^^^^^^ StringLiteral 83:5..85:3
    $('a') abc $(function{return;})
   EOT;
 //   ^ PunctuationDelimiter
@@ -561,7 +599,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^^^^^^^^^^ Comment
   interface StackLike<T> {
 //^^^^^^^^^ Keyword
-//          ^^^^^^^^^ Identifier
+//          ^^^^^^^^^ IdentifierType
 //                   ^ IdentifierOperator
 //                    ^ IdentifierType
 //                     ^ IdentifierOperator
