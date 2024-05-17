@@ -65,7 +65,7 @@ func TestExecRequest(t *testing.T) {
 			Name: "Command",
 			Request: &v1.ExecRequest{
 				Repo: "github.com/gorilla/mux",
-				Args: [][]byte{[]byte("diff")},
+				Args: [][]byte{[]byte("diff-tree")},
 			},
 			ExpectedCode:  codes.Unknown,
 			ExpectedBody:  "teststdout",
@@ -122,12 +122,12 @@ func TestExecRequest(t *testing.T) {
 		GitBackendSource: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			backend := git.NewMockGitBackend()
 			backend.ExecFunc.SetDefaultHook(func(ctx context.Context, args ...string) (io.ReadCloser, error) {
-				if !gitcli.IsAllowedGitCmd(logtest.Scoped(t), args, fs.RepoDir(repoName)) {
+				if !gitcli.IsAllowedGitCmd(logtest.Scoped(t), args) {
 					return nil, gitcli.ErrBadGitCommand
 				}
 
 				switch args[0] {
-				case "diff":
+				case "diff-tree":
 					var stdout bytes.Buffer
 					stdout.Write([]byte("teststdout"))
 					return &errorReader{

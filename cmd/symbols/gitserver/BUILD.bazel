@@ -19,7 +19,6 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//internal/types",
-        "//lib/errors",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )

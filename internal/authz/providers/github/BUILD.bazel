@@ -47,6 +47,7 @@ go_test(
     deps = [
         "//internal/api",
         "//internal/authz",
+        "//internal/conf",
         "//internal/database/dbmocks",
         "//internal/extsvc",
         "//internal/extsvc/auth",

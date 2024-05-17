@@ -595,3 +595,16 @@
   - oss.terrastruct.com/util-go
   - ISC
   - *5
+- - :license
+  - khroma
+  - MIT
+  - :who:
+    :why:
+    :versions: []
+    :when: 2024-05-17 13:16:23.875425000 Z
+- - :permit
+  - EPL-2.0
+  - :who:
+    :why: permissive open source license
+    :versions: []
+    :when: 2024-05-17 13:21:45.702008000 Z

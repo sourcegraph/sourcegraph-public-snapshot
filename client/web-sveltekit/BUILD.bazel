@@ -93,6 +93,7 @@ BUILD_DEPS = [
     ":node_modules/fzf",
     ":node_modules/graphql",
     ":node_modules/hotkeys-js",
+    ":node_modules/mermaid",
     ":node_modules/prismjs",
     ":node_modules/sass",
     ":node_modules/signale",

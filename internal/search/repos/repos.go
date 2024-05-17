@@ -661,7 +661,7 @@ func hasCommitAfter(ctx context.Context, gitserverClient gitserver.Client, repoN
 	// we ask for two commits here, but the second one we never actually need.
 	// One we figure out why `isRequestForSingleCommit` exists in the first place,
 	// we should update this.
-	commits, err := gitserverClient.Commits(ctx, repoName, gitserver.CommitsOptions{N: 2, After: timeRef, Range: revspec})
+	commits, err := gitserverClient.Commits(ctx, repoName, gitserver.CommitsOptions{N: 2, After: timeRef, Ranges: []string{revspec}})
 	if err != nil {
 		return false, err
 	}

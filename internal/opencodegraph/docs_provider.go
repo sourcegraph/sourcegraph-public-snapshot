@@ -86,19 +86,19 @@ var docsPatterns = []struct {
 		PathPattern:    regexp.MustCompile(`\.tsx?$`),
 		ContentPattern: regexp.MustCompile(`eventLogger.log(?:ViewEvent)?`),
 		Title:          "Telemetry",
-		URL:            "https://sourcegraph.com/docs/dev/background-information/telemetry#sourcegraph-web-app",
+		URL:            "https://docs-legacy.sourcegraph.com/dev/background-information/telemetry#sourcegraph-web-app",
 	},
 	{
 		Id:             "css",
 		PathPattern:    regexp.MustCompile(`\.tsx?$`),
 		ContentPattern: regexp.MustCompile(`import styles from.*\.module\.s?css'`),
 		Title:          "CSS in client/web",
-		URL:            "https://sourcegraph.com/docs/dev/background-information/web/styling",
+		URL:            "https://docs-legacy.sourcegraph.com/dev/background-information/web/styling",
 	},
 	{
 		Id:          "bazel",
 		PathPattern: regexp.MustCompile(`(^|/)BUILD\.bazel$`),
 		Title:       "Bazel at Sourcegraph",
-		URL:         "https://sourcegraph.com/docs/dev/background-information/bazel",
+		URL:         "https://docs-legacy.sourcegraph.com/dev/background-information/bazel",
 	},
 }
