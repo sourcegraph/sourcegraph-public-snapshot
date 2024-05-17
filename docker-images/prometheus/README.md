@@ -5,7 +5,7 @@ The `sourcegraph/prometheus` image provides an all-in-one image through `prom-wr
 - Vanilla Prometheus with embedded Sourcegraph configuration
 - Bundled Alertmanager with a `siteConfigSubscriber` sidecar service to automatically apply relevant configuration changes to Alertmanager
 
-To learn more, refer to the [Sourcegraph observability developer guide](https://sourcegraph.com/docs/dev/background-information/observability) and [monitoring architecture](https://handbook.sourcegraph.com/engineering/observability/monitoring_architecture#sourcegraph-prometheus).
+To learn more, refer to the [Sourcegraph observability developer guide](https://docs-legacy.sourcegraph.com/dev/background-information/observability) and [monitoring architecture](https://handbook.sourcegraph.com/engineering/observability/monitoring_architecture#sourcegraph-prometheus).
 
 ## Image API
 

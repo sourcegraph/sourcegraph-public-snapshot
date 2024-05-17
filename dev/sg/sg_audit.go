@@ -172,7 +172,7 @@ In order to be compliant with SOC2, you or someone from your team *must* documen
 2. Explain why no test plan was provided and why the PR wasn't reviewed before being merged.
 3. Close the issue.
 
-Read more about [test plans](https://sourcegraph.com/docs/dev/background-information/testing_principles#test-plans) and [reviews](https://docs.sourcegraph.com/dev/background-information/pull_request_reviews).
+Read more about [test plans](https://docs-legacy.sourcegraph.com/dev/background-information/testing_principles#test-plans) and [reviews](https://docs.sourcegraph.com/dev/background-information/pull_request_reviews).
 {{""}}
 {{- range . }}
 - _{{ .CreatedAt }}_ @{{ .Author }}

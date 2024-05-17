@@ -2783,7 +2783,7 @@ type SiteConfiguration struct {
 	CodyEnabled *bool `json:"cody.enabled,omitempty"`
 	// CodyPermissions description: Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://sourcegraph.com/docs/admin/access_control
 	CodyPermissions *bool `json:"cody.permissions,omitempty"`
-	// CodyRestrictUsersFeatureFlag description: DEPRECATED; see cody.permissions instead. PRIOR DESCRIPTION: Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://sourcegraph.com/docs/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
+	// CodyRestrictUsersFeatureFlag description: DEPRECATED; see cody.permissions instead. PRIOR DESCRIPTION: Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://docs-legacy.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
 	CodyRestrictUsersFeatureFlag *bool `json:"cody.restrictUsersFeatureFlag,omitempty"`
 	// Completions description: Configuration for the completions service.
 	Completions *Completions `json:"completions,omitempty"`
