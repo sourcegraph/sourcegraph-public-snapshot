@@ -69,6 +69,7 @@
   "newtype"
   "clone"
   "as"
+  "concurrent"
 ] @keyword.operator
 
 "return" @keyword.return
