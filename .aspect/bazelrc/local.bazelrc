@@ -22,3 +22,9 @@ common --remote_cache=https://storage.googleapis.com/local_bazel_remote_cache
 # Docs: https://bazel.build/reference/command-line-reference#flag--experimental_remote_cache_async
 # Appears to be quite unstable, disabling for now
 # common  --experimental_remote_cache_async
+
+
+# Disables declaration file generation from pnpm workspaces (i.e. all sub projects in client/)
+# which removes tsc from the loop of compilation.
+# Docs: https://docs.aspect.build/rulesets/aspect_rules_ts/docs/transpiler/#avoid-eager-type-checks-via-npm_package
+build --@aspect_rules_js//npm:exclude_declarations_from_npm_packages
