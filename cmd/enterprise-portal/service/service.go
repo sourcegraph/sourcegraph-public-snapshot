@@ -7,6 +7,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/codyaccessservice"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice"
@@ -56,9 +59,26 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	server := httpserver.NewFromAddr(
 		listenAddr,
 		&http.Server{
-			ReadTimeout:  2 * time.Minute,
-			WriteTimeout: 2 * time.Minute,
-			Handler:      httpServer,
+			Addr: listenAddr,
+			Handler: h2c.NewHandler(
+				otelhttp.NewHandler(
+					// Cloud Run only supports HTTP/2 if the service accepts HTTP/2 cleartext (h2c),
+					// see https://cloud.google.com/run/docs/configuring/http2
+					httpServer,
+					"handler",
+					// Don't trust incoming spans, start our own.
+					otelhttp.WithPublicEndpoint(),
+					// Generate custom span names from the request, the default is very vague.
+					otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
+						// Prefix with 'handle' because outgoing HTTP requests can have similar-looking
+						// spans.
+						return fmt.Sprintf("handle.%s %s", r.Method, r.URL.Path)
+					}),
+				),
+				&http2.Server{},
+			),
+			ReadTimeout:  30 * time.Second,
+			WriteTimeout: time.Minute,
 		},
 	)
 	return server, nil
