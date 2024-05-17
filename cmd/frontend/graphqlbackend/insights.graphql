@@ -141,7 +141,13 @@ type InsightSeriesStatus {
     """
     Data points that are flagged terminally incomplete for this series.
     """
-    incompleteDatapoints: [IncompleteDatapointAlert!]!
+    incompleteDatapoints(
+        """
+        By default, incomplete datapoints are aggregated across all repositories.
+        Setting this to false will allow resolving the repository.
+        """
+        aggregateRepositories: Boolean = true
+    ): [IncompleteDatapointAlert!]!
 }
 
 """
@@ -162,6 +168,11 @@ type TimeoutDatapointAlert implements IncompleteDatapointAlert {
     The data point that is incomplete.
     """
     time: DateTime!
+
+    """
+    The repository that this data point is incomplete for. This field will only resolve if `aggregateRepositories` on `incompleteDatapoints` is set to true.
+    """
+    repository: Repository
 }
 
 """
@@ -177,6 +188,11 @@ type GenericIncompleteDatapointAlert implements IncompleteDatapointAlert {
     A message describing why the datapoint was marked incomplete.
     """
     reason: String!
+
+    """
+    The repository that this data point is incomplete for. This field will only resolve if `aggregateRepositories` on `incompleteDatapoints` is set to true.
+    """
+    repository: Repository
 }
 
 extend type Query {
@@ -278,7 +294,7 @@ type InsightsDashboard implements Node {
     views(first: Int, after: ID): InsightViewConnection
 
     """
-    The permission grants assossiated with the dashboard.
+    The permission grants associated with the dashboard.
     """
     grants: InsightsPermissionGrants!
 }

@@ -31,6 +31,7 @@ type Interface interface {
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
 	GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error)
 	LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
+	LoadIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
 	AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error
 	GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts) ([]SeriesPointForExport, error)
 }
@@ -845,6 +846,31 @@ func (s *Store) LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID
 		if err = rows.Scan(
 			&tmp.Reason,
 			&tmp.Time); err != nil {
+			return err
+		}
+		results = append(results, tmp)
+		return nil
+	})
+}
+
+// This is a variant of LoadAggregatedIncompleteDatapoints, but it retains the repoId so that
+// the graphql resolvers can resolve the repository.l
+func (s *Store) LoadIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error) {
+	if seriesID == 0 {
+		return nil, errors.New("invalid seriesID")
+	}
+
+	q := "select reason, time, repo_id from insight_series_incomplete_points where series_id = %s group by reason, time, repo_id;"
+	rows, err := s.Query(ctx, sqlf.Sprintf(q, seriesID))
+	if err != nil {
+		return nil, err
+	}
+	return results, scanAll(rows, func(s scanner) (err error) {
+		var tmp IncompleteDatapoint
+		if err = rows.Scan(
+			&tmp.Reason,
+			&tmp.Time,
+			&tmp.RepoId); err != nil {
 			return err
 		}
 		results = append(results, tmp)

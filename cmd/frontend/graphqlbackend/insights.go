@@ -99,6 +99,11 @@ type InsightsDataPointResolver interface {
 type InsightViewDebugResolver interface {
 	Raw(context.Context) ([]string, error)
 }
+
+type IncompleteDatapointsArgs struct {
+	AggregateRepositories bool
+}
+
 type InsightStatusResolver interface {
 	TotalPoints(context.Context) (int32, error)
 	PendingJobs(context.Context) (int32, error)
@@ -106,7 +111,7 @@ type InsightStatusResolver interface {
 	FailedJobs(context.Context) (int32, error)
 	BackfillQueuedAt(context.Context) *gqlutil.DateTime
 	IsLoadingData(context.Context) (*bool, error)
-	IncompleteDatapoints(ctx context.Context) ([]IncompleteDatapointAlert, error)
+	IncompleteDatapoints(ctx context.Context, args *IncompleteDatapointsArgs) ([]IncompleteDatapointAlert, error)
 }
 
 type InsightsPointsArgs struct {
@@ -498,11 +503,13 @@ type IncompleteDatapointAlert interface {
 
 type TimeoutDatapointAlert interface {
 	Time() gqlutil.DateTime
+	Repository(ctx context.Context) (*RepositoryResolver, error)
 }
 
 type GenericIncompleteDatapointAlert interface {
 	Time() gqlutil.DateTime
 	Reason() string
+	Repository(ctx context.Context) (*RepositoryResolver, error)
 }
 
 type ValidateScopedInsightQueryArgs struct {

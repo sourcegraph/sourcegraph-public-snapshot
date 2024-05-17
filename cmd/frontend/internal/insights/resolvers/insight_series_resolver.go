@@ -3,6 +3,8 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"sort"
 	"strconv"
 	"sync"
@@ -79,7 +81,7 @@ type statusInfo struct {
 type (
 	GetSeriesQueueStatusFunc    func(ctx context.Context, seriesID string) (*queryrunner.JobsStatus, error)
 	GetSeriesBackfillsFunc      func(ctx context.Context, seriesID int) ([]scheduler.SeriesBackfill, error)
-	GetIncompleteDatapointsFunc func(ctx context.Context, seriesID int) ([]store.IncompleteDatapoint, error)
+	GetIncompleteDatapointsFunc func(ctx context.Context, seriesID int, aggregateRepositories bool) ([]store.IncompleteDatapoint, error)
 	insightStatusResolver       struct {
 		getQueueStatus          GetSeriesQueueStatusFunc
 		getSeriesBackfills      GetSeriesBackfillsFunc
@@ -89,6 +91,8 @@ type (
 
 		status    statusInfo
 		statusErr error
+
+		db database.DB
 	}
 )
 
@@ -161,18 +165,23 @@ func NewStatusResolver(r *baseInsightResolver, viewSeries types.InsightViewSerie
 		backfillStore := scheduler.NewBackfillStore(r.insightsDB)
 		return backfillStore.LoadSeriesBackfills(ctx, seriesID)
 	}
-	getIncompletes := func(ctx context.Context, seriesID int) ([]store.IncompleteDatapoint, error) {
-		return r.timeSeriesStore.LoadAggregatedIncompleteDatapoints(ctx, seriesID)
+	getIncompletes := func(ctx context.Context, seriesID int, aggregateRepositories bool) ([]store.IncompleteDatapoint, error) {
+		if aggregateRepositories {
+			return r.timeSeriesStore.LoadAggregatedIncompleteDatapoints(ctx, seriesID)
+		} else {
+			return r.timeSeriesStore.LoadIncompleteDatapoints(ctx, seriesID)
+		}
 	}
-	return newStatusResolver(getStatus, getBackfills, getIncompletes, viewSeries)
+	return newStatusResolver(getStatus, getBackfills, getIncompletes, viewSeries, r.postgresDB)
 }
 
-func newStatusResolver(getQueueStatus GetSeriesQueueStatusFunc, getSeriesBackfills GetSeriesBackfillsFunc, getIncompleteDatapoints GetIncompleteDatapointsFunc, series types.InsightViewSeries) *insightStatusResolver {
+func newStatusResolver(getQueueStatus GetSeriesQueueStatusFunc, getSeriesBackfills GetSeriesBackfillsFunc, getIncompleteDatapoints GetIncompleteDatapointsFunc, series types.InsightViewSeries, db database.DB) *insightStatusResolver {
 	return &insightStatusResolver{
 		getQueueStatus:          getQueueStatus,
 		getSeriesBackfills:      getSeriesBackfills,
 		series:                  series,
 		getIncompleteDatapoints: getIncompleteDatapoints,
+		db:                      db,
 	}
 }
 
@@ -514,11 +523,12 @@ var (
 
 type IncompleteDataPointAlertResolver struct {
 	point store.IncompleteDatapoint
+	db    database.DB
 }
 
 func (i *IncompleteDataPointAlertResolver) ToTimeoutDatapointAlert() (graphqlbackend.TimeoutDatapointAlert, bool) {
 	if i.point.Reason == store.ReasonTimeout {
-		return &timeoutDatapointAlertResolver{point: i.point}, true
+		return &timeoutDatapointAlertResolver{point: i.point, db: i.db}, true
 	}
 	return nil, false
 }
@@ -528,7 +538,7 @@ func (i *IncompleteDataPointAlertResolver) ToGenericIncompleteDatapointAlert() (
 	case store.ReasonTimeout:
 		return nil, false
 	}
-	return &genericIncompleteDatapointAlertResolver{point: i.point}, true
+	return &genericIncompleteDatapointAlertResolver{point: i.point, db: i.db}, true
 }
 
 func (i *IncompleteDataPointAlertResolver) Time() gqlutil.DateTime {
@@ -537,14 +547,20 @@ func (i *IncompleteDataPointAlertResolver) Time() gqlutil.DateTime {
 
 type timeoutDatapointAlertResolver struct {
 	point store.IncompleteDatapoint
+	db    database.DB
 }
 
 func (t *timeoutDatapointAlertResolver) Time() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: t.point.Time}
 }
 
+func (t *timeoutDatapointAlertResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	return repositoryResolver(ctx, t.db, t.point.RepoId)
+}
+
 type genericIncompleteDatapointAlertResolver struct {
 	point store.IncompleteDatapoint
+	db    database.DB
 }
 
 func (g *genericIncompleteDatapointAlertResolver) Time() gqlutil.DateTime {
@@ -558,10 +574,18 @@ func (g *genericIncompleteDatapointAlertResolver) Reason() string {
 	}
 }
 
-func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context) (resolvers []graphqlbackend.IncompleteDatapointAlert, err error) {
-	incomplete, err := i.getIncompleteDatapoints(ctx, i.series.InsightSeriesID)
+func (g *genericIncompleteDatapointAlertResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	return repositoryResolver(ctx, g.db, g.point.RepoId)
+}
+
+func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context, args *graphqlbackend.IncompleteDatapointsArgs) (resolvers []graphqlbackend.IncompleteDatapointAlert, err error) {
+	incomplete, err := i.getIncompleteDatapoints(ctx, i.series.InsightSeriesID, args.AggregateRepositories)
+	// Before this change we wouldn't sort the datapoints. This should make it easier to understand a long list of datapoints.
+	sort.Slice(incomplete, func(i, j int) bool {
+		return incomplete[i].Time.After(incomplete[j].Time)
+	})
 	for _, reason := range incomplete {
-		resolvers = append(resolvers, &IncompleteDataPointAlertResolver{point: reason})
+		resolvers = append(resolvers, &IncompleteDataPointAlertResolver{point: reason, db: i.db})
 	}
 
 	return resolvers, err
@@ -572,4 +596,16 @@ func isNilOrEmpty(s *string) bool {
 		return true
 	}
 	return *s == ""
+}
+
+func repositoryResolver(ctx context.Context, db database.DB, repoId *int) (*graphqlbackend.RepositoryResolver, error) {
+	if repoId == nil {
+		return nil, nil
+	}
+	gsClient := gitserver.NewClient("graphql.search.results.repositories")
+	repo, err := db.Repos().Get(ctx, api.RepoID(*repoId))
+	if err != nil {
+		return nil, err
+	}
+	return graphqlbackend.NewRepositoryResolver(db, gsClient, repo), nil
 }
