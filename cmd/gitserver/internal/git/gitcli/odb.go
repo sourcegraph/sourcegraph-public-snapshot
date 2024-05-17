@@ -50,7 +50,7 @@ func (g *gitCLIBackend) GetCommit(ctx context.Context, commit api.CommitID, incl
 		// If exit code is 128 and `fatal: bad object` is part of stderr, most likely we
 		// are referencing a commit that does not exist.
 		// We want to return a gitdomain.RevisionNotFoundError in that case.
-		var e *CommandFailedError
+		var e *commandFailedError
 		if errors.As(err, &e) && e.ExitStatus == 128 && bytes.Contains(e.Stderr, []byte("fatal: bad object")) {
 			return nil, &gitdomain.RevisionNotFoundError{Repo: g.repoName, Spec: string(commit)}
 		}
@@ -175,7 +175,7 @@ func (g *gitCLIBackend) getBlobOID(ctx context.Context, commit api.CommitID, pat
 		// If exit code is 128 and `not a tree object` is part of stderr, most likely we
 		// are referencing a commit that does not exist.
 		// We want to return a gitdomain.RevisionNotFoundError in that case.
-		var e *CommandFailedError
+		var e *commandFailedError
 		if errors.As(err, &e) && e.ExitStatus == 128 {
 			if bytes.Contains(e.Stderr, []byte("not a tree object")) || bytes.Contains(e.Stderr, []byte("Not a valid object name")) {
 				return "", &gitdomain.RevisionNotFoundError{Repo: g.repoName, Spec: string(commit)}
@@ -225,7 +225,7 @@ func (g *gitCLIBackend) BehindAhead(ctx context.Context, left, right string) (*g
 
 	out, err := io.ReadAll(rc)
 	if err != nil {
-		var e *CommandFailedError
+		var e *commandFailedError
 		if errors.As(err, &e) {
 			switch {
 			case e.ExitStatus == 128 && bytes.Contains(e.Stderr, []byte("fatal: ambiguous argument")):
@@ -262,7 +262,7 @@ func (g *gitCLIBackend) FirstEverCommit(ctx context.Context) (api.CommitID, erro
 
 	out, err := io.ReadAll(rc)
 	if err != nil {
-		var cmdFailedErr *CommandFailedError
+		var cmdFailedErr *commandFailedError
 		if errors.As(err, &cmdFailedErr) {
 			if cmdFailedErr.ExitStatus == 129 && bytes.Contains(cmdFailedErr.Stderr, []byte(revListUsageString)) {
 				// If the error is due to an empty repository, return a sentinel error.
@@ -490,7 +490,7 @@ func (it *readDirIterator) Next() (fs.FileInfo, error) {
 	}
 
 	if err := it.sc.Err(); err != nil {
-		var cfe *CommandFailedError
+		var cfe *commandFailedError
 		if errors.As(err, &cfe) {
 			if bytes.Contains(cfe.Stderr, []byte("exists on disk, but not in")) {
 				return nil, &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(it.path), Err: os.ErrNotExist}
@@ -515,7 +515,7 @@ func (it *readDirIterator) Next() (fs.FileInfo, error) {
 
 func (it *readDirIterator) Close() error {
 	if err := it.r.Close(); err != nil {
-		var cfe *CommandFailedError
+		var cfe *commandFailedError
 		if errors.As(err, &cfe) {
 			if bytes.Contains(cfe.Stderr, []byte("exists on disk, but not in")) {
 				return &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(it.path), Err: os.ErrNotExist}
