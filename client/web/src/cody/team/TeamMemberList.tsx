@@ -200,7 +200,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                 member.role === 'admin' ? (
                                     <>
                                         <div />
-                                        <div className="align-content-center">
+                                        <div className="align-content-center text-center">
                                             <Link
                                                 to="#"
                                                 onClick={() => updateRole(member.accountId, 'member')}
@@ -213,7 +213,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                     </>
                                 ) : (
                                     <>
-                                        <div className="align-content-center">
+                                        <div className="align-content-center text-center">
                                             <Link
                                                 to="#"
                                                 onClick={() => updateRole(member.accountId, 'admin')}
@@ -222,7 +222,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                                 Make admin
                                             </Link>
                                         </div>
-                                        <div className="align-content-center">
+                                        <div className="align-content-center text-center">
                                             <ButtonLink
                                                 to="#"
                                                 variant="danger"
@@ -266,12 +266,12 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                 </div>
                                 {isAdmin && (
                                     <>
-                                        <div className="align-content-center">
+                                        <div className="align-content-center text-center">
                                             <Link to="#" onClick={() => revokeInvite(invite.id)} className="ml-2">
                                                 Revoke
                                             </Link>
                                         </div>
-                                        <div className="align-content-center">
+                                        <div className="align-content-center text-center">
                                             <ButtonLink
                                                 to="#"
                                                 variant="success"
