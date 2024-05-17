@@ -123,7 +123,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                             />
                             <Text className="text-muted mb-2">Enter email addresses separated by a comma.</Text>
                             <Text className="text-danger mb-2">{emailAddressErrorMessage}</Text>
-                            <div className="d-flex justify-content-end">
+                            <div>
                                 <ButtonLink variant="success" size="sm" onSelect={onSendInvitesClicked}>
                                     Send
                                 </ButtonLink>
