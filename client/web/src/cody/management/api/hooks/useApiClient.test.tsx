@@ -1,12 +1,12 @@
 import React from 'react'
-import { renderHook } from '@testing-library/react-hooks'
 
+import { renderHook } from '@testing-library/react-hooks'
 import { describe, expect, it } from 'vitest'
 
-import { CodyProApiClientContext } from '../components/CodyProApiClient'
-import { useApiCaller } from './useApiClient'
 import { Call, Caller } from '../client'
+import { CodyProApiClientContext } from '../components/CodyProApiClient'
 
+import { useApiCaller } from './useApiClient'
 
 // FakeCaller is a testing fake for the Caller interface, for simulating
 // making API calls. Only supports one call being made at a time, otherwise
@@ -38,7 +38,7 @@ class FakeCaller implements Caller {
         return this.callInFlight
     }
 
-    resolveLastCallWith<Data>(result: { data?: Data; response: Response}) {
+    resolveLastCallWith<Data>(result: { data?: Data; response: Response }) {
         if (!this.resolveLastCallFn) {
             throw Error('Cannot resolve. There is no call in-flight.')
         }
@@ -67,9 +67,7 @@ class FakeCaller implements Caller {
 describe('useApiCaller()', () => {
     const mockCaller = new FakeCaller()
     const wrapper = ({ children }: { children: React.ReactNode }) => (
-        <CodyProApiClientContext.Provider value={{ caller: mockCaller }}>
-            {children}
-        </CodyProApiClientContext.Provider>
+        <CodyProApiClientContext.Provider value={{ caller: mockCaller }}>{children}</CodyProApiClientContext.Provider>
     )
 
     // responseStub is a stubbed out Response object.
@@ -95,7 +93,7 @@ describe('useApiCaller()', () => {
         // Resolve the promise that was returned by the API call made by
         // the useApiCaller hook.
         expect(mockCaller.isCallInFlight()).toBe(true)
-        mockCaller.resolveLastCallWith({data: 'some value', response: responseStub})
+        mockCaller.resolveLastCallWith({ data: 'some value', response: responseStub })
         expect(mockCaller.isCallInFlight()).toBe(false)
 
         // Now we need to kick the React runtime to pick up on the change.

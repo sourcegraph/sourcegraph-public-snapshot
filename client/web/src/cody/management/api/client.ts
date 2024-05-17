@@ -32,7 +32,7 @@ export module Client {
         return { method: 'PATCH', urlSuffix: '/team/current/subscription', requestBody }
     }
 
-    export function  getCurrentSubscriptionInvoices(): Call<types.GetSubscriptionInvoicesResponse> {
+    export function getCurrentSubscriptionInvoices(): Call<types.GetSubscriptionInvoicesResponse> {
         return { method: 'GET', urlSuffix: '/team/current/subscription/invoices' }
     }
 
