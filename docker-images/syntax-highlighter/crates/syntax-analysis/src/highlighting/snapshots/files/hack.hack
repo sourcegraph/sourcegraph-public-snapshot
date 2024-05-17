@@ -3,9 +3,17 @@ use namespace HH\Lib\{C, Vec};
 use const Space\Const\C;
 use type Space\Type\T;
 
+// NOTE: Tree-sitter grammar seems to not support module
+module foo.bar.baz;
+
 // Functions
 function f(dynamic $d): void {}
 function g(arraykey $a): void {}
+
+// Shape constructor
+function foo(int $arg): shape(...){
+  return shape();
+}
 
 /**
  * A doc comment starts with two asterisks.
@@ -104,8 +112,10 @@ newtype Point = (float, float);
 
 // Async/await
 async function main_async(): Awaitable<void> {
-  $out = IO\request_output();
-  await $out->writeAllAsync("Hello, world\n");
+  concurrent {
+      $out = IO\request_output();
+      await $out->writeAllAsync("Hello, world\n");
+   }
 }
 
 // Enums

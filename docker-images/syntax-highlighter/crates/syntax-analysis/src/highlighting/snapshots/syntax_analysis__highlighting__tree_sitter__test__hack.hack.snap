@@ -33,6 +33,17 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                    ^ IdentifierType
 //                     ^ PunctuationDelimiter
   
+  // NOTE: Tree-sitter grammar seems to not support module
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  module foo.bar.baz;
+//^^^^^^ Identifier
+//       ^^^ Identifier
+//          ^ IdentifierOperator
+//           ^^^ Identifier
+//              ^ IdentifierOperator
+//               ^^^ Identifier
+//                  ^ PunctuationDelimiter
+  
   // Functions
 //^^^^^^^^^^^^ Comment
   function f(dynamic $d): void {}
@@ -50,8 +61,23 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                       ^ PunctuationDelimiter
 //                         ^^^^ IdentifierBuiltinType
   
+  // Shape constructor
+//^^^^^^^^^^^^^^^^^^^^ Comment
+  function foo(int $arg): shape(...){
+//^^^^^^^^ Keyword
+//         ^^^ IdentifierFunction
+//             ^^^ IdentifierBuiltinType
+//                 ^^^^ Identifier
+//                      ^ PunctuationDelimiter
+//                        ^^^^^ IdentifierBuiltinType
+    return shape();
+//  ^^^^^^ Keyword
+//         ^^^^^ IdentifierBuiltinType
+//                ^ PunctuationDelimiter
+  }
+  
   /**
-//^^^ Comment 9:0..11:3
+//^^^ Comment 17:0..19:3
    * A doc comment starts with two asterisks.
    */
   function swap<T>(inout T $i1, inout T $i2): void {
@@ -327,11 +353,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                       ^^ Tag
 //                                         ^^^^^^ Tag
 //                                               ^ IdentifierOperator
-//                                                 StringLiteral 65:48..67:4
+//                                                 StringLiteral 73:48..75:4
       Text in the markup
       <!-- this is a comment -->
 //    ^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
-//                               StringLiteral 67:30..68:0
+//                               StringLiteral 75:30..76:0
   </tt>;
 //^^ Tag
 //  ^^ Tag
@@ -427,7 +453,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   $s = <<<EOT
 //^^ Identifier
 //   ^ IdentifierOperator
-//     ^^^^^^ StringLiteral 83:5..85:3
+//     ^^^^^^ StringLiteral 91:5..93:3
    $('a') abc $(function{return;})
   EOT;
 //   ^ PunctuationDelimiter
@@ -541,20 +567,22 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                      ^ IdentifierOperator
 //                                       ^^^^ IdentifierBuiltinType
 //                                           ^ IdentifierOperator
-    $out = IO\request_output();
-//  ^^^^ Identifier
-//       ^ IdentifierOperator
-//         ^^ IdentifierNamespace
-//           ^ PunctuationDelimiter
-//            ^^^^^^^^^^^^^^ IdentifierFunction
-//                            ^ PunctuationDelimiter
-    await $out->writeAllAsync("Hello, world\n");
-//  ^^^^^ Keyword
-//        ^^^^ Identifier
-//            ^^ IdentifierOperator
-//              ^^^^^^^^^^^^^ IdentifierFunction
-//                            ^^^^^^^^^^^^^^^^ StringLiteral
-//                                             ^ PunctuationDelimiter
+    concurrent {
+        $out = IO\request_output();
+//      ^^^^ Identifier
+//           ^ IdentifierOperator
+//             ^^ IdentifierNamespace
+//               ^ PunctuationDelimiter
+//                ^^^^^^^^^^^^^^ IdentifierFunction
+//                                ^ PunctuationDelimiter
+        await $out->writeAllAsync("Hello, world\n");
+//      ^^^^^ Keyword
+//            ^^^^ Identifier
+//                ^^ IdentifierOperator
+//                  ^^^^^^^^^^^^^ IdentifierFunction
+//                                ^^^^^^^^^^^^^^^^ StringLiteral
+//                                                 ^ PunctuationDelimiter
+     }
   }
   
   // Enums
