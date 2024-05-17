@@ -568,6 +568,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                       ^^^^ IdentifierBuiltinType
 //                                           ^ IdentifierOperator
     concurrent {
+//  ^^^^^^^^^^ Keyword
         $out = IO\request_output();
 //      ^^^^ Identifier
 //           ^ IdentifierOperator
