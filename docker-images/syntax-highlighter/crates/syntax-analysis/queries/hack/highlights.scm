@@ -13,9 +13,10 @@
 
 [
   (comment)
-  (heredoc)
   (xhp_comment)
 ] @comment
+
+
 
 ((comment) @comment.documentation
   (#match? @comment.documentation "^[*][*][^*].*[*]$"))
@@ -126,6 +127,9 @@
   (_) @type)
 
 (class_declaration
+  name: (identifier) @type)
+
+(interface_declaration
   name: (identifier) @type)
 
 (type_parameter
@@ -380,6 +384,7 @@
 [
   (string)
   (xhp_string)
+  (heredoc)
 ] @string
 
 [
