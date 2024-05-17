@@ -235,6 +235,7 @@ const (
 type GitserverServiceClient interface {
 	CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error)
 	DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error)
+	// Deprecated: Do not use.
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
 	// GetObject returns the object with the given OID in the given repository.
 	//
@@ -494,6 +495,7 @@ func (c *gitserverServiceClient) DiskInfo(ctx context.Context, in *DiskInfoReque
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *gitserverServiceClient) Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error) {
 	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[1], GitserverService_Exec_FullMethodName, opts...)
 	if err != nil {
@@ -1009,6 +1011,7 @@ func (x *gitserverServiceCommitLogClient) Recv() (*CommitLogResponse, error) {
 type GitserverServiceServer interface {
 	CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error
 	DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error)
+	// Deprecated: Do not use.
 	Exec(*ExecRequest, GitserverService_ExecServer) error
 	// GetObject returns the object with the given OID in the given repository.
 	//

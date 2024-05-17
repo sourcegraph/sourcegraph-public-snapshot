@@ -16,7 +16,6 @@ type operations struct {
 	archiveReader            *observation.Operation
 	commits                  *observation.Operation
 	contributorCount         *observation.Operation
-	exec                     *observation.Operation
 	firstEverCommit          *observation.Operation
 	behindAhead              *observation.Operation
 	getCommit                *observation.Operation
@@ -98,7 +97,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		archiveReader:            op("ArchiveReader"),
 		commits:                  op("Commits"),
 		contributorCount:         op("ContributorCount"),
-		exec:                     op("Exec"),
 		firstEverCommit:          op("FirstEverCommit"),
 		behindAhead:              op("BehindAhead"),
 		getCommit:                op("GetCommit"),

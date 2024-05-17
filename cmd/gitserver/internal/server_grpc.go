@@ -138,6 +138,7 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	ctx := ss.Context()
 
 	// Log which actor is accessing the repo.
+	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 	args := byteSlicesToStrings(req.GetArgs())
 	logAttrs := []log.Field{}
 	if len(args) > 0 {
@@ -147,12 +148,15 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 		)
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 	accesslog.Record(ctx, req.GetRepo(), logAttrs...)
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 	if req.GetRepo() == "" {
 		return status.New(codes.InvalidArgument, "repo must be specified").Err()
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 	repoName := api.RepoName(req.GetRepo())
 	repoDir := gs.fs.RepoDir(repoName)
 	backend := gs.gitBackendSource(repoDir, repoName)
