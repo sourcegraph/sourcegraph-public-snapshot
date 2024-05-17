@@ -95,7 +95,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             // to a user. In practice we can likely go much lower.
             maxLineLen: 5 * 1024,
             zoektSearchOptions: searchOptions,
-            displayLimit: settings?.['search.displayLimit']
+            displayLimit: settings?.['search.displayLimit'],
         }),
         [patternType, caseSensitive, trace, featureOverrides, searchMode, searchOptions, settings]
     )
