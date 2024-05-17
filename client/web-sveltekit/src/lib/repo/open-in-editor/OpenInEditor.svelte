@@ -4,7 +4,7 @@
         parseBrowserRepoURL,
         buildRepoBaseNameAndPath,
         buildEditorUrl,
-        isProjectPathValid, type Editor
+        isProjectPathValid,
     } from '$lib/web'
     import { getEditorSettingsErrorMessage } from './build-url'
     import Tooltip from '$lib/Tooltip.svelte'
@@ -16,7 +16,6 @@
     import Popover from '$lib/Popover.svelte';
     import { Button } from '$lib/wildcard';
     import { supportedEditors } from '$lib/web';
-    import { writable } from 'svelte/store';
 
     export let externalServiceType: ExternalRepository['serviceType'] = ''
     export let updateUserSetting: (edit: SettingsEdit) => Promise<void>;
@@ -25,11 +24,11 @@
 
     $: editorSettingsErrorMessage = getEditorSettingsErrorMessage(openInEditor)
     $: editorIds = openInEditor?.editorIds ?? []
-    $: editors = writable<(Editor | undefined)[] | undefined>(!editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined);
+    $: editors = !editorSettingsErrorMessage ? editorIds.map(getEditor) : undefined;
 
     $: sourcegraphBaseURL = new URL($page.url).origin
 
-    $: ({repoName, filePath, position, range} = parseBrowserRepoURL($page.url.toString()))
+    $: ({ repoName, filePath, position, range } = parseBrowserRepoURL($page.url.toString()))
     $: start = position ?? range?.start
 
     $: defaultProjectPath = ''
@@ -64,8 +63,8 @@
 
 </script>
 
-{#if $editors}
-    {#each $editors as editor, editorIndex}
+{#if editors}
+    {#each editors as editor, editorIndex}
         {#if editor}
             <Tooltip tooltip={`Open in ${editor.name}`}>
                 <a
