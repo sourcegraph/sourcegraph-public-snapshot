@@ -119,6 +119,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                                 setEmailAddressErrorMessage(null)
                                 setEmailAddressesString(event.target.value)
                             }}
+                            isValid={emailAddressErrorMessage ? false : undefined}
                         />
                         <Text className="text-muted mb-2">Enter email addresses separated by a comma.</Text>
                         <Text className="text-danger mb-2">{emailAddressErrorMessage}</Text>
