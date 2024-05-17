@@ -114,7 +114,7 @@ func fakeBackfillGetter(backfills []scheduler.SeriesBackfill, err error) GetSeri
 }
 
 func fakeIncompleteGetter() GetIncompleteDatapointsFunc {
-	return func(ctx context.Context, seriesID int) ([]store.IncompleteDatapoint, error) {
+	return func(ctx context.Context, seriesID int, aggregateRepositories bool) ([]store.IncompleteDatapoint, error) {
 		return nil, nil
 	}
 }
@@ -210,9 +210,11 @@ func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			logger := logtest.Scoped(t)
+			postgres := database.NewDB(logger, dbtest.NewDB(t))
 			statusGetter := fakeStatusGetter(&tc.queueStatus, tc.queueErr)
 			backfillGetter := fakeBackfillGetter(tc.backfills, tc.backfillsErr)
-			statusResolver := newStatusResolver(statusGetter, backfillGetter, fakeIncompleteGetter(), tc.series)
+			statusResolver := newStatusResolver(statusGetter, backfillGetter, fakeIncompleteGetter(), tc.series, postgres)
 			loading, err := statusResolver.IsLoadingData(context.Background())
 			var loadingResult bool
 			if loading != nil {
@@ -279,9 +281,15 @@ func TestInsightStatusResolver_IncompleteDatapoints(t *testing.T) {
 	}
 
 	t.Run("as timeout", func(t *testing.T) {
-		got, err := resolver.IncompleteDatapoints(ctx)
+		got, err := resolver.IncompleteDatapoints(ctx, &graphqlbackend.IncompleteDatapointsArgs{AggregateRepositories: true})
 		require.NoError(t, err)
-		autogold.Expect([]string{"2020-01-01 00:00:00 +0000 UTC", "2020-01-02 00:00:00 +0000 UTC"}).Equal(t, stringify(got))
+		autogold.Expect([]string{"2020-01-02 00:00:00 +0000 UTC", "2020-01-01 00:00:00 +0000 UTC"}).Equal(t, stringify(got))
+	})
+
+	t.Run("sort by timestamp descending", func(t *testing.T) {
+		got, err := resolver.IncompleteDatapoints(ctx, &graphqlbackend.IncompleteDatapointsArgs{AggregateRepositories: true})
+		require.NoError(t, err)
+		autogold.Expect([]string{"2020-01-02 00:00:00 +0000 UTC", "2020-01-01 00:00:00 +0000 UTC"}).Equal(t, stringify(got))
 	})
 }
 
