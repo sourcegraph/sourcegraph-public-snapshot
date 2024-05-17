@@ -17,26 +17,26 @@ export interface Call<Resp> {
 //
 // This doesn't _do_ anything, it just returns the metadata for what needs to be done.
 // It is used in conjunction with a Caller implementation for actually fetching data.
-export class Client {
+export module Client {
     // Subscriptions
 
-    static getCurrentSubscription(): Call<types.Subscription> {
+    export function getCurrentSubscription(): Call<types.Subscription> {
         return { method: 'GET', urlSuffix: '/team/current/subscription' }
     }
 
-    static getCurrentSubscriptionSummary(): Call<types.SubscriptionSummary> {
+    export function getCurrentSubscriptionSummary(): Call<types.SubscriptionSummary> {
         return { method: 'GET', urlSuffix: '/team/current/subscription/summary' }
     }
 
-    static updateCurrentSubscription(requestBody: types.UpdateSubscriptionRequest): Call<types.Subscription> {
+    export function updateCurrentSubscription(requestBody: types.UpdateSubscriptionRequest): Call<types.Subscription> {
         return { method: 'PATCH', urlSuffix: '/team/current/subscription', requestBody }
     }
 
-    static getCurrentSubscriptionInvoices(): Call<types.GetSubscriptionInvoicesResponse> {
+    export function  getCurrentSubscriptionInvoices(): Call<types.GetSubscriptionInvoicesResponse> {
         return { method: 'GET', urlSuffix: '/team/current/subscription/invoices' }
     }
 
-    static reactivateCurrentSubscription(
+    export function reactivateCurrentSubscription(
         requestBody: types.ReactivateSubscriptionRequest
     ): Call<types.GetSubscriptionInvoicesResponse> {
         return { method: 'POST', urlSuffix: '/team/current/subscription/reactivate', requestBody }
@@ -44,7 +44,7 @@ export class Client {
 
     // Stripe Checkout
 
-    static createStripeCheckoutSession(
+    export function createStripeCheckoutSession(
         requestBody: types.CreateCheckoutSessionRequest
     ): Call<types.CreateCheckoutSessionResponse> {
         return { method: 'POST', urlSuffix: '/checkout/session', requestBody }

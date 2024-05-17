@@ -22,63 +22,66 @@ export function useApiCaller<Resp>(call: Call<Resp>): ReactFriendlyApiResponse<R
     const { caller } = useContext(CodyProApiClientContext)
 
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<any>(undefined)
-    const [data, setData] = useState<any>(undefined)
-    const [response, setResponse] = useState<any>(undefined)
+    const [error, setError] = useState<Error | undefined>(undefined)
+    const [data, setData] = useState<Resp | undefined>(undefined)
+    const [response, setResponse] = useState<Response | undefined>(undefined)
 
     useEffect(() => {
-        ;(async () => {
-            // `ignore` tracks if we should discard any results, because of any underlying race condition
-            // in the sequence of API calls. We return a handle to this in the function callback, which
-            // the React runtime may invoke (setting ignore = true) outside of our view.
-            // https://react.dev/reference/react/useEffect#fetching-data-with-effects
-            // https://maxrozen.com/race-conditions-fetching-data-react-with-useeffect
-            let ignore = false
+        // `ignore` tracks if we should discard any results, because of any underlying race condition
+        // in the sequence of API calls. We return a handle to this in the function callback, which
+        // the React runtime may invoke (setting ignore = true) outside of our view.
+        // https://react.dev/reference/react/useEffect#fetching-data-with-effects
+        // https://maxrozen.com/race-conditions-fetching-data-react-with-useeffect
+        let ignore = false
 
+        ;(async () => {
             try {
                 console.debug(`calling API '${call.method} ${call.urlSuffix}'`)
                 const callerResponse = await caller.call(call)
 
-                if (!ignore) {
-                    // If we received a 200 response, all is well. We can just return
-                    // the unmarshalled JSON response object as-is.
-                    if (callerResponse.response.status >= 200 && callerResponse.response.status <= 299) {
-                        setData(callerResponse.data)
-                        setError(undefined)
-                        setResponse(callerResponse.response)
-                    } else {
-                        // For a 4xx or 5xx response this is where we provide any standardized logic for
-                        // error handling. For example:
-                        //
-                        // - On a 401 response, we need to force-logout the user so they can refresh their
-                        //   SAMS access token.
-                        // - On a 500 response, perhaps replace the current UI with a full-page error. e.g.
-                        //   http://github.com/500 or http://github.com/501
-                        setData(undefined)
-                        setError(Error(`unexpected status code: ${callerResponse.response.status}`))
-                        setResponse(callerResponse.response)
+                if (ignore) {
+                    return
+                }
 
-                        // Provide a clearer message. A 401 typically comes from the user's SAMS credentials
-                        // having expired on the backend.
-                        if (callerResponse.response.status === 401) {
-                            setError(Error('Please log out and log back in.'))
-                        }
+                // If we received a 200 response, all is well. We can just return
+                // the unmarshalled JSON response object as-is.
+                setLoading(false)
+                if (callerResponse.response.status >= 200 && callerResponse.response.status <= 299) {
+                    setData(callerResponse.data)
+                    setError(undefined)
+                    setResponse(callerResponse.response)
+                } else {
+                    // For a 4xx or 5xx response this is where we provide any standardized logic for
+                    // error handling. For example:
+                    //
+                    // - On a 401 response, we need to force-logout the user so they can refresh their
+                    //   SAMS access token.
+                    // - On a 500 response, perhaps replace the current UI with a full-page error. e.g.
+                    //   http://github.com/500 or http://github.com/501
+                    setData(undefined)
+                    setError(Error(`unexpected status code: ${callerResponse.response.status}`))
+                    setResponse(callerResponse.response)
+
+                    // Provide a clearer message. A 401 typically comes from the user's SAMS credentials
+                    // having expired on the backend.
+                    if (callerResponse.response.status === 401) {
+                        setError(Error('Please log out and log back in.'))
                     }
-                    setLoading(false)
                 }
             } catch (err) {
-                if (!ignore) {
-                    setData(undefined)
-                    setError(err)
-                    setResponse(undefined)
-                    setLoading(false)
+                if (ignore) {
+                    return
                 }
-            }
-
-            return () => {
-                ignore = true
+                setData(undefined)
+                setError(err)
+                setResponse(undefined)
+                setLoading(false)
             }
         })()
+
+        return () => {
+            ignore = true
+        }
     }, [call, caller])
 
     return { loading, error, data, response }

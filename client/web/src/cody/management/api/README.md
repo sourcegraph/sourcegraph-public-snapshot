@@ -27,6 +27,7 @@ leading to additional HTTP requests being made unintentionally!
 
 ```ts
 // Make the API call to create the Stripe Checkout session.
-const call = useMemo(() => client.createStripeCheckoutSession(req), [])
+// Make the API call to create the Stripe Checkout session.
+const call = useMemo(() => Client.createStripeCheckoutSession(req), [req.customerEmail, req.showPromoCodeField])
 const { loading, error, data } = useApiCaller(call)
 ```

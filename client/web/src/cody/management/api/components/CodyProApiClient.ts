@@ -1,9 +1,8 @@
 import { createContext } from 'react'
 
-import { Client, Caller, CodyProApiCaller } from '../client'
+import { Caller, CodyProApiCaller } from '../client'
 
 export interface CodyProApiClient {
-    client: Client
     caller: Caller
 }
 
@@ -11,7 +10,6 @@ export interface CodyProApiClient {
 // Sourcegraph backend for making API calls.
 export function defaultCodyProApiClientContext(): CodyProApiClient {
     return {
-        client: new Client(),
         caller: new CodyProApiCaller(),
     }
 }
