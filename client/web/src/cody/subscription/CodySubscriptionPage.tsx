@@ -72,7 +72,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         return null
     }
 
-    const isProUser = data.currentUser.codySubscription?.plan !== CodySubscriptionPlan.PRO
+    const isProUser = data.currentUser.codySubscription?.plan === CodySubscriptionPlan.PRO
 
     return (
         <>
