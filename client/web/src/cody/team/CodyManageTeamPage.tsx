@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { mdiPlusThick, mdiOpenInNew } from '@mdi/js'
+import { mdiPlusThick } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -91,14 +91,6 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                                     }
                                 >
                                     Manage subscription
-                                    <Icon
-                                        svgPath={mdiOpenInNew}
-                                        inline={false}
-                                        aria-hidden={true}
-                                        height="1rem"
-                                        width="1rem"
-                                        className="ml-2"
-                                    />
                                 </Link>
                                 <Button
                                     as={Link}
