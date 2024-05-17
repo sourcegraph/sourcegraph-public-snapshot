@@ -1,5 +1,5 @@
 {
-  "checksum": "086e602854ce0a57688fe32a92865811f1faabff847fbfff558769af2f1f7573",
+  "checksum": "7711f7224695bdbac88df9721a590cbc57131f32c8b1be7988cd69705b3f8726",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -13192,6 +13192,10 @@
               "target": "tree_sitter_go"
             },
             {
+              "id": "tree-sitter-hack 0.0.4",
+              "target": "tree_sitter_hack"
+            },
+            {
               "id": "tree-sitter-java 0.20.2",
               "target": "tree_sitter_java"
             },
@@ -13582,6 +13586,74 @@
         },
         "edition": "2018",
         "version": "0.20.0"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.83",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT"
+    },
+    "tree-sitter-hack 0.0.4": {
+      "name": "tree-sitter-hack",
+      "version": "0.0.4",
+      "repository": {
+        "Git": {
+          "remote": "https://github.com/slackhq/tree-sitter-hack",
+          "commitish": {
+            "Rev": "fca1e294f6dce8ec5659233a6a21f5bd0ed5b4f2"
+          }
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_hack",
+            "crate_root": "bindings/rust/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "bindings/rust/build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_hack",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.10",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-hack 0.0.4",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.0.4"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -17771,6 +17843,7 @@
     "tree-sitter-cpp 0.20.3",
     "tree-sitter-dart 0.0.1",
     "tree-sitter-go 0.20.0",
+    "tree-sitter-hack 0.0.4",
     "tree-sitter-highlight 0.20.1",
     "tree-sitter-java 0.20.2",
     "tree-sitter-javascript 0.20.0",
