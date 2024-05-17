@@ -274,7 +274,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                         <div className="align-content-center text-center">
                                             <ButtonLink
                                                 to="#"
-                                                variant="success"
+                                                variant="secondary"
                                                 size="sm"
                                                 onClick={() => resendInvite(invite.id)}
                                                 className="ml-2"
