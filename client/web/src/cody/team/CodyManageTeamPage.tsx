@@ -95,7 +95,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                                 <Button
                                     as={Link}
                                     to="/cody/manage/subscription/new"
-                                    variant="primary"
+                                    variant="success"
                                     className="text-nowrap"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiPlusThick} /> Add seats
