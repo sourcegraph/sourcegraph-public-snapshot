@@ -13,6 +13,7 @@ go_library(
         "users.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf",
@@ -44,6 +45,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":azuredevops"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/extsvc/auth",
         "//internal/httpcli",

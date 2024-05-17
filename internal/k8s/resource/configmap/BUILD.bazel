@@ -4,6 +4,7 @@ go_library(
     name = "configmap",
     srcs = ["configmap.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/k8s/resource/configmap",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/pointers",

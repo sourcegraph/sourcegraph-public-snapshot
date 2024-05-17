@@ -1,6 +1,6 @@
 import type { AuthProvider } from '../jscontext'
 
-// NOTE(naman): Remember to add events to allow list: https://sourcegraph.com/docs/dev/background-information/data-usage-pipeline#allow-list
+// NOTE(naman): Remember to add events to allow list: https://docs-legacy.sourcegraph.com/dev/background-information/data-usage-pipeline#allow-list
 export const enum EventName {
     CODY_CHAT_PAGE_VIEWED = 'web:codyChat:pageViewed',
     CODY_CHAT_SUBMIT = 'web:codyChat:submit',

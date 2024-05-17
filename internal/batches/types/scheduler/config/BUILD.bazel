@@ -5,6 +5,7 @@ go_library(
     name = "config",
     srcs = ["config.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/types/scheduler/config",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/batches/types/scheduler/window",
@@ -20,5 +21,6 @@ go_test(
     timeout = "short",
     srcs = ["config_test.go"],
     embed = [":config"],
+    tags = [TAG_SEARCHSUITE],
     deps = ["//schema"],
 )

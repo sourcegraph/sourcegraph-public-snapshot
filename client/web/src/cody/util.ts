@@ -1,4 +1,6 @@
 // The URL to direct users in order to manage their Cody Pro subscription.
+import { useState, useEffect } from 'react'
+
 export const manageSubscriptionRedirectURL = 'https://accounts.sourcegraph.com/cody/subscription'
 
 /**
@@ -34,11 +36,14 @@ export function isValidEmailAddress(emailAddress: string): boolean {
 const emailRegex = /^[^@]+@[^@]+\.[^@]+$/
 
 /**
+ * So the request is kinda made to two backends. Dotcom's `.api/ssc/proxy` endpoint
+ * exchanges the Sourcegraph session credentials for a SAMS access token
+ * and then proxy the request to the SSC backend.
  * @param sscUrl The SSC API URL to call. Example: "/checkout/session".
  * @param method E.g. "POST".
  * @param params The body to send to the SSC API. Will be JSON-encoded.
  */
-export function fetchThroughSSCProxy(sscUrl: string, method: string, params?: object): Promise<Response> {
+export function requestSSC(sscUrl: string, method: string, params?: object): Promise<Response> {
     // /.api/ssc/proxy endpoint exchanges the Sourcegraph session credentials for a SAMS access token.
     // And then proxy the request onto the SSC backend, which will actually create the
     // checkout session.
@@ -52,4 +57,26 @@ export function fetchThroughSSCProxy(sscUrl: string, method: string, params?: ob
         method,
         ...(!['GET', 'HEAD'].includes(method) && params ? { body: JSON.stringify(params) } : null),
     })
+}
+
+// React hook to fetch data through the SSC proxy and convert the response to a more usable format.
+// This is a low-level hook that is meant to be used by other hooks that need to fetch data from the SSC API.
+export const useSSCQuery = <T extends object>(endpoint: string): [T | null, Error | null] => {
+    const [data, setData] = useState<T | null>(null)
+    const [error, setError] = useState<Error | null>(null)
+    useEffect(() => {
+        async function loadData(): Promise<void> {
+            try {
+                const response = await requestSSC(endpoint, 'GET')
+                const responseJson = await response.json()
+                setData(responseJson)
+            } catch (error) {
+                setError(error)
+            }
+        }
+
+        void loadData()
+    }, [endpoint])
+
+    return [data, error]
 }

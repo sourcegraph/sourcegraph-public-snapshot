@@ -5,6 +5,7 @@ go_library(
     name = "awskms",
     srcs = ["aws_kms.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/encryption/awskms",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/encryption",
@@ -25,6 +26,7 @@ go_test(
     srcs = ["aws_kms_test.go"],
     data = glob(["testdata/**"]),
     embed = [":awskms"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/encryption/envelope",
         "//internal/httpcli",

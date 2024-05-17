@@ -5,6 +5,7 @@ go_library(
     srcs = ["eval.go"],
     embedsrcs = ["context_data.tsv"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/embeddings/qa",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:public"],
     deps = [
         "//internal/api",

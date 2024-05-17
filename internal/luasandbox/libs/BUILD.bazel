@@ -5,6 +5,7 @@ go_library(
     name = "libs",
     srcs = ["paths.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/luasandbox/libs",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/luasandbox/util",
@@ -18,5 +19,6 @@ go_test(
     timeout = "short",
     srcs = ["paths_test.go"],
     embed = [":libs"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

@@ -12,6 +12,7 @@ go_library(
         "autocomplete/zsh_autocomplete",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//lib/errors",

@@ -9,6 +9,7 @@ go_library(
         "linters.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/changed",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/ci:__subpackages__"],
 )
 
@@ -20,6 +21,7 @@ go_test(
         "linters_test.go",
     ],
     embed = [":changed"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "//dev/sg/linters",
         "@com_github_stretchr_testify//assert",

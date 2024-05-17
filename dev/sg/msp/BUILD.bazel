@@ -8,6 +8,7 @@ go_library(
         "sg_msp.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/msp",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/managedservicesplatform",

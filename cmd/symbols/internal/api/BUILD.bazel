@@ -11,6 +11,7 @@ go_library(
         "search_sqlite.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/symbols:__subpackages__"],
     deps = [
         "//cmd/symbols/internal/api/observability",
@@ -47,6 +48,7 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":api"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//cmd/symbols/fetcher",
         "//cmd/symbols/gitserver",

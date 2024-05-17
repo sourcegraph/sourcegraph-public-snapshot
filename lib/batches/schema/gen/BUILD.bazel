@@ -11,6 +11,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 go_binary(
     name = "stringdata",
     embed = [":gen_lib"],
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//lib/batches/schema:__pkg__"],
 )
 
@@ -18,5 +19,6 @@ go_library(
     name = "gen_lib",
     srcs = ["gen.go"],
     importpath = "github.com/sourcegraph/sourcegraph/lib/batches/schema/gen",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:private"],
 )

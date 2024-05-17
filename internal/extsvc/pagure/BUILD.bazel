@@ -8,6 +8,7 @@ go_library(
         "testing.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/pagure",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/httpcli",
@@ -29,6 +30,7 @@ go_test(
     srcs = ["client_test.go"],
     data = glob(["testdata/**"]),
     embed = [":pagure"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/testutil",
         "@com_github_inconshreveable_log15//:log15",

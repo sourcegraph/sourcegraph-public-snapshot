@@ -11,6 +11,7 @@ go_library(
         "term_utils.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/codycontext",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -35,6 +36,7 @@ go_test(
         "query_transformer_test.go",
     ],
     embed = [":codycontext"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/api",
         "//internal/search",

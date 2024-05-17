@@ -5,7 +5,7 @@ This distribution of the [OpenTelemetry collector](https://opentelemetry.io/docs
 - [selected integrations](#integrations) (receivers, exporters, and extensions) for the OpenTelemetry collector
 - [basic collector configuration](#configurations) that can be used out-of-the-box in `/etc/otel-collector/configs` with the `--config` flag for some common Sourcegraph deployment configurations.
 
-This custom build undergoes Sourcegraph's [image vulnerability scanning](https://sourcegraph.com/docs/dev/background-information/ci#image-vulnerability-scanning) to audit the bundled dependencies.
+This custom build undergoes Sourcegraph's [image vulnerability scanning](https://docs-legacy.sourcegraph.com/dev/background-information/ci#image-vulnerability-scanning) to audit the bundled dependencies.
 
 To get started:
 

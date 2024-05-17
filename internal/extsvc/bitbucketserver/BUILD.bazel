@@ -10,6 +10,7 @@ go_library(
         "testing.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/errcode",
@@ -41,6 +42,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":bitbucketserver"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/extsvc/auth",
         "//internal/httpcli",

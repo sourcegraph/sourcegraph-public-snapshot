@@ -29,7 +29,7 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	esStore := db.ExternalServices()
 
 	// making use of a mock clock here to ensure all time operations are appropriately mocked
-	// https://sourcegraph.com/docs/dev/background-information/languages/testing_go_code#testing-time
+	// https://docs-legacy.sourcegraph.com/dev/background-information/languages/testing_go_code#testing-time
 	clock := glock.NewMockClock()
 	now := clock.Now()
 

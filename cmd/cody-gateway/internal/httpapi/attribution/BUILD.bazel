@@ -5,6 +5,7 @@ go_library(
     name = "attribution",
     srcs = ["handler.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/attribution",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/actor",
@@ -21,6 +22,7 @@ go_library(
 go_test(
     name = "attribution_test",
     srcs = ["handler_test.go"],
+    tags = [TAG_CODY_PRIME],
     deps = [
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/auth",

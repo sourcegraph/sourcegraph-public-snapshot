@@ -8,6 +8,7 @@ go_library(
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/insights/backfillv2",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf/deploy",
@@ -25,6 +26,7 @@ go_test(
     srcs = ["migrator_test.go"],
     embed = [":backfillv2"],
     tags = [
+        TAG_INFRA_RELEASE,
         # Test requires localhost database
         "requires-network",
     ],

@@ -19,6 +19,7 @@ go_library(
 go_test(
     name = "util_test",
     srcs = ["util_test.go"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         ":util",
         "@com_github_stretchr_testify//assert",

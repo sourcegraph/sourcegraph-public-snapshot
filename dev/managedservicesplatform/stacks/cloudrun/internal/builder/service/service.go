@@ -192,7 +192,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 			// Configuration for the single service container.
 			Containers: []*cloudrunv2service.CloudRunV2ServiceTemplateContainers{{
 				Name:  pointers.Ptr(vars.Service.ID),
-				Image: pointers.Ptr(fmt.Sprintf("%s:%s", vars.Image, vars.ResolvedImageTag)),
+				Image: pointers.Ptr(fmt.Sprintf("%s:%s", vars.Image, vars.ImageTag)),
 
 				Resources: &cloudrunv2service.CloudRunV2ServiceTemplateContainersResources{
 					Limits: &vars.ResourceLimits,

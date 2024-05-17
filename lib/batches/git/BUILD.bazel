@@ -8,6 +8,7 @@ go_library(
         "refs.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/batches/git",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:public"],
     deps = ["@com_github_sourcegraph_go_diff//diff"],
 )
@@ -17,5 +18,6 @@ go_test(
     timeout = "short",
     srcs = ["changes_test.go"],
     embed = [":git"],
+    tags = [TAG_SEARCHSUITE],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

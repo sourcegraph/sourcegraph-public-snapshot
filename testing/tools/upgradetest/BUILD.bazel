@@ -8,6 +8,7 @@ go_library(
         "tests-util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/testing/tools/upgradetest",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//visibility:private"],
     deps = [
         "//lib/errors",
@@ -48,6 +49,7 @@ sh_test(
     tags = [
         "no-sandbox",
         "requires-network",
+        TAG_INFRA_RELEASE,
     ],
 )
 

@@ -5,6 +5,7 @@ go_library(
     name = "app-token_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/ci/scripts/app-token",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//lib/errors",
@@ -17,6 +18,7 @@ go_library(
 go_binary(
     name = "app-token",
     embed = [":app-token_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )
 
@@ -26,6 +28,7 @@ go_test(
     embed = [":app-token_lib"],
     env = {"BUILDKITE": "true"},
     tags = [
+        TAG_INFRA_DEVINFRA,
         # ==================== Test output for //dev/ci/scripts/app-token:app-token_test:
         # 2023/02/23 01:51:39 GET https://api.github.com/orgs/sourcegraph/installation: 401 A JSON web token could not be decoded []
         # TODO(bazel): fix test; failing due to missing auth token

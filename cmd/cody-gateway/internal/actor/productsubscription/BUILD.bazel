@@ -5,6 +5,7 @@ go_library(
     name = "productsubscription",
     srcs = ["productsubscription.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/actor",
@@ -29,6 +30,7 @@ go_test(
     name = "productsubscription_test",
     srcs = ["productsubscription_test.go"],
     embed = [":productsubscription"],
+    tags = [TAG_CODY_PRIME],
     deps = [
         "//cmd/cody-gateway/internal/dotcom",
         "//internal/codygateway",

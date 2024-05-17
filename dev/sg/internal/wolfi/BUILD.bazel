@@ -10,6 +10,7 @@ go_library(
         "update_images.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/wolfi",
+    tags = [TAG_SECURITY],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/std",

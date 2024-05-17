@@ -28,6 +28,7 @@ ts_project(
         "src/reference.ts",
         "src/textDocument.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@sourcegraph/extension-api-types",
@@ -42,6 +43,7 @@ ts_project(
     name = "client-api_tests",
     testonly = True,
     srcs = ["src/hover.test.ts"],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":client-api_lib",

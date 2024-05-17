@@ -92,7 +92,7 @@ func (g *gitCLIBackend) NewCommand(ctx context.Context, optFns ...CommandOptionF
 
 	logger := g.logger.WithTrace(trace.Context(ctx))
 
-	if !IsAllowedGitCmd(logger, opts.arguments, g.dir) {
+	if !IsAllowedGitCmd(logger, opts.arguments) {
 		blockedCommandExecutedCounter.Inc()
 		return nil, ErrBadGitCommand
 	}

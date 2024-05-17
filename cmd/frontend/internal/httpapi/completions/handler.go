@@ -509,13 +509,13 @@ func checkClientCodyIgnoreCompatibility(ctx context.Context, db database.DB, r *
 		cvc = clientVersionConstraint{client: clientName, constraint: ">= 1.20.0"}
 		if isClientsTestMode {
 			// set the constraint to a lower pre-release version to enable testing
-			cvc.constraint = ">= 1.17.0-0"
+			cvc.constraint = ">= 1.16.0-0"
 		}
 	case types.CodyClientJetbrains:
 		cvc = clientVersionConstraint{client: clientName, constraint: ">= 6.0.0"}
 		if isClientsTestMode {
 			// set the constraint to a lower pre-release version to enable testing
-			cvc.constraint = ">= 5.5.10-0"
+			cvc.constraint = ">= 5.5.8-0"
 		}
 	default:
 		return &codyIgnoreCompatibilityError{

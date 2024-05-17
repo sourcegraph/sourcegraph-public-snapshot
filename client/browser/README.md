@@ -135,7 +135,7 @@ The test suite in `end-to-end/github.test.ts` runs on the release branch `bext/r
 
 The test suite in end-to-end/phabricator.test.ts tests the Phabricator native integration.
 It assumes an existing Sourcegraph and Phabricator instance that has the Phabricator extension installed.
-There are automated scripts to set up the Phabricator instance, see https://sourcegraph.com/docs/dev/phabricator_gitolite.
+There are automated scripts to set up the Phabricator instance, see https://docs-legacy.sourcegraph.com/dev/phabricator_gitolite.
 It currently does not run in CI and is intended to be run manually for release testing.
 
 `end-to-end/bitbucket.test.ts` tests the browser extension on a Bitbucket Server instance.
@@ -243,7 +243,7 @@ This is an adjusted version of @lguychard's [comment here](https://github.com/so
 4. Navigated to `127.0.0.1` to access the Phabricator instance, and logged in with `admin` / `sourcegraph` (as printed by `./dev/phabricator/start.sh`)
 5. Navigated to `http://127.0.0.1/config/group/sourcegraph/` (Config -> Application Settings -> Sourcegraph)
 6. Edited `corsOrigin` in site config at `https://sourcegraph.test:3443/site-admin/configuration` to include `http://127.0.0.1` (might need to be added in `dev-private` repo).
-7. Added a repository by mirroring a public GitHub repository (we have some docs for this [here](https://sourcegraph.com/docs/dev/phabricator_gitolite), but they need improving):
+7. Added a repository by mirroring a public GitHub repository (we have some docs for this [here](https://docs-legacy.sourcegraph.com/dev/phabricator_gitolite), but they need improving):
    - Navigated to `http://127.0.0.1/diffusion/edit/?vcs=git`
    - Created a repository with name `JsonRPC2`, callsign `JRPC`, short name `jrpc`
    - Navigated to `http://127.0.0.1/source/jrpc/manage/uris/` (URIs)

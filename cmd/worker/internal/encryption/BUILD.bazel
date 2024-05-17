@@ -14,6 +14,7 @@ go_library(
         "observability.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",
@@ -36,7 +37,10 @@ go_test(
     name = "encryption_test",
     srcs = ["encryption_test.go"],
     embed = [":encryption"],
-    tags = ["requires-network"],
+    tags = [
+        TAG_PLATFORM_SOURCE,
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/basestore",

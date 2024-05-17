@@ -9,6 +9,7 @@ go_library(
         "stasher.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/reader",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = ["//lib/codeintel/lsif/protocol/reader"],
 )

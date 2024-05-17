@@ -27,32 +27,32 @@
 </script>
 
 <script lang="ts">
-    import { tick } from 'svelte'
     import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiHistory, mdiListBoxOutline, mdiHome } from '@mdi/js'
+    import { tick } from 'svelte'
 
-    import { page } from '$app/stores'
     import { afterNavigate, goto } from '$app/navigation'
-
-    import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
+    import { page } from '$app/stores'
     import { isErrorLike, SourcegraphURL } from '$lib/common'
-    import { fetchSidebarFileTree } from '$lib/repo/api/tree'
-    import type { LastCommitFragment } from '$testing/graphql-type-mocks'
-
-    import Icon from '$lib/Icon.svelte'
-    import Tabs from '$lib/Tabs.svelte'
-    import TabPanel from '$lib/TabPanel.svelte'
-    import LastCommit from '$lib/repo/LastCommit.svelte'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import Tooltip from '$lib/Tooltip.svelte'
-    import HistoryPanel, { type Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
+    import { filesHotkey } from '$lib/fuzzyfinder/keys'
+    import Icon from '$lib/Icon.svelte'
+    import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import { fetchSidebarFileTree } from '$lib/repo/api/tree'
+    import HistoryPanel, { type Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
+    import LastCommit from '$lib/repo/LastCommit.svelte'
+    import TabPanel from '$lib/TabPanel.svelte'
+    import Tabs from '$lib/Tabs.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
+    import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
+    import type { LastCommitFragment } from '$testing/graphql-type-mocks'
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
     import { createFileTreeStore } from './fileTreeStore'
-    import RepositoryRevPicker from './RepositoryRevPicker.svelte'
-    import ReferencePanel from './ReferencePanel.svelte'
     import type { GitHistory_HistoryConnection, RepoPage_ReferencesLocationConnection } from './layout.gql'
+    import ReferencePanel from './ReferencePanel.svelte'
+    import RepositoryRevPicker from './RepositoryRevPicker.svelte'
 
     export let data: LayoutData
 
@@ -221,7 +221,8 @@
                                 class={`${buttonClass} search-files-button`}
                                 on:click={() => openFuzzyFinder('files')}
                             >
-                                <span>Search files</span> <kbd>⌘P</kbd>
+                                <span>Search files</span>
+                                <KeyboardShortcut shorcut={filesHotkey} />
                             </button>
                         </svelte:fragment>
                     </Button>

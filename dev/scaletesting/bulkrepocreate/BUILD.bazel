@@ -7,6 +7,7 @@ go_library(
         "main.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/scaletesting/bulkrepocreate",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/scaletesting/internal/store",
@@ -22,5 +23,6 @@ go_library(
 go_binary(
     name = "bulkrepocreate",
     embed = [":bulkrepocreate_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )

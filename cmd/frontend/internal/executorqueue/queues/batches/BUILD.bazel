@@ -9,6 +9,7 @@ go_library(
         "transform.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/queues/batches",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
@@ -39,6 +40,7 @@ go_test(
         "transform_test.go",
     ],
     embed = [":batches"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//internal/api",

@@ -10,6 +10,7 @@ go_library(
         "retry.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/retry",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/grpc/grpcutil",
@@ -33,6 +34,7 @@ go_test(
         "retry_test.go",
     ],
     embed = [":retry"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "@com_github_grpc_ecosystem_go_grpc_middleware_v2//testing/testpb",
         "@com_github_sourcegraph_log//:log",

@@ -262,7 +262,9 @@ func generateTerraform(service *spec.Spec, opts generateTerraformOptions) error 
 			return err
 		}
 
-		if rollout := service.BuildRolloutPipelineConfiguration(env); rollout != nil {
+		// Generate additional rollouts assets IFF this is the final stage of
+		// a rollout pipeline.
+		if rollout := service.BuildRolloutPipelineConfiguration(env); rollout.IsFinalStage() {
 			pending.Updatef("[%s] Building rollout pipeline configurations for environment %q...", serviceID, env.ID)
 
 			// We generate skaffold.yaml archive for upload to GCS. See

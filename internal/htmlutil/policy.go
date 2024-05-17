@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	chromaOnly   = regexp.MustCompile(`^(?:chroma-[a-zA-Z0-9\-]+)|chroma$`)
+	chromaOnly   = regexp.MustCompile(`^(?:chroma-[a-zA-Z0-9\-]+)|chroma|language-[a-zA-Z]+$`)
 	chromaOrAnsi = regexp.MustCompile(`^(?:(chroma|ansi)-[a-zA-Z0-9\-]+)|chroma$`)
 )
 

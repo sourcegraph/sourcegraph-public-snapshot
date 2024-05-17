@@ -207,3 +207,83 @@ func TestEnvironmentJobScheduleSpecFindMaxCronInterval(t *testing.T) {
 		})
 	}
 }
+
+func TestEnvironmentDeploySpec_Validate(t *testing.T) {
+	tests := []struct {
+		name     string
+		spec     EnvironmentDeploySpec
+		wantErrs autogold.Value
+	}{
+		{
+			name: "manual type with subscription",
+			spec: EnvironmentDeploySpec{
+				Type:         EnvironmentDeployTypeManual,
+				Subscription: &EnvironmentDeployTypeSubscriptionSpec{},
+			},
+			wantErrs: autogold.Expect([]string{"subscription deploy spec provided when type is manual"}),
+		},
+		{
+			name: "subscription type with manual",
+			spec: EnvironmentDeploySpec{
+				Type:   EnvironmentDeployTypeSubscription,
+				Manual: &EnvironmentDeployManualSpec{},
+			},
+			wantErrs: autogold.Expect([]string{"manual deploy spec provided when type is subscription"}),
+		},
+		{
+			name: "subscription type without subscription",
+			spec: EnvironmentDeploySpec{
+				Type: EnvironmentDeployTypeSubscription,
+			},
+			wantErrs: autogold.Expect([]string{"no subscription specified when deploy type is subscription"}),
+		},
+		{
+			name: "subscription type with empty tag",
+			spec: EnvironmentDeploySpec{
+				Type:         EnvironmentDeployTypeSubscription,
+				Subscription: &EnvironmentDeployTypeSubscriptionSpec{},
+			},
+			wantErrs: autogold.Expect([]string{"no tag in image subscription specified"}),
+		},
+		{
+			name: "subscription type with tag",
+			spec: EnvironmentDeploySpec{
+				Type: EnvironmentDeployTypeSubscription,
+				Subscription: &EnvironmentDeployTypeSubscriptionSpec{
+					Tag: "insiders",
+				},
+			},
+		},
+		{
+			name: "rollout type",
+			spec: EnvironmentDeploySpec{
+				Type: EnvironmentDeployTypeRollout,
+			},
+		},
+		{
+			name: "invalid type",
+			spec: EnvironmentDeploySpec{
+				Type: "invalid",
+			},
+			wantErrs: autogold.Expect([]string{`invalid deploy type "invalid"`}),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			errs := stringifyErrors(tc.spec.Validate())
+			if tc.wantErrs == nil {
+				assert.Empty(t, errs)
+			} else {
+				tc.wantErrs.Equal(t, errs)
+			}
+		})
+	}
+}
+
+func stringifyErrors(errs []error) (values []string) {
+	for _, errs := range errs {
+		values = append(values, errs.Error())
+	}
+	return values
+}

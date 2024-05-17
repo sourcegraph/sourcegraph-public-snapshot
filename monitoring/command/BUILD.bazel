@@ -4,6 +4,7 @@ go_library(
     name = "command",
     srcs = ["generate.go"],
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/command",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/cliutil/completions",

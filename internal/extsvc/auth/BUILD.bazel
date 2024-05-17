@@ -10,6 +10,7 @@ go_library(
         "oauth_bearer.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/auth",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/httpcli",
@@ -27,5 +28,6 @@ go_test(
         "oauth_bearer_test.go",
     ],
     embed = [":auth"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = ["@com_github_gomodule_oauth1//oauth"],
 )
