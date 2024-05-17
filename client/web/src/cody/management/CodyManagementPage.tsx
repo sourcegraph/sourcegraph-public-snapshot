@@ -133,12 +133,13 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                 <ButtonLink
                                     variant="primary"
                                     size="sm"
-                                    href={manageSubscriptionRedirectURL}
-                                    onClick={event => {
-                                        event.preventDefault()
-                                        telemetryRecorder.recordEvent('cody.manageSubscription', 'click')
-                                        window.location.href = manageSubscriptionRedirectURL
-                                    }}
+                                    to="/cody/subscription/manage"
+                                    // href={manageSubscriptionRedirectURL}
+                                    // onClick={event => {
+                                    //     event.preventDefault()
+                                    //     telemetryRecorder.recordEvent('cody.manageSubscription', 'click')
+                                    //     window.location.href = manageSubscriptionRedirectURL
+                                    // }}
                                 >
                                     <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />
                                     Manage subscription
