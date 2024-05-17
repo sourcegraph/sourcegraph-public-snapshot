@@ -6,7 +6,6 @@ import { useSearchParams } from 'react-router-dom'
 
 import { H3, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
-import { requestSSC } from '../../../util'
 import { Client } from '../../api/client'
 import { useApiCaller } from '../../api/hooks/useApiClient'
 import { CreateCheckoutSessionRequest } from '../../api/types'
