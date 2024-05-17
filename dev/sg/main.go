@@ -312,6 +312,7 @@ var sg = &cli.App{
 		versionCommand,
 	},
 	ExitErrHandler: func(cmd *cli.Context, err error) {
+		interrupt.Wait()
 		if err == nil {
 			return
 		}

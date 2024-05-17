@@ -19,6 +19,7 @@ import (
 type key int
 
 var jobsKey key
+var hasRun bool
 
 type backgroundJobs struct {
 	wg                sync.WaitGroup
@@ -73,6 +74,10 @@ func Run(ctx context.Context, job func(ctx context.Context, backgroundOutput *st
 // outputs from completed jobs. This should only be called when user command execution is
 // complete, and we are now waiting for background tasks to complete.
 func Wait(ctx context.Context, out *std.Output) {
+	if hasRun {
+		return
+	}
+	hasRun = true
 	jobs := loadFromContext(ctx)
 	pendingCount := int(jobs.stillRunningCount.Load())
 
