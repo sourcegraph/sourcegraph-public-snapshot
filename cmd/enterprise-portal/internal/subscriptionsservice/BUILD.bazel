@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "subscriptionsservice",
+    srcs = ["v1.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice",
+    visibility = ["//cmd/enterprise-portal:__subpackages__"],
+    deps = [
+        "//lib/enterpriseportal/subscriptions/v1/v1connect",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

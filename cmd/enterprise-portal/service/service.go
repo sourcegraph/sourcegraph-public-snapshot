@@ -8,6 +8,9 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/codyaccessservice"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice"
+
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -43,6 +46,10 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 
 	// Register MSP endpoints
 	contract.Diagnostics.RegisterDiagnosticsHandlers(httpServer, serviceState{})
+
+	// Register connect endpoints
+	codyaccessservice.RegisterV1(logger, httpServer, dotcomDB)
+	subscriptionsservice.RegisterV1(logger, httpServer)
 
 	// Initialize server
 	listenAddr := fmt.Sprintf(":%d", contract.Port)

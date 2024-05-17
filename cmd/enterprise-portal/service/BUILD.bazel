@@ -11,7 +11,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/service",
     visibility = ["//visibility:public"],
     deps = [
+        "//cmd/enterprise-portal/internal/codyaccessservice",
         "//cmd/enterprise-portal/internal/dotcomdb",
+        "//cmd/enterprise-portal/internal/subscriptionsservice",
         "//internal/httpserver",
         "//internal/trace/policy",
         "//internal/version",
