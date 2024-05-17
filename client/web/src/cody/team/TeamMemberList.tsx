@@ -279,7 +279,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                                 onClick={() => resendInvite(invite.id)}
                                                 className="ml-2"
                                             >
-                                                Resend invite
+                                                Re-send invite
                                             </ButtonLink>
                                         </div>
                                     </>
