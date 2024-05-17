@@ -108,8 +108,8 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                     </div>
                     <div className="flex-1 d-flex flex-column">
                         <H2 className={classNames('mb-4', styles.inviteUsersHeader)}>
-                            <strong>Invite users</strong> – You have {remainingInviteCount} free{' '}
-                            {pluralize('seat', remainingInviteCount)}
+                            <strong>Invite users</strong> – {remainingInviteCount}{' '}
+                            {pluralize('seat', remainingInviteCount)} remaining
                         </H2>
                         <TextArea
                             className={classNames('mb-2')}
