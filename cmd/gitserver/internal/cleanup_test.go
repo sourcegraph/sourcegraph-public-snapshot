@@ -421,10 +421,9 @@ func TestCleanupBroken(t *testing.T) {
 		}
 	}
 	{
-		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoCorrupt), "perforce")
-		if err := cli.Config().Set(ctx, gitConfigMaybeCorrupt, "1"); err != nil {
-			t.Fatal(err)
-		}
+		f, err := os.Create(filepath.Join(repoCorrupt, gitcli.RepoMaybeCorruptFlagFilepath))
+		require.NoError(t, err)
+		require.NoError(t, f.Close())
 	}
 	{
 		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoPerforceGCOld), "perforce")
