@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -1192,15 +1193,17 @@ func (gs *grpcServer) ListRefs(req *proto.ListRefsRequest, ss proto.GitserverSer
 		return err
 	}
 
-	sendFunc := func(refs []*proto.GitRef) error {
-		return ss.Send(&proto.ListRefsResponse{Refs: refs})
-	}
+	tr, _ := trace.New(ss.Context(), "chunkedsender")
+	defer tr.EndWithErr(&err)
 
 	// We use a chunker here to make sure we don't send too large gRPC messages.
 	// For repos with thousands or even millions of refs, sending them all in one
 	// message would be very slow, but sending them all in individual messages
 	// would also be slow, so we chunk them instead.
-	chunker := chunk.New(sendFunc)
+	chunker := chunk.New(func(refs []*proto.GitRef) error {
+		tr.AddEvent("sending chunk", attribute.Int("count", len(refs)))
+		return ss.Send(&proto.ListRefsResponse{Refs: refs})
+	})
 
 	for {
 		ref, err := it.Next()
@@ -1504,12 +1507,14 @@ func (gs *grpcServer) ChangedFiles(req *proto.ChangedFilesRequest, ss proto.Gits
 	}
 	defer iterator.Close()
 
-	chunker := chunk.New(func(paths []*proto.ChangedFile) error {
-		out := &proto.ChangedFilesResponse{
-			Files: paths,
-		}
+	tr, _ := trace.New(ctx, "chunkedsender")
+	defer tr.EndWithErr(&err)
 
-		return ss.Send(out)
+	chunker := chunk.New(func(paths []*proto.ChangedFile) error {
+		tr.AddEvent("sending chunk", attribute.Int("count", len(paths)))
+		return ss.Send(&proto.ChangedFilesResponse{
+			Files: paths,
+		})
 	})
 
 	for {
@@ -1650,15 +1655,17 @@ func (gs *grpcServer) ReadDir(req *proto.ReadDirRequest, ss proto.GitserverServi
 		}
 	}()
 
-	sendFunc := func(fis []*proto.FileInfo) error {
-		return ss.Send(&proto.ReadDirResponse{FileInfo: fis})
-	}
+	tr, _ := trace.New(ctx, "chunkedsender")
+	defer tr.EndWithErr(&err)
 
 	// We use a chunker here to make sure we don't send too large gRPC messages.
 	// For repos with thousands or even millions of files, sending them all in one
 	// message would be very slow, but sending them all in individual messages
 	// would also be slow, so we chunk them instead.
-	chunker := chunk.New(sendFunc)
+	chunker := chunk.New(func(fis []*proto.FileInfo) error {
+		tr.AddEvent("sending chunk", attribute.Int("count", len(fis)))
+		return ss.Send(&proto.ReadDirResponse{FileInfo: fis})
+	})
 
 	for {
 		fi, err := it.Next()
@@ -1779,15 +1786,17 @@ func (gs *grpcServer) CommitLog(req *proto.CommitLogRequest, ss proto.GitserverS
 		}
 	}()
 
-	sendFunc := func(cs []*proto.GetCommitResponse) error {
-		return ss.Send(&proto.CommitLogResponse{Commits: cs})
-	}
+	tr, _ := trace.New(ctx, "chunkedsender")
+	defer tr.EndWithErr(&err)
 
 	// We use a chunker here to make sure we don't send too large gRPC messages.
 	// For repos with thousands or even millions of commits, sending them all in one
 	// message would be very memory intensive, but sending them all in individual
 	// messages would be slow, so we chunk them instead.
-	chunker := chunk.New(sendFunc)
+	chunker := chunk.New(func(cs []*proto.GetCommitResponse) error {
+		tr.AddEvent("sending chunk", attribute.Int("count", len(cs)))
+		return ss.Send(&proto.CommitLogResponse{Commits: cs})
+	})
 
 	for {
 		commit, err := it.Next()
