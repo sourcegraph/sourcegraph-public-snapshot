@@ -65,6 +65,20 @@ cd crates/syntax-analysis
 ONLY=.java cargo test test_all_files -- --nocapture
 ```
 
+### Load Testing
+
+Start up the highlighter using:
+
+```bash
+cargo run --release --bin syntect_server
+```
+
+Use [wrk](https://github.com/wg/wrk) with a Lua script, such as [`load_test.lua`](./load_test.lua).
+
+```bash
+wrk --threads 4 --duration 5s --connections 100 --script load_test.lua http://127.0.0.1:8000/scip
+```
+
 ## Building docker image
 
 `./build.sh` will build your current repository checkout into a final Docker image. You **DO NOT** need to do this when you push to get it publish. But, you should do this to make sure that it is possible to build the image :smile:.
