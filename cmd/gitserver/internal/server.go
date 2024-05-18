@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -415,13 +414,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, lock Reposito
 			return nil, err
 		}
 
-		remoteURL, err := s.getRemoteURL(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
 		if err := syncer.IsCloneable(ctx, repo); err != nil {
-			redactedErr := urlredactor.New(remoteURL).Redact(err.Error())
-			return nil, errors.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactedErr)
+			return nil, errors.Wrapf(err, "error cloning repo: repo %s not cloneable", repo)
 		}
 
 		return syncer, nil
