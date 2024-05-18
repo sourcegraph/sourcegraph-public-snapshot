@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -40,6 +41,7 @@ func (c *openAIChatCompletionStreamClient) Complete(
 	requestParams types.CompletionRequestParameters,
 	logger log.Logger,
 ) (*types.CompletionResponse, error) {
+	fmt.Println("OpenAi Complete1")
 	var resp *http.Response
 	var err error
 	defer (func() {
@@ -85,6 +87,7 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
 ) error {
+	fmt.Println("OpenAI stream start")
 	var resp *http.Response
 	var err error
 
@@ -93,11 +96,7 @@ func (c *openAIChatCompletionStreamClient) Stream(
 			resp.Body.Close()
 		}
 	})()
-	if feature == types.CompletionsFeatureCode {
-		resp, err = c.makeCompletionRequest(ctx, requestParams, true)
-	} else {
-		resp, err = c.makeRequest(ctx, requestParams, true)
-	}
+	resp, err = c.makeRequest(ctx, requestParams, true)
 	if err != nil {
 		return err
 	}
@@ -121,6 +120,7 @@ func (c *openAIChatCompletionStreamClient) Stream(
 		if err := json.Unmarshal(data, &event); err != nil {
 			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
 		}
+		fmt.Println("OpenAI response event", event)
 
 		// These are only included in the last message, so we're not worried about overwriting
 		if event.Usage.PromptTokens > 0 {
@@ -131,11 +131,7 @@ func (c *openAIChatCompletionStreamClient) Stream(
 		}
 
 		if len(event.Choices) > 0 {
-			if feature == types.CompletionsFeatureCode {
-				content += event.Choices[0].Text
-			} else {
-				content += event.Choices[0].Delta.Content
-			}
+			content += event.Choices[0].Delta.Content
 			ev = types.CompletionResponse{
 				Completion: content,
 				StopReason: event.Choices[0].FinishReason,
@@ -181,7 +177,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 	}
 	for _, m := range requestParams.Messages {
 		// TODO(sqs): map these 'roles' to openai system/user/assistant
-		var role string
+		var role string = m.Speaker
 		switch m.Speaker {
 		case types.HUMAN_MESSAGE_SPEAKER:
 			role = "user"
@@ -208,6 +204,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 	}
 	url.Path = "v1/chat/completions"
 
+	fmt.Println("OpenAI NewRequestWithContext", url.String(), string(reqBody))
 	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
@@ -254,6 +251,7 @@ func (c *openAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Con
 	}
 
 	reqBody, err := json.Marshal(payload)
+	fmt.Println("OpenAi makeCompletionRequest reqBody", string(reqBody))
 	if err != nil {
 		return nil, err
 	}

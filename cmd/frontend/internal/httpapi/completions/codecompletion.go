@@ -60,6 +60,7 @@ func allowedCustomModel(model string) string {
 		"fireworks/" + fireworks.Mixtral8x7bFineTunedModel,
 		"anthropic/claude-instant-1.2",
 		"anthropic/claude-3-haiku-20240307",
+		"openai/gpt-4o",
 		// Deprecated model identifiers
 		"anthropic/claude-instant-v1",
 		"anthropic/claude-instant-1",
