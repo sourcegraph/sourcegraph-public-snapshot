@@ -1,4 +1,4 @@
-package appliance
+package reconciler
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-func (r *Reconciler) reconcilePreciseCodeIntel(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcilePreciseCodeIntel(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	if err := r.reconcilePreciseCodeIntelDeployment(ctx, sg, owner); err != nil {
 		return errors.Wrap(err, "reconciling Deployment")
 	}
@@ -33,11 +33,11 @@ func (r *Reconciler) reconcilePreciseCodeIntel(ctx context.Context, sg *Sourcegr
 	return nil
 }
 
-func (r *Reconciler) reconcilePreciseCodeIntelDeployment(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcilePreciseCodeIntelDeployment(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	name := "precise-code-intel-worker"
 	cfg := sg.Spec.PreciseCodeIntel
 
-	defaultImage, err := getDefaultImage(sg, name)
+	defaultImage, err := config.GetDefaultImage(sg, name)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (r *Reconciler) reconcilePreciseCodeIntelDeployment(ctx context.Context, sg
 	return reconcileObject(ctx, r, cfg, &dep, &appsv1.Deployment{}, sg, owner)
 }
 
-func (r *Reconciler) reconcilePreciseCodeIntelService(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcilePreciseCodeIntelService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	name := "precise-code-intel-worker"
 	cfg := sg.Spec.PreciseCodeIntel
 
@@ -139,7 +139,7 @@ func (r *Reconciler) reconcilePreciseCodeIntelService(ctx context.Context, sg *S
 	return reconcileObject(ctx, r, cfg, &svc, &corev1.Service{}, sg, owner)
 }
 
-func (r *Reconciler) reconcilePreciseCodeIntelServiceAccount(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcilePreciseCodeIntelServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.PreciseCodeIntel
 	sa := serviceaccount.NewServiceAccount("precise-code-intel-worker", sg.Namespace, cfg)
 	return reconcileObject(ctx, r, cfg, &sa, &corev1.ServiceAccount{}, sg, owner)
