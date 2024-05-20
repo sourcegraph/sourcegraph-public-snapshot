@@ -10,3 +10,14 @@ go_library(
         "@com_github_sourcegraph_log//logtest",
     ],
 )
+
+go_library(
+    name = "contractest",
+    srcs = ["contract_mock.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/contract/contractest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/managedservicesplatform/runtime/contract",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

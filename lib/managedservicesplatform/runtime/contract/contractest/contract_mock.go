@@ -1,4 +1,4 @@
-package mock
+package contracttest
 
 import (
 	"cmp"
@@ -9,17 +9,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/contract"
 )
 
-type ServiceMetadata struct {
-	name    string
-	version string
+type MockServiceMetadata struct {
+	MockName    string
+	MockVersion string
 }
 
+// MockError is the error that is returned when there is an error parsing the given environment
 type MockError struct {
 	error
 }
 
-func (s ServiceMetadata) Name() string    { return cmp.Or(s.name, "mock-name") }
-func (s ServiceMetadata) Version() string { return cmp.Or(s.version, "mock-version") }
+func (s MockServiceMetadata) Name() string    { return cmp.Or(s.MockName, "mock-name") }
+func (s MockServiceMetadata) Version() string { return cmp.Or(s.MockVersion, "mock-version") }
 
 // NewMockContract returns a new contract instance from the given env. If there is an error parsing the given environment
 // a MockError is returned that contains the error.
