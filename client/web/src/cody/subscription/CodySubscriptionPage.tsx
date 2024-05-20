@@ -84,7 +84,9 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             <Button
                                 variant="primary"
                                 onClick={() => {
-                                    telemetryRecorder.recordEvent('cody.manageSubscription', 'click', { metadata: {tier: 1 }})
+                                    telemetryRecorder.recordEvent('cody.manageSubscription', 'click', {
+                                        metadata: { tier: 1 },
+                                    })
                                     window.location.href = manageSubscriptionRedirectURL
                                 }}
                             >
@@ -225,8 +227,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                     metadata: { tier: 1, team: 1 },
                                                 })
-                                                const url = new URL(manageSubscriptionRedirectURL);
-                                                url.searchParams.append('team', '1');
+                                                const url = new URL(manageSubscriptionRedirectURL)
+                                                url.searchParams.append('team', '1')
                                                 window.location.href = url.toString()
                                             }}
                                         >
