@@ -81,6 +81,17 @@ export class CodyProApiCaller implements Caller {
             credentials: 'same-origin',
             method: call.method,
             body: bodyJson,
+            headers: {
+                // In order for the Sourcegraph backend to authenticate the request, we need to
+                // ensure we don't run afoul of our CSRF protections (see csrf_security_model.md).
+                //
+                // Setting the `x-requested-with` header, along with other the current CORS config
+                // is sufficient for backend request to be authenticated. (See `CookieMiddlewareWithCSRFSafety()`.)
+                //
+                // On a related note, the `fetch` API does NOT include the "origin" header for GET
+                // or HEAD requests by spec. (See https://fetch.spec.whatwg.org/#origin-header.)
+                'x-requested-with': 'Sourcegraph/CodyProApiClient',
+            }
         })
 
         if (fetchResponse.status >= 200 && fetchResponse.status <= 299) {
